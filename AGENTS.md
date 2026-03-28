@@ -1,5 +1,12 @@
 # Agent Notes
 
+## Key References
+
+- **`PLATFORM.md`** — Product specification. Read this first to understand what Hirely does, the user types, system flow, agent architecture, interview mechanics, report structure, and MVP scope.
+- **`ARCHITECTURE.md`** — Technical architecture. Covers stack, deployment, directory structure, database schema, agent design (InterviewAgent + EvaluationAgent), AI model strategy, auth flow, file storage, and phased build plan.
+
+Always consult both files before making design decisions or implementing new features. They are the source of truth for product behavior and technical implementation.
+
 ## Project Structure
 
 - Use feature-first folders: `src/features/<feature>/` with `routes/`, `components/`, `hooks/`, `queries/`, `services/`, `types.ts`.
