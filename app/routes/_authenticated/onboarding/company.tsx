@@ -12,7 +12,7 @@ import { createCompany, getMyCompany } from "@/features/companies/server-fns";
 
 export const Route = createFileRoute("/_authenticated/onboarding/company")({
   beforeLoad: ({ context }) => {
-    if (context.user?.role !== "company") {
+    if (!context.isCompany) {
       throw redirect({ to: "/dashboard" });
     }
   },

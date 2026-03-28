@@ -11,6 +11,8 @@ export type User = NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>;
 
 export interface RouterContext {
   user: User | null;
+  isCompany: boolean;
+  isCandidate: boolean;
   queryClient: QueryClient;
 }
 
@@ -30,6 +32,8 @@ export function getRouter() {
     defaultPreloadStaleTime: 0,
     context: {
       user: null,
+      isCompany: false,
+      isCandidate: false,
       queryClient,
     },
     defaultErrorComponent: ErrorBoundary,

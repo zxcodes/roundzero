@@ -20,12 +20,12 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function AuthenticatedLayout() {
-  const { user } = Route.useRouteContext();
+  const { user, isCompany } = Route.useRouteContext();
 
   return (
     <TooltipProvider>
       <SidebarProvider>
-        <AppSidebar user={user!} />
+        <AppSidebar user={user!} isCompany={isCompany} />
         <SidebarInset>
           <SiteHeader title="Dashboard" />
           <div className="flex-1 p-4 lg:p-6">

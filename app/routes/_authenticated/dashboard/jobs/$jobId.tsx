@@ -35,14 +35,12 @@ import { deleteJob, getJob, updateJob } from "@/features/jobs/server-fns";
 export const Route = createFileRoute("/_authenticated/dashboard/jobs/$jobId")({
   loader: async ({ params, context }) => {
     const job = await getJob({ data: { id: params.jobId } });
-    const isCompany = context.user?.role === "company";
-    const isCandidate = context.user?.role === "candidate";
 
     const [alreadyApplied, applicants] = await Promise.all([
-      isCandidate && job.status === "open"
+      context.isCandidate && job.status === "open"
         ? hasApplied({ data: { jobId: params.jobId } })
         : Promise.resolve(false),
-      isCompany ? getJobApplicants({ data: { jobId: params.jobId } }) : Promise.resolve([]),
+      context.isCompany ? getJobApplicants({ data: { jobId: params.jobId } }) : Promise.resolve([]),
     ]);
 
     return { job, alreadyApplied, applicants };
@@ -73,8 +71,7 @@ const formatDate = (date: Date | string) => {
 
 function JobDetailPage() {
   const { job, alreadyApplied, applicants } = Route.useLoaderData();
-  const { user } = Route.useRouteContext();
-  const isCompany = user?.role === "company";
+  const { isCompany } = Route.useRouteContext();
 
   const requirements: string[] = Array.isArray(job.requirements) ? job.requirements : [];
 

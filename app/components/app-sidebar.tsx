@@ -56,9 +56,10 @@ const candidateNav = [
 
 export function AppSidebar({
   user,
+  isCompany,
   ...props
-}: React.ComponentProps<typeof Sidebar> & { user: User }) {
-  const navItems = user.role === "company" ? companyNav : candidateNav;
+}: React.ComponentProps<typeof Sidebar> & { user: User; isCompany: boolean }) {
+  const navItems = isCompany ? companyNav : candidateNav;
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>

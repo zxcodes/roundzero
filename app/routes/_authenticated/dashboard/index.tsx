@@ -5,15 +5,14 @@ export const Route = createFileRoute("/_authenticated/dashboard/")({
 });
 
 function DashboardIndexPage() {
-  const { user } = Route.useRouteContext();
+  const { user, isCompany } = Route.useRouteContext();
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Welcome back, {user?.name}</h2>
         <p className="text-muted-foreground">
-          Here's what's happening with your{" "}
-          {user?.role === "company" ? "hiring pipeline" : "applications"}.
+          Here's what's happening with your {isCompany ? "hiring pipeline" : "applications"}.
         </p>
       </div>
     </div>

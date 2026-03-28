@@ -14,8 +14,7 @@ import { getMyJobs, getOpenJobs } from "@/features/jobs/server-fns";
 
 export const Route = createFileRoute("/_authenticated/dashboard/jobs/")({
   loader: async ({ context }) => {
-    const isCompany = context.user?.role === "company";
-    if (isCompany) {
+    if (context.isCompany) {
       const jobs = await getMyJobs();
       return { jobs, isCompany: true as const };
     }

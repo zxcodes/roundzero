@@ -36,9 +36,13 @@ export const Route = createRootRouteWithContext<RouterContext>()({
   beforeLoad: async () => {
     try {
       const user = await getCurrentUser();
-      return { user };
+      return {
+        user,
+        isCompany: user?.role === "company",
+        isCandidate: user?.role === "candidate",
+      };
     } catch {
-      return { user: null };
+      return { user: null, isCompany: false, isCandidate: false };
     }
   },
   loader: () => getThemeServerFn(),

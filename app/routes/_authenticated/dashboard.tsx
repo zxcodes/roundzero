@@ -3,7 +3,7 @@ import { getMyCompany } from "@/features/companies/server-fns";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   beforeLoad: async ({ context }) => {
-    if (context.user?.role === "company") {
+    if (context.isCompany) {
       const company = await getMyCompany();
       if (!company) {
         throw redirect({ to: "/onboarding/company" });
