@@ -1,6 +1,6 @@
 # Hirely
 
-AI-powered hiring platform that replaces the first round of hiring with structured, adaptive interviews and explainable candidate evaluations.
+AI-powered hiring PLATFORM that replaces the first round of hiring with structured, adaptive interviews and explainable candidate evaluations.
 
 ## Stack
 
@@ -54,6 +54,6 @@ src/
 
 ## Documentation
 
-- **[platform.md](platform.md)** — Product specification
+- **[PLATFORM.md](PLATFORM.md)** — Product specification
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** — Technical architecture
 - **[AGENTS.md](AGENTS.md)** — Agent/AI coding conventions
