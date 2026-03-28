@@ -30,16 +30,19 @@
 - [x] SQLC queries for companies table
 - [x] Company creation flow (post-login, if role = company)
 - [x] Dashboard layout with sidebar (`_authenticated.tsx`, shadcn sidebar)
-- [ ] SQLC queries for jobs table
-- [ ] Job posting form + server functions (create, edit, list)
-- [ ] Dashboard jobs list (`app/routes/_authenticated/dashboard/jobs.tsx`)
-- [ ] Job detail page (`app/routes/_authenticated/dashboard/jobs.$jobId.tsx`)
-- [ ] Public job listing for candidates (`app/routes/jobs.tsx`)
-- [ ] Public job detail + apply (`app/routes/jobs.$jobId.tsx`)
+- [x] SQLC queries for jobs table (create, list by company, get by ID, update, delete, open jobs)
+- [x] Job server functions (createJob, getMyJobs, getJob, updateJob, deleteJob, getOpenJobs)
+- [x] Job form component (reusable for create/edit, dynamic requirements list)
+- [x] Dashboard jobs list — role-aware (company: management table, candidate: browse grid)
+- [x] Job detail page — role-aware (company: edit/delete, candidate: read-only + apply placeholder)
+- [x] New job page (`/dashboard/jobs/new`)
+- [x] Error boundary + not found components (defaultErrorComponent, defaultNotFoundComponent, root notFoundComponent)
 - [ ] SQLC queries for applications table
+- [ ] Application server functions (apply, list my applications, list applicants per job)
 - [ ] Application form (resume upload, optional links)
 - [ ] Resume upload to Cloudflare R2 (presigned URL flow)
 - [ ] Application status tracking
+- [ ] Wire "Apply" button on job detail to application flow
 
 ## Phase 3: AI Interview
 
