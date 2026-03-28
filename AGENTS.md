@@ -32,6 +32,13 @@ Always consult both files before making design decisions or implementing new fea
 - DB client uses `postgres` package (see `app/db.ts`).
 - `.env` contains `DATABASE_URL` for local DB.
 
+## TanStack Skills (IMPORTANT)
+
+- **Always check TanStack Intent skills before implementing anything TanStack-specific** (routing, server functions, data loading, error boundaries, auth guards, etc.).
+- Run `bunx @tanstack/intent@latest list` to discover available skills. There are 30+ skills across 11 packages covering routing, server functions, middleware, auth, error handling, and more.
+- Read the relevant skill from `node_modules/@tanstack/<package>/skills/<skill>/SKILL.md` before writing code. These contain the canonical patterns, common mistakes, and cross-references.
+- This is the source of truth for TanStack API usage — prefer skill guidance over guessing or using outdated patterns.
+
 ## Tooling
 
 - Linting: Biome (`biome.json`).

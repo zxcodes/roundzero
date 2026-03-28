@@ -11,7 +11,8 @@
       "**/app/**/*",
       "**/vite.config.ts",
       "!**/app/routeTree.gen.ts",
-      "!**/app/**/*_sql.ts"
+      "!**/app/**/*_sql.ts",
+      "!**/app/components/ui/**"
     ]
   },
   "formatter": {

@@ -1,4 +1,8 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { AppSidebar } from "@/components/app-sidebar";
+import { SiteHeader } from "@/components/site-header";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: ({ context, location }) => {
@@ -12,4 +16,23 @@ export const Route = createFileRoute("/_authenticated")({
       throw redirect({ to: "/choose-role" });
     }
   },
+  component: AuthenticatedLayout,
 });
+
+function AuthenticatedLayout() {
+  const { user } = Route.useRouteContext();
+
+  return (
+    <TooltipProvider>
+      <SidebarProvider>
+        <AppSidebar user={user!} />
+        <SidebarInset>
+          <SiteHeader title="Dashboard" />
+          <div className="flex-1 p-4 lg:p-6">
+            <Outlet />
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
+    </TooltipProvider>
+  );
+}

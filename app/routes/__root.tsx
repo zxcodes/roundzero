@@ -2,6 +2,7 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import { createRootRouteWithContext, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+import { NotFound } from "@/components/not-found";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/features/auth/provider";
 import { getCurrentUser } from "@/features/auth/server-fns";
@@ -42,6 +43,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
   loader: () => getThemeServerFn(),
   component: RootComponent,
   shellComponent: RootDocument,
+  notFoundComponent: NotFound,
 });
 
 function RootComponent() {

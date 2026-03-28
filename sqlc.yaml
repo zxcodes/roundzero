@@ -14,3 +14,21 @@ sql:
         options:
           runtime: node
           driver: postgres
+  - schema: "db/migrations"
+    queries: "app/features/companies/queries/queries.sql"
+    engine: postgresql
+    codegen:
+      - out: app/features/companies/queries
+        plugin: ts
+        options:
+          runtime: node
+          driver: postgres
+  - schema: "db/migrations"
+    queries: "app/features/jobs/queries/queries.sql"
+    engine: postgresql
+    codegen:
+      - out: app/features/jobs/queries
+        plugin: ts
+        options:
+          runtime: node
+          driver: postgres

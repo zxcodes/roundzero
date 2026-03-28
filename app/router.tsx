@@ -1,4 +1,6 @@
 import { createRouter as createTanStackRouter } from "@tanstack/react-router";
+import { ErrorBoundary } from "./components/error-boundary";
+import { NotFound } from "./components/not-found";
 import type { getCurrentUser } from "./features/auth/server-fns";
 import { routeTree } from "./routeTree.gen";
 
@@ -17,6 +19,8 @@ export function getRouter() {
     context: {
       user: null,
     },
+    defaultErrorComponent: ErrorBoundary,
+    defaultNotFoundComponent: NotFound,
   });
 
   return router;

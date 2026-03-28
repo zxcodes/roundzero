@@ -14,25 +14,26 @@
 
 ## Phase 1: Database & Auth
 
-- [ ] Postgres schema (`db/schema.sql`, `db/init.sql`)
-- [ ] dbmate migration (`db/migrations/00000000000000_init.sql`)
-- [ ] DB client (`app/shared/db.ts`)
-- [ ] SQLC queries for users table
-- [ ] Google OAuth (server-side, access token → user info → upsert)
-- [ ] Session management (encrypted httpOnly cookies)
-- [ ] Auth middleware (server function middleware reads session)
-- [ ] Auth context provider (`app/features/auth/provider.tsx`)
-- [ ] Login page (`app/routes/login.tsx`)
-- [ ] Role selection (company / candidate) on first login
+- [x] Postgres schema (`db/schema.sql`, `db/init.sql`)
+- [x] dbmate migration (`db/migrations/20260328081657_init.sql`)
+- [x] DB client (`app/shared/db.ts`)
+- [x] SQLC queries for users table
+- [x] Google OAuth (server-side, access token → user info → upsert)
+- [x] Session management (encrypted httpOnly cookies)
+- [x] Auth context provider (`app/features/auth/provider.tsx`)
+- [x] Login page (`app/routes/login.tsx`)
+- [x] Role selection (company / candidate) on first login
+- [x] Zod enums for all domain values (`app/shared/enums.ts`)
 
 ## Phase 2: Jobs & Applications
 
-- [ ] SQLC queries for companies, jobs tables
-- [ ] Company creation flow (post-login, if role = company)
+- [x] SQLC queries for companies table
+- [x] Company creation flow (post-login, if role = company)
+- [x] Dashboard layout with sidebar (`_authenticated.tsx`, shadcn sidebar)
+- [ ] SQLC queries for jobs table
 - [ ] Job posting form + server functions (create, edit, list)
-- [ ] Dashboard layout route (`app/routes/dashboard.tsx`)
-- [ ] Dashboard jobs list (`app/routes/dashboard.jobs.tsx`)
-- [ ] Job detail page (`app/routes/dashboard.jobs.$jobId.tsx`)
+- [ ] Dashboard jobs list (`app/routes/_authenticated/dashboard/jobs.tsx`)
+- [ ] Job detail page (`app/routes/_authenticated/dashboard/jobs.$jobId.tsx`)
 - [ ] Public job listing for candidates (`app/routes/jobs.tsx`)
 - [ ] Public job detail + apply (`app/routes/jobs.$jobId.tsx`)
 - [ ] SQLC queries for applications table
