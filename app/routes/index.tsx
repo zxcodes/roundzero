@@ -1,13 +1,13 @@
-import { Button } from "@/components/ui/button";
 import {
-    ArrowRight,
-    CaretDoubleRight,
-    ChatCircleText,
-    CheckCircle,
-    Ranking,
-    Warning,
+  ArrowRight,
+  CaretDoubleRight,
+  ChatCircleText,
+  CheckCircle,
+  Ranking,
+  Warning,
 } from "@phosphor-icons/react";
 import { createFileRoute } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({ component: HomePage });
 
@@ -31,16 +31,13 @@ function HomePage() {
 function Nav() {
   return (
     <header className="border-border/40 sticky top-0 z-50 border-b backdrop-blur-sm">
-      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-6">
-        <span className="text-sm font-semibold tracking-tight">hirely</span>
-        <div className="flex items-center gap-2">
-
-          <Button size="sm" variant="ghost" className="text-muted-foreground text-sm">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-8">
+        <span className="text-lg font-semibold tracking-tight">hirely</span>
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" className="text-muted-foreground">
             Log in
           </Button>
-          <Button size="sm" className="text-sm">
-            Get started
-          </Button>
+          <Button>Get started</Button>
         </div>
       </div>
     </header>
@@ -52,53 +49,55 @@ function Nav() {
 // ---------------------------------------------------------------------------
 function Hero() {
   return (
-    <section className="mx-auto grid max-w-5xl gap-12 px-6 py-24 lg:grid-cols-2 lg:items-center lg:py-32">
+    <section className="mx-auto grid max-w-7xl gap-16 px-8 py-28 lg:grid-cols-2 lg:items-center lg:py-36">
       {/* Left */}
-      <div className="max-w-lg space-y-6">
-        <p className="text-muted-foreground text-sm">Replace your first interview round</p>
-        <h1 className="text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-[2.75rem]">
+      <div className="space-y-6">
+        <p className="text-muted-foreground text-sm font-medium tracking-wide uppercase">
+          Replace your first interview round
+        </p>
+        <h1 className="text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
           AI interviews your candidates. You get the report.
         </h1>
-        <p className="text-muted-foreground leading-relaxed">
+        <p className="text-muted-foreground max-w-xl text-lg leading-relaxed">
           Hirely conducts adaptive, structured interviews and produces scored candidate reports with
           evidence — so your team only talks to people worth their time.
         </p>
-        <div className="flex items-center gap-3">
-          <Button>
-            Start hiring <ArrowRight className="ml-1.5 h-4 w-4" />
+        <div className="flex items-center gap-4 pt-2">
+          <Button size="lg">
+            Start hiring <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
-          <Button variant="ghost" className="text-muted-foreground">
+          <Button variant="ghost" size="lg" className="text-muted-foreground">
             See how it works
           </Button>
         </div>
       </div>
 
       {/* Right — mock report card */}
-      <div className="bg-card border-border/60 rounded-xl border p-5 shadow-sm lg:ml-auto lg:max-w-sm">
+      <div className="bg-card border-border/60 rounded-xl border p-6 shadow-sm lg:ml-auto lg:max-w-md">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium uppercase tracking-wider text-emerald-500">
+            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-500">
               Strong hire
             </p>
-            <p className="mt-1 font-semibold">Sarah Chen</p>
-            <p className="text-muted-foreground text-xs">Senior Backend Engineer</p>
+            <p className="mt-1.5 text-lg font-semibold">Sarah Chen</p>
+            <p className="text-muted-foreground text-sm">Senior Backend Engineer</p>
           </div>
-          <div className="bg-primary/10 text-primary flex h-12 w-12 items-center justify-center rounded-full text-lg font-bold">
+          <div className="bg-primary/10 text-primary flex h-14 w-14 items-center justify-center rounded-full text-xl font-bold">
             8.4
           </div>
         </div>
 
-        <div className="border-border/40 mt-4 border-t pt-4">
-          <div className="space-y-2.5">
+        <div className="border-border/40 mt-5 border-t pt-5">
+          <div className="space-y-3">
             <ScoreBar label="Technical" value={9.1} />
             <ScoreBar label="Communication" value={7.8} />
             <ScoreBar label="Experience" value={8.2} />
           </div>
         </div>
 
-        <div className="border-border/40 mt-4 space-y-1.5 border-t pt-4">
-          <p className="text-xs font-medium">Key insights</p>
-          <p className="text-muted-foreground text-xs leading-relaxed">
+        <div className="border-border/40 mt-5 space-y-2 border-t pt-5">
+          <p className="text-sm font-medium">Key insights</p>
+          <p className="text-muted-foreground text-sm leading-relaxed">
             Strong system design instincts. Clearly articulated tradeoffs in distributed caching
             question. Minor gap in observability tooling.
           </p>
@@ -110,15 +109,15 @@ function Hero() {
 
 function ScoreBar({ label, value }: { label: string; value: number }) {
   return (
-    <div className="flex items-center gap-3 text-xs">
-      <span className="text-muted-foreground w-28 shrink-0">{label}</span>
-      <div className="bg-muted h-1.5 flex-1 overflow-hidden rounded-full">
+    <div className="flex items-center gap-3 text-sm">
+      <span className="text-muted-foreground w-32 shrink-0">{label}</span>
+      <div className="bg-muted h-2 flex-1 overflow-hidden rounded-full">
         <div
           className="bg-primary h-full rounded-full"
           style={{ width: `${(value / 10) * 100}%` }}
         />
       </div>
-      <span className="w-6 text-right font-medium">{value}</span>
+      <span className="w-8 text-right font-medium">{value}</span>
     </div>
   );
 }
@@ -129,17 +128,17 @@ function ScoreBar({ label, value }: { label: string; value: number }) {
 function InterviewSection() {
   return (
     <section className="border-border/40 border-t">
-      <div className="mx-auto grid max-w-5xl gap-12 px-6 py-20 lg:grid-cols-2 lg:items-center">
+      <div className="mx-auto grid max-w-7xl gap-16 px-8 py-24 lg:grid-cols-2 lg:items-center">
         {/* Left — mock chat */}
         <div className="bg-card border-border/60 overflow-hidden rounded-xl border shadow-sm">
-          <div className="border-border/40 flex items-center gap-2 border-b px-4 py-3">
-            <ChatCircleText weight="fill" className="text-primary h-4 w-4" />
-            <span className="text-xs font-medium">Interview session</span>
-            <span className="bg-emerald-500/10 ml-auto rounded-full px-2 py-0.5 text-[10px] font-medium text-emerald-500">
+          <div className="border-border/40 flex items-center gap-2 border-b px-5 py-3.5">
+            <ChatCircleText weight="fill" className="text-primary h-5 w-5" />
+            <span className="text-sm font-medium">Interview session</span>
+            <span className="bg-emerald-500/10 ml-auto rounded-full px-2.5 py-0.5 text-xs font-medium text-emerald-500">
               In progress
             </span>
           </div>
-          <div className="space-y-3 p-4">
+          <div className="space-y-3.5 p-5">
             <ChatBubble
               sender="ai"
               text="You mentioned building a real-time notification system at your last role. Walk me through the architecture decisions you made."
@@ -156,25 +155,29 @@ function InterviewSection() {
         </div>
 
         {/* Right — text */}
-        <div className="max-w-md space-y-4 lg:pl-4">
-          <p className="text-muted-foreground text-sm font-medium">Adaptive interviews</p>
-          <h2 className="text-2xl font-bold tracking-tight">Questions that go deeper, not wider</h2>
-          <p className="text-muted-foreground leading-relaxed">
+        <div className="space-y-5">
+          <p className="text-muted-foreground text-sm font-medium tracking-wide uppercase">
+            Adaptive interviews
+          </p>
+          <h2 className="text-3xl font-bold tracking-tight lg:text-4xl">
+            Questions that go deeper, not wider
+          </h2>
+          <p className="text-muted-foreground text-lg leading-relaxed">
             Every interview adapts in real-time. The AI probes weak answers, validates strong
             claims, and detects inconsistencies between the resume and conversation — the way a
             senior interviewer would.
           </p>
-          <ul className="text-muted-foreground space-y-2 text-sm">
-            <li className="flex items-start gap-2">
-              <CaretDoubleRight className="mt-0.5 h-4 w-4 shrink-0" />
+          <ul className="text-muted-foreground space-y-3 pt-1 text-base">
+            <li className="flex items-start gap-2.5">
+              <CaretDoubleRight className="mt-1 h-4 w-4 shrink-0" />
               Follow-up questions based on actual responses
             </li>
-            <li className="flex items-start gap-2">
-              <CaretDoubleRight className="mt-0.5 h-4 w-4 shrink-0" />
+            <li className="flex items-start gap-2.5">
+              <CaretDoubleRight className="mt-1 h-4 w-4 shrink-0" />
               Scenario-based problems tailored to the role
             </li>
-            <li className="flex items-start gap-2">
-              <CaretDoubleRight className="mt-0.5 h-4 w-4 shrink-0" />
+            <li className="flex items-start gap-2.5">
+              <CaretDoubleRight className="mt-1 h-4 w-4 shrink-0" />
               20-40 minutes, async, no scheduling needed
             </li>
           </ul>
@@ -188,7 +191,7 @@ function ChatBubble({ sender, text }: { sender: "ai" | "candidate"; text: string
   return (
     <div className={sender === "ai" ? "" : "flex justify-end"}>
       <div
-        className={`max-w-[85%] rounded-lg px-3 py-2 text-xs leading-relaxed ${
+        className={`max-w-[85%] rounded-lg px-3.5 py-2.5 text-sm leading-relaxed ${
           sender === "ai" ? "bg-muted text-foreground" : "bg-primary text-primary-foreground"
         }`}
       >
@@ -204,12 +207,16 @@ function ChatBubble({ sender, text }: { sender: "ai" | "candidate"; text: string
 function ReportSection() {
   return (
     <section className="border-border/40 border-t">
-      <div className="mx-auto grid max-w-5xl gap-12 px-6 py-20 lg:grid-cols-2 lg:items-center">
+      <div className="mx-auto grid max-w-7xl gap-16 px-8 py-24 lg:grid-cols-2 lg:items-center">
         {/* Left — text */}
-        <div className="max-w-md space-y-4">
-          <p className="text-muted-foreground text-sm font-medium">Candidate reports</p>
-          <h2 className="text-2xl font-bold tracking-tight">Every score backed by evidence</h2>
-          <p className="text-muted-foreground leading-relaxed">
+        <div className="space-y-5">
+          <p className="text-muted-foreground text-sm font-medium tracking-wide uppercase">
+            Candidate reports
+          </p>
+          <h2 className="text-3xl font-bold tracking-tight lg:text-4xl">
+            Every score backed by evidence
+          </h2>
+          <p className="text-muted-foreground text-lg leading-relaxed">
             No black-box ratings. Each report shows exactly what the candidate said, how it was
             evaluated, and why they scored the way they did. Your team sees the reasoning, not just
             a number.
@@ -217,14 +224,14 @@ function ReportSection() {
         </div>
 
         {/* Right — mock report breakdown */}
-        <div className="bg-card border-border/60 rounded-xl border shadow-sm lg:ml-auto lg:max-w-sm">
-          <div className="border-border/40 border-b px-5 py-3">
-            <p className="text-xs font-medium">Report — Sarah Chen</p>
+        <div className="bg-card border-border/60 rounded-xl border shadow-sm lg:ml-auto lg:max-w-md">
+          <div className="border-border/40 border-b px-6 py-3.5">
+            <p className="text-sm font-medium">Report — Sarah Chen</p>
           </div>
-          <div className="space-y-4 p-5">
+          <div className="space-y-5 p-6">
             <div>
-              <p className="mb-2 text-xs font-medium text-emerald-500">Strengths</p>
-              <ul className="space-y-1.5">
+              <p className="mb-2.5 text-sm font-medium text-emerald-500">Strengths</p>
+              <ul className="space-y-2">
                 <ReportItem
                   icon="check"
                   text="Deep understanding of distributed systems tradeoffs"
@@ -237,8 +244,8 @@ function ReportSection() {
               </ul>
             </div>
             <div>
-              <p className="text-xs font-medium text-amber-500">Areas of concern</p>
-              <ul className="mt-2 space-y-1.5">
+              <p className="text-sm font-medium text-amber-500">Areas of concern</p>
+              <ul className="mt-2.5 space-y-2">
                 <ReportItem
                   icon="flag"
                   text="Limited exposure to observability beyond basic logging"
@@ -255,11 +262,11 @@ function ReportSection() {
 
 function ReportItem({ icon, text }: { icon: "check" | "flag"; text: string }) {
   return (
-    <li className="text-muted-foreground flex items-start gap-2 text-xs leading-relaxed">
+    <li className="text-muted-foreground flex items-start gap-2.5 text-sm leading-relaxed">
       {icon === "check" ? (
-        <CheckCircle weight="fill" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500" />
+        <CheckCircle weight="fill" className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
       ) : (
-        <Warning weight="fill" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
+        <Warning weight="fill" className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
       )}
       {text}
     </li>
@@ -272,13 +279,13 @@ function ReportItem({ icon, text }: { icon: "check" | "flag"; text: string }) {
 function RankingSection() {
   return (
     <section className="border-border/40 border-t">
-      <div className="mx-auto grid max-w-5xl gap-12 px-6 py-20 lg:grid-cols-2 lg:items-center">
+      <div className="mx-auto grid max-w-7xl gap-16 px-8 py-24 lg:grid-cols-2 lg:items-center">
         {/* Left — mock ranked list */}
         <div className="bg-card border-border/60 rounded-xl border shadow-sm">
-          <div className="border-border/40 flex items-center gap-2 border-b px-5 py-3">
-            <Ranking weight="fill" className="text-primary h-4 w-4" />
-            <span className="text-xs font-medium">Senior Backend Engineer</span>
-            <span className="text-muted-foreground ml-auto text-[10px]">12 evaluated</span>
+          <div className="border-border/40 flex items-center gap-2.5 border-b px-6 py-3.5">
+            <Ranking weight="fill" className="text-primary h-5 w-5" />
+            <span className="text-sm font-medium">Senior Backend Engineer</span>
+            <span className="text-muted-foreground ml-auto text-xs">12 evaluated</span>
           </div>
           <div className="divide-border/40 divide-y">
             <RankRow rank={1} name="Sarah Chen" score={8.4} rec="strong_hire" />
@@ -289,12 +296,14 @@ function RankingSection() {
         </div>
 
         {/* Right — text */}
-        <div className="max-w-md space-y-4 lg:pl-4">
-          <p className="text-muted-foreground text-sm font-medium">Ranked shortlists</p>
-          <h2 className="text-2xl font-bold tracking-tight">
+        <div className="space-y-5">
+          <p className="text-muted-foreground text-sm font-medium tracking-wide uppercase">
+            Ranked shortlists
+          </p>
+          <h2 className="text-3xl font-bold tracking-tight lg:text-4xl">
             Your top candidates, sorted and explained
           </h2>
-          <p className="text-muted-foreground leading-relaxed">
+          <p className="text-muted-foreground text-lg leading-relaxed">
             Stop scrolling through 200 applications. Hirely scores every candidate across technical
             skill, communication, and experience depth — then gives you a ranked list with clear
             hire/pass recommendations.
@@ -328,13 +337,13 @@ function RankRow({
   };
 
   return (
-    <div className="flex items-center gap-4 px-5 py-3">
-      <span className="text-muted-foreground w-5 text-center text-xs font-medium">{rank}</span>
-      <span className="flex-1 text-sm font-medium">{name}</span>
-      <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${recStyles[rec]}`}>
+    <div className="flex items-center gap-4 px-6 py-3.5">
+      <span className="text-muted-foreground w-6 text-center text-sm font-medium">{rank}</span>
+      <span className="flex-1 font-medium">{name}</span>
+      <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${recStyles[rec]}`}>
         {recLabels[rec]}
       </span>
-      <span className="w-8 text-right text-sm font-semibold">{score}</span>
+      <span className="w-8 text-right font-semibold">{score}</span>
     </div>
   );
 }
@@ -345,16 +354,16 @@ function RankRow({
 function BottomCTA() {
   return (
     <section className="border-border/40 border-t">
-      <div className="mx-auto max-w-5xl px-6 py-24 text-center">
-        <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+      <div className="mx-auto max-w-7xl px-8 py-28 text-center">
+        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
           Stop screening resumes. Start reviewing reports.
         </h2>
-        <p className="text-muted-foreground mx-auto mt-3 max-w-md text-sm leading-relaxed">
+        <p className="text-muted-foreground mx-auto mt-4 max-w-lg text-lg leading-relaxed">
           Post your first job and let Hirely handle the first round. Your team gets scored,
           explained candidates — ready for a real conversation.
         </p>
-        <Button size="lg" className="mt-8">
-          Get started <ArrowRight className="ml-1.5 h-4 w-4" />
+        <Button size="lg" className="mt-10">
+          Get started <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       </div>
     </section>
@@ -367,9 +376,9 @@ function BottomCTA() {
 function Footer() {
   return (
     <footer className="border-border/40 border-t">
-      <div className="text-muted-foreground mx-auto flex max-w-5xl items-center justify-between px-6 py-6 text-xs">
+      <div className="text-muted-foreground mx-auto flex max-w-7xl items-center justify-between px-8 py-8 text-sm">
         <span>&copy; {new Date().getFullYear()} Hirely</span>
-        <div className="flex gap-4">
+        <div className="flex gap-6">
           <span className="hover:text-foreground cursor-pointer transition-colors">Privacy</span>
           <span className="hover:text-foreground cursor-pointer transition-colors">Terms</span>
         </div>
