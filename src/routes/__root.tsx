@@ -1,6 +1,8 @@
 import { TanStackDevtools } from "@tanstack/react-devtools";
-import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+import { ThemeProvider } from "@/components/theme-provider";
+import { getThemeServerFn } from "@/lib/theme";
 
 import appCss from "../styles.css?url";
 
@@ -15,7 +17,7 @@ export const Route = createRootRoute({
         content: "width=device-width, initial-scale=1",
       },
       {
-        title: "TanStack Start Starter",
+        title: "Hirely",
       },
     ],
     links: [
@@ -25,12 +27,24 @@ export const Route = createRootRoute({
       },
     ],
   }),
+  loader: () => getThemeServerFn(),
+  component: RootComponent,
   shellComponent: RootDocument,
 });
 
-function RootDocument({ children }: { children: React.ReactNode }) {
+function RootComponent() {
+  const theme = Route.useLoaderData();
   return (
-    <html lang="en">
+    <ThemeProvider theme={theme}>
+      <Outlet />
+    </ThemeProvider>
+  );
+}
+
+function RootDocument({ children }: { children: React.ReactNode }) {
+  const theme = Route.useLoaderData();
+  return (
+    <html className={theme} lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>
