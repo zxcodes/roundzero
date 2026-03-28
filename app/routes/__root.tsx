@@ -1,12 +1,16 @@
+import { GoogleOAuthProvider } from "@react-oauth/google";
 import { TanStackDevtools } from "@tanstack/react-devtools";
-import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
+import { createRootRouteWithContext, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AuthProvider } from "@/features/auth/provider";
+import { getCurrentUser } from "@/features/auth/server-fns";
 import { getThemeServerFn } from "@/lib/theme";
+import type { RouterContext } from "@/router";
 
 import appCss from "../styles.css?url";
 
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<RouterContext>()({
   head: () => ({
     meta: [
       {
@@ -27,6 +31,14 @@ export const Route = createRootRoute({
       },
     ],
   }),
+  beforeLoad: async () => {
+    try {
+      const user = await getCurrentUser();
+      return { user };
+    } catch {
+      return { user: null };
+    }
+  },
   loader: () => getThemeServerFn(),
   component: RootComponent,
   shellComponent: RootDocument,
@@ -34,10 +46,16 @@ export const Route = createRootRoute({
 
 function RootComponent() {
   const theme = Route.useLoaderData();
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? "";
+
   return (
-    <ThemeProvider theme={theme}>
-      <Outlet />
-    </ThemeProvider>
+    <GoogleOAuthProvider clientId={googleClientId}>
+      <AuthProvider>
+        <ThemeProvider theme={theme}>
+          <Outlet />
+        </ThemeProvider>
+      </AuthProvider>
+    </GoogleOAuthProvider>
   );
 }
 

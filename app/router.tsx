@@ -1,5 +1,12 @@
 import { createRouter as createTanStackRouter } from "@tanstack/react-router";
+import type { getCurrentUser } from "./features/auth/server-fns";
 import { routeTree } from "./routeTree.gen";
+
+export type User = NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>;
+
+export interface RouterContext {
+  user: User | null;
+}
 
 export function getRouter() {
   const router = createTanStackRouter({
@@ -7,6 +14,9 @@ export function getRouter() {
     scrollRestoration: true,
     defaultPreload: "intent",
     defaultPreloadStaleTime: 0,
+    context: {
+      user: null,
+    },
   });
 
   return router;

@@ -6,7 +6,7 @@ import {
   Ranking,
   Warning,
 } from "@phosphor-icons/react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({ component: HomePage });
@@ -34,10 +34,16 @@ function Nav() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-8">
         <span className="text-lg font-semibold tracking-tight">hirely</span>
         <div className="flex items-center gap-3">
-          <Button variant="ghost" className="text-muted-foreground">
-            Log in
+          <Button variant="ghost" className="text-muted-foreground" asChild>
+            <Link to="/login" search={{ redirect: "/dashboard" }}>
+              Log in
+            </Link>
           </Button>
-          <Button>Get started</Button>
+          <Button asChild>
+            <Link to="/login" search={{ redirect: "/dashboard" }}>
+              Get started
+            </Link>
+          </Button>
         </div>
       </div>
     </header>
@@ -63,8 +69,10 @@ function Hero() {
           evidence — so your team only talks to people worth their time.
         </p>
         <div className="flex items-center gap-4 pt-2">
-          <Button size="lg">
-            Start hiring <ArrowRight className="ml-2 h-4 w-4" />
+          <Button size="lg" asChild>
+            <Link to="/login" search={{ redirect: "/dashboard" }}>
+              Start hiring <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
           </Button>
           <Button variant="ghost" size="lg" className="text-muted-foreground">
             See how it works
@@ -362,8 +370,10 @@ function BottomCTA() {
           Post your first job and let Hirely handle the first round. Your team gets scored,
           explained candidates — ready for a real conversation.
         </p>
-        <Button size="lg" className="mt-10">
-          Get started <ArrowRight className="ml-2 h-4 w-4" />
+        <Button size="lg" className="mt-10" asChild>
+          <Link to="/login" search={{ redirect: "/dashboard" }}>
+            Get started <ArrowRight className="ml-2 h-4 w-4" />
+          </Link>
         </Button>
       </div>
     </section>

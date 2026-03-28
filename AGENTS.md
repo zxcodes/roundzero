@@ -22,6 +22,9 @@ Always consult both files before making design decisions or implementing new fea
 - Do not write manual types for DB data; use SQLC-generated types only.
 - Never use type assertions in application code. Always infer from server function response.
 - SQLC config is in `sqlc.yaml` with per-feature query files.
+- **No logic in the database.** No triggers, functions, or stored procedures in migrations. Migrations are pure schema (tables, indexes, constraints). All logic (e.g. setting `updated_at`) must be handled in application code (SQLC queries).
+- **No DB-level enums or CHECK constraints for enum-like values.** Use plain `TEXT` columns in the schema. Define and validate enums with Zod in `app/shared/enums.ts`. This keeps validation in one place (app code) and avoids migration headaches when values change.
+- **Always set `updated_at = now()` explicitly** in every UPDATE query. There are no database triggers to do this automatically.
 
 ## Local DB + Client
 
