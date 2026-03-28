@@ -1,6 +1,5 @@
 import { Brain, ChartBar, ChatCircleText, File, Ranking, ShieldCheck } from "@phosphor-icons/react";
 import { createFileRoute } from "@tanstack/react-router";
-import { ModeToggle } from "@/components/mode-toggle";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({ component: HomePage });
@@ -13,7 +12,6 @@ function HomePage() {
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
           <span className="text-lg font-semibold tracking-tight">Hirely</span>
           <div className="flex items-center gap-3">
-            <ModeToggle />
             <Button size="sm" variant="outline">
               For companies
             </Button>
