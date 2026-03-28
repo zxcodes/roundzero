@@ -1,6 +1,6 @@
 {
-  "include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts"],
-  "exclude": ["src/**/*_sql.ts"],
+  "include": ["app/**/*.ts", "app/**/*.tsx", "vite.config.ts"],
+  "exclude": ["app/**/*_sql.ts"],
 
   "compilerOptions": {
     "target": "ES2022",
@@ -25,7 +25,7 @@
     "allowJs": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["app/*"]
     }
   }
 }

@@ -8,10 +8,10 @@
   "files": {
     "ignoreUnknown": false,
     "includes": [
-      "**/src/**/*",
+      "**/app/**/*",
       "**/vite.config.ts",
-      "!**/src/routeTree.gen.ts",
-      "!**/src/**/*_sql.ts"
+      "!**/app/routeTree.gen.ts",
+      "!**/app/**/*_sql.ts"
     ]
   },
   "formatter": {

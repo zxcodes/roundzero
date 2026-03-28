@@ -43,7 +43,7 @@ bun run dev
 ## Project Structure
 
 ```
-src/
+app/
 ├── routes/          # TanStack file-based routes
 ├── features/        # Feature modules (auth, jobs, interviews, reports, etc.)
 ├── agents/          # Cloudflare Agents (InterviewAgent, EvaluationAgent)

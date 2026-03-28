@@ -10,7 +10,7 @@
     "sqlgen": "sqlc generate",
     "db:migrate": "dbmate migrate up --url $DATABASE_URL",
     "db:wait": "dbmate wait --url $DATABASE_URL",
-    "check": "biome check src --write && bun typecheck",
+    "check": "biome check app --write && bun typecheck",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

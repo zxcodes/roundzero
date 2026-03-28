@@ -36,7 +36,7 @@ wrangler.jsonc
 ## Directory Structure
 
 ```
-src/
+app/
 ├── routes/                        # TanStack file-based routes
 │   ├── __root.tsx
 │   ├── index.tsx                  # Landing page

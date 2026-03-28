@@ -8,10 +8,10 @@ sql: []
 # Example entry:
 # sql:
 #   - schema: "db/migrations/00000000000000_init.sql"
-#     queries: "src/features/example/queries/queries.sql"
+#     queries: "app/features/example/queries/queries.sql"
 #     engine: postgresql
 #     codegen:
-#       - out: src/features/example/queries
+#       - out: app/features/example/queries
 #         plugin: ts
 #         options:
 #           runtime: node

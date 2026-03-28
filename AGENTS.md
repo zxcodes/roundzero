@@ -9,9 +9,9 @@ Always consult both files before making design decisions or implementing new fea
 
 ## Project Structure
 
-- Use feature-first folders: `src/features/<feature>/` with `routes/`, `components/`, `hooks/`, `queries/`, `services/`, `types.ts`.
-- Keep shared utilities in `src/shared/` (db, auth, server middleware, UI helpers).
-- File-based routes must live in `src/routes/` and can re-export feature components.
+- Use feature-first folders: `app/features/<feature>/` with `routes/`, `components/`, `hooks/`, `queries/`, `services/`, `types.ts`.
+- Keep shared utilities in `app/shared/` (db, auth, server middleware, UI helpers).
+- File-based routes must live in `app/routes/` and can re-export feature components.
 - No barrel exports (no `index.ts` re-export files).
 
 ## Database + SQLC
@@ -26,7 +26,7 @@ Always consult both files before making design decisions or implementing new fea
 ## Local DB + Client
 
 - Local dev uses Postgres via Docker.
-- DB client uses `postgres` package (see `src/db.ts`).
+- DB client uses `postgres` package (see `app/db.ts`).
 - `.env` contains `DATABASE_URL` for local DB.
 
 ## Tooling
@@ -34,8 +34,8 @@ Always consult both files before making design decisions or implementing new fea
 - Linting: Biome (`biome.json`).
 - Typecheck: `bun run typecheck`.
 - Ignore SQLC outputs in lint/typecheck:
-  - Biome: `!**/src/**/*_sql.ts`
-  - TS: `"exclude": ["src/**/*_sql.ts"]` in `tsconfig.json`.
+  - Biome: `!**/app/**/*_sql.ts`
+  - TS: `"exclude": ["app/**/*_sql.ts"]` in `tsconfig.json`.
 - Always check the latest framework docs and prefer official utilities over custom helpers.
 - Avoid unnecessary utilities or files unless shared across multiple places.
 
