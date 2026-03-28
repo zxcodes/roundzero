@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard/index'
 import { Route as AuthenticatedOnboardingCompanyRouteImport } from './routes/_authenticated/onboarding/company'
+import { Route as AuthenticatedDashboardApplicationsRouteImport } from './routes/_authenticated/dashboard/applications'
 import { Route as AuthenticatedDashboardJobsIndexRouteImport } from './routes/_authenticated/dashboard/jobs/index'
 import { Route as AuthenticatedDashboardJobsNewRouteImport } from './routes/_authenticated/dashboard/jobs/new'
 import { Route as AuthenticatedDashboardJobsJobIdRouteImport } from './routes/_authenticated/dashboard/jobs/$jobId'
@@ -56,6 +57,12 @@ const AuthenticatedOnboardingCompanyRoute =
     path: '/onboarding/company',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedDashboardApplicationsRoute =
+  AuthenticatedDashboardApplicationsRouteImport.update({
+    id: '/applications',
+    path: '/applications',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
 const AuthenticatedDashboardJobsIndexRoute =
   AuthenticatedDashboardJobsIndexRouteImport.update({
     id: '/jobs/',
@@ -80,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/choose-role': typeof ChooseRoleRoute
   '/login': typeof LoginRoute
   '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
+  '/dashboard/applications': typeof AuthenticatedDashboardApplicationsRoute
   '/onboarding/company': typeof AuthenticatedOnboardingCompanyRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/dashboard/jobs/$jobId': typeof AuthenticatedDashboardJobsJobIdRoute
@@ -90,6 +98,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/choose-role': typeof ChooseRoleRoute
   '/login': typeof LoginRoute
+  '/dashboard/applications': typeof AuthenticatedDashboardApplicationsRoute
   '/onboarding/company': typeof AuthenticatedOnboardingCompanyRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
   '/dashboard/jobs/$jobId': typeof AuthenticatedDashboardJobsJobIdRoute
@@ -103,6 +112,7 @@ export interface FileRoutesById {
   '/choose-role': typeof ChooseRoleRoute
   '/login': typeof LoginRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
+  '/_authenticated/dashboard/applications': typeof AuthenticatedDashboardApplicationsRoute
   '/_authenticated/onboarding/company': typeof AuthenticatedOnboardingCompanyRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/_authenticated/dashboard/jobs/$jobId': typeof AuthenticatedDashboardJobsJobIdRoute
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
     | '/choose-role'
     | '/login'
     | '/dashboard'
+    | '/dashboard/applications'
     | '/onboarding/company'
     | '/dashboard/'
     | '/dashboard/jobs/$jobId'
@@ -126,6 +137,7 @@ export interface FileRouteTypes {
     | '/'
     | '/choose-role'
     | '/login'
+    | '/dashboard/applications'
     | '/onboarding/company'
     | '/dashboard'
     | '/dashboard/jobs/$jobId'
@@ -138,6 +150,7 @@ export interface FileRouteTypes {
     | '/choose-role'
     | '/login'
     | '/_authenticated/dashboard'
+    | '/_authenticated/dashboard/applications'
     | '/_authenticated/onboarding/company'
     | '/_authenticated/dashboard/'
     | '/_authenticated/dashboard/jobs/$jobId'
@@ -203,6 +216,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOnboardingCompanyRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/dashboard/applications': {
+      id: '/_authenticated/dashboard/applications'
+      path: '/applications'
+      fullPath: '/dashboard/applications'
+      preLoaderRoute: typeof AuthenticatedDashboardApplicationsRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
     '/_authenticated/dashboard/jobs/': {
       id: '/_authenticated/dashboard/jobs/'
       path: '/jobs'
@@ -228,6 +248,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedDashboardRouteChildren {
+  AuthenticatedDashboardApplicationsRoute: typeof AuthenticatedDashboardApplicationsRoute
   AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
   AuthenticatedDashboardJobsJobIdRoute: typeof AuthenticatedDashboardJobsJobIdRoute
   AuthenticatedDashboardJobsNewRoute: typeof AuthenticatedDashboardJobsNewRoute
@@ -236,6 +257,8 @@ interface AuthenticatedDashboardRouteChildren {
 
 const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
   {
+    AuthenticatedDashboardApplicationsRoute:
+      AuthenticatedDashboardApplicationsRoute,
     AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
     AuthenticatedDashboardJobsJobIdRoute: AuthenticatedDashboardJobsJobIdRoute,
     AuthenticatedDashboardJobsNewRoute: AuthenticatedDashboardJobsNewRoute,

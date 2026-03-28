@@ -1,6 +1,7 @@
 import { ArrowLeft } from "@phosphor-icons/react";
+import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,9 +14,24 @@ export const Route = createFileRoute("/_authenticated/dashboard/jobs/new")({
 
 function NewJobPage() {
   const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const onSubmit = async (data: {
+  const createJobFn = useServerFn(createJob);
+  const createJobMutation = useMutation({
+    mutationFn: createJobFn,
+    onSuccess: async ({ job }) => {
+      toast.success("Job created successfully");
+      await router.invalidate();
+      await router.navigate({
+        to: "/dashboard/jobs/$jobId",
+        params: { jobId: job.id },
+      });
+    },
+    onError: () => {
+      toast.error("Failed to create job. Please try again.");
+    },
+  });
+
+  const onSubmit = (data: {
     title: string;
     description: string;
     requirements: string[];
@@ -30,19 +46,7 @@ function NewJobPage() {
       return;
     }
 
-    setIsSubmitting(true);
-    try {
-      const { job } = await createJob({ data });
-      toast.success("Job created successfully");
-      await router.invalidate();
-      await router.navigate({
-        to: "/dashboard/jobs/$jobId",
-        params: { jobId: job.id },
-      });
-    } catch {
-      toast.error("Failed to create job. Please try again.");
-      setIsSubmitting(false);
-    }
+    createJobMutation.mutate({ data });
   };
 
   return (
@@ -69,7 +73,11 @@ function NewJobPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <JobForm onSubmit={onSubmit} isSubmitting={isSubmitting} submitLabel="Create job" />
+          <JobForm
+            onSubmit={onSubmit}
+            isSubmitting={createJobMutation.isPending}
+            submitLabel="Create job"
+          />
         </CardContent>
       </Card>
     </div>

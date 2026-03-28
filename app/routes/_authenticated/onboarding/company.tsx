@@ -1,5 +1,7 @@
+import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
-import { useId, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { useId } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,16 +23,27 @@ export const Route = createFileRoute("/_authenticated/onboarding/company")({
 function CompanyOnboardingPage() {
   const existingCompany = Route.useLoaderData();
   const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const nameId = useId();
   const descriptionId = useId();
+
+  const createCompanyFn = useServerFn(createCompany);
+  const createCompanyMutation = useMutation({
+    mutationFn: createCompanyFn,
+    onSuccess: async () => {
+      await router.invalidate();
+      await router.navigate({ to: "/dashboard" });
+    },
+    onError: () => {
+      toast.error("Failed to create company. Please try again.");
+    },
+  });
 
   if (existingCompany) {
     router.navigate({ to: "/dashboard" });
     return null;
   }
 
-  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const name = formData.get("name") as string;
@@ -41,20 +54,12 @@ function CompanyOnboardingPage() {
       return;
     }
 
-    setIsSubmitting(true);
-    try {
-      await createCompany({
-        data: {
-          name: name.trim(),
-          description: description.trim() || undefined,
-        },
-      });
-      await router.invalidate();
-      await router.navigate({ to: "/dashboard" });
-    } catch {
-      toast.error("Failed to create company. Please try again.");
-      setIsSubmitting(false);
-    }
+    createCompanyMutation.mutate({
+      data: {
+        name: name.trim(),
+        description: description.trim() || undefined,
+      },
+    });
   };
 
   return (
@@ -84,8 +89,8 @@ function CompanyOnboardingPage() {
                 rows={3}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Creating..." : "Create company"}
+            <Button type="submit" className="w-full" disabled={createCompanyMutation.isPending}>
+              {createCompanyMutation.isPending ? "Creating..." : "Create company"}
             </Button>
           </form>
         </CardContent>

@@ -37,12 +37,14 @@
 - [x] Job detail page — role-aware (company: edit/delete, candidate: read-only + apply placeholder)
 - [x] New job page (`/dashboard/jobs/new`)
 - [x] Error boundary + not found components (defaultErrorComponent, defaultNotFoundComponent, root notFoundComponent)
-- [ ] SQLC queries for applications table
-- [ ] Application server functions (apply, list my applications, list applicants per job)
-- [ ] Application form (resume upload, optional links)
-- [ ] Resume upload to Cloudflare R2 (presigned URL flow)
-- [ ] Application status tracking
-- [ ] Wire "Apply" button on job detail to application flow
+- [x] SQLC queries for applications table
+- [x] Application server functions (apply, list my applications, list applicants per job)
+- [x] Application form (resume URL + optional links)
+- [x] Wire "Apply" button on job detail to application flow (hasApplied check, apply form, success state)
+- [x] Candidate "My Applications" page (`/dashboard/applications`)
+- [x] Company applicants view per job (on job detail page, with candidate info)
+- [x] Application status tracking (company can update via dropdown)
+- [ ] Resume upload to Cloudflare R2 (presigned URL flow) — deferred to Phase 3
 
 ## Phase 3: AI Interview
 
