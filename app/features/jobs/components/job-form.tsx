@@ -1,4 +1,5 @@
-import { Plus, X } from "@phosphor-icons/react";
+import { Add01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -111,7 +112,7 @@ export function JobForm({
             maxLength={200}
           />
           <Button type="button" variant="outline" size="icon" onClick={onAddRequirement}>
-            <Plus className="size-4" />
+            <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-4" />
           </Button>
         </div>
         {requirements.length > 0 && (
@@ -127,7 +128,7 @@ export function JobForm({
                   onClick={() => onRemoveRequirement(i)}
                   className="text-muted-foreground hover:text-foreground shrink-0"
                 >
-                  <X className="size-3.5" />
+                  <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-3.5" />
                 </button>
               </li>
             ))}

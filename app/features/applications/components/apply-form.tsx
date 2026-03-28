@@ -1,4 +1,5 @@
-import { Link as LinkIcon, Plus, X } from "@phosphor-icons/react";
+import { Add01Icon, Cancel01Icon, Link01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -80,7 +81,7 @@ export function ApplyForm({
             onKeyDown={onKeyDown}
           />
           <Button type="button" variant="outline" size="icon" onClick={onAddLink}>
-            <Plus className="size-4" />
+            <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-4" />
           </Button>
         </div>
         <p className="text-muted-foreground text-xs">
@@ -94,7 +95,11 @@ export function ApplyForm({
                 className="bg-muted flex items-center justify-between gap-2 rounded-md px-3 py-1.5 text-sm"
               >
                 <span className="flex items-center gap-1.5 truncate">
-                  <LinkIcon className="text-muted-foreground size-3.5 shrink-0" />
+                  <HugeiconsIcon
+                    icon={Link01Icon}
+                    strokeWidth={2}
+                    className="text-muted-foreground size-3.5 shrink-0"
+                  />
                   <span className="truncate">{link}</span>
                 </span>
                 <button
@@ -102,7 +107,7 @@ export function ApplyForm({
                   onClick={() => onRemoveLink(i)}
                   className="text-muted-foreground hover:text-foreground shrink-0"
                 >
-                  <X className="size-3.5" />
+                  <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-3.5" />
                 </button>
               </li>
             ))}

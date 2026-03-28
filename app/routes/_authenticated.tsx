@@ -24,12 +24,20 @@ function AuthenticatedLayout() {
 
   return (
     <TooltipProvider>
-      <SidebarProvider>
-        <AppSidebar user={user!} isCompany={isCompany} />
+      <SidebarProvider
+        style={
+          {
+            "--sidebar-width": "calc(var(--spacing) * 72)",
+          } as { [key: string]: string }
+        }
+      >
+        <AppSidebar user={user!} isCompany={isCompany} variant="inset" />
         <SidebarInset>
           <SiteHeader title="Dashboard" />
-          <div className="flex-1 p-4 lg:p-6">
-            <Outlet />
+          <div className="flex flex-1 flex-col">
+            <div className="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
+              <Outlet />
+            </div>
           </div>
         </SidebarInset>
       </SidebarProvider>

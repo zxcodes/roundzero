@@ -1,11 +1,12 @@
 import {
-  ArrowRight,
-  CaretDoubleRight,
-  ChatCircleText,
-  CheckCircle,
-  Ranking,
-  Warning,
-} from "@phosphor-icons/react";
+  Alert02Icon,
+  ArrowRight01Icon,
+  ArrowRightDoubleIcon,
+  BubbleChatIcon,
+  CheckmarkCircle02Icon,
+  RankingIcon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 
@@ -71,7 +72,8 @@ function Hero() {
         <div className="flex items-center gap-4 pt-2">
           <Button size="lg" asChild>
             <Link to="/login" search={{ redirect: "/dashboard" }}>
-              Start hiring <ArrowRight className="ml-2 h-4 w-4" />
+              Start hiring{" "}
+              <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="ml-2 h-4 w-4" />
             </Link>
           </Button>
           <Button variant="ghost" size="lg" className="text-muted-foreground">
@@ -140,7 +142,7 @@ function InterviewSection() {
         {/* Left — mock chat */}
         <div className="bg-card border-border/60 overflow-hidden rounded-xl border shadow-sm">
           <div className="border-border/40 flex items-center gap-2 border-b px-5 py-3.5">
-            <ChatCircleText weight="fill" className="text-primary h-5 w-5" />
+            <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={2} className="text-primary h-5 w-5" />
             <span className="text-sm font-medium">Interview session</span>
             <span className="bg-emerald-500/10 ml-auto rounded-full px-2.5 py-0.5 text-xs font-medium text-emerald-500">
               In progress
@@ -177,15 +179,27 @@ function InterviewSection() {
           </p>
           <ul className="text-muted-foreground space-y-3 pt-1 text-base">
             <li className="flex items-start gap-2.5">
-              <CaretDoubleRight className="mt-1 h-4 w-4 shrink-0" />
+              <HugeiconsIcon
+                icon={ArrowRightDoubleIcon}
+                strokeWidth={2}
+                className="mt-1 h-4 w-4 shrink-0"
+              />
               Follow-up questions based on actual responses
             </li>
             <li className="flex items-start gap-2.5">
-              <CaretDoubleRight className="mt-1 h-4 w-4 shrink-0" />
+              <HugeiconsIcon
+                icon={ArrowRightDoubleIcon}
+                strokeWidth={2}
+                className="mt-1 h-4 w-4 shrink-0"
+              />
               Scenario-based problems tailored to the role
             </li>
             <li className="flex items-start gap-2.5">
-              <CaretDoubleRight className="mt-1 h-4 w-4 shrink-0" />
+              <HugeiconsIcon
+                icon={ArrowRightDoubleIcon}
+                strokeWidth={2}
+                className="mt-1 h-4 w-4 shrink-0"
+              />
               20-40 minutes, async, no scheduling needed
             </li>
           </ul>
@@ -272,9 +286,17 @@ function ReportItem({ icon, text }: { icon: "check" | "flag"; text: string }) {
   return (
     <li className="text-muted-foreground flex items-start gap-2.5 text-sm leading-relaxed">
       {icon === "check" ? (
-        <CheckCircle weight="fill" className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+        <HugeiconsIcon
+          icon={CheckmarkCircle02Icon}
+          strokeWidth={2}
+          className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500"
+        />
       ) : (
-        <Warning weight="fill" className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+        <HugeiconsIcon
+          icon={Alert02Icon}
+          strokeWidth={2}
+          className="mt-0.5 h-4 w-4 shrink-0 text-amber-500"
+        />
       )}
       {text}
     </li>
@@ -291,7 +313,7 @@ function RankingSection() {
         {/* Left — mock ranked list */}
         <div className="bg-card border-border/60 rounded-xl border shadow-sm">
           <div className="border-border/40 flex items-center gap-2.5 border-b px-6 py-3.5">
-            <Ranking weight="fill" className="text-primary h-5 w-5" />
+            <HugeiconsIcon icon={RankingIcon} strokeWidth={2} className="text-primary h-5 w-5" />
             <span className="text-sm font-medium">Senior Backend Engineer</span>
             <span className="text-muted-foreground ml-auto text-xs">12 evaluated</span>
           </div>
@@ -372,7 +394,8 @@ function BottomCTA() {
         </p>
         <Button size="lg" className="mt-10" asChild>
           <Link to="/login" search={{ redirect: "/dashboard" }}>
-            Get started <ArrowRight className="ml-2 h-4 w-4" />
+            Get started{" "}
+            <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="ml-2 h-4 w-4" />
           </Link>
         </Button>
       </div>

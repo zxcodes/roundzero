@@ -1,4 +1,5 @@
-import { Buildings, User } from "@phosphor-icons/react";
+import { Building01Icon, UserIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -57,7 +58,11 @@ function ChooseRolePage() {
               )}
             >
               <div className="flex flex-col items-center gap-2 px-4 py-6">
-                <Buildings weight="duotone" className="h-8 w-8 text-primary" />
+                <HugeiconsIcon
+                  icon={Building01Icon}
+                  strokeWidth={2}
+                  className="h-8 w-8 text-primary"
+                />
                 <p className="text-sm font-medium">Company</p>
                 <p className="text-xs text-muted-foreground">
                   Post jobs and review AI-generated candidate reports
@@ -74,7 +79,7 @@ function ChooseRolePage() {
               )}
             >
               <div className="flex flex-col items-center gap-2 px-4 py-6">
-                <User weight="duotone" className="h-8 w-8 text-primary" />
+                <HugeiconsIcon icon={UserIcon} strokeWidth={2} className="h-8 w-8 text-primary" />
                 <p className="text-sm font-medium">Candidate</p>
                 <p className="text-xs text-muted-foreground">
                   Apply to jobs and complete AI-powered interviews

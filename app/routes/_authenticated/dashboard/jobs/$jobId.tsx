@@ -1,11 +1,12 @@
 import {
-  ArrowLeft,
-  CheckCircle,
-  Envelope,
-  PencilSimple,
-  Trash,
-  Users,
-} from "@phosphor-icons/react";
+  ArrowLeft01Icon,
+  CheckmarkCircle02Icon,
+  Delete02Icon,
+  Edit02Icon,
+  Mail01Icon,
+  UserGroupIcon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -80,7 +81,7 @@ function JobDetailPage() {
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" asChild>
           <Link to="/dashboard/jobs">
-            <ArrowLeft className="size-4" />
+            <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
           </Link>
         </Button>
         <div className="flex-1">
@@ -189,7 +190,11 @@ function ApplicantsSection({
       <CardContent>
         {applicants.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8">
-            <Users className="text-muted-foreground mb-3 size-10" />
+            <HugeiconsIcon
+              icon={UserGroupIcon}
+              strokeWidth={2}
+              className="text-muted-foreground mb-3 size-10"
+            />
             <p className="text-muted-foreground text-sm">No one has applied yet.</p>
           </div>
         ) : (
@@ -212,7 +217,11 @@ function ApplicantsSection({
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium">{applicant.candidateName}</p>
                     <div className="flex items-center gap-1">
-                      <Envelope className="text-muted-foreground size-3" />
+                      <HugeiconsIcon
+                        icon={Mail01Icon}
+                        strokeWidth={2}
+                        className="text-muted-foreground size-3"
+                      />
                       <p className="text-muted-foreground truncate text-xs">
                         {applicant.candidateEmail}
                       </p>
@@ -282,7 +291,11 @@ function CandidateApplySection({
   if (applied) {
     return (
       <div className="flex items-center justify-center gap-2 rounded-lg border border-dashed py-6">
-        <CheckCircle className="text-muted-foreground size-5" weight="fill" />
+        <HugeiconsIcon
+          icon={CheckmarkCircle02Icon}
+          strokeWidth={2}
+          className="text-muted-foreground size-5"
+        />
         <p className="text-muted-foreground text-sm font-medium">
           You have already applied to this position
         </p>
@@ -414,11 +427,11 @@ function CompanyActions({
   return (
     <div className="flex gap-2">
       <Button variant="outline" onClick={() => setIsEditing(true)}>
-        <PencilSimple className="size-4" />
+        <HugeiconsIcon icon={Edit02Icon} strokeWidth={2} className="size-4" />
         Edit
       </Button>
       <Button variant="destructive" onClick={onDelete} disabled={deleteJobMutation.isPending}>
-        <Trash className="size-4" />
+        <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} className="size-4" />
         {deleteJobMutation.isPending ? "Deleting..." : "Delete"}
       </Button>
     </div>

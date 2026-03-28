@@ -1,4 +1,5 @@
-import { DotsThreeVertical, SignOut } from "@phosphor-icons/react";
+import { Logout03Icon, MoreVerticalIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -46,7 +47,7 @@ export function NavUser({ user }: { user: User }) {
                 <span className="truncate font-medium">{user.name}</span>
                 <span className="truncate text-xs text-muted-foreground">{user.email}</span>
               </div>
-              <DotsThreeVertical className="ml-auto size-4" />
+              <HugeiconsIcon icon={MoreVerticalIcon} strokeWidth={2} className="ml-auto size-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -69,7 +70,7 @@ export function NavUser({ user }: { user: User }) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={signOut}>
-              <SignOut />
+              <HugeiconsIcon icon={Logout03Icon} strokeWidth={2} className="size-4" />
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>

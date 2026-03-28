@@ -1,4 +1,5 @@
-import { Briefcase } from "@phosphor-icons/react";
+import { Briefcase01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -56,7 +57,11 @@ function MyApplicationsPage() {
 
       {applications.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16">
-          <Briefcase className="text-muted-foreground mb-4 size-12" />
+          <HugeiconsIcon
+            icon={Briefcase01Icon}
+            strokeWidth={2}
+            className="text-muted-foreground mb-4 size-12"
+          />
           <h3 className="text-lg font-semibold">No applications yet</h3>
           <p className="text-muted-foreground mt-1 mb-4 text-sm">
             Browse open jobs and submit your first application.

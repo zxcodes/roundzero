@@ -1,4 +1,5 @@
-import { Briefcase, Plus } from "@phosphor-icons/react";
+import { Add01Icon, Briefcase01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -65,7 +66,7 @@ function CompanyJobsList({ jobs }: { jobs: Awaited<ReturnType<typeof getMyJobs>>
         </div>
         <Button asChild>
           <Link to="/dashboard/jobs/new">
-            <Plus className="size-4" />
+            <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-4" />
             Post a job
           </Link>
         </Button>
@@ -73,14 +74,18 @@ function CompanyJobsList({ jobs }: { jobs: Awaited<ReturnType<typeof getMyJobs>>
 
       {jobs.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16">
-          <Briefcase className="text-muted-foreground mb-4 size-12" />
+          <HugeiconsIcon
+            icon={Briefcase01Icon}
+            strokeWidth={2}
+            className="text-muted-foreground mb-4 size-12"
+          />
           <h3 className="text-lg font-semibold">No jobs yet</h3>
           <p className="text-muted-foreground mt-1 mb-4 text-sm">
             Create your first job posting to start receiving applications.
           </p>
           <Button asChild>
             <Link to="/dashboard/jobs/new">
-              <Plus className="size-4" />
+              <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-4" />
               Post a job
             </Link>
           </Button>
@@ -143,7 +148,11 @@ function CandidateJobsList({ jobs }: { jobs: Awaited<ReturnType<typeof getOpenJo
 
       {jobs.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16">
-          <Briefcase className="text-muted-foreground mb-4 size-12" />
+          <HugeiconsIcon
+            icon={Briefcase01Icon}
+            strokeWidth={2}
+            className="text-muted-foreground mb-4 size-12"
+          />
           <h3 className="text-lg font-semibold">No open jobs</h3>
           <p className="text-muted-foreground mt-1 text-sm">
             There are no open positions right now. Check back later.
