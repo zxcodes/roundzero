@@ -38,6 +38,7 @@ Always consult both files before making design decisions or implementing new fea
 - Run `bunx @tanstack/intent@latest list` to discover available skills. There are 30+ skills across 11 packages covering routing, server functions, middleware, auth, error handling, and more.
 - Read the relevant skill from `node_modules/@tanstack/<package>/skills/<skill>/SKILL.md` before writing code. These contain the canonical patterns, common mistakes, and cross-references.
 - This is the source of truth for TanStack API usage — prefer skill guidance over guessing or using outdated patterns.
+- **Always use `zodValidator()` from `@tanstack/zod-adapter`** for server function `inputValidator` calls. Never use manual `(data) => schema.parse(data)` callbacks. Example: `.inputValidator(zodValidator(mySchema))`.
 
 ## Tooling
 

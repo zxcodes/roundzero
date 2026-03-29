@@ -50,6 +50,8 @@ import {
 import { JobForm, type JobFormData } from "@/features/jobs/components/job-form";
 import { archiveJob, getJob, publishJob, updateJob } from "@/features/jobs/server/functions";
 import {
+  type ApplicationStatus,
+  applicationStatusSchema,
   type EmploymentType,
   type ExperienceLevel,
   employmentTypeLabels,
@@ -334,7 +336,7 @@ function ApplicantsSection({
     },
   });
 
-  const onStatusChange = async (applicationId: string, status: string) => {
+  const onStatusChange = async (applicationId: string, status: ApplicationStatus) => {
     await updateStatusMutation.mutateAsync({
       data: { applicationId, status },
     });
@@ -404,7 +406,9 @@ function ApplicantsSection({
                     </div>
                     <Select
                       value={applicant.status}
-                      onValueChange={(value) => onStatusChange(applicant.id, value)}
+                      onValueChange={(value) =>
+                        onStatusChange(applicant.id, applicationStatusSchema.parse(value))
+                      }
                       disabled={updateStatusMutation.isPending}
                     >
                       <SelectTrigger className="w-32">

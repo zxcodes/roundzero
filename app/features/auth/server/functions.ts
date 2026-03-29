@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { clearSession, updateSession, useSession } from "@tanstack/react-start/server";
+import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { getDb } from "@/shared/db";
 import { userRoleSchema } from "@/shared/enums";
@@ -16,7 +17,7 @@ const googleAuthSchema = z.object({
 });
 
 export const loginWithGoogle = createServerFn({ method: "POST" })
-  .inputValidator((data: { access_token: string }) => googleAuthSchema.parse(data))
+  .inputValidator(zodValidator(googleAuthSchema))
   .handler(async ({ data }) => {
     const userResponse = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
       headers: { Authorization: `Bearer ${data.access_token}` },
@@ -73,7 +74,7 @@ const setRoleSchema = z.object({
 
 export const setRole = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator((data: { role: string }) => setRoleSchema.parse(data))
+  .inputValidator(zodValidator(setRoleSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
     const user = await setUserRoleQuery(db, {

@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { getUserById } from "@/features/auth/queries/queries_sql";
 import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
@@ -27,11 +28,17 @@ const updateStatusSchema = z.object({
   status: applicationStatusSchema,
 });
 
+const jobIdSchema = z.object({
+  jobId: z.string().uuid(),
+});
+
+const applicationIdSchema = z.object({
+  id: z.string().uuid(),
+});
+
 export const applyToJob = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator((data: { jobId: string; resumeUrl?: string | null; links?: string[] }) =>
-    applySchema.parse(data),
-  )
+  .inputValidator(zodValidator(applySchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
 
@@ -91,7 +98,7 @@ export const getMyApplications = createServerFn({ method: "GET" })
 
 export const getJobApplicants = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .inputValidator((data: { jobId: string }) => z.object({ jobId: z.string().uuid() }).parse(data))
+  .inputValidator(zodValidator(jobIdSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
 
@@ -112,7 +119,7 @@ export const getJobApplicants = createServerFn({ method: "GET" })
 
 export const getApplicationDetail = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .inputValidator((data: { id: string }) => z.object({ id: z.string().uuid() }).parse(data))
+  .inputValidator(zodValidator(applicationIdSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
 
@@ -145,9 +152,7 @@ const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
 
 export const updateApplicationStatus = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator((data: { applicationId: string; status: string }) =>
-    updateStatusSchema.parse(data),
-  )
+  .inputValidator(zodValidator(updateStatusSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
 
@@ -190,7 +195,7 @@ export const updateApplicationStatus = createServerFn({ method: "POST" })
 
 export const getApplicationCount = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .inputValidator((data: { jobId: string }) => z.object({ jobId: z.string().uuid() }).parse(data))
+  .inputValidator(zodValidator(jobIdSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
 
@@ -211,7 +216,7 @@ export const getApplicationCount = createServerFn({ method: "GET" })
 
 export const hasApplied = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .inputValidator((data: { jobId: string }) => z.object({ jobId: z.string().uuid() }).parse(data))
+  .inputValidator(zodValidator(jobIdSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
 

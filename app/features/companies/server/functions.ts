@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
+import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { getDb } from "@/shared/db";
 import { authMiddleware } from "@/shared/middleware";
@@ -13,7 +14,7 @@ const createCompanySchema = z.object({
 
 export const createCompany = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator((data: { name: string; description?: string }) => createCompanySchema.parse(data))
+  .inputValidator(zodValidator(createCompanySchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
 

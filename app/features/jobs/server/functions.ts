@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
 import { getDb } from "@/shared/db";
@@ -55,7 +56,7 @@ const jobIdSchema = z.object({
 
 export const createJob = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
-  .inputValidator((data: z.input<typeof jobFieldsSchema>) => jobFieldsSchema.parse(data))
+  .inputValidator(zodValidator(jobFieldsSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
 
@@ -109,7 +110,7 @@ export const getMyArchivedJobs = createServerFn({ method: "GET" })
 
 export const getJob = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .inputValidator((data: { id: string }) => jobIdSchema.parse(data))
+  .inputValidator(zodValidator(jobIdSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
     const job = await getJobById(db, { id: data.id });
@@ -130,7 +131,7 @@ export const getJob = createServerFn({ method: "GET" })
 
 export const updateJob = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
-  .inputValidator((data: z.input<typeof updateJobSchema>) => updateJobSchema.parse(data))
+  .inputValidator(zodValidator(updateJobSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
 
@@ -161,7 +162,7 @@ export const updateJob = createServerFn({ method: "POST" })
 
 export const archiveJob = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
-  .inputValidator((data: { id: string }) => jobIdSchema.parse(data))
+  .inputValidator(zodValidator(jobIdSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
     const archived = await archiveJobQuery(db, { id: data.id, companyId: context.company.id });
@@ -179,7 +180,7 @@ export const getOpenJobs = createServerFn({ method: "GET" }).handler(async () =>
 
 export const publishJob = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
-  .inputValidator((data: { id: string }) => jobIdSchema.parse(data))
+  .inputValidator(zodValidator(jobIdSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
 
