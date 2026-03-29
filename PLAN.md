@@ -44,9 +44,72 @@
 - [x] Candidate "My Applications" page (`/dashboard/applications`)
 - [x] Company applicants view per job (on job detail page, with candidate info)
 - [x] Application status tracking (company can update via dropdown)
-- [ ] Resume upload to Cloudflare R2 (presigned URL flow) — deferred to Phase 3
+- [ ] Resume upload to Cloudflare R2 (presigned URL flow) — deferred to Phase 4
 
-## Phase 3: AI Interview
+## Phase 3: Product Solidification
+
+Solidify Hirely as a usable job platform before adding AI. Public browsing, proper onboarding, company profiles, one-click apply, job expiry.
+
+### Decisions
+
+| Topic | Decision |
+|---|---|
+| Login separation | Separate entry URLs: `/company/login` and `/candidate/login` |
+| Dual roles | One account = one role |
+| Wrong-URL login | Redirect to correct dashboard with toast |
+| Public URL structure | Marketing landing at `/` + public `/companies` directory + public `/jobs` board |
+| Company profile fields | Full: name, description, logo, website, industry, size, founded year, location(s), tech stack (tags), culture/perks, social links |
+| Company onboarding | Minimal: name, logo, industry, size, short description — rest in profile settings |
+| Candidate onboarding | Name (pre-filled from Google) + headline + resume upload |
+| Apply flow | True one-click: button only, uses resume from candidate profile |
+| Job expiry | Optional `expires_at` on jobs + stale indicator after 90 days |
+| Resume storage | Local filesystem for now, migrate to R2 in Phase 4 |
+| Login messaging | Tailored copy per role (company: "Start hiring smarter", candidate: "Find your next role") |
+
+### Sub-project 1: Schema + Auth Changes
+
+- [ ] Extend `companies` table: add `logo_url`, `website`, `industry`, `company_size`, `founded_year`, `location`, `tech_stack` (JSONB), `culture`, `social_links` (JSONB), `updated_at`
+- [ ] Create `candidate_profiles` table: `user_id` (FK), `headline`, `resume_url`, `bio`, `skills` (JSONB), `work_history` (JSONB), `links` (JSONB), `created_at`, `updated_at`
+- [ ] Add `expires_at` (TIMESTAMPTZ, nullable) to `jobs` table
+- [ ] Add `slug` (TEXT UNIQUE) to `companies` table for public URLs
+- [ ] Separate login routes: `/company/login` and `/candidate/login` with tailored messaging
+- [ ] Auto-assign role from login URL context — remove `/choose-role` route
+- [ ] Handle wrong-URL login: redirect existing users to correct dashboard
+- [ ] Local filesystem resume upload endpoint (`/api/upload`)
+- [ ] SQLC queries for candidate profiles (create, get by user, update)
+- [ ] SQLC queries for extended company fields (update profile, get by slug)
+- [ ] Update seed data for new schema
+- [ ] Update existing tests for schema changes
+
+### Sub-project 2: Public Browsing
+
+- [ ] Public `/companies` route — company directory (card grid, search/filter by industry, size, tech stack)
+- [ ] Public `/companies/:slug` route — company profile page with open jobs listed
+- [ ] Public `/jobs` route — job board (card grid, search/filter by title, location, type, experience)
+- [ ] Public `/jobs/:id` route — job detail page (read-only, "Login to apply" CTA for unauthenticated)
+- [ ] Navigation: public header with Companies / Jobs tabs + login buttons
+- [ ] Authenticated candidates see "Apply" button instead of "Login to apply"
+- [ ] Update landing page nav to link to `/companies` and `/jobs`
+
+### Sub-project 3: Onboarding Flows
+
+- [ ] Company onboarding redesign — minimal fields (name, logo, industry, size, description), polished centered layout
+- [ ] Candidate onboarding — new flow: name (pre-filled), headline, resume upload
+- [ ] Company profile settings page — all fields editable, organized in sections
+- [ ] Candidate profile settings page — resume, headline, bio, skills, work history, links
+- [ ] Onboarding should not show dashboard sidebar — standalone centered layout
+
+### Sub-project 4: Apply Flow Rework + Job Expiry
+
+- [ ] One-click apply: single button, uses resume from candidate profile
+- [ ] Guard: require resume in profile before applying (prompt to complete profile if missing)
+- [ ] Remove per-application resume URL and links fields from apply form
+- [ ] `expires_at` field on job create/edit form (optional date picker)
+- [ ] Stale job indicator: badge on jobs older than 90 days with no expiry set
+- [ ] Auto-close expired jobs: scheduled task or on-read check that sets `status = 'closed'` when `expires_at < now()`
+- [ ] Update job browsing UI to hide expired/closed jobs by default
+
+## Phase 4: AI Interview
 
 - [ ] Switch runtime from Nitro to Cloudflare Workers (`@cloudflare/vite-plugin`)
 - [ ] `wrangler.jsonc` config (Durable Objects, AI binding, R2 bucket)
@@ -61,7 +124,7 @@
 - [ ] Interview progress tracking (stage transitions, question count)
 - [ ] Time/question limits enforcement
 
-## Phase 4: Evaluation & Reports
+## Phase 5: Evaluation & Reports
 
 - [ ] EvaluationAgent (`app/agents/evaluation-agent.ts`, extends Agent)
 - [ ] Trigger evaluation when interview completes
@@ -76,7 +139,7 @@
 - [ ] Company dashboard: candidate list per job (`app/routes/dashboard.candidates.$candidateId.tsx`)
 - [ ] Ranked candidate list with scores + recommendations
 
-## Phase 5: Polish & Extras
+## Phase 6: Polish & Extras
 
 - [ ] Candidate-facing interview status tracking
 - [ ] Email notifications (interview ready, report available)
@@ -87,7 +150,7 @@
 - [ ] Loading states and optimistic UI
 - [ ] Mobile responsiveness pass
 
-## Phase 6 (Optional): Migrate to Better Auth
+## Phase 7 (Optional): Migrate to Better Auth
 
 Replaces the hand-rolled Google OAuth + encrypted cookie session system with Better Auth. Unlocks magic links, email/password, 2FA, and other auth methods without custom implementation.
 
