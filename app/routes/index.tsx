@@ -7,10 +7,17 @@ import {
   RankingIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 
-export const Route = createFileRoute("/")({ component: HomePage });
+export const Route = createFileRoute("/")({
+  beforeLoad: ({ context }) => {
+    if (context.user) {
+      throw redirect({ to: "/dashboard" });
+    }
+  },
+  component: HomePage,
+});
 
 function HomePage() {
   return (
