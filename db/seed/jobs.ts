@@ -7,6 +7,7 @@ type DomainTemplate = {
   priorities: string[];
   roleTitles: string[];
   compensation: { min: number; max: number; currency: string };
+  experienceLevels: string[];
 };
 
 const templates: DomainTemplate[] = [
@@ -23,6 +24,7 @@ const templates: DomainTemplate[] = [
       "Data Infrastructure Engineer",
     ],
     compensation: { min: 150000, max: 230000, currency: "USD" },
+    experienceLevels: ["senior", "staff", "lead"],
   },
   {
     domain: "healthtech",
@@ -37,6 +39,7 @@ const templates: DomainTemplate[] = [
       "Platform Engineer",
     ],
     compensation: { min: 145000, max: 220000, currency: "USD" },
+    experienceLevels: ["mid", "senior", "staff"],
   },
   {
     domain: "devtools",
@@ -51,6 +54,7 @@ const templates: DomainTemplate[] = [
       "Developer Experience Engineer",
     ],
     compensation: { min: 155000, max: 240000, currency: "USD" },
+    experienceLevels: ["senior", "staff", "principal"],
   },
   {
     domain: "logistics",
@@ -65,6 +69,7 @@ const templates: DomainTemplate[] = [
       "Data Engineer",
     ],
     compensation: { min: 140000, max: 210000, currency: "USD" },
+    experienceLevels: ["mid", "senior", "lead"],
   },
 ];
 
@@ -75,14 +80,14 @@ const offices = [
   "Seattle, WA",
   "Chicago, IL",
   "Boston, MA",
+  "Denver, CO",
+  "Los Angeles, CA",
+  "Portland, OR",
+  "Miami, FL",
 ] as const;
 
-const remotePolicies = [
-  "Remote (US)",
-  "Hybrid (3 days in office)",
-  "Hybrid (2 days in office)",
-  "On-site",
-] as const;
+const workplaceTypes = ["remote", "hybrid", "onsite"] as const;
+const employmentTypes = ["full_time", "contract"] as const;
 
 function buildDescription(
   companyName: string,
@@ -95,17 +100,12 @@ function buildDescription(
   const launchWindow = randomInt(`${seed}-launch`, 30, 120);
   const priorityA = pick(template.priorities, randomInt(`${seed}-priority-a`, 0, 100));
   const priorityB = pick(template.priorities, randomInt(`${seed}-priority-b`, 0, 100));
-  const office = pick(offices, randomInt(`${seed}-office`, 0, 100));
-  const remotePolicy = pick(remotePolicies, randomInt(`${seed}-remote`, 0, 100));
-  const bonus = randomInt(`${seed}-bonus`, 10, 20);
-  const equity = randomInt(`${seed}-equity`, 1, 5) / 10;
 
   return [
     `${companyName} is hiring a ${title} to join our ${template.domain} product team. ${template.mission}`,
     `In this role, you will partner with product, design, and data to deliver roadmap initiatives across the next ${roadmap} quarters. You will directly influence architecture choices and engineering standards while collaborating with a ${teamSize}-person cross-functional squad.`,
     `Success in the first 90 days includes shipping at least one customer-facing capability, improving one internal reliability metric, and contributing to design docs for our ${launchWindow}-day platform roadmap. Immediate focus areas are ${priorityA} and ${priorityB}.`,
     `Core stack includes ${template.techStack.join(", ")}. Experience with similar systems is valued, but strong problem-solving, ownership, and communication are equally important.`,
-    `Compensation & location: ${template.compensation.currency} ${template.compensation.min.toLocaleString()} - ${template.compensation.max.toLocaleString()} base + up to ${bonus}% annual bonus + ${equity}% equity band. Location: ${office}. Work model: ${remotePolicy}.`,
   ].join("\n\n");
 }
 
@@ -146,6 +146,15 @@ async function seedJobs() {
     description: string;
     requirements: string[];
     status: "draft" | "open" | "closed";
+    location: string;
+    workplaceType: string;
+    employmentType: string;
+    experienceLevel: string;
+    salaryMin: number;
+    salaryMax: number;
+    salaryCurrency: string;
+    teamSize: number;
+    headcount: number;
   }>;
 
   let counter = 1;
@@ -162,6 +171,19 @@ async function seedJobs() {
       const status: "draft" | "open" | "closed" =
         counter % 6 === 0 ? "draft" : counter % 9 === 0 ? "closed" : "open";
 
+      const location = pick(offices, randomInt(`${seed}-office`, 0, 100));
+      const workplace = pick(workplaceTypes, randomInt(`${seed}-workplace`, 0, 100));
+      const employment = pick(employmentTypes, randomInt(`${seed}-employment`, 0, 100));
+      const expLevel = pick(template.experienceLevels, randomInt(`${seed}-exp`, 0, 100));
+
+      // Salary within template range with some variation
+      const salarySpread = template.compensation.max - template.compensation.min;
+      const salaryMin = template.compensation.min + randomInt(`${seed}-sal-min`, 0, Math.floor(salarySpread * 0.3));
+      const salaryMax = salaryMin + randomInt(`${seed}-sal-max`, Math.floor(salarySpread * 0.3), salarySpread);
+
+      const teamSize = randomInt(`${seed}-team`, 4, 20);
+      const headcount = randomInt(`${seed}-headcount`, 1, 4);
+
       jobs.push({
         id: makeUuid("hirely-seed-job", counter),
         companyId: company.id,
@@ -169,6 +191,15 @@ async function seedJobs() {
         description,
         requirements,
         status,
+        location,
+        workplaceType: workplace,
+        employmentType: employment,
+        experienceLevel: expLevel,
+        salaryMin,
+        salaryMax,
+        salaryCurrency: template.compensation.currency,
+        teamSize,
+        headcount,
       });
 
       counter += 1;
@@ -177,8 +208,17 @@ async function seedJobs() {
 
   for (const job of jobs) {
     await sql`
-      INSERT INTO jobs (id, company_id, title, description, requirements, status)
-      VALUES (${job.id}, ${job.companyId}, ${job.title}, ${job.description}, ${sql.json(job.requirements)}, ${job.status})
+      INSERT INTO jobs (
+        id, company_id, title, description, requirements, status,
+        location, workplace_type, employment_type, experience_level,
+        salary_min, salary_max, salary_currency, team_size, headcount
+      )
+      VALUES (
+        ${job.id}, ${job.companyId}, ${job.title}, ${job.description},
+        ${sql.json(job.requirements)}, ${job.status},
+        ${job.location}, ${job.workplaceType}, ${job.employmentType}, ${job.experienceLevel},
+        ${job.salaryMin}, ${job.salaryMax}, ${job.salaryCurrency}, ${job.teamSize}, ${job.headcount}
+      )
       ON CONFLICT (id) DO UPDATE
       SET
         company_id = EXCLUDED.company_id,
@@ -186,6 +226,15 @@ async function seedJobs() {
         description = EXCLUDED.description,
         requirements = EXCLUDED.requirements,
         status = EXCLUDED.status,
+        location = EXCLUDED.location,
+        workplace_type = EXCLUDED.workplace_type,
+        employment_type = EXCLUDED.employment_type,
+        experience_level = EXCLUDED.experience_level,
+        salary_min = EXCLUDED.salary_min,
+        salary_max = EXCLUDED.salary_max,
+        salary_currency = EXCLUDED.salary_currency,
+        team_size = EXCLUDED.team_size,
+        headcount = EXCLUDED.headcount,
         updated_at = now()
     `;
   }

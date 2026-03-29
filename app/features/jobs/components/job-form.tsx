@@ -1,55 +1,116 @@
 import { Add01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useId, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+  type EmploymentType,
+  type ExperienceLevel,
+  employmentTypeLabels,
+  experienceLevelLabels,
+  type JobStatus,
+  type WorkplaceType,
+  workplaceTypeLabels,
+} from "@/shared/enums";
+import { useAppForm } from "@/shared/form";
 
-interface JobFormData {
+export interface JobFormData {
   title: string;
   description: string;
   requirements: string[];
-  status: string;
+  status: JobStatus;
+  location: string | null;
+  workplaceType: WorkplaceType | null;
+  employmentType: EmploymentType | null;
+  experienceLevel: ExperienceLevel | null;
+  salaryMin: number | null;
+  salaryMax: number | null;
+  salaryCurrency: string;
+  teamSize: number | null;
+  headcount: number | null;
 }
+
+const emptyToNull = <T,>(value: T | ""): T | null => (value === "" ? null : value);
+
+const workplaceOptions = Object.entries(workplaceTypeLabels).map(([value, label]) => ({
+  value,
+  label,
+}));
+const employmentOptions = Object.entries(employmentTypeLabels).map(([value, label]) => ({
+  value,
+  label,
+}));
+const experienceOptions = Object.entries(experienceLevelLabels).map(([value, label]) => ({
+  value,
+  label,
+}));
+const statusOptions = [
+  { value: "draft", label: "Draft" },
+  { value: "open", label: "Open" },
+  { value: "closed", label: "Closed" },
+];
+const currencyOptions = [
+  { value: "USD", label: "USD" },
+  { value: "EUR", label: "EUR" },
+  { value: "GBP", label: "GBP" },
+  { value: "CAD", label: "CAD" },
+  { value: "AUD", label: "AUD" },
+];
 
 export function JobForm({
   defaultValues,
   onSubmit,
-  isSubmitting,
   submitLabel,
 }: {
   defaultValues?: Partial<JobFormData>;
   onSubmit: (data: JobFormData) => void;
-  isSubmitting: boolean;
   submitLabel: string;
 }) {
-  const titleId = useId();
-  const descriptionId = useId();
-  const statusId = useId();
-  const requirementInputId = useId();
-
-  const [requirements, setRequirements] = useState<string[]>(defaultValues?.requirements ?? []);
   const [requirementInput, setRequirementInput] = useState("");
-  const [status, setStatus] = useState(defaultValues?.status ?? "draft");
+
+  const form = useAppForm({
+    defaultValues: {
+      title: defaultValues?.title ?? "",
+      description: defaultValues?.description ?? "",
+      requirements: defaultValues?.requirements ?? ([] as string[]),
+      status: defaultValues?.status ?? ("draft" as string),
+      location: defaultValues?.location ?? "",
+      workplaceType: (defaultValues?.workplaceType ?? "") as string,
+      employmentType: (defaultValues?.employmentType ?? "") as string,
+      experienceLevel: (defaultValues?.experienceLevel ?? "") as string,
+      salaryMin: defaultValues?.salaryMin ?? null,
+      salaryMax: defaultValues?.salaryMax ?? null,
+      salaryCurrency: defaultValues?.salaryCurrency ?? "USD",
+      teamSize: defaultValues?.teamSize ?? null,
+      headcount: defaultValues?.headcount ?? null,
+    },
+    onSubmit: ({ value }) => {
+      onSubmit({
+        title: value.title.trim(),
+        description: value.description.trim(),
+        requirements: value.requirements,
+        status: value.status as JobStatus,
+        location: value.location.trim() || null,
+        workplaceType: emptyToNull(value.workplaceType) as WorkplaceType | null,
+        employmentType: emptyToNull(value.employmentType) as EmploymentType | null,
+        experienceLevel: emptyToNull(value.experienceLevel) as ExperienceLevel | null,
+        salaryMin: value.salaryMin,
+        salaryMax: value.salaryMax,
+        salaryCurrency: value.salaryCurrency,
+        teamSize: value.teamSize,
+        headcount: value.headcount,
+      });
+    },
+  });
 
   const onAddRequirement = () => {
     const trimmed = requirementInput.trim();
-    if (trimmed && !requirements.includes(trimmed)) {
-      setRequirements([...requirements, trimmed]);
+    if (trimmed && !form.getFieldValue("requirements").includes(trimmed)) {
+      form.pushFieldValue("requirements", trimmed);
       setRequirementInput("");
     }
-  };
-
-  const onRemoveRequirement = (index: number) => {
-    setRequirements(requirements.filter((_, i) => i !== index));
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -59,103 +120,204 @@ export function JobForm({
     }
   };
 
-  const onFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const title = (formData.get("title") as string).trim();
-    const description = (formData.get("description") as string).trim();
-
-    onSubmit({
-      title,
-      description,
-      requirements,
-      status,
-    });
-  };
-
   return (
-    <form onSubmit={onFormSubmit} className="space-y-6">
-      <div className="space-y-2">
-        <Label htmlFor={titleId}>Job title</Label>
-        <Input
-          id={titleId}
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        form.handleSubmit();
+      }}
+      className="space-y-6"
+    >
+      {/* Basic info */}
+      <div className="space-y-4">
+        <form.AppField
           name="title"
-          placeholder="Senior Software Engineer"
-          defaultValue={defaultValues?.title}
-          required
-          maxLength={200}
+          children={(field) => (
+            <field.TextField
+              label="Job title"
+              placeholder="Senior Software Engineer"
+              required
+              maxLength={200}
+            />
+          )}
         />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor={descriptionId}>Description</Label>
-        <Textarea
-          id={descriptionId}
+        <form.AppField
           name="description"
-          placeholder="Describe the role, responsibilities, and what makes this opportunity exciting..."
-          defaultValue={defaultValues?.description}
-          required
-          maxLength={5000}
-          rows={6}
+          children={(field) => (
+            <field.TextareaField
+              label="Description"
+              placeholder="Describe the role, responsibilities, and what makes this opportunity exciting..."
+              required
+              maxLength={5000}
+              rows={6}
+            />
+          )}
         />
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor={requirementInputId}>Requirements</Label>
-        <div className="flex gap-2">
-          <Input
-            id={requirementInputId}
-            placeholder="e.g. 3+ years React experience"
-            value={requirementInput}
-            onChange={(e) => setRequirementInput(e.target.value)}
-            onKeyDown={onKeyDown}
-            maxLength={200}
+      <Separator />
+
+      {/* Job metadata */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-medium">Job details</h3>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <form.AppField
+            name="location"
+            children={(field) => (
+              <field.TextField label="Location" placeholder="San Francisco, CA" maxLength={200} />
+            )}
           />
-          <Button type="button" variant="outline" size="icon" onClick={onAddRequirement}>
-            <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-4" />
-          </Button>
+          <form.AppField
+            name="workplaceType"
+            children={(field) => (
+              <field.SelectField
+                label="Workplace"
+                placeholder="Select type"
+                options={workplaceOptions}
+              />
+            )}
+          />
+          <form.AppField
+            name="employmentType"
+            children={(field) => (
+              <field.SelectField
+                label="Employment type"
+                placeholder="Select type"
+                options={employmentOptions}
+              />
+            )}
+          />
+          <form.AppField
+            name="experienceLevel"
+            children={(field) => (
+              <field.SelectField
+                label="Experience level"
+                placeholder="Select level"
+                options={experienceOptions}
+              />
+            )}
+          />
         </div>
-        {requirements.length > 0 && (
-          <ul className="mt-2 space-y-1.5">
-            {requirements.map((req, i) => (
-              <li
-                key={`${req}-${i}`}
-                className="bg-muted flex items-center justify-between gap-2 rounded-md px-3 py-1.5 text-sm"
-              >
-                <span>{req}</span>
-                <button
-                  type="button"
-                  onClick={() => onRemoveRequirement(i)}
-                  className="text-muted-foreground hover:text-foreground shrink-0"
-                >
-                  <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-3.5" />
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor={statusId}>Status</Label>
-        <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger id={statusId}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="draft">Draft</SelectItem>
-            <SelectItem value="open">Open</SelectItem>
-            <SelectItem value="closed">Closed</SelectItem>
-          </SelectContent>
-        </Select>
-        <p className="text-muted-foreground text-xs">
-          Only &quot;Open&quot; jobs are visible to candidates.
-        </p>
+      <Separator />
+
+      {/* Compensation */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-medium">Compensation</h3>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <form.AppField
+            name="salaryMin"
+            children={(field) => (
+              <field.NumberField label="Min salary" placeholder="120000" min={0} />
+            )}
+          />
+          <form.AppField
+            name="salaryMax"
+            children={(field) => (
+              <field.NumberField label="Max salary" placeholder="180000" min={0} />
+            )}
+          />
+          <form.AppField
+            name="salaryCurrency"
+            children={(field) => <field.SelectField label="Currency" options={currencyOptions} />}
+          />
+        </div>
       </div>
 
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? "Saving..." : submitLabel}
-      </Button>
+      <Separator />
+
+      {/* Team info */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-medium">Team</h3>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <form.AppField
+            name="teamSize"
+            children={(field) => (
+              <field.NumberField
+                label="Team size"
+                placeholder="8"
+                min={1}
+                description="Number of people on the team"
+              />
+            )}
+          />
+          <form.AppField
+            name="headcount"
+            children={(field) => (
+              <field.NumberField
+                label="Open positions"
+                placeholder="1"
+                min={1}
+                description="How many hires for this role"
+              />
+            )}
+          />
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Requirements */}
+      <div className="space-y-4">
+        <form.Field name="requirements" mode="array">
+          {(reqField) => (
+            <div className="space-y-2">
+              <Label>Requirements</Label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="e.g. 3+ years React experience"
+                  value={requirementInput}
+                  onChange={(e) => setRequirementInput(e.target.value)}
+                  onKeyDown={onKeyDown}
+                  maxLength={200}
+                />
+                <Button type="button" variant="outline" size="icon" onClick={onAddRequirement}>
+                  <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-4" />
+                </Button>
+              </div>
+              {reqField.state.value.length > 0 && (
+                <ul className="mt-2 space-y-1.5">
+                  {reqField.state.value.map((req, i) => (
+                    <li
+                      key={`${req}-${i}`}
+                      className="bg-muted flex items-center justify-between gap-2 rounded-md px-3 py-1.5 text-sm"
+                    >
+                      <span>{req}</span>
+                      <button
+                        type="button"
+                        onClick={() => reqField.removeValue(i)}
+                        className="text-muted-foreground hover:text-foreground shrink-0"
+                      >
+                        <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-3.5" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </form.Field>
+      </div>
+
+      <Separator />
+
+      {/* Status + Submit */}
+      <div className="space-y-4">
+        <form.AppField
+          name="status"
+          children={(field) => (
+            <field.SelectField
+              label="Status"
+              options={statusOptions}
+              description='Only "Open" jobs are visible to candidates.'
+            />
+          )}
+        />
+        <form.AppForm>
+          <form.SubmitButton label={submitLabel} submittingLabel="Saving..." />
+        </form.AppForm>
+      </div>
     </form>
   );
 }

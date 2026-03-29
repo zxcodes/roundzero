@@ -1,4 +1,4 @@
-import { Add01Icon, Briefcase01Icon } from "@hugeicons/core-free-icons";
+import { Add01Icon, Briefcase01Icon, Location01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getMyJobs, getOpenJobs } from "@/features/jobs/server-fns";
+import {
+  type EmploymentType,
+  type ExperienceLevel,
+  employmentTypeLabels,
+  experienceLevelLabels,
+  type WorkplaceType,
+  workplaceTypeLabels,
+} from "@/shared/enums";
 
 export const Route = createFileRoute("/_authenticated/dashboard/jobs/")({
   loader: async ({ context }) => {
@@ -44,6 +52,17 @@ const formatDate = (date: Date | string) => {
     day: "numeric",
     year: "numeric",
   });
+};
+
+const formatSalaryCompact = (min: number | null, max: number | null, currency: string) => {
+  if (!min && !max) return null;
+  const fmt = (n: number) => {
+    if (n >= 1000) return `${Math.round(n / 1000)}k`;
+    return String(n);
+  };
+  if (min && max) return `${currency} ${fmt(min)}-${fmt(max)}`;
+  if (min) return `${currency} ${fmt(min)}+`;
+  return `Up to ${currency} ${fmt(max!)}`;
 };
 
 function JobsListPage() {
@@ -96,6 +115,8 @@ function CompanyJobsList({ jobs }: { jobs: Awaited<ReturnType<typeof getMyJobs>>
             <TableHeader>
               <TableRow>
                 <TableHead>Title</TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead>Type</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Created</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -112,6 +133,14 @@ function CompanyJobsList({ jobs }: { jobs: Awaited<ReturnType<typeof getMyJobs>>
                     >
                       {job.title}
                     </Link>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-sm">
+                    {job.location || "—"}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-sm">
+                    {job.employmentType
+                      ? employmentTypeLabels[job.employmentType as EmploymentType]
+                      : "—"}
                   </TableCell>
                   <TableCell>
                     <Badge variant={statusVariant(job.status)} className="capitalize">
@@ -159,22 +188,60 @@ function CandidateJobsList({ jobs }: { jobs: Awaited<ReturnType<typeof getOpenJo
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {jobs.map((job) => (
-            <Link
-              key={job.id}
-              to="/dashboard/jobs/$jobId"
-              params={{ jobId: job.id }}
-              className="hover:bg-muted/50 block rounded-lg border p-4 transition-colors"
-            >
-              <h3 className="font-semibold">{job.title}</h3>
-              <p className="text-muted-foreground text-sm">
-                {"companyName" in job ? job.companyName : ""}
-              </p>
-              <p className="text-muted-foreground mt-2 line-clamp-2 text-sm">{job.description}</p>
-              <p className="text-muted-foreground mt-3 text-xs">{formatDate(job.createdAt)}</p>
-            </Link>
-          ))}
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {jobs.map((job) => {
+            const salary = formatSalaryCompact(job.salaryMin, job.salaryMax, job.salaryCurrency);
+            return (
+              <Link
+                key={job.id}
+                to="/dashboard/jobs/$jobId"
+                params={{ jobId: job.id }}
+                className="group flex flex-col rounded-lg border p-5 transition-colors hover:border-foreground/20 hover:bg-muted/40"
+              >
+                {/* Top: title + company */}
+                <div className="mb-3">
+                  <h3 className="font-semibold leading-tight group-hover:underline">{job.title}</h3>
+                  <p className="text-muted-foreground mt-0.5 text-sm">{job.companyName}</p>
+                </div>
+
+                {/* Metadata tags */}
+                <div className="mb-3 flex flex-wrap gap-1.5">
+                  {job.location && (
+                    <Badge variant="secondary" className="gap-1 font-normal">
+                      <HugeiconsIcon icon={Location01Icon} strokeWidth={2} className="size-3" />
+                      {job.location}
+                    </Badge>
+                  )}
+                  {job.workplaceType && (
+                    <Badge variant="secondary" className="font-normal">
+                      {workplaceTypeLabels[job.workplaceType as WorkplaceType]}
+                    </Badge>
+                  )}
+                  {job.employmentType && (
+                    <Badge variant="secondary" className="font-normal">
+                      {employmentTypeLabels[job.employmentType as EmploymentType]}
+                    </Badge>
+                  )}
+                  {job.experienceLevel && (
+                    <Badge variant="outline" className="font-normal">
+                      {experienceLevelLabels[job.experienceLevel as ExperienceLevel]}
+                    </Badge>
+                  )}
+                </div>
+
+                {/* Description snippet */}
+                <p className="text-muted-foreground mb-4 line-clamp-2 text-sm leading-relaxed">
+                  {job.description}
+                </p>
+
+                {/* Bottom: salary + date */}
+                <div className="mt-auto flex items-center justify-between">
+                  {salary ? <span className="text-sm font-medium">{salary}</span> : <span />}
+                  <span className="text-muted-foreground text-xs">{formatDate(job.createdAt)}</span>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

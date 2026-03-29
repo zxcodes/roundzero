@@ -73,6 +73,15 @@ CREATE TABLE public.jobs (
     description text NOT NULL,
     requirements jsonb DEFAULT '[]'::jsonb NOT NULL,
     status text DEFAULT 'draft'::text NOT NULL,
+    location text,
+    workplace_type text,
+    employment_type text,
+    experience_level text,
+    salary_min integer,
+    salary_max integer,
+    salary_currency text DEFAULT 'USD'::text NOT NULL,
+    team_size integer,
+    headcount integer DEFAULT 1,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
 );

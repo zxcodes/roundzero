@@ -3,7 +3,12 @@ import { useSession } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
 import { getDb } from "@/shared/db";
-import { jobStatusSchema } from "@/shared/enums";
+import {
+  employmentTypeSchema,
+  experienceLevelSchema,
+  jobStatusSchema,
+  workplaceTypeSchema,
+} from "@/shared/enums";
 import {
   createJob as createJobQuery,
   deleteJob as deleteJobQuery,
@@ -41,19 +46,24 @@ const requireCompany = async () => {
   return { userId, company };
 };
 
-const createJobSchema = z.object({
+const jobFieldsSchema = z.object({
   title: z.string().min(1, "Job title is required").max(200),
   description: z.string().min(1, "Job description is required").max(5000),
   requirements: z.array(z.string()).default([]),
   status: jobStatusSchema.default("draft"),
+  location: z.string().max(200).nullable().optional(),
+  workplaceType: workplaceTypeSchema.nullable().optional(),
+  employmentType: employmentTypeSchema.nullable().optional(),
+  experienceLevel: experienceLevelSchema.nullable().optional(),
+  salaryMin: z.number().int().positive().nullable().optional(),
+  salaryMax: z.number().int().positive().nullable().optional(),
+  salaryCurrency: z.string().max(10).default("USD"),
+  teamSize: z.number().int().positive().nullable().optional(),
+  headcount: z.number().int().positive().nullable().optional(),
 });
 
-const updateJobSchema = z.object({
+const updateJobSchema = jobFieldsSchema.extend({
   id: z.string().uuid(),
-  title: z.string().min(1, "Job title is required").max(200),
-  description: z.string().min(1, "Job description is required").max(5000),
-  requirements: z.array(z.string()).default([]),
-  status: jobStatusSchema,
 });
 
 const deleteJobSchema = z.object({
@@ -61,10 +71,7 @@ const deleteJobSchema = z.object({
 });
 
 export const createJob = createServerFn({ method: "POST" })
-  .inputValidator(
-    (data: { title: string; description: string; requirements?: string[]; status?: string }) =>
-      createJobSchema.parse(data),
-  )
+  .inputValidator((data: z.input<typeof jobFieldsSchema>) => jobFieldsSchema.parse(data))
   .handler(async ({ data }) => {
     const { company } = await requireCompany();
     const db = getDb();
@@ -75,6 +82,15 @@ export const createJob = createServerFn({ method: "POST" })
       description: data.description,
       requirements: JSON.stringify(data.requirements),
       status: data.status,
+      location: data.location ?? null,
+      workplaceType: data.workplaceType ?? null,
+      employmentType: data.employmentType ?? null,
+      experienceLevel: data.experienceLevel ?? null,
+      salaryMin: data.salaryMin ?? null,
+      salaryMax: data.salaryMax ?? null,
+      salaryCurrency: data.salaryCurrency,
+      teamSize: data.teamSize ?? null,
+      headcount: data.headcount ?? null,
     });
 
     if (!job) {
@@ -107,15 +123,7 @@ export const getJob = createServerFn({ method: "GET" })
   });
 
 export const updateJob = createServerFn({ method: "POST" })
-  .inputValidator(
-    (data: {
-      id: string;
-      title: string;
-      description: string;
-      requirements?: string[];
-      status: string;
-    }) => updateJobSchema.parse(data),
-  )
+  .inputValidator((data: z.input<typeof updateJobSchema>) => updateJobSchema.parse(data))
   .handler(async ({ data }) => {
     const { company } = await requireCompany();
     const db = getDb();
@@ -127,6 +135,15 @@ export const updateJob = createServerFn({ method: "POST" })
       description: data.description,
       requirements: JSON.stringify(data.requirements),
       status: data.status,
+      location: data.location ?? null,
+      workplaceType: data.workplaceType ?? null,
+      employmentType: data.employmentType ?? null,
+      experienceLevel: data.experienceLevel ?? null,
+      salaryMin: data.salaryMin ?? null,
+      salaryMax: data.salaryMax ?? null,
+      salaryCurrency: data.salaryCurrency,
+      teamSize: data.teamSize ?? null,
+      headcount: data.headcount ?? null,
     });
 
     if (!job) {

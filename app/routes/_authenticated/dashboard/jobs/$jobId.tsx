@@ -3,7 +3,9 @@ import {
   CheckmarkCircle02Icon,
   Delete02Icon,
   Edit02Icon,
+  Location01Icon,
   Mail01Icon,
+  MoneyBag02Icon,
   UserGroupIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -23,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { ApplyForm } from "@/features/applications/components/apply-form";
 import {
   applyToJob,
@@ -30,8 +33,17 @@ import {
   hasApplied,
   updateApplicationStatus,
 } from "@/features/applications/server-fns";
-import { JobForm } from "@/features/jobs/components/job-form";
+import { JobForm, type JobFormData } from "@/features/jobs/components/job-form";
 import { deleteJob, getJob, updateJob } from "@/features/jobs/server-fns";
+import {
+  type EmploymentType,
+  type ExperienceLevel,
+  employmentTypeLabels,
+  experienceLevelLabels,
+  type JobStatus,
+  type WorkplaceType,
+  workplaceTypeLabels,
+} from "@/shared/enums";
 
 export const Route = createFileRoute("/_authenticated/dashboard/jobs/$jobId")({
   loader: async ({ params, context }) => {
@@ -70,22 +82,37 @@ const formatDate = (date: Date | string) => {
   });
 };
 
+const formatSalary = (min: number | null, max: number | null, currency: string) => {
+  if (!min && !max) return null;
+  const fmt = (n: number) =>
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 0,
+    }).format(n);
+  if (min && max) return `${fmt(min)} - ${fmt(max)}`;
+  if (min) return `From ${fmt(min)}`;
+  return `Up to ${fmt(max!)}`;
+};
+
 function JobDetailPage() {
   const { job, alreadyApplied, applicants } = Route.useLoaderData();
   const { isCompany } = Route.useRouteContext();
 
   const requirements: string[] = Array.isArray(job.requirements) ? job.requirements : [];
+  const salary = formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency);
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" asChild>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-start gap-3">
+        <Button variant="ghost" size="icon" className="mt-1 shrink-0" asChild>
           <Link to="/dashboard/jobs">
             <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
           </Link>
         </Button>
-        <div className="flex-1">
-          <div className="flex items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-2xl font-bold tracking-tight">{job.title}</h2>
             <Badge variant={statusVariant(job.status)} className="capitalize">
               {job.status}
@@ -100,37 +127,133 @@ function JobDetailPage() {
 
       {isCompany && <CompanyActions job={job} requirements={requirements} />}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Description</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm leading-relaxed whitespace-pre-wrap">{job.description}</p>
-        </CardContent>
-      </Card>
+      {/* Main content — two-column on large screens */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Left column — description + requirements */}
+        <div className="space-y-6 lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Description</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm leading-relaxed whitespace-pre-wrap">{job.description}</p>
+            </CardContent>
+          </Card>
 
-      {requirements.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Requirements</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="list-inside list-disc space-y-1">
-              {requirements.map((req, i) => (
-                <li key={`${req}-${i}`} className="text-sm">
-                  {req}
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      )}
+          {requirements.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Requirements</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="list-inside list-disc space-y-1.5">
+                  {requirements.map((req, i) => (
+                    <li key={`${req}-${i}`} className="text-sm">
+                      {req}
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
 
-      {isCompany && <ApplicantsSection applicants={applicants} />}
+          {isCompany && <ApplicantsSection applicants={applicants} />}
+        </div>
 
-      {!isCompany && job.status === "open" && (
-        <CandidateApplySection jobId={job.id} alreadyApplied={alreadyApplied} />
-      )}
+        {/* Right column — metadata sidebar */}
+        <div className="space-y-6">
+          {/* Job metadata card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Job details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {job.location && (
+                <div className="flex items-start gap-3">
+                  <HugeiconsIcon
+                    icon={Location01Icon}
+                    strokeWidth={2}
+                    className="text-muted-foreground mt-0.5 size-4 shrink-0"
+                  />
+                  <div>
+                    <p className="text-sm font-medium">{job.location}</p>
+                    {job.workplaceType && (
+                      <p className="text-muted-foreground text-xs">
+                        {workplaceTypeLabels[job.workplaceType as WorkplaceType]}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {job.employmentType && (
+                <div className="flex items-center gap-3">
+                  <div className="bg-muted text-muted-foreground flex size-4 shrink-0 items-center justify-center rounded text-[10px] font-bold">
+                    E
+                  </div>
+                  <p className="text-sm">
+                    {employmentTypeLabels[job.employmentType as EmploymentType]}
+                  </p>
+                </div>
+              )}
+
+              {job.experienceLevel && (
+                <div className="flex items-center gap-3">
+                  <div className="bg-muted text-muted-foreground flex size-4 shrink-0 items-center justify-center rounded text-[10px] font-bold">
+                    L
+                  </div>
+                  <p className="text-sm">
+                    {experienceLevelLabels[job.experienceLevel as ExperienceLevel]}
+                  </p>
+                </div>
+              )}
+
+              {salary && (
+                <>
+                  <Separator />
+                  <div className="flex items-start gap-3">
+                    <HugeiconsIcon
+                      icon={MoneyBag02Icon}
+                      strokeWidth={2}
+                      className="text-muted-foreground mt-0.5 size-4 shrink-0"
+                    />
+                    <div>
+                      <p className="text-sm font-medium">{salary}</p>
+                      <p className="text-muted-foreground text-xs">Annual compensation</p>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {(job.teamSize || job.headcount) && (
+                <>
+                  <Separator />
+                  <div className="flex items-start gap-3">
+                    <HugeiconsIcon
+                      icon={UserGroupIcon}
+                      strokeWidth={2}
+                      className="text-muted-foreground mt-0.5 size-4 shrink-0"
+                    />
+                    <div className="space-y-0.5">
+                      {job.teamSize && <p className="text-sm">{job.teamSize} people on team</p>}
+                      {job.headcount && (
+                        <p className="text-muted-foreground text-xs">
+                          {job.headcount} open {job.headcount === 1 ? "position" : "positions"}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Apply section for candidates */}
+          {!isCompany && job.status === "open" && (
+            <CandidateApplySection jobId={job.id} alreadyApplied={alreadyApplied} />
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -290,16 +413,16 @@ function CandidateApplySection({
 
   if (applied) {
     return (
-      <div className="flex items-center justify-center gap-2 rounded-lg border border-dashed py-6">
-        <HugeiconsIcon
-          icon={CheckmarkCircle02Icon}
-          strokeWidth={2}
-          className="text-muted-foreground size-5"
-        />
-        <p className="text-muted-foreground text-sm font-medium">
-          You have already applied to this position
-        </p>
-      </div>
+      <Card>
+        <CardContent className="flex items-center justify-center gap-2 py-6">
+          <HugeiconsIcon
+            icon={CheckmarkCircle02Icon}
+            strokeWidth={2}
+            className="text-muted-foreground size-5"
+          />
+          <p className="text-muted-foreground text-sm font-medium">You have already applied</p>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -307,14 +430,11 @@ function CandidateApplySection({
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Apply for this position</CardTitle>
-          <CardDescription>
-            Add your resume and any relevant links. You can submit without either — they are
-            optional.
-          </CardDescription>
+          <CardTitle className="text-base">Apply</CardTitle>
+          <CardDescription>Add your resume and any relevant links.</CardDescription>
         </CardHeader>
         <CardContent>
-          <ApplyForm onSubmit={onApply} isSubmitting={applyMutation.isPending} />
+          <ApplyForm onSubmit={onApply} />
           <Button
             variant="ghost"
             className="mt-3 w-full"
@@ -371,12 +491,7 @@ function CompanyActions({
     },
   });
 
-  const onUpdate = (data: {
-    title: string;
-    description: string;
-    requirements: string[];
-    status: string;
-  }) => {
+  const onUpdate = (data: JobFormData) => {
     updateJobMutation.mutate({
       data: {
         id: job.id,
@@ -410,10 +525,18 @@ function CompanyActions({
               title: job.title,
               description: job.description,
               requirements,
-              status: job.status,
+              status: job.status as JobStatus,
+              location: job.location,
+              workplaceType: job.workplaceType as WorkplaceType | null,
+              employmentType: job.employmentType as EmploymentType | null,
+              experienceLevel: job.experienceLevel as ExperienceLevel | null,
+              salaryMin: job.salaryMin,
+              salaryMax: job.salaryMax,
+              salaryCurrency: job.salaryCurrency,
+              teamSize: job.teamSize,
+              headcount: job.headcount,
             }}
             onSubmit={onUpdate}
-            isSubmitting={updateJobMutation.isPending}
             submitLabel="Save changes"
           />
           <Button variant="ghost" className="mt-3 w-full" onClick={() => setIsEditing(false)}>

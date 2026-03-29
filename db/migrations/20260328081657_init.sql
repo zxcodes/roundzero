@@ -25,14 +25,23 @@ CREATE INDEX idx_companies_owner ON companies(owner_id);
 
 -- Jobs
 CREATE TABLE jobs (
-  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id    UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-  title         TEXT NOT NULL,
-  description   TEXT NOT NULL,
-  requirements  JSONB NOT NULL DEFAULT '[]',
-  status        TEXT NOT NULL DEFAULT 'draft',
-  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  company_id       UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+  title            TEXT NOT NULL,
+  description      TEXT NOT NULL,
+  requirements     JSONB NOT NULL DEFAULT '[]',
+  status           TEXT NOT NULL DEFAULT 'draft',
+  location         TEXT,
+  workplace_type   TEXT,
+  employment_type  TEXT,
+  experience_level TEXT,
+  salary_min       INTEGER,
+  salary_max       INTEGER,
+  salary_currency  TEXT NOT NULL DEFAULT 'USD',
+  team_size        INTEGER,
+  headcount        INTEGER DEFAULT 1,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at       TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX idx_jobs_company ON jobs(company_id);
