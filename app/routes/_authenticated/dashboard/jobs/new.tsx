@@ -37,7 +37,7 @@ function NewJobPage() {
   };
 
   return (
-    <div className="animate-fade-in mx-auto max-w-3xl space-y-6">
+    <div className="animate-fade-in space-y-6">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" className="shrink-0" asChild>
           <Link to="/dashboard/jobs">
