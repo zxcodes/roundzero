@@ -1,29 +1,29 @@
-import { NavMain } from "@/components/nav-main";
-import { NavUser } from "@/components/nav-user";
 import {
-    Sidebar,
-    SidebarContent,
-    SidebarFooter,
-    SidebarGroup,
-    SidebarGroupContent,
-    SidebarHeader,
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
-} from "@/components/ui/sidebar";
-import type { User } from "@/router";
-import {
-    AddCircleIcon,
-    Briefcase01Icon,
-    ChartBarBigIcon,
-    HelpCircleIcon,
-    House01Icon,
-    Search01Icon,
-    Settings01Icon,
-    UserGroupIcon
+  AddCircleIcon,
+  Briefcase01Icon,
+  ChartBarBigIcon,
+  HelpCircleIcon,
+  House01Icon,
+  Search01Icon,
+  Settings01Icon,
+  UserGroupIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
+import { NavMain } from "@/components/nav-main";
+import { NavUser } from "@/components/nav-user";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/components/ui/sidebar";
+import type { User } from "@/router";
 
 const companyMain = [
   {
@@ -66,7 +66,6 @@ const candidateMain = [
   },
 ];
 
-
 const secondaryItems = [
   {
     title: "Settings",
@@ -95,15 +94,7 @@ export function AppSidebar({
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild size="lg" className="data-[slot=sidebar-menu-button]:p-1.5!">
-              <Link to="/dashboard">
-                <span className="text-base font-semibold">hirely</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <p className="text-2xl font-semibold pl-1.5">hirely</p>
       </SidebarHeader>
 
       <SidebarContent>
@@ -120,7 +111,6 @@ export function AppSidebar({
                     <span>Quick Create</span>
                   </Link>
                 </SidebarMenuButton>
-
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
