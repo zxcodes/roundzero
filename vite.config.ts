@@ -18,7 +18,11 @@ const config = defineConfig({
     tanstackStart({
       srcDirectory: "app",
     }),
-    viteReact(),
+    viteReact({
+      babel: {
+        plugins: ["babel-plugin-react-compiler"],
+      },
+    }),
   ],
 });
 
