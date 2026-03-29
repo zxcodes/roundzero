@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useMatches } from "@tanstack/react-router";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -19,8 +19,20 @@ export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
 });
 
+const routeTitles: Record<string, string> = {
+  "/_authenticated/dashboard/": "Overview",
+  "/_authenticated/dashboard/jobs/": "Jobs",
+  "/_authenticated/dashboard/jobs/new": "Post a Job",
+  "/_authenticated/dashboard/jobs/$jobId": "Job Details",
+  "/_authenticated/dashboard/applications": "My Applications",
+  "/_authenticated/onboarding/company": "Company Setup",
+};
+
 function AuthenticatedLayout() {
   const { user, isCompany } = Route.useRouteContext();
+  const matches = useMatches();
+  const lastMatch = matches[matches.length - 1];
+  const title = routeTitles[lastMatch?.routeId ?? ""] ?? "Dashboard";
 
   return (
     <TooltipProvider>
@@ -33,7 +45,7 @@ function AuthenticatedLayout() {
       >
         <AppSidebar user={user!} isCompany={isCompany} variant="inset" />
         <SidebarInset>
-          <SiteHeader title="Dashboard" />
+          <SiteHeader title={title} />
           <div className="flex flex-1 flex-col">
             <div className="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
               <Outlet />

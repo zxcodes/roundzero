@@ -332,3 +332,34 @@ export async function getOpenJobs(sql: Sql): Promise<getOpenJobsRow[]> {
     }));
 }
 
+export const countJobsByCompanyAndStatusQuery = `-- name: countJobsByCompanyAndStatus :one
+SELECT
+  count(*) FILTER (WHERE status = 'open')::int AS open_count,
+  count(*) FILTER (WHERE status = 'draft')::int AS draft_count,
+  count(*)::int AS total_count
+FROM jobs
+WHERE company_id = $1`;
+
+export interface countJobsByCompanyAndStatusArgs {
+    companyId: string;
+}
+
+export interface countJobsByCompanyAndStatusRow {
+    openCount: number;
+    draftCount: number;
+    totalCount: number;
+}
+
+export async function countJobsByCompanyAndStatus(sql: Sql, args: countJobsByCompanyAndStatusArgs): Promise<countJobsByCompanyAndStatusRow | null> {
+    const rows = await sql.unsafe(countJobsByCompanyAndStatusQuery, [args.companyId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        openCount: row[0],
+        draftCount: row[1],
+        totalCount: row[2]
+    };
+}
+

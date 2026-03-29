@@ -114,11 +114,21 @@ export const getMyJobs = createServerFn({ method: "GET" }).handler(async () => {
 export const getJob = createServerFn({ method: "GET" })
   .inputValidator((data: { id: string }) => deleteJobSchema.parse(data))
   .handler(async ({ data }) => {
+    const userId = await requireAuth();
     const db = getDb();
     const job = await getJobById(db, { id: data.id });
     if (!job) {
       throw new Error("Job not found");
     }
+
+    // Non-open jobs are only visible to the company owner
+    if (job.status !== "open") {
+      const company = await getCompanyByOwnerId(db, { ownerId: userId });
+      if (!company || company.id !== job.companyId) {
+        throw new Error("Job not found");
+      }
+    }
+
     return job;
   });
 

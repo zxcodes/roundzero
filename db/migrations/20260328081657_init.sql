@@ -56,6 +56,7 @@ CREATE TABLE applications (
   links         JSONB NOT NULL DEFAULT '[]',
   status        TEXT NOT NULL DEFAULT 'applied',
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(job_id, candidate_id)
 );
 

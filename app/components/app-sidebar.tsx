@@ -1,12 +1,8 @@
 import {
   AddCircleIcon,
   Briefcase01Icon,
-  ChartBarBigIcon,
-  HelpCircleIcon,
   House01Icon,
   Search01Icon,
-  Settings01Icon,
-  UserGroupIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
@@ -36,16 +32,6 @@ const companyMain = [
     url: "/dashboard/jobs",
     icon: <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} className="size-4" />,
   },
-  {
-    title: "Candidates",
-    url: "/dashboard/candidates",
-    icon: <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} className="size-4" />,
-  },
-  {
-    title: "Analytics",
-    url: "/dashboard/analytics",
-    icon: <HugeiconsIcon icon={ChartBarBigIcon} strokeWidth={2} className="size-4" />,
-  },
 ];
 
 const candidateMain = [
@@ -63,19 +49,6 @@ const candidateMain = [
     title: "My Applications",
     url: "/dashboard/applications",
     icon: <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} className="size-4" />,
-  },
-];
-
-const secondaryItems = [
-  {
-    title: "Settings",
-    url: "/dashboard",
-    icon: <HugeiconsIcon icon={Settings01Icon} strokeWidth={2} className="size-4" />,
-  },
-  {
-    title: "Get Help",
-    url: "/dashboard",
-    icon: <HugeiconsIcon icon={HelpCircleIcon} strokeWidth={2} className="size-4" />,
   },
 ];
 
@@ -119,10 +92,6 @@ export function AppSidebar({
         </SidebarGroup>
 
         <NavMain sections={[{ items: mainItems }]} />
-
-        <div className="mt-auto">
-          <NavMain sections={[{ items: secondaryItems }]} />
-        </div>
       </SidebarContent>
 
       <SidebarFooter>

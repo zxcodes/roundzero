@@ -3,7 +3,7 @@ import { Sql } from "postgres";
 export const createApplicationQuery = `-- name: createApplication :one
 INSERT INTO applications (job_id, candidate_id, resume_url, links)
 VALUES ($1, $2, $3, $4)
-RETURNING id, job_id, candidate_id, resume_url, links, status, created_at`;
+RETURNING id, job_id, candidate_id, resume_url, links, status, created_at, updated_at`;
 
 export interface createApplicationArgs {
     jobId: string;
@@ -20,6 +20,7 @@ export interface createApplicationRow {
     links: any;
     status: string;
     createdAt: Date;
+    updatedAt: Date;
 }
 
 export async function createApplication(sql: Sql, args: createApplicationArgs): Promise<createApplicationRow | null> {
@@ -35,12 +36,13 @@ export async function createApplication(sql: Sql, args: createApplicationArgs): 
         resumeUrl: row[3],
         links: row[4],
         status: row[5],
-        createdAt: row[6]
+        createdAt: row[6],
+        updatedAt: row[7]
     };
 }
 
 export const getApplicationByJobAndCandidateQuery = `-- name: getApplicationByJobAndCandidate :one
-SELECT id, job_id, candidate_id, resume_url, links, status, created_at
+SELECT id, job_id, candidate_id, resume_url, links, status, created_at, updated_at
 FROM applications
 WHERE job_id = $1 AND candidate_id = $2`;
 
@@ -57,6 +59,7 @@ export interface getApplicationByJobAndCandidateRow {
     links: any;
     status: string;
     createdAt: Date;
+    updatedAt: Date;
 }
 
 export async function getApplicationByJobAndCandidate(sql: Sql, args: getApplicationByJobAndCandidateArgs): Promise<getApplicationByJobAndCandidateRow | null> {
@@ -72,12 +75,13 @@ export async function getApplicationByJobAndCandidate(sql: Sql, args: getApplica
         resumeUrl: row[3],
         links: row[4],
         status: row[5],
-        createdAt: row[6]
+        createdAt: row[6],
+        updatedAt: row[7]
     };
 }
 
 export const getApplicationsByCandidateQuery = `-- name: getApplicationsByCandidate :many
-SELECT a.id, a.job_id, a.candidate_id, a.resume_url, a.links, a.status, a.created_at,
+SELECT a.id, a.job_id, a.candidate_id, a.resume_url, a.links, a.status, a.created_at, a.updated_at,
        j.title AS job_title, j.status AS job_status,
        c.name AS company_name
 FROM applications a
@@ -98,6 +102,7 @@ export interface getApplicationsByCandidateRow {
     links: any;
     status: string;
     createdAt: Date;
+    updatedAt: Date;
     jobTitle: string;
     jobStatus: string;
     companyName: string;
@@ -112,14 +117,15 @@ export async function getApplicationsByCandidate(sql: Sql, args: getApplications
         links: row[4],
         status: row[5],
         createdAt: row[6],
-        jobTitle: row[7],
-        jobStatus: row[8],
-        companyName: row[9]
+        updatedAt: row[7],
+        jobTitle: row[8],
+        jobStatus: row[9],
+        companyName: row[10]
     }));
 }
 
 export const getApplicationsByJobQuery = `-- name: getApplicationsByJob :many
-SELECT a.id, a.job_id, a.candidate_id, a.resume_url, a.links, a.status, a.created_at,
+SELECT a.id, a.job_id, a.candidate_id, a.resume_url, a.links, a.status, a.created_at, a.updated_at,
        u.name AS candidate_name, u.email AS candidate_email, u.picture AS candidate_picture
 FROM applications a
 JOIN users u ON u.id = a.candidate_id
@@ -138,6 +144,7 @@ export interface getApplicationsByJobRow {
     links: any;
     status: string;
     createdAt: Date;
+    updatedAt: Date;
     candidateName: string;
     candidateEmail: string;
     candidatePicture: string | null;
@@ -152,14 +159,15 @@ export async function getApplicationsByJob(sql: Sql, args: getApplicationsByJobA
         links: row[4],
         status: row[5],
         createdAt: row[6],
-        candidateName: row[7],
-        candidateEmail: row[8],
-        candidatePicture: row[9]
+        updatedAt: row[7],
+        candidateName: row[8],
+        candidateEmail: row[9],
+        candidatePicture: row[10]
     }));
 }
 
 export const getApplicationByIdQuery = `-- name: getApplicationById :one
-SELECT a.id, a.job_id, a.candidate_id, a.resume_url, a.links, a.status, a.created_at,
+SELECT a.id, a.job_id, a.candidate_id, a.resume_url, a.links, a.status, a.created_at, a.updated_at,
        j.title AS job_title, j.status AS job_status,
        c.name AS company_name
 FROM applications a
@@ -179,6 +187,7 @@ export interface getApplicationByIdRow {
     links: any;
     status: string;
     createdAt: Date;
+    updatedAt: Date;
     jobTitle: string;
     jobStatus: string;
     companyName: string;
@@ -198,17 +207,19 @@ export async function getApplicationById(sql: Sql, args: getApplicationByIdArgs)
         links: row[4],
         status: row[5],
         createdAt: row[6],
-        jobTitle: row[7],
-        jobStatus: row[8],
-        companyName: row[9]
+        updatedAt: row[7],
+        jobTitle: row[8],
+        jobStatus: row[9],
+        companyName: row[10]
     };
 }
 
 export const updateApplicationStatusQuery = `-- name: updateApplicationStatus :one
 UPDATE applications
-SET status = $1
+SET status = $1,
+    updated_at = now()
 WHERE id = $2
-RETURNING id, job_id, candidate_id, resume_url, links, status, created_at`;
+RETURNING id, job_id, candidate_id, resume_url, links, status, created_at, updated_at`;
 
 export interface updateApplicationStatusArgs {
     status: string;
@@ -223,6 +234,7 @@ export interface updateApplicationStatusRow {
     links: any;
     status: string;
     createdAt: Date;
+    updatedAt: Date;
 }
 
 export async function updateApplicationStatus(sql: Sql, args: updateApplicationStatusArgs): Promise<updateApplicationStatusRow | null> {
@@ -238,7 +250,8 @@ export async function updateApplicationStatus(sql: Sql, args: updateApplicationS
         resumeUrl: row[3],
         links: row[4],
         status: row[5],
-        createdAt: row[6]
+        createdAt: row[6],
+        updatedAt: row[7]
     };
 }
 
@@ -263,6 +276,65 @@ export async function getApplicationCountByJob(sql: Sql, args: getApplicationCou
     const row = rows[0];
     return {
         count: row[0]
+    };
+}
+
+export const countApplicationsByCompanyQuery = `-- name: countApplicationsByCompany :one
+SELECT count(*)::int AS total_count
+FROM applications a
+JOIN jobs j ON j.id = a.job_id
+WHERE j.company_id = $1`;
+
+export interface countApplicationsByCompanyArgs {
+    companyId: string;
+}
+
+export interface countApplicationsByCompanyRow {
+    totalCount: number;
+}
+
+export async function countApplicationsByCompany(sql: Sql, args: countApplicationsByCompanyArgs): Promise<countApplicationsByCompanyRow | null> {
+    const rows = await sql.unsafe(countApplicationsByCompanyQuery, [args.companyId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        totalCount: row[0]
+    };
+}
+
+export const countApplicationsByCandidateQuery = `-- name: countApplicationsByCandidate :one
+SELECT
+  count(*)::int AS total_count,
+  count(*) FILTER (WHERE a.status != 'rejected')::int AS active_count,
+  count(*) FILTER (WHERE a.status = 'interviewing')::int AS interviewing_count,
+  count(*) FILTER (WHERE a.status = 'evaluated')::int AS evaluated_count
+FROM applications a
+WHERE a.candidate_id = $1`;
+
+export interface countApplicationsByCandidateArgs {
+    candidateId: string;
+}
+
+export interface countApplicationsByCandidateRow {
+    totalCount: number;
+    activeCount: number;
+    interviewingCount: number;
+    evaluatedCount: number;
+}
+
+export async function countApplicationsByCandidate(sql: Sql, args: countApplicationsByCandidateArgs): Promise<countApplicationsByCandidateRow | null> {
+    const rows = await sql.unsafe(countApplicationsByCandidateQuery, [args.candidateId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        totalCount: row[0],
+        activeCount: row[1],
+        interviewingCount: row[2],
+        evaluatedCount: row[3]
     };
 }
 

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { z } from "zod";
+import { getUserById } from "@/features/auth/queries/queries_sql";
 import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
 import { getJobById } from "@/features/jobs/queries/queries_sql";
 import { getDb } from "@/shared/db";
@@ -51,6 +52,12 @@ export const applyToJob = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const userId = await requireAuth();
     const db = getDb();
+
+    // Only candidates can apply
+    const user = await getUserById(db, { id: userId });
+    if (!user || user.role !== "candidate") {
+      throw new Error("Only candidates can apply to jobs");
+    }
 
     // Verify the job exists and is open
     const job = await getJobById(db, { id: data.jobId });
@@ -181,7 +188,20 @@ export const updateApplicationStatus = createServerFn({ method: "POST" })
 export const getApplicationCount = createServerFn({ method: "GET" })
   .inputValidator((data: { jobId: string }) => z.object({ jobId: z.string().uuid() }).parse(data))
   .handler(async ({ data }) => {
+    const userId = await requireAuth();
     const db = getDb();
+
+    // Only the company owner of this job can view the count
+    const company = await getCompanyByOwnerId(db, { ownerId: userId });
+    if (!company) {
+      throw new Error("Not authorized");
+    }
+
+    const job = await getJobById(db, { id: data.jobId });
+    if (!job || job.companyId !== company.id) {
+      throw new Error("Not authorized");
+    }
+
     const result = await getApplicationCountByJob(db, { jobId: data.jobId });
     return result?.count ?? 0;
   });

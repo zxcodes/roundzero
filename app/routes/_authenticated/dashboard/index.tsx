@@ -1,78 +1,77 @@
-import { ArrowDownRight01Icon, ArrowUpRight01Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+  type CandidateMetrics,
+  type CompanyMetrics,
+  getDashboardMetrics,
+} from "@/features/dashboard/server-fns";
 
 export const Route = createFileRoute("/_authenticated/dashboard/")({
+  loader: async () => {
+    const metrics = await getDashboardMetrics();
+    return { metrics };
+  },
   component: DashboardIndexPage,
 });
 
+type MetricCard = {
+  label: string;
+  value: string;
+  description: string;
+};
+
+const buildCompanyMetrics = (m: CompanyMetrics): MetricCard[] => [
+  {
+    label: "Open Roles",
+    value: String(m.openRoles),
+    description: `${m.totalJobs} total jobs posted`,
+  },
+  {
+    label: "Total Applicants",
+    value: String(m.totalApplicants),
+    description: "Across all your job postings",
+  },
+  {
+    label: "Draft Jobs",
+    value: String(m.draftJobs),
+    description: "Unpublished jobs awaiting review",
+  },
+  {
+    label: "Total Jobs",
+    value: String(m.totalJobs),
+    description: "All jobs in your pipeline",
+  },
+];
+
+const buildCandidateMetrics = (m: CandidateMetrics): MetricCard[] => [
+  {
+    label: "Applications Sent",
+    value: String(m.applicationsSent),
+    description: "Total applications submitted",
+  },
+  {
+    label: "Active Applications",
+    value: String(m.activeApplications),
+    description: "Applications still in progress",
+  },
+  {
+    label: "Interview Invites",
+    value: String(m.interviewInvites),
+    description: "Applications moved to interview stage",
+  },
+  {
+    label: "Evaluations Received",
+    value: String(m.evaluationsReceived),
+    description: "Completed interview evaluations",
+  },
+];
+
 function DashboardIndexPage() {
   const { user, isCompany } = Route.useRouteContext();
+  const { metrics } = Route.useLoaderData();
 
-  const metrics = isCompany
-    ? [
-        {
-          label: "Open Roles",
-          value: "18",
-          trend: "+12%",
-          description: "6 new jobs posted this month",
-          up: true,
-        },
-        {
-          label: "Total Applicants",
-          value: "1,243",
-          trend: "+8.5%",
-          description: "Candidate flow remains healthy",
-          up: true,
-        },
-        {
-          label: "Interview Pass Rate",
-          value: "42%",
-          trend: "-4%",
-          description: "Slight dip from previous period",
-          up: false,
-        },
-        {
-          label: "Avg. Time To Hire",
-          value: "11 days",
-          trend: "-18%",
-          description: "Faster than last quarter",
-          up: true,
-        },
-      ]
-    : [
-        {
-          label: "Applications Sent",
-          value: "24",
-          trend: "+4",
-          description: "4 new applications this week",
-          up: true,
-        },
-        {
-          label: "Interview Invites",
-          value: "7",
-          trend: "+2",
-          description: "2 new invites in the last 14 days",
-          up: true,
-        },
-        {
-          label: "Evaluation Score",
-          value: "8.1",
-          trend: "+0.6",
-          description: "Average across completed interviews",
-          up: true,
-        },
-        {
-          label: "Active Pipelines",
-          value: "5",
-          trend: "-1",
-          description: "One process moved to final decision",
-          up: false,
-        },
-      ];
+  const cards =
+    metrics.type === "company" ? buildCompanyMetrics(metrics) : buildCandidateMetrics(metrics);
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -84,66 +83,22 @@ function DashboardIndexPage() {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        {metrics.map((metric, i) => (
-          <Card key={metric.label} className={`animate-fade-in stagger-${i + 1}`}>
+        {cards.map((card, i) => (
+          <Card key={card.label} className={`animate-fade-in stagger-${i + 1}`}>
             <CardHeader className="flex flex-row items-start justify-between gap-4 pb-2">
               <div>
-                <CardDescription className="text-xs">{metric.label}</CardDescription>
+                <CardDescription className="text-xs">{card.label}</CardDescription>
                 <CardTitle className="mt-1.5 font-mono text-3xl font-semibold tracking-tight">
-                  {metric.value}
+                  {card.value}
                 </CardTitle>
               </div>
-              <Badge
-                variant="outline"
-                className={`gap-1 rounded-full px-2 py-0.5 font-mono text-[11px] ${
-                  metric.up
-                    ? "border-emerald-500/20 text-emerald-500"
-                    : "border-amber-500/20 text-amber-500"
-                }`}
-              >
-                <HugeiconsIcon
-                  icon={metric.up ? ArrowUpRight01Icon : ArrowDownRight01Icon}
-                  strokeWidth={2}
-                  className="size-3"
-                />
-                {metric.trend}
-              </Badge>
             </CardHeader>
             <CardContent>
-              <p className="text-xs text-muted-foreground">{metric.description}</p>
+              <p className="text-xs text-muted-foreground">{card.description}</p>
             </CardContent>
           </Card>
         ))}
       </div>
-
-      <Card className="animate-fade-in stagger-5">
-        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <CardTitle>Activity Trend</CardTitle>
-            <CardDescription className="mt-1 text-xs">
-              {isCompany
-                ? "Interview and application activity over the last 3 months"
-                : "Application and interview progress over the last 3 months"}
-            </CardDescription>
-          </div>
-          <ToggleGroup type="single" defaultValue="90d" variant="outline">
-            <ToggleGroupItem value="90d" className="text-xs">
-              3 months
-            </ToggleGroupItem>
-            <ToggleGroupItem value="30d" className="text-xs">
-              30 days
-            </ToggleGroupItem>
-            <ToggleGroupItem value="7d" className="text-xs">
-              7 days
-            </ToggleGroupItem>
-          </ToggleGroup>
-        </CardHeader>
-        <CardContent>
-          <div className="flex h-56 items-center justify-center rounded-lg border border-dashed border-border/60 bg-muted/30">
-            <p className="text-xs text-muted-foreground">Chart data will appear here</p>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

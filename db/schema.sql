@@ -30,7 +30,8 @@ CREATE TABLE public.applications (
     resume_url text,
     links jsonb DEFAULT '[]'::jsonb NOT NULL,
     status text DEFAULT 'applied'::text NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 

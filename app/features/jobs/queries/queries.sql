@@ -50,3 +50,11 @@ FROM jobs j
 JOIN companies c ON c.id = j.company_id
 WHERE j.status = 'open'
 ORDER BY j.created_at DESC;
+
+-- name: countJobsByCompanyAndStatus :one
+SELECT
+  count(*) FILTER (WHERE status = 'open')::int AS open_count,
+  count(*) FILTER (WHERE status = 'draft')::int AS draft_count,
+  count(*)::int AS total_count
+FROM jobs
+WHERE company_id = $1;

@@ -3,6 +3,8 @@ import {
   CheckmarkCircle02Icon,
   Delete02Icon,
   Edit02Icon,
+  File02Icon,
+  Link04Icon,
   Location01Icon,
   Mail01Icon,
   MoneyBag02Icon,
@@ -342,53 +344,93 @@ function ApplicantsSection({
           </div>
         ) : (
           <div className="space-y-2">
-            {applicants.map((applicant) => (
-              <div
-                key={applicant.id}
-                className="flex items-center justify-between gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/50"
-              >
-                <div className="flex items-center gap-3 overflow-hidden">
-                  <Avatar className="size-8">
-                    <AvatarImage
-                      src={applicant.candidatePicture ?? undefined}
-                      alt={applicant.candidateName}
-                    />
-                    <AvatarFallback className="text-[10px]">
-                      {getInitials(applicant.candidateName)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{applicant.candidateName}</p>
-                    <div className="flex items-center gap-1">
-                      <HugeiconsIcon
-                        icon={Mail01Icon}
-                        strokeWidth={2}
-                        className="size-3 text-muted-foreground"
-                      />
-                      <p className="truncate text-xs text-muted-foreground">
-                        {applicant.candidateEmail}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <Select
-                  value={applicant.status}
-                  onValueChange={(value) => onStatusChange(applicant.id, value)}
-                  disabled={updateStatusMutation.isPending}
+            {applicants.map((applicant) => {
+              const links: string[] = Array.isArray(applicant.links) ? applicant.links : [];
+
+              return (
+                <div
+                  key={applicant.id}
+                  className="rounded-lg border p-3 transition-colors hover:bg-muted/50"
                 >
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {APPLICATION_STATUSES.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>
-                        {s.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            ))}
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <Avatar className="size-8">
+                        <AvatarImage
+                          src={applicant.candidatePicture ?? undefined}
+                          alt={applicant.candidateName}
+                        />
+                        <AvatarFallback className="text-[10px]">
+                          {getInitials(applicant.candidateName)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">{applicant.candidateName}</p>
+                        <div className="flex items-center gap-1">
+                          <HugeiconsIcon
+                            icon={Mail01Icon}
+                            strokeWidth={2}
+                            className="size-3 text-muted-foreground"
+                          />
+                          <p className="truncate text-xs text-muted-foreground">
+                            {applicant.candidateEmail}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <Select
+                      value={applicant.status}
+                      onValueChange={(value) => onStatusChange(applicant.id, value)}
+                      disabled={updateStatusMutation.isPending}
+                    >
+                      <SelectTrigger className="w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {APPLICATION_STATUSES.map((s) => (
+                          <SelectItem key={s.value} value={s.value}>
+                            {s.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {(applicant.resumeUrl || links.length > 0) && (
+                    <div className="mt-2 flex flex-wrap items-center gap-2 pl-11">
+                      {applicant.resumeUrl && (
+                        <a
+                          href={applicant.resumeUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        >
+                          <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-3" />
+                          Resume
+                        </a>
+                      )}
+                      {links.map((link, i) => (
+                        <a
+                          key={`${link}-${i}`}
+                          href={link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        >
+                          <HugeiconsIcon icon={Link04Icon} strokeWidth={2} className="size-3" />
+                          {(() => {
+                            try {
+                              return new URL(link).hostname;
+                            } catch {
+                              return "Link";
+                            }
+                          })()}
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </CardContent>
