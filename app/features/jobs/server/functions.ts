@@ -1,14 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
-import { z } from "zod";
 import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
 import { getDb } from "@/shared/db";
-import {
-  employmentTypeSchema,
-  experienceLevelSchema,
-  jobStatusSchema,
-  workplaceTypeSchema,
-} from "@/shared/enums";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
 import {
   archiveJob as archiveJobQuery,
@@ -19,40 +12,7 @@ import {
   getOpenJobs as getOpenJobsQuery,
   updateJob as updateJobQuery,
 } from "../queries/queries_sql";
-
-const jobFieldsSchema = z
-  .object({
-    title: z.string().min(1, "Job title is required").max(200),
-    description: z.string().min(1, "Job description is required").max(5000),
-    requirements: z.array(z.string()).default([]),
-    status: jobStatusSchema.default("draft"),
-    location: z.string().max(200).nullable().optional(),
-    workplaceType: workplaceTypeSchema.nullable().optional(),
-    employmentType: employmentTypeSchema.nullable().optional(),
-    experienceLevel: experienceLevelSchema.nullable().optional(),
-    salaryMin: z.number().int().positive().nullable().optional(),
-    salaryMax: z.number().int().positive().nullable().optional(),
-    salaryCurrency: z.string().max(10).default("USD"),
-    teamSize: z.number().int().positive().nullable().optional(),
-    headcount: z.number().int().positive().nullable().optional(),
-  })
-  .refine(
-    (data) => {
-      if (data.salaryMin != null && data.salaryMax != null) {
-        return data.salaryMin <= data.salaryMax;
-      }
-      return true;
-    },
-    { message: "Minimum salary cannot exceed maximum salary", path: ["salaryMin"] },
-  );
-
-const updateJobSchema = jobFieldsSchema.extend({
-  id: z.string().uuid(),
-});
-
-const jobIdSchema = z.object({
-  id: z.string().uuid(),
-});
+import { jobFieldsSchema, jobIdSchema, updateJobSchema } from "../schemas";
 
 export const createJob = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])

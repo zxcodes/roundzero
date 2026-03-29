@@ -25,6 +25,22 @@ export type ExperienceLevel = z.infer<typeof experienceLevelSchema>;
 export const applicationStatusSchema = z.enum(["applied", "interviewing", "evaluated", "rejected"]);
 export type ApplicationStatus = z.infer<typeof applicationStatusSchema>;
 
+/** Valid status transitions for applications. */
+export const APPLICATION_STATUS_TRANSITIONS: Record<ApplicationStatus, ApplicationStatus[]> = {
+  applied: ["interviewing", "rejected"],
+  interviewing: ["evaluated", "rejected"],
+  evaluated: ["rejected"],
+  rejected: [],
+};
+
+/** Returns the list of statuses an application can transition to from the current status. */
+export const getValidTransitions = (current: ApplicationStatus): ApplicationStatus[] =>
+  APPLICATION_STATUS_TRANSITIONS[current] ?? [];
+
+/** Returns true if the transition from `current` to `next` is valid. */
+export const isValidTransition = (current: ApplicationStatus, next: ApplicationStatus): boolean =>
+  getValidTransitions(current).includes(next);
+
 export const interviewStatusSchema = z.enum(["pending", "in_progress", "completed", "expired"]);
 export type InterviewStatus = z.infer<typeof interviewStatusSchema>;
 

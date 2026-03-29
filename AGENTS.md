@@ -58,9 +58,29 @@ Always consult both files before making design decisions or implementing new fea
 
 - Generate SQLC: `bun run sqlgen`.
 - Run dev: `bun run dev`.
+- Run tests: `bun run test`.
 - Typecheck: `bun run typecheck`.
 - Full check (lint + types): `bun run check`.
-- DB migrate: `pnpm dbmate --url $DATABASE_URL migrate up` (see `setup-db.sh`).
+- DB setup (dev + test): `bash setup-db.sh setup_pg`.
+- DB reset (test only): `bash setup-db.sh reset_pg`.
+- DB remove: `bash setup-db.sh rm_pg`.
+
+## Testing
+
+- **Two separate Postgres containers**: dev (`hirely_pg`, port 6311) and test (`hirely_pg_test`, port 6312). Tests never touch dev data.
+- **`TEST_DATABASE_URL`** in `.env` points to the test container. `test-utils.ts` reads this to create a separate Postgres client.
+- **Run tests**: `bun run test`. This runs `vitest run` (Vitest 4).
+- **Setup both DBs**: `bash setup-db.sh setup_pg` creates dev + test containers and migrates both.
+- **Reset test DB only**: `bash setup-db.sh reset_pg` nukes and recreates the test container (never touches dev).
+- **Global test setup** in `app/shared/__tests__/setup.ts` registers `afterEach(cleanTestData)` (TRUNCATE CASCADE) and `afterAll(closeTestDb)`. Individual test files must NOT add their own `afterEach`/`afterAll` hooks for cleanup — the global setup handles it.
+- **Test helpers** in `app/shared/__tests__/test-utils.ts` — provides `getTestDb()`, `cleanTestData()`, `closeTestDb()`, and seed helpers (`seedUser`, `seedCompany`, `seedJob`).
+- **File naming**: `<feature>.test.ts` (e.g. `auth.test.ts`, `jobs.test.ts`). Query-layer tests live in `queries/__tests__/`. Business logic / schema tests live in `__tests__/` at the feature level.
+- **Always update relevant tests when changing features** — tests must stay in sync with queries, schemas, business logic, and server functions.
+- **Test categories**:
+  - **Query-layer tests** — test SQLC-generated queries against real Postgres (insert, select, update, constraint checks).
+  - **Schema / validation tests** — test Zod schemas and extracted business logic (pure functions, no DB needed).
+  - **Business logic tests** — test multi-step workflows against real DB (apply guards, status transitions, access control, metrics).
+- **Vitest config** is in `vitest.config.ts` (separate from `vite.config.ts`). Uses `maxWorkers: 1`, `fileParallelism: false`, `isolate: false` so all test files share one DB connection.
 
 ## Code Conventions
 

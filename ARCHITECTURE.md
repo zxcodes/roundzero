@@ -12,7 +12,7 @@
 | AI agents       | Cloudflare Agents SDK (Durable Objects)                                        |
 | AI models       | Vercel AI SDK (`ai` package) with any provider (OpenAI, Anthropic, Workers AI) |
 | Auth            | Google OAuth (server-side sessions via cookies)                                |
-| UI              | shadcn/ui, Tailwind CSS v4, Phosphor Icons                                     |
+| UI              | shadcn/ui, Tailwind CSS v4, Hugeicons                                          |
 | Linting         | Biome                                                                          |
 
 ---
@@ -150,49 +150,61 @@ CREATE TABLE users (
   email       TEXT UNIQUE NOT NULL,
   name        TEXT NOT NULL,
   picture     TEXT,
-  role        TEXT CHECK (role IN ('company', 'candidate')),  -- null until role selection
+  role        TEXT,                                             -- null until role selection
   google_id   TEXT UNIQUE,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()              -- auto-updated via trigger
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()               -- set explicitly in UPDATE queries
 );
 
 CREATE TABLE companies (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  owner_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  owner_id    UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
   name        TEXT NOT NULL,
   description TEXT,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE jobs (
-  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id    UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-  title         TEXT NOT NULL,
-  description   TEXT NOT NULL,
-  requirements  JSONB NOT NULL DEFAULT '[]',
-  status        TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'open', 'closed')),
-  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()             -- auto-updated via trigger
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  company_id       UUID NOT NULL REFERENCES companies(id) ON DELETE RESTRICT,
+  title            TEXT NOT NULL,
+  description      TEXT NOT NULL,
+  requirements     JSONB NOT NULL DEFAULT '[]',
+  status           TEXT NOT NULL DEFAULT 'draft',              -- validated via Zod, not CHECK
+  location         TEXT,
+  workplace_type   TEXT,
+  employment_type  TEXT,
+  experience_level TEXT,
+  salary_min       INTEGER,
+  salary_max       INTEGER,
+  salary_currency  TEXT NOT NULL DEFAULT 'USD',
+  team_size        INTEGER,
+  headcount        INTEGER DEFAULT 1,
+  archived_at      TIMESTAMPTZ,                                -- soft delete (null = active)
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at       TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Partial index for efficient "active jobs" filtering
+CREATE INDEX idx_jobs_archived ON jobs(archived_at) WHERE archived_at IS NULL;
 
 CREATE TABLE applications (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  job_id        UUID NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
-  candidate_id  UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  job_id        UUID NOT NULL REFERENCES jobs(id) ON DELETE RESTRICT,
+  candidate_id  UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
   resume_url    TEXT,
   links         JSONB NOT NULL DEFAULT '[]',
-  status        TEXT NOT NULL DEFAULT 'applied'
-                CHECK (status IN ('applied', 'interviewing', 'evaluated', 'rejected')),
+  status        TEXT NOT NULL DEFAULT 'applied',               -- validated via Zod, not CHECK
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(job_id, candidate_id)
 );
 
 CREATE TABLE interviews (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  application_id  UUID NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
+  application_id  UUID NOT NULL REFERENCES applications(id) ON DELETE RESTRICT,
   agent_id        TEXT,                                        -- Durable Object ID, set on start
-  status          TEXT NOT NULL DEFAULT 'pending'
-                  CHECK (status IN ('pending', 'in_progress', 'completed', 'expired')),
+  status          TEXT NOT NULL DEFAULT 'pending',
   started_at      TIMESTAMPTZ,
   completed_at    TIMESTAMPTZ,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -200,19 +212,24 @@ CREATE TABLE interviews (
 
 CREATE TABLE reports (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  interview_id    UUID NOT NULL REFERENCES interviews(id) ON DELETE CASCADE UNIQUE,
-  application_id  UUID NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
+  interview_id    UUID NOT NULL REFERENCES interviews(id) ON DELETE RESTRICT UNIQUE,
+  application_id  UUID NOT NULL REFERENCES applications(id) ON DELETE RESTRICT,
   summary         TEXT NOT NULL,
   strengths       JSONB NOT NULL DEFAULT '[]',
   weaknesses      JSONB NOT NULL DEFAULT '[]',
   insights        JSONB NOT NULL DEFAULT '[]',
   evidence        JSONB NOT NULL DEFAULT '[]',
   scores          JSONB NOT NULL,                              -- { technical, communication, experience, overall }
-  recommendation  TEXT NOT NULL
-                  CHECK (recommendation IN ('strong_hire', 'consider', 'not_recommended')),
+  recommendation  TEXT NOT NULL,                               -- validated via Zod, not CHECK
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ```
+
+**Key schema decisions:**
+- All FK constraints use `ON DELETE RESTRICT` — no cascading deletes. Data is never accidentally removed.
+- No `CHECK` constraints for enum-like columns — validation is handled by Zod schemas in `app/shared/enums.ts`.
+- No triggers — `updated_at` is set explicitly in every UPDATE query.
+- Jobs use soft delete (`archived_at`) with a partial index for efficient active-job queries.
 
 ---
 
@@ -390,6 +407,73 @@ Workers AI can be used as a fallback or for cost-sensitive operations. The `ai` 
 4. Set session cookie (encrypted, httpOnly)
 5. Role selection on first login (company or candidate)
 6. Server functions read session from cookie via middleware
+
+---
+
+## Testing
+
+### Infrastructure
+
+Two separate Postgres Docker containers ensure tests never interfere with dev data:
+
+| Container       | Port | Purpose           | Env Variable         |
+| --------------- | ---- | ----------------- | -------------------- |
+| `hirely_pg`     | 6311 | Local development | `DATABASE_URL`       |
+| `hirely_pg_test`| 6312 | Tests only        | `TEST_DATABASE_URL`  |
+
+Both containers are created and migrated by `bash setup-db.sh setup_pg`. The test container can be independently reset with `bash setup-db.sh reset_pg` (never touches dev).
+
+### Config
+
+Vitest 4 config lives in `vitest.config.ts` (separate from `vite.config.ts`):
+
+- `maxWorkers: 1`, `fileParallelism: false`, `isolate: false` — all test files share one DB connection
+- `setupFiles: ['app/shared/__tests__/setup.ts']` — global hooks run before any test file
+- `env: { loader: '.env' }` — loads `TEST_DATABASE_URL` from `.env`
+
+### Directory Structure
+
+```
+app/
+├── shared/__tests__/
+│   ├── setup.ts            # Global afterEach(cleanTestData) + afterAll(closeTestDb)
+│   ├── test-utils.ts       # getTestDb(), seed helpers (seedUser, seedCompany, seedJob)
+│   └── enums.test.ts       # Shared enum/business logic tests
+│
+├── features/auth/queries/__tests__/
+│   └── auth.test.ts        # User upsert, lookup, Google ID queries
+│
+├── features/companies/queries/__tests__/
+│   └── companies.test.ts   # Company CRUD, owner lookup queries
+│
+├── features/jobs/
+│   ├── queries/__tests__/
+│   │   └── jobs.test.ts    # Job CRUD, status filtering, archive queries
+│   └── __tests__/
+│       ├── schemas.test.ts         # Zod schema validation (pure, no DB)
+│       └── business-logic.test.ts  # Visibility rules, publish guards, isolation
+│
+├── features/applications/
+│   ├── queries/__tests__/
+│   │   └── applications.test.ts    # Apply, status update, constraint queries
+│   └── __tests__/
+│       └── business-logic.test.ts  # Apply guards, status transitions, access control
+│
+└── features/dashboard/__tests__/
+    └── dashboard.test.ts           # Company/candidate metrics aggregation
+```
+
+### Test Categories
+
+1. **Query-layer tests** (`queries/__tests__/`) — test SQLC-generated queries against real Postgres. Verify inserts, selects, updates, unique constraints, and FK violations.
+2. **Schema / validation tests** (`__tests__/schemas.test.ts`) — test Zod schemas and pure validation logic. No DB needed.
+3. **Business logic tests** (`__tests__/business-logic.test.ts`) — test multi-step workflows against real DB: apply guards, status transitions, access control, metrics aggregation.
+
+### Conventions
+
+- Global setup handles cleanup — individual test files must NOT add `afterEach`/`afterAll` hooks for DB cleanup.
+- Seed helpers (`seedUser`, `seedCompany`, `seedJob`) create minimal valid records with sensible defaults and accept overrides.
+- All tests run against the real test Postgres — no mocking of the database layer.
 
 ---
 

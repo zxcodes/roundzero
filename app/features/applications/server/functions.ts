@@ -5,7 +5,7 @@ import { getUserById } from "@/features/auth/queries/queries_sql";
 import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
 import { getJobById } from "@/features/jobs/queries/queries_sql";
 import { getDb } from "@/shared/db";
-import { applicationStatusSchema } from "@/shared/enums";
+import { applicationStatusSchema, isValidTransition } from "@/shared/enums";
 import { authMiddleware } from "@/shared/middleware";
 import {
   createApplication as createApplicationQuery,
@@ -143,13 +143,6 @@ export const getApplicationDetail = createServerFn({ method: "GET" })
     return application;
   });
 
-const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
-  applied: ["interviewing", "rejected"],
-  interviewing: ["evaluated", "rejected"],
-  evaluated: ["rejected"],
-  rejected: [],
-};
-
 export const updateApplicationStatus = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(zodValidator(updateStatusSchema))
@@ -175,9 +168,8 @@ export const updateApplicationStatus = createServerFn({ method: "POST" })
     }
 
     // Validate status transition
-    const currentStatus = application.status;
-    const allowedTransitions = VALID_STATUS_TRANSITIONS[currentStatus] ?? [];
-    if (!allowedTransitions.includes(data.status)) {
+    const currentStatus = applicationStatusSchema.parse(application.status);
+    if (!isValidTransition(currentStatus, data.status)) {
       throw new Error(`Cannot transition from "${currentStatus}" to "${data.status}"`);
     }
 
