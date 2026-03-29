@@ -1,33 +1,29 @@
-import {
-  AddCircleIcon,
-  Briefcase01Icon,
-  ChartBarBigIcon,
-  DatabaseIcon,
-  FolderLibraryIcon,
-  HelpCircleIcon,
-  House01Icon,
-  Mail01Icon,
-  SchoolReportCardIcon,
-  Search01Icon,
-  Settings01Icon,
-  UserGroupIcon,
-} from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Link } from "@tanstack/react-router";
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarGroup,
+    SidebarGroupContent,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import type { User } from "@/router";
+import {
+    AddCircleIcon,
+    Briefcase01Icon,
+    ChartBarBigIcon,
+    HelpCircleIcon,
+    House01Icon,
+    Search01Icon,
+    Settings01Icon,
+    UserGroupIcon
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Link } from "@tanstack/react-router";
 
 const companyMain = [
   {
@@ -70,23 +66,6 @@ const candidateMain = [
   },
 ];
 
-const documentItems = [
-  {
-    title: "Data Library",
-    url: "/dashboard",
-    icon: <HugeiconsIcon icon={DatabaseIcon} strokeWidth={2} className="size-5" />,
-  },
-  {
-    title: "Reports",
-    url: "/dashboard",
-    icon: <HugeiconsIcon icon={SchoolReportCardIcon} strokeWidth={2} className="size-5" />,
-  },
-  {
-    title: "Word Assistant",
-    url: "/dashboard",
-    icon: <HugeiconsIcon icon={FolderLibraryIcon} strokeWidth={2} className="size-5" />,
-  },
-];
 
 const secondaryItems = [
   {
@@ -141,20 +120,13 @@ export function AppSidebar({
                     <span>Quick Create</span>
                   </Link>
                 </SidebarMenuButton>
-                <SidebarMenuButton asChild className="size-8">
-                  <Link to="/dashboard">
-                    <HugeiconsIcon icon={Mail01Icon} strokeWidth={2} className="size-4" />
-                    <span className="sr-only">Inbox</span>
-                  </Link>
-                </SidebarMenuButton>
+
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
         <NavMain sections={[{ items: mainItems }]} />
-
-        <NavMain sections={[{ label: "Documents", items: documentItems }]} />
 
         <div className="mt-auto">
           <NavMain sections={[{ items: secondaryItems }]} />
