@@ -10,8 +10,9 @@ import {
 } from "@/shared/enums";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
 import {
+  archiveJob as archiveJobQuery,
   createJob as createJobQuery,
-  deleteJob as deleteJobQuery,
+  getArchivedJobsByCompanyId,
   getJobById,
   getJobsByCompanyId,
   getOpenJobs as getOpenJobsQuery,
@@ -48,7 +49,7 @@ const updateJobSchema = jobFieldsSchema.extend({
   id: z.string().uuid(),
 });
 
-const deleteJobSchema = z.object({
+const jobIdSchema = z.object({
   id: z.string().uuid(),
 });
 
@@ -94,9 +95,21 @@ export const getMyJobs = createServerFn({ method: "GET" })
     return jobs;
   });
 
+export const getMyArchivedJobs = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }) => {
+    const db = getDb();
+    const company = await getCompanyByOwnerId(db, { ownerId: context.userId });
+    if (!company) {
+      return [];
+    }
+    const jobs = await getArchivedJobsByCompanyId(db, { companyId: company.id });
+    return jobs;
+  });
+
 export const getJob = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .inputValidator((data: { id: string }) => deleteJobSchema.parse(data))
+  .inputValidator((data: { id: string }) => jobIdSchema.parse(data))
   .handler(async ({ data, context }) => {
     const db = getDb();
     const job = await getJobById(db, { id: data.id });
@@ -146,13 +159,16 @@ export const updateJob = createServerFn({ method: "POST" })
     return { job };
   });
 
-export const deleteJob = createServerFn({ method: "POST" })
+export const archiveJob = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
-  .inputValidator((data: { id: string }) => deleteJobSchema.parse(data))
+  .inputValidator((data: { id: string }) => jobIdSchema.parse(data))
   .handler(async ({ data, context }) => {
     const db = getDb();
-    await deleteJobQuery(db, { id: data.id, companyId: context.company.id });
-    return { success: true };
+    const archived = await archiveJobQuery(db, { id: data.id, companyId: context.company.id });
+    if (!archived) {
+      throw new Error("Job not found, not authorized, or already archived");
+    }
+    return { job: archived };
   });
 
 export const getOpenJobs = createServerFn({ method: "GET" }).handler(async () => {
@@ -161,13 +177,9 @@ export const getOpenJobs = createServerFn({ method: "GET" }).handler(async () =>
   return jobs;
 });
 
-const publishJobSchema = z.object({
-  id: z.string().uuid(),
-});
-
 export const publishJob = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
-  .inputValidator((data: { id: string }) => publishJobSchema.parse(data))
+  .inputValidator((data: { id: string }) => jobIdSchema.parse(data))
   .handler(async ({ data, context }) => {
     const db = getDb();
 

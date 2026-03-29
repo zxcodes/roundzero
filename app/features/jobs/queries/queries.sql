@@ -11,6 +11,7 @@ RETURNING *;
 SELECT *
 FROM jobs
 WHERE company_id = $1
+  AND archived_at IS NULL
 ORDER BY created_at DESC;
 
 -- name: getJobById :one
@@ -40,10 +41,15 @@ WHERE id = $14
   AND company_id = $15
 RETURNING *;
 
--- name: deleteJob :exec
-DELETE FROM jobs
+-- name: archiveJob :one
+UPDATE jobs
+SET archived_at = now(),
+    status = 'closed',
+    updated_at = now()
 WHERE id = $1
-  AND company_id = $2;
+  AND company_id = $2
+  AND archived_at IS NULL
+RETURNING *;
 
 -- name: getOpenJobs :many
 SELECT j.*,
@@ -51,6 +57,7 @@ SELECT j.*,
 FROM jobs j
 JOIN companies c ON c.id = j.company_id
 WHERE j.status = 'open'
+  AND j.archived_at IS NULL
 ORDER BY j.created_at DESC;
 
 -- name: countJobsByCompanyAndStatus :one
@@ -59,4 +66,12 @@ SELECT
   count(*) FILTER (WHERE status = 'draft')::int AS draft_count,
   count(*)::int AS total_count
 FROM jobs
-WHERE company_id = $1;
+WHERE company_id = $1
+  AND archived_at IS NULL;
+
+-- name: getArchivedJobsByCompanyId :many
+SELECT *
+FROM jobs
+WHERE company_id = $1
+  AND archived_at IS NOT NULL
+ORDER BY archived_at DESC;

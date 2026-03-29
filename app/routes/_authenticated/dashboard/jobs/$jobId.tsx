@@ -1,7 +1,7 @@
 import {
+  Archive01Icon,
   ArrowLeft01Icon,
   CheckmarkCircle02Icon,
-  Delete02Icon,
   Edit02Icon,
   File02Icon,
   Link04Icon,
@@ -48,7 +48,7 @@ import {
   updateApplicationStatus,
 } from "@/features/applications/server/functions";
 import { JobForm, type JobFormData } from "@/features/jobs/components/job-form";
-import { deleteJob, getJob, publishJob, updateJob } from "@/features/jobs/server/functions";
+import { archiveJob, getJob, publishJob, updateJob } from "@/features/jobs/server/functions";
 import {
   type EmploymentType,
   type ExperienceLevel,
@@ -581,16 +581,16 @@ function CompanyActions({
     },
   });
 
-  const deleteJobFn = useServerFn(deleteJob);
-  const deleteJobMutation = useMutation({
-    mutationFn: deleteJobFn,
+  const archiveJobFn = useServerFn(archiveJob);
+  const archiveJobMutation = useMutation({
+    mutationFn: archiveJobFn,
     onSuccess: async () => {
-      toast.success("Job deleted successfully");
+      toast.success("Job archived successfully");
       await router.invalidate();
       await router.navigate({ to: "/dashboard/jobs" });
     },
     onError: () => {
-      toast.error("Failed to delete job. Please try again.");
+      toast.error("Failed to archive job. Please try again.");
     },
   });
 
@@ -607,8 +607,8 @@ function CompanyActions({
     });
   };
 
-  const onDelete = async () => {
-    await deleteJobMutation.mutateAsync({ data: { id: job.id } });
+  const onArchive = async () => {
+    await archiveJobMutation.mutateAsync({ data: { id: job.id } });
   };
 
   if (isEditing) {
@@ -667,27 +667,22 @@ function CompanyActions({
       </Button>
       <AlertDialog>
         <AlertDialogTrigger asChild>
-          <Button variant="destructive" size="sm" disabled={deleteJobMutation.isPending}>
-            <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} className="size-3.5" />
-            {deleteJobMutation.isPending ? "Deleting..." : "Delete"}
+          <Button variant="outline" size="sm" disabled={archiveJobMutation.isPending}>
+            <HugeiconsIcon icon={Archive01Icon} strokeWidth={2} className="size-3.5" />
+            {archiveJobMutation.isPending ? "Archiving..." : "Archive"}
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this job?</AlertDialogTitle>
+            <AlertDialogTitle>Archive this job?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the job posting and all associated applications. This
-              action cannot be undone.
+              This will close the job posting and hide it from candidates. Existing applications
+              will be preserved. You can still view archived jobs.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={onDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete
-            </AlertDialogAction>
+            <AlertDialogAction onClick={onArchive}>Archive</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

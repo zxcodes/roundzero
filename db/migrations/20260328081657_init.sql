@@ -15,7 +15,7 @@ CREATE TABLE users (
 -- Companies
 CREATE TABLE companies (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  owner_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  owner_id    UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
   name        TEXT NOT NULL,
   description TEXT,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -26,7 +26,7 @@ CREATE INDEX idx_companies_owner ON companies(owner_id);
 -- Jobs
 CREATE TABLE jobs (
   id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id       UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+  company_id       UUID NOT NULL REFERENCES companies(id) ON DELETE RESTRICT,
   title            TEXT NOT NULL,
   description      TEXT NOT NULL,
   requirements     JSONB NOT NULL DEFAULT '[]',
@@ -40,18 +40,20 @@ CREATE TABLE jobs (
   salary_currency  TEXT NOT NULL DEFAULT 'USD',
   team_size        INTEGER,
   headcount        INTEGER DEFAULT 1,
+  archived_at      TIMESTAMPTZ,
   created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at       TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX idx_jobs_company ON jobs(company_id);
 CREATE INDEX idx_jobs_status ON jobs(status);
+CREATE INDEX idx_jobs_archived ON jobs(archived_at) WHERE archived_at IS NULL;
 
 -- Applications
 CREATE TABLE applications (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  job_id        UUID NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
-  candidate_id  UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  job_id        UUID NOT NULL REFERENCES jobs(id) ON DELETE RESTRICT,
+  candidate_id  UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
   resume_url    TEXT,
   links         JSONB NOT NULL DEFAULT '[]',
   status        TEXT NOT NULL DEFAULT 'applied',
@@ -66,7 +68,7 @@ CREATE INDEX idx_applications_candidate ON applications(candidate_id);
 -- Interviews: each maps to a Durable Object instance
 CREATE TABLE interviews (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  application_id  UUID NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
+  application_id  UUID NOT NULL REFERENCES applications(id) ON DELETE RESTRICT,
   agent_id        TEXT,
   status          TEXT NOT NULL DEFAULT 'pending',
   started_at      TIMESTAMPTZ,
@@ -79,8 +81,8 @@ CREATE INDEX idx_interviews_application ON interviews(application_id);
 -- Reports: final output of the evaluation pipeline
 CREATE TABLE reports (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  interview_id    UUID NOT NULL REFERENCES interviews(id) ON DELETE CASCADE UNIQUE,
-  application_id  UUID NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
+  interview_id    UUID NOT NULL REFERENCES interviews(id) ON DELETE RESTRICT UNIQUE,
+  application_id  UUID NOT NULL REFERENCES applications(id) ON DELETE RESTRICT,
   summary         TEXT NOT NULL,
   strengths       JSONB NOT NULL DEFAULT '[]',
   weaknesses      JSONB NOT NULL DEFAULT '[]',

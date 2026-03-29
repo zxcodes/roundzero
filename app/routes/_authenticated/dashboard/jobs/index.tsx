@@ -1,11 +1,12 @@
 import {
   Add01Icon,
+  Archive01Icon,
   Briefcase01Icon,
   Location01Icon,
   Rocket01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -19,7 +20,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getMyJobs, getOpenJobs, publishJob } from "@/features/jobs/server/functions";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  getMyArchivedJobs,
+  getMyJobs,
+  getOpenJobs,
+  publishJob,
+} from "@/features/jobs/server/functions";
 import {
   type EmploymentType,
   type ExperienceLevel,
@@ -102,6 +109,19 @@ function CompanyJobsList({ jobs }: { jobs: Awaited<ReturnType<typeof getMyJobs>>
     await publishJobMutation.mutateAsync({ data: { id: jobId } });
   };
 
+  const getMyArchivedJobsFn = useServerFn(getMyArchivedJobs);
+  const archivedJobsQuery = useQuery({
+    queryKey: ["archived-jobs"],
+    queryFn: () => getMyArchivedJobsFn(),
+    enabled: false,
+  });
+
+  const onTabChange = (value: string) => {
+    if (value === "archived" && !archivedJobsQuery.data) {
+      archivedJobsQuery.refetch();
+    }
+  };
+
   return (
     <div className="animate-fade-in space-y-6">
       <div className="flex items-center justify-between">
@@ -119,93 +139,213 @@ function CompanyJobsList({ jobs }: { jobs: Awaited<ReturnType<typeof getMyJobs>>
         </Button>
       </div>
 
-      {jobs.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-16">
-          <div className="mb-4 flex size-12 items-center justify-center rounded-xl bg-muted">
-            <HugeiconsIcon
-              icon={Briefcase01Icon}
-              strokeWidth={2}
-              className="size-6 text-muted-foreground"
-            />
-          </div>
-          <h3 className="text-sm font-semibold">No jobs yet</h3>
-          <p className="mt-1 mb-4 text-xs text-muted-foreground">
-            Create your first job posting to start receiving applications.
-          </p>
-          <Button size="sm" asChild>
-            <Link to="/dashboard/jobs/new">
-              <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-3.5" />
-              Post a job
-            </Link>
-          </Button>
+      <Tabs defaultValue="active" onValueChange={onTabChange}>
+        <TabsList>
+          <TabsTrigger value="active">Active</TabsTrigger>
+          <TabsTrigger value="archived">
+            <HugeiconsIcon icon={Archive01Icon} strokeWidth={2} className="size-3.5" />
+            Archived
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="active">
+          <ActiveJobsTable
+            jobs={jobs}
+            onPublish={onPublish}
+            isPending={publishJobMutation.isPending}
+          />
+        </TabsContent>
+
+        <TabsContent value="archived">
+          <ArchivedJobsTable
+            jobs={archivedJobsQuery.data ?? []}
+            isLoading={archivedJobsQuery.isLoading}
+          />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+function ActiveJobsTable({
+  jobs,
+  onPublish,
+  isPending,
+}: {
+  jobs: Awaited<ReturnType<typeof getMyJobs>>;
+  onPublish: (jobId: string) => Promise<void>;
+  isPending: boolean;
+}) {
+  if (jobs.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-16">
+        <div className="mb-4 flex size-12 items-center justify-center rounded-xl bg-muted">
+          <HugeiconsIcon
+            icon={Briefcase01Icon}
+            strokeWidth={2}
+            className="size-6 text-muted-foreground"
+          />
         </div>
-      ) : (
-        <div className="overflow-hidden rounded-xl border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {jobs.map((job) => (
-                <TableRow key={job.id}>
-                  <TableCell className="font-medium">
-                    <Link
-                      to="/dashboard/jobs/$jobId"
-                      params={{ jobId: job.id }}
-                      className="hover:underline"
+        <h3 className="text-sm font-semibold">No active jobs</h3>
+        <p className="mt-1 mb-4 text-xs text-muted-foreground">
+          Create your first job posting to start receiving applications.
+        </p>
+        <Button size="sm" asChild>
+          <Link to="/dashboard/jobs/new">
+            <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-3.5" />
+            Post a job
+          </Link>
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-hidden rounded-xl border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Title</TableHead>
+            <TableHead>Location</TableHead>
+            <TableHead>Type</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Created</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {jobs.map((job) => (
+            <TableRow key={job.id}>
+              <TableCell className="font-medium">
+                <Link
+                  to="/dashboard/jobs/$jobId"
+                  params={{ jobId: job.id }}
+                  className="hover:underline"
+                >
+                  {job.title}
+                </Link>
+              </TableCell>
+              <TableCell className="text-sm text-muted-foreground">
+                {job.location || "\u2014"}
+              </TableCell>
+              <TableCell className="text-sm text-muted-foreground">
+                {job.employmentType
+                  ? employmentTypeLabels[job.employmentType as EmploymentType]
+                  : "\u2014"}
+              </TableCell>
+              <TableCell>
+                <Badge variant={statusVariant(job.status)} className="capitalize">
+                  {job.status}
+                </Badge>
+              </TableCell>
+              <TableCell className="font-mono text-xs text-muted-foreground">
+                {formatDate(job.createdAt)}
+              </TableCell>
+              <TableCell className="text-right">
+                <div className="flex items-center justify-end gap-1">
+                  {job.status === "draft" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onPublish(job.id)}
+                      disabled={isPending}
                     >
-                      {job.title}
+                      <HugeiconsIcon icon={Rocket01Icon} strokeWidth={2} className="size-3.5" />
+                      Publish
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link to="/dashboard/jobs/$jobId" params={{ jobId: job.id }}>
+                      View
                     </Link>
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {job.location || "\u2014"}
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {job.employmentType
-                      ? employmentTypeLabels[job.employmentType as EmploymentType]
-                      : "\u2014"}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={statusVariant(job.status)} className="capitalize">
-                      {job.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="font-mono text-xs text-muted-foreground">
-                    {formatDate(job.createdAt)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      {job.status === "draft" && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onPublish(job.id)}
-                          disabled={publishJobMutation.isPending}
-                        >
-                          <HugeiconsIcon icon={Rocket01Icon} strokeWidth={2} className="size-3.5" />
-                          Publish
-                        </Button>
-                      )}
-                      <Button variant="ghost" size="sm" asChild>
-                        <Link to="/dashboard/jobs/$jobId" params={{ jobId: job.id }}>
-                          View
-                        </Link>
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
+function ArchivedJobsTable({
+  jobs,
+  isLoading,
+}: {
+  jobs: Awaited<ReturnType<typeof getMyArchivedJobs>>;
+  isLoading: boolean;
+}) {
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center rounded-xl border border-dashed py-16">
+        <p className="text-sm text-muted-foreground">Loading archived jobs...</p>
+      </div>
+    );
+  }
+
+  if (jobs.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-16">
+        <div className="mb-4 flex size-12 items-center justify-center rounded-xl bg-muted">
+          <HugeiconsIcon
+            icon={Archive01Icon}
+            strokeWidth={2}
+            className="size-6 text-muted-foreground"
+          />
         </div>
-      )}
+        <h3 className="text-sm font-semibold">No archived jobs</h3>
+        <p className="mt-1 text-xs text-muted-foreground">Archived jobs will appear here.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-hidden rounded-xl border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Title</TableHead>
+            <TableHead>Location</TableHead>
+            <TableHead>Type</TableHead>
+            <TableHead>Archived</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {jobs.map((job) => (
+            <TableRow key={job.id} className="opacity-70">
+              <TableCell className="font-medium">
+                <Link
+                  to="/dashboard/jobs/$jobId"
+                  params={{ jobId: job.id }}
+                  className="hover:underline"
+                >
+                  {job.title}
+                </Link>
+              </TableCell>
+              <TableCell className="text-sm text-muted-foreground">
+                {job.location || "\u2014"}
+              </TableCell>
+              <TableCell className="text-sm text-muted-foreground">
+                {job.employmentType
+                  ? employmentTypeLabels[job.employmentType as EmploymentType]
+                  : "\u2014"}
+              </TableCell>
+              <TableCell className="font-mono text-xs text-muted-foreground">
+                {job.archivedAt ? formatDate(job.archivedAt) : "\u2014"}
+              </TableCell>
+              <TableCell className="text-right">
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/dashboard/jobs/$jobId" params={{ jobId: job.id }}>
+                    View
+                  </Link>
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }

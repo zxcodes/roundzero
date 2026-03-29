@@ -83,6 +83,7 @@ CREATE TABLE public.jobs (
     salary_currency text DEFAULT 'USD'::text NOT NULL,
     team_size integer,
     headcount integer DEFAULT 1,
+    archived_at timestamp with time zone,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -249,6 +250,13 @@ CREATE INDEX idx_interviews_application ON public.interviews USING btree (applic
 
 
 --
+-- Name: idx_jobs_archived; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_jobs_archived ON public.jobs USING btree (archived_at) WHERE (archived_at IS NULL);
+
+
+--
 -- Name: idx_jobs_company; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -274,7 +282,7 @@ CREATE INDEX idx_reports_application ON public.reports USING btree (application_
 --
 
 ALTER TABLE ONLY public.applications
-    ADD CONSTRAINT applications_candidate_id_fkey FOREIGN KEY (candidate_id) REFERENCES public.users(id) ON DELETE CASCADE;
+    ADD CONSTRAINT applications_candidate_id_fkey FOREIGN KEY (candidate_id) REFERENCES public.users(id) ON DELETE RESTRICT;
 
 
 --
@@ -282,7 +290,7 @@ ALTER TABLE ONLY public.applications
 --
 
 ALTER TABLE ONLY public.applications
-    ADD CONSTRAINT applications_job_id_fkey FOREIGN KEY (job_id) REFERENCES public.jobs(id) ON DELETE CASCADE;
+    ADD CONSTRAINT applications_job_id_fkey FOREIGN KEY (job_id) REFERENCES public.jobs(id) ON DELETE RESTRICT;
 
 
 --
@@ -290,7 +298,7 @@ ALTER TABLE ONLY public.applications
 --
 
 ALTER TABLE ONLY public.companies
-    ADD CONSTRAINT companies_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES public.users(id) ON DELETE CASCADE;
+    ADD CONSTRAINT companies_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES public.users(id) ON DELETE RESTRICT;
 
 
 --
@@ -298,7 +306,7 @@ ALTER TABLE ONLY public.companies
 --
 
 ALTER TABLE ONLY public.interviews
-    ADD CONSTRAINT interviews_application_id_fkey FOREIGN KEY (application_id) REFERENCES public.applications(id) ON DELETE CASCADE;
+    ADD CONSTRAINT interviews_application_id_fkey FOREIGN KEY (application_id) REFERENCES public.applications(id) ON DELETE RESTRICT;
 
 
 --
@@ -306,7 +314,7 @@ ALTER TABLE ONLY public.interviews
 --
 
 ALTER TABLE ONLY public.jobs
-    ADD CONSTRAINT jobs_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id) ON DELETE CASCADE;
+    ADD CONSTRAINT jobs_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id) ON DELETE RESTRICT;
 
 
 --
@@ -314,7 +322,7 @@ ALTER TABLE ONLY public.jobs
 --
 
 ALTER TABLE ONLY public.reports
-    ADD CONSTRAINT reports_application_id_fkey FOREIGN KEY (application_id) REFERENCES public.applications(id) ON DELETE CASCADE;
+    ADD CONSTRAINT reports_application_id_fkey FOREIGN KEY (application_id) REFERENCES public.applications(id) ON DELETE RESTRICT;
 
 
 --
@@ -322,7 +330,7 @@ ALTER TABLE ONLY public.reports
 --
 
 ALTER TABLE ONLY public.reports
-    ADD CONSTRAINT reports_interview_id_fkey FOREIGN KEY (interview_id) REFERENCES public.interviews(id) ON DELETE CASCADE;
+    ADD CONSTRAINT reports_interview_id_fkey FOREIGN KEY (interview_id) REFERENCES public.interviews(id) ON DELETE RESTRICT;
 
 
 --

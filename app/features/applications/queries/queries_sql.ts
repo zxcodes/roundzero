@@ -88,6 +88,7 @@ FROM applications a
 JOIN jobs j ON j.id = a.job_id
 JOIN companies c ON c.id = j.company_id
 WHERE a.candidate_id = $1
+  AND j.archived_at IS NULL
 ORDER BY a.created_at DESC`;
 
 export interface getApplicationsByCandidateArgs {
@@ -283,7 +284,8 @@ export const countApplicationsByCompanyQuery = `-- name: countApplicationsByComp
 SELECT count(*)::int AS total_count
 FROM applications a
 JOIN jobs j ON j.id = a.job_id
-WHERE j.company_id = $1`;
+WHERE j.company_id = $1
+  AND j.archived_at IS NULL`;
 
 export interface countApplicationsByCompanyArgs {
     companyId: string;
@@ -311,7 +313,9 @@ SELECT
   count(*) FILTER (WHERE a.status = 'interviewing')::int AS interviewing_count,
   count(*) FILTER (WHERE a.status = 'evaluated')::int AS evaluated_count
 FROM applications a
-WHERE a.candidate_id = $1`;
+JOIN jobs j ON j.id = a.job_id
+WHERE a.candidate_id = $1
+  AND j.archived_at IS NULL`;
 
 export interface countApplicationsByCandidateArgs {
     candidateId: string;
