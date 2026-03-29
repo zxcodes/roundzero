@@ -86,3 +86,53 @@
 - [ ] Error handling and edge cases (expired interviews, failed evaluations)
 - [ ] Loading states and optimistic UI
 - [ ] Mobile responsiveness pass
+
+## Phase 6 (Optional): Migrate to Better Auth
+
+Replaces the hand-rolled Google OAuth + encrypted cookie session system with Better Auth. Unlocks magic links, email/password, 2FA, and other auth methods without custom implementation.
+
+### Why
+
+- Current auth only supports Google OAuth. Adding magic links, email/password, or passkeys would require building token generation, email sending, verification flows, and rate limiting from scratch.
+- Better Auth handles all of this out of the box with a plugin system.
+
+### Key facts
+
+- Better Auth maps to existing tables via `modelName` and `fields` — no table name conflicts.
+- Custom columns (`role`, `google_id`, `picture`) are exposed via `additionalFields` with `input: false`.
+- Uses `pg` (node-postgres) internally via Kysely — add `pg` as a dependency for Better Auth's connection. SQLC queries continue using `postgres` (postgres.js) unchanged.
+- TanStack Start integration exists: `tanstackStartCookies` plugin + `/api/auth/$` route handler.
+- `kysely-postgres-js` is an alternative if you want a single DB driver, but adding `pg` just for Better Auth is simpler.
+
+### Migration tasks
+
+- [ ] Install `better-auth` and `pg`
+- [ ] Add Better Auth tables to init migration: `account`, `session`, `verification` (Better Auth core schema)
+- [ ] Add `email_verified` column to `users` table (Better Auth expects this; map `picture` → `image` via `fields`)
+- [ ] Create `app/shared/auth.ts` — Better Auth server instance:
+  - `database: new Pool({ connectionString: process.env.DATABASE_URL })`
+  - `user.modelName: "users"` (use existing table)
+  - `user.fields` mapping: `createdAt` → `created_at`, `updatedAt` → `updated_at`, `image` → `picture`
+  - `user.additionalFields`: `role` (type: `["company", "candidate"]`, `input: false`), `google_id` (type: `string`)
+  - `advanced.database.generateId: false` (let Postgres `gen_random_uuid()` handle IDs)
+  - `socialProviders.google` with client ID + secret
+  - `plugins: [tanstackStartCookies()]` (must be last plugin)
+- [ ] Create `app/shared/auth-client.ts` — Better Auth client instance (`createAuthClient` from `better-auth/react`)
+- [ ] Create API route handler (`app/routes/api/auth/$.ts`) — catches all `/api/auth/*` requests
+- [ ] Create `getSession` / `ensureSession` server functions using `auth.api.getSession({ headers })`
+- [ ] Replace `@react-oauth/google` client-side flow with `authClient.signIn.social({ provider: "google" })`
+- [ ] Replace custom `loginWithGoogle` server function with Better Auth's built-in Google OAuth flow
+- [ ] Replace `useSession`/`updateSession`/`clearSession` (TanStack Start built-in) with Better Auth session management
+- [ ] Update `authMiddleware` to use `auth.api.getSession({ headers })` instead of reading encrypted cookie directly
+- [ ] Update `companyMiddleware` to read `session.user.id` from Better Auth session
+- [ ] Update `_authenticated.tsx` `beforeLoad` to use new `getSession` server function
+- [ ] Update `__root.tsx` `beforeLoad` to use new `getSession` for router context
+- [ ] Remove `app/shared/session.ts` (no longer needed — Better Auth manages sessions)
+- [ ] Remove `@react-oauth/google` dependency
+- [ ] Remove `SESSION_SECRET` env var (Better Auth uses `BETTER_AUTH_SECRET` instead)
+- [ ] Add `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `GOOGLE_CLIENT_SECRET` to `.env.example`
+- [ ] Run `bash setup-db.sh reset_pg` to recreate DB with new schema
+- [ ] Update tests — auth query tests need to account for new `account`/`session`/`verification` tables
+- [ ] (Optional) Add magic link plugin: `magicLink()` server plugin + email sending via Resend/SES
+- [ ] (Optional) Add email/password plugin: `emailAndPassword: { enabled: true }`
+- [ ] (Optional) Add 2FA plugin: `twoFactor()` for TOTP/OTP
