@@ -56,6 +56,7 @@ Always consult both files before making design decisions or implementing new fea
 
 ## Commands
 
+- **Full setup**: `bun run setup.ts` (installs deps, copies `.env.example`, sets up Postgres, generates SQLC).
 - Generate SQLC: `bun run sqlgen`.
 - Run dev: `bun run dev`.
 - Run tests: `bun run test`.
