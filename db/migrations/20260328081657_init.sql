@@ -96,10 +96,3 @@ CREATE TABLE reports (
 CREATE INDEX idx_reports_application ON reports(application_id);
 
 -- migrate:down
-
-DROP TABLE IF EXISTS reports;
-DROP TABLE IF EXISTS interviews;
-DROP TABLE IF EXISTS applications;
-DROP TABLE IF EXISTS jobs;
-DROP TABLE IF EXISTS companies;
-DROP TABLE IF EXISTS users;
