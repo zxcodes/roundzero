@@ -58,50 +58,60 @@ function CompanyOnboardingPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Create your company</CardTitle>
-          <CardDescription>
-            Set up your company profile to start posting jobs and reviewing candidates.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              form.handleSubmit();
-            }}
-            className="space-y-4"
-          >
-            <form.AppField
-              name="name"
-              children={(field) => (
-                <field.TextField
-                  label="Company name"
-                  placeholder="Acme Inc."
-                  required
-                  maxLength={100}
-                />
-              )}
-            />
-            <form.AppField
-              name="description"
-              children={(field) => (
-                <field.TextareaField
-                  label="Description"
-                  placeholder="What does your company do?"
-                  maxLength={500}
-                  rows={3}
-                />
-              )}
-            />
-            <form.AppForm>
-              <form.SubmitButton label="Create company" submittingLabel="Creating..." />
-            </form.AppForm>
-          </form>
-        </CardContent>
-      </Card>
+    <div className="relative flex min-h-svh items-center justify-center p-6">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--color-primary)/5%,transparent_70%)]" />
+
+      <div className="animate-fade-in-up relative w-full max-w-md">
+        <div className="mb-8 flex justify-center">
+          <div className="flex size-12 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/20">
+            <span className="text-lg font-bold text-primary-foreground">H</span>
+          </div>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-xl">Create your company</CardTitle>
+            <CardDescription>
+              Set up your company profile to start posting jobs and reviewing candidates.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                form.handleSubmit();
+              }}
+              className="space-y-4"
+            >
+              <form.AppField
+                name="name"
+                children={(field) => (
+                  <field.TextField
+                    label="Company name"
+                    placeholder="Acme Inc."
+                    required
+                    maxLength={100}
+                  />
+                )}
+              />
+              <form.AppField
+                name="description"
+                children={(field) => (
+                  <field.TextareaField
+                    label="Description"
+                    placeholder="What does your company do?"
+                    maxLength={500}
+                    rows={3}
+                  />
+                )}
+              />
+              <form.AppForm>
+                <form.SubmitButton label="Create company" submittingLabel="Creating..." />
+              </form.AppForm>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

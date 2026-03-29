@@ -37,25 +37,25 @@ function NewJobPage() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="animate-fade-in mx-auto max-w-3xl space-y-6">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" asChild>
+        <Button variant="ghost" size="icon" className="shrink-0" asChild>
           <Link to="/dashboard/jobs">
             <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
           </Link>
         </Button>
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Post a new job</h2>
-          <p className="text-muted-foreground">
+          <p className="mt-1 text-sm text-muted-foreground">
             Fill in the details below to create a new job posting.
           </p>
         </div>
       </div>
 
-      <Card>
+      <Card className="animate-fade-in stagger-1">
         <CardHeader>
           <CardTitle>Job details</CardTitle>
-          <CardDescription>
+          <CardDescription className="text-xs">
             Provide a clear title, description, and requirements to attract the right candidates.
           </CardDescription>
         </CardHeader>

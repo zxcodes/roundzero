@@ -84,28 +84,28 @@ export function ApplyForm({
                 <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-4" />
               </Button>
             </div>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-muted-foreground">
               GitHub, portfolio, LinkedIn, or any relevant links.
             </p>
             {linksField.state.value.length > 0 && (
-              <ul className="mt-2 space-y-1.5">
+              <ul className="mt-2 space-y-1">
                 {linksField.state.value.map((link, i) => (
                   <li
                     key={`${link}-${i}`}
-                    className="bg-muted flex items-center justify-between gap-2 rounded-md px-3 py-1.5 text-sm"
+                    className="flex items-center justify-between gap-2 rounded-md bg-muted px-3 py-2 text-sm"
                   >
                     <span className="flex items-center gap-1.5 truncate">
                       <HugeiconsIcon
                         icon={Link01Icon}
                         strokeWidth={2}
-                        className="text-muted-foreground size-3.5 shrink-0"
+                        className="size-3.5 shrink-0 text-muted-foreground"
                       />
                       <span className="truncate">{link}</span>
                     </span>
                     <button
                       type="button"
                       onClick={() => linksField.removeValue(i)}
-                      className="text-muted-foreground hover:text-foreground shrink-0"
+                      className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
                     >
                       <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-3.5" />
                     </button>

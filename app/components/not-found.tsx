@@ -5,21 +5,22 @@ import { Button } from "@/components/ui/button";
 
 export function NotFound() {
   return (
-    <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 p-6 text-center">
-      <div className="bg-muted flex size-16 items-center justify-center rounded-full">
+    <div className="animate-fade-in-up flex min-h-[50vh] flex-col items-center justify-center gap-5 p-6 text-center">
+      <div className="flex size-14 items-center justify-center rounded-2xl bg-muted">
         <HugeiconsIcon
           icon={Search01Icon}
           strokeWidth={2}
-          className="text-muted-foreground size-8"
+          className="size-7 text-muted-foreground"
         />
       </div>
-      <div className="space-y-2">
-        <h2 className="text-xl font-semibold tracking-tight">Page not found</h2>
-        <p className="text-muted-foreground max-w-md text-sm">
+      <div className="space-y-1.5">
+        <p className="font-mono text-6xl font-bold tracking-tighter text-foreground/10">404</p>
+        <h2 className="text-lg font-semibold tracking-tight">Page not found</h2>
+        <p className="max-w-sm text-sm text-muted-foreground">
           The page you're looking for doesn't exist or has been moved.
         </p>
       </div>
-      <Button asChild>
+      <Button size="sm" asChild>
         <Link to="/">Go home</Link>
       </Button>
     </div>

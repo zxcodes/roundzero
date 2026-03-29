@@ -77,11 +77,13 @@ function JobsListPage() {
 
 function CompanyJobsList({ jobs }: { jobs: Awaited<ReturnType<typeof getMyJobs>> }) {
   return (
-    <div className="space-y-6">
+    <div className="animate-fade-in space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Jobs</h2>
-          <p className="text-muted-foreground">Manage your job postings and track applicants.</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Manage your job postings and track applicants.
+          </p>
         </div>
         <Button asChild>
           <Link to="/dashboard/jobs/new">
@@ -92,25 +94,27 @@ function CompanyJobsList({ jobs }: { jobs: Awaited<ReturnType<typeof getMyJobs>>
       </div>
 
       {jobs.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16">
-          <HugeiconsIcon
-            icon={Briefcase01Icon}
-            strokeWidth={2}
-            className="text-muted-foreground mb-4 size-12"
-          />
-          <h3 className="text-lg font-semibold">No jobs yet</h3>
-          <p className="text-muted-foreground mt-1 mb-4 text-sm">
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-16">
+          <div className="mb-4 flex size-12 items-center justify-center rounded-xl bg-muted">
+            <HugeiconsIcon
+              icon={Briefcase01Icon}
+              strokeWidth={2}
+              className="size-6 text-muted-foreground"
+            />
+          </div>
+          <h3 className="text-sm font-semibold">No jobs yet</h3>
+          <p className="mt-1 mb-4 text-xs text-muted-foreground">
             Create your first job posting to start receiving applications.
           </p>
-          <Button asChild>
+          <Button size="sm" asChild>
             <Link to="/dashboard/jobs/new">
-              <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-4" />
+              <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-3.5" />
               Post a job
             </Link>
           </Button>
         </div>
       ) : (
-        <div className="rounded-lg border">
+        <div className="overflow-hidden rounded-xl border">
           <Table>
             <TableHeader>
               <TableRow>
@@ -134,10 +138,10 @@ function CompanyJobsList({ jobs }: { jobs: Awaited<ReturnType<typeof getMyJobs>>
                       {job.title}
                     </Link>
                   </TableCell>
-                  <TableCell className="text-muted-foreground text-sm">
+                  <TableCell className="text-sm text-muted-foreground">
                     {job.location || "—"}
                   </TableCell>
-                  <TableCell className="text-muted-foreground text-sm">
+                  <TableCell className="text-sm text-muted-foreground">
                     {job.employmentType
                       ? employmentTypeLabels[job.employmentType as EmploymentType]
                       : "—"}
@@ -147,7 +151,7 @@ function CompanyJobsList({ jobs }: { jobs: Awaited<ReturnType<typeof getMyJobs>>
                       {job.status}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
+                  <TableCell className="font-mono text-xs text-muted-foreground">
                     {formatDate(job.createdAt)}
                   </TableCell>
                   <TableCell className="text-right">
@@ -169,75 +173,81 @@ function CompanyJobsList({ jobs }: { jobs: Awaited<ReturnType<typeof getMyJobs>>
 
 function CandidateJobsList({ jobs }: { jobs: Awaited<ReturnType<typeof getOpenJobs>> }) {
   return (
-    <div className="space-y-6">
+    <div className="animate-fade-in space-y-6">
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Browse Jobs</h2>
-        <p className="text-muted-foreground">Find open positions and apply.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Find open positions and apply.</p>
       </div>
 
       {jobs.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16">
-          <HugeiconsIcon
-            icon={Briefcase01Icon}
-            strokeWidth={2}
-            className="text-muted-foreground mb-4 size-12"
-          />
-          <h3 className="text-lg font-semibold">No open jobs</h3>
-          <p className="text-muted-foreground mt-1 text-sm">
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-16">
+          <div className="mb-4 flex size-12 items-center justify-center rounded-xl bg-muted">
+            <HugeiconsIcon
+              icon={Briefcase01Icon}
+              strokeWidth={2}
+              className="size-6 text-muted-foreground"
+            />
+          </div>
+          <h3 className="text-sm font-semibold">No open jobs</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
             There are no open positions right now. Check back later.
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {jobs.map((job) => {
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {jobs.map((job, i) => {
             const salary = formatSalaryCompact(job.salaryMin, job.salaryMax, job.salaryCurrency);
             return (
               <Link
                 key={job.id}
                 to="/dashboard/jobs/$jobId"
                 params={{ jobId: job.id }}
-                className="group flex flex-col rounded-lg border p-5 transition-colors hover:border-foreground/20 hover:bg-muted/40"
+                className={`animate-fade-in stagger-${Math.min(i + 1, 6)} group flex flex-col rounded-xl border bg-card p-4 ring-1 ring-foreground/[0.03] transition-all hover:border-primary/30 hover:shadow-sm`}
               >
-                {/* Top: title + company */}
-                <div className="mb-3">
-                  <h3 className="font-semibold leading-tight group-hover:underline">{job.title}</h3>
-                  <p className="text-muted-foreground mt-0.5 text-sm">{job.companyName}</p>
+                <div className="mb-2.5">
+                  <h3 className="text-sm font-semibold leading-tight group-hover:text-primary transition-colors">
+                    {job.title}
+                  </h3>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{job.companyName}</p>
                 </div>
 
-                {/* Metadata tags */}
-                <div className="mb-3 flex flex-wrap gap-1.5">
+                <div className="mb-2.5 flex flex-wrap gap-1">
                   {job.location && (
-                    <Badge variant="secondary" className="gap-1 font-normal">
-                      <HugeiconsIcon icon={Location01Icon} strokeWidth={2} className="size-3" />
+                    <Badge variant="secondary" className="gap-1 text-[11px] font-normal">
+                      <HugeiconsIcon icon={Location01Icon} strokeWidth={2} className="size-2.5" />
                       {job.location}
                     </Badge>
                   )}
                   {job.workplaceType && (
-                    <Badge variant="secondary" className="font-normal">
+                    <Badge variant="secondary" className="text-[11px] font-normal">
                       {workplaceTypeLabels[job.workplaceType as WorkplaceType]}
                     </Badge>
                   )}
                   {job.employmentType && (
-                    <Badge variant="secondary" className="font-normal">
+                    <Badge variant="secondary" className="text-[11px] font-normal">
                       {employmentTypeLabels[job.employmentType as EmploymentType]}
                     </Badge>
                   )}
                   {job.experienceLevel && (
-                    <Badge variant="outline" className="font-normal">
+                    <Badge variant="outline" className="text-[11px] font-normal">
                       {experienceLevelLabels[job.experienceLevel as ExperienceLevel]}
                     </Badge>
                   )}
                 </div>
 
-                {/* Description snippet */}
-                <p className="text-muted-foreground mb-4 line-clamp-2 text-sm leading-relaxed">
+                <p className="mb-3 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
                   {job.description}
                 </p>
 
-                {/* Bottom: salary + date */}
                 <div className="mt-auto flex items-center justify-between">
-                  {salary ? <span className="text-sm font-medium">{salary}</span> : <span />}
-                  <span className="text-muted-foreground text-xs">{formatDate(job.createdAt)}</span>
+                  {salary ? (
+                    <span className="font-mono text-xs font-medium">{salary}</span>
+                  ) : (
+                    <span />
+                  )}
+                  <span className="font-mono text-[11px] text-muted-foreground">
+                    {formatDate(job.createdAt)}
+                  </span>
                 </div>
               </Link>
             );

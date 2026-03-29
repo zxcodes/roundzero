@@ -49,29 +49,33 @@ function MyApplicationsPage() {
   const applications = Route.useLoaderData();
 
   return (
-    <div className="space-y-6">
+    <div className="animate-fade-in space-y-6">
       <div>
         <h2 className="text-2xl font-bold tracking-tight">My Applications</h2>
-        <p className="text-muted-foreground">Track the status of your job applications.</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Track the status of your job applications.
+        </p>
       </div>
 
       {applications.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16">
-          <HugeiconsIcon
-            icon={Briefcase01Icon}
-            strokeWidth={2}
-            className="text-muted-foreground mb-4 size-12"
-          />
-          <h3 className="text-lg font-semibold">No applications yet</h3>
-          <p className="text-muted-foreground mt-1 mb-4 text-sm">
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-16">
+          <div className="mb-4 flex size-12 items-center justify-center rounded-xl bg-muted">
+            <HugeiconsIcon
+              icon={Briefcase01Icon}
+              strokeWidth={2}
+              className="size-6 text-muted-foreground"
+            />
+          </div>
+          <h3 className="text-sm font-semibold">No applications yet</h3>
+          <p className="mt-1 mb-4 text-xs text-muted-foreground">
             Browse open jobs and submit your first application.
           </p>
-          <Button asChild>
+          <Button size="sm" asChild>
             <Link to="/dashboard/jobs">Browse Jobs</Link>
           </Button>
         </div>
       ) : (
-        <div className="rounded-lg border">
+        <div className="animate-fade-in stagger-1 overflow-hidden rounded-xl border">
           <Table>
             <TableHeader>
               <TableRow>
@@ -89,18 +93,18 @@ function MyApplicationsPage() {
                     <Link
                       to="/dashboard/jobs/$jobId"
                       params={{ jobId: app.jobId }}
-                      className="hover:underline"
+                      className="transition-colors hover:text-primary hover:underline"
                     >
                       {app.jobTitle}
                     </Link>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{app.companyName}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{app.companyName}</TableCell>
                   <TableCell>
                     <Badge variant={statusVariant(app.status)} className="capitalize">
                       {formatStatus(app.status)}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
+                  <TableCell className="font-mono text-xs text-muted-foreground">
                     {formatDate(app.createdAt)}
                   </TableCell>
                   <TableCell className="text-right">

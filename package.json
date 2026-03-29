@@ -15,7 +15,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@fontsource-variable/figtree": "^5.2.10",
+    "@fontsource-variable/geist-mono": "^5.2.7",
+    "@fontsource-variable/plus-jakarta-sans": "^5.2.8",
     "@hugeicons/core-free-icons": "^4.0.0",
     "@hugeicons/react": "^1.1.6",
     "@react-oauth/google": "^0.13.4",

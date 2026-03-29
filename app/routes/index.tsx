@@ -31,16 +31,21 @@ function HomePage() {
 // ---------------------------------------------------------------------------
 function Nav() {
   return (
-    <header className="border-border/40 sticky top-0 z-50 border-b backdrop-blur-sm">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-8">
-        <span className="text-lg font-semibold tracking-tight">hirely</span>
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" className="text-muted-foreground" asChild>
+    <header className="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-xl backdrop-saturate-150">
+      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6 lg:px-8">
+        <Link to="/" className="flex items-center gap-2">
+          <div className="flex size-7 items-center justify-center rounded-lg bg-primary">
+            <span className="text-xs font-bold text-primary-foreground">H</span>
+          </div>
+          <span className="text-base font-semibold tracking-tight">hirely</span>
+        </Link>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" className="text-muted-foreground" asChild>
             <Link to="/login" search={{ redirect: "/dashboard" }}>
               Log in
             </Link>
           </Button>
-          <Button asChild>
+          <Button size="sm" asChild>
             <Link to="/login" search={{ redirect: "/dashboard" }}>
               Get started
             </Link>
@@ -52,65 +57,82 @@ function Nav() {
 }
 
 // ---------------------------------------------------------------------------
-// Hero — left text, right mock report card
+// Hero
 // ---------------------------------------------------------------------------
 function Hero() {
   return (
-    <section className="mx-auto grid max-w-7xl gap-16 px-8 py-28 lg:grid-cols-2 lg:items-center lg:py-36">
-      {/* Left */}
-      <div className="space-y-6">
-        <p className="text-muted-foreground text-sm font-medium tracking-wide uppercase">
-          Replace your first interview round
-        </p>
-        <h1 className="text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
-          AI interviews your candidates. You get the report.
-        </h1>
-        <p className="text-muted-foreground max-w-xl text-lg leading-relaxed">
-          Hirely conducts adaptive, structured interviews and produces scored candidate reports with
-          evidence — so your team only talks to people worth their time.
-        </p>
-        <div className="flex items-center gap-4 pt-2">
-          <Button size="lg" asChild>
-            <Link to="/login" search={{ redirect: "/dashboard" }}>
-              Start hiring{" "}
-              <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
-          <Button variant="ghost" size="lg" className="text-muted-foreground">
-            See how it works
-          </Button>
-        </div>
-      </div>
+    <section className="relative overflow-hidden">
+      {/* Subtle gradient background */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--color-primary)/6%,transparent_70%)]" />
 
-      {/* Right — mock report card */}
-      <div className="bg-card border-border/60 rounded-xl border p-6 shadow-sm lg:ml-auto lg:max-w-md">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-500">
-              Strong hire
-            </p>
-            <p className="mt-1.5 text-lg font-semibold">Sarah Chen</p>
-            <p className="text-muted-foreground text-sm">Senior Backend Engineer</p>
+      <div className="relative mx-auto grid max-w-6xl gap-12 px-6 py-24 lg:grid-cols-2 lg:items-center lg:gap-16 lg:px-8 lg:py-32">
+        {/* Left */}
+        <div className="animate-fade-in-up space-y-5">
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1">
+            <div className="size-1.5 animate-pulse rounded-full bg-primary" />
+            <span className="text-xs font-medium text-primary">
+              Replace your first interview round
+            </span>
           </div>
-          <div className="bg-primary/10 text-primary flex h-14 w-14 items-center justify-center rounded-full text-xl font-bold">
-            8.4
-          </div>
-        </div>
-
-        <div className="border-border/40 mt-5 border-t pt-5">
-          <div className="space-y-3">
-            <ScoreBar label="Technical" value={9.1} />
-            <ScoreBar label="Communication" value={7.8} />
-            <ScoreBar label="Experience" value={8.2} />
-          </div>
-        </div>
-
-        <div className="border-border/40 mt-5 space-y-2 border-t pt-5">
-          <p className="text-sm font-medium">Key insights</p>
-          <p className="text-muted-foreground text-sm leading-relaxed">
-            Strong system design instincts. Clearly articulated tradeoffs in distributed caching
-            question. Minor gap in observability tooling.
+          <h1 className="text-[2.5rem] font-extrabold leading-[1.08] tracking-tight sm:text-5xl lg:text-[3.5rem]">
+            AI interviews your{" "}
+            <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              candidates.
+            </span>
+            <br />
+            You get the report.
+          </h1>
+          <p className="max-w-lg text-base leading-relaxed text-muted-foreground lg:text-lg">
+            Hirely conducts adaptive, structured interviews and produces scored candidate reports
+            with evidence — so your team only talks to people worth their time.
           </p>
+          <div className="flex items-center gap-3 pt-1">
+            <Button size="lg" asChild>
+              <Link to="/login" search={{ redirect: "/dashboard" }}>
+                Start hiring
+                <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="ml-1 size-4" />
+              </Link>
+            </Button>
+            <Button variant="ghost" size="lg" className="text-muted-foreground">
+              See how it works
+            </Button>
+          </div>
+        </div>
+
+        {/* Right — mock report card */}
+        <div className="animate-fade-in-up stagger-2 lg:ml-auto lg:max-w-md">
+          <div className="rounded-xl border border-border/60 bg-card p-5 shadow-sm ring-1 ring-foreground/[0.03]">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-widest text-emerald-500">
+                  Strong hire
+                </p>
+                <p className="mt-1.5 text-base font-semibold">Sarah Chen</p>
+                <p className="text-sm text-muted-foreground">Senior Backend Engineer</p>
+              </div>
+              <div className="flex size-14 items-center justify-center rounded-full bg-primary/10 font-mono text-xl font-bold text-primary">
+                8.4
+              </div>
+            </div>
+
+            <div className="mt-5 border-t border-border/40 pt-5">
+              <div className="space-y-3">
+                <ScoreBar label="Technical" value={9.1} />
+                <ScoreBar label="Communication" value={7.8} />
+                <ScoreBar label="Experience" value={8.2} />
+              </div>
+            </div>
+
+            <div className="mt-5 space-y-1.5 border-t border-border/40 pt-5">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Key insights
+              </p>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                Strong system design instincts. Clearly articulated tradeoffs in distributed caching
+                question. Minor gap in observability tooling.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -120,35 +142,35 @@ function Hero() {
 function ScoreBar({ label, value }: { label: string; value: number }) {
   return (
     <div className="flex items-center gap-3 text-sm">
-      <span className="text-muted-foreground w-32 shrink-0">{label}</span>
-      <div className="bg-muted h-2 flex-1 overflow-hidden rounded-full">
+      <span className="w-28 shrink-0 text-muted-foreground">{label}</span>
+      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
         <div
-          className="bg-primary h-full rounded-full"
+          className="h-full rounded-full bg-primary transition-all duration-700 ease-out"
           style={{ width: `${(value / 10) * 100}%` }}
         />
       </div>
-      <span className="w-8 text-right font-medium">{value}</span>
+      <span className="w-8 text-right font-mono text-xs font-semibold">{value}</span>
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Section 1 — Interview (left mock chat, right text)
+// Section 1 — Interview
 // ---------------------------------------------------------------------------
 function InterviewSection() {
   return (
-    <section className="border-border/40 border-t">
-      <div className="mx-auto grid max-w-7xl gap-16 px-8 py-24 lg:grid-cols-2 lg:items-center">
+    <section className="border-t border-border/40">
+      <div className="mx-auto grid max-w-6xl gap-12 px-6 py-20 lg:grid-cols-2 lg:items-center lg:gap-16 lg:px-8 lg:py-28">
         {/* Left — mock chat */}
-        <div className="bg-card border-border/60 overflow-hidden rounded-xl border shadow-sm">
-          <div className="border-border/40 flex items-center gap-2 border-b px-5 py-3.5">
-            <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={2} className="text-primary h-5 w-5" />
+        <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm ring-1 ring-foreground/[0.03]">
+          <div className="flex items-center gap-2 border-b border-border/40 px-5 py-3">
+            <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={2} className="size-4 text-primary" />
             <span className="text-sm font-medium">Interview session</span>
-            <span className="bg-emerald-500/10 ml-auto rounded-full px-2.5 py-0.5 text-xs font-medium text-emerald-500">
+            <span className="ml-auto rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-500">
               In progress
             </span>
           </div>
-          <div className="space-y-3.5 p-5">
+          <div className="space-y-3 p-5">
             <ChatBubble
               sender="ai"
               text="You mentioned building a real-time notification system at your last role. Walk me through the architecture decisions you made."
@@ -165,40 +187,40 @@ function InterviewSection() {
         </div>
 
         {/* Right — text */}
-        <div className="space-y-5">
-          <p className="text-muted-foreground text-sm font-medium tracking-wide uppercase">
+        <div className="space-y-4">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
             Adaptive interviews
           </p>
-          <h2 className="text-3xl font-bold tracking-tight lg:text-4xl">
+          <h2 className="text-2xl font-bold tracking-tight lg:text-3xl">
             Questions that go deeper, not wider
           </h2>
-          <p className="text-muted-foreground text-lg leading-relaxed">
+          <p className="text-base leading-relaxed text-muted-foreground">
             Every interview adapts in real-time. The AI probes weak answers, validates strong
             claims, and detects inconsistencies between the resume and conversation — the way a
             senior interviewer would.
           </p>
-          <ul className="text-muted-foreground space-y-3 pt-1 text-base">
-            <li className="flex items-start gap-2.5">
+          <ul className="space-y-2.5 pt-1">
+            <li className="flex items-start gap-2.5 text-sm text-muted-foreground">
               <HugeiconsIcon
                 icon={ArrowRightDoubleIcon}
                 strokeWidth={2}
-                className="mt-1 h-4 w-4 shrink-0"
+                className="mt-0.5 size-4 shrink-0 text-primary/60"
               />
               Follow-up questions based on actual responses
             </li>
-            <li className="flex items-start gap-2.5">
+            <li className="flex items-start gap-2.5 text-sm text-muted-foreground">
               <HugeiconsIcon
                 icon={ArrowRightDoubleIcon}
                 strokeWidth={2}
-                className="mt-1 h-4 w-4 shrink-0"
+                className="mt-0.5 size-4 shrink-0 text-primary/60"
               />
               Scenario-based problems tailored to the role
             </li>
-            <li className="flex items-start gap-2.5">
+            <li className="flex items-start gap-2.5 text-sm text-muted-foreground">
               <HugeiconsIcon
                 icon={ArrowRightDoubleIcon}
                 strokeWidth={2}
-                className="mt-1 h-4 w-4 shrink-0"
+                className="mt-0.5 size-4 shrink-0 text-primary/60"
               />
               20-40 minutes, async, no scheduling needed
             </li>
@@ -213,8 +235,10 @@ function ChatBubble({ sender, text }: { sender: "ai" | "candidate"; text: string
   return (
     <div className={sender === "ai" ? "" : "flex justify-end"}>
       <div
-        className={`max-w-[85%] rounded-lg px-3.5 py-2.5 text-sm leading-relaxed ${
-          sender === "ai" ? "bg-muted text-foreground" : "bg-primary text-primary-foreground"
+        className={`max-w-[85%] rounded-xl px-3.5 py-2.5 text-[13px] leading-relaxed ${
+          sender === "ai"
+            ? "rounded-tl-sm bg-muted text-foreground"
+            : "rounded-tr-sm bg-primary text-primary-foreground"
         }`}
       >
         {text}
@@ -224,21 +248,21 @@ function ChatBubble({ sender, text }: { sender: "ai" | "candidate"; text: string
 }
 
 // ---------------------------------------------------------------------------
-// Section 2 — Report (left text, right mock report details)
+// Section 2 — Report
 // ---------------------------------------------------------------------------
 function ReportSection() {
   return (
-    <section className="border-border/40 border-t">
-      <div className="mx-auto grid max-w-7xl gap-16 px-8 py-24 lg:grid-cols-2 lg:items-center">
+    <section className="border-t border-border/40">
+      <div className="mx-auto grid max-w-6xl gap-12 px-6 py-20 lg:grid-cols-2 lg:items-center lg:gap-16 lg:px-8 lg:py-28">
         {/* Left — text */}
-        <div className="space-y-5">
-          <p className="text-muted-foreground text-sm font-medium tracking-wide uppercase">
+        <div className="space-y-4">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
             Candidate reports
           </p>
-          <h2 className="text-3xl font-bold tracking-tight lg:text-4xl">
+          <h2 className="text-2xl font-bold tracking-tight lg:text-3xl">
             Every score backed by evidence
           </h2>
-          <p className="text-muted-foreground text-lg leading-relaxed">
+          <p className="text-base leading-relaxed text-muted-foreground">
             No black-box ratings. Each report shows exactly what the candidate said, how it was
             evaluated, and why they scored the way they did. Your team sees the reasoning, not just
             a number.
@@ -246,34 +270,40 @@ function ReportSection() {
         </div>
 
         {/* Right — mock report breakdown */}
-        <div className="bg-card border-border/60 rounded-xl border shadow-sm lg:ml-auto lg:max-w-md">
-          <div className="border-border/40 border-b px-6 py-3.5">
-            <p className="text-sm font-medium">Report — Sarah Chen</p>
-          </div>
-          <div className="space-y-5 p-6">
-            <div>
-              <p className="mb-2.5 text-sm font-medium text-emerald-500">Strengths</p>
-              <ul className="space-y-2">
-                <ReportItem
-                  icon="check"
-                  text="Deep understanding of distributed systems tradeoffs"
-                />
-                <ReportItem icon="check" text="Clear, structured communication under pressure" />
-                <ReportItem
-                  icon="check"
-                  text="Demonstrated ownership of past projects, not just contribution"
-                />
-              </ul>
+        <div className="lg:ml-auto lg:max-w-md">
+          <div className="rounded-xl border border-border/60 bg-card shadow-sm ring-1 ring-foreground/[0.03]">
+            <div className="border-b border-border/40 px-5 py-3">
+              <p className="text-sm font-medium">Report — Sarah Chen</p>
             </div>
-            <div>
-              <p className="text-sm font-medium text-amber-500">Areas of concern</p>
-              <ul className="mt-2.5 space-y-2">
-                <ReportItem
-                  icon="flag"
-                  text="Limited exposure to observability beyond basic logging"
-                />
-                <ReportItem icon="flag" text="Gave a vague answer on CI/CD pipeline design" />
-              </ul>
+            <div className="space-y-5 p-5">
+              <div>
+                <p className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-emerald-500">
+                  Strengths
+                </p>
+                <ul className="space-y-2">
+                  <ReportItem
+                    icon="check"
+                    text="Deep understanding of distributed systems tradeoffs"
+                  />
+                  <ReportItem icon="check" text="Clear, structured communication under pressure" />
+                  <ReportItem
+                    icon="check"
+                    text="Demonstrated ownership of past projects, not just contribution"
+                  />
+                </ul>
+              </div>
+              <div>
+                <p className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-amber-500">
+                  Areas of concern
+                </p>
+                <ul className="space-y-2">
+                  <ReportItem
+                    icon="flag"
+                    text="Limited exposure to observability beyond basic logging"
+                  />
+                  <ReportItem icon="flag" text="Gave a vague answer on CI/CD pipeline design" />
+                </ul>
+              </div>
             </div>
           </div>
         </div>
@@ -284,18 +314,18 @@ function ReportSection() {
 
 function ReportItem({ icon, text }: { icon: "check" | "flag"; text: string }) {
   return (
-    <li className="text-muted-foreground flex items-start gap-2.5 text-sm leading-relaxed">
+    <li className="flex items-start gap-2.5 text-[13px] leading-relaxed text-muted-foreground">
       {icon === "check" ? (
         <HugeiconsIcon
           icon={CheckmarkCircle02Icon}
           strokeWidth={2}
-          className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500"
+          className="mt-0.5 size-3.5 shrink-0 text-emerald-500"
         />
       ) : (
         <HugeiconsIcon
           icon={Alert02Icon}
           strokeWidth={2}
-          className="mt-0.5 h-4 w-4 shrink-0 text-amber-500"
+          className="mt-0.5 size-3.5 shrink-0 text-amber-500"
         />
       )}
       {text}
@@ -304,20 +334,20 @@ function ReportItem({ icon, text }: { icon: "check" | "flag"; text: string }) {
 }
 
 // ---------------------------------------------------------------------------
-// Section 3 — Ranking (left mock ranked list, right text)
+// Section 3 — Ranking
 // ---------------------------------------------------------------------------
 function RankingSection() {
   return (
-    <section className="border-border/40 border-t">
-      <div className="mx-auto grid max-w-7xl gap-16 px-8 py-24 lg:grid-cols-2 lg:items-center">
+    <section className="border-t border-border/40">
+      <div className="mx-auto grid max-w-6xl gap-12 px-6 py-20 lg:grid-cols-2 lg:items-center lg:gap-16 lg:px-8 lg:py-28">
         {/* Left — mock ranked list */}
-        <div className="bg-card border-border/60 rounded-xl border shadow-sm">
-          <div className="border-border/40 flex items-center gap-2.5 border-b px-6 py-3.5">
-            <HugeiconsIcon icon={RankingIcon} strokeWidth={2} className="text-primary h-5 w-5" />
+        <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm ring-1 ring-foreground/[0.03]">
+          <div className="flex items-center gap-2.5 border-b border-border/40 px-5 py-3">
+            <HugeiconsIcon icon={RankingIcon} strokeWidth={2} className="size-4 text-primary" />
             <span className="text-sm font-medium">Senior Backend Engineer</span>
-            <span className="text-muted-foreground ml-auto text-xs">12 evaluated</span>
+            <span className="ml-auto font-mono text-xs text-muted-foreground">12 evaluated</span>
           </div>
-          <div className="divide-border/40 divide-y">
+          <div className="divide-y divide-border/40">
             <RankRow rank={1} name="Sarah Chen" score={8.4} rec="strong_hire" />
             <RankRow rank={2} name="Marcus Johnson" score={7.9} rec="strong_hire" />
             <RankRow rank={3} name="Priya Patel" score={7.2} rec="consider" />
@@ -326,14 +356,14 @@ function RankingSection() {
         </div>
 
         {/* Right — text */}
-        <div className="space-y-5">
-          <p className="text-muted-foreground text-sm font-medium tracking-wide uppercase">
+        <div className="space-y-4">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
             Ranked shortlists
           </p>
-          <h2 className="text-3xl font-bold tracking-tight lg:text-4xl">
+          <h2 className="text-2xl font-bold tracking-tight lg:text-3xl">
             Your top candidates, sorted and explained
           </h2>
-          <p className="text-muted-foreground text-lg leading-relaxed">
+          <p className="text-base leading-relaxed text-muted-foreground">
             Stop scrolling through 200 applications. Hirely scores every candidate across technical
             skill, communication, and experience depth — then gives you a ranked list with clear
             hire/pass recommendations.
@@ -367,13 +397,13 @@ function RankRow({
   };
 
   return (
-    <div className="flex items-center gap-4 px-6 py-3.5">
-      <span className="text-muted-foreground w-6 text-center text-sm font-medium">{rank}</span>
-      <span className="flex-1 font-medium">{name}</span>
-      <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${recStyles[rec]}`}>
+    <div className="flex items-center gap-4 px-5 py-3">
+      <span className="w-5 text-center font-mono text-xs text-muted-foreground">{rank}</span>
+      <span className="flex-1 text-sm font-medium">{name}</span>
+      <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${recStyles[rec]}`}>
         {recLabels[rec]}
       </span>
-      <span className="w-8 text-right font-semibold">{score}</span>
+      <span className="w-8 text-right font-mono text-sm font-semibold">{score}</span>
     </div>
   );
 }
@@ -383,21 +413,26 @@ function RankRow({
 // ---------------------------------------------------------------------------
 function BottomCTA() {
   return (
-    <section className="border-border/40 border-t">
-      <div className="mx-auto max-w-7xl px-8 py-28 text-center">
-        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-          Stop screening resumes. Start reviewing reports.
-        </h2>
-        <p className="text-muted-foreground mx-auto mt-4 max-w-lg text-lg leading-relaxed">
-          Post your first job and let Hirely handle the first round. Your team gets scored,
-          explained candidates — ready for a real conversation.
-        </p>
-        <Button size="lg" className="mt-10" asChild>
-          <Link to="/login" search={{ redirect: "/dashboard" }}>
-            Get started{" "}
-            <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="ml-2 h-4 w-4" />
-          </Link>
-        </Button>
+    <section className="border-t border-border/40">
+      <div className="relative mx-auto max-w-6xl px-6 py-24 text-center lg:px-8 lg:py-32">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,var(--color-primary)/4%,transparent_70%)]" />
+        <div className="relative">
+          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
+            Stop screening resumes.
+            <br />
+            Start reviewing reports.
+          </h2>
+          <p className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-muted-foreground">
+            Post your first job and let Hirely handle the first round. Your team gets scored,
+            explained candidates — ready for a real conversation.
+          </p>
+          <Button size="lg" className="mt-8" asChild>
+            <Link to="/login" search={{ redirect: "/dashboard" }}>
+              Get started
+              <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="ml-1 size-4" />
+            </Link>
+          </Button>
+        </div>
       </div>
     </section>
   );
@@ -408,12 +443,12 @@ function BottomCTA() {
 // ---------------------------------------------------------------------------
 function Footer() {
   return (
-    <footer className="border-border/40 border-t">
-      <div className="text-muted-foreground mx-auto flex max-w-7xl items-center justify-between px-8 py-8 text-sm">
+    <footer className="border-t border-border/40">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6 text-sm text-muted-foreground lg:px-8">
         <span>&copy; {new Date().getFullYear()} Hirely</span>
         <div className="flex gap-6">
-          <span className="hover:text-foreground cursor-pointer transition-colors">Privacy</span>
-          <span className="hover:text-foreground cursor-pointer transition-colors">Terms</span>
+          <span className="cursor-pointer transition-colors hover:text-foreground">Privacy</span>
+          <span className="cursor-pointer transition-colors hover:text-foreground">Terms</span>
         </div>
       </div>
     </footer>

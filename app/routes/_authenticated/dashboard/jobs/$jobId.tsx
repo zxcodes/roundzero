@@ -103,10 +103,10 @@ function JobDetailPage() {
   const salary = formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency);
 
   return (
-    <div className="space-y-6">
+    <div className="animate-fade-in space-y-6">
       {/* Header */}
       <div className="flex items-start gap-3">
-        <Button variant="ghost" size="icon" className="mt-1 shrink-0" asChild>
+        <Button variant="ghost" size="icon" className="mt-0.5 shrink-0" asChild>
           <Link to="/dashboard/jobs">
             <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
           </Link>
@@ -118,9 +118,14 @@ function JobDetailPage() {
               {job.status}
             </Badge>
           </div>
-          <p className="text-muted-foreground text-sm">
-            Created {formatDate(job.createdAt)}
-            {job.updatedAt !== job.createdAt && ` · Updated ${formatDate(job.updatedAt)}`}
+          <p className="mt-1 text-xs text-muted-foreground">
+            <span className="font-mono">{formatDate(job.createdAt)}</span>
+            {job.updatedAt !== job.createdAt && (
+              <>
+                {" "}
+                · Updated <span className="font-mono">{formatDate(job.updatedAt)}</span>
+              </>
+            )}
           </p>
         </div>
       </div>
@@ -128,10 +133,10 @@ function JobDetailPage() {
       {isCompany && <CompanyActions job={job} requirements={requirements} />}
 
       {/* Main content — two-column on large screens */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-5 lg:grid-cols-3">
         {/* Left column — description + requirements */}
-        <div className="space-y-6 lg:col-span-2">
-          <Card>
+        <div className="space-y-5 lg:col-span-2">
+          <Card className="animate-fade-in stagger-1">
             <CardHeader>
               <CardTitle>Description</CardTitle>
             </CardHeader>
@@ -141,14 +146,15 @@ function JobDetailPage() {
           </Card>
 
           {requirements.length > 0 && (
-            <Card>
+            <Card className="animate-fade-in stagger-2">
               <CardHeader>
                 <CardTitle>Requirements</CardTitle>
               </CardHeader>
               <CardContent>
-                <ul className="list-inside list-disc space-y-1.5">
+                <ul className="space-y-2">
                   {requirements.map((req, i) => (
-                    <li key={`${req}-${i}`} className="text-sm">
+                    <li key={`${req}-${i}`} className="flex items-start gap-2.5 text-sm">
+                      <span className="mt-2 block size-1 shrink-0 rounded-full bg-primary" />
                       {req}
                     </li>
                   ))}
@@ -161,11 +167,13 @@ function JobDetailPage() {
         </div>
 
         {/* Right column — metadata sidebar */}
-        <div className="space-y-6">
+        <div className="space-y-5">
           {/* Job metadata card */}
-          <Card>
+          <Card className="animate-fade-in stagger-2">
             <CardHeader>
-              <CardTitle className="text-base">Job details</CardTitle>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
+                Job details
+              </p>
             </CardHeader>
             <CardContent className="space-y-4">
               {job.location && (
@@ -173,12 +181,12 @@ function JobDetailPage() {
                   <HugeiconsIcon
                     icon={Location01Icon}
                     strokeWidth={2}
-                    className="text-muted-foreground mt-0.5 size-4 shrink-0"
+                    className="mt-0.5 size-4 shrink-0 text-muted-foreground"
                   />
                   <div>
                     <p className="text-sm font-medium">{job.location}</p>
                     {job.workplaceType && (
-                      <p className="text-muted-foreground text-xs">
+                      <p className="text-xs text-muted-foreground">
                         {workplaceTypeLabels[job.workplaceType as WorkplaceType]}
                       </p>
                     )}
@@ -188,7 +196,7 @@ function JobDetailPage() {
 
               {job.employmentType && (
                 <div className="flex items-center gap-3">
-                  <div className="bg-muted text-muted-foreground flex size-4 shrink-0 items-center justify-center rounded text-[10px] font-bold">
+                  <div className="flex size-4 shrink-0 items-center justify-center rounded bg-muted text-[10px] font-bold text-muted-foreground">
                     E
                   </div>
                   <p className="text-sm">
@@ -199,7 +207,7 @@ function JobDetailPage() {
 
               {job.experienceLevel && (
                 <div className="flex items-center gap-3">
-                  <div className="bg-muted text-muted-foreground flex size-4 shrink-0 items-center justify-center rounded text-[10px] font-bold">
+                  <div className="flex size-4 shrink-0 items-center justify-center rounded bg-muted text-[10px] font-bold text-muted-foreground">
                     L
                   </div>
                   <p className="text-sm">
@@ -215,11 +223,11 @@ function JobDetailPage() {
                     <HugeiconsIcon
                       icon={MoneyBag02Icon}
                       strokeWidth={2}
-                      className="text-muted-foreground mt-0.5 size-4 shrink-0"
+                      className="mt-0.5 size-4 shrink-0 text-muted-foreground"
                     />
                     <div>
-                      <p className="text-sm font-medium">{salary}</p>
-                      <p className="text-muted-foreground text-xs">Annual compensation</p>
+                      <p className="font-mono text-sm font-medium">{salary}</p>
+                      <p className="text-xs text-muted-foreground">Annual compensation</p>
                     </div>
                   </div>
                 </>
@@ -232,13 +240,19 @@ function JobDetailPage() {
                     <HugeiconsIcon
                       icon={UserGroupIcon}
                       strokeWidth={2}
-                      className="text-muted-foreground mt-0.5 size-4 shrink-0"
+                      className="mt-0.5 size-4 shrink-0 text-muted-foreground"
                     />
                     <div className="space-y-0.5">
-                      {job.teamSize && <p className="text-sm">{job.teamSize} people on team</p>}
+                      {job.teamSize && (
+                        <p className="text-sm">
+                          <span className="font-mono font-medium">{job.teamSize}</span> people on
+                          team
+                        </p>
+                      )}
                       {job.headcount && (
-                        <p className="text-muted-foreground text-xs">
-                          {job.headcount} open {job.headcount === 1 ? "position" : "positions"}
+                        <p className="text-xs text-muted-foreground">
+                          <span className="font-mono">{job.headcount}</span> open{" "}
+                          {job.headcount === 1 ? "position" : "positions"}
                         </p>
                       )}
                     </div>
@@ -300,40 +314,46 @@ function ApplicantsSection({
   };
 
   return (
-    <Card>
+    <Card className="animate-fade-in stagger-3">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <CardTitle>Applicants</CardTitle>
-            <Badge variant="secondary">{applicants.length}</Badge>
+            <Badge variant="secondary" className="font-mono text-[11px]">
+              {applicants.length}
+            </Badge>
           </div>
         </div>
-        <CardDescription>Review candidates and update their application status.</CardDescription>
+        <CardDescription className="text-xs">
+          Review candidates and update their application status.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         {applicants.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8">
-            <HugeiconsIcon
-              icon={UserGroupIcon}
-              strokeWidth={2}
-              className="text-muted-foreground mb-3 size-10"
-            />
-            <p className="text-muted-foreground text-sm">No one has applied yet.</p>
+            <div className="mb-3 flex size-10 items-center justify-center rounded-xl bg-muted">
+              <HugeiconsIcon
+                icon={UserGroupIcon}
+                strokeWidth={2}
+                className="size-5 text-muted-foreground"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">No one has applied yet.</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {applicants.map((applicant) => (
               <div
                 key={applicant.id}
-                className="flex items-center justify-between gap-3 rounded-lg border p-3"
+                className="flex items-center justify-between gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/50"
               >
                 <div className="flex items-center gap-3 overflow-hidden">
-                  <Avatar className="size-9">
+                  <Avatar className="size-8">
                     <AvatarImage
                       src={applicant.candidatePicture ?? undefined}
                       alt={applicant.candidateName}
                     />
-                    <AvatarFallback className="text-xs">
+                    <AvatarFallback className="text-[10px]">
                       {getInitials(applicant.candidateName)}
                     </AvatarFallback>
                   </Avatar>
@@ -343,9 +363,9 @@ function ApplicantsSection({
                       <HugeiconsIcon
                         icon={Mail01Icon}
                         strokeWidth={2}
-                        className="text-muted-foreground size-3"
+                        className="size-3 text-muted-foreground"
                       />
-                      <p className="text-muted-foreground truncate text-xs">
+                      <p className="truncate text-xs text-muted-foreground">
                         {applicant.candidateEmail}
                       </p>
                     </div>
@@ -356,7 +376,7 @@ function ApplicantsSection({
                   onValueChange={(value) => onStatusChange(applicant.id, value)}
                   disabled={updateStatusMutation.isPending}
                 >
-                  <SelectTrigger className="w-36">
+                  <SelectTrigger className="w-32">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -413,14 +433,14 @@ function CandidateApplySection({
 
   if (applied) {
     return (
-      <Card>
+      <Card className="animate-scale-in">
         <CardContent className="flex items-center justify-center gap-2 py-6">
           <HugeiconsIcon
             icon={CheckmarkCircle02Icon}
             strokeWidth={2}
-            className="text-muted-foreground size-5"
+            className="size-4 text-emerald-500"
           />
-          <p className="text-muted-foreground text-sm font-medium">You have already applied</p>
+          <p className="text-sm font-medium text-muted-foreground">You have already applied</p>
         </CardContent>
       </Card>
     );
@@ -428,10 +448,12 @@ function CandidateApplySection({
 
   if (showForm) {
     return (
-      <Card>
+      <Card className="animate-scale-in">
         <CardHeader>
-          <CardTitle className="text-base">Apply</CardTitle>
-          <CardDescription>Add your resume and any relevant links.</CardDescription>
+          <p className="text-[11px] font-bold uppercase tracking-widest text-primary">Apply</p>
+          <CardDescription className="text-xs">
+            Add your resume and any relevant links.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <ApplyForm onSubmit={onApply} />
@@ -512,10 +534,10 @@ function CompanyActions({
 
   if (isEditing) {
     return (
-      <Card>
+      <Card className="animate-scale-in">
         <CardHeader>
           <CardTitle>Edit job</CardTitle>
-          <CardDescription>
+          <CardDescription className="text-xs">
             Make changes to the job posting. Only &quot;Open&quot; jobs are visible to candidates.
           </CardDescription>
         </CardHeader>
@@ -549,12 +571,17 @@ function CompanyActions({
 
   return (
     <div className="flex gap-2">
-      <Button variant="outline" onClick={() => setIsEditing(true)}>
-        <HugeiconsIcon icon={Edit02Icon} strokeWidth={2} className="size-4" />
+      <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+        <HugeiconsIcon icon={Edit02Icon} strokeWidth={2} className="size-3.5" />
         Edit
       </Button>
-      <Button variant="destructive" onClick={onDelete} disabled={deleteJobMutation.isPending}>
-        <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} className="size-4" />
+      <Button
+        variant="destructive"
+        size="sm"
+        onClick={onDelete}
+        disabled={deleteJobMutation.isPending}
+      >
+        <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} className="size-3.5" />
         {deleteJobMutation.isPending ? "Deleting..." : "Delete"}
       </Button>
     </div>

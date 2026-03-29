@@ -159,7 +159,7 @@ export function JobForm({
 
       {/* Job metadata */}
       <div className="space-y-4">
-        <h3 className="text-sm font-medium">Job details</h3>
+        <p className="text-[11px] font-bold uppercase tracking-widest text-primary">Job details</p>
         <div className="grid gap-4 sm:grid-cols-2">
           <form.AppField
             name="location"
@@ -204,7 +204,7 @@ export function JobForm({
 
       {/* Compensation */}
       <div className="space-y-4">
-        <h3 className="text-sm font-medium">Compensation</h3>
+        <p className="text-[11px] font-bold uppercase tracking-widest text-primary">Compensation</p>
         <div className="grid gap-4 sm:grid-cols-3">
           <form.AppField
             name="salaryMin"
@@ -229,7 +229,7 @@ export function JobForm({
 
       {/* Team info */}
       <div className="space-y-4">
-        <h3 className="text-sm font-medium">Team</h3>
+        <p className="text-[11px] font-bold uppercase tracking-widest text-primary">Team</p>
         <div className="grid gap-4 sm:grid-cols-2">
           <form.AppField
             name="teamSize"
@@ -277,17 +277,20 @@ export function JobForm({
                 </Button>
               </div>
               {reqField.state.value.length > 0 && (
-                <ul className="mt-2 space-y-1.5">
+                <ul className="mt-2 space-y-1">
                   {reqField.state.value.map((req, i) => (
                     <li
                       key={`${req}-${i}`}
-                      className="bg-muted flex items-center justify-between gap-2 rounded-md px-3 py-1.5 text-sm"
+                      className="flex items-center justify-between gap-2 rounded-md bg-muted px-3 py-2 text-sm"
                     >
-                      <span>{req}</span>
+                      <span className="flex items-center gap-2">
+                        <span className="block size-1 shrink-0 rounded-full bg-primary" />
+                        {req}
+                      </span>
                       <button
                         type="button"
                         onClick={() => reqField.removeValue(i)}
-                        className="text-muted-foreground hover:text-foreground shrink-0"
+                        className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
                       >
                         <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-3.5" />
                       </button>

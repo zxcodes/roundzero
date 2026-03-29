@@ -29,22 +29,22 @@ const companyMain = [
   {
     title: "Overview",
     url: "/dashboard",
-    icon: <HugeiconsIcon icon={House01Icon} strokeWidth={2} className="size-5" />,
+    icon: <HugeiconsIcon icon={House01Icon} strokeWidth={2} className="size-4" />,
   },
   {
     title: "Jobs",
     url: "/dashboard/jobs",
-    icon: <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} className="size-5" />,
+    icon: <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} className="size-4" />,
   },
   {
     title: "Candidates",
     url: "/dashboard/candidates",
-    icon: <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} className="size-5" />,
+    icon: <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} className="size-4" />,
   },
   {
     title: "Analytics",
     url: "/dashboard/analytics",
-    icon: <HugeiconsIcon icon={ChartBarBigIcon} strokeWidth={2} className="size-5" />,
+    icon: <HugeiconsIcon icon={ChartBarBigIcon} strokeWidth={2} className="size-4" />,
   },
 ];
 
@@ -52,17 +52,17 @@ const candidateMain = [
   {
     title: "Overview",
     url: "/dashboard",
-    icon: <HugeiconsIcon icon={House01Icon} strokeWidth={2} className="size-5" />,
+    icon: <HugeiconsIcon icon={House01Icon} strokeWidth={2} className="size-4" />,
   },
   {
     title: "Browse Jobs",
     url: "/dashboard/jobs",
-    icon: <HugeiconsIcon icon={Search01Icon} strokeWidth={2} className="size-5" />,
+    icon: <HugeiconsIcon icon={Search01Icon} strokeWidth={2} className="size-4" />,
   },
   {
     title: "My Applications",
     url: "/dashboard/applications",
-    icon: <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} className="size-5" />,
+    icon: <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} className="size-4" />,
   },
 ];
 
@@ -70,17 +70,12 @@ const secondaryItems = [
   {
     title: "Settings",
     url: "/dashboard",
-    icon: <HugeiconsIcon icon={Settings01Icon} strokeWidth={2} className="size-5" />,
+    icon: <HugeiconsIcon icon={Settings01Icon} strokeWidth={2} className="size-4" />,
   },
   {
     title: "Get Help",
     url: "/dashboard",
-    icon: <HugeiconsIcon icon={HelpCircleIcon} strokeWidth={2} className="size-5" />,
-  },
-  {
-    title: "Search",
-    url: "/dashboard/jobs",
-    icon: <HugeiconsIcon icon={Search01Icon} strokeWidth={2} className="size-5" />,
+    icon: <HugeiconsIcon icon={HelpCircleIcon} strokeWidth={2} className="size-4" />,
   },
 ];
 
@@ -94,24 +89,31 @@ export function AppSidebar({
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
-        <p className="text-2xl font-semibold pl-1.5">hirely</p>
+        <Link to="/dashboard" className="flex items-center gap-2.5 px-1 py-0.5">
+          <div className="flex size-7 items-center justify-center rounded-lg bg-primary">
+            <span className="text-xs font-bold text-primary-foreground">H</span>
+          </div>
+          <span className="text-base font-semibold tracking-tight">hirely</span>
+        </Link>
       </SidebarHeader>
 
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent className="flex flex-col gap-2">
             <SidebarMenu>
-              <SidebarMenuItem className="flex items-center gap-2">
-                <SidebarMenuButton
-                  asChild
-                  className="bg-primary text-primary-foreground min-w-8 hover:bg-primary/90 hover:text-primary-foreground"
-                >
-                  <Link to="/dashboard/jobs/new">
-                    <HugeiconsIcon icon={AddCircleIcon} strokeWidth={2} className="size-4" />
-                    <span>Quick Create</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {isCompany && (
+                <SidebarMenuItem className="flex items-center gap-2">
+                  <SidebarMenuButton
+                    asChild
+                    className="bg-primary text-primary-foreground min-w-8 hover:bg-primary/90 hover:text-primary-foreground"
+                  >
+                    <Link to="/dashboard/jobs/new">
+                      <HugeiconsIcon icon={AddCircleIcon} strokeWidth={2} className="size-4" />
+                      <span>Post a job</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
