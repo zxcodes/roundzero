@@ -241,7 +241,7 @@ function CandidateJobsList({ jobs }: { jobs: Awaited<ReturnType<typeof getOpenJo
                 key={job.id}
                 to="/dashboard/jobs/$jobId"
                 params={{ jobId: job.id }}
-                className={`animate-fade-in stagger-${Math.min(i + 1, 6)} group flex flex-col rounded-xl border bg-card p-4 ring-1 ring-foreground/[0.03] transition-all hover:border-primary/30 hover:shadow-sm`}
+                className={`animate-fade-in stagger-${Math.min(i + 1, 6)} group flex flex-col rounded-xl border bg-card p-4 ring-1 ring-foreground/3 transition-all hover:border-primary/30 hover:shadow-sm`}
               >
                 <div className="mb-2.5">
                   <h3 className="text-sm font-semibold leading-tight group-hover:text-primary transition-colors">
