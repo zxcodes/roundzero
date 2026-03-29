@@ -60,7 +60,7 @@ function ChooseRolePage() {
           <button type="button" onClick={() => setSelectedRole("company")}>
             <div
               className={cn(
-                "rounded-xl border bg-card p-6 text-center ring-1 ring-foreground/[0.03] transition-all hover:border-primary/40 hover:shadow-sm",
+                "rounded-xl border bg-card p-6 text-center ring-1 ring-foreground/3 transition-all hover:border-primary/40 hover:shadow-sm",
                 selectedRole === "company" &&
                   "border-primary bg-primary/5 ring-primary/20 shadow-sm shadow-primary/10",
               )}
@@ -94,7 +94,7 @@ function ChooseRolePage() {
           <button type="button" onClick={() => setSelectedRole("candidate")}>
             <div
               className={cn(
-                "rounded-xl border bg-card p-6 text-center ring-1 ring-foreground/[0.03] transition-all hover:border-primary/40 hover:shadow-sm",
+                "rounded-xl border bg-card p-6 text-center ring-1 ring-foreground/3 transition-all hover:border-primary/40 hover:shadow-sm",
                 selectedRole === "candidate" &&
                   "border-primary bg-primary/5 ring-primary/20 shadow-sm shadow-primary/10",
               )}
