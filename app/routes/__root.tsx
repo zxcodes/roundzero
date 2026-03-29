@@ -5,6 +5,7 @@ import { createRootRouteWithContext, HeadContent, Outlet, Scripts } from "@tanst
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { NotFound } from "@/components/not-found";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/features/auth/provider";
 import { getCurrentUser } from "@/features/auth/server-fns";
 import { getThemeServerFn } from "@/lib/theme";
@@ -60,6 +61,7 @@ function RootComponent() {
       <AuthProvider>
         <ThemeProvider theme={theme}>
           <Outlet />
+          <Toaster />
         </ThemeProvider>
       </AuthProvider>
     </GoogleOAuthProvider>

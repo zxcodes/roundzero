@@ -1,11 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
-import { useSession } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { getUserById } from "@/features/auth/queries/queries_sql";
 import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
 import { getJobById } from "@/features/jobs/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { applicationStatusSchema } from "@/shared/enums";
+import { authMiddleware } from "@/shared/middleware";
 import {
   createApplication as createApplicationQuery,
   getApplicationById,
@@ -15,24 +15,6 @@ import {
   getApplicationsByJob,
   updateApplicationStatus as updateApplicationStatusQuery,
 } from "./queries/queries_sql";
-
-type SessionData = {
-  userId: string;
-};
-
-const sessionConfig = {
-  password: process.env.SESSION_SECRET!,
-  name: "hirely-session",
-  maxAge: 60 * 60 * 24 * 30,
-};
-
-const requireAuth = async () => {
-  const session = await useSession<SessionData>(sessionConfig);
-  if (!session.data.userId) {
-    throw new Error("Not authenticated");
-  }
-  return session.data.userId;
-};
 
 const applySchema = z.object({
   jobId: z.string().uuid(),
@@ -46,15 +28,15 @@ const updateStatusSchema = z.object({
 });
 
 export const applyToJob = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
   .inputValidator((data: { jobId: string; resumeUrl?: string | null; links?: string[] }) =>
     applySchema.parse(data),
   )
-  .handler(async ({ data }) => {
-    const userId = await requireAuth();
+  .handler(async ({ data, context }) => {
     const db = getDb();
 
     // Only candidates can apply
-    const user = await getUserById(db, { id: userId });
+    const user = await getUserById(db, { id: context.userId });
     if (!user || user.role !== "candidate") {
       throw new Error("Only candidates can apply to jobs");
     }
@@ -71,7 +53,7 @@ export const applyToJob = createServerFn({ method: "POST" })
     // Check if already applied
     const existing = await getApplicationByJobAndCandidate(db, {
       jobId: data.jobId,
-      candidateId: userId,
+      candidateId: context.userId,
     });
     if (existing) {
       throw new Error("You have already applied to this job");
@@ -79,7 +61,7 @@ export const applyToJob = createServerFn({ method: "POST" })
 
     const application = await createApplicationQuery(db, {
       jobId: data.jobId,
-      candidateId: userId,
+      candidateId: context.userId,
       resumeUrl: data.resumeUrl ?? null,
       links: JSON.stringify(data.links),
     });
@@ -91,23 +73,30 @@ export const applyToJob = createServerFn({ method: "POST" })
     return { application };
   });
 
-export const getMyApplications = createServerFn({ method: "GET" }).handler(async () => {
-  const userId = await requireAuth();
-  const db = getDb();
-  const applications = await getApplicationsByCandidate(db, {
-    candidateId: userId,
+export const getMyApplications = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }) => {
+    const db = getDb();
+
+    const user = await getUserById(db, { id: context.userId });
+    if (!user || user.role !== "candidate") {
+      throw new Error("Only candidates can view applications");
+    }
+
+    const applications = await getApplicationsByCandidate(db, {
+      candidateId: context.userId,
+    });
+    return applications;
   });
-  return applications;
-});
 
 export const getJobApplicants = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
   .inputValidator((data: { jobId: string }) => z.object({ jobId: z.string().uuid() }).parse(data))
-  .handler(async ({ data }) => {
-    const userId = await requireAuth();
+  .handler(async ({ data, context }) => {
     const db = getDb();
 
     // Verify this user owns the company that owns the job
-    const company = await getCompanyByOwnerId(db, { ownerId: userId });
+    const company = await getCompanyByOwnerId(db, { ownerId: context.userId });
     if (!company) {
       throw new Error("No company found");
     }
@@ -122,9 +111,9 @@ export const getJobApplicants = createServerFn({ method: "GET" })
   });
 
 export const getApplicationDetail = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
   .inputValidator((data: { id: string }) => z.object({ id: z.string().uuid() }).parse(data))
-  .handler(async ({ data }) => {
-    const userId = await requireAuth();
+  .handler(async ({ data, context }) => {
     const db = getDb();
 
     const application = await getApplicationById(db, { id: data.id });
@@ -133,8 +122,8 @@ export const getApplicationDetail = createServerFn({ method: "GET" })
     }
 
     // Only the candidate or the company owner can view
-    if (application.candidateId !== userId) {
-      const company = await getCompanyByOwnerId(db, { ownerId: userId });
+    if (application.candidateId !== context.userId) {
+      const company = await getCompanyByOwnerId(db, { ownerId: context.userId });
       if (!company) {
         throw new Error("Not authorized");
       }
@@ -147,12 +136,19 @@ export const getApplicationDetail = createServerFn({ method: "GET" })
     return application;
   });
 
+const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
+  applied: ["interviewing", "rejected"],
+  interviewing: ["evaluated", "rejected"],
+  evaluated: ["rejected"],
+  rejected: [],
+};
+
 export const updateApplicationStatus = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
   .inputValidator((data: { applicationId: string; status: string }) =>
     updateStatusSchema.parse(data),
   )
-  .handler(async ({ data }) => {
-    const userId = await requireAuth();
+  .handler(async ({ data, context }) => {
     const db = getDb();
 
     // Only the company owner can update status
@@ -163,7 +159,7 @@ export const updateApplicationStatus = createServerFn({ method: "POST" })
       throw new Error("Application not found");
     }
 
-    const company = await getCompanyByOwnerId(db, { ownerId: userId });
+    const company = await getCompanyByOwnerId(db, { ownerId: context.userId });
     if (!company) {
       throw new Error("Not authorized");
     }
@@ -171,6 +167,13 @@ export const updateApplicationStatus = createServerFn({ method: "POST" })
     const job = await getJobById(db, { id: application.jobId });
     if (!job || job.companyId !== company.id) {
       throw new Error("Not authorized");
+    }
+
+    // Validate status transition
+    const currentStatus = application.status;
+    const allowedTransitions = VALID_STATUS_TRANSITIONS[currentStatus] ?? [];
+    if (!allowedTransitions.includes(data.status)) {
+      throw new Error(`Cannot transition from "${currentStatus}" to "${data.status}"`);
     }
 
     const updated = await updateApplicationStatusQuery(db, {
@@ -186,13 +189,13 @@ export const updateApplicationStatus = createServerFn({ method: "POST" })
   });
 
 export const getApplicationCount = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
   .inputValidator((data: { jobId: string }) => z.object({ jobId: z.string().uuid() }).parse(data))
-  .handler(async ({ data }) => {
-    const userId = await requireAuth();
+  .handler(async ({ data, context }) => {
     const db = getDb();
 
     // Only the company owner of this job can view the count
-    const company = await getCompanyByOwnerId(db, { ownerId: userId });
+    const company = await getCompanyByOwnerId(db, { ownerId: context.userId });
     if (!company) {
       throw new Error("Not authorized");
     }
@@ -207,13 +210,19 @@ export const getApplicationCount = createServerFn({ method: "GET" })
   });
 
 export const hasApplied = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
   .inputValidator((data: { jobId: string }) => z.object({ jobId: z.string().uuid() }).parse(data))
-  .handler(async ({ data }) => {
-    const userId = await requireAuth();
+  .handler(async ({ data, context }) => {
     const db = getDb();
+
+    const user = await getUserById(db, { id: context.userId });
+    if (!user || user.role !== "candidate") {
+      return false;
+    }
+
     const existing = await getApplicationByJobAndCandidate(db, {
       jobId: data.jobId,
-      candidateId: userId,
+      candidateId: context.userId,
     });
     return !!existing;
   });

@@ -8,6 +8,7 @@ import {
   Location01Icon,
   Mail01Icon,
   MoneyBag02Icon,
+  Rocket01Icon,
   UserGroupIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -16,6 +17,17 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,7 +48,7 @@ import {
   updateApplicationStatus,
 } from "@/features/applications/server-fns";
 import { JobForm, type JobFormData } from "@/features/jobs/components/job-form";
-import { deleteJob, getJob, updateJob } from "@/features/jobs/server-fns";
+import { deleteJob, getJob, publishJob, updateJob } from "@/features/jobs/server-fns";
 import {
   type EmploymentType,
   type ExperienceLevel,
@@ -121,8 +133,14 @@ function JobDetailPage() {
             </Badge>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
+            {job.companyName && (
+              <>
+                <span className="font-medium text-foreground">{job.companyName}</span>
+                {" \u00B7 "}
+              </>
+            )}
             <span className="font-mono">{formatDate(job.createdAt)}</span>
-            {job.updatedAt !== job.createdAt && (
+            {new Date(job.updatedAt).getTime() !== new Date(job.createdAt).getTime() && (
               <>
                 {" "}
                 · Updated <span className="font-mono">{formatDate(job.updatedAt)}</span>
@@ -281,6 +299,13 @@ const APPLICATION_STATUSES = [
   { value: "rejected", label: "Rejected" },
 ];
 
+const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
+  applied: ["applied", "interviewing", "rejected"],
+  interviewing: ["interviewing", "evaluated", "rejected"],
+  evaluated: ["evaluated", "rejected"],
+  rejected: ["rejected"],
+};
+
 const getInitials = (name: string) => {
   return name
     .split(" ")
@@ -309,8 +334,8 @@ function ApplicantsSection({
     },
   });
 
-  const onStatusChange = (applicationId: string, status: string) => {
-    updateStatusMutation.mutate({
+  const onStatusChange = async (applicationId: string, status: string) => {
+    await updateStatusMutation.mutateAsync({
       data: { applicationId, status },
     });
   };
@@ -386,7 +411,9 @@ function ApplicantsSection({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {APPLICATION_STATUSES.map((s) => (
+                        {APPLICATION_STATUSES.filter((s) =>
+                          (VALID_STATUS_TRANSITIONS[applicant.status] ?? []).includes(s.value),
+                        ).map((s) => (
                           <SelectItem key={s.value} value={s.value}>
                             {s.label}
                           </SelectItem>
@@ -463,8 +490,8 @@ function CandidateApplySection({
     },
   });
 
-  const onApply = (data: { resumeUrl: string | null; links: string[] }) => {
-    applyMutation.mutate({
+  const onApply = async (data: { resumeUrl: string | null; links: string[] }) => {
+    await applyMutation.mutateAsync({
       data: {
         jobId,
         resumeUrl: data.resumeUrl,
@@ -542,6 +569,18 @@ function CompanyActions({
     },
   });
 
+  const publishJobFn = useServerFn(publishJob);
+  const publishJobMutation = useMutation({
+    mutationFn: publishJobFn,
+    onSuccess: async () => {
+      toast.success("Job published successfully");
+      await router.invalidate();
+    },
+    onError: () => {
+      toast.error("Failed to publish job. Please try again.");
+    },
+  });
+
   const deleteJobFn = useServerFn(deleteJob);
   const deleteJobMutation = useMutation({
     mutationFn: deleteJobFn,
@@ -555,8 +594,12 @@ function CompanyActions({
     },
   });
 
-  const onUpdate = (data: JobFormData) => {
-    updateJobMutation.mutate({
+  const onPublish = async () => {
+    await publishJobMutation.mutateAsync({ data: { id: job.id } });
+  };
+
+  const onUpdate = async (data: JobFormData) => {
+    await updateJobMutation.mutateAsync({
       data: {
         id: job.id,
         ...data,
@@ -564,14 +607,8 @@ function CompanyActions({
     });
   };
 
-  const onDelete = () => {
-    if (
-      !window.confirm("Are you sure you want to delete this job? This action cannot be undone.")
-    ) {
-      return;
-    }
-
-    deleteJobMutation.mutate({ data: { id: job.id } });
+  const onDelete = async () => {
+    await deleteJobMutation.mutateAsync({ data: { id: job.id } });
   };
 
   if (isEditing) {
@@ -613,19 +650,47 @@ function CompanyActions({
 
   return (
     <div className="flex gap-2">
+      {job.status === "draft" && (
+        <Button
+          variant="default"
+          size="sm"
+          onClick={onPublish}
+          disabled={publishJobMutation.isPending}
+        >
+          <HugeiconsIcon icon={Rocket01Icon} strokeWidth={2} className="size-3.5" />
+          {publishJobMutation.isPending ? "Publishing..." : "Publish"}
+        </Button>
+      )}
       <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
         <HugeiconsIcon icon={Edit02Icon} strokeWidth={2} className="size-3.5" />
         Edit
       </Button>
-      <Button
-        variant="destructive"
-        size="sm"
-        onClick={onDelete}
-        disabled={deleteJobMutation.isPending}
-      >
-        <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} className="size-3.5" />
-        {deleteJobMutation.isPending ? "Deleting..." : "Delete"}
-      </Button>
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button variant="destructive" size="sm" disabled={deleteJobMutation.isPending}>
+            <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} className="size-3.5" />
+            {deleteJobMutation.isPending ? "Deleting..." : "Delete"}
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this job?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the job posting and all associated applications. This
+              action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={onDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

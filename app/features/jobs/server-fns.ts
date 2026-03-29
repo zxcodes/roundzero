@@ -1,5 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { useSession } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
 import { getDb } from "@/shared/db";
@@ -9,6 +8,7 @@ import {
   jobStatusSchema,
   workplaceTypeSchema,
 } from "@/shared/enums";
+import { authMiddleware, companyMiddleware } from "@/shared/middleware";
 import {
   createJob as createJobQuery,
   deleteJob as deleteJobQuery,
@@ -18,49 +18,31 @@ import {
   updateJob as updateJobQuery,
 } from "./queries/queries_sql";
 
-type SessionData = {
-  userId: string;
-};
-
-const sessionConfig = {
-  password: process.env.SESSION_SECRET!,
-  name: "hirely-session",
-  maxAge: 60 * 60 * 24 * 30,
-};
-
-const requireAuth = async () => {
-  const session = await useSession<SessionData>(sessionConfig);
-  if (!session.data.userId) {
-    throw new Error("Not authenticated");
-  }
-  return session.data.userId;
-};
-
-const requireCompany = async () => {
-  const userId = await requireAuth();
-  const db = getDb();
-  const company = await getCompanyByOwnerId(db, { ownerId: userId });
-  if (!company) {
-    throw new Error("No company found");
-  }
-  return { userId, company };
-};
-
-const jobFieldsSchema = z.object({
-  title: z.string().min(1, "Job title is required").max(200),
-  description: z.string().min(1, "Job description is required").max(5000),
-  requirements: z.array(z.string()).default([]),
-  status: jobStatusSchema.default("draft"),
-  location: z.string().max(200).nullable().optional(),
-  workplaceType: workplaceTypeSchema.nullable().optional(),
-  employmentType: employmentTypeSchema.nullable().optional(),
-  experienceLevel: experienceLevelSchema.nullable().optional(),
-  salaryMin: z.number().int().positive().nullable().optional(),
-  salaryMax: z.number().int().positive().nullable().optional(),
-  salaryCurrency: z.string().max(10).default("USD"),
-  teamSize: z.number().int().positive().nullable().optional(),
-  headcount: z.number().int().positive().nullable().optional(),
-});
+const jobFieldsSchema = z
+  .object({
+    title: z.string().min(1, "Job title is required").max(200),
+    description: z.string().min(1, "Job description is required").max(5000),
+    requirements: z.array(z.string()).default([]),
+    status: jobStatusSchema.default("draft"),
+    location: z.string().max(200).nullable().optional(),
+    workplaceType: workplaceTypeSchema.nullable().optional(),
+    employmentType: employmentTypeSchema.nullable().optional(),
+    experienceLevel: experienceLevelSchema.nullable().optional(),
+    salaryMin: z.number().int().positive().nullable().optional(),
+    salaryMax: z.number().int().positive().nullable().optional(),
+    salaryCurrency: z.string().max(10).default("USD"),
+    teamSize: z.number().int().positive().nullable().optional(),
+    headcount: z.number().int().positive().nullable().optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.salaryMin != null && data.salaryMax != null) {
+        return data.salaryMin <= data.salaryMax;
+      }
+      return true;
+    },
+    { message: "Minimum salary cannot exceed maximum salary", path: ["salaryMin"] },
+  );
 
 const updateJobSchema = jobFieldsSchema.extend({
   id: z.string().uuid(),
@@ -71,13 +53,13 @@ const deleteJobSchema = z.object({
 });
 
 export const createJob = createServerFn({ method: "POST" })
+  .middleware([companyMiddleware])
   .inputValidator((data: z.input<typeof jobFieldsSchema>) => jobFieldsSchema.parse(data))
-  .handler(async ({ data }) => {
-    const { company } = await requireCompany();
+  .handler(async ({ data, context }) => {
     const db = getDb();
 
     const job = await createJobQuery(db, {
-      companyId: company.id,
+      companyId: context.company.id,
       title: data.title,
       description: data.description,
       requirements: JSON.stringify(data.requirements),
@@ -100,21 +82,22 @@ export const createJob = createServerFn({ method: "POST" })
     return { job };
   });
 
-export const getMyJobs = createServerFn({ method: "GET" }).handler(async () => {
-  const userId = await requireAuth();
-  const db = getDb();
-  const company = await getCompanyByOwnerId(db, { ownerId: userId });
-  if (!company) {
-    return [];
-  }
-  const jobs = await getJobsByCompanyId(db, { companyId: company.id });
-  return jobs;
-});
+export const getMyJobs = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }) => {
+    const db = getDb();
+    const company = await getCompanyByOwnerId(db, { ownerId: context.userId });
+    if (!company) {
+      return [];
+    }
+    const jobs = await getJobsByCompanyId(db, { companyId: company.id });
+    return jobs;
+  });
 
 export const getJob = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
   .inputValidator((data: { id: string }) => deleteJobSchema.parse(data))
-  .handler(async ({ data }) => {
-    const userId = await requireAuth();
+  .handler(async ({ data, context }) => {
     const db = getDb();
     const job = await getJobById(db, { id: data.id });
     if (!job) {
@@ -123,7 +106,7 @@ export const getJob = createServerFn({ method: "GET" })
 
     // Non-open jobs are only visible to the company owner
     if (job.status !== "open") {
-      const company = await getCompanyByOwnerId(db, { ownerId: userId });
+      const company = await getCompanyByOwnerId(db, { ownerId: context.userId });
       if (!company || company.id !== job.companyId) {
         throw new Error("Job not found");
       }
@@ -133,14 +116,14 @@ export const getJob = createServerFn({ method: "GET" })
   });
 
 export const updateJob = createServerFn({ method: "POST" })
+  .middleware([companyMiddleware])
   .inputValidator((data: z.input<typeof updateJobSchema>) => updateJobSchema.parse(data))
-  .handler(async ({ data }) => {
-    const { company } = await requireCompany();
+  .handler(async ({ data, context }) => {
     const db = getDb();
 
     const job = await updateJobQuery(db, {
       id: data.id,
-      companyId: company.id,
+      companyId: context.company.id,
       title: data.title,
       description: data.description,
       requirements: JSON.stringify(data.requirements),
@@ -164,11 +147,11 @@ export const updateJob = createServerFn({ method: "POST" })
   });
 
 export const deleteJob = createServerFn({ method: "POST" })
+  .middleware([companyMiddleware])
   .inputValidator((data: { id: string }) => deleteJobSchema.parse(data))
-  .handler(async ({ data }) => {
-    const { company } = await requireCompany();
+  .handler(async ({ data, context }) => {
     const db = getDb();
-    await deleteJobQuery(db, { id: data.id, companyId: company.id });
+    await deleteJobQuery(db, { id: data.id, companyId: context.company.id });
     return { success: true };
   });
 
@@ -177,3 +160,47 @@ export const getOpenJobs = createServerFn({ method: "GET" }).handler(async () =>
   const jobs = await getOpenJobsQuery(db);
   return jobs;
 });
+
+const publishJobSchema = z.object({
+  id: z.string().uuid(),
+});
+
+export const publishJob = createServerFn({ method: "POST" })
+  .middleware([companyMiddleware])
+  .inputValidator((data: { id: string }) => publishJobSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    const db = getDb();
+
+    const job = await getJobById(db, { id: data.id });
+    if (!job || job.companyId !== context.company.id) {
+      throw new Error("Job not found or not authorized");
+    }
+
+    if (job.status !== "draft") {
+      throw new Error("Only draft jobs can be published");
+    }
+
+    const updated = await updateJobQuery(db, {
+      id: data.id,
+      companyId: context.company.id,
+      title: job.title,
+      description: job.description,
+      requirements: JSON.stringify(job.requirements),
+      status: "open",
+      location: job.location,
+      workplaceType: job.workplaceType,
+      employmentType: job.employmentType,
+      experienceLevel: job.experienceLevel,
+      salaryMin: job.salaryMin,
+      salaryMax: job.salaryMax,
+      salaryCurrency: job.salaryCurrency,
+      teamSize: job.teamSize,
+      headcount: job.headcount,
+    });
+
+    if (!updated) {
+      throw new Error("Failed to publish job");
+    }
+
+    return { job: updated };
+  });

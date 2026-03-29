@@ -14,9 +14,11 @@ WHERE company_id = $1
 ORDER BY created_at DESC;
 
 -- name: getJobById :one
-SELECT *
-FROM jobs
-WHERE id = $1;
+SELECT j.*,
+       c.name AS company_name
+FROM jobs j
+JOIN companies c ON c.id = j.company_id
+WHERE j.id = $1;
 
 -- name: updateJob :one
 UPDATE jobs

@@ -1,6 +1,6 @@
 import { Briefcase01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,6 +14,11 @@ import {
 import { getMyApplications } from "@/features/applications/server-fns";
 
 export const Route = createFileRoute("/_authenticated/dashboard/applications")({
+  beforeLoad: ({ context }) => {
+    if (!context.isCandidate) {
+      throw redirect({ to: "/dashboard" });
+    }
+  },
   loader: () => getMyApplications(),
   component: MyApplicationsPage,
 });

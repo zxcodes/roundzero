@@ -2,17 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { getDb } from "@/shared/db";
+import { authMiddleware } from "@/shared/middleware";
+import { type SessionData, sessionConfig } from "@/shared/session";
 import { createCompany as createCompanyQuery, getCompanyByOwnerId } from "./queries/queries_sql";
-
-type SessionData = {
-  userId: string;
-};
-
-const sessionConfig = {
-  password: process.env.SESSION_SECRET!,
-  name: "hirely-session",
-  maxAge: 60 * 60 * 24 * 30,
-};
 
 const createCompanySchema = z.object({
   name: z.string().min(1, "Company name is required").max(100),
@@ -20,25 +12,20 @@ const createCompanySchema = z.object({
 });
 
 export const createCompany = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
   .inputValidator((data: { name: string; description?: string }) => createCompanySchema.parse(data))
-  .handler(async ({ data }) => {
-    const session = await useSession<SessionData>(sessionConfig);
-
-    if (!session.data.userId) {
-      throw new Error("Not authenticated");
-    }
-
+  .handler(async ({ data, context }) => {
     const db = getDb();
 
     const existing = await getCompanyByOwnerId(db, {
-      ownerId: session.data.userId,
+      ownerId: context.userId,
     });
     if (existing) {
       throw new Error("You already have a company");
     }
 
     const company = await createCompanyQuery(db, {
-      ownerId: session.data.userId,
+      ownerId: context.userId,
       name: data.name,
       description: data.description ?? null,
     });

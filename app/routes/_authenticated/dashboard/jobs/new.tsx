@@ -1,7 +1,7 @@
 import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,11 @@ import { JobForm, type JobFormData } from "@/features/jobs/components/job-form";
 import { createJob } from "@/features/jobs/server-fns";
 
 export const Route = createFileRoute("/_authenticated/dashboard/jobs/new")({
+  beforeLoad: ({ context }) => {
+    if (!context.isCompany) {
+      throw redirect({ to: "/dashboard" });
+    }
+  },
   component: NewJobPage,
 });
 
@@ -32,8 +37,8 @@ function NewJobPage() {
     },
   });
 
-  const onSubmit = (data: JobFormData) => {
-    createJobMutation.mutate({ data });
+  const onSubmit = async (data: JobFormData) => {
+    await createJobMutation.mutateAsync({ data });
   };
 
   return (

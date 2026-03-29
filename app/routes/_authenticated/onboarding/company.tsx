@@ -37,13 +37,13 @@ function CompanyOnboardingPage() {
       name: "",
       description: "",
     },
-    onSubmit: ({ value }) => {
+    onSubmit: async ({ value }) => {
       if (!value.name.trim()) {
         toast.error("Company name is required");
         return;
       }
 
-      createCompanyMutation.mutate({
+      await createCompanyMutation.mutateAsync({
         data: {
           name: value.name.trim(),
           description: value.description.trim() || undefined,

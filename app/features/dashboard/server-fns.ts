@@ -1,5 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { useSession } from "@tanstack/react-start/server";
 import {
   countApplicationsByCandidate,
   countApplicationsByCompany,
@@ -8,24 +7,7 @@ import { getUserById } from "@/features/auth/queries/queries_sql";
 import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
 import { countJobsByCompanyAndStatus } from "@/features/jobs/queries/queries_sql";
 import { getDb } from "@/shared/db";
-
-type SessionData = {
-  userId: string;
-};
-
-const sessionConfig = {
-  password: process.env.SESSION_SECRET!,
-  name: "hirely-session",
-  maxAge: 60 * 60 * 24 * 30,
-};
-
-const requireAuth = async () => {
-  const session = await useSession<SessionData>(sessionConfig);
-  if (!session.data.userId) {
-    throw new Error("Not authenticated");
-  }
-  return session.data.userId;
-};
+import { authMiddleware } from "@/shared/middleware";
 
 export type CompanyMetrics = {
   type: "company";
@@ -45,18 +27,18 @@ export type CandidateMetrics = {
 
 export type DashboardMetrics = CompanyMetrics | CandidateMetrics;
 
-export const getDashboardMetrics = createServerFn({ method: "GET" }).handler(
-  async (): Promise<DashboardMetrics> => {
-    const userId = await requireAuth();
+export const getDashboardMetrics = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }): Promise<DashboardMetrics> => {
     const db = getDb();
 
-    const user = await getUserById(db, { id: userId });
+    const user = await getUserById(db, { id: context.userId });
     if (!user?.role) {
       throw new Error("User not found or role not set");
     }
 
     if (user.role === "company") {
-      const company = await getCompanyByOwnerId(db, { ownerId: userId });
+      const company = await getCompanyByOwnerId(db, { ownerId: context.userId });
       if (!company) {
         return { type: "company", openRoles: 0, draftJobs: 0, totalJobs: 0, totalApplicants: 0 };
       }
@@ -76,7 +58,7 @@ export const getDashboardMetrics = createServerFn({ method: "GET" }).handler(
     }
 
     // Candidate
-    const counts = await countApplicationsByCandidate(db, { candidateId: userId });
+    const counts = await countApplicationsByCandidate(db, { candidateId: context.userId });
 
     return {
       type: "candidate",
@@ -85,5 +67,4 @@ export const getDashboardMetrics = createServerFn({ method: "GET" }).handler(
       interviewInvites: counts?.interviewingCount ?? 0,
       evaluationsReceived: counts?.evaluatedCount ?? 0,
     };
-  },
-);
+  });

@@ -126,9 +126,11 @@ export async function getJobsByCompanyId(sql: Sql, args: getJobsByCompanyIdArgs)
 }
 
 export const getJobByIdQuery = `-- name: getJobById :one
-SELECT id, company_id, title, description, requirements, status, location, workplace_type, employment_type, experience_level, salary_min, salary_max, salary_currency, team_size, headcount, created_at, updated_at
-FROM jobs
-WHERE id = $1`;
+SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.status, j.location, j.workplace_type, j.employment_type, j.experience_level, j.salary_min, j.salary_max, j.salary_currency, j.team_size, j.headcount, j.created_at, j.updated_at,
+       c.name AS company_name
+FROM jobs j
+JOIN companies c ON c.id = j.company_id
+WHERE j.id = $1`;
 
 export interface getJobByIdArgs {
     id: string;
@@ -152,6 +154,7 @@ export interface getJobByIdRow {
     headcount: number | null;
     createdAt: Date;
     updatedAt: Date;
+    companyName: string;
 }
 
 export async function getJobById(sql: Sql, args: getJobByIdArgs): Promise<getJobByIdRow | null> {
@@ -177,7 +180,8 @@ export async function getJobById(sql: Sql, args: getJobByIdArgs): Promise<getJob
         teamSize: row[13],
         headcount: row[14],
         createdAt: row[15],
-        updatedAt: row[16]
+        updatedAt: row[16],
+        companyName: row[17]
     };
 }
 

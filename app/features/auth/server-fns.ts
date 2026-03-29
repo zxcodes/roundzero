@@ -3,21 +3,13 @@ import { clearSession, updateSession, useSession } from "@tanstack/react-start/s
 import { z } from "zod";
 import { getDb } from "@/shared/db";
 import { userRoleSchema } from "@/shared/enums";
+import { authMiddleware } from "@/shared/middleware";
+import { type SessionData, sessionConfig } from "@/shared/session";
 import {
   getUserById,
   setUserRole as setUserRoleQuery,
   upsertUserByGoogleId,
 } from "./queries/queries_sql";
-
-type SessionData = {
-  userId: string;
-};
-
-const sessionConfig = {
-  password: process.env.SESSION_SECRET!,
-  name: "hirely-session",
-  maxAge: 60 * 60 * 24 * 30, // 30 days
-};
 
 const googleAuthSchema = z.object({
   access_token: z.string().min(1),
@@ -80,18 +72,13 @@ const setRoleSchema = z.object({
 });
 
 export const setRole = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
   .inputValidator((data: { role: string }) => setRoleSchema.parse(data))
-  .handler(async ({ data }) => {
-    const session = await useSession<SessionData>(sessionConfig);
-
-    if (!session.data.userId) {
-      throw new Error("Not authenticated");
-    }
-
+  .handler(async ({ data, context }) => {
     const db = getDb();
     const user = await setUserRoleQuery(db, {
       role: data.role,
-      id: session.data.userId,
+      id: context.userId,
     });
 
     if (!user) {

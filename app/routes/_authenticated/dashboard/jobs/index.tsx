@@ -1,6 +1,14 @@
-import { Add01Icon, Briefcase01Icon, Location01Icon } from "@hugeicons/core-free-icons";
+import {
+  Add01Icon,
+  Briefcase01Icon,
+  Location01Icon,
+  Rocket01Icon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMutation } from "@tanstack/react-query";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getMyJobs, getOpenJobs } from "@/features/jobs/server-fns";
+import { getMyJobs, getOpenJobs, publishJob } from "@/features/jobs/server-fns";
 import {
   type EmploymentType,
   type ExperienceLevel,
@@ -76,6 +84,24 @@ function JobsListPage() {
 }
 
 function CompanyJobsList({ jobs }: { jobs: Awaited<ReturnType<typeof getMyJobs>> }) {
+  const router = useRouter();
+
+  const publishJobFn = useServerFn(publishJob);
+  const publishJobMutation = useMutation({
+    mutationFn: publishJobFn,
+    onSuccess: async () => {
+      toast.success("Job published successfully");
+      await router.invalidate();
+    },
+    onError: () => {
+      toast.error("Failed to publish job. Please try again.");
+    },
+  });
+
+  const onPublish = async (jobId: string) => {
+    await publishJobMutation.mutateAsync({ data: { id: jobId } });
+  };
+
   return (
     <div className="animate-fade-in space-y-6">
       <div className="flex items-center justify-between">
@@ -139,12 +165,12 @@ function CompanyJobsList({ jobs }: { jobs: Awaited<ReturnType<typeof getMyJobs>>
                     </Link>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {job.location || "—"}
+                    {job.location || "\u2014"}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {job.employmentType
                       ? employmentTypeLabels[job.employmentType as EmploymentType]
-                      : "—"}
+                      : "\u2014"}
                   </TableCell>
                   <TableCell>
                     <Badge variant={statusVariant(job.status)} className="capitalize">
@@ -155,11 +181,24 @@ function CompanyJobsList({ jobs }: { jobs: Awaited<ReturnType<typeof getMyJobs>>
                     {formatDate(job.createdAt)}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link to="/dashboard/jobs/$jobId" params={{ jobId: job.id }}>
-                        View
-                      </Link>
-                    </Button>
+                    <div className="flex items-center justify-end gap-1">
+                      {job.status === "draft" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onPublish(job.id)}
+                          disabled={publishJobMutation.isPending}
+                        >
+                          <HugeiconsIcon icon={Rocket01Icon} strokeWidth={2} className="size-3.5" />
+                          Publish
+                        </Button>
+                      )}
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link to="/dashboard/jobs/$jobId" params={{ jobId: job.id }}>
+                          View
+                        </Link>
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
