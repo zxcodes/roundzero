@@ -4,7 +4,7 @@ import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query
 import { ErrorBoundary } from "./components/error-boundary";
 import { NotFound } from "./components/not-found";
 import { RouteSpinner } from "./components/route-spinner";
-import type { getCurrentUser } from "./features/auth/server-fns";
+import type { getCurrentUser } from "./features/auth/server/functions";
 import { routeTree } from "./routeTree.gen";
 
 export type User = NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>;

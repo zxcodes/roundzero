@@ -52,14 +52,16 @@ app/
 │
 ├── features/
 │   ├── auth/
-│   │   ├── server-fns.ts          # Google OAuth login/logout/session
+│   │   ├── server/
+│   │   │   └── functions.ts       # Google OAuth login/logout/session
 │   │   ├── provider.tsx           # Auth context
 │   │   ├── queries/               # SQLC: users table
 │   │   └── services/
 │   │       └── session.ts
 │   │
 │   ├── jobs/
-│   │   ├── server-fns.ts          # CRUD for jobs
+│   │   ├── server/
+│   │   │   └── functions.ts       # CRUD for jobs
 │   │   ├── components/
 │   │   │   ├── job-form.tsx
 │   │   │   ├── job-card.tsx
@@ -69,7 +71,8 @@ app/
 │   │       └── job.ts
 │   │
 │   ├── applications/
-│   │   ├── server-fns.ts          # Apply, upload resume, status
+│   │   ├── server/
+│   │   │   └── functions.ts       # Apply, upload resume, status
 │   │   ├── components/
 │   │   │   ├── apply-form.tsx
 │   │   │   └── application-list.tsx
@@ -78,7 +81,8 @@ app/
 │   │       └── application.ts
 │   │
 │   ├── interviews/
-│   │   ├── server-fns.ts          # Create/fetch interview sessions
+│   │   ├── server/
+│   │   │   └── functions.ts       # Create/fetch interview sessions
 │   │   ├── components/
 │   │   │   ├── interview-chat.tsx  # Main chat UI (useAgentChat)
 │   │   │   └── interview-status.tsx
@@ -87,7 +91,8 @@ app/
 │   │       └── interview.ts
 │   │
 │   ├── reports/
-│   │   ├── server-fns.ts          # Fetch/list candidate reports
+│   │   ├── server/
+│   │   │   └── functions.ts       # Fetch/list candidate reports
 │   │   ├── components/
 │   │   │   ├── report-card.tsx
 │   │   │   ├── report-detail.tsx
@@ -97,7 +102,8 @@ app/
 │   │       └── report.ts
 │   │
 │   └── ranking/
-│       ├── server-fns.ts          # Ranked candidate list per job
+│       ├── server/
+│       │   └── functions.ts       # Ranked candidate list per job
 │       ├── components/
 │       │   └── ranked-list.tsx
 │       └── queries/               # SQLC: ranking views/queries

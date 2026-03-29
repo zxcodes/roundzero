@@ -4,7 +4,7 @@ import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { setRole } from "@/features/auth/server-fns";
+import { setRole } from "@/features/auth/server/functions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/choose-role")({

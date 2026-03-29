@@ -7,7 +7,7 @@ import { NotFound } from "@/components/not-found";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/features/auth/provider";
-import { getCurrentUser } from "@/features/auth/server-fns";
+import { getCurrentUser } from "@/features/auth/server/functions";
 import { getThemeServerFn } from "@/lib/theme";
 import type { RouterContext } from "@/router";
 

@@ -14,7 +14,7 @@ import {
   getApplicationsByCandidate,
   getApplicationsByJob,
   updateApplicationStatus as updateApplicationStatusQuery,
-} from "./queries/queries_sql";
+} from "../queries/queries_sql";
 
 const applySchema = z.object({
   jobId: z.string().uuid(),

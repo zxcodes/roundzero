@@ -9,7 +9,7 @@ import {
   getUserById,
   setUserRole as setUserRoleQuery,
   upsertUserByGoogleId,
-} from "./queries/queries_sql";
+} from "../queries/queries_sql";
 
 const googleAuthSchema = z.object({
   access_token: z.string().min(1),

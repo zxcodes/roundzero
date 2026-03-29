@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getMyApplications } from "@/features/applications/server-fns";
+import { getMyApplications } from "@/features/applications/server/functions";
 
 export const Route = createFileRoute("/_authenticated/dashboard/applications")({
   beforeLoad: ({ context }) => {

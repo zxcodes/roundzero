@@ -4,7 +4,7 @@ import { z } from "zod";
 import { getDb } from "@/shared/db";
 import { authMiddleware } from "@/shared/middleware";
 import { type SessionData, sessionConfig } from "@/shared/session";
-import { createCompany as createCompanyQuery, getCompanyByOwnerId } from "./queries/queries_sql";
+import { createCompany as createCompanyQuery, getCompanyByOwnerId } from "../queries/queries_sql";
 
 const createCompanySchema = z.object({
   name: z.string().min(1, "Company name is required").max(100),

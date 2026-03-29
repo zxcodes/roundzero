@@ -4,7 +4,7 @@ import {
   type CandidateMetrics,
   type CompanyMetrics,
   getDashboardMetrics,
-} from "@/features/dashboard/server-fns";
+} from "@/features/dashboard/server/functions";
 
 export const Route = createFileRoute("/_authenticated/dashboard/")({
   loader: async () => {

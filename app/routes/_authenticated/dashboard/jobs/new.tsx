@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { JobForm, type JobFormData } from "@/features/jobs/components/job-form";
-import { createJob } from "@/features/jobs/server-fns";
+import { createJob } from "@/features/jobs/server/functions";
 
 export const Route = createFileRoute("/_authenticated/dashboard/jobs/new")({
   beforeLoad: ({ context }) => {

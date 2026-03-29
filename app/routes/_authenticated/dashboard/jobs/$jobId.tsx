@@ -46,9 +46,9 @@ import {
   getJobApplicants,
   hasApplied,
   updateApplicationStatus,
-} from "@/features/applications/server-fns";
+} from "@/features/applications/server/functions";
 import { JobForm, type JobFormData } from "@/features/jobs/components/job-form";
-import { deleteJob, getJob, publishJob, updateJob } from "@/features/jobs/server-fns";
+import { deleteJob, getJob, publishJob, updateJob } from "@/features/jobs/server/functions";
 import {
   type EmploymentType,
   type ExperienceLevel,

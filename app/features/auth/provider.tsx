@@ -2,7 +2,7 @@ import { type TokenResponse, useGoogleLogin } from "@react-oauth/google";
 import { useRouter } from "@tanstack/react-router";
 import { createContext, use, useCallback } from "react";
 import { toast } from "sonner";
-import { loginWithGoogle, logout } from "./server-fns";
+import { loginWithGoogle, logout } from "./server/functions";
 
 interface AuthContextType {
   signIn: () => void;

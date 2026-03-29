@@ -3,7 +3,7 @@ import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { createCompany, getMyCompany } from "@/features/companies/server-fns";
+import { createCompany, getMyCompany } from "@/features/companies/server/functions";
 import { useAppForm } from "@/shared/form";
 
 export const Route = createFileRoute("/_authenticated/onboarding/company")({

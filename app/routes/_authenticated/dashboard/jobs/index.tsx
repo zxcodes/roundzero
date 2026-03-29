@@ -19,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getMyJobs, getOpenJobs, publishJob } from "@/features/jobs/server-fns";
+import { getMyJobs, getOpenJobs, publishJob } from "@/features/jobs/server/functions";
 import {
   type EmploymentType,
   type ExperienceLevel,

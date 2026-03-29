@@ -16,7 +16,7 @@ import {
   getJobsByCompanyId,
   getOpenJobs as getOpenJobsQuery,
   updateJob as updateJobQuery,
-} from "./queries/queries_sql";
+} from "../queries/queries_sql";
 
 const jobFieldsSchema = z
   .object({

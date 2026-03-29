@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { getMyCompany } from "@/features/companies/server-fns";
+import { getMyCompany } from "@/features/companies/server/functions";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   beforeLoad: async ({ context }) => {
