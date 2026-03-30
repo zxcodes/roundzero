@@ -88,7 +88,8 @@ CREATE TABLE public.interviews (
     status text DEFAULT 'pending'::text NOT NULL,
     started_at timestamp with time zone,
     completed_at timestamp with time zone,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -252,14 +253,6 @@ ALTER TABLE ONLY public.schema_migrations
 
 
 --
--- Name: users users_email_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.users
-    ADD CONSTRAINT users_email_key UNIQUE (email);
-
-
---
 -- Name: users users_google_id_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -304,13 +297,6 @@ CREATE INDEX idx_companies_owner ON public.companies USING btree (owner_id);
 
 
 --
--- Name: idx_companies_slug; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX idx_companies_slug ON public.companies USING btree (slug);
-
-
---
 -- Name: idx_interviews_application; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -343,6 +329,13 @@ CREATE INDEX idx_jobs_status ON public.jobs USING btree (status);
 --
 
 CREATE INDEX idx_reports_application ON public.reports USING btree (application_id);
+
+
+--
+-- Name: idx_users_email; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_users_email ON public.users USING btree (lower(email));
 
 
 --

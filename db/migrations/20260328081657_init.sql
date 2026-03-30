@@ -3,7 +3,7 @@
 -- Users: both company admins and candidates
 CREATE TABLE users (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email       TEXT UNIQUE NOT NULL,
+  email       TEXT NOT NULL,
   name        TEXT NOT NULL,
   picture     TEXT,
   role        TEXT,
@@ -11,6 +11,8 @@ CREATE TABLE users (
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+CREATE UNIQUE INDEX idx_users_email ON users(LOWER(email));
 
 -- Companies
 CREATE TABLE companies (
@@ -33,7 +35,6 @@ CREATE TABLE companies (
 );
 
 CREATE INDEX idx_companies_owner ON companies(owner_id);
-CREATE UNIQUE INDEX idx_companies_slug ON companies(slug);
 
 -- Candidate profiles
 CREATE TABLE candidate_profiles (
@@ -102,7 +103,8 @@ CREATE TABLE interviews (
   status          TEXT NOT NULL DEFAULT 'pending',
   started_at      TIMESTAMPTZ,
   completed_at    TIMESTAMPTZ,
-  created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX idx_interviews_application ON interviews(application_id);
