@@ -208,7 +208,7 @@ function CompanyCard({ company, className }: { company: CompanyFromLoader; class
         <CardContent className="space-y-4">
           {/* Header row */}
           <div className="flex items-start gap-3.5">
-            <Avatar className="size-11 rounded-xl ring-1 ring-border/40">
+            <Avatar className="size-11 rounded-xl">
               {company.logoUrl ? <AvatarImage src={company.logoUrl} alt={company.name} /> : null}
               <AvatarFallback className="rounded-xl text-xs font-semibold">
                 {initials}

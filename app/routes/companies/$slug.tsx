@@ -80,7 +80,7 @@ function CompanyProfilePage() {
             </Link>
 
             <div className="animate-fade-in mt-8 flex flex-col gap-6 sm:flex-row sm:items-start">
-              <Avatar className="size-16 rounded-xl ring-2 ring-border/40">
+              <Avatar className="size-16 rounded-xl">
                 {company.logoUrl ? <AvatarImage src={company.logoUrl} alt={company.name} /> : null}
                 <AvatarFallback className="rounded-xl text-lg font-bold">{initials}</AvatarFallback>
               </Avatar>
