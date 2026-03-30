@@ -2,7 +2,7 @@
 
 ## Key References
 
-- **`PLATFORM.md`** — Product specification. Read this first to understand what Hirely does, the user types, system flow, agent architecture, interview mechanics, report structure, and MVP scope.
+- **`PLATFORM.md`** — Product specification. Read this first to understand what RoundZero does, the user types, system flow, agent architecture, interview mechanics, report structure, and MVP scope.
 - **`ARCHITECTURE.md`** — Technical architecture. Covers stack, deployment, directory structure, database schema, agent design (InterviewAgent + EvaluationAgent), AI model strategy, auth flow, file storage, and phased build plan.
 
 Always consult both files before making design decisions or implementing new features. They are the source of truth for product behavior and technical implementation.
@@ -69,7 +69,7 @@ Always consult both files before making design decisions or implementing new fea
 
 ## Testing
 
-- **Two separate Postgres containers**: dev (`hirely_pg`, port 6311) and test (`hirely_pg_test`, port 6312). Tests never touch dev data.
+- **Two separate Postgres containers**: dev (`rz_pg_dev`, port 6311) and test (`rz_pg_test`, port 6312). Tests never touch dev data.
 - **`TEST_DATABASE_URL`** in `.env` points to the test container. `test-utils.ts` reads this to create a separate Postgres client.
 - **Run tests**: `bun run test`. This runs `vitest run` (Vitest 4).
 - **Setup both DBs**: `bash setup-db.sh setup_pg` creates dev + test containers and migrates both.

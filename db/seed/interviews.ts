@@ -17,7 +17,7 @@ async function seedInterviews() {
       SELECT a.id
       FROM applications a
       JOIN users u ON u.id = a.candidate_id
-      WHERE u.google_id LIKE 'hirely-seed-candidate-google-%'
+      WHERE u.google_id LIKE 'rz-seed-candidate-google-%'
       ORDER BY a.created_at ASC
       LIMIT 25
     )
@@ -37,9 +37,9 @@ async function seedInterviews() {
         : null;
 
     return {
-      id: makeUuid("hirely-seed-interview", index + 1),
+      id: makeUuid("rz-seed-interview", index + 1),
       applicationId: application.id,
-      agentId: status === "pending" ? null : `agent-hirely-seed-${index + 1}`,
+      agentId: status === "pending" ? null : `agent-rz-seed-${index + 1}`,
       status,
       startedAt,
       completedAt,

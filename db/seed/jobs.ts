@@ -130,7 +130,7 @@ async function seedJobs() {
     SELECT c.id, c.name
     FROM companies c
     JOIN users u ON u.id = c.owner_id
-    WHERE u.google_id LIKE 'hirely-seed-company-google-%'
+    WHERE u.google_id LIKE 'rz-seed-company-google-%'
     ORDER BY c.created_at ASC
     LIMIT 20
   `;
@@ -163,7 +163,7 @@ async function seedJobs() {
     const company = companies[companyIndex]!;
 
     for (let n = 0; n < 2; n++) {
-      const seed = `hirely-seed-job-${counter}`;
+      const seed = `rz-seed-job-${counter}`;
       const title = pick(template.roleTitles, randomInt(`${seed}-title`, 0, 999));
       const description = buildDescription(company.name, title, template, seed);
       const requirements = buildRequirements(template, seed);
@@ -185,7 +185,7 @@ async function seedJobs() {
       const headcount = randomInt(`${seed}-headcount`, 1, 4);
 
       jobs.push({
-        id: makeUuid("hirely-seed-job", counter),
+        id: makeUuid("rz-seed-job", counter),
         companyId: company.id,
         title,
         description,

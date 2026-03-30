@@ -34,7 +34,7 @@ async function seedReports() {
     JOIN applications a ON a.id = i.application_id
     JOIN users u ON u.id = a.candidate_id
     WHERE i.status = 'completed'
-      AND u.google_id LIKE 'hirely-seed-candidate-google-%'
+      AND u.google_id LIKE 'rz-seed-candidate-google-%'
     ORDER BY i.created_at ASC
     LIMIT 20
   `;
@@ -50,7 +50,7 @@ async function seedReports() {
     const problemSolving = clampScore(8 - (index % 3));
 
     return {
-      id: makeUuidFromSeed(`hirely-seed-report-${interview.id}`),
+      id: makeUuidFromSeed(`rz-seed-report-${interview.id}`),
       interviewId: interview.id,
       applicationId: interview.application_id,
       summary:

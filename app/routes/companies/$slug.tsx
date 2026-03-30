@@ -11,6 +11,7 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PublicFooter, PublicHeader } from "@/components/public-layout";
+import { CompanyDetailSkeleton } from "@/components/route-skeletons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,7 @@ export const Route = createFileRoute("/companies/$slug")({
     const jobs = await getOpenJobsByCompanyId({ data: { companyId: company.id } });
     return { company, jobs };
   },
+  pendingComponent: CompanyDetailSkeleton,
   component: CompanyProfilePage,
 });
 

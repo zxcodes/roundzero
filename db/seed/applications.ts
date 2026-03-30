@@ -51,7 +51,7 @@ async function seedApplications() {
     SELECT id, name
     FROM users
     WHERE role = 'candidate'
-      AND google_id LIKE 'hirely-seed-candidate-google-%'
+      AND google_id LIKE 'rz-seed-candidate-google-%'
     ORDER BY created_at ASC
     LIMIT 20
   `;
@@ -84,44 +84,44 @@ async function seedApplications() {
   for (let i = 0; i < 20; i++) {
     const candidate = candidates[i]!;
     const baseSlug = candidate.name.toLowerCase().replaceAll(" ", "-");
-    const githubHandle = copycat.username(`hirely-seed-gh-${candidate.id}`);
-    const linkedInSlug = `${baseSlug}-${randomInt(`hirely-seed-li-${candidate.id}`, 10, 99)}`;
+    const githubHandle = copycat.username(`rz-seed-gh-${candidate.id}`);
+    const linkedInSlug = `${baseSlug}-${randomInt(`rz-seed-li-${candidate.id}`, 10, 99)}`;
     const portfolioDomain = pick(portfolioDomains, i);
 
     const jobA = openJobs[i % openJobs.length]!;
     const jobB = openJobs[(i + 11) % openJobs.length]!;
 
     applications.push({
-      id: makeUuid("hirely-seed-application", i * 2 + 1),
+      id: makeUuid("rz-seed-application", i * 2 + 1),
       jobId: jobA.id,
       candidateId: candidate.id,
-      resumeUrl: `https://cdn.hirely.dev/resumes/${baseSlug}-resume.pdf`,
+      resumeUrl: `https://cdn.roundzero.dev/resumes/${baseSlug}-resume.pdf`,
       links: buildRoleAwareLinks({
         nameSlug: baseSlug,
         githubHandle,
         linkedInSlug,
         portfolioDomain,
         title: jobA.title,
-        seed: `hirely-seed-links-${candidate.id}-a`,
+        seed: `rz-seed-links-${candidate.id}-a`,
       }),
       status: pick(applicationStatuses, i),
     });
 
     applications.push({
-      id: makeUuid("hirely-seed-application", i * 2 + 2),
+      id: makeUuid("rz-seed-application", i * 2 + 2),
       jobId: jobB.id,
       candidateId: candidate.id,
       resumeUrl:
         i % 4 === 0
           ? null
-          : `https://cdn.hirely.dev/resumes/${baseSlug}-resume-v2.pdf`,
+          : `https://cdn.roundzero.dev/resumes/${baseSlug}-resume-v2.pdf`,
       links: buildRoleAwareLinks({
         nameSlug: baseSlug,
         githubHandle,
         linkedInSlug,
         portfolioDomain,
         title: jobB.title,
-        seed: `hirely-seed-links-${candidate.id}-b`,
+        seed: `rz-seed-links-${candidate.id}-b`,
       }),
       status: pick(applicationStatuses, i + 2),
     });

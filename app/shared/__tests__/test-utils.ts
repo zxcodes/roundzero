@@ -4,7 +4,7 @@ import postgres from "postgres";
  * Shared test database utilities.
  *
  * Uses a dedicated test database (TEST_DATABASE_URL) to avoid
- * wiping dev data. Falls back to a default hirely_test connection
+ * wiping dev data. Falls back to a default rz_pg_test connection
  * if the env var is not set.
  */
 

@@ -1,6 +1,6 @@
 import { $ } from "bun";
 
-console.log("Starting Hirely seed pipeline...\n");
+console.log("Starting RoundZero seed pipeline...\n");
 
 try {
   await $`bun ./db/seed/users.ts`;

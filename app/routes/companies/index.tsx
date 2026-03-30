@@ -6,9 +6,10 @@ import {
   UserGroupIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link, stripSearchParams, useNavigate } from "@tanstack/react-router";
+import { z } from "zod";
 import { PublicFooter, PublicHeader } from "@/components/public-layout";
+import { CompaniesListSkeleton } from "@/components/route-skeletons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,19 +30,29 @@ import {
   industrySchema,
 } from "@/shared/enums";
 
+const searchDefaults = { search: "", industry: "all", size: "all" } as const;
+
+const companiesSearchSchema = z.object({
+  search: z.string().default(searchDefaults.search).catch(searchDefaults.search),
+  industry: z.string().default(searchDefaults.industry).catch(searchDefaults.industry),
+  size: z.string().default(searchDefaults.size).catch(searchDefaults.size),
+});
+
 export const Route = createFileRoute("/companies/")({
+  validateSearch: companiesSearchSchema,
+  search: { middlewares: [stripSearchParams(searchDefaults)] },
   loader: async () => {
     const companies = await getAllCompanies();
     return { companies };
   },
+  pendingComponent: CompaniesListSkeleton,
   component: CompaniesPage,
 });
 
 function CompaniesPage() {
   const { companies } = Route.useLoaderData();
-  const [search, setSearch] = useState("");
-  const [industryFilter, setIndustryFilter] = useState("all");
-  const [sizeFilter, setSizeFilter] = useState("all");
+  const { search, industry: industryFilter, size: sizeFilter } = Route.useSearch();
+  const navigate = useNavigate({ from: "/companies/" });
 
   const filtered = companies.filter((c) => {
     const matchesSearch =
@@ -54,6 +65,18 @@ function CompaniesPage() {
   });
 
   const hasFilters = search || industryFilter !== "all" || sizeFilter !== "all";
+
+  const onSearchChange = (value: string) => {
+    navigate({ search: (prev) => ({ ...prev, search: value }) });
+  };
+
+  const onIndustryChange = (value: string) => {
+    navigate({ search: (prev) => ({ ...prev, industry: value }) });
+  };
+
+  const onSizeChange = (value: string) => {
+    navigate({ search: (prev) => ({ ...prev, size: value }) });
+  };
 
   return (
     <div className="bg-background text-foreground min-h-svh">
@@ -69,7 +92,7 @@ function CompaniesPage() {
                 Company directory
               </p>
               <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
-                Companies hiring on Hirely
+                Companies hiring on RoundZero
               </h1>
               <p className="max-w-lg text-base leading-relaxed text-muted-foreground">
                 Explore teams building great products. Find the right culture, stack, and role for
@@ -91,11 +114,11 @@ function CompaniesPage() {
               <Input
                 placeholder="Search companies..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => onSearchChange(e.target.value)}
                 className="pl-10"
               />
             </div>
-            <Select value={industryFilter} onValueChange={setIndustryFilter}>
+            <Select value={industryFilter} onValueChange={onIndustryChange}>
               <SelectTrigger className="w-full sm:w-44">
                 <SelectValue placeholder="Industry" />
               </SelectTrigger>
@@ -108,7 +131,7 @@ function CompaniesPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={sizeFilter} onValueChange={setSizeFilter}>
+            <Select value={sizeFilter} onValueChange={onSizeChange}>
               <SelectTrigger className="w-full sm:w-48">
                 <SelectValue placeholder="Company size" />
               </SelectTrigger>

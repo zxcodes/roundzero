@@ -17,6 +17,7 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
+import { DashboardJobDetailSkeleton } from "@/components/route-skeletons";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -74,6 +75,7 @@ export const Route = createFileRoute("/_authenticated/dashboard/jobs/$jobId")({
 
     return { job, alreadyApplied, applicants };
   },
+  pendingComponent: DashboardJobDetailSkeleton,
   component: JobDetailPage,
 });
 

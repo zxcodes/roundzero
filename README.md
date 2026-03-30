@@ -1,6 +1,6 @@
-# Hirely
+# RoundZero
 
-AI-powered hiring PLATFORM that replaces the first round of hiring with structured, adaptive interviews and explainable candidate evaluations.
+AI-powered hiring platform that replaces the first round of hiring with structured, adaptive interviews and explainable candidate evaluations.
 
 ## Stack
 

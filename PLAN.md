@@ -1,4 +1,4 @@
-# Hirely — Build Plan
+# RoundZero — Build Plan
 
 ## Phase 0: Foundation Setup
 
@@ -48,7 +48,7 @@
 
 ## Phase 3: Product Solidification
 
-Solidify Hirely as a usable job platform before adding AI. Public browsing, proper onboarding, company profiles, one-click apply, job expiry.
+Solidify RoundZero as a usable job platform before adding AI. Public browsing, proper onboarding, company profiles, one-click apply, job expiry.
 
 ### Decisions
 

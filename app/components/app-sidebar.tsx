@@ -64,9 +64,9 @@ export function AppSidebar({
       <SidebarHeader>
         <Link to="/dashboard" className="flex items-center gap-2.5 px-1 py-0.5">
           <div className="flex size-7 items-center justify-center rounded-lg bg-primary">
-            <span className="text-xs font-bold text-primary-foreground">H</span>
+            <span className="text-xs font-bold text-primary-foreground">R0</span>
           </div>
-          <span className="text-base font-semibold tracking-tight">hirely</span>
+          <span className="text-base font-semibold tracking-tight">roundzero</span>
         </Link>
       </SidebarHeader>
 

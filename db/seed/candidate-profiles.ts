@@ -39,7 +39,7 @@ async function seedCandidateProfiles() {
     SELECT id, name
     FROM users
     WHERE role = 'candidate'
-      AND google_id LIKE 'hirely-seed-candidate-google-%'
+      AND google_id LIKE 'rz-seed-candidate-google-%'
     ORDER BY created_at ASC
     LIMIT 20
   `;
@@ -51,10 +51,10 @@ async function seedCandidateProfiles() {
   const profiles = candidateUsers.map((user, index) => {
     const headline = headlines[index]!;
     const skills = pick(skillSets, index);
-    const bio = copycat.paragraph(`hirely-seed-candidate-bio-${index + 1}`);
+    const bio = copycat.paragraph(`rz-seed-candidate-bio-${index + 1}`);
 
     return {
-      id: makeUuid("hirely-seed-candidate-profile", index + 1),
+      id: makeUuid("rz-seed-candidate-profile", index + 1),
       userId: user.id,
       headline,
       bio: `${bio} Passionate about building reliable software and working with great teams.`,

@@ -11,6 +11,7 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link, useRouteContext } from "@tanstack/react-router";
 import { PublicFooter, PublicHeader } from "@/components/public-layout";
+import { JobDetailSkeleton } from "@/components/route-skeletons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,6 +25,7 @@ export const Route = createFileRoute("/jobs/$jobId")({
     const job = await getPublicJobById({ data: { id: params.jobId } });
     return { job };
   },
+  pendingComponent: JobDetailSkeleton,
   component: JobDetailPage,
 });
 

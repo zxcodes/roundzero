@@ -5,9 +5,10 @@ import {
   Search01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link, stripSearchParams, useNavigate } from "@tanstack/react-router";
+import { z } from "zod";
 import { PublicFooter, PublicHeader } from "@/components/public-layout";
+import { JobsListSkeleton } from "@/components/route-skeletons";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -28,19 +29,29 @@ import {
   workplaceTypeLabels,
 } from "@/shared/enums";
 
+const searchDefaults = { search: "", type: "all", level: "all" } as const;
+
+const jobsSearchSchema = z.object({
+  search: z.string().default(searchDefaults.search).catch(searchDefaults.search),
+  type: z.string().default(searchDefaults.type).catch(searchDefaults.type),
+  level: z.string().default(searchDefaults.level).catch(searchDefaults.level),
+});
+
 export const Route = createFileRoute("/jobs/")({
+  validateSearch: jobsSearchSchema,
+  search: { middlewares: [stripSearchParams(searchDefaults)] },
   loader: async () => {
     const jobs = await getOpenJobs();
     return { jobs };
   },
+  pendingComponent: JobsListSkeleton,
   component: JobsPage,
 });
 
 function JobsPage() {
   const { jobs } = Route.useLoaderData();
-  const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [levelFilter, setLevelFilter] = useState("all");
+  const { search, type: typeFilter, level: levelFilter } = Route.useSearch();
+  const navigate = useNavigate({ from: "/jobs/" });
 
   const filtered = jobs.filter((j) => {
     const matchesSearch =
@@ -54,6 +65,18 @@ function JobsPage() {
   });
 
   const hasFilters = search || typeFilter !== "all" || levelFilter !== "all";
+
+  const onSearchChange = (value: string) => {
+    navigate({ search: (prev) => ({ ...prev, search: value }) });
+  };
+
+  const onTypeChange = (value: string) => {
+    navigate({ search: (prev) => ({ ...prev, type: value }) });
+  };
+
+  const onLevelChange = (value: string) => {
+    navigate({ search: (prev) => ({ ...prev, level: value }) });
+  };
 
   return (
     <div className="bg-background text-foreground min-h-svh">
@@ -70,8 +93,8 @@ function JobsPage() {
               </p>
               <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Open positions</h1>
               <p className="max-w-lg text-base leading-relaxed text-muted-foreground">
-                Browse roles from companies hiring on Hirely. Apply with one click and interview on
-                your schedule.
+                Browse roles from companies hiring on RoundZero. Apply with one click and interview
+                on your schedule.
               </p>
             </div>
           </div>
@@ -89,11 +112,11 @@ function JobsPage() {
               <Input
                 placeholder="Search by title, company, or location..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => onSearchChange(e.target.value)}
                 className="pl-10"
               />
             </div>
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <Select value={typeFilter} onValueChange={onTypeChange}>
               <SelectTrigger className="w-full sm:w-40">
                 <SelectValue placeholder="Job type" />
               </SelectTrigger>
@@ -106,7 +129,7 @@ function JobsPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={levelFilter} onValueChange={setLevelFilter}>
+            <Select value={levelFilter} onValueChange={onLevelChange}>
               <SelectTrigger className="w-full sm:w-40">
                 <SelectValue placeholder="Experience" />
               </SelectTrigger>
@@ -182,6 +205,7 @@ function JobCard({ job, className }: { job: JobFromLoader; className?: string })
             <p className="text-sm font-semibold transition-colors group-hover:text-primary">
               {job.title}
             </p>
+            {/* biome-ignore lint/a11y/useSemanticElements: can't nest <a> inside parent <Link> */}
             <span
               role="link"
               tabIndex={0}

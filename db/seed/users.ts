@@ -24,11 +24,11 @@ async function seedUsers() {
   }>;
 
   for (let i = 1; i <= 20; i++) {
-    const seed = `hirely-seed-company-user-${i}`;
+    const seed = `rz-seed-company-user-${i}`;
     const firstName = copycat.firstName(seed);
     const lastName = copycat.lastName(`${seed}-last`);
     const domain = pick(companyDomains, i);
-    const id = makeUuid("hirely-seed-company-user", i);
+    const id = makeUuid("rz-seed-company-user", i);
     const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@${domain}`;
 
     users.push({
@@ -37,15 +37,15 @@ async function seedUsers() {
       name: `${firstName} ${lastName}`,
       picture: `https://i.pravatar.cc/300?img=${(i % 70) + 1}`,
       role: "company",
-      googleId: `hirely-seed-company-google-${i}`,
+      googleId: `rz-seed-company-google-${i}`,
     });
   }
 
   for (let i = 1; i <= 20; i++) {
-    const seed = `hirely-seed-candidate-user-${i}`;
+    const seed = `rz-seed-candidate-user-${i}`;
     const firstName = copycat.firstName(seed);
     const lastName = copycat.lastName(`${seed}-last`);
-    const id = makeUuid("hirely-seed-candidate-user", i);
+    const id = makeUuid("rz-seed-candidate-user", i);
     const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}${i}@gmail.com`;
 
     users.push({
@@ -54,7 +54,7 @@ async function seedUsers() {
       name: `${firstName} ${lastName}`,
       picture: `https://i.pravatar.cc/300?img=${((i + 20) % 70) + 1}`,
       role: "candidate",
-      googleId: `hirely-seed-candidate-google-${i}`,
+      googleId: `rz-seed-candidate-google-${i}`,
     });
   }
 

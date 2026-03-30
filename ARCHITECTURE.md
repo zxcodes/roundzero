@@ -1,4 +1,4 @@
-# Hirely – Architecture
+# RoundZero – Architecture
 
 ## Stack
 
@@ -418,8 +418,8 @@ Two separate Postgres Docker containers ensure tests never interfere with dev da
 
 | Container       | Port | Purpose           | Env Variable         |
 | --------------- | ---- | ----------------- | -------------------- |
-| `hirely_pg`     | 6311 | Local development | `DATABASE_URL`       |
-| `hirely_pg_test`| 6312 | Tests only        | `TEST_DATABASE_URL`  |
+| `rz_pg_dev`     | 6311 | Local development | `DATABASE_URL`       |
+| `rz_pg_test`    | 6312 | Tests only        | `TEST_DATABASE_URL`  |
 
 Both containers are created and migrated by `bash setup-db.sh setup_pg`. The test container can be independently reset with `bash setup-db.sh reset_pg` (never touches dev).
 
@@ -483,7 +483,7 @@ Resumes and attachments stored in Cloudflare R2 (S3-compatible):
 
 ```
 wrangler.jsonc:
-  r2_buckets: [{ binding: "BUCKET", bucket_name: "hirely-uploads" }]
+  r2_buckets: [{ binding: "BUCKET", bucket_name: "roundzero-uploads" }]
 ```
 
 Upload flow:

@@ -7,9 +7,17 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  stripSearchParams,
+  useNavigate,
+  useRouter,
+} from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { z } from "zod";
+import { DashboardJobsListSkeleton } from "@/components/route-skeletons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,7 +44,15 @@ import {
   workplaceTypeLabels,
 } from "@/shared/enums";
 
+const tabDefaults = { tab: "active" } as const;
+
+const dashboardJobsSearchSchema = z.object({
+  tab: z.enum(["active", "archived"]).default(tabDefaults.tab).catch(tabDefaults.tab),
+});
+
 export const Route = createFileRoute("/_authenticated/dashboard/jobs/")({
+  validateSearch: dashboardJobsSearchSchema,
+  search: { middlewares: [stripSearchParams(tabDefaults)] },
   loader: async ({ context }) => {
     if (context.isCompany) {
       const jobs = await getMyJobs();
@@ -45,6 +61,7 @@ export const Route = createFileRoute("/_authenticated/dashboard/jobs/")({
     const jobs = await getOpenJobs();
     return { jobs, isCompany: false as const };
   },
+  pendingComponent: DashboardJobsListSkeleton,
   component: JobsListPage,
 });
 
@@ -92,6 +109,8 @@ function JobsListPage() {
 
 function CompanyJobsList({ jobs }: { jobs: Awaited<ReturnType<typeof getMyJobs>> }) {
   const router = useRouter();
+  const { tab } = Route.useSearch();
+  const navigate = useNavigate({ from: "/dashboard/jobs/" });
 
   const publishJobFn = useServerFn(publishJob);
   const publishJobMutation = useMutation({
@@ -117,6 +136,7 @@ function CompanyJobsList({ jobs }: { jobs: Awaited<ReturnType<typeof getMyJobs>>
   });
 
   const onTabChange = (value: string) => {
+    navigate({ search: { tab: value as "active" | "archived" } });
     if (value === "archived" && !archivedJobsQuery.data) {
       archivedJobsQuery.refetch();
     }
@@ -139,7 +159,7 @@ function CompanyJobsList({ jobs }: { jobs: Awaited<ReturnType<typeof getMyJobs>>
         </Button>
       </div>
 
-      <Tabs defaultValue="active" onValueChange={onTabChange}>
+      <Tabs value={tab} onValueChange={onTabChange}>
         <TabsList>
           <TabsTrigger value="active">Active</TabsTrigger>
           <TabsTrigger value="archived">

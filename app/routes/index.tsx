@@ -60,7 +60,7 @@ function Hero() {
             You get the report.
           </h1>
           <p className="max-w-lg text-base leading-relaxed text-muted-foreground lg:text-lg">
-            Hirely conducts adaptive, structured interviews and produces scored candidate reports
+            RoundZero conducts adaptive, structured interviews and produces scored candidate reports
             with evidence — so your team only talks to people worth their time.
           </p>
           <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center">
@@ -338,9 +338,9 @@ function RankingSection() {
             Your top candidates, sorted and explained
           </h2>
           <p className="text-base leading-relaxed text-muted-foreground">
-            Stop scrolling through 200 applications. Hirely scores every candidate across technical
-            skill, communication, and experience depth — then gives you a ranked list with clear
-            hire/pass recommendations.
+            Stop scrolling through 200 applications. RoundZero scores every candidate across
+            technical skill, communication, and experience depth — then gives you a ranked list with
+            clear hire/pass recommendations.
           </p>
         </div>
       </div>
@@ -397,7 +397,7 @@ function BottomCTA() {
             Start reviewing reports.
           </h2>
           <p className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-muted-foreground">
-            Post your first job and let Hirely handle the first round. Your team gets scored,
+            Post your first job and let RoundZero handle the first round. Your team gets scored,
             explained candidates — ready for a real conversation.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">

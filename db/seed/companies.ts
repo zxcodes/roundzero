@@ -67,7 +67,7 @@ async function seedCompanies() {
     SELECT id
     FROM users
     WHERE role = 'company'
-      AND google_id LIKE 'hirely-seed-company-google-%'
+      AND google_id LIKE 'rz-seed-company-google-%'
     ORDER BY created_at ASC
     LIMIT 20
   `;
@@ -77,13 +77,13 @@ async function seedCompanies() {
   }
 
   const companies = companyUsers.map((owner, index) => {
-    const city = copycat.city(`hirely-seed-company-city-${index + 1}`);
+    const city = copycat.city(`rz-seed-company-city-${index + 1}`);
     const sector = pick(sectors, index);
     const industry = pick(industries, index);
     const companySize = pick(companySizes, index + 1);
 
     return {
-      id: makeUuid("hirely-seed-company", index + 1),
+      id: makeUuid("rz-seed-company", index + 1),
       ownerId: owner.id,
       name: companyNames[index]!,
       slug: generateSlug(companyNames[index]!),
