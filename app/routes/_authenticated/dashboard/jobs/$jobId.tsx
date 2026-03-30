@@ -135,24 +135,24 @@ function JobDetailPage() {
             </Badge>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            {job.companyName && (
+            {job.companyName ? (
               <>
                 <span className="font-medium text-foreground">{job.companyName}</span>
                 {" \u00B7 "}
               </>
-            )}
+            ) : null}
             <span className="font-mono">{formatDate(job.createdAt)}</span>
-            {new Date(job.updatedAt).getTime() !== new Date(job.createdAt).getTime() && (
+            {new Date(job.updatedAt).getTime() !== new Date(job.createdAt).getTime() ? (
               <>
                 {" "}
                 · Updated <span className="font-mono">{formatDate(job.updatedAt)}</span>
               </>
-            )}
+            ) : null}
           </p>
         </div>
       </div>
 
-      {isCompany && <CompanyActions job={job} requirements={requirements} />}
+      {isCompany ? <CompanyActions job={job} requirements={requirements} /> : null}
 
       {/* Main content — two-column on large screens */}
       <div className="grid gap-5 lg:grid-cols-3">
@@ -167,7 +167,7 @@ function JobDetailPage() {
             </CardContent>
           </Card>
 
-          {requirements.length > 0 && (
+          {requirements.length > 0 ? (
             <Card className="animate-fade-in stagger-2">
               <CardHeader>
                 <CardTitle>Requirements</CardTitle>
@@ -183,9 +183,9 @@ function JobDetailPage() {
                 </ul>
               </CardContent>
             </Card>
-          )}
+          ) : null}
 
-          {isCompany && <ApplicantsSection applicants={applicants} />}
+          {isCompany ? <ApplicantsSection applicants={applicants} /> : null}
         </div>
 
         {/* Right column — metadata sidebar */}
@@ -198,7 +198,7 @@ function JobDetailPage() {
               </p>
             </CardHeader>
             <CardContent className="space-y-4">
-              {job.location && (
+              {job.location ? (
                 <div className="flex items-start gap-3">
                   <HugeiconsIcon
                     icon={Location01Icon}
@@ -207,16 +207,16 @@ function JobDetailPage() {
                   />
                   <div>
                     <p className="text-sm font-medium">{job.location}</p>
-                    {job.workplaceType && (
+                    {job.workplaceType ? (
                       <p className="text-xs text-muted-foreground">
                         {workplaceTypeLabels[job.workplaceType as WorkplaceType]}
                       </p>
-                    )}
+                    ) : null}
                   </div>
                 </div>
-              )}
+              ) : null}
 
-              {job.employmentType && (
+              {job.employmentType ? (
                 <div className="flex items-center gap-3">
                   <div className="flex size-4 shrink-0 items-center justify-center rounded bg-muted text-[10px] font-bold text-muted-foreground">
                     E
@@ -225,9 +225,9 @@ function JobDetailPage() {
                     {employmentTypeLabels[job.employmentType as EmploymentType]}
                   </p>
                 </div>
-              )}
+              ) : null}
 
-              {job.experienceLevel && (
+              {job.experienceLevel ? (
                 <div className="flex items-center gap-3">
                   <div className="flex size-4 shrink-0 items-center justify-center rounded bg-muted text-[10px] font-bold text-muted-foreground">
                     L
@@ -236,9 +236,9 @@ function JobDetailPage() {
                     {experienceLevelLabels[job.experienceLevel as ExperienceLevel]}
                   </p>
                 </div>
-              )}
+              ) : null}
 
-              {salary && (
+              {salary ? (
                 <>
                   <Separator />
                   <div className="flex items-start gap-3">
@@ -253,9 +253,9 @@ function JobDetailPage() {
                     </div>
                   </div>
                 </>
-              )}
+              ) : null}
 
-              {(job.teamSize || job.headcount) && (
+              {job.teamSize || job.headcount ? (
                 <>
                   <Separator />
                   <div className="flex items-start gap-3">
@@ -265,29 +265,29 @@ function JobDetailPage() {
                       className="mt-0.5 size-4 shrink-0 text-muted-foreground"
                     />
                     <div className="space-y-0.5">
-                      {job.teamSize && (
+                      {job.teamSize ? (
                         <p className="text-sm">
                           <span className="font-mono font-medium">{job.teamSize}</span> people on
                           team
                         </p>
-                      )}
-                      {job.headcount && (
+                      ) : null}
+                      {job.headcount ? (
                         <p className="text-xs text-muted-foreground">
                           <span className="font-mono">{job.headcount}</span> open{" "}
                           {job.headcount === 1 ? "position" : "positions"}
                         </p>
-                      )}
+                      ) : null}
                     </div>
                   </div>
                 </>
-              )}
+              ) : null}
             </CardContent>
           </Card>
 
           {/* Apply section for candidates */}
-          {!isCompany && job.status === "open" && (
+          {!isCompany && job.status === "open" ? (
             <CandidateApplySection jobId={job.id} alreadyApplied={alreadyApplied} />
-          )}
+          ) : null}
         </div>
       </div>
     </div>
@@ -426,9 +426,9 @@ function ApplicantsSection({
                     </Select>
                   </div>
 
-                  {(applicant.resumeUrl || links.length > 0) && (
+                  {applicant.resumeUrl || links.length > 0 ? (
                     <div className="mt-2 flex flex-wrap items-center gap-2 pl-11">
-                      {applicant.resumeUrl && (
+                      {applicant.resumeUrl ? (
                         <a
                           href={applicant.resumeUrl}
                           target="_blank"
@@ -438,7 +438,7 @@ function ApplicantsSection({
                           <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-3" />
                           Resume
                         </a>
-                      )}
+                      ) : null}
                       {links.map((link, i) => (
                         <a
                           key={`${link}-${i}`}
@@ -458,7 +458,7 @@ function ApplicantsSection({
                         </a>
                       ))}
                     </div>
-                  )}
+                  ) : null}
                 </div>
               );
             })}
@@ -654,7 +654,7 @@ function CompanyActions({
 
   return (
     <div className="flex gap-2">
-      {job.status === "draft" && (
+      {job.status === "draft" ? (
         <Button
           variant="default"
           size="sm"
@@ -664,7 +664,7 @@ function CompanyActions({
           <HugeiconsIcon icon={Rocket01Icon} strokeWidth={2} className="size-3.5" />
           {publishJobMutation.isPending ? "Publishing..." : "Publish"}
         </Button>
-      )}
+      ) : null}
       <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
         <HugeiconsIcon icon={Edit02Icon} strokeWidth={2} className="size-3.5" />
         Edit

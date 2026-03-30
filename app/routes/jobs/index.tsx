@@ -5,7 +5,7 @@ import {
   Search01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { PublicFooter, PublicHeader } from "@/components/public-layout";
 import { Badge } from "@/components/ui/badge";
@@ -165,6 +165,13 @@ type JobFromLoader = Awaited<ReturnType<typeof getOpenJobs>>[number];
 
 function JobCard({ job, className }: { job: JobFromLoader; className?: string }) {
   const salary = formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency);
+  const navigate = useNavigate();
+
+  const onCompanyClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigate({ to: "/companies/$slug", params: { slug: job.companySlug } });
+  };
 
   return (
     <Link to="/jobs/$jobId" params={{ jobId: job.id }} className={className}>
@@ -175,57 +182,61 @@ function JobCard({ job, className }: { job: JobFromLoader; className?: string })
             <p className="text-sm font-semibold transition-colors group-hover:text-primary">
               {job.title}
             </p>
-            <Link
-              to="/companies/$slug"
-              params={{ slug: job.companySlug }}
-              className="text-xs text-muted-foreground transition-colors hover:text-primary"
-              onClick={(e) => e.stopPropagation()}
+            <span
+              role="link"
+              tabIndex={0}
+              onClick={onCompanyClick}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ")
+                  onCompanyClick(e as unknown as React.MouseEvent);
+              }}
+              className="cursor-pointer text-xs text-muted-foreground transition-colors hover:text-primary"
             >
               {job.companyName}
-            </Link>
+            </span>
           </div>
 
           {/* Meta */}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
-            {job.location && (
+            {job.location ? (
               <span className="inline-flex items-center gap-1">
                 <HugeiconsIcon icon={Location01Icon} strokeWidth={2} className="size-3.5" />
                 {job.location}
               </span>
-            )}
-            {salary && (
+            ) : null}
+            {salary ? (
               <span className="inline-flex items-center gap-1">
                 <HugeiconsIcon icon={MoneyBag02Icon} strokeWidth={2} className="size-3.5" />
                 {salary}
               </span>
-            )}
+            ) : null}
           </div>
 
           {/* Description */}
-          {job.description && (
+          {job.description ? (
             <p className="line-clamp-2 flex-1 text-[13px] leading-relaxed text-muted-foreground">
               {job.description}
             </p>
-          )}
+          ) : null}
 
           {/* Tags */}
           <div className="flex flex-wrap gap-1.5 border-t border-border/40 pt-3">
-            {job.employmentType && (
+            {job.employmentType ? (
               <Badge variant="secondary" className="text-[11px]">
                 {employmentTypeLabels[job.employmentType as EmploymentType] ?? job.employmentType}
               </Badge>
-            )}
-            {job.experienceLevel && (
+            ) : null}
+            {job.experienceLevel ? (
               <Badge variant="secondary" className="text-[11px]">
                 {experienceLevelLabels[job.experienceLevel as ExperienceLevel] ??
                   job.experienceLevel}
               </Badge>
-            )}
-            {job.workplaceType && (
+            ) : null}
+            {job.workplaceType ? (
               <Badge variant="outline" className="text-[11px]">
                 {workplaceTypeLabels[job.workplaceType as WorkplaceType] ?? job.workplaceType}
               </Badge>
-            )}
+            ) : null}
           </div>
         </CardContent>
       </Card>

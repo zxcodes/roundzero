@@ -100,36 +100,36 @@ function JobDetailPage() {
 
               {/* Meta badges */}
               <div className="flex flex-wrap gap-2">
-                {job.employmentType && (
+                {job.employmentType ? (
                   <Badge variant="secondary" className="gap-1">
                     <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} className="size-3" />
                     {employmentTypeLabels[job.employmentType as EmploymentType] ??
                       job.employmentType}
                   </Badge>
-                )}
-                {job.experienceLevel && (
+                ) : null}
+                {job.experienceLevel ? (
                   <Badge variant="secondary">
                     {experienceLevelLabels[job.experienceLevel as ExperienceLevel] ??
                       job.experienceLevel}
                   </Badge>
-                )}
-                {job.workplaceType && (
+                ) : null}
+                {job.workplaceType ? (
                   <Badge variant="outline">
                     {workplaceTypeLabels[job.workplaceType as WorkplaceType] ?? job.workplaceType}
                   </Badge>
-                )}
-                {job.location && (
+                ) : null}
+                {job.location ? (
                   <Badge variant="outline" className="gap-1">
                     <HugeiconsIcon icon={Location01Icon} strokeWidth={2} className="size-3" />
                     {job.location}
                   </Badge>
-                )}
-                {salary && (
+                ) : null}
+                {salary ? (
                   <Badge variant="outline" className="gap-1">
                     <HugeiconsIcon icon={MoneyBag02Icon} strokeWidth={2} className="size-3" />
                     {salary}
                   </Badge>
-                )}
+                ) : null}
               </div>
             </div>
           </div>
@@ -139,7 +139,7 @@ function JobDetailPage() {
         <section className="mx-auto grid max-w-6xl gap-10 px-6 py-8 lg:grid-cols-3 lg:px-8 lg:py-12">
           {/* Left column — description & requirements */}
           <div className="space-y-10 lg:col-span-2">
-            {job.description && (
+            {job.description ? (
               <div className="animate-fade-in space-y-3">
                 <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
                   Description
@@ -148,9 +148,9 @@ function JobDetailPage() {
                   {job.description}
                 </div>
               </div>
-            )}
+            ) : null}
 
-            {requirements.length > 0 && (
+            {requirements.length > 0 ? (
               <div className="animate-fade-in stagger-1 space-y-3">
                 <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
                   Requirements
@@ -167,7 +167,7 @@ function JobDetailPage() {
                   ))}
                 </ul>
               </div>
-            )}
+            ) : null}
 
             {/* Bottom CTA (mobile + desktop) */}
             <div className="animate-fade-in stagger-2 rounded-xl border border-dashed border-primary/20 bg-primary/5 p-6 text-center">
@@ -211,21 +211,21 @@ function JobDetailPage() {
                 <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
                   Job details
                 </h3>
-                {salary && <DetailRow icon={MoneyBag02Icon} label="Salary" value={salary} />}
-                {job.teamSize && (
+                {salary ? <DetailRow icon={MoneyBag02Icon} label="Salary" value={salary} /> : null}
+                {job.teamSize ? (
                   <DetailRow
                     icon={UserGroupIcon}
                     label="Team size"
                     value={`${job.teamSize} ${job.teamSize === 1 ? "person" : "people"}`}
                   />
-                )}
-                {job.headcount && (
+                ) : null}
+                {job.headcount ? (
                   <DetailRow
                     icon={Briefcase01Icon}
                     label="Openings"
                     value={`${job.headcount} ${job.headcount === 1 ? "position" : "positions"}`}
                   />
-                )}
+                ) : null}
                 <DetailRow icon={Clock01Icon} label="Posted" value={postedDate} />
               </CardContent>
             </Card>

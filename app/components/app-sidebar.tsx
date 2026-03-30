@@ -74,7 +74,7 @@ export function AppSidebar({
         <SidebarGroup>
           <SidebarGroupContent className="flex flex-col gap-2">
             <SidebarMenu>
-              {isCompany && (
+              {isCompany ? (
                 <SidebarMenuItem className="flex items-center gap-2">
                   <SidebarMenuButton
                     asChild
@@ -86,7 +86,7 @@ export function AppSidebar({
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              )}
+              ) : null}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

@@ -186,7 +186,7 @@ function CompanyCard({ company, className }: { company: CompanyFromLoader; class
           {/* Header row */}
           <div className="flex items-start gap-3.5">
             <Avatar className="size-11 rounded-xl ring-1 ring-border/40">
-              {company.logoUrl && <AvatarImage src={company.logoUrl} alt={company.name} />}
+              {company.logoUrl ? <AvatarImage src={company.logoUrl} alt={company.name} /> : null}
               <AvatarFallback className="rounded-xl text-xs font-semibold">
                 {initials}
               </AvatarFallback>
@@ -195,29 +195,29 @@ function CompanyCard({ company, className }: { company: CompanyFromLoader; class
               <p className="truncate text-sm font-semibold transition-colors group-hover:text-primary">
                 {company.name}
               </p>
-              {company.industry && (
+              {company.industry ? (
                 <p className="text-xs text-muted-foreground">
                   {industryLabels[company.industry as Industry] ?? company.industry}
                 </p>
-              )}
+              ) : null}
             </div>
-            {company.openJobCount > 0 && (
+            {company.openJobCount > 0 ? (
               <Badge variant="secondary" className="shrink-0 gap-1 text-[11px] font-semibold">
                 <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} className="size-3" />
                 {company.openJobCount}
               </Badge>
-            )}
+            ) : null}
           </div>
 
           {/* Description */}
-          {company.description && (
+          {company.description ? (
             <p className="line-clamp-2 text-[13px] leading-relaxed text-muted-foreground">
               {company.description}
             </p>
-          )}
+          ) : null}
 
           {/* Tech stack tags */}
-          {techStack.length > 0 && (
+          {techStack.length > 0 ? (
             <div className="flex flex-wrap gap-1">
               {techStack.slice(0, 4).map((tech) => (
                 <span
@@ -227,28 +227,28 @@ function CompanyCard({ company, className }: { company: CompanyFromLoader; class
                   {tech}
                 </span>
               ))}
-              {techStack.length > 4 && (
+              {techStack.length > 4 ? (
                 <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
                   +{techStack.length - 4}
                 </span>
-              )}
+              ) : null}
             </div>
-          )}
+          ) : null}
 
           {/* Meta row */}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-border/40 pt-3 text-xs text-muted-foreground">
-            {company.location && (
+            {company.location ? (
               <span className="inline-flex items-center gap-1">
                 <HugeiconsIcon icon={Location01Icon} strokeWidth={2} className="size-3.5" />
                 {company.location}
               </span>
-            )}
-            {company.companySize && (
+            ) : null}
+            {company.companySize ? (
               <span className="inline-flex items-center gap-1">
                 <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} className="size-3.5" />
                 {companySizeLabels[company.companySize as CompanySize] ?? company.companySize}
               </span>
-            )}
+            ) : null}
           </div>
         </CardContent>
       </Card>

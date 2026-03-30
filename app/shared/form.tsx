@@ -45,7 +45,7 @@ function TextField({
         onBlur={field.handleBlur}
         onChange={(e) => field.handleChange(e.target.value)}
       />
-      {description && <p className="text-muted-foreground text-xs">{description}</p>}
+      {description ? <p className="text-muted-foreground text-xs">{description}</p> : null}
     </div>
   );
 }
@@ -77,7 +77,7 @@ function NumberField({
           field.handleChange(Number.isNaN(parsed) ? null : parsed);
         }}
       />
-      {description && <p className="text-muted-foreground text-xs">{description}</p>}
+      {description ? <p className="text-muted-foreground text-xs">{description}</p> : null}
     </div>
   );
 }
@@ -111,7 +111,7 @@ function TextareaField({
         onBlur={field.handleBlur}
         onChange={(e) => field.handleChange(e.target.value)}
       />
-      {description && <p className="text-muted-foreground text-xs">{description}</p>}
+      {description ? <p className="text-muted-foreground text-xs">{description}</p> : null}
     </div>
   );
 }
@@ -143,7 +143,7 @@ function SelectField({
           ))}
         </SelectContent>
       </Select>
-      {description && <p className="text-muted-foreground text-xs">{description}</p>}
+      {description ? <p className="text-muted-foreground text-xs">{description}</p> : null}
     </div>
   );
 }

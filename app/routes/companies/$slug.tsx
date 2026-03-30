@@ -79,7 +79,7 @@ function CompanyProfilePage() {
 
             <div className="animate-fade-in mt-8 flex flex-col gap-6 sm:flex-row sm:items-start">
               <Avatar className="size-16 rounded-xl ring-2 ring-border/40">
-                {company.logoUrl && <AvatarImage src={company.logoUrl} alt={company.name} />}
+                {company.logoUrl ? <AvatarImage src={company.logoUrl} alt={company.name} /> : null}
                 <AvatarFallback className="rounded-xl text-lg font-bold">{initials}</AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1 space-y-3">
@@ -88,31 +88,31 @@ function CompanyProfilePage() {
                     {company.name}
                   </h1>
                   <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted-foreground">
-                    {company.industry && (
+                    {company.industry ? (
                       <span className="inline-flex items-center gap-1.5">
                         <HugeiconsIcon icon={Building01Icon} strokeWidth={2} className="size-3.5" />
                         {industryLabels[company.industry as Industry] ?? company.industry}
                       </span>
-                    )}
-                    {company.location && (
+                    ) : null}
+                    {company.location ? (
                       <span className="inline-flex items-center gap-1.5">
                         <HugeiconsIcon icon={Location01Icon} strokeWidth={2} className="size-3.5" />
                         {company.location}
                       </span>
-                    )}
-                    {company.companySize && (
+                    ) : null}
+                    {company.companySize ? (
                       <span className="inline-flex items-center gap-1.5">
                         <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} className="size-3.5" />
                         {companySizeLabels[company.companySize as CompanySize] ??
                           company.companySize}
                       </span>
-                    )}
-                    {company.foundedYear && <span>Founded {company.foundedYear}</span>}
+                    ) : null}
+                    {company.foundedYear ? <span>Founded {company.foundedYear}</span> : null}
                   </div>
                 </div>
                 {/* Action row */}
                 <div className="flex flex-wrap items-center gap-2">
-                  {company.website && (
+                  {company.website ? (
                     <Button variant="outline" size="sm" asChild>
                       <a href={company.website} target="_blank" rel="noopener noreferrer">
                         <HugeiconsIcon
@@ -123,7 +123,7 @@ function CompanyProfilePage() {
                         Website
                       </a>
                     </Button>
-                  )}
+                  ) : null}
                   {Object.entries(socialLinks).map(([label, url]) => (
                     <Button key={label} variant="ghost" size="sm" asChild>
                       <a
@@ -146,7 +146,7 @@ function CompanyProfilePage() {
         <section className="mx-auto grid max-w-6xl gap-10 px-6 py-8 lg:grid-cols-3 lg:px-8 lg:py-12">
           {/* Left column — about + jobs */}
           <div className="space-y-10 lg:col-span-2">
-            {company.description && (
+            {company.description ? (
               <div className="animate-fade-in space-y-3">
                 <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
                   About
@@ -155,9 +155,9 @@ function CompanyProfilePage() {
                   {company.description}
                 </p>
               </div>
-            )}
+            ) : null}
 
-            {company.culture && (
+            {company.culture ? (
               <div className="animate-fade-in stagger-1 space-y-3">
                 <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
                   Culture & Perks
@@ -166,7 +166,7 @@ function CompanyProfilePage() {
                   {company.culture}
                 </p>
               </div>
-            )}
+            ) : null}
 
             {/* Open jobs */}
             <div className="animate-fade-in stagger-2 space-y-4">
@@ -207,7 +207,7 @@ function CompanyProfilePage() {
 
           {/* Right sidebar */}
           <aside className="space-y-6">
-            {techStack.length > 0 && (
+            {techStack.length > 0 ? (
               <Card>
                 <CardContent className="space-y-3">
                   <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
@@ -222,7 +222,7 @@ function CompanyProfilePage() {
                   </div>
                 </CardContent>
               </Card>
-            )}
+            ) : null}
 
             {/* Quick stats */}
             <Card>
@@ -231,24 +231,24 @@ function CompanyProfilePage() {
                   At a glance
                 </h3>
                 <div className="space-y-2.5">
-                  {company.industry && (
+                  {company.industry ? (
                     <StatRow
                       label="Industry"
                       value={industryLabels[company.industry as Industry] ?? company.industry}
                     />
-                  )}
-                  {company.companySize && (
+                  ) : null}
+                  {company.companySize ? (
                     <StatRow
                       label="Size"
                       value={
                         companySizeLabels[company.companySize as CompanySize] ?? company.companySize
                       }
                     />
-                  )}
-                  {company.foundedYear && (
+                  ) : null}
+                  {company.foundedYear ? (
                     <StatRow label="Founded" value={String(company.foundedYear)} />
-                  )}
-                  {company.location && <StatRow label="Location" value={company.location} />}
+                  ) : null}
+                  {company.location ? <StatRow label="Location" value={company.location} /> : null}
                   <StatRow label="Open roles" value={String(jobs.length)} />
                 </div>
               </CardContent>
@@ -285,37 +285,37 @@ function CompanyJobCard({ job }: { job: JobFromLoader }) {
               {job.title}
             </p>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-              {job.location && (
+              {job.location ? (
                 <span className="inline-flex items-center gap-1">
                   <HugeiconsIcon icon={Location01Icon} strokeWidth={2} className="size-3" />
                   {job.location}
                 </span>
-              )}
-              {job.employmentType && (
+              ) : null}
+              {job.employmentType ? (
                 <span>
                   {employmentTypeLabels[job.employmentType as EmploymentType] ?? job.employmentType}
                 </span>
-              )}
-              {job.experienceLevel && (
+              ) : null}
+              {job.experienceLevel ? (
                 <span>
                   {experienceLevelLabels[job.experienceLevel as ExperienceLevel] ??
                     job.experienceLevel}
                 </span>
-              )}
-              {salary && (
+              ) : null}
+              {salary ? (
                 <span className="inline-flex items-center gap-1">
                   <HugeiconsIcon icon={MoneyBag02Icon} strokeWidth={2} className="size-3" />
                   {salary}
                 </span>
-              )}
+              ) : null}
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
-            {job.workplaceType && (
+            {job.workplaceType ? (
               <Badge variant="outline" className="text-[11px]">
                 {workplaceTypeLabels[job.workplaceType as WorkplaceType] ?? job.workplaceType}
               </Badge>
-            )}
+            ) : null}
             <HugeiconsIcon
               icon={ArrowRight01Icon}
               strokeWidth={2}

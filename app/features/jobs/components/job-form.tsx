@@ -276,7 +276,7 @@ export function JobForm({
                   <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-4" />
                 </Button>
               </div>
-              {reqField.state.value.length > 0 && (
+              {reqField.state.value.length > 0 ? (
                 <ul className="mt-2 space-y-1">
                   {reqField.state.value.map((req, i) => (
                     <li
@@ -297,7 +297,7 @@ export function JobForm({
                     </li>
                   ))}
                 </ul>
-              )}
+              ) : null}
             </div>
           )}
         </form.Field>

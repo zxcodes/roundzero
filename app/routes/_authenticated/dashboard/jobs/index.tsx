@@ -243,7 +243,7 @@ function ActiveJobsTable({
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex items-center justify-end gap-1">
-                  {job.status === "draft" && (
+                  {job.status === "draft" ? (
                     <Button
                       variant="outline"
                       size="sm"
@@ -253,7 +253,7 @@ function ActiveJobsTable({
                       <HugeiconsIcon icon={Rocket01Icon} strokeWidth={2} className="size-3.5" />
                       Publish
                     </Button>
-                  )}
+                  ) : null}
                   <Button variant="ghost" size="sm" asChild>
                     <Link to="/dashboard/jobs/$jobId" params={{ jobId: job.id }}>
                       View
@@ -391,27 +391,27 @@ function CandidateJobsList({ jobs }: { jobs: Awaited<ReturnType<typeof getOpenJo
                 </div>
 
                 <div className="mb-2.5 flex flex-wrap gap-1">
-                  {job.location && (
+                  {job.location ? (
                     <Badge variant="secondary" className="gap-1 text-[11px] font-normal">
                       <HugeiconsIcon icon={Location01Icon} strokeWidth={2} className="size-2.5" />
                       {job.location}
                     </Badge>
-                  )}
-                  {job.workplaceType && (
+                  ) : null}
+                  {job.workplaceType ? (
                     <Badge variant="secondary" className="text-[11px] font-normal">
                       {workplaceTypeLabels[job.workplaceType as WorkplaceType]}
                     </Badge>
-                  )}
-                  {job.employmentType && (
+                  ) : null}
+                  {job.employmentType ? (
                     <Badge variant="secondary" className="text-[11px] font-normal">
                       {employmentTypeLabels[job.employmentType as EmploymentType]}
                     </Badge>
-                  )}
-                  {job.experienceLevel && (
+                  ) : null}
+                  {job.experienceLevel ? (
                     <Badge variant="outline" className="text-[11px] font-normal">
                       {experienceLevelLabels[job.experienceLevel as ExperienceLevel]}
                     </Badge>
-                  )}
+                  ) : null}
                 </div>
 
                 <p className="mb-3 line-clamp-2 text-xs leading-relaxed text-muted-foreground">

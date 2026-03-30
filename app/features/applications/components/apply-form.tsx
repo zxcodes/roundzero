@@ -87,7 +87,7 @@ export function ApplyForm({
             <p className="text-xs text-muted-foreground">
               GitHub, portfolio, LinkedIn, or any relevant links.
             </p>
-            {linksField.state.value.length > 0 && (
+            {linksField.state.value.length > 0 ? (
               <ul className="mt-2 space-y-1">
                 {linksField.state.value.map((link, i) => (
                   <li
@@ -112,7 +112,7 @@ export function ApplyForm({
                   </li>
                 ))}
               </ul>
-            )}
+            ) : null}
           </div>
         )}
       </form.Field>
