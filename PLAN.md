@@ -63,35 +63,43 @@ Solidify RoundZero as a usable job platform before adding AI. Public browsing, p
 | Candidate onboarding | Name (pre-filled from Google) + headline + resume upload |
 | Apply flow | True one-click: button only, uses resume from candidate profile |
 | Job expiry | Optional `expires_at` on jobs + stale indicator after 90 days |
-| Resume storage | Local filesystem for now, migrate to R2 in Phase 4 |
+| Resume storage | CF R2 (UI now, endpoint wired in Phase 4) |
 | Login messaging | Tailored copy per role (company: "Start hiring smarter", candidate: "Find your next role") |
 
-### Sub-project 1: Schema + Auth Changes
+### Sub-project 1: Schema + Auth Changes ✅
 
-- [ ] Extend `companies` table: add `logo_url`, `website`, `industry`, `company_size`, `founded_year`, `location`, `tech_stack` (JSONB), `culture`, `social_links` (JSONB), `updated_at`
-- [ ] Create `candidate_profiles` table: `user_id` (FK), `headline`, `resume_url`, `bio`, `skills` (JSONB), `work_history` (JSONB), `links` (JSONB), `created_at`, `updated_at`
-- [ ] Add `expires_at` (TIMESTAMPTZ, nullable) to `jobs` table
-- [ ] Add `slug` (TEXT UNIQUE) to `companies` table for public URLs
-- [ ] Separate login routes: `/company/login` and `/candidate/login` with tailored messaging
-- [ ] Auto-assign role from login URL context — remove `/choose-role` route
-- [ ] Handle wrong-URL login: redirect existing users to correct dashboard
-- [ ] Local filesystem resume upload endpoint (`/api/upload`)
-- [ ] SQLC queries for candidate profiles (create, get by user, update)
-- [ ] SQLC queries for extended company fields (update profile, get by slug)
-- [ ] Update seed data for new schema
-- [ ] Update existing tests for schema changes
+- [x] Extend `companies` table: add `logo_url`, `website`, `industry`, `company_size`, `founded_year`, `location`, `tech_stack` (JSONB), `culture`, `social_links` (JSONB), `updated_at`
+- [x] Create `candidate_profiles` table: `user_id` (FK), `headline`, `resume_url`, `bio`, `skills` (JSONB), `work_history` (JSONB), `links` (JSONB), `created_at`, `updated_at`
+- [x] Add `expires_at` (TIMESTAMPTZ, nullable) to `jobs` table
+- [x] Add `slug` (TEXT UNIQUE) to `companies` table for public URLs
+- [x] Separate login routes: `/company/login` and `/candidate/login` with tailored messaging
+- [x] Auto-assign role from login URL context — remove `/choose-role` route
+- [x] Handle wrong-URL login: redirect existing users to correct dashboard
+- [x] SQLC queries for candidate profiles (create, get by user, update)
+- [x] SQLC queries for extended company fields (update profile, get by slug)
+- [x] Update seed data for new schema
+- [x] Update existing tests for schema changes
 
-### Sub-project 2: Public Browsing
+### Sub-project 2: Public Browsing ✅
 
-- [ ] Public `/companies` route — company directory (card grid, search/filter by industry, size, tech stack)
-- [ ] Public `/companies/:slug` route — company profile page with open jobs listed
-- [ ] Public `/jobs` route — job board (card grid, search/filter by title, location, type, experience)
-- [ ] Public `/jobs/:id` route — job detail page (read-only, "Login to apply" CTA for unauthenticated)
-- [ ] Navigation: public header with Companies / Jobs tabs + login buttons
-- [ ] Authenticated candidates see "Apply" button instead of "Login to apply"
-- [ ] Update landing page nav to link to `/companies` and `/jobs`
+- [x] Public `/companies` route — company directory (card grid, search/filter by industry, size, tech stack)
+- [x] Public `/companies/:slug` route — company profile page with open jobs listed
+- [x] Public `/jobs` route — job board (card grid, search/filter by title, location, type, experience)
+- [x] Public `/jobs/:id` route — job detail page (read-only, "Login to apply" CTA for unauthenticated)
+- [x] Navigation: public header with Companies / Jobs tabs + login buttons
+- [x] Authenticated candidates see "Apply" button instead of "Login to apply"
+- [x] Update landing page nav to link to `/companies` and `/jobs`
 
-### Sub-project 3: Onboarding Flows
+### Prerequisite Refactors ✅
+
+- [x] Refactor 1: URL search params — standardize search/filter state across public routes
+- [x] Refactor 2: Fix skeletons — loading states match final layout for all public routes
+- [x] Refactor 3: Rebrand hirely → roundzero — all references, cookies, seed prefixes, branding
+- [x] Company profile page polish — hero meta, sidebar cleanup, avatar border removal
+- [x] Seed data enrichment — tech_stack, social_links, founded_year, culture, work_history, links
+- [x] Fix JSONB double-encoding bug — seed scripts used `JSON.stringify()` instead of `sql.json()` for tagged template inserts, causing JSONB columns to store strings instead of arrays/objects
+
+### Sub-project 3: Onboarding Flows ← NEXT
 
 - [ ] Company onboarding redesign — minimal fields (name, logo, industry, size, description), polished centered layout
 - [ ] Candidate onboarding — new flow: name (pre-filled), headline, resume upload
