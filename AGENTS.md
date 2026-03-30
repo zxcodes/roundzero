@@ -64,7 +64,7 @@ Always consult both files before making design decisions or implementing new fea
 - Typecheck: `bun run typecheck`.
 - Full check (lint + types): `bun run check`.
 - DB setup (dev + test): `bash setup-db.sh setup_pg`.
-- DB reset (test only): `bash setup-db.sh reset_pg`.
+- DB reset (dev + test): `bash setup-db.sh reset_pg`.
 - DB remove: `bash setup-db.sh rm_pg`.
 
 ## Testing
@@ -90,4 +90,5 @@ Always consult both files before making design decisions or implementing new fea
 - Never write manual types for data returned by server functions or SQLC queries. Always use inferred types from the return values (e.g. `Route.useRouteContext()`, `Route.useLoaderData()`, `Awaited<ReturnType<...>>`).
 - Always use `function` declarations for UI components and `const` declarations for non-ui functions.
 - **Single `useId()` per component.** Call `useId()` once and derive all element IDs from it: `const id = useId(); const nameId = \`name-\${id}\`;`. Never call `useId()` multiple times in the same component.
+- **No manual memoization.** React Compiler is enabled via `reactCompilerPreset()` in `vite.config.ts` and handles memoization automatically. Never use `useCallback`, `useMemo`, or `React.memo` — they are unnecessary and add noise.
 - **All forms must use TanStack Form** (`@tanstack/react-form`). Use the shared `useAppForm` hook from `@/shared/form` which provides pre-bound field components (`TextField`, `NumberField`, `TextareaField`, `SelectField`) and form components (`SubmitButton`). Use `form.AppField` for simple fields and `form.Field` with `mode="array"` for array fields. Forms manage their own submit state internally via `SubmitButton` — never pass `isSubmitting` props from parent pages.

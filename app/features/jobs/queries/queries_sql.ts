@@ -509,3 +509,69 @@ export async function getArchivedJobsByCompanyId(sql: Sql, args: getArchivedJobs
     }));
 }
 
+export const getOpenJobsByCompanyIdQuery = `-- name: getOpenJobsByCompanyId :many
+SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.status, j.location, j.workplace_type, j.employment_type, j.experience_level, j.salary_min, j.salary_max, j.salary_currency, j.team_size, j.headcount, j.expires_at, j.archived_at, j.created_at, j.updated_at,
+       c.name AS company_name,
+       c.slug AS company_slug
+FROM jobs j
+JOIN companies c ON c.id = j.company_id
+WHERE j.company_id = $1
+  AND j.status = 'open'
+  AND j.archived_at IS NULL
+  AND (j.expires_at IS NULL OR j.expires_at > now())
+ORDER BY j.created_at DESC`;
+
+export interface getOpenJobsByCompanyIdArgs {
+    companyId: string;
+}
+
+export interface getOpenJobsByCompanyIdRow {
+    id: string;
+    companyId: string;
+    title: string;
+    description: string;
+    requirements: any;
+    status: string;
+    location: string | null;
+    workplaceType: string | null;
+    employmentType: string | null;
+    experienceLevel: string | null;
+    salaryMin: number | null;
+    salaryMax: number | null;
+    salaryCurrency: string;
+    teamSize: number | null;
+    headcount: number | null;
+    expiresAt: Date | null;
+    archivedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+    companyName: string;
+    companySlug: string;
+}
+
+export async function getOpenJobsByCompanyId(sql: Sql, args: getOpenJobsByCompanyIdArgs): Promise<getOpenJobsByCompanyIdRow[]> {
+    return (await sql.unsafe(getOpenJobsByCompanyIdQuery, [args.companyId]).values()).map(row => ({
+        id: row[0],
+        companyId: row[1],
+        title: row[2],
+        description: row[3],
+        requirements: row[4],
+        status: row[5],
+        location: row[6],
+        workplaceType: row[7],
+        employmentType: row[8],
+        experienceLevel: row[9],
+        salaryMin: row[10],
+        salaryMax: row[11],
+        salaryCurrency: row[12],
+        teamSize: row[13],
+        headcount: row[14],
+        expiresAt: row[15],
+        archivedAt: row[16],
+        createdAt: row[17],
+        updatedAt: row[18],
+        companyName: row[19],
+        companySlug: row[20]
+    }));
+}
+

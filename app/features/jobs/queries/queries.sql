@@ -79,3 +79,15 @@ FROM jobs
 WHERE company_id = $1
   AND archived_at IS NOT NULL
 ORDER BY archived_at DESC;
+
+-- name: getOpenJobsByCompanyId :many
+SELECT j.*,
+       c.name AS company_name,
+       c.slug AS company_slug
+FROM jobs j
+JOIN companies c ON c.id = j.company_id
+WHERE j.company_id = $1
+  AND j.status = 'open'
+  AND j.archived_at IS NULL
+  AND (j.expires_at IS NULL OR j.expires_at > now())
+ORDER BY j.created_at DESC;

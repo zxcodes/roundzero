@@ -1,6 +1,5 @@
 import {
   Alert02Icon,
-  ArrowRight01Icon,
   ArrowRightDoubleIcon,
   BubbleChatIcon,
   CheckmarkCircle02Icon,
@@ -8,6 +7,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { PublicFooter, PublicHeader } from "@/components/public-layout";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
@@ -22,40 +22,14 @@ export const Route = createFileRoute("/")({
 function HomePage() {
   return (
     <div className="bg-background text-foreground min-h-svh">
-      <Nav />
+      <PublicHeader />
       <Hero />
       <InterviewSection />
       <ReportSection />
       <RankingSection />
       <BottomCTA />
-      <Footer />
+      <PublicFooter />
     </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Nav
-// ---------------------------------------------------------------------------
-function Nav() {
-  return (
-    <header className="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-xl backdrop-saturate-150">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6 lg:px-8">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="flex size-7 items-center justify-center rounded-lg bg-primary">
-            <span className="text-xs font-bold text-primary-foreground">H</span>
-          </div>
-          <span className="text-base font-semibold tracking-tight">hirely</span>
-        </Link>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="text-muted-foreground" asChild>
-            <Link to="/login">Log in</Link>
-          </Button>
-          <Button size="sm" asChild>
-            <Link to="/login">Get started</Link>
-          </Button>
-        </div>
-      </div>
-    </header>
   );
 }
 
@@ -89,15 +63,12 @@ function Hero() {
             Hirely conducts adaptive, structured interviews and produces scored candidate reports
             with evidence — so your team only talks to people worth their time.
           </p>
-          <div className="flex items-center gap-3 pt-1">
+          <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center">
             <Button size="lg" asChild>
-              <Link to="/login">
-                Start hiring
-                <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="ml-1 size-4" />
-              </Link>
+              <Link to="/company/login">For companies</Link>
             </Button>
-            <Button variant="ghost" size="lg" className="text-muted-foreground">
-              See how it works
+            <Button variant="outline" size="lg" asChild>
+              <Link to="/candidate/login">For job seekers</Link>
             </Button>
           </div>
         </div>
@@ -429,31 +400,16 @@ function BottomCTA() {
             Post your first job and let Hirely handle the first round. Your team gets scored,
             explained candidates — ready for a real conversation.
           </p>
-          <Button size="lg" className="mt-8" asChild>
-            <Link to="/login">
-              Get started
-              <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="ml-1 size-4" />
-            </Link>
-          </Button>
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Button size="lg" asChild>
+              <Link to="/company/login">For companies</Link>
+            </Button>
+            <Button variant="outline" size="lg" asChild>
+              <Link to="/candidate/login">For job seekers</Link>
+            </Button>
+          </div>
         </div>
       </div>
     </section>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Footer
-// ---------------------------------------------------------------------------
-function Footer() {
-  return (
-    <footer className="border-t border-border/40">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6 text-sm text-muted-foreground lg:px-8">
-        <span>&copy; {new Date().getFullYear()} Hirely</span>
-        <div className="flex gap-6">
-          <span className="cursor-pointer transition-colors hover:text-foreground">Privacy</span>
-          <span className="cursor-pointer transition-colors hover:text-foreground">Terms</span>
-        </div>
-      </div>
-    </footer>
   );
 }

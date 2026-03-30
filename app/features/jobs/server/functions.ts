@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
+import { z } from "zod";
 import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
@@ -9,6 +10,7 @@ import {
   getArchivedJobsByCompanyId,
   getJobById,
   getJobsByCompanyId,
+  getOpenJobsByCompanyId as getOpenJobsByCompanyIdQuery,
   getOpenJobs as getOpenJobsQuery,
   updateJob as updateJobQuery,
 } from "../queries/queries_sql";
@@ -179,4 +181,30 @@ export const publishJob = createServerFn({ method: "POST" })
     }
 
     return { job: updated };
+  });
+
+// --- Public Server Functions ---
+
+const companyIdSchema = z.object({
+  companyId: z.string().uuid(),
+});
+
+export const getPublicJobById = createServerFn({ method: "GET" })
+  .inputValidator(zodValidator(jobIdSchema))
+  .handler(async ({ data }) => {
+    const db = getDb();
+    const job = await getJobById(db, { id: data.id });
+
+    if (!job || job.status !== "open" || job.archivedAt) {
+      throw new Error("Job not found");
+    }
+
+    return job;
+  });
+
+export const getOpenJobsByCompanyId = createServerFn({ method: "GET" })
+  .inputValidator(zodValidator(companyIdSchema))
+  .handler(async ({ data }) => {
+    const db = getDb();
+    return getOpenJobsByCompanyIdQuery(db, { companyId: data.companyId });
   });

@@ -8,7 +8,9 @@ import { authMiddleware, companyMiddleware } from "@/shared/middleware";
 import { type SessionData, sessionConfig } from "@/shared/session";
 import {
   createCompany as createCompanyQuery,
+  getAllCompanies as getAllCompaniesQuery,
   getCompanyByOwnerId,
+  getCompanyBySlug as getCompanyBySlugQuery,
   slugExists,
   updateCompanyProfile as updateCompanyProfileQuery,
 } from "../queries/queries_sql";
@@ -144,4 +146,26 @@ export const updateCompanyProfile = createServerFn({ method: "POST" })
     }
 
     return { company: updated };
+  });
+
+// --- Public Server Functions ---
+
+export const getAllCompanies = createServerFn({ method: "GET" }).handler(async () => {
+  const db = getDb();
+  return getAllCompaniesQuery(db);
+});
+
+const companySlugSchema = z.object({
+  slug: z.string().min(1),
+});
+
+export const getCompanyBySlug = createServerFn({ method: "GET" })
+  .inputValidator(zodValidator(companySlugSchema))
+  .handler(async ({ data }) => {
+    const db = getDb();
+    const company = await getCompanyBySlugQuery(db, { slug: data.slug });
+    if (!company) {
+      throw new Error("Company not found");
+    }
+    return company;
   });

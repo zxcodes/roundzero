@@ -1,6 +1,6 @@
 import { type TokenResponse, useGoogleLogin } from "@react-oauth/google";
 import { useRouter } from "@tanstack/react-router";
-import { createContext, use, useCallback, useRef } from "react";
+import { createContext, use, useRef } from "react";
 import { toast } from "sonner";
 import type { UserRole } from "@/shared/enums";
 import { loginWithGoogle, logout } from "./server/functions";
@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await router.navigate({ to: "/dashboard" });
         } else {
           // Shouldn't happen with role-based login, but fallback
-          await router.navigate({ to: "/login" });
+          await router.navigate({ to: "/" });
         }
       } catch (error) {
         console.error("Authentication error:", error);
@@ -46,24 +46,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
   });
 
-  const signIn = useCallback(
-    (role?: UserRole) => {
-      pendingRoleRef.current = role;
-      login();
-    },
-    [login],
-  );
+  const signIn = (role?: UserRole) => {
+    pendingRoleRef.current = role;
+    login();
+  };
 
-  const signOut = useCallback(async () => {
+  const signOut = async () => {
     try {
       await logout();
       await router.invalidate();
-      await router.navigate({ to: "/login" });
+      await router.navigate({ to: "/" });
     } catch (error) {
       console.error("Logout failed:", error);
       toast.error("Failed to sign out");
     }
-  }, [router]);
+  };
 
   return <AuthContext value={{ signIn, signOut }}>{children}</AuthContext>;
 }

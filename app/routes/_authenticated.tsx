@@ -7,13 +7,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: ({ context }) => {
     if (!context.user) {
-      throw redirect({
-        to: "/login",
-      });
+      throw redirect({ to: "/" });
     }
     if (!context.user.role) {
-      // User authenticated but no role — send to login to pick one
-      throw redirect({ to: "/login" });
+      // User authenticated but no role — shouldn't happen with role-based login
+      throw redirect({ to: "/" });
     }
   },
   component: AuthenticatedLayout,
