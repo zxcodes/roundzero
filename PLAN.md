@@ -99,15 +99,27 @@ Solidify RoundZero as a usable job platform before adding AI. Public browsing, p
 - [x] Seed data enrichment — tech_stack, social_links, founded_year, culture, work_history, links
 - [x] Fix JSONB double-encoding bug — seed scripts used `JSON.stringify()` instead of `sql.json()` for tagged template inserts, causing JSONB columns to store strings instead of arrays/objects
 
-### Sub-project 3: Onboarding Flows ← NEXT
+### Sub-project 3: Onboarding Flows ✅
 
-- [ ] Company onboarding redesign — minimal fields (name, logo, industry, size, description), polished centered layout
-- [ ] Candidate onboarding — new flow: name (pre-filled), headline, resume upload
-- [ ] Company profile settings page — all fields editable, organized in sections
-- [ ] Candidate profile settings page — resume, headline, bio, skills, work history, links
-- [ ] Onboarding should not show dashboard sidebar — standalone centered layout
+- [x] Company onboarding redesign — minimal fields (name, logo, industry, size, description), polished centered layout
+- [x] Candidate onboarding — new flow: name (pre-filled), headline, resume upload
+- [x] Company profile settings page — all fields editable, organized in sections
+- [x] Candidate profile settings page — resume, headline, bio, skills, work history, links
+- [x] Onboarding should not show dashboard sidebar — standalone centered layout
 
-### Sub-project 4: Apply Flow Rework + Job Expiry
+### Sub-project 4: Server-Side Pagination ✅
+
+- [x] Schema cleanup — removed duplicate slug index on companies, case-insensitive email unique index on users, added `updated_at` to interviews
+- [x] Converted raw `<button>` remove/dismiss icons to shadcn `Button` across onboarding forms
+- [x] Added shadcn Pagination component
+- [x] SQL queries: `getOpenJobsPaginated` + `countOpenJobsFiltered` (jobs), `getAllCompaniesPaginated` + `countCompaniesFiltered` (companies) — all with `sqlc.arg()` named params
+- [x] Paginated server functions for jobs and companies (12 items/page, search + filter params, returns `{ items, total, totalPages }`)
+- [x] Shared `PaginationNav` component — shadcn primitives with TanStack Router `Link`, preserves search params
+- [x] `/jobs/` route — server-side filtering via `loaderDeps`, removed client-side `.filter()`, pagination UI
+- [x] `/companies/` route — same pattern as jobs, filter changes reset to page 1
+- [x] Trimmed `AGENTS.md`, added JSONB rule, verified zero `JSON.stringify`/`JSON.parse` in codebase
+
+### Sub-project 5: Apply Flow Rework + Job Expiry ← NEXT
 
 - [ ] One-click apply: single button, uses resume from candidate profile
 - [ ] Guard: require resume in profile before applying (prompt to complete profile if missing)
