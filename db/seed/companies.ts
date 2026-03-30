@@ -55,6 +55,26 @@ const companySizes = [
   "1000+",
 ] as const;
 
+const techStacks = [
+  ["TypeScript", "React", "Node.js", "PostgreSQL", "AWS", "Redis"],
+  ["Python", "Django", "PostgreSQL", "Celery", "GCP", "Docker"],
+  ["Go", "Kubernetes", "Terraform", "gRPC", "ClickHouse", "Prometheus"],
+  ["TypeScript", "Next.js", "Prisma", "Tailwind CSS", "Vercel", "Stripe API"],
+  ["Java", "Spring Boot", "Kafka", "PostgreSQL", "AWS", "Elasticsearch"],
+  ["Rust", "WebAssembly", "C++", "Linux", "Redis", "gRPC"],
+  ["TypeScript", "Vue.js", "GraphQL", "PostgreSQL", "Docker", "Cloudflare Workers"],
+  ["Python", "FastAPI", "SQLAlchemy", "Redis", "AWS", "Terraform"],
+] as const;
+
+const cultureTexts = [
+  "We value autonomy, clear communication, and shipping high-quality work. Async-first with optional in-person meetups quarterly.",
+  "Engineering-driven culture with weekly demos, blameless retros, and a strong emphasis on documentation and code review.",
+  "Small, focused teams with full ownership of their domain. We invest heavily in DX, testing, and operational excellence.",
+  "Collaborative environment with a bias for action. We ship fast, measure everything, and iterate based on real user feedback.",
+  "Remote-first with flexible hours. We care about outcomes, not hours logged. Strong mentorship culture with regular 1:1s.",
+  "Flat hierarchy where engineers have direct access to customers. We prioritize technical depth and long-term thinking.",
+] as const;
+
 const generateSlug = (name: string): string =>
   name
     .toLowerCase()
@@ -81,24 +101,40 @@ async function seedCompanies() {
     const sector = pick(sectors, index);
     const industry = pick(industries, index);
     const companySize = pick(companySizes, index + 1);
+    const slug = generateSlug(companyNames[index]!);
 
     return {
       id: makeUuid("rz-seed-company", index + 1),
       ownerId: owner.id,
       name: companyNames[index]!,
-      slug: generateSlug(companyNames[index]!),
+      slug,
       description: `${companyNames[index]!} is a ${sector.toLowerCase()} company based in ${city}. We build software for enterprise operators and product teams, with a strong focus on reliability, measurable outcomes, and long-term platform scalability.`,
       industry,
       companySize,
       location: city,
-      website: `https://${generateSlug(companyNames[index]!)}.com`,
+      website: `https://${slug}.com`,
+      foundedYear: 2015 + (index % 10),
+      techStack: [...pick(techStacks, index)],
+      culture: pick(cultureTexts, index),
+      socialLinks: {
+        LinkedIn: `https://linkedin.com/company/${slug}`,
+        Twitter: `https://twitter.com/${slug}`,
+      },
     };
   });
 
   for (const company of companies) {
     await sql`
-      INSERT INTO companies (id, owner_id, name, slug, description, industry, company_size, location, website)
-      VALUES (${company.id}, ${company.ownerId}, ${company.name}, ${company.slug}, ${company.description}, ${company.industry}, ${company.companySize}, ${company.location}, ${company.website})
+      INSERT INTO companies (
+        id, owner_id, name, slug, description, industry, company_size,
+        location, website, founded_year, tech_stack, culture, social_links
+      )
+      VALUES (
+        ${company.id}, ${company.ownerId}, ${company.name}, ${company.slug},
+        ${company.description}, ${company.industry}, ${company.companySize},
+        ${company.location}, ${company.website}, ${company.foundedYear},
+        ${sql.json(company.techStack)}, ${company.culture}, ${sql.json(company.socialLinks)}
+      )
       ON CONFLICT (id) DO UPDATE
       SET
         owner_id = EXCLUDED.owner_id,
@@ -109,6 +145,10 @@ async function seedCompanies() {
         company_size = EXCLUDED.company_size,
         location = EXCLUDED.location,
         website = EXCLUDED.website,
+        founded_year = EXCLUDED.founded_year,
+        tech_stack = EXCLUDED.tech_stack,
+        culture = EXCLUDED.culture,
+        social_links = EXCLUDED.social_links,
         updated_at = now()
     `;
   }
