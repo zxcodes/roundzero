@@ -48,14 +48,10 @@ function Nav() {
         </Link>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" className="text-muted-foreground" asChild>
-            <Link to="/login" search={{ redirect: "/dashboard" }}>
-              Log in
-            </Link>
+            <Link to="/login">Log in</Link>
           </Button>
           <Button size="sm" asChild>
-            <Link to="/login" search={{ redirect: "/dashboard" }}>
-              Get started
-            </Link>
+            <Link to="/login">Get started</Link>
           </Button>
         </div>
       </div>
@@ -95,7 +91,7 @@ function Hero() {
           </p>
           <div className="flex items-center gap-3 pt-1">
             <Button size="lg" asChild>
-              <Link to="/login" search={{ redirect: "/dashboard" }}>
+              <Link to="/login">
                 Start hiring
                 <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="ml-1 size-4" />
               </Link>
@@ -434,7 +430,7 @@ function BottomCTA() {
             explained candidates — ready for a real conversation.
           </p>
           <Button size="lg" className="mt-8" asChild>
-            <Link to="/login" search={{ redirect: "/dashboard" }}>
+            <Link to="/login">
               Get started
               <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="ml-1 size-4" />
             </Link>

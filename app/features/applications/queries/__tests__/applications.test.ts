@@ -32,6 +32,7 @@ const makeOpenJob = async (companyId: string, title = "Open Job") => {
     salaryCurrency: "USD",
     teamSize: null,
     headcount: null,
+    expiresAt: null,
   });
   return job!;
 };

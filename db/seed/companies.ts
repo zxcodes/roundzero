@@ -33,7 +33,34 @@ const sectors = [
   "B2B SaaS",
 ] as const;
 
-const sizeRanges = ["50-100", "100-250", "250-500", "500-1,000"] as const;
+const industries = [
+  "technology",
+  "finance",
+  "healthcare",
+  "education",
+  "ecommerce",
+  "saas",
+  "consulting",
+  "gaming",
+  "media",
+  "other",
+] as const;
+
+const companySizes = [
+  "1-10",
+  "11-50",
+  "51-200",
+  "201-500",
+  "501-1000",
+  "1000+",
+] as const;
+
+const generateSlug = (name: string): string =>
+  name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 
 async function seedCompanies() {
   const companyUsers = await sql<{ id: string }[]>`
@@ -52,25 +79,37 @@ async function seedCompanies() {
   const companies = companyUsers.map((owner, index) => {
     const city = copycat.city(`hirely-seed-company-city-${index + 1}`);
     const sector = pick(sectors, index);
-    const size = pick(sizeRanges, index + 2);
+    const industry = pick(industries, index);
+    const companySize = pick(companySizes, index + 1);
 
     return {
       id: makeUuid("hirely-seed-company", index + 1),
       ownerId: owner.id,
       name: companyNames[index]!,
-      description: `${companyNames[index]!} is a ${sector.toLowerCase()} company based in ${city}. We build software for enterprise operators and product teams, with a strong focus on reliability, measurable outcomes, and long-term platform scalability. Our team is ${size} people and growing across engineering, product, and design.`,
+      slug: generateSlug(companyNames[index]!),
+      description: `${companyNames[index]!} is a ${sector.toLowerCase()} company based in ${city}. We build software for enterprise operators and product teams, with a strong focus on reliability, measurable outcomes, and long-term platform scalability.`,
+      industry,
+      companySize,
+      location: city,
+      website: `https://${generateSlug(companyNames[index]!)}.com`,
     };
   });
 
   for (const company of companies) {
     await sql`
-      INSERT INTO companies (id, owner_id, name, description)
-      VALUES (${company.id}, ${company.ownerId}, ${company.name}, ${company.description})
+      INSERT INTO companies (id, owner_id, name, slug, description, industry, company_size, location, website)
+      VALUES (${company.id}, ${company.ownerId}, ${company.name}, ${company.slug}, ${company.description}, ${company.industry}, ${company.companySize}, ${company.location}, ${company.website})
       ON CONFLICT (id) DO UPDATE
       SET
         owner_id = EXCLUDED.owner_id,
         name = EXCLUDED.name,
-        description = EXCLUDED.description
+        slug = EXCLUDED.slug,
+        description = EXCLUDED.description,
+        industry = EXCLUDED.industry,
+        company_size = EXCLUDED.company_size,
+        location = EXCLUDED.location,
+        website = EXCLUDED.website,
+        updated_at = now()
     `;
   }
 

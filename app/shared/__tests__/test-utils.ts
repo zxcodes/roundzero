@@ -33,7 +33,7 @@ export const closeTestDb = async () => {
 /** Delete all test data in correct FK order. Call in afterEach or afterAll. */
 export const cleanTestData = async () => {
   const sql = getTestDb();
-  await sql`TRUNCATE reports, interviews, applications, jobs, companies, users CASCADE`;
+  await sql`TRUNCATE reports, interviews, applications, jobs, companies, candidate_profiles, users CASCADE`;
 };
 
 // ─── Seed helpers ────────────────────────────────────────────────
@@ -70,12 +70,14 @@ export interface TestCompany {
   id: string;
   ownerId: string;
   name: string;
+  slug: string;
 }
 
 /** Create a test company. Creates an owner user if ownerId not provided. */
 export const seedCompany = async (overrides?: {
   ownerId?: string;
   name?: string;
+  slug?: string;
   description?: string | null;
 }): Promise<{ company: TestCompany; owner: TestUser }> => {
   const owner = overrides?.ownerId
@@ -84,12 +86,18 @@ export const seedCompany = async (overrides?: {
 
   const sql = getTestDb();
   const name = overrides?.name ?? "Test Company";
+  const slug =
+    overrides?.slug ??
+    `${name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")}-${crypto.randomUUID().slice(0, 6)}`;
   const description = overrides?.description ?? null;
 
   const [row] = await sql`
-    INSERT INTO companies (owner_id, name, description)
-    VALUES (${owner.id}, ${name}, ${description})
-    RETURNING id, owner_id AS "ownerId", name
+    INSERT INTO companies (owner_id, name, slug, description)
+    VALUES (${owner.id}, ${name}, ${slug}, ${description})
+    RETURNING id, owner_id AS "ownerId", name, slug
   `;
   return { company: row as TestCompany, owner };
 };
@@ -123,4 +131,32 @@ export const seedJob = async (overrides?: {
     RETURNING id, company_id AS "companyId", title, status
   `;
   return { job: row as TestJob, companyId };
+};
+
+export interface TestCandidateProfile {
+  id: string;
+  userId: string;
+  headline: string | null;
+}
+
+/** Create a test candidate profile. Creates a candidate user if userId not provided. */
+export const seedCandidateProfile = async (overrides?: {
+  userId?: string;
+  headline?: string | null;
+  resumeUrl?: string | null;
+}): Promise<{ profile: TestCandidateProfile; user: TestUser }> => {
+  const user = overrides?.userId
+    ? ({ id: overrides.userId } as TestUser)
+    : await seedUser({ role: "candidate" });
+
+  const sql = getTestDb();
+  const headline = overrides?.headline ?? "Software Engineer";
+  const resumeUrl = overrides?.resumeUrl ?? null;
+
+  const [row] = await sql`
+    INSERT INTO candidate_profiles (user_id, headline, resume_url)
+    VALUES (${user.id}, ${headline}, ${resumeUrl})
+    RETURNING id, user_id AS "userId", headline
+  `;
+  return { profile: row as TestCandidateProfile, user };
 };

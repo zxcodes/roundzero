@@ -5,6 +5,7 @@ console.log("Starting Hirely seed pipeline...\n");
 try {
   await $`bun ./db/seed/users.ts`;
   await $`bun ./db/seed/companies.ts`;
+  await $`bun ./db/seed/candidate-profiles.ts`;
   await $`bun ./db/seed/jobs.ts`;
   await $`bun ./db/seed/applications.ts`;
   await $`bun ./db/seed/interviews.ts`;

@@ -14,14 +14,42 @@ CREATE TABLE users (
 
 -- Companies
 CREATE TABLE companies (
-  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  owner_id    UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
-  name        TEXT NOT NULL,
-  description TEXT,
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_id       UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  name           TEXT NOT NULL,
+  slug           TEXT UNIQUE NOT NULL,
+  description    TEXT,
+  logo_url       TEXT,
+  website        TEXT,
+  industry       TEXT,
+  company_size   TEXT,
+  founded_year   INTEGER,
+  location       TEXT,
+  tech_stack     JSONB NOT NULL DEFAULT '[]',
+  culture        TEXT,
+  social_links   JSONB NOT NULL DEFAULT '{}',
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX idx_companies_owner ON companies(owner_id);
+CREATE UNIQUE INDEX idx_companies_slug ON companies(slug);
+
+-- Candidate profiles
+CREATE TABLE candidate_profiles (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id       UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE RESTRICT,
+  headline      TEXT,
+  resume_url    TEXT,
+  bio           TEXT,
+  skills        JSONB NOT NULL DEFAULT '[]',
+  work_history  JSONB NOT NULL DEFAULT '[]',
+  links         JSONB NOT NULL DEFAULT '[]',
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_candidate_profiles_user ON candidate_profiles(user_id);
 
 -- Jobs
 CREATE TABLE jobs (
@@ -40,6 +68,7 @@ CREATE TABLE jobs (
   salary_currency  TEXT NOT NULL DEFAULT 'USD',
   team_size        INTEGER,
   headcount        INTEGER DEFAULT 1,
+  expires_at       TIMESTAMPTZ,
   archived_at      TIMESTAMPTZ,
   created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at       TIMESTAMPTZ NOT NULL DEFAULT now()

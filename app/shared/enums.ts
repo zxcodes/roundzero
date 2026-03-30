@@ -47,7 +47,54 @@ export type InterviewStatus = z.infer<typeof interviewStatusSchema>;
 export const recommendationSchema = z.enum(["strong_hire", "consider", "not_recommended"]);
 export type Recommendation = z.infer<typeof recommendationSchema>;
 
+export const companySizeSchema = z.enum([
+  "1-10",
+  "11-50",
+  "51-200",
+  "201-500",
+  "501-1000",
+  "1000+",
+]);
+export type CompanySize = z.infer<typeof companySizeSchema>;
+
+export const industrySchema = z.enum([
+  "technology",
+  "finance",
+  "healthcare",
+  "education",
+  "ecommerce",
+  "media",
+  "gaming",
+  "saas",
+  "consulting",
+  "other",
+]);
+export type Industry = z.infer<typeof industrySchema>;
+
 // Display label helpers
+
+export const companySizeLabels: Record<CompanySize, string> = {
+  "1-10": "1–10 employees",
+  "11-50": "11–50 employees",
+  "51-200": "51–200 employees",
+  "201-500": "201–500 employees",
+  "501-1000": "501–1,000 employees",
+  "1000+": "1,000+ employees",
+};
+
+export const industryLabels: Record<Industry, string> = {
+  technology: "Technology",
+  finance: "Finance",
+  healthcare: "Healthcare",
+  education: "Education",
+  ecommerce: "E-commerce",
+  media: "Media & Entertainment",
+  gaming: "Gaming",
+  saas: "SaaS",
+  consulting: "Consulting",
+  other: "Other",
+};
+
 export const workplaceTypeLabels: Record<WorkplaceType, string> = {
   remote: "Remote",
   hybrid: "Hybrid",

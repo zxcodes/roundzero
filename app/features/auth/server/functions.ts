@@ -14,6 +14,7 @@ import {
 
 const googleAuthSchema = z.object({
   access_token: z.string().min(1),
+  role: userRoleSchema.optional(),
 });
 
 export const loginWithGoogle = createServerFn({ method: "POST" })
@@ -44,6 +45,18 @@ export const loginWithGoogle = createServerFn({ method: "POST" })
 
     if (!user) {
       throw new Error("Failed to create or update user");
+    }
+
+    // Auto-assign role if provided and user doesn't have one yet
+    if (data.role && !user.role) {
+      const updated = await setUserRoleQuery(db, {
+        role: data.role,
+        id: user.id,
+      });
+      if (updated) {
+        await updateSession<SessionData>(sessionConfig, { userId: updated.id });
+        return { user: updated };
+      }
     }
 
     await updateSession<SessionData>(sessionConfig, { userId: user.id });

@@ -36,6 +36,24 @@ CREATE TABLE public.applications (
 
 
 --
+-- Name: candidate_profiles; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.candidate_profiles (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    headline text,
+    resume_url text,
+    bio text,
+    skills jsonb DEFAULT '[]'::jsonb NOT NULL,
+    work_history jsonb DEFAULT '[]'::jsonb NOT NULL,
+    links jsonb DEFAULT '[]'::jsonb NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: companies; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -43,8 +61,19 @@ CREATE TABLE public.companies (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     owner_id uuid NOT NULL,
     name text NOT NULL,
+    slug text NOT NULL,
     description text,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
+    logo_url text,
+    website text,
+    industry text,
+    company_size text,
+    founded_year integer,
+    location text,
+    tech_stack jsonb DEFAULT '[]'::jsonb NOT NULL,
+    culture text,
+    social_links jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -83,6 +112,7 @@ CREATE TABLE public.jobs (
     salary_currency text DEFAULT 'USD'::text NOT NULL,
     team_size integer,
     headcount integer DEFAULT 1,
+    expires_at timestamp with time zone,
     archived_at timestamp with time zone,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
@@ -150,11 +180,35 @@ ALTER TABLE ONLY public.applications
 
 
 --
+-- Name: candidate_profiles candidate_profiles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.candidate_profiles
+    ADD CONSTRAINT candidate_profiles_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: candidate_profiles candidate_profiles_user_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.candidate_profiles
+    ADD CONSTRAINT candidate_profiles_user_id_key UNIQUE (user_id);
+
+
+--
 -- Name: companies companies_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.companies
     ADD CONSTRAINT companies_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: companies companies_slug_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.companies
+    ADD CONSTRAINT companies_slug_key UNIQUE (slug);
 
 
 --
@@ -236,10 +290,24 @@ CREATE INDEX idx_applications_job ON public.applications USING btree (job_id);
 
 
 --
+-- Name: idx_candidate_profiles_user; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_candidate_profiles_user ON public.candidate_profiles USING btree (user_id);
+
+
+--
 -- Name: idx_companies_owner; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_companies_owner ON public.companies USING btree (owner_id);
+
+
+--
+-- Name: idx_companies_slug; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_companies_slug ON public.companies USING btree (slug);
 
 
 --
@@ -291,6 +359,14 @@ ALTER TABLE ONLY public.applications
 
 ALTER TABLE ONLY public.applications
     ADD CONSTRAINT applications_job_id_fkey FOREIGN KEY (job_id) REFERENCES public.jobs(id) ON DELETE RESTRICT;
+
+
+--
+-- Name: candidate_profiles candidate_profiles_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.candidate_profiles
+    ADD CONSTRAINT candidate_profiles_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE RESTRICT;
 
 
 --

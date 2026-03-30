@@ -41,3 +41,12 @@ sql:
         options:
           runtime: node
           driver: postgres
+  - schema: "db/migrations"
+    queries: "app/features/candidates/queries/queries.sql"
+    engine: postgresql
+    codegen:
+      - out: app/features/candidates/queries
+        plugin: ts
+        options:
+          runtime: node
+          driver: postgres

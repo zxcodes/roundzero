@@ -28,6 +28,7 @@ const makeJobArgs = (companyId: string, overrides?: Record<string, unknown>) => 
   salaryCurrency: "USD",
   teamSize: 5,
   headcount: 2,
+  expiresAt: null as Date | null,
   ...overrides,
 });
 
@@ -161,6 +162,7 @@ describe("updateJob", () => {
       salaryCurrency: "EUR",
       teamSize: 10,
       headcount: 3,
+      expiresAt: null,
     });
 
     expect(updated).not.toBeNull();
@@ -180,6 +182,7 @@ describe("updateJob", () => {
       ...makeJobArgs(c2.id, { title: "Hacked" }),
       id: created!.id,
       companyId: c2.id,
+      expiresAt: null,
     });
 
     expect(result).toBeNull();
@@ -256,6 +259,32 @@ describe("getOpenJobs", () => {
     expect(open).toHaveLength(1);
     expect(open[0].title).toBe("Open Job");
     expect(open[0].companyName).toBe("Visible Corp");
+    expect(open[0].companySlug).toBeDefined();
+  });
+
+  it("excludes expired jobs", async () => {
+    const { company } = await seedCompany({ name: "Expiry Corp" });
+    const pastDate = new Date("2020-01-01");
+    const futureDate = new Date("2099-01-01");
+
+    await createJob(
+      sql,
+      makeJobArgs(company.id, { title: "Expired Job", status: "open", expiresAt: pastDate }),
+    );
+    await createJob(
+      sql,
+      makeJobArgs(company.id, { title: "Future Job", status: "open", expiresAt: futureDate }),
+    );
+    await createJob(
+      sql,
+      makeJobArgs(company.id, { title: "No Expiry Job", status: "open", expiresAt: null }),
+    );
+
+    const open = await getOpenJobs(sql);
+    const titles = open.map((j) => j.title);
+    expect(titles).toContain("Future Job");
+    expect(titles).toContain("No Expiry Job");
+    expect(titles).not.toContain("Expired Job");
   });
 });
 

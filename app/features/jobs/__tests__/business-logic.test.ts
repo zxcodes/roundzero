@@ -25,6 +25,7 @@ const makeJobArgs = (companyId: string, overrides?: Record<string, unknown>) => 
   salaryCurrency: "USD",
   teamSize: null,
   headcount: null,
+  expiresAt: null,
   ...overrides,
 });
 

@@ -5,15 +5,15 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 export const Route = createFileRoute("/_authenticated")({
-  beforeLoad: ({ context, location }) => {
+  beforeLoad: ({ context }) => {
     if (!context.user) {
       throw redirect({
         to: "/login",
-        search: { redirect: location.href },
       });
     }
     if (!context.user.role) {
-      throw redirect({ to: "/choose-role" });
+      // User authenticated but no role — send to login to pick one
+      throw redirect({ to: "/login" });
     }
   },
   component: AuthenticatedLayout,

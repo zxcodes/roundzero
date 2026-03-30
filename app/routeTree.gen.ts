@@ -10,9 +10,10 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as ChooseRoleRouteImport } from './routes/choose-role'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CompanyLoginRouteImport } from './routes/company/login'
+import { Route as CandidateLoginRouteImport } from './routes/candidate/login'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard/index'
 import { Route as AuthenticatedOnboardingCompanyRouteImport } from './routes/_authenticated/onboarding/company'
@@ -26,11 +27,6 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ChooseRoleRoute = ChooseRoleRouteImport.update({
-  id: '/choose-role',
-  path: '/choose-role',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
@@ -38,6 +34,16 @@ const AuthenticatedRoute = AuthenticatedRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompanyLoginRoute = CompanyLoginRouteImport.update({
+  id: '/company/login',
+  path: '/company/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CandidateLoginRoute = CandidateLoginRouteImport.update({
+  id: '/candidate/login',
+  path: '/candidate/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -84,9 +90,10 @@ const AuthenticatedDashboardJobsJobIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/choose-role': typeof ChooseRoleRoute
   '/login': typeof LoginRoute
   '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
+  '/candidate/login': typeof CandidateLoginRoute
+  '/company/login': typeof CompanyLoginRoute
   '/dashboard/applications': typeof AuthenticatedDashboardApplicationsRoute
   '/onboarding/company': typeof AuthenticatedOnboardingCompanyRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
@@ -96,8 +103,9 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/choose-role': typeof ChooseRoleRoute
   '/login': typeof LoginRoute
+  '/candidate/login': typeof CandidateLoginRoute
+  '/company/login': typeof CompanyLoginRoute
   '/dashboard/applications': typeof AuthenticatedDashboardApplicationsRoute
   '/onboarding/company': typeof AuthenticatedOnboardingCompanyRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
@@ -109,9 +117,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
-  '/choose-role': typeof ChooseRoleRoute
   '/login': typeof LoginRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
+  '/candidate/login': typeof CandidateLoginRoute
+  '/company/login': typeof CompanyLoginRoute
   '/_authenticated/dashboard/applications': typeof AuthenticatedDashboardApplicationsRoute
   '/_authenticated/onboarding/company': typeof AuthenticatedOnboardingCompanyRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
@@ -123,9 +132,10 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/choose-role'
     | '/login'
     | '/dashboard'
+    | '/candidate/login'
+    | '/company/login'
     | '/dashboard/applications'
     | '/onboarding/company'
     | '/dashboard/'
@@ -135,8 +145,9 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/choose-role'
     | '/login'
+    | '/candidate/login'
+    | '/company/login'
     | '/dashboard/applications'
     | '/onboarding/company'
     | '/dashboard'
@@ -147,9 +158,10 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
-    | '/choose-role'
     | '/login'
     | '/_authenticated/dashboard'
+    | '/candidate/login'
+    | '/company/login'
     | '/_authenticated/dashboard/applications'
     | '/_authenticated/onboarding/company'
     | '/_authenticated/dashboard/'
@@ -161,8 +173,9 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
-  ChooseRoleRoute: typeof ChooseRoleRoute
   LoginRoute: typeof LoginRoute
+  CandidateLoginRoute: typeof CandidateLoginRoute
+  CompanyLoginRoute: typeof CompanyLoginRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -172,13 +185,6 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/choose-role': {
-      id: '/choose-role'
-      path: '/choose-role'
-      fullPath: '/choose-role'
-      preLoaderRoute: typeof ChooseRoleRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -193,6 +199,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/company/login': {
+      id: '/company/login'
+      path: '/company/login'
+      fullPath: '/company/login'
+      preLoaderRoute: typeof CompanyLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/candidate/login': {
+      id: '/candidate/login'
+      path: '/candidate/login'
+      fullPath: '/candidate/login'
+      preLoaderRoute: typeof CandidateLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/dashboard': {
@@ -287,8 +307,9 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
-  ChooseRoleRoute: ChooseRoleRoute,
   LoginRoute: LoginRoute,
+  CandidateLoginRoute: CandidateLoginRoute,
+  CompanyLoginRoute: CompanyLoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

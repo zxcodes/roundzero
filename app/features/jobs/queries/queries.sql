@@ -2,9 +2,9 @@
 INSERT INTO jobs (
   company_id, title, description, requirements, status,
   location, workplace_type, employment_type, experience_level,
-  salary_min, salary_max, salary_currency, team_size, headcount
+  salary_min, salary_max, salary_currency, team_size, headcount, expires_at
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
 RETURNING *;
 
 -- name: getJobsByCompanyId :many
@@ -16,7 +16,8 @@ ORDER BY created_at DESC;
 
 -- name: getJobById :one
 SELECT j.*,
-       c.name AS company_name
+       c.name AS company_name,
+       c.slug AS company_slug
 FROM jobs j
 JOIN companies c ON c.id = j.company_id
 WHERE j.id = $1;
@@ -36,9 +37,10 @@ SET title = $1,
     salary_currency = $11,
     team_size = $12,
     headcount = $13,
+    expires_at = $14,
     updated_at = now()
-WHERE id = $14
-  AND company_id = $15
+WHERE id = $15
+  AND company_id = $16
 RETURNING *;
 
 -- name: archiveJob :one
@@ -53,11 +55,13 @@ RETURNING *;
 
 -- name: getOpenJobs :many
 SELECT j.*,
-       c.name AS company_name
+       c.name AS company_name,
+       c.slug AS company_slug
 FROM jobs j
 JOIN companies c ON c.id = j.company_id
 WHERE j.status = 'open'
   AND j.archived_at IS NULL
+  AND (j.expires_at IS NULL OR j.expires_at > now())
 ORDER BY j.created_at DESC;
 
 -- name: countJobsByCompanyAndStatus :one

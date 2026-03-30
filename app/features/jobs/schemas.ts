@@ -21,6 +21,7 @@ export const jobFieldsSchema = z
     salaryCurrency: z.string().max(10).default("USD"),
     teamSize: z.number().int().positive().nullable().optional(),
     headcount: z.number().int().positive().nullable().optional(),
+    expiresAt: z.coerce.date().nullable().optional(),
   })
   .refine(
     (data) => {

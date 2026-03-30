@@ -38,6 +38,12 @@ case "$1" in
     docker rm -f hirely_pg_test
     ;;
   reset_pg)
+    docker rm -f hirely_pg_dev
+    setup_pg_db hirely_pg_dev $PG_DEV_PORT
+    database_url="postgresql://$PG_USER:$PG_PASSWORD@localhost:$PG_DEV_PORT/$PG_DB?sslmode=disable"
+    bunx dbmate --url $database_url wait
+    bunx dbmate --url $database_url migrate up
+
     docker rm -f hirely_pg_test
     setup_pg_db hirely_pg_test $PG_TEST_PORT
     database_url="postgresql://$PG_USER:$PG_PASSWORD@localhost:$PG_TEST_PORT/$PG_DB?sslmode=disable"
