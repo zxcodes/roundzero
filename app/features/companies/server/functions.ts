@@ -134,9 +134,9 @@ export const updateCompanyProfile = createServerFn({ method: "POST" })
       companySize: data.companySize,
       foundedYear: data.foundedYear,
       location: data.location,
-      techStack: data.techStack ? JSON.stringify(data.techStack) : null,
+      techStack: data.techStack,
       culture: data.culture,
-      socialLinks: data.socialLinks ? JSON.stringify(data.socialLinks) : null,
+      socialLinks: data.socialLinks,
       id: context.company.id,
       ownerId: context.userId,
     });

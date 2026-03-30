@@ -28,8 +28,8 @@ CREATE TABLE public.applications (
     job_id uuid NOT NULL,
     candidate_id uuid NOT NULL,
     resume_url text,
-    links jsonb DEFAULT '[]'::jsonb NOT NULL,
-    status text DEFAULT 'applied'::text NOT NULL,
+    links jsonb DEFAULT '[]'::jsonb,
+    status text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -45,9 +45,9 @@ CREATE TABLE public.candidate_profiles (
     headline text,
     resume_url text,
     bio text,
-    skills jsonb DEFAULT '[]'::jsonb NOT NULL,
-    work_history jsonb DEFAULT '[]'::jsonb NOT NULL,
-    links jsonb DEFAULT '[]'::jsonb NOT NULL,
+    skills jsonb DEFAULT '[]'::jsonb,
+    work_history jsonb DEFAULT '[]'::jsonb,
+    links jsonb DEFAULT '{}'::jsonb,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -69,9 +69,9 @@ CREATE TABLE public.companies (
     company_size text,
     founded_year integer,
     location text,
-    tech_stack jsonb DEFAULT '[]'::jsonb NOT NULL,
+    tech_stack jsonb DEFAULT '[]'::jsonb,
     culture text,
-    social_links jsonb DEFAULT '{}'::jsonb NOT NULL,
+    social_links jsonb DEFAULT '{}'::jsonb,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
 );

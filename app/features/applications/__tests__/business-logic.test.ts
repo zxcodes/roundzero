@@ -17,7 +17,7 @@ const makeOpenJob = async (companyId: string, title = "Open Job") => {
     companyId,
     title,
     description: "Test",
-    requirements: JSON.stringify([]),
+    requirements: [],
     status: "open",
     location: null,
     workplaceType: null,
@@ -46,7 +46,8 @@ describe("apply to job — guard logic", () => {
       jobId: job.id,
       candidateId: candidate.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
 
     expect(app).not.toBeNull();
@@ -62,7 +63,8 @@ describe("apply to job — guard logic", () => {
       jobId: job.id,
       candidateId: candidate.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
 
     await expect(
@@ -70,7 +72,8 @@ describe("apply to job — guard logic", () => {
         jobId: job.id,
         candidateId: candidate.id,
         resumeUrl: null,
-        links: JSON.stringify([]),
+        links: [],
+        status: "applied",
       }),
     ).rejects.toThrow();
   });
@@ -83,7 +86,8 @@ describe("apply to job — guard logic", () => {
         jobId: "00000000-0000-0000-0000-000000000000",
         candidateId: candidate.id,
         resumeUrl: null,
-        links: JSON.stringify([]),
+        links: [],
+        status: "applied",
       }),
     ).rejects.toThrow();
   });
@@ -100,7 +104,8 @@ describe("application status transitions", () => {
       jobId: job.id,
       candidateId: candidate.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
 
     expect(isValidTransition("applied", "interviewing")).toBe(true);
@@ -125,7 +130,8 @@ describe("application status transitions", () => {
       jobId: job.id,
       candidateId: candidate.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
     await updateApplicationStatus(sql, { id: app!.id, status: "interviewing" });
 
@@ -147,7 +153,8 @@ describe("application status transitions", () => {
       jobId: job.id,
       candidateId: candidate.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
     await updateApplicationStatus(sql, { id: app!.id, status: "rejected" });
 
@@ -166,7 +173,8 @@ describe("application status transitions", () => {
       jobId: job.id,
       candidateId: candidate.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
 
     const step1 = await updateApplicationStatus(sql, { id: app!.id, status: "interviewing" });
@@ -191,7 +199,8 @@ describe("application access control", () => {
       jobId: job.id,
       candidateId: candidate.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
 
     const found = await getApplicationByJobAndCandidate(sql, {
@@ -211,7 +220,8 @@ describe("application access control", () => {
       jobId: job.id,
       candidateId: candidate1.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
 
     const found = await getApplicationByJobAndCandidate(sql, {
@@ -229,7 +239,8 @@ describe("application access control", () => {
       jobId: job.id,
       candidateId: candidate.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
 
     const detail = await getApplicationById(sql, { id: app!.id });
@@ -253,7 +264,8 @@ describe("applications on archived jobs", () => {
       jobId: job.id,
       candidateId: candidate.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
 
     await archiveJob(sql, { id: job.id, companyId: company.id });

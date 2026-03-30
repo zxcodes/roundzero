@@ -102,13 +102,15 @@ export function ApplyForm({
                       />
                       <span className="truncate">{link}</span>
                     </span>
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon-xs"
                       onClick={() => linksField.removeValue(i)}
-                      className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
+                      className="shrink-0 text-muted-foreground hover:text-foreground"
                     >
                       <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-3.5" />
-                    </button>
+                    </Button>
                   </li>
                 ))}
               </ul>

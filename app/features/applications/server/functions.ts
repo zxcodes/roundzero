@@ -70,7 +70,8 @@ export const applyToJob = createServerFn({ method: "POST" })
       jobId: data.jobId,
       candidateId: context.userId,
       resumeUrl: data.resumeUrl ?? null,
-      links: JSON.stringify(data.links),
+      links: data.links,
+      status: "applied",
     });
 
     if (!application) {

@@ -21,7 +21,7 @@ const makeOpenJob = async (companyId: string, title = "Open Job") => {
     companyId,
     title,
     description: "Test",
-    requirements: JSON.stringify([]),
+    requirements: [],
     status: "open",
     location: null,
     workplaceType: null,
@@ -42,7 +42,7 @@ const makeDraftJob = async (companyId: string, title = "Draft Job") => {
     companyId,
     title,
     description: "Test",
-    requirements: JSON.stringify([]),
+    requirements: [],
     status: "draft",
     location: null,
     workplaceType: null,
@@ -102,25 +102,29 @@ describe("company dashboard metrics", () => {
       jobId: job1.id,
       candidateId: c1.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
     await createApplication(sql, {
       jobId: job1.id,
       candidateId: c2.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
     await createApplication(sql, {
       jobId: job2.id,
       candidateId: c3.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
     await createApplication(sql, {
       jobId: archivedJob.id,
       candidateId: c1.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
 
     // Archive one job — its applications should be excluded from count
@@ -158,25 +162,29 @@ describe("candidate dashboard metrics", () => {
       jobId: job1.id,
       candidateId: candidate.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
     const a2 = await createApplication(sql, {
       jobId: job2.id,
       candidateId: candidate.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
     const a3 = await createApplication(sql, {
       jobId: job3.id,
       candidateId: candidate.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
     await createApplication(sql, {
       jobId: job4.id,
       candidateId: candidate.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
 
     await updateApplicationStatus(sql, { id: a1!.id, status: "interviewing" });
@@ -203,13 +211,15 @@ describe("candidate dashboard metrics", () => {
       jobId: activeJob.id,
       candidateId: candidate.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
     await createApplication(sql, {
       jobId: archivedJob.id,
       candidateId: candidate.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
 
     await archiveJob(sql, { id: archivedJob.id, companyId: company.id });

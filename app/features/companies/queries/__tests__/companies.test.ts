@@ -177,9 +177,9 @@ describe("updateCompanyProfile", () => {
       companySize: "201-500",
       foundedYear: 2020,
       location: "San Francisco, CA",
-      techStack: JSON.stringify(["TypeScript", "React"]),
+      techStack: ["TypeScript", "React"],
       culture: "We value collaboration",
-      socialLinks: JSON.stringify({ linkedin: "https://linkedin.com/company/new" }),
+      socialLinks: { linkedin: "https://linkedin.com/company/new" },
     });
 
     expect(updated).not.toBeNull();

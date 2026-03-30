@@ -9,6 +9,7 @@ import { type SessionData, sessionConfig } from "@/shared/session";
 import {
   getUserById,
   setUserRole as setUserRoleQuery,
+  updateUserName as updateUserNameQuery,
   upsertUserByGoogleId,
 } from "../queries/queries_sql";
 
@@ -97,6 +98,27 @@ export const setRole = createServerFn({ method: "POST" })
 
     if (!user) {
       throw new Error("Failed to set role — role may already be set");
+    }
+
+    return { user };
+  });
+
+const updateNameSchema = z.object({
+  name: z.string().min(1, "Name is required").max(100),
+});
+
+export const updateUserName = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .inputValidator(zodValidator(updateNameSchema))
+  .handler(async ({ data, context }) => {
+    const db = getDb();
+    const user = await updateUserNameQuery(db, {
+      name: data.name.trim(),
+      id: context.userId,
+    });
+
+    if (!user) {
+      throw new Error("Failed to update name");
     }
 
     return { user };

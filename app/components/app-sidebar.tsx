@@ -3,6 +3,7 @@ import {
   Briefcase01Icon,
   House01Icon,
   Search01Icon,
+  Setting06Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
@@ -32,6 +33,11 @@ const companyMain = [
     url: "/dashboard/jobs",
     icon: <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} className="size-4" />,
   },
+  {
+    title: "Settings",
+    url: "/dashboard/settings",
+    icon: <HugeiconsIcon icon={Setting06Icon} strokeWidth={2} className="size-4" />,
+  },
 ];
 
 const candidateMain = [
@@ -49,6 +55,11 @@ const candidateMain = [
     title: "My Applications",
     url: "/dashboard/applications",
     icon: <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} className="size-4" />,
+  },
+  {
+    title: "Settings",
+    url: "/dashboard/settings",
+    icon: <HugeiconsIcon icon={Setting06Icon} strokeWidth={2} className="size-4" />,
   },
 ];
 

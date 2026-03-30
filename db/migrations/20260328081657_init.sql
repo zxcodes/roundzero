@@ -25,9 +25,9 @@ CREATE TABLE companies (
   company_size   TEXT,
   founded_year   INTEGER,
   location       TEXT,
-  tech_stack     JSONB NOT NULL DEFAULT '[]',
+  tech_stack     JSONB DEFAULT '[]',
   culture        TEXT,
-  social_links   JSONB NOT NULL DEFAULT '{}',
+  social_links   JSONB DEFAULT '{}',
   created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -42,9 +42,9 @@ CREATE TABLE candidate_profiles (
   headline      TEXT,
   resume_url    TEXT,
   bio           TEXT,
-  skills        JSONB NOT NULL DEFAULT '[]',
-  work_history  JSONB NOT NULL DEFAULT '[]',
-  links         JSONB NOT NULL DEFAULT '[]',
+  skills        JSONB DEFAULT '[]',
+  work_history  JSONB DEFAULT '[]',
+  links         JSONB DEFAULT '{}',
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -84,8 +84,8 @@ CREATE TABLE applications (
   job_id        UUID NOT NULL REFERENCES jobs(id) ON DELETE RESTRICT,
   candidate_id  UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
   resume_url    TEXT,
-  links         JSONB NOT NULL DEFAULT '[]',
-  status        TEXT NOT NULL DEFAULT 'applied',
+  links         JSONB DEFAULT '[]',
+  status        TEXT NOT NULL,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(job_id, candidate_id)

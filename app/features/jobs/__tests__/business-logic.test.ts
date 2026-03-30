@@ -14,7 +14,7 @@ const makeJobArgs = (companyId: string, overrides?: Record<string, unknown>) => 
   companyId,
   title: "Test Job",
   description: "Test description",
-  requirements: JSON.stringify([]),
+  requirements: [],
   status: "draft" as string,
   location: null,
   workplaceType: null,

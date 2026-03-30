@@ -1,15 +1,16 @@
 import { Sql } from "postgres";
 
 export const createApplicationQuery = `-- name: createApplication :one
-INSERT INTO applications (job_id, candidate_id, resume_url, links)
-VALUES ($1, $2, $3, $4)
+INSERT INTO applications (job_id, candidate_id, resume_url, links, status)
+VALUES ($1, $2, $3, $4, $5)
 RETURNING id, job_id, candidate_id, resume_url, links, status, created_at, updated_at`;
 
 export interface createApplicationArgs {
     jobId: string;
     candidateId: string;
     resumeUrl: string | null;
-    links: any;
+    links: any | null;
+    status: string;
 }
 
 export interface createApplicationRow {
@@ -17,14 +18,14 @@ export interface createApplicationRow {
     jobId: string;
     candidateId: string;
     resumeUrl: string | null;
-    links: any;
+    links: any | null;
     status: string;
     createdAt: Date;
     updatedAt: Date;
 }
 
 export async function createApplication(sql: Sql, args: createApplicationArgs): Promise<createApplicationRow | null> {
-    const rows = await sql.unsafe(createApplicationQuery, [args.jobId, args.candidateId, args.resumeUrl, args.links]).values();
+    const rows = await sql.unsafe(createApplicationQuery, [args.jobId, args.candidateId, args.resumeUrl, args.links, args.status]).values();
     if (rows.length !== 1) {
         return null;
     }
@@ -56,7 +57,7 @@ export interface getApplicationByJobAndCandidateRow {
     jobId: string;
     candidateId: string;
     resumeUrl: string | null;
-    links: any;
+    links: any | null;
     status: string;
     createdAt: Date;
     updatedAt: Date;
@@ -100,7 +101,7 @@ export interface getApplicationsByCandidateRow {
     jobId: string;
     candidateId: string;
     resumeUrl: string | null;
-    links: any;
+    links: any | null;
     status: string;
     createdAt: Date;
     updatedAt: Date;
@@ -142,7 +143,7 @@ export interface getApplicationsByJobRow {
     jobId: string;
     candidateId: string;
     resumeUrl: string | null;
-    links: any;
+    links: any | null;
     status: string;
     createdAt: Date;
     updatedAt: Date;
@@ -185,7 +186,7 @@ export interface getApplicationByIdRow {
     jobId: string;
     candidateId: string;
     resumeUrl: string | null;
-    links: any;
+    links: any | null;
     status: string;
     createdAt: Date;
     updatedAt: Date;
@@ -232,7 +233,7 @@ export interface updateApplicationStatusRow {
     jobId: string;
     candidateId: string;
     resumeUrl: string | null;
-    links: any;
+    links: any | null;
     status: string;
     createdAt: Date;
     updatedAt: Date;

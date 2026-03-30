@@ -17,9 +17,9 @@ export interface createCandidateProfileRow {
     headline: string | null;
     resumeUrl: string | null;
     bio: string | null;
-    skills: any;
-    workHistory: any;
-    links: any;
+    skills: any | null;
+    workHistory: any | null;
+    links: any | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -59,9 +59,9 @@ export interface getCandidateProfileByUserIdRow {
     headline: string | null;
     resumeUrl: string | null;
     bio: string | null;
-    skills: any;
-    workHistory: any;
-    links: any;
+    skills: any | null;
+    workHistory: any | null;
+    links: any | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -102,9 +102,9 @@ export interface updateCandidateProfileArgs {
     headline: string | null;
     resumeUrl: string | null;
     bio: string | null;
-    skills: any;
-    workHistory: any;
-    links: any;
+    skills: any | null;
+    workHistory: any | null;
+    links: any | null;
     userId: string;
 }
 
@@ -114,9 +114,9 @@ export interface updateCandidateProfileRow {
     headline: string | null;
     resumeUrl: string | null;
     bio: string | null;
-    skills: any;
-    workHistory: any;
-    links: any;
+    skills: any | null;
+    workHistory: any | null;
+    links: any | null;
     createdAt: Date;
     updatedAt: Date;
 }

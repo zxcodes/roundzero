@@ -1,6 +1,6 @@
 -- name: createApplication :one
-INSERT INTO applications (job_id, candidate_id, resume_url, links)
-VALUES ($1, $2, $3, $4)
+INSERT INTO applications (job_id, candidate_id, resume_url, links, status)
+VALUES ($1, $2, $3, $4, $5)
 RETURNING id, job_id, candidate_id, resume_url, links, status, created_at, updated_at;
 
 -- name: getApplicationByJobAndCandidate :one

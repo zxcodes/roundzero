@@ -28,7 +28,7 @@ describe("createCandidateProfile", () => {
     // JSONB columns default to '[]' (NOT NULL)
     expect(profile!.skills).toEqual([]);
     expect(profile!.workHistory).toEqual([]);
-    expect(profile!.links).toEqual([]);
+    expect(profile!.links).toEqual({});
     expect(profile!.createdAt).toBeInstanceOf(Date);
     expect(profile!.updatedAt).toBeInstanceOf(Date);
   });
@@ -105,19 +105,18 @@ describe("updateCandidateProfile", () => {
       headline: "Senior Engineer",
       resumeUrl: "https://example.com/new-resume.pdf",
       bio: "I build scalable systems.",
-      skills: JSON.stringify(skills),
-      workHistory: JSON.stringify(workHistory),
-      links: JSON.stringify(links),
+      skills,
+      workHistory,
+      links,
     });
 
     expect(updated).not.toBeNull();
     expect(updated!.headline).toBe("Senior Engineer");
     expect(updated!.resumeUrl).toBe("https://example.com/new-resume.pdf");
     expect(updated!.bio).toBe("I build scalable systems.");
-    // JSONB via .values() returns strings — parse to verify contents
-    expect(JSON.parse(updated!.skills)).toEqual(skills);
-    expect(JSON.parse(updated!.workHistory)).toEqual(workHistory);
-    expect(JSON.parse(updated!.links)).toEqual(links);
+    expect(updated!.skills).toEqual(skills);
+    expect(updated!.workHistory).toEqual(workHistory);
+    expect(updated!.links).toEqual(links);
   });
 
   it("sets updated_at to a newer timestamp", async () => {
@@ -131,9 +130,9 @@ describe("updateCandidateProfile", () => {
       headline: "Updated",
       resumeUrl: null,
       bio: null,
-      skills: JSON.stringify([]),
-      workHistory: JSON.stringify([]),
-      links: JSON.stringify([]),
+      skills: [],
+      workHistory: [],
+      links: [],
     });
 
     expect(updated).not.toBeNull();
@@ -148,9 +147,9 @@ describe("updateCandidateProfile", () => {
       headline: "Ghost",
       resumeUrl: null,
       bio: null,
-      skills: JSON.stringify([]),
-      workHistory: JSON.stringify([]),
-      links: JSON.stringify([]),
+      skills: [],
+      workHistory: [],
+      links: [],
     });
 
     expect(result).toBeNull();
@@ -165,9 +164,9 @@ describe("updateCandidateProfile", () => {
       headline: "Engineer",
       resumeUrl: "https://example.com/resume.pdf",
       bio: "Some bio",
-      skills: JSON.stringify(["TypeScript"]),
-      workHistory: JSON.stringify([{ company: "Test" }]),
-      links: JSON.stringify([{ url: "https://example.com" }]),
+      skills: ["TypeScript"],
+      workHistory: [{ company: "Test" }],
+      links: [{ url: "https://example.com" }],
     });
 
     // Then reset JSONB fields to empty and clear text fields
@@ -176,18 +175,17 @@ describe("updateCandidateProfile", () => {
       headline: null,
       resumeUrl: null,
       bio: null,
-      skills: JSON.stringify([]),
-      workHistory: JSON.stringify([]),
-      links: JSON.stringify([]),
+      skills: [],
+      workHistory: [],
+      links: [],
     });
 
     expect(cleared).not.toBeNull();
     expect(cleared!.headline).toBeNull();
     expect(cleared!.resumeUrl).toBeNull();
     expect(cleared!.bio).toBeNull();
-    // JSONB via .values() returns strings after update
-    expect(JSON.parse(cleared!.skills)).toEqual([]);
-    expect(JSON.parse(cleared!.workHistory)).toEqual([]);
-    expect(JSON.parse(cleared!.links)).toEqual([]);
+    expect(cleared!.skills).toEqual([]);
+    expect(cleared!.workHistory).toEqual([]);
+    expect(cleared!.links).toEqual([]);
   });
 });

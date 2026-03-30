@@ -26,9 +26,9 @@ export interface createCompanyRow {
     companySize: string | null;
     foundedYear: number | null;
     location: string | null;
-    techStack: any;
+    techStack: any | null;
     culture: string | null;
-    socialLinks: any;
+    socialLinks: any | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -80,9 +80,9 @@ export interface getCompanyByOwnerIdRow {
     companySize: string | null;
     foundedYear: number | null;
     location: string | null;
-    techStack: any;
+    techStack: any | null;
     culture: string | null;
-    socialLinks: any;
+    socialLinks: any | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -134,9 +134,9 @@ export interface getCompanyByIdRow {
     companySize: string | null;
     foundedYear: number | null;
     location: string | null;
-    techStack: any;
+    techStack: any | null;
     culture: string | null;
-    socialLinks: any;
+    socialLinks: any | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -191,9 +191,9 @@ export interface getCompanyBySlugRow {
     companySize: string | null;
     foundedYear: number | null;
     location: string | null;
-    techStack: any;
+    techStack: any | null;
     culture: string | null;
-    socialLinks: any;
+    socialLinks: any | null;
     createdAt: Date;
     updatedAt: Date;
     ownerName: string;
@@ -255,9 +255,9 @@ export interface updateCompanyProfileArgs {
     companySize: string | null;
     foundedYear: number | null;
     location: string | null;
-    techStack: any;
+    techStack: any | null;
     culture: string | null;
-    socialLinks: any;
+    socialLinks: any | null;
     id: string;
     ownerId: string;
 }
@@ -274,9 +274,9 @@ export interface updateCompanyProfileRow {
     companySize: string | null;
     foundedYear: number | null;
     location: string | null;
-    techStack: any;
+    techStack: any | null;
     culture: string | null;
-    socialLinks: any;
+    socialLinks: any | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -325,9 +325,9 @@ export interface getAllCompaniesRow {
     companySize: string | null;
     foundedYear: number | null;
     location: string | null;
-    techStack: any;
+    techStack: any | null;
     culture: string | null;
-    socialLinks: any;
+    socialLinks: any | null;
     createdAt: Date;
     updatedAt: Date;
     openJobCount: number;

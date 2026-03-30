@@ -21,7 +21,7 @@ const makeOpenJob = async (companyId: string, title = "Open Job") => {
     companyId,
     title,
     description: "Test",
-    requirements: JSON.stringify([]),
+    requirements: [],
     status: "open",
     location: null,
     workplaceType: null,
@@ -38,7 +38,7 @@ const makeOpenJob = async (companyId: string, title = "Open Job") => {
 };
 
 describe("createApplication", () => {
-  it("creates an application with default status 'applied'", async () => {
+  it("creates an application with status 'applied'", async () => {
     const { company } = await seedCompany();
     const candidate = await seedUser({ role: "candidate" });
     const job = await makeOpenJob(company.id);
@@ -47,7 +47,8 @@ describe("createApplication", () => {
       jobId: job.id,
       candidateId: candidate.id,
       resumeUrl: "https://example.com/resume.pdf",
-      links: JSON.stringify(["https://github.com/test"]),
+      links: ["https://github.com/test"],
+      status: "applied",
     });
 
     expect(app).not.toBeNull();
@@ -67,7 +68,8 @@ describe("createApplication", () => {
       jobId: job.id,
       candidateId: candidate.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
 
     expect(app).not.toBeNull();
@@ -83,7 +85,8 @@ describe("createApplication", () => {
       jobId: job.id,
       candidateId: candidate.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
 
     await expect(
@@ -91,7 +94,8 @@ describe("createApplication", () => {
         jobId: job.id,
         candidateId: candidate.id,
         resumeUrl: null,
-        links: JSON.stringify([]),
+        links: [],
+        status: "applied",
       }),
     ).rejects.toThrow();
   });
@@ -106,7 +110,8 @@ describe("getApplicationByJobAndCandidate", () => {
       jobId: job.id,
       candidateId: candidate.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
 
     const found = await getApplicationByJobAndCandidate(sql, {
@@ -140,7 +145,8 @@ describe("getApplicationById", () => {
       jobId: job.id,
       candidateId: candidate.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
 
     const found = await getApplicationById(sql, { id: created!.id });
@@ -169,13 +175,15 @@ describe("getApplicationsByJob", () => {
       jobId: job.id,
       candidateId: c1.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
     await createApplication(sql, {
       jobId: job.id,
       candidateId: c2.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
 
     const apps = await getApplicationsByJob(sql, { jobId: job.id });
@@ -196,13 +204,15 @@ describe("getApplicationsByCandidate", () => {
       jobId: job1.id,
       candidateId: candidate.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
     await createApplication(sql, {
       jobId: job2.id,
       candidateId: candidate.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
 
     // Archive one job
@@ -224,7 +234,8 @@ describe("updateApplicationStatus", () => {
       jobId: job.id,
       candidateId: candidate.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
 
     const updated = await updateApplicationStatus(sql, {
@@ -257,13 +268,15 @@ describe("getApplicationCountByJob", () => {
       jobId: job.id,
       candidateId: c1.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
     await createApplication(sql, {
       jobId: job.id,
       candidateId: c2.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
 
     const result = await getApplicationCountByJob(sql, { jobId: job.id });
@@ -294,13 +307,15 @@ describe("countApplicationsByCompany", () => {
       jobId: job1.id,
       candidateId: c1.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
     await createApplication(sql, {
       jobId: job2.id,
       candidateId: c2.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
 
     // Archive one job
@@ -325,19 +340,22 @@ describe("countApplicationsByCandidate", () => {
       jobId: job1.id,
       candidateId: candidate.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
     const a2 = await createApplication(sql, {
       jobId: job2.id,
       candidateId: candidate.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
     await createApplication(sql, {
       jobId: job3.id,
       candidateId: candidate.id,
       resumeUrl: null,
-      links: JSON.stringify([]),
+      links: [],
+      status: "applied",
     });
 
     // Set statuses

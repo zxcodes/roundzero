@@ -20,3 +20,10 @@ SET role = $1,
 WHERE id = $2
   AND role IS NULL
 RETURNING id, email, name, picture, role, google_id, created_at, updated_at;
+
+-- name: updateUserName :one
+UPDATE users
+SET name = $1,
+    updated_at = now()
+WHERE id = $2
+RETURNING id, email, name, picture, role, google_id, created_at, updated_at;

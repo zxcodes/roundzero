@@ -287,13 +287,15 @@ export function JobForm({
                         <span className="block size-1 shrink-0 rounded-full bg-primary" />
                         {req}
                       </span>
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon-xs"
                         onClick={() => reqField.removeValue(i)}
-                        className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
+                        className="shrink-0 text-muted-foreground hover:text-foreground"
                       >
                         <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-3.5" />
-                      </button>
+                      </Button>
                     </li>
                   ))}
                 </ul>

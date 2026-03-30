@@ -126,3 +126,44 @@ export async function setUserRole(sql: Sql, args: setUserRoleArgs): Promise<setU
     };
 }
 
+export const updateUserNameQuery = `-- name: updateUserName :one
+UPDATE users
+SET name = $1,
+    updated_at = now()
+WHERE id = $2
+RETURNING id, email, name, picture, role, google_id, created_at, updated_at`;
+
+export interface updateUserNameArgs {
+    name: string;
+    id: string;
+}
+
+export interface updateUserNameRow {
+    id: string;
+    email: string;
+    name: string;
+    picture: string | null;
+    role: string | null;
+    googleId: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export async function updateUserName(sql: Sql, args: updateUserNameArgs): Promise<updateUserNameRow | null> {
+    const rows = await sql.unsafe(updateUserNameQuery, [args.name, args.id]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        email: row[1],
+        name: row[2],
+        picture: row[3],
+        role: row[4],
+        googleId: row[5],
+        createdAt: row[6],
+        updatedAt: row[7]
+    };
+}
+

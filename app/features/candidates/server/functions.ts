@@ -102,9 +102,9 @@ export const updateMyCandidateProfile = createServerFn({ method: "POST" })
       headline: data.headline,
       resumeUrl: data.resumeUrl,
       bio: data.bio,
-      skills: data.skills ? JSON.stringify(data.skills) : null,
-      workHistory: data.workHistory ? JSON.stringify(data.workHistory) : null,
-      links: data.links ? JSON.stringify(data.links) : null,
+      skills: data.skills,
+      workHistory: data.workHistory,
+      links: data.links,
       userId: context.userId,
     });
 
