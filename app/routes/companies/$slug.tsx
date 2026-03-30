@@ -198,7 +198,7 @@ function CompanyProfilePage() {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-3 flex flex-col">
                   {jobs.map((job) => (
                     <CompanyJobCard key={job.id} job={job} />
                   ))}
