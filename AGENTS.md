@@ -2,94 +2,58 @@
 
 ## Key References
 
-- **`PLATFORM.md`** — Product specification. Read this first to understand what RoundZero does, the user types, system flow, agent architecture, interview mechanics, report structure, and MVP scope.
-- **`ARCHITECTURE.md`** — Technical architecture. Covers stack, deployment, directory structure, database schema, agent design (InterviewAgent + EvaluationAgent), AI model strategy, auth flow, file storage, and phased build plan.
+- **`PLATFORM.md`** — Product spec (what RoundZero does, user types, flow, agents, interviews, reports, MVP scope).
+- **`ARCHITECTURE.md`** — Tech architecture (stack, deployment, directory structure, DB schema, AI models, auth, storage, build phases).
 
-Always consult both files before making design decisions or implementing new features. They are the source of truth for product behavior and technical implementation.
+Always consult both before making design decisions or implementing features.
 
 ## Project Structure
 
-- Use feature-first folders: `app/features/<feature>/` with `routes/`, `components/`, `hooks/`, `queries/`, `services/`, `types.ts`.
-- Keep shared utilities in `app/shared/` (db, auth, server middleware, UI helpers).
-- File-based routes must live in `app/routes/` and can re-export feature components.
-- No barrel exports (no `index.ts` re-export files).
+- Feature-first folders: `app/features/<feature>/` with `routes/`, `components/`, `hooks/`, `queries/`, `services/`, `types.ts`.
+- Shared utilities in `app/shared/`. File-based routes in `app/routes/`.
+- No barrel exports (`index.ts` re-export files).
 
 ## Database + SQLC
 
-- Migrations use dbmate with a single init migration in `db/migrations/`.
-- Full schema lives in `db/init.sql` and `db/schema.sql` (no pg_dump headers).
-- SQLC is the source of typed query functions; do not hand-edit `*_sql.ts` outputs.
-- Do not write manual types for DB data; use SQLC-generated types only.
-- Never use type assertions in application code. Always infer from server function response.
-- SQLC config is in `sqlc.yaml` with per-feature query files.
-- **No logic in the database.** No triggers, functions, or stored procedures in migrations. Migrations are pure schema (tables, indexes, constraints). All logic (e.g. setting `updated_at`) must be handled in application code (SQLC queries).
-- **No DB-level enums or CHECK constraints for enum-like values.** Use plain `TEXT` columns in the schema. Define and validate enums with Zod in `app/shared/enums.ts`. This keeps validation in one place (app code) and avoids migration headaches when values change.
-- **Always set `updated_at = now()` explicitly** in every UPDATE query. There are no database triggers to do this automatically.
-- **No down migrations.** Down migrations drop tables which means data loss. Always include `-- migrate:down` in migration files but keep the body empty.
+- Single init migration in `db/migrations/` via dbmate. Schema in `db/init.sql` and `db/schema.sql`.
+- SQLC generates typed query functions — never hand-edit `*_sql.ts`. Config in `sqlc.yaml`.
+- No manual DB types — use SQLC-generated types. No type assertions — infer from server function responses.
+- **No DB logic** — no triggers, functions, or stored procedures. Pure schema only.
+- **No DB enums/CHECKs** — use `TEXT` columns. Validate with Zod in `app/shared/enums.ts`.
+- **No down migrations** — include `-- migrate:down` but keep body empty.
+- **Set `updated_at = now()` explicitly** in every UPDATE query (no triggers).
+- **JSONB: never use `JSON.stringify()` or `JSON.parse()`.** The `postgres` driver handles serialization both ways automatically. Pass raw JS objects/arrays when writing, and read JSONB columns as plain JS values. Pre-stringifying causes double-encoding (`"\"[...]\""`), and parsing the read side breaks already-decoded values.
 
-## Local DB + Client
+## Local DB
 
-- Local dev uses Postgres via Docker.
-- DB client uses `postgres` package (see `app/db.ts`).
-- `.env` contains `DATABASE_URL` for local DB.
+- Postgres via Docker. Client uses `postgres` package (`app/db.ts`). `DATABASE_URL` in `.env`.
 
-## TanStack Skills (IMPORTANT)
+## TanStack
 
-- **Always check TanStack Intent skills before implementing anything TanStack-specific** (routing, server functions, data loading, error boundaries, auth guards, etc.).
-- Run `bunx @tanstack/intent@latest list` to discover available skills. There are 30+ skills across 11 packages covering routing, server functions, middleware, auth, error handling, and more.
-- Read the relevant skill from `node_modules/@tanstack/<package>/skills/<skill>/SKILL.md` before writing code. These contain the canonical patterns, common mistakes, and cross-references.
-- This is the source of truth for TanStack API usage — prefer skill guidance over guessing or using outdated patterns.
-- **Always use `zodValidator()` from `@tanstack/zod-adapter`** for server function `inputValidator` calls. Never use manual `(data) => schema.parse(data)` callbacks. Example: `.inputValidator(zodValidator(mySchema))`.
-
-## Tooling
-
-- Linting: Biome (`biome.json`).
-- Typecheck: `bun run typecheck`.
-- Ignore SQLC outputs in lint/typecheck:
-  - Biome: `!**/app/**/*_sql.ts`
-  - TS: `"exclude": ["app/**/*_sql.ts"]` in `tsconfig.json`.
-- Always check the latest framework docs and prefer official utilities over custom helpers.
-- Avoid unnecessary utilities or files unless shared across multiple places.
+- **Check TanStack Intent skills first** — run `bunx @tanstack/intent@latest list`, read `node_modules/@tanstack/<package>/skills/<skill>/SKILL.md`.
+- **Use `zodValidator()` from `@tanstack/zod-adapter`** for `inputValidator`. Never use manual `schema.parse()` callbacks.
+- **All forms use TanStack Form** via `useAppForm` from `@/shared/form` (provides `TextField`, `NumberField`, `TextareaField`, `SelectField`, `SubmitButton`). Use `form.AppField` for simple fields, `form.Field` with `mode="array"` for arrays. Forms manage submit state internally — never pass `isSubmitting` from parents.
 
 ## UI
 
-- Always use shadcn UI components when applicable.
+- Always use shadcn components. Icons: `@hugeicons/react` + `@hugeicons/core-free-icons` (no Lucide, no Phosphor).
+- **No manual memoization** — React Compiler is enabled. Never use `useCallback`, `useMemo`, `React.memo`.
+- **Single `useId()` per component** — call once, derive IDs: `` const id = useId(); const nameId = `name-${id}`; ``
+- **Ternaries for conditionals** — `{x ? (...) : null}`, never `{x && (...)}`.
+- `function` declarations for UI components, `const` for non-UI. `on` prefix for handlers (not `handle`).
 
-## Commands
+## Tooling + Commands
 
-- **Full setup**: `bun run setup.ts` (installs deps, copies `.env.example`, sets up Postgres, generates SQLC).
-- Generate SQLC: `bun run sqlgen`.
-- Run dev: `bun run dev`.
-- Run tests: `bun run test`.
-- Typecheck: `bun run typecheck`.
-- Full check (lint + types): `bun run check`.
-- DB setup (dev + test): `bash setup-db.sh setup_pg`.
-- DB reset (dev + test): `bash setup-db.sh reset_pg`.
-- DB remove: `bash setup-db.sh rm_pg`.
+- Lint: Biome (`biome.json`). SQLC outputs excluded from lint/typecheck.
+- `bun run setup.ts` — full setup | `bun run dev` — dev server | `bun run sqlgen` — generate SQLC
+- `bun run test` — tests | `bun run typecheck` — types | `bun run check` — lint + types
+- `bash setup-db.sh setup_pg` — create dev+test DBs | `bash setup-db.sh reset_pg` — reset both | `bash setup-db.sh rm_pg` — remove
 
 ## Testing
 
-- **Two separate Postgres containers**: dev (`rz_pg_dev`, port 6311) and test (`rz_pg_test`, port 6312). Tests never touch dev data.
-- **`TEST_DATABASE_URL`** in `.env` points to the test container. `test-utils.ts` reads this to create a separate Postgres client.
-- **Run tests**: `bun run test`. This runs `vitest run` (Vitest 4).
-- **Setup both DBs**: `bash setup-db.sh setup_pg` creates dev + test containers and migrates both.
-- **Reset test DB only**: `bash setup-db.sh reset_pg` nukes and recreates the test container (never touches dev).
-- **Global test setup** in `app/shared/__tests__/setup.ts` registers `afterEach(cleanTestData)` (TRUNCATE CASCADE) and `afterAll(closeTestDb)`. Individual test files must NOT add their own `afterEach`/`afterAll` hooks for cleanup — the global setup handles it.
-- **Test helpers** in `app/shared/__tests__/test-utils.ts` — provides `getTestDb()`, `cleanTestData()`, `closeTestDb()`, and seed helpers (`seedUser`, `seedCompany`, `seedJob`).
-- **File naming**: `<feature>.test.ts` (e.g. `auth.test.ts`, `jobs.test.ts`). Query-layer tests live in `queries/__tests__/`. Business logic / schema tests live in `__tests__/` at the feature level.
-- **Always update relevant tests when changing features** — tests must stay in sync with queries, schemas, business logic, and server functions.
-- **Test categories**:
-  - **Query-layer tests** — test SQLC-generated queries against real Postgres (insert, select, update, constraint checks).
-  - **Schema / validation tests** — test Zod schemas and extracted business logic (pure functions, no DB needed).
-  - **Business logic tests** — test multi-step workflows against real DB (apply guards, status transitions, access control, metrics).
-- **Vitest config** is in `vitest.config.ts` (separate from `vite.config.ts`). Uses `maxWorkers: 1`, `fileParallelism: false`, `isolate: false` so all test files share one DB connection.
-
-## Code Conventions
-
-- Never use handle for handler functions. Always use `on`, ex: `onClick` instead of `handleClick`
-- Never write manual types for data returned by server functions or SQLC queries. Always use inferred types from the return values (e.g. `Route.useRouteContext()`, `Route.useLoaderData()`, `Awaited<ReturnType<...>>`).
-- Always use `function` declarations for UI components and `const` declarations for non-ui functions.
-- **Single `useId()` per component.** Call `useId()` once and derive all element IDs from it: `const id = useId(); const nameId = \`name-\${id}\`;`. Never call `useId()` multiple times in the same component.
-- **No manual memoization.** React Compiler is enabled via `reactCompilerPreset()` in `vite.config.ts` and handles memoization automatically. Never use `useCallback`, `useMemo`, or `React.memo` — they are unnecessary and add noise.
-- **All forms must use TanStack Form** (`@tanstack/react-form`). Use the shared `useAppForm` hook from `@/shared/form` which provides pre-bound field components (`TextField`, `NumberField`, `TextareaField`, `SelectField`) and form components (`SubmitButton`). Use `form.AppField` for simple fields and `form.Field` with `mode="array"` for array fields. Forms manage their own submit state internally via `SubmitButton` — never pass `isSubmitting` props from parent pages.
-- **JSX conditional rendering: always use ternaries.** Write `{x ? (...) : null}` instead of `{x && (...)}`. This avoids accidentally rendering `0`, `""`, or `NaN` and keeps the pattern consistent across the codebase.
+- Two Postgres containers: dev (`rz_pg_dev:6311`) and test (`rz_pg_test:6312`). Tests never touch dev.
+- `TEST_DATABASE_URL` in `.env`. Vitest 4 config in `vitest.config.ts` (`maxWorkers: 1`, `fileParallelism: false`, `isolate: false`).
+- Global setup in `app/shared/__tests__/setup.ts` handles `afterEach(cleanTestData)` + `afterAll(closeTestDb)` — individual tests must NOT add their own cleanup hooks.
+- Helpers in `app/shared/__tests__/test-utils.ts`: `getTestDb()`, `cleanTestData()`, `closeTestDb()`, `seedUser`, `seedCompany`, `seedJob`.
+- File naming: `<feature>.test.ts`. Query tests in `queries/__tests__/`, business logic in `__tests__/`.
+- Always update tests when changing features. Test categories: query-layer (real DB), schema/validation (pure), business logic (multi-step workflows).
