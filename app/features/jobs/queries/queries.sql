@@ -91,3 +91,29 @@ WHERE j.company_id = $1
   AND j.archived_at IS NULL
   AND (j.expires_at IS NULL OR j.expires_at > now())
 ORDER BY j.created_at DESC;
+
+-- name: getOpenJobsPaginated :many
+SELECT j.*,
+       c.name AS company_name,
+       c.slug AS company_slug
+FROM jobs j
+JOIN companies c ON c.id = j.company_id
+WHERE j.status = 'open'
+  AND j.archived_at IS NULL
+  AND (j.expires_at IS NULL OR j.expires_at > now())
+  AND (sqlc.arg('search')::text = '' OR j.title ILIKE '%' || sqlc.arg('search') || '%' OR c.name ILIKE '%' || sqlc.arg('search') || '%' OR j.location ILIKE '%' || sqlc.arg('search') || '%')
+  AND (sqlc.arg('employment_type')::text = 'all' OR j.employment_type = sqlc.arg('employment_type'))
+  AND (sqlc.arg('experience_level')::text = 'all' OR j.experience_level = sqlc.arg('experience_level'))
+ORDER BY j.created_at DESC
+LIMIT sqlc.arg('limit')::int OFFSET sqlc.arg('offset')::int;
+
+-- name: countOpenJobsFiltered :one
+SELECT count(*)::int AS total
+FROM jobs j
+JOIN companies c ON c.id = j.company_id
+WHERE j.status = 'open'
+  AND j.archived_at IS NULL
+  AND (j.expires_at IS NULL OR j.expires_at > now())
+  AND (sqlc.arg('search')::text = '' OR j.title ILIKE '%' || sqlc.arg('search') || '%' OR c.name ILIKE '%' || sqlc.arg('search') || '%' OR j.location ILIKE '%' || sqlc.arg('search') || '%')
+  AND (sqlc.arg('employment_type')::text = 'all' OR j.employment_type = sqlc.arg('employment_type'))
+  AND (sqlc.arg('experience_level')::text = 'all' OR j.experience_level = sqlc.arg('experience_level'));

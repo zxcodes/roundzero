@@ -8,6 +8,7 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link, stripSearchParams, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
+import { PaginationNav } from "@/components/pagination-nav";
 import { PublicFooter, PublicHeader } from "@/components/public-layout";
 import { CompaniesListSkeleton } from "@/components/route-skeletons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -21,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getAllCompanies } from "@/features/companies/server/functions";
+import { getAllCompaniesPaginated } from "@/features/companies/server/functions";
 import type { CompanySize, Industry } from "@/shared/enums";
 import {
   companySizeLabels,
@@ -30,52 +31,56 @@ import {
   industrySchema,
 } from "@/shared/enums";
 
-const searchDefaults = { search: "", industry: "all", size: "all" } as const;
+const searchDefaults = { search: "", industry: "all", size: "all", page: 1 } as const;
 
 const companiesSearchSchema = z.object({
   search: z.string().default(searchDefaults.search).catch(searchDefaults.search),
   industry: z.string().default(searchDefaults.industry).catch(searchDefaults.industry),
   size: z.string().default(searchDefaults.size).catch(searchDefaults.size),
+  page: z.number().int().min(1).default(searchDefaults.page).catch(searchDefaults.page),
 });
 
 export const Route = createFileRoute("/companies/")({
   validateSearch: companiesSearchSchema,
   search: { middlewares: [stripSearchParams(searchDefaults)] },
-  loader: async () => {
-    const companies = await getAllCompanies();
-    return { companies };
+  loaderDeps: ({ search }) => ({
+    search: search.search,
+    industry: search.industry,
+    size: search.size,
+    page: search.page,
+  }),
+  loader: async ({ deps }) => {
+    const result = await getAllCompaniesPaginated({
+      data: {
+        search: deps.search,
+        industry: deps.industry,
+        size: deps.size,
+        page: deps.page,
+      },
+    });
+    return result;
   },
   pendingComponent: CompaniesListSkeleton,
   component: CompaniesPage,
 });
 
 function CompaniesPage() {
-  const { companies } = Route.useLoaderData();
-  const { search, industry: industryFilter, size: sizeFilter } = Route.useSearch();
+  const { items, total, totalPages } = Route.useLoaderData();
+  const { search, industry: industryFilter, size: sizeFilter, page } = Route.useSearch();
   const navigate = useNavigate({ from: "/companies/" });
-
-  const filtered = companies.filter((c) => {
-    const matchesSearch =
-      !search ||
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.description?.toLowerCase().includes(search.toLowerCase());
-    const matchesIndustry = industryFilter === "all" || c.industry === industryFilter;
-    const matchesSize = sizeFilter === "all" || c.companySize === sizeFilter;
-    return matchesSearch && matchesIndustry && matchesSize;
-  });
 
   const hasFilters = search || industryFilter !== "all" || sizeFilter !== "all";
 
   const onSearchChange = (value: string) => {
-    navigate({ search: (prev) => ({ ...prev, search: value }) });
+    navigate({ search: (prev) => ({ ...prev, search: value, page: 1 }) });
   };
 
   const onIndustryChange = (value: string) => {
-    navigate({ search: (prev) => ({ ...prev, industry: value }) });
+    navigate({ search: (prev) => ({ ...prev, industry: value, page: 1 }) });
   };
 
   const onSizeChange = (value: string) => {
-    navigate({ search: (prev) => ({ ...prev, size: value }) });
+    navigate({ search: (prev) => ({ ...prev, size: value, page: 1 }) });
   };
 
   return (
@@ -150,14 +155,14 @@ function CompaniesPage() {
         {/* Results count */}
         <div className="mx-auto max-w-6xl px-6 pt-6 lg:px-8">
           <p className="text-xs font-medium text-muted-foreground">
-            {filtered.length} {filtered.length === 1 ? "company" : "companies"}
+            {total} {total === 1 ? "company" : "companies"}
             {hasFilters ? " matching your filters" : ""}
           </p>
         </div>
 
         {/* Grid */}
         <section className="mx-auto max-w-6xl px-6 py-4 pb-12 lg:px-8 lg:pb-16">
-          {filtered.length === 0 ? (
+          {items.length === 0 ? (
             <div className="animate-fade-in py-24 text-center">
               <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-muted">
                 <HugeiconsIcon
@@ -173,7 +178,7 @@ function CompaniesPage() {
             </div>
           ) : (
             <div className="animate-fade-in grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {filtered.map((company, i) => (
+              {items.map((company, i) => (
                 <CompanyCard
                   key={company.id}
                   company={company}
@@ -182,6 +187,9 @@ function CompaniesPage() {
               ))}
             </div>
           )}
+
+          {/* Pagination */}
+          <PaginationNav currentPage={page} totalPages={totalPages} className="mt-8" />
         </section>
       </main>
 
@@ -190,7 +198,7 @@ function CompaniesPage() {
   );
 }
 
-type CompanyFromLoader = Awaited<ReturnType<typeof getAllCompanies>>[number];
+type CompanyFromLoader = Awaited<ReturnType<typeof getAllCompaniesPaginated>>["items"][number];
 
 function CompanyCard({ company, className }: { company: CompanyFromLoader; className?: string }) {
   const initials = company.name

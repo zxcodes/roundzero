@@ -6,11 +6,13 @@ import { getDb } from "@/shared/db";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
 import {
   archiveJob as archiveJobQuery,
+  countOpenJobsFiltered,
   createJob as createJobQuery,
   getArchivedJobsByCompanyId,
   getJobById,
   getJobsByCompanyId,
   getOpenJobsByCompanyId as getOpenJobsByCompanyIdQuery,
+  getOpenJobsPaginated as getOpenJobsPaginatedQuery,
   getOpenJobs as getOpenJobsQuery,
   updateJob as updateJobQuery,
 } from "../queries/queries_sql";
@@ -207,4 +209,39 @@ export const getOpenJobsByCompanyId = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const db = getDb();
     return getOpenJobsByCompanyIdQuery(db, { companyId: data.companyId });
+  });
+
+const JOBS_PER_PAGE = 12;
+
+const paginatedJobsSchema = z.object({
+  search: z.string(),
+  type: z.string(),
+  level: z.string(),
+  page: z.number().int().min(1),
+});
+
+export const getOpenJobsPaginated = createServerFn({ method: "GET" })
+  .inputValidator(zodValidator(paginatedJobsSchema))
+  .handler(async ({ data }) => {
+    const db = getDb();
+    const offset = (data.page - 1) * JOBS_PER_PAGE;
+
+    const [items, countRow] = await Promise.all([
+      getOpenJobsPaginatedQuery(db, {
+        search: data.search,
+        employmentType: data.type,
+        experienceLevel: data.level,
+        limit: JOBS_PER_PAGE,
+        offset,
+      }),
+      countOpenJobsFiltered(db, {
+        search: data.search,
+        employmentType: data.type,
+        experienceLevel: data.level,
+      }),
+    ]);
+
+    const total = countRow?.total ?? 0;
+
+    return { items, total, totalPages: Math.ceil(total / JOBS_PER_PAGE) };
   });

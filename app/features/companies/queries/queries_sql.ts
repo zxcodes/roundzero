@@ -355,6 +355,94 @@ export async function getAllCompanies(sql: Sql): Promise<getAllCompaniesRow[]> {
     }));
 }
 
+export const getAllCompaniesPaginatedQuery = `-- name: getAllCompaniesPaginated :many
+SELECT c.id, c.owner_id, c.name, c.slug, c.description, c.logo_url, c.website, c.industry, c.company_size, c.founded_year, c.location, c.tech_stack, c.culture, c.social_links, c.created_at, c.updated_at,
+       (SELECT count(*)::int FROM jobs j WHERE j.company_id = c.id AND j.status = 'open' AND j.archived_at IS NULL) AS open_job_count
+FROM companies c
+WHERE ($1::text = '' OR c.name ILIKE '%' || $1 || '%' OR c.description ILIKE '%' || $1 || '%')
+  AND ($2::text = 'all' OR c.industry = $2)
+  AND ($3::text = 'all' OR c.company_size = $3)
+ORDER BY c.created_at DESC
+LIMIT $5::int OFFSET $4::int`;
+
+export interface getAllCompaniesPaginatedArgs {
+    search: string;
+    industry: string;
+    companySize: string;
+    offset: number;
+    limit: number;
+}
+
+export interface getAllCompaniesPaginatedRow {
+    id: string;
+    ownerId: string;
+    name: string;
+    slug: string;
+    description: string | null;
+    logoUrl: string | null;
+    website: string | null;
+    industry: string | null;
+    companySize: string | null;
+    foundedYear: number | null;
+    location: string | null;
+    techStack: any | null;
+    culture: string | null;
+    socialLinks: any | null;
+    createdAt: Date;
+    updatedAt: Date;
+    openJobCount: number;
+}
+
+export async function getAllCompaniesPaginated(sql: Sql, args: getAllCompaniesPaginatedArgs): Promise<getAllCompaniesPaginatedRow[]> {
+    return (await sql.unsafe(getAllCompaniesPaginatedQuery, [args.search, args.industry, args.companySize, args.offset, args.limit]).values()).map(row => ({
+        id: row[0],
+        ownerId: row[1],
+        name: row[2],
+        slug: row[3],
+        description: row[4],
+        logoUrl: row[5],
+        website: row[6],
+        industry: row[7],
+        companySize: row[8],
+        foundedYear: row[9],
+        location: row[10],
+        techStack: row[11],
+        culture: row[12],
+        socialLinks: row[13],
+        createdAt: row[14],
+        updatedAt: row[15],
+        openJobCount: row[16]
+    }));
+}
+
+export const countCompaniesFilteredQuery = `-- name: countCompaniesFiltered :one
+SELECT count(*)::int AS total
+FROM companies c
+WHERE ($1::text = '' OR c.name ILIKE '%' || $1 || '%' OR c.description ILIKE '%' || $1 || '%')
+  AND ($2::text = 'all' OR c.industry = $2)
+  AND ($3::text = 'all' OR c.company_size = $3)`;
+
+export interface countCompaniesFilteredArgs {
+    search: string;
+    industry: string;
+    companySize: string;
+}
+
+export interface countCompaniesFilteredRow {
+    total: number;
+}
+
+export async function countCompaniesFiltered(sql: Sql, args: countCompaniesFilteredArgs): Promise<countCompaniesFilteredRow | null> {
+    const rows = await sql.unsafe(countCompaniesFilteredQuery, [args.search, args.industry, args.companySize]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        total: row[0]
+    };
+}
+
 export const slugExistsQuery = `-- name: slugExists :one
 SELECT EXISTS(SELECT 1 FROM companies WHERE slug = $1) AS exists`;
 

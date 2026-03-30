@@ -7,6 +7,7 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link, stripSearchParams, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
+import { PaginationNav } from "@/components/pagination-nav";
 import { PublicFooter, PublicHeader } from "@/components/public-layout";
 import { JobsListSkeleton } from "@/components/route-skeletons";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getOpenJobs } from "@/features/jobs/server/functions";
+import { getOpenJobsPaginated } from "@/features/jobs/server/functions";
 import type { EmploymentType, ExperienceLevel, WorkplaceType } from "@/shared/enums";
 import {
   employmentTypeLabels,
@@ -29,53 +30,56 @@ import {
   workplaceTypeLabels,
 } from "@/shared/enums";
 
-const searchDefaults = { search: "", type: "all", level: "all" } as const;
+const searchDefaults = { search: "", type: "all", level: "all", page: 1 } as const;
 
 const jobsSearchSchema = z.object({
   search: z.string().default(searchDefaults.search).catch(searchDefaults.search),
   type: z.string().default(searchDefaults.type).catch(searchDefaults.type),
   level: z.string().default(searchDefaults.level).catch(searchDefaults.level),
+  page: z.number().int().min(1).default(searchDefaults.page).catch(searchDefaults.page),
 });
 
 export const Route = createFileRoute("/jobs/")({
   validateSearch: jobsSearchSchema,
   search: { middlewares: [stripSearchParams(searchDefaults)] },
-  loader: async () => {
-    const jobs = await getOpenJobs();
-    return { jobs };
+  loaderDeps: ({ search }) => ({
+    search: search.search,
+    type: search.type,
+    level: search.level,
+    page: search.page,
+  }),
+  loader: async ({ deps }) => {
+    const result = await getOpenJobsPaginated({
+      data: {
+        search: deps.search,
+        type: deps.type,
+        level: deps.level,
+        page: deps.page,
+      },
+    });
+    return result;
   },
   pendingComponent: JobsListSkeleton,
   component: JobsPage,
 });
 
 function JobsPage() {
-  const { jobs } = Route.useLoaderData();
-  const { search, type: typeFilter, level: levelFilter } = Route.useSearch();
+  const { items, total, totalPages } = Route.useLoaderData();
+  const { search, type: typeFilter, level: levelFilter, page } = Route.useSearch();
   const navigate = useNavigate({ from: "/jobs/" });
-
-  const filtered = jobs.filter((j) => {
-    const matchesSearch =
-      !search ||
-      j.title.toLowerCase().includes(search.toLowerCase()) ||
-      j.companyName.toLowerCase().includes(search.toLowerCase()) ||
-      j.location?.toLowerCase().includes(search.toLowerCase());
-    const matchesType = typeFilter === "all" || j.employmentType === typeFilter;
-    const matchesLevel = levelFilter === "all" || j.experienceLevel === levelFilter;
-    return matchesSearch && matchesType && matchesLevel;
-  });
 
   const hasFilters = search || typeFilter !== "all" || levelFilter !== "all";
 
   const onSearchChange = (value: string) => {
-    navigate({ search: (prev) => ({ ...prev, search: value }) });
+    navigate({ search: (prev) => ({ ...prev, search: value, page: 1 }) });
   };
 
   const onTypeChange = (value: string) => {
-    navigate({ search: (prev) => ({ ...prev, type: value }) });
+    navigate({ search: (prev) => ({ ...prev, type: value, page: 1 }) });
   };
 
   const onLevelChange = (value: string) => {
-    navigate({ search: (prev) => ({ ...prev, level: value }) });
+    navigate({ search: (prev) => ({ ...prev, level: value, page: 1 }) });
   };
 
   return (
@@ -148,14 +152,14 @@ function JobsPage() {
         {/* Results count */}
         <div className="mx-auto max-w-6xl px-6 pt-6 lg:px-8">
           <p className="text-xs font-medium text-muted-foreground">
-            {filtered.length} {filtered.length === 1 ? "position" : "positions"}
+            {total} {total === 1 ? "position" : "positions"}
             {hasFilters ? " matching your filters" : ""}
           </p>
         </div>
 
         {/* Grid */}
         <section className="mx-auto max-w-6xl px-6 py-4 pb-12 lg:px-8 lg:pb-16">
-          {filtered.length === 0 ? (
+          {items.length === 0 ? (
             <div className="animate-fade-in py-24 text-center">
               <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-muted">
                 <HugeiconsIcon
@@ -171,11 +175,14 @@ function JobsPage() {
             </div>
           ) : (
             <div className="animate-fade-in grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {filtered.map((job, i) => (
+              {items.map((job, i) => (
                 <JobCard key={job.id} job={job} className={i < 3 ? `stagger-${i + 1}` : ""} />
               ))}
             </div>
           )}
+
+          {/* Pagination */}
+          <PaginationNav currentPage={page} totalPages={totalPages} className="mt-8" />
         </section>
       </main>
 
@@ -184,7 +191,7 @@ function JobsPage() {
   );
 }
 
-type JobFromLoader = Awaited<ReturnType<typeof getOpenJobs>>[number];
+type JobFromLoader = Awaited<ReturnType<typeof getOpenJobsPaginated>>["items"][number];
 
 function JobCard({ job, className }: { job: JobFromLoader; className?: string }) {
   const salary = formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency);

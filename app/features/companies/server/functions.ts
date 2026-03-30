@@ -7,7 +7,9 @@ import { companySizeSchema, industrySchema } from "@/shared/enums";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
 import { type SessionData, sessionConfig } from "@/shared/session";
 import {
+  countCompaniesFiltered,
   createCompany as createCompanyQuery,
+  getAllCompaniesPaginated as getAllCompaniesPaginatedQuery,
   getAllCompanies as getAllCompaniesQuery,
   getCompanyByOwnerId,
   getCompanyBySlug as getCompanyBySlugQuery,
@@ -168,4 +170,39 @@ export const getCompanyBySlug = createServerFn({ method: "GET" })
       throw new Error("Company not found");
     }
     return company;
+  });
+
+const COMPANIES_PER_PAGE = 12;
+
+const paginatedCompaniesSchema = z.object({
+  search: z.string(),
+  industry: z.string(),
+  size: z.string(),
+  page: z.number().int().min(1),
+});
+
+export const getAllCompaniesPaginated = createServerFn({ method: "GET" })
+  .inputValidator(zodValidator(paginatedCompaniesSchema))
+  .handler(async ({ data }) => {
+    const db = getDb();
+    const offset = (data.page - 1) * COMPANIES_PER_PAGE;
+
+    const [items, countRow] = await Promise.all([
+      getAllCompaniesPaginatedQuery(db, {
+        search: data.search,
+        industry: data.industry,
+        companySize: data.size,
+        limit: COMPANIES_PER_PAGE,
+        offset,
+      }),
+      countCompaniesFiltered(db, {
+        search: data.search,
+        industry: data.industry,
+        companySize: data.size,
+      }),
+    ]);
+
+    const total = countRow?.total ?? 0;
+
+    return { items, total, totalPages: Math.ceil(total / COMPANIES_PER_PAGE) };
   });
