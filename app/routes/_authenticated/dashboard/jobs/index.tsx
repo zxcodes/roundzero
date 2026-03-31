@@ -104,7 +104,7 @@ function JobsListPage() {
     return <CompanyJobsList jobs={jobs} />;
   }
 
-  return <CandidateJobsList jobs={jobs as Awaited<ReturnType<typeof getOpenJobs>>} />;
+  return <CandidateJobsList jobs={jobs} />;
 }
 
 function CompanyJobsList({ jobs }: { jobs: Awaited<ReturnType<typeof getMyJobs>> }) {
