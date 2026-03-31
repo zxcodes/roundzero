@@ -143,7 +143,7 @@ export interface TestCandidateProfile {
 export const seedCandidateProfile = async (overrides?: {
   userId?: string;
   headline?: string | null;
-  resumeUrl?: string | null;
+  resumeKey?: string | null;
 }): Promise<{ profile: TestCandidateProfile; user: TestUser }> => {
   const user = overrides?.userId
     ? ({ id: overrides.userId } as TestUser)
@@ -151,11 +151,11 @@ export const seedCandidateProfile = async (overrides?: {
 
   const sql = getTestDb();
   const headline = overrides?.headline ?? "Software Engineer";
-  const resumeUrl = overrides?.resumeUrl ?? null;
+  const resumeKey = overrides?.resumeKey ?? null;
 
   const [row] = await sql`
-    INSERT INTO candidate_profiles (user_id, headline, resume_url)
-    VALUES (${user.id}, ${headline}, ${resumeUrl})
+    INSERT INTO candidate_profiles (user_id, headline, resume_key)
+    VALUES (${user.id}, ${headline}, ${resumeKey})
     RETURNING id, user_id AS "userId", headline
   `;
   return { profile: row as TestCandidateProfile, user };

@@ -292,7 +292,7 @@ function JobDetailPage() {
             <CandidateApplySection
               jobId={job.id}
               alreadyApplied={alreadyApplied}
-              hasResume={Boolean(candidateProfile?.resumeUrl)}
+              hasResume={Boolean(candidateProfile?.resumeKey)}
             />
           ) : null}
         </div>
@@ -444,18 +444,13 @@ function ApplicantsSection({
                     </Select>
                   </div>
 
-                  {applicant.resumeUrl || links.length > 0 ? (
+                  {applicant.resumeKey || links.length > 0 ? (
                     <div className="mt-2 flex flex-wrap items-center gap-2 pl-11">
-                      {applicant.resumeUrl ? (
-                        <a
-                          href={applicant.resumeUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                        >
+                      {applicant.resumeKey ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs text-muted-foreground">
                           <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-3" />
-                          Resume
-                        </a>
+                          Resume on file
+                        </span>
                       ) : null}
                       {links.map((link, i) => (
                         <a

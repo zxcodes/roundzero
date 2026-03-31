@@ -1,5 +1,5 @@
 -- name: createCandidateProfile :one
-INSERT INTO candidate_profiles (user_id, headline, resume_url)
+INSERT INTO candidate_profiles (user_id, headline, resume_key)
 VALUES ($1, $2, $3)
 RETURNING *;
 
@@ -11,7 +11,7 @@ WHERE user_id = $1;
 -- name: updateCandidateProfile :one
 UPDATE candidate_profiles
 SET headline = $1,
-    resume_url = $2,
+    resume_key = $2,
     bio = $3,
     skills = $4,
     work_history = $5,

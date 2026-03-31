@@ -76,7 +76,7 @@ async function seedApplications() {
     id: string;
     jobId: string;
     candidateId: string;
-    resumeUrl: string | null;
+    resumeKey: string | null;
     metadata: Record<string, unknown>;
     status: (typeof applicationStatuses)[number];
   }>;
@@ -95,7 +95,7 @@ async function seedApplications() {
       id: makeUuid("rz-seed-application", i * 2 + 1),
       jobId: jobA.id,
       candidateId: candidate.id,
-      resumeUrl: `https://cdn.roundzero.dev/resumes/${baseSlug}-resume.pdf`,
+      resumeKey: `resumes/${candidate.id}/${baseSlug}-resume.pdf`,
       metadata: {
         links: buildRoleAwareLinks({
           nameSlug: baseSlug,
@@ -113,10 +113,10 @@ async function seedApplications() {
       id: makeUuid("rz-seed-application", i * 2 + 2),
       jobId: jobB.id,
       candidateId: candidate.id,
-      resumeUrl:
+      resumeKey:
         i % 4 === 0
           ? null
-          : `https://cdn.roundzero.dev/resumes/${baseSlug}-resume-v2.pdf`,
+          : `resumes/${candidate.id}/${baseSlug}-resume-v2.pdf`,
       metadata: {
         links: buildRoleAwareLinks({
           nameSlug: baseSlug,
@@ -133,12 +133,12 @@ async function seedApplications() {
 
   for (const application of applications) {
     await sql`
-      INSERT INTO applications (id, job_id, candidate_id, resume_url, metadata, status)
+      INSERT INTO applications (id, job_id, candidate_id, resume_key, metadata, status)
       VALUES (
         ${application.id},
         ${application.jobId},
         ${application.candidateId},
-        ${application.resumeUrl},
+        ${application.resumeKey},
         ${sql.json(application.metadata)},
         ${application.status}
       )
@@ -146,7 +146,7 @@ async function seedApplications() {
       SET
         job_id = EXCLUDED.job_id,
         candidate_id = EXCLUDED.candidate_id,
-        resume_url = EXCLUDED.resume_url,
+        resume_key = EXCLUDED.resume_key,
         metadata = EXCLUDED.metadata,
         status = EXCLUDED.status
     `;

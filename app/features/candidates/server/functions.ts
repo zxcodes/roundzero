@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
+import { getUserById } from "@/features/auth/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { authMiddleware } from "@/shared/middleware";
 import { type SessionData, sessionConfig } from "@/shared/session";
@@ -15,12 +16,12 @@ import {
 
 const createCandidateProfileSchema = z.object({
   headline: z.string().max(200).optional(),
-  resumeUrl: z.string().url(),
+  resumeKey: z.string().min(1),
 });
 
 const updateCandidateProfileSchema = z.object({
   headline: z.string().max(200).nullable(),
-  resumeUrl: z.string().url().nullable(),
+  resumeKey: z.string().min(1).nullable(),
   bio: z.string().max(5000).nullable(),
   skills: z.array(z.string()).nullable(),
   workHistory: z
@@ -44,6 +45,38 @@ const updateCandidateProfileSchema = z.object({
 });
 export type UpdateCandidateProfileInput = z.infer<typeof updateCandidateProfileSchema>;
 
+const allowedResumeTypes = {
+  "application/pdf": "pdf",
+  "application/msword": "doc",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+} as const;
+
+const maxResumeFileSize = 5 * 1024 * 1024;
+
+const resumeUploadTargetSchema = z.object({
+  fileName: z.string().min(1).max(255),
+  fileSize: z.number().int().positive().max(maxResumeFileSize),
+  contentType: z.enum(
+    Object.keys(allowedResumeTypes) as [
+      keyof typeof allowedResumeTypes,
+      ...Array<keyof typeof allowedResumeTypes>,
+    ],
+  ),
+});
+
+const finalizeResumeUploadSchema = z.object({
+  resumeKey: z.string().min(1),
+});
+
+const buildResumeKey = (userId: string, contentType: keyof typeof allowedResumeTypes) =>
+  `resumes/${userId}/${crypto.randomUUID()}.${allowedResumeTypes[contentType]}`;
+
+const assertResumeKeyBelongsToUser = (resumeKey: string, userId: string) => {
+  if (!resumeKey.startsWith(`resumes/${userId}/`)) {
+    throw new Error("Invalid resume key");
+  }
+};
+
 // --- Server Functions ---
 
 export const createCandidateProfile = createServerFn({ method: "POST" })
@@ -62,7 +95,7 @@ export const createCandidateProfile = createServerFn({ method: "POST" })
     const profile = await createCandidateProfileQuery(db, {
       userId: context.userId,
       headline: data.headline ?? null,
-      resumeUrl: data.resumeUrl ?? null,
+      resumeKey: data.resumeKey,
     });
 
     if (!profile) {
@@ -101,7 +134,7 @@ export const updateMyCandidateProfile = createServerFn({ method: "POST" })
 
     const updated = await updateCandidateProfileQuery(db, {
       headline: data.headline,
-      resumeUrl: data.resumeUrl,
+      resumeKey: data.resumeKey,
       bio: data.bio,
       skills: data.skills,
       workHistory: data.workHistory,
@@ -114,4 +147,43 @@ export const updateMyCandidateProfile = createServerFn({ method: "POST" })
     }
 
     return { profile: updated };
+  });
+
+export const createResumeUploadTarget = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .inputValidator(zodValidator(resumeUploadTargetSchema))
+  .handler(async ({ data, context }) => {
+    const db = getDb();
+    const user = await getUserById(db, { id: context.userId });
+    if (!user || user.role !== "candidate") {
+      throw new Error("Only candidates can upload resumes");
+    }
+
+    return {
+      resumeKey: buildResumeKey(context.userId, data.contentType),
+      uploadUrl: null as string | null,
+      uploadMethod: "mock" as const,
+      maxBytes: maxResumeFileSize,
+    };
+  });
+
+export const finalizeResumeUpload = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .inputValidator(zodValidator(finalizeResumeUploadSchema))
+  .handler(async ({ data, context }) => {
+    const db = getDb();
+    const user = await getUserById(db, { id: context.userId });
+    if (!user || user.role !== "candidate") {
+      throw new Error("Only candidates can finalize resume uploads");
+    }
+    assertResumeKeyBelongsToUser(data.resumeKey, context.userId);
+    return { resumeKey: data.resumeKey };
+  });
+
+export const getResumeDownloadUrl = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .inputValidator(zodValidator(finalizeResumeUploadSchema))
+  .handler(async ({ data, context }) => {
+    assertResumeKeyBelongsToUser(data.resumeKey, context.userId);
+    return { url: null as string | null };
   });

@@ -490,7 +490,18 @@ Upload flow:
 
 1. Server function generates presigned upload URL
 2. Client uploads directly to R2
-3. URL stored in `applications.resume_url`
+3. Client finalizes the upload with the server
+4. Object key stored in `candidate_profiles.resume_key`
+
+### Resume Handling
+
+- Store `resume_key`, not `resume_url`, in the database.
+- Candidates upload resumes directly to R2 using a server-issued signed upload URL.
+- Resume keys are scoped by user, e.g. `resumes/<userId>/<uuid>.<ext>`.
+- Candidate profiles store the current source-of-truth `resume_key`.
+- Applications snapshot the apply-time `resume_key` into `applications.resume_key`.
+- Resume access uses short-lived signed read URLs derived from the stored key.
+- Until R2 is fully wired in dev, the app uses the same server contract with temporary/mock storage behavior behind it.
 
 ---
 

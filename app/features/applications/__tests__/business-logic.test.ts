@@ -45,7 +45,7 @@ describe("apply to job — guard logic", () => {
     const app = await createApplication(sql, {
       jobId: job.id,
       candidateId: candidate.id,
-      resumeUrl: "https://example.com/resume.pdf",
+      resumeKey: "https://example.com/resume.pdf",
       metadata: {},
       status: "applied",
     });
@@ -62,7 +62,7 @@ describe("apply to job — guard logic", () => {
     await createApplication(sql, {
       jobId: job.id,
       candidateId: candidate.id,
-      resumeUrl: "https://example.com/resume.pdf",
+      resumeKey: "https://example.com/resume.pdf",
       metadata: {},
       status: "applied",
     });
@@ -71,7 +71,7 @@ describe("apply to job — guard logic", () => {
       createApplication(sql, {
         jobId: job.id,
         candidateId: candidate.id,
-        resumeUrl: "https://example.com/resume.pdf",
+        resumeKey: "https://example.com/resume.pdf",
         metadata: {},
         status: "applied",
       }),
@@ -85,7 +85,7 @@ describe("apply to job — guard logic", () => {
       createApplication(sql, {
         jobId: "00000000-0000-0000-0000-000000000000",
         candidateId: candidate.id,
-        resumeUrl: "https://example.com/resume.pdf",
+        resumeKey: "https://example.com/resume.pdf",
         metadata: {},
         status: "applied",
       }),
@@ -103,7 +103,7 @@ describe("application status transitions", () => {
     const app = await createApplication(sql, {
       jobId: job.id,
       candidateId: candidate.id,
-      resumeUrl: "https://example.com/resume.pdf",
+      resumeKey: "https://example.com/resume.pdf",
       metadata: {},
       status: "applied",
     });
@@ -129,7 +129,7 @@ describe("application status transitions", () => {
     const app = await createApplication(sql, {
       jobId: job.id,
       candidateId: candidate.id,
-      resumeUrl: "https://example.com/resume.pdf",
+      resumeKey: "https://example.com/resume.pdf",
       metadata: {},
       status: "applied",
     });
@@ -152,7 +152,7 @@ describe("application status transitions", () => {
     const app = await createApplication(sql, {
       jobId: job.id,
       candidateId: candidate.id,
-      resumeUrl: "https://example.com/resume.pdf",
+      resumeKey: "https://example.com/resume.pdf",
       metadata: {},
       status: "applied",
     });
@@ -172,7 +172,7 @@ describe("application status transitions", () => {
     const app = await createApplication(sql, {
       jobId: job.id,
       candidateId: candidate.id,
-      resumeUrl: "https://example.com/resume.pdf",
+      resumeKey: "https://example.com/resume.pdf",
       metadata: {},
       status: "applied",
     });
@@ -198,7 +198,7 @@ describe("application access control", () => {
     await createApplication(sql, {
       jobId: job.id,
       candidateId: candidate.id,
-      resumeUrl: "https://example.com/resume.pdf",
+      resumeKey: "https://example.com/resume.pdf",
       metadata: {},
       status: "applied",
     });
@@ -219,7 +219,7 @@ describe("application access control", () => {
     await createApplication(sql, {
       jobId: job.id,
       candidateId: candidate1.id,
-      resumeUrl: "https://example.com/resume.pdf",
+      resumeKey: "https://example.com/resume.pdf",
       metadata: {},
       status: "applied",
     });
@@ -238,7 +238,7 @@ describe("application access control", () => {
     const app = await createApplication(sql, {
       jobId: job.id,
       candidateId: candidate.id,
-      resumeUrl: "https://example.com/resume.pdf",
+      resumeKey: "https://example.com/resume.pdf",
       metadata: {},
       status: "applied",
     });
@@ -263,7 +263,7 @@ describe("applications on archived jobs", () => {
     const app = await createApplication(sql, {
       jobId: job.id,
       candidateId: candidate.id,
-      resumeUrl: "https://example.com/resume.pdf",
+      resumeKey: "https://example.com/resume.pdf",
       metadata: {},
       status: "applied",
     });

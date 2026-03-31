@@ -1,14 +1,14 @@
 import { Sql } from "postgres";
 
 export const createApplicationQuery = `-- name: createApplication :one
-INSERT INTO applications (job_id, candidate_id, resume_url, metadata, status)
+INSERT INTO applications (job_id, candidate_id, resume_key, metadata, status)
 VALUES ($1, $2, $3, $4, $5)
-RETURNING id, job_id, candidate_id, resume_url, metadata, status, created_at, updated_at`;
+RETURNING id, job_id, candidate_id, resume_key, metadata, status, created_at, updated_at`;
 
 export interface createApplicationArgs {
     jobId: string;
     candidateId: string;
-    resumeUrl: string | null;
+    resumeKey: string | null;
     metadata: any;
     status: string;
 }
@@ -17,7 +17,7 @@ export interface createApplicationRow {
     id: string;
     jobId: string;
     candidateId: string;
-    resumeUrl: string | null;
+    resumeKey: string | null;
     metadata: any;
     status: string;
     createdAt: Date;
@@ -25,7 +25,7 @@ export interface createApplicationRow {
 }
 
 export async function createApplication(sql: Sql, args: createApplicationArgs): Promise<createApplicationRow | null> {
-    const rows = await sql.unsafe(createApplicationQuery, [args.jobId, args.candidateId, args.resumeUrl, args.metadata, args.status]).values();
+    const rows = await sql.unsafe(createApplicationQuery, [args.jobId, args.candidateId, args.resumeKey, args.metadata, args.status]).values();
     if (rows.length !== 1) {
         return null;
     }
@@ -34,7 +34,7 @@ export async function createApplication(sql: Sql, args: createApplicationArgs): 
         id: row[0],
         jobId: row[1],
         candidateId: row[2],
-        resumeUrl: row[3],
+        resumeKey: row[3],
         metadata: row[4],
         status: row[5],
         createdAt: row[6],
@@ -43,7 +43,7 @@ export async function createApplication(sql: Sql, args: createApplicationArgs): 
 }
 
 export const getApplicationByJobAndCandidateQuery = `-- name: getApplicationByJobAndCandidate :one
-SELECT id, job_id, candidate_id, resume_url, metadata, status, created_at, updated_at
+SELECT id, job_id, candidate_id, resume_key, metadata, status, created_at, updated_at
 FROM applications
 WHERE job_id = $1 AND candidate_id = $2`;
 
@@ -56,7 +56,7 @@ export interface getApplicationByJobAndCandidateRow {
     id: string;
     jobId: string;
     candidateId: string;
-    resumeUrl: string | null;
+    resumeKey: string | null;
     metadata: any;
     status: string;
     createdAt: Date;
@@ -73,7 +73,7 @@ export async function getApplicationByJobAndCandidate(sql: Sql, args: getApplica
         id: row[0],
         jobId: row[1],
         candidateId: row[2],
-        resumeUrl: row[3],
+        resumeKey: row[3],
         metadata: row[4],
         status: row[5],
         createdAt: row[6],
@@ -82,7 +82,7 @@ export async function getApplicationByJobAndCandidate(sql: Sql, args: getApplica
 }
 
 export const getApplicationsByCandidateQuery = `-- name: getApplicationsByCandidate :many
-SELECT a.id, a.job_id, a.candidate_id, a.resume_url, a.metadata, a.status, a.created_at, a.updated_at,
+SELECT a.id, a.job_id, a.candidate_id, a.resume_key, a.metadata, a.status, a.created_at, a.updated_at,
        j.title AS job_title, j.status AS job_status,
        c.name AS company_name
 FROM applications a
@@ -100,7 +100,7 @@ export interface getApplicationsByCandidateRow {
     id: string;
     jobId: string;
     candidateId: string;
-    resumeUrl: string | null;
+    resumeKey: string | null;
     metadata: any;
     status: string;
     createdAt: Date;
@@ -115,7 +115,7 @@ export async function getApplicationsByCandidate(sql: Sql, args: getApplications
         id: row[0],
         jobId: row[1],
         candidateId: row[2],
-        resumeUrl: row[3],
+        resumeKey: row[3],
         metadata: row[4],
         status: row[5],
         createdAt: row[6],
@@ -127,7 +127,7 @@ export async function getApplicationsByCandidate(sql: Sql, args: getApplications
 }
 
 export const getApplicationsByJobQuery = `-- name: getApplicationsByJob :many
-SELECT a.id, a.job_id, a.candidate_id, a.resume_url, a.metadata, a.status, a.created_at, a.updated_at,
+SELECT a.id, a.job_id, a.candidate_id, a.resume_key, a.metadata, a.status, a.created_at, a.updated_at,
        u.name AS candidate_name, u.email AS candidate_email, u.picture AS candidate_picture
 FROM applications a
 JOIN users u ON u.id = a.candidate_id
@@ -142,7 +142,7 @@ export interface getApplicationsByJobRow {
     id: string;
     jobId: string;
     candidateId: string;
-    resumeUrl: string | null;
+    resumeKey: string | null;
     metadata: any;
     status: string;
     createdAt: Date;
@@ -157,7 +157,7 @@ export async function getApplicationsByJob(sql: Sql, args: getApplicationsByJobA
         id: row[0],
         jobId: row[1],
         candidateId: row[2],
-        resumeUrl: row[3],
+        resumeKey: row[3],
         metadata: row[4],
         status: row[5],
         createdAt: row[6],
@@ -169,7 +169,7 @@ export async function getApplicationsByJob(sql: Sql, args: getApplicationsByJobA
 }
 
 export const getApplicationByIdQuery = `-- name: getApplicationById :one
-SELECT a.id, a.job_id, a.candidate_id, a.resume_url, a.metadata, a.status, a.created_at, a.updated_at,
+SELECT a.id, a.job_id, a.candidate_id, a.resume_key, a.metadata, a.status, a.created_at, a.updated_at,
        j.title AS job_title, j.status AS job_status,
        c.name AS company_name
 FROM applications a
@@ -185,7 +185,7 @@ export interface getApplicationByIdRow {
     id: string;
     jobId: string;
     candidateId: string;
-    resumeUrl: string | null;
+    resumeKey: string | null;
     metadata: any;
     status: string;
     createdAt: Date;
@@ -205,7 +205,7 @@ export async function getApplicationById(sql: Sql, args: getApplicationByIdArgs)
         id: row[0],
         jobId: row[1],
         candidateId: row[2],
-        resumeUrl: row[3],
+        resumeKey: row[3],
         metadata: row[4],
         status: row[5],
         createdAt: row[6],
@@ -221,7 +221,7 @@ UPDATE applications
 SET status = $1,
     updated_at = now()
 WHERE id = $2
-RETURNING id, job_id, candidate_id, resume_url, metadata, status, created_at, updated_at`;
+RETURNING id, job_id, candidate_id, resume_key, metadata, status, created_at, updated_at`;
 
 export interface updateApplicationStatusArgs {
     status: string;
@@ -232,7 +232,7 @@ export interface updateApplicationStatusRow {
     id: string;
     jobId: string;
     candidateId: string;
-    resumeUrl: string | null;
+    resumeKey: string | null;
     metadata: any;
     status: string;
     createdAt: Date;
@@ -249,7 +249,7 @@ export async function updateApplicationStatus(sql: Sql, args: updateApplicationS
         id: row[0],
         jobId: row[1],
         candidateId: row[2],
-        resumeUrl: row[3],
+        resumeKey: row[3],
         metadata: row[4],
         status: row[5],
         createdAt: row[6],

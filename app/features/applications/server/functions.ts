@@ -61,14 +61,14 @@ export const applyToJob = createServerFn({ method: "POST" })
     }
 
     const profile = await getCandidateProfileByUserId(db, { userId: context.userId });
-    if (!profile?.resumeUrl) {
+    if (!profile?.resumeKey) {
       throw new Error("Add your resume to your profile before applying");
     }
 
     const application = await createApplicationQuery(db, {
       jobId: data.jobId,
       candidateId: context.userId,
-      resumeUrl: profile.resumeUrl,
+      resumeKey: profile.resumeKey,
       metadata: {
         headline: profile.headline,
         bio: profile.bio,

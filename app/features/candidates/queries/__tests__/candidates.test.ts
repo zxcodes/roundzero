@@ -17,13 +17,13 @@ describe("createCandidateProfile", () => {
     const profile = await createCandidateProfile(sql, {
       userId: user.id,
       headline: "Full-Stack Developer",
-      resumeUrl: "https://example.com/resume.pdf",
+      resumeKey: "https://example.com/resume.pdf",
     });
 
     expect(profile).not.toBeNull();
     expect(profile!.userId).toBe(user.id);
     expect(profile!.headline).toBe("Full-Stack Developer");
-    expect(profile!.resumeUrl).toBe("https://example.com/resume.pdf");
+    expect(profile!.resumeKey).toBe("https://example.com/resume.pdf");
     expect(profile!.bio).toBeNull();
     // JSONB columns default to '[]' (NOT NULL)
     expect(profile!.skills).toEqual([]);
@@ -39,12 +39,12 @@ describe("createCandidateProfile", () => {
     const profile = await createCandidateProfile(sql, {
       userId: user.id,
       headline: null,
-      resumeUrl: null,
+      resumeKey: null,
     });
 
     expect(profile).not.toBeNull();
     expect(profile!.headline).toBeNull();
-    expect(profile!.resumeUrl).toBeNull();
+    expect(profile!.resumeKey).toBeNull();
   });
 
   it("enforces unique user_id constraint", async () => {
@@ -53,14 +53,14 @@ describe("createCandidateProfile", () => {
     await createCandidateProfile(sql, {
       userId: user.id,
       headline: "First Profile",
-      resumeUrl: null,
+      resumeKey: null,
     });
 
     await expect(
       createCandidateProfile(sql, {
         userId: user.id,
         headline: "Duplicate Profile",
-        resumeUrl: null,
+        resumeKey: null,
       }),
     ).rejects.toThrow();
   });
@@ -103,7 +103,7 @@ describe("updateCandidateProfile", () => {
     const updated = await updateCandidateProfile(sql, {
       userId: user.id,
       headline: "Senior Engineer",
-      resumeUrl: "https://example.com/new-resume.pdf",
+      resumeKey: "https://example.com/new-resume.pdf",
       bio: "I build scalable systems.",
       skills,
       workHistory,
@@ -112,7 +112,7 @@ describe("updateCandidateProfile", () => {
 
     expect(updated).not.toBeNull();
     expect(updated!.headline).toBe("Senior Engineer");
-    expect(updated!.resumeUrl).toBe("https://example.com/new-resume.pdf");
+    expect(updated!.resumeKey).toBe("https://example.com/new-resume.pdf");
     expect(updated!.bio).toBe("I build scalable systems.");
     expect(updated!.skills).toEqual(skills);
     expect(updated!.workHistory).toEqual(workHistory);
@@ -128,7 +128,7 @@ describe("updateCandidateProfile", () => {
     const updated = await updateCandidateProfile(sql, {
       userId: user.id,
       headline: "Updated",
-      resumeUrl: null,
+      resumeKey: null,
       bio: null,
       skills: [],
       workHistory: [],
@@ -145,7 +145,7 @@ describe("updateCandidateProfile", () => {
     const result = await updateCandidateProfile(sql, {
       userId: user.id,
       headline: "Ghost",
-      resumeUrl: null,
+      resumeKey: null,
       bio: null,
       skills: [],
       workHistory: [],
@@ -162,7 +162,7 @@ describe("updateCandidateProfile", () => {
     await updateCandidateProfile(sql, {
       userId: user.id,
       headline: "Engineer",
-      resumeUrl: "https://example.com/resume.pdf",
+      resumeKey: "https://example.com/resume.pdf",
       bio: "Some bio",
       skills: ["TypeScript"],
       workHistory: [{ company: "Test" }],
@@ -173,7 +173,7 @@ describe("updateCandidateProfile", () => {
     const cleared = await updateCandidateProfile(sql, {
       userId: user.id,
       headline: null,
-      resumeUrl: null,
+      resumeKey: null,
       bio: null,
       skills: [],
       workHistory: [],
@@ -182,7 +182,7 @@ describe("updateCandidateProfile", () => {
 
     expect(cleared).not.toBeNull();
     expect(cleared!.headline).toBeNull();
-    expect(cleared!.resumeUrl).toBeNull();
+    expect(cleared!.resumeKey).toBeNull();
     expect(cleared!.bio).toBeNull();
     expect(cleared!.skills).toEqual([]);
     expect(cleared!.workHistory).toEqual([]);
