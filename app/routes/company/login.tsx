@@ -100,7 +100,7 @@ function CompanyLoginPage() {
       </div>
 
       {/* Right — login form */}
-      <div className="relative flex items-center justify-center p-6 lg:p-10">
+      <div className="relative flex min-h-svh items-start justify-center p-6 pt-16 lg:min-h-0 lg:items-center lg:p-10 lg:pt-10">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--color-primary)/4%,transparent_70%)]" />
 
         <div className="animate-fade-in relative w-full max-w-sm space-y-8">
@@ -114,6 +114,9 @@ function CompanyLoginPage() {
           </div>
 
           <div className="space-y-2 text-center">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-primary lg:hidden">
+              For companies
+            </p>
             <h2 className="text-2xl font-bold tracking-tight">Start hiring smarter</h2>
             <p className="text-sm text-muted-foreground">
               Sign in to post jobs, run AI interviews, and review scored candidate reports.
@@ -125,6 +128,65 @@ function CompanyLoginPage() {
               <GoogleIcon />
               Continue with Google
             </Button>
+          </div>
+
+          {/* Mobile value props — condensed */}
+          <div className="space-y-3 lg:hidden">
+            <div className="flex items-start gap-3 rounded-lg border border-border/60 bg-card/50 p-3">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10">
+                <HugeiconsIcon
+                  icon={BubbleChatIcon}
+                  strokeWidth={2}
+                  className="size-4 text-primary"
+                />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium">AI-powered interviews</p>
+                <p className="text-xs text-muted-foreground">
+                  Adaptive questions that probe deeper based on real answers
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 rounded-lg border border-border/60 bg-card/50 p-3">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10">
+                <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-4 text-primary" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium">Evidence-backed reports</p>
+                <p className="text-xs text-muted-foreground">
+                  Scored evaluations with transcript excerpts and reasoning
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 rounded-lg border border-border/60 bg-card/50 p-3">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10">
+                <HugeiconsIcon icon={RankingIcon} strokeWidth={2} className="size-4 text-primary" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium">Ranked shortlists</p>
+                <p className="text-xs text-muted-foreground">
+                  Candidates sorted by fit with clear hire/pass recommendations
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center justify-center gap-4 pt-1 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <HugeiconsIcon
+                  icon={CheckmarkCircle02Icon}
+                  strokeWidth={2}
+                  className="size-3.5 text-emerald-500"
+                />
+                No credit card required
+              </span>
+              <span className="flex items-center gap-1">
+                <HugeiconsIcon
+                  icon={CheckmarkCircle02Icon}
+                  strokeWidth={2}
+                  className="size-3.5 text-emerald-500"
+                />
+                Free to post jobs
+              </span>
+            </div>
           </div>
 
           <div className="space-y-3 text-center text-xs text-muted-foreground">

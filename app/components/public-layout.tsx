@@ -1,8 +1,13 @@
+import { Menu01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { Link, useRouteContext } from "@tanstack/react-router";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 export function PublicHeader() {
   const { user } = useRouteContext({ from: "__root__" });
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-xl backdrop-saturate-150">
@@ -47,6 +52,61 @@ export function PublicHeader() {
               </Button>
             </>
           )}
+
+          {/* Mobile hamburger menu */}
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon-sm" className="sm:hidden" aria-label="Open menu">
+                <HugeiconsIcon icon={Menu01Icon} strokeWidth={2} className="size-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-72 p-0">
+              <SheetTitle className="sr-only">Navigation</SheetTitle>
+              <div className="flex flex-col gap-1 p-4 pt-12">
+                <Button
+                  variant="ghost"
+                  className="justify-start text-muted-foreground"
+                  asChild
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <Link to="/jobs" activeProps={{ className: "text-foreground bg-accent" }}>
+                    Jobs
+                  </Link>
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="justify-start text-muted-foreground"
+                  asChild
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <Link to="/companies" activeProps={{ className: "text-foreground bg-accent" }}>
+                    Companies
+                  </Link>
+                </Button>
+                {!user ? (
+                  <>
+                    <div className="my-2 h-px bg-border" />
+                    <Button
+                      variant="ghost"
+                      className="justify-start text-muted-foreground"
+                      asChild
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      <Link to="/company/login">For companies</Link>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="justify-start text-muted-foreground"
+                      asChild
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      <Link to="/candidate/login">For job seekers</Link>
+                    </Button>
+                  </>
+                ) : null}
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </header>
