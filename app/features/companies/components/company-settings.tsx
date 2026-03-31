@@ -1,17 +1,17 @@
 import { Cancel01Icon, Upload04Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { useStore } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useId, useState } from "react";
-import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { updateCompanyProfile } from "@/features/companies/server/functions";
+import { AutoSaveIndicator, useAutoSaveStatus } from "@/shared/auto-save-indicator";
 import { type CompanySize, companySizeLabels, type Industry, industryLabels } from "@/shared/enums";
 import { useAppForm } from "@/shared/form";
 
@@ -39,18 +39,21 @@ export function CompanySettings({ company }: { company: Company }) {
   const id = useId();
 
   const updateFn = useServerFn(updateCompanyProfile);
+
+  const autoSave = useAutoSaveStatus();
+
   const updateMutation = useMutation({
     mutationFn: updateFn,
+    onMutate: () => autoSave.setSaving(),
     onSuccess: async () => {
-      toast.success("Company profile updated");
+      autoSave.setSaved();
       await router.invalidate();
     },
     onError: () => {
-      toast.error("Failed to update profile. Please try again.");
+      autoSave.setError();
     },
   });
 
-  const techStack = Array.isArray(company.techStack) ? company.techStack : [];
   const socialLinks =
     company.socialLinks && typeof company.socialLinks === "object"
       ? company.socialLinks
@@ -69,6 +72,7 @@ export function CompanySettings({ company }: { company: Company }) {
       linkedinUrl: socialLinks.linkedin ?? "",
       twitterUrl: socialLinks.twitter ?? "",
       githubUrl: socialLinks.github ?? "",
+      techStack: Array.isArray(company.techStack) ? company.techStack : [],
     },
     onSubmit: async ({ value }) => {
       await updateMutation.mutateAsync({
@@ -81,7 +85,7 @@ export function CompanySettings({ company }: { company: Company }) {
           companySize: (value.companySize || null) as CompanySize | null,
           foundedYear: value.foundedYear,
           location: value.location.trim() || null,
-          techStack: tags.length > 0 ? tags : null,
+          techStack: value.techStack.length > 0 ? value.techStack : null,
           culture: value.culture.trim() || null,
           socialLinks:
             value.linkedinUrl || value.twitterUrl || value.githubUrl
@@ -94,42 +98,54 @@ export function CompanySettings({ company }: { company: Company }) {
         },
       });
     },
+    listeners: {
+      onChange: ({ formApi }) => {
+        if (formApi.state.isDirty) {
+          formApi.handleSubmit();
+        }
+      },
+      onChangeDebounceMs: 1500,
+    },
   });
 
-  const [tags, setTags] = useState<string[]>(techStack);
   const [tagInput, setTagInput] = useState("");
+  const techStackTags = useStore(form.store, (state) => state.values.techStack);
 
   const tagInputId = `tag-input-${id}`;
   const logoId = `logo-${id}`;
 
   const onAddTag = (value: string) => {
     const trimmed = value.trim();
-    if (trimmed && !tags.includes(trimmed)) {
-      setTags([...tags, trimmed]);
+    const currentTags = form.getFieldValue("techStack");
+    if (trimmed && !currentTags.includes(trimmed)) {
+      form.setFieldValue("techStack", [...currentTags, trimmed]);
+      form.handleSubmit();
     }
     setTagInput("");
   };
 
   const onRemoveTag = (tag: string) => {
-    setTags(tags.filter((t) => t !== tag));
+    const currentTags = form.getFieldValue("techStack");
+    form.setFieldValue(
+      "techStack",
+      currentTags.filter((t: string) => t !== tag),
+    );
+    form.handleSubmit();
   };
 
   return (
     <div className="animate-fade-in space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Company Settings</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Manage your company profile. This information is visible on your public company page.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Company Settings</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Manage your company profile. This information is visible on your public company page.
+          </p>
+        </div>
+        <AutoSaveIndicator status={autoSave.status} />
       </div>
 
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          form.handleSubmit();
-        }}
-        className="space-y-6"
-      >
+      <div className="space-y-6">
         {/* Basic Info */}
         <Card>
           <CardHeader>
@@ -145,7 +161,6 @@ export function CompanySettings({ company }: { company: Company }) {
                   type="button"
                   id={logoId}
                   className="flex size-20 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-muted-foreground/25 transition-colors hover:border-muted-foreground/50 hover:bg-muted/50"
-                  onClick={() => toast.info("Logo upload will be available soon")}
                 >
                   <HugeiconsIcon
                     icon={Upload04Icon}
@@ -287,9 +302,9 @@ export function CompanySettings({ company }: { company: Company }) {
               />
             </div>
 
-            {tags.length > 0 ? (
+            {techStackTags.length > 0 ? (
               <div className="flex flex-wrap gap-1.5">
-                {tags.map((tag) => (
+                {techStackTags.map((tag) => (
                   <Badge key={tag} variant="secondary" className="gap-1 pr-1">
                     {tag}
                     <Button
@@ -370,13 +385,7 @@ export function CompanySettings({ company }: { company: Company }) {
             />
           </CardContent>
         </Card>
-
-        <Separator />
-
-        <form.AppForm>
-          <form.SubmitButton label="Save changes" submittingLabel="Saving..." />
-        </form.AppForm>
-      </form>
+      </div>
     </div>
   );
 }
