@@ -1,7 +1,7 @@
 import { Cancel01Icon, Upload04Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
-import { Link, useRouter } from "@tanstack/react-router";
+import { useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useId, useState } from "react";
 import { toast } from "sonner";
@@ -172,16 +172,15 @@ export function CompanySettings({ company }: { company: Company }) {
                   <Label>Slug</Label>
                   <Input value={company.slug} disabled className="bg-muted font-mono text-sm" />
                   <p className="text-muted-foreground text-xs">
-                    Your public URL:
-                    <Link
-                      to="/companies/$slug"
-                      params={{ slug: company.slug }}
+                    Your public URL:{" "}
+                    <a
+                      href={`${import.meta.env.VITE_APP_URL}/companies/${company.slug}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="font-medium text-primary underline underline-offset-2 hover:text-primary/80"
                     >
-                      {` ${import.meta.env.VITE_APP_URL}/companies/${company.slug}`}
-                    </Link>
+                      {import.meta.env.VITE_APP_URL}/companies/{company.slug}
+                    </a>
                   </p>
                 </div>
               </div>
