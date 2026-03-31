@@ -10,7 +10,6 @@ import {
   countCompaniesFiltered,
   createCompany as createCompanyQuery,
   getAllCompaniesPaginated as getAllCompaniesPaginatedQuery,
-  getAllCompanies as getAllCompaniesQuery,
   getCompanyByOwnerId,
   getCompanyBySlug as getCompanyBySlugQuery,
   slugExists,
@@ -151,11 +150,6 @@ export const updateCompanyProfile = createServerFn({ method: "POST" })
   });
 
 // --- Public Server Functions ---
-
-export const getAllCompanies = createServerFn({ method: "GET" }).handler(async () => {
-  const db = getDb();
-  return getAllCompaniesQuery(db);
-});
 
 const companySlugSchema = z.object({
   slug: z.string().min(1),

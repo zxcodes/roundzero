@@ -9,27 +9,9 @@ import { countJobsByCompanyAndStatus } from "@/features/jobs/queries/queries_sql
 import { getDb } from "@/shared/db";
 import { authMiddleware } from "@/shared/middleware";
 
-export type CompanyMetrics = {
-  type: "company";
-  openRoles: number;
-  draftJobs: number;
-  totalJobs: number;
-  totalApplicants: number;
-};
-
-export type CandidateMetrics = {
-  type: "candidate";
-  applicationsSent: number;
-  activeApplications: number;
-  interviewInvites: number;
-  evaluationsReceived: number;
-};
-
-export type DashboardMetrics = CompanyMetrics | CandidateMetrics;
-
 export const getDashboardMetrics = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .handler(async ({ context }): Promise<DashboardMetrics> => {
+  .handler(async ({ context }) => {
     const db = getDb();
 
     const user = await getUserById(db, { id: context.userId });

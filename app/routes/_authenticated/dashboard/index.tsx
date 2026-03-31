@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  type CandidateMetrics,
-  type CompanyMetrics,
-  getDashboardMetrics,
-} from "@/features/dashboard/server/functions";
+import { getDashboardMetrics } from "@/features/dashboard/server/functions";
+
+type DashboardMetrics = Awaited<ReturnType<typeof getDashboardMetrics>>;
+type CompanyMetrics = Extract<DashboardMetrics, { type: "company" }>;
+type CandidateMetrics = Extract<DashboardMetrics, { type: "candidate" }>;
 
 export const Route = createFileRoute("/_authenticated/dashboard/")({
   loader: async () => {

@@ -41,12 +41,6 @@ export const getValidTransitions = (current: ApplicationStatus): ApplicationStat
 export const isValidTransition = (current: ApplicationStatus, next: ApplicationStatus): boolean =>
   getValidTransitions(current).includes(next);
 
-export const interviewStatusSchema = z.enum(["pending", "in_progress", "completed", "expired"]);
-export type InterviewStatus = z.infer<typeof interviewStatusSchema>;
-
-export const recommendationSchema = z.enum(["strong_hire", "consider", "not_recommended"]);
-export type Recommendation = z.infer<typeof recommendationSchema>;
-
 export const companySizeSchema = z.enum([
   "1-10",
   "11-50",

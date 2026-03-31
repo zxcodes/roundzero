@@ -82,27 +82,6 @@ export const getCurrentUser = createServerFn({ method: "GET" }).handler(async ()
   return user;
 });
 
-const setRoleSchema = z.object({
-  role: userRoleSchema,
-});
-
-export const setRole = createServerFn({ method: "POST" })
-  .middleware([authMiddleware])
-  .inputValidator(zodValidator(setRoleSchema))
-  .handler(async ({ data, context }) => {
-    const db = getDb();
-    const user = await setUserRoleQuery(db, {
-      role: data.role,
-      id: context.userId,
-    });
-
-    if (!user) {
-      throw new Error("Failed to set role — role may already be set");
-    }
-
-    return { user };
-  });
-
 const updateNameSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
 });

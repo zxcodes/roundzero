@@ -10,10 +10,8 @@ import {
   experienceLevelLabels,
   experienceLevelSchema,
   getValidTransitions,
-  interviewStatusSchema,
   isValidTransition,
   jobStatusSchema,
-  recommendationSchema,
   userRoleSchema,
   type WorkplaceType,
   workplaceTypeLabels,
@@ -56,22 +54,6 @@ describe("applicationStatusSchema", () => {
   it("rejects invalid statuses", () => {
     expect(() => applicationStatusSchema.parse("pending")).toThrow();
     expect(() => applicationStatusSchema.parse("hired")).toThrow();
-  });
-});
-
-describe("interviewStatusSchema", () => {
-  it("accepts all valid statuses", () => {
-    for (const status of ["pending", "in_progress", "completed", "expired"]) {
-      expect(interviewStatusSchema.parse(status)).toBe(status);
-    }
-  });
-});
-
-describe("recommendationSchema", () => {
-  it("accepts all valid recommendations", () => {
-    for (const rec of ["strong_hire", "consider", "not_recommended"]) {
-      expect(recommendationSchema.parse(rec)).toBe(rec);
-    }
   });
 });
 

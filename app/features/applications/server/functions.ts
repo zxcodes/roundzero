@@ -11,7 +11,6 @@ import {
   createApplication as createApplicationQuery,
   getApplicationById,
   getApplicationByJobAndCandidate,
-  getApplicationCountByJob,
   getApplicationsByCandidate,
   getApplicationsByJob,
   updateApplicationStatus as updateApplicationStatusQuery,
@@ -30,10 +29,6 @@ const updateStatusSchema = z.object({
 
 const jobIdSchema = z.object({
   jobId: z.string().uuid(),
-});
-
-const applicationIdSchema = z.object({
-  id: z.string().uuid(),
 });
 
 export const applyToJob = createServerFn({ method: "POST" })
@@ -118,32 +113,6 @@ export const getJobApplicants = createServerFn({ method: "GET" })
     return applicants;
   });
 
-export const getApplicationDetail = createServerFn({ method: "GET" })
-  .middleware([authMiddleware])
-  .inputValidator(zodValidator(applicationIdSchema))
-  .handler(async ({ data, context }) => {
-    const db = getDb();
-
-    const application = await getApplicationById(db, { id: data.id });
-    if (!application) {
-      throw new Error("Application not found");
-    }
-
-    // Only the candidate or the company owner can view
-    if (application.candidateId !== context.userId) {
-      const company = await getCompanyByOwnerId(db, { ownerId: context.userId });
-      if (!company) {
-        throw new Error("Not authorized");
-      }
-      const job = await getJobById(db, { id: application.jobId });
-      if (!job || job.companyId !== company.id) {
-        throw new Error("Not authorized");
-      }
-    }
-
-    return application;
-  });
-
 export const updateApplicationStatus = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(zodValidator(updateStatusSchema))
@@ -184,27 +153,6 @@ export const updateApplicationStatus = createServerFn({ method: "POST" })
     }
 
     return { application: updated };
-  });
-
-export const getApplicationCount = createServerFn({ method: "GET" })
-  .middleware([authMiddleware])
-  .inputValidator(zodValidator(jobIdSchema))
-  .handler(async ({ data, context }) => {
-    const db = getDb();
-
-    // Only the company owner of this job can view the count
-    const company = await getCompanyByOwnerId(db, { ownerId: context.userId });
-    if (!company) {
-      throw new Error("Not authorized");
-    }
-
-    const job = await getJobById(db, { id: data.jobId });
-    if (!job || job.companyId !== company.id) {
-      throw new Error("Not authorized");
-    }
-
-    const result = await getApplicationCountByJob(db, { jobId: data.jobId });
-    return result?.count ?? 0;
   });
 
 export const hasApplied = createServerFn({ method: "GET" })
