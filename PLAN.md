@@ -219,3 +219,35 @@ Replaces the hand-rolled Google OAuth + encrypted cookie session system with Bet
 - [ ] (Optional) Add magic link plugin: `magicLink()` server plugin + email sending via Resend/SES
 - [ ] (Optional) Add email/password plugin: `emailAndPassword: { enabled: true }`
 - [ ] (Optional) Add 2FA plugin: `twoFactor()` for TOTP/OTP
+
+## Phase 8 (Optional): Web Interface Guidelines Compliance
+
+Accessibility, animation, typography, and interaction polish based on a full-codebase audit against the [Vercel Web Interface Guidelines](https://github.com/vercel-labs/web-interface-guidelines).
+
+### Systemic (high priority — fix once, resolve everywhere)
+
+- [ ] Add `@media (prefers-reduced-motion: reduce)` guard in `styles.css` for `animate-fade-in`, `animate-fade-in-up`, `animate-scale-in`, `animate-shimmer`
+- [ ] Add `aria-hidden="true"` to all decorative `HugeiconsIcon` instances (~60+ occurrences) — consider a wrapper component
+- [ ] Add skip link (`<a href="#main-content">Skip to main content</a>`) in `__root.tsx` and wrap page content in `<main id="main-content">`
+
+### Accessibility (medium priority)
+
+- [ ] Add `aria-label` to all icon-only buttons (back buttons, add/remove buttons, upload buttons across job-form, company-settings, candidate-settings, apply-form)
+- [ ] Add `aria-label` or `<label>` to filter `<Select>` and search `<Input>` on `/jobs/` and `/companies/` routes
+- [ ] Add `name` and `autocomplete` attributes to all form inputs (fix in `app/shared/form.tsx` base components)
+- [ ] Fix `pagination-nav.tsx` disabled links — add `tabIndex={-1}` alongside `aria-disabled` to prevent keyboard activation
+- [ ] Add confirmation dialog for destructive status change (reject application) in `dashboard/jobs/$jobId.tsx`
+- [ ] Convert footer/login "Terms" and "Privacy" `<span>` elements to `<a>`/`<Link>`
+- [ ] Add visible `focus-visible:ring-*` to upload buttons (company onboarding, candidate onboarding)
+
+### Animation & Performance (medium priority)
+
+- [ ] Replace `transition-all` with explicit property lists (`transition-[border-color,box-shadow]`) on Card components, mode-toggle
+- [ ] Replace hardcoded `"en-US"` locale with `Intl` defaults in `formatDate`/`formatSalary` (4 files)
+
+### Typography & Copy (low priority)
+
+- [ ] Replace all `...` with `…` (ellipsis character) in placeholders and loading labels (~30 instances)
+- [ ] Add `text-wrap: balance` to all `<h1>`/`<h2>` headings
+- [ ] Add `tabular-nums` to numeric columns (dashboard metrics, scores, dates)
+- [ ] Replace straight apostrophes with curly (`\u2019`) in `not-found.tsx`
