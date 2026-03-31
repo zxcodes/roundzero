@@ -291,6 +291,8 @@ function JobDetailPage() {
           {!isCompany && job.status === "open" ? (
             <CandidateApplySection
               jobId={job.id}
+              jobTitle={job.title}
+              companyName={job.companyName ?? "the company"}
               alreadyApplied={alreadyApplied}
               hasResume={Boolean(candidateProfile?.resumeKey)}
             />
@@ -484,10 +486,14 @@ function ApplicantsSection({
 
 function CandidateApplySection({
   jobId,
+  jobTitle,
+  companyName,
   alreadyApplied,
   hasResume,
 }: {
   jobId: string;
+  jobTitle: string;
+  companyName: string;
   alreadyApplied: boolean;
   hasResume: boolean;
 }) {
@@ -498,7 +504,7 @@ function CandidateApplySection({
   const applyMutation = useMutation({
     mutationFn: applyToJobFn,
     onSuccess: async () => {
-      toast.success("Application submitted successfully!");
+      toast.success(`Successfully applied to ${jobTitle} at ${companyName}`);
       setJustApplied(true);
       await router.invalidate();
     },
