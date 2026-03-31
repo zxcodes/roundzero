@@ -17,7 +17,8 @@ Always consult both before making design decisions or implementing features.
 
 - Single init migration in `db/migrations/` via dbmate. Schema in `db/init.sql` and `db/schema.sql`.
 - SQLC generates typed query functions — never hand-edit `*_sql.ts`. Config in `sqlc.yaml`.
-- No manual DB types — use SQLC-generated types. No type assertions — infer from server function responses.
+- No manual DB/data shape types — use SQLC-generated types or infer from server function / loader responses. Do not re-declare row or payload shapes in components when the type already exists upstream.
+- No type assertions — infer from server function responses.
 - **No DB logic** — no triggers, functions, or stored procedures. Pure schema only.
 - **No DB enums/CHECKs** — use `TEXT` columns. Validate with Zod in `app/shared/enums.ts`.
 - **No down migrations** — include `-- migrate:down` but keep body empty.

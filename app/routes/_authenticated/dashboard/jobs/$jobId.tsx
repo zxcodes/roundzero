@@ -41,13 +41,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { ApplyForm } from "@/features/applications/components/apply-form";
 import {
   applyToJob,
   getJobApplicants,
   hasApplied,
   updateApplicationStatus,
 } from "@/features/applications/server/functions";
+import { getMyCandidateProfile } from "@/features/candidates/server/functions";
 import { JobForm, type JobFormData } from "@/features/jobs/components/job-form";
 import { archiveJob, getJob, publishJob, updateJob } from "@/features/jobs/server/functions";
 import {
@@ -66,14 +66,15 @@ export const Route = createFileRoute("/_authenticated/dashboard/jobs/$jobId")({
   loader: async ({ params, context }) => {
     const job = await getJob({ data: { id: params.jobId } });
 
-    const [alreadyApplied, applicants] = await Promise.all([
+    const [alreadyApplied, applicants, candidateProfile] = await Promise.all([
       context.isCandidate && job.status === "open"
         ? hasApplied({ data: { jobId: params.jobId } })
         : Promise.resolve(false),
       context.isCompany ? getJobApplicants({ data: { jobId: params.jobId } }) : Promise.resolve([]),
+      context.isCandidate ? getMyCandidateProfile() : Promise.resolve(null),
     ]);
 
-    return { job, alreadyApplied, applicants };
+    return { job, alreadyApplied, applicants, candidateProfile };
   },
   pendingComponent: DashboardJobDetailSkeleton,
   component: JobDetailPage,
@@ -114,7 +115,7 @@ const formatSalary = (min: number | null, max: number | null, currency: string) 
 };
 
 function JobDetailPage() {
-  const { job, alreadyApplied, applicants } = Route.useLoaderData();
+  const { job, alreadyApplied, applicants, candidateProfile } = Route.useLoaderData();
   const { isCompany } = Route.useRouteContext();
 
   const requirements: string[] = Array.isArray(job.requirements) ? job.requirements : [];
@@ -288,7 +289,11 @@ function JobDetailPage() {
 
           {/* Apply section for candidates */}
           {!isCompany && job.status === "open" ? (
-            <CandidateApplySection jobId={job.id} alreadyApplied={alreadyApplied} />
+            <CandidateApplySection
+              jobId={job.id}
+              alreadyApplied={alreadyApplied}
+              hasResume={Boolean(candidateProfile?.resumeUrl)}
+            />
           ) : null}
         </div>
       </div>
@@ -374,7 +379,18 @@ function ApplicantsSection({
         ) : (
           <div className="space-y-2">
             {applicants.map((applicant) => {
-              const links: string[] = Array.isArray(applicant.links) ? applicant.links : [];
+              const metadata =
+                applicant.metadata && typeof applicant.metadata === "object"
+                  ? applicant.metadata
+                  : {};
+              const links =
+                metadata.links &&
+                typeof metadata.links === "object" &&
+                !Array.isArray(metadata.links)
+                  ? Object.values(metadata.links).filter(
+                      (value): value is string => typeof value === "string" && value.length > 0,
+                    )
+                  : [];
 
               return (
                 <div
@@ -474,39 +490,50 @@ function ApplicantsSection({
 function CandidateApplySection({
   jobId,
   alreadyApplied,
+  hasResume,
 }: {
   jobId: string;
   alreadyApplied: boolean;
+  hasResume: boolean;
 }) {
   const router = useRouter();
-  const [showForm, setShowForm] = useState(false);
-  const [applied, setApplied] = useState(alreadyApplied);
+  const [justApplied, setJustApplied] = useState(false);
 
   const applyToJobFn = useServerFn(applyToJob);
   const applyMutation = useMutation({
     mutationFn: applyToJobFn,
     onSuccess: async () => {
       toast.success("Application submitted successfully!");
-      setApplied(true);
-      setShowForm(false);
+      setJustApplied(true);
       await router.invalidate();
     },
-    onError: () => {
-      toast.error("Failed to submit application. Please try again.");
+    onError: (error) => {
+      toast.error(error.message || "Failed to submit application. Please try again.");
     },
   });
 
-  const onApply = async (data: { resumeUrl: string | null; links: string[] }) => {
+  const onApply = async () => {
     await applyMutation.mutateAsync({
-      data: {
-        jobId,
-        resumeUrl: data.resumeUrl,
-        links: data.links,
-      },
+      data: { jobId },
     });
   };
 
-  if (applied) {
+  if (justApplied) {
+    return (
+      <Card className="animate-scale-in">
+        <CardContent className="flex items-center justify-center gap-2 py-6">
+          <HugeiconsIcon
+            icon={CheckmarkCircle02Icon}
+            strokeWidth={2}
+            className="size-4 text-emerald-500"
+          />
+          <p className="text-sm font-medium text-muted-foreground">Application submitted</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (alreadyApplied) {
     return (
       <Card className="animate-scale-in">
         <CardContent className="flex items-center justify-center gap-2 py-6">
@@ -521,24 +548,20 @@ function CandidateApplySection({
     );
   }
 
-  if (showForm) {
+  if (!hasResume) {
     return (
       <Card className="animate-scale-in">
         <CardHeader>
-          <p className="text-[11px] font-bold uppercase tracking-widest text-primary">Apply</p>
+          <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
+            Resume required
+          </p>
           <CardDescription className="text-xs">
-            Add your resume and any relevant links.
+            Add a resume to your profile before applying to jobs.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ApplyForm onSubmit={onApply} />
-          <Button
-            variant="ghost"
-            className="mt-3 w-full"
-            onClick={() => setShowForm(false)}
-            disabled={applyMutation.isPending}
-          >
-            Cancel
+          <Button className="w-full" asChild>
+            <Link to="/dashboard/settings">Add resume in settings</Link>
           </Button>
         </CardContent>
       </Card>
@@ -546,8 +569,8 @@ function CandidateApplySection({
   }
 
   return (
-    <Button className="w-full" size="lg" onClick={() => setShowForm(true)}>
-      Apply for this position
+    <Button className="w-full" size="lg" onClick={onApply} disabled={applyMutation.isPending}>
+      {applyMutation.isPending ? "Applying..." : "Apply for this position"}
     </Button>
   );
 }

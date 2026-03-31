@@ -85,7 +85,7 @@ CREATE TABLE applications (
   job_id        UUID NOT NULL REFERENCES jobs(id) ON DELETE RESTRICT,
   candidate_id  UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
   resume_url    TEXT,
-  links         JSONB DEFAULT '[]',
+  metadata      JSONB NOT NULL DEFAULT '{}',
   status        TEXT NOT NULL,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),

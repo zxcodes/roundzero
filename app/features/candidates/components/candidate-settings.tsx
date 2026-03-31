@@ -1,10 +1,4 @@
-import {
-  Add01Icon,
-  Cancel01Icon,
-  Loading03Icon,
-  Tick02Icon,
-  Upload04Icon,
-} from "@hugeicons/core-free-icons";
+import { Add01Icon, Cancel01Icon, Loading03Icon, Tick02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useStore } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
@@ -17,29 +11,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { updateUserName } from "@/features/auth/server/functions";
-import { updateMyCandidateProfile } from "@/features/candidates/server/functions";
+import {
+  type getMyCandidateProfile,
+  type UpdateCandidateProfileInput,
+  updateMyCandidateProfile,
+} from "@/features/candidates/server/functions";
 import type { User } from "@/router";
 import { AutoSaveIndicator, useAutoSaveStatus } from "@/shared/auto-save-indicator";
 import { useAppForm } from "@/shared/form";
 
-type WorkHistoryEntry = {
-  company: string;
-  title: string;
-  startDate: string;
-  endDate?: string;
-  description?: string;
-};
-
-type CandidateProfile = {
-  id: string;
-  userId: string;
-  headline: string | null;
-  resumeUrl: string | null;
-  bio: string | null;
-  skills: string[];
-  workHistory: WorkHistoryEntry[];
-  links: { linkedin?: string; github?: string; portfolio?: string } | null;
-};
+type CandidateProfile = NonNullable<Awaited<ReturnType<typeof getMyCandidateProfile>>>;
+type WorkHistoryEntry = NonNullable<UpdateCandidateProfileInput["workHistory"]>[number];
 
 export function CandidateSettings({ profile, user }: { profile: CandidateProfile; user: User }) {
   const router = useRouter();
@@ -74,6 +56,7 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
     defaultValues: {
       name: user.name ?? "",
       headline: profile.headline ?? "",
+      resumeUrl: profile.resumeUrl ?? "",
       bio: profile.bio ?? "",
       linkedinUrl: links.linkedin ?? "",
       githubUrl: links.github ?? "",
@@ -93,7 +76,7 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
       await updateProfileMutation.mutateAsync({
         data: {
           headline: value.headline.trim() || null,
-          resumeUrl: profile.resumeUrl,
+          resumeUrl: value.resumeUrl.trim() || null,
           bio: value.bio.trim() || null,
           skills: value.skills.length > 0 ? value.skills : null,
           workHistory: value.workHistory.length > 0 ? value.workHistory : null,
@@ -124,8 +107,6 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
   const currentWorkEntries = useStore(form.store, (state) => state.values.workHistory);
 
   const skillInputId = `skill-input-${id}`;
-  const resumeId = `resume-${id}`;
-
   const onSaveWorkEntry = async (index: number) => {
     setEntrySaveStatus((prev) => ({ ...prev, [index]: "saving" }));
     await form.handleSubmit();
@@ -235,27 +216,17 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
               )}
             />
 
-            {/* Resume upload placeholder */}
-            <div className="space-y-2">
-              <Label htmlFor={resumeId}>Resume</Label>
-              <button
-                type="button"
-                id={resumeId}
-                className="flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/25 px-6 py-8 transition-colors hover:border-muted-foreground/50 hover:bg-muted/50"
-              >
-                <div className="flex size-10 items-center justify-center rounded-lg bg-muted">
-                  <HugeiconsIcon
-                    icon={Upload04Icon}
-                    strokeWidth={1.5}
-                    className="size-5 text-muted-foreground"
-                  />
-                </div>
-                <div className="text-center">
-                  <p className="text-sm font-medium">Upload your resume</p>
-                  <p className="text-xs text-muted-foreground">PDF, DOC, or DOCX (coming soon)</p>
-                </div>
-              </button>
-            </div>
+            <form.AppField
+              name="resumeUrl"
+              children={(field) => (
+                <field.TextField
+                  label="Resume URL"
+                  placeholder="https://example.com/resume.pdf"
+                  type="url"
+                  description="This is the resume attached when you apply."
+                />
+              )}
+            />
           </CardContent>
         </Card>
 

@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { getUserById } from "@/features/auth/queries/queries_sql";
+import { getCandidateProfileByUserId } from "@/features/candidates/queries/queries_sql";
 import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
 import { getJobById } from "@/features/jobs/queries/queries_sql";
 import { getDb } from "@/shared/db";
@@ -18,8 +19,6 @@ import {
 
 const applySchema = z.object({
   jobId: z.string().uuid(),
-  resumeUrl: z.string().url().nullable().optional(),
-  links: z.array(z.string().url()).default([]),
 });
 
 const updateStatusSchema = z.object({
@@ -61,11 +60,22 @@ export const applyToJob = createServerFn({ method: "POST" })
       throw new Error("You have already applied to this job");
     }
 
+    const profile = await getCandidateProfileByUserId(db, { userId: context.userId });
+    if (!profile?.resumeUrl) {
+      throw new Error("Add your resume to your profile before applying");
+    }
+
     const application = await createApplicationQuery(db, {
       jobId: data.jobId,
       candidateId: context.userId,
-      resumeUrl: data.resumeUrl ?? null,
-      links: data.links,
+      resumeUrl: profile.resumeUrl,
+      metadata: {
+        headline: profile.headline,
+        bio: profile.bio,
+        skills: profile.skills,
+        workHistory: profile.workHistory,
+        links: profile.links,
+      },
       status: "applied",
     });
 

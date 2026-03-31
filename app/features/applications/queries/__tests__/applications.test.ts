@@ -47,7 +47,7 @@ describe("createApplication", () => {
       jobId: job.id,
       candidateId: candidate.id,
       resumeUrl: "https://example.com/resume.pdf",
-      links: ["https://github.com/test"],
+      metadata: { headline: "Engineer", links: { github: "https://github.com/test" } },
       status: "applied",
     });
 
@@ -55,11 +55,15 @@ describe("createApplication", () => {
     expect(app!.jobId).toBe(job.id);
     expect(app!.candidateId).toBe(candidate.id);
     expect(app!.resumeUrl).toBe("https://example.com/resume.pdf");
+    expect(app!.metadata).toEqual({
+      headline: "Engineer",
+      links: { github: "https://github.com/test" },
+    });
     expect(app!.status).toBe("applied");
     expect(app!.createdAt).toBeInstanceOf(Date);
   });
 
-  it("creates an application with null resume", async () => {
+  it("creates an application with metadata snapshot", async () => {
     const { company } = await seedCompany();
     const candidate = await seedUser({ role: "candidate" });
     const job = await makeOpenJob(company.id);
@@ -67,13 +71,13 @@ describe("createApplication", () => {
     const app = await createApplication(sql, {
       jobId: job.id,
       candidateId: candidate.id,
-      resumeUrl: null,
-      links: [],
+      resumeUrl: "https://example.com/resume.pdf",
+      metadata: { skills: ["TypeScript"] },
       status: "applied",
     });
 
     expect(app).not.toBeNull();
-    expect(app!.resumeUrl).toBeNull();
+    expect(app!.metadata).toEqual({ skills: ["TypeScript"] });
   });
 
   it("enforces unique(job_id, candidate_id) constraint", async () => {
@@ -84,8 +88,8 @@ describe("createApplication", () => {
     await createApplication(sql, {
       jobId: job.id,
       candidateId: candidate.id,
-      resumeUrl: null,
-      links: [],
+      resumeUrl: "https://example.com/resume.pdf",
+      metadata: {},
       status: "applied",
     });
 
@@ -93,8 +97,8 @@ describe("createApplication", () => {
       createApplication(sql, {
         jobId: job.id,
         candidateId: candidate.id,
-        resumeUrl: null,
-        links: [],
+        resumeUrl: "https://example.com/resume.pdf",
+        metadata: {},
         status: "applied",
       }),
     ).rejects.toThrow();
@@ -109,8 +113,8 @@ describe("getApplicationByJobAndCandidate", () => {
     await createApplication(sql, {
       jobId: job.id,
       candidateId: candidate.id,
-      resumeUrl: null,
-      links: [],
+      resumeUrl: "https://example.com/resume.pdf",
+      metadata: {},
       status: "applied",
     });
 
@@ -144,8 +148,8 @@ describe("getApplicationById", () => {
     const created = await createApplication(sql, {
       jobId: job.id,
       candidateId: candidate.id,
-      resumeUrl: null,
-      links: [],
+      resumeUrl: "https://example.com/resume.pdf",
+      metadata: {},
       status: "applied",
     });
 
@@ -174,15 +178,15 @@ describe("getApplicationsByJob", () => {
     await createApplication(sql, {
       jobId: job.id,
       candidateId: c1.id,
-      resumeUrl: null,
-      links: [],
+      resumeUrl: "https://example.com/alice-resume.pdf",
+      metadata: {},
       status: "applied",
     });
     await createApplication(sql, {
       jobId: job.id,
       candidateId: c2.id,
-      resumeUrl: null,
-      links: [],
+      resumeUrl: "https://example.com/bob-resume.pdf",
+      metadata: {},
       status: "applied",
     });
 
@@ -203,15 +207,15 @@ describe("getApplicationsByCandidate", () => {
     await createApplication(sql, {
       jobId: job1.id,
       candidateId: candidate.id,
-      resumeUrl: null,
-      links: [],
+      resumeUrl: "https://example.com/resume.pdf",
+      metadata: {},
       status: "applied",
     });
     await createApplication(sql, {
       jobId: job2.id,
       candidateId: candidate.id,
-      resumeUrl: null,
-      links: [],
+      resumeUrl: "https://example.com/resume.pdf",
+      metadata: {},
       status: "applied",
     });
 
@@ -233,8 +237,8 @@ describe("updateApplicationStatus", () => {
     const created = await createApplication(sql, {
       jobId: job.id,
       candidateId: candidate.id,
-      resumeUrl: null,
-      links: [],
+      resumeUrl: "https://example.com/resume.pdf",
+      metadata: {},
       status: "applied",
     });
 
@@ -267,15 +271,15 @@ describe("getApplicationCountByJob", () => {
     await createApplication(sql, {
       jobId: job.id,
       candidateId: c1.id,
-      resumeUrl: null,
-      links: [],
+      resumeUrl: "https://example.com/resume.pdf",
+      metadata: {},
       status: "applied",
     });
     await createApplication(sql, {
       jobId: job.id,
       candidateId: c2.id,
-      resumeUrl: null,
-      links: [],
+      resumeUrl: "https://example.com/resume.pdf",
+      metadata: {},
       status: "applied",
     });
 
@@ -306,15 +310,15 @@ describe("countApplicationsByCompany", () => {
     await createApplication(sql, {
       jobId: job1.id,
       candidateId: c1.id,
-      resumeUrl: null,
-      links: [],
+      resumeUrl: "https://example.com/resume.pdf",
+      metadata: {},
       status: "applied",
     });
     await createApplication(sql, {
       jobId: job2.id,
       candidateId: c2.id,
-      resumeUrl: null,
-      links: [],
+      resumeUrl: "https://example.com/resume.pdf",
+      metadata: {},
       status: "applied",
     });
 
@@ -339,22 +343,22 @@ describe("countApplicationsByCandidate", () => {
     const a1 = await createApplication(sql, {
       jobId: job1.id,
       candidateId: candidate.id,
-      resumeUrl: null,
-      links: [],
+      resumeUrl: "https://example.com/resume.pdf",
+      metadata: {},
       status: "applied",
     });
     const a2 = await createApplication(sql, {
       jobId: job2.id,
       candidateId: candidate.id,
-      resumeUrl: null,
-      links: [],
+      resumeUrl: "https://example.com/resume.pdf",
+      metadata: {},
       status: "applied",
     });
     await createApplication(sql, {
       jobId: job3.id,
       candidateId: candidate.id,
-      resumeUrl: null,
-      links: [],
+      resumeUrl: "https://example.com/resume.pdf",
+      metadata: {},
       status: "applied",
     });
 

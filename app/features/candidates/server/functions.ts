@@ -15,7 +15,7 @@ import {
 
 const createCandidateProfileSchema = z.object({
   headline: z.string().max(200).optional(),
-  resumeUrl: z.string().url().optional(),
+  resumeUrl: z.string().url(),
 });
 
 const updateCandidateProfileSchema = z.object({
@@ -42,6 +42,7 @@ const updateCandidateProfileSchema = z.object({
     })
     .nullable(),
 });
+export type UpdateCandidateProfileInput = z.infer<typeof updateCandidateProfileSchema>;
 
 // --- Server Functions ---
 

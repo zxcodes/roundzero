@@ -10,26 +10,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { updateCompanyProfile } from "@/features/companies/server/functions";
+import { type getMyCompany, updateCompanyProfile } from "@/features/companies/server/functions";
 import { AutoSaveIndicator, useAutoSaveStatus } from "@/shared/auto-save-indicator";
 import { type CompanySize, companySizeLabels, type Industry, industryLabels } from "@/shared/enums";
 import { useAppForm } from "@/shared/form";
 
-type Company = {
-  id: string;
-  name: string;
-  slug: string;
-  description: string | null;
-  logoUrl: string | null;
-  website: string | null;
-  industry: string | null;
-  companySize: string | null;
-  foundedYear: number | null;
-  location: string | null;
-  techStack: string[];
-  culture: string | null;
-  socialLinks: { linkedin?: string; twitter?: string; github?: string } | null;
-};
+type Company = NonNullable<Awaited<ReturnType<typeof getMyCompany>>>;
 
 const industryOptions = Object.entries(industryLabels).map(([value, label]) => ({ value, label }));
 const sizeOptions = Object.entries(companySizeLabels).map(([value, label]) => ({ value, label }));

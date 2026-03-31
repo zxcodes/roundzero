@@ -11,39 +11,39 @@ function buildRoleAwareLinks(input: {
   portfolioDomain: string;
   title: string;
   seed: string;
-}): string[] {
+}): { linkedin?: string; portfolio?: string; github?: string; kaggle?: string; dribbble?: string; stackoverflow?: string } {
   const normalized = input.title.toLowerCase();
 
-  const base = [
-    `https://www.linkedin.com/in/${input.linkedInSlug}`,
-    `https://${input.nameSlug}.${input.portfolioDomain}`,
-  ];
+  const base = {
+    linkedin: `https://www.linkedin.com/in/${input.linkedInSlug}`,
+    portfolio: `https://${input.nameSlug}.${input.portfolioDomain}`,
+  };
 
   if (normalized.includes("data") || normalized.includes("machine learning")) {
-    return [
+    return {
       ...base,
-      `https://www.kaggle.com/${input.githubHandle}`,
-      `https://github.com/${input.githubHandle}/tree/main/ml-projects`,
-    ];
+      kaggle: `https://www.kaggle.com/${input.githubHandle}`,
+      github: `https://github.com/${input.githubHandle}/tree/main/ml-projects`,
+    };
   }
 
   if (normalized.includes("frontend") || normalized.includes("mobile") || normalized.includes("designer")) {
-    return [
+    return {
       ...base,
-      `https://github.com/${input.githubHandle}`,
-      `https://dribbble.com/${input.githubHandle}`,
-    ];
+      github: `https://github.com/${input.githubHandle}`,
+      dribbble: `https://dribbble.com/${input.githubHandle}`,
+    };
   }
 
   if (normalized.includes("devops") || normalized.includes("site reliability") || normalized.includes("platform")) {
-    return [
+    return {
       ...base,
-      `https://github.com/${input.githubHandle}`,
-      `https://stackoverflow.com/users/${randomInt(`${input.seed}-so`, 100000, 999999)}/${input.githubHandle}`,
-    ];
+      github: `https://github.com/${input.githubHandle}`,
+      stackoverflow: `https://stackoverflow.com/users/${randomInt(`${input.seed}-so`, 100000, 999999)}/${input.githubHandle}`,
+    };
   }
 
-  return [...base, `https://github.com/${input.githubHandle}`];
+  return { ...base, github: `https://github.com/${input.githubHandle}` };
 }
 
 async function seedApplications() {
@@ -77,7 +77,7 @@ async function seedApplications() {
     jobId: string;
     candidateId: string;
     resumeUrl: string | null;
-    links: string[];
+    metadata: Record<string, unknown>;
     status: (typeof applicationStatuses)[number];
   }>;
 
@@ -96,14 +96,16 @@ async function seedApplications() {
       jobId: jobA.id,
       candidateId: candidate.id,
       resumeUrl: `https://cdn.roundzero.dev/resumes/${baseSlug}-resume.pdf`,
-      links: buildRoleAwareLinks({
-        nameSlug: baseSlug,
-        githubHandle,
-        linkedInSlug,
-        portfolioDomain,
-        title: jobA.title,
-        seed: `rz-seed-links-${candidate.id}-a`,
-      }),
+      metadata: {
+        links: buildRoleAwareLinks({
+          nameSlug: baseSlug,
+          githubHandle,
+          linkedInSlug,
+          portfolioDomain,
+          title: jobA.title,
+          seed: `rz-seed-links-${candidate.id}-a`,
+        }),
+      },
       status: pick(applicationStatuses, i),
     });
 
@@ -115,27 +117,29 @@ async function seedApplications() {
         i % 4 === 0
           ? null
           : `https://cdn.roundzero.dev/resumes/${baseSlug}-resume-v2.pdf`,
-      links: buildRoleAwareLinks({
-        nameSlug: baseSlug,
-        githubHandle,
-        linkedInSlug,
-        portfolioDomain,
-        title: jobB.title,
-        seed: `rz-seed-links-${candidate.id}-b`,
-      }),
+      metadata: {
+        links: buildRoleAwareLinks({
+          nameSlug: baseSlug,
+          githubHandle,
+          linkedInSlug,
+          portfolioDomain,
+          title: jobB.title,
+          seed: `rz-seed-links-${candidate.id}-b`,
+        }),
+      },
       status: pick(applicationStatuses, i + 2),
     });
   }
 
   for (const application of applications) {
     await sql`
-      INSERT INTO applications (id, job_id, candidate_id, resume_url, links, status)
+      INSERT INTO applications (id, job_id, candidate_id, resume_url, metadata, status)
       VALUES (
         ${application.id},
         ${application.jobId},
         ${application.candidateId},
         ${application.resumeUrl},
-        ${sql.json(application.links)},
+        ${sql.json(application.metadata)},
         ${application.status}
       )
       ON CONFLICT (id) DO UPDATE
@@ -143,7 +147,7 @@ async function seedApplications() {
         job_id = EXCLUDED.job_id,
         candidate_id = EXCLUDED.candidate_id,
         resume_url = EXCLUDED.resume_url,
-        links = EXCLUDED.links,
+        metadata = EXCLUDED.metadata,
         status = EXCLUDED.status
     `;
   }

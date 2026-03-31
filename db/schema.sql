@@ -28,7 +28,7 @@ CREATE TABLE public.applications (
     job_id uuid NOT NULL,
     candidate_id uuid NOT NULL,
     resume_url text,
-    links jsonb DEFAULT '[]'::jsonb,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
     status text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
