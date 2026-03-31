@@ -25,6 +25,15 @@ export const Route = createFileRoute("/jobs/$jobId")({
     const job = await getPublicJobById({ data: { id: params.jobId } });
     return { job };
   },
+  head: ({ loaderData }) => ({
+    meta: [
+      {
+        title: loaderData?.job
+          ? `${loaderData.job.title} at ${loaderData.job.companyName} | RoundZero`
+          : "Job Not Found | RoundZero",
+      },
+    ],
+  }),
   pendingComponent: JobDetailSkeleton,
   component: JobDetailPage,
 });

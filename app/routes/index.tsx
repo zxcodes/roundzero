@@ -16,6 +16,13 @@ export const Route = createFileRoute("/")({
       throw redirect({ to: "/dashboard" });
     }
   },
+  head: () => ({
+    meta: [
+      {
+        title: "RoundZero | AI-Powered Hiring Platform",
+      },
+    ],
+  }),
   component: HomePage,
 });
 

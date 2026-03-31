@@ -48,6 +48,9 @@ export const Route = createFileRoute("/jobs/")({
     level: search.level,
     page: search.page,
   }),
+  head: () => ({
+    meta: [{ title: "Browse Jobs | RoundZero" }],
+  }),
   loader: async ({ deps }) => {
     const result = await getOpenJobsPaginated({
       data: {

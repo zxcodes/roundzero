@@ -49,6 +49,9 @@ export const Route = createFileRoute("/companies/")({
     size: search.size,
     page: search.page,
   }),
+  head: () => ({
+    meta: [{ title: "Browse Companies | RoundZero" }],
+  }),
   loader: async ({ deps }) => {
     const result = await getAllCompaniesPaginated({
       data: {

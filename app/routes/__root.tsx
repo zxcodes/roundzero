@@ -24,7 +24,42 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         content: "width=device-width, initial-scale=1",
       },
       {
-        title: "RoundZero",
+        title: "RoundZero | AI-Powered Hiring Platform",
+      },
+      {
+        name: "description",
+        content:
+          "RoundZero replaces the first interview round with AI-powered interviews. Post jobs, run structured AI interviews, and get evidence-backed candidate reports.",
+      },
+      {
+        name: "keywords",
+        content: "hiring, ai interview, recruitment, jobs, candidates, talent acquisition",
+      },
+      {
+        property: "og:title",
+        content: "RoundZero | AI-Powered Hiring Platform",
+      },
+      {
+        property: "og:description",
+        content:
+          "Replace the first interview round with AI-powered interviews. Get scored candidate reports with evidence.",
+      },
+      {
+        property: "og:type",
+        content: "website",
+      },
+      {
+        name: "twitter:card",
+        content: "summary_large_image",
+      },
+      {
+        name: "twitter:title",
+        content: "RoundZero | AI-Powered Hiring Platform",
+      },
+      {
+        name: "twitter:description",
+        content:
+          "Replace the first interview round with AI-powered interviews. Get scored candidate reports with evidence.",
       },
     ],
     links: [

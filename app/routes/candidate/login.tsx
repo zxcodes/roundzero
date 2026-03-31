@@ -15,6 +15,9 @@ export const Route = createFileRoute("/candidate/login")({
       throw redirect({ to: "/dashboard" });
     }
   },
+  head: () => ({
+    meta: [{ title: "Sign In as Candidate | RoundZero" }],
+  }),
   component: CandidateLoginPage,
 });
 

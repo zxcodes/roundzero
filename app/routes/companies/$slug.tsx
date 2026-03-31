@@ -40,6 +40,15 @@ export const Route = createFileRoute("/companies/$slug")({
     const jobs = await getOpenJobsByCompanyId({ data: { companyId: company.id } });
     return { company, jobs };
   },
+  head: ({ loaderData }) => ({
+    meta: [
+      {
+        title: loaderData?.company
+          ? `${loaderData.company.name} | RoundZero`
+          : "Company Not Found | RoundZero",
+      },
+    ],
+  }),
   pendingComponent: CompanyDetailSkeleton,
   component: CompanyProfilePage,
 });
