@@ -3,11 +3,10 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useId } from "react";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { updateUserName } from "@/features/auth/server/functions";
 import {
   createCandidateProfile,
   getMyCandidateProfile,
@@ -28,7 +27,6 @@ function CandidateOnboardingPage() {
   const existingProfile = Route.useLoaderData();
   const { user } = Route.useRouteContext();
   const router = useRouter();
-  const id = useId();
 
   const createProfileFn = useServerFn(createCandidateProfile);
   const createProfileMutation = useMutation({
@@ -42,11 +40,24 @@ function CandidateOnboardingPage() {
     },
   });
 
+  const updateNameFn = useServerFn(updateUserName);
+  const updateNameMutation = useMutation({
+    mutationFn: updateNameFn,
+  });
+
   const form = useAppForm({
     defaultValues: {
+      name: user?.name ?? "",
       headline: "",
     },
     onSubmit: async ({ value }) => {
+      const trimmedName = value.name.trim();
+      if (trimmedName && trimmedName !== user?.name) {
+        await updateNameMutation.mutateAsync({
+          data: { name: trimmedName },
+        });
+      }
+
       await createProfileMutation.mutateAsync({
         data: {
           headline: value.headline.trim() || undefined,
@@ -59,9 +70,6 @@ function CandidateOnboardingPage() {
     router.navigate({ to: "/dashboard" });
     return null;
   }
-
-  const nameId = `name-${id}`;
-  const resumeId = `resume-${id}`;
 
   return (
     <Card>
@@ -79,14 +87,17 @@ function CandidateOnboardingPage() {
           }}
           className="space-y-5"
         >
-          {/* Name (read-only, from Google) */}
-          <div className="space-y-2">
-            <Label htmlFor={nameId}>Name</Label>
-            <Input id={nameId} value={user?.name ?? ""} disabled className="bg-muted" />
-            <p className="text-muted-foreground text-xs">
-              Your name comes from your Google account
-            </p>
-          </div>
+          <form.AppField
+            name="name"
+            children={(field) => (
+              <field.TextField
+                label="Name"
+                placeholder="Your full name"
+                maxLength={100}
+                description="You can update this anytime"
+              />
+            )}
+          />
 
           <form.AppField
             name="headline"
@@ -102,10 +113,10 @@ function CandidateOnboardingPage() {
 
           {/* Resume upload placeholder */}
           <div className="space-y-2">
-            <Label htmlFor={resumeId}>Resume</Label>
+            <Label htmlFor="resume-upload">Resume</Label>
             <button
               type="button"
-              id={resumeId}
+              id="resume-upload"
               className="flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/25 px-6 py-8 transition-colors hover:border-muted-foreground/50 hover:bg-muted/50"
               onClick={() => toast.info("Resume upload will be available soon")}
             >
