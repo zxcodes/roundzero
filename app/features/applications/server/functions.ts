@@ -209,7 +209,7 @@ export const getApplicationResumeDownloadUrl = createServerFn({ method: "POST" }
     const db = getDb();
 
     const application = await getApplicationById(db, { id: data.applicationId });
-    if (!application || !application.resumeKey) {
+    if (!application?.resumeKey) {
       throw new Error("Resume not found");
     }
 
