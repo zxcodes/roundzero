@@ -131,6 +131,7 @@ Solidify RoundZero as a usable job platform before adding AI. Public browsing, p
 - [x] Persist candidate `resume_key` immediately after upload so settings/onboarding refreshes read from the DB
 - [x] Track `resume_updated_at` and show last-updated state in candidate settings
 - [ ] `expires_at` field on job create/edit form (optional date picker)
+- [ ] When creating a job posting, let companies enter questsions in a plain text box. Also let them know our agent will pick it up and pass those when assessing a candidate. This will be an optional text box.
 - [ ] Stale job indicator: badge on jobs older than 90 days with no expiry set
 - [ ] Auto-close expired jobs: scheduled task or on-read check that sets `status = 'closed'` when `expires_at < now()`
 - [ ] Update job browsing UI to hide expired/closed jobs by default
