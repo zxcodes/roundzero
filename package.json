@@ -10,10 +10,12 @@
     "sqlgen": "sqlc generate",
     "db:seed": "bun run seed.ts",
     "db:migrate": "dbmate migrate up --url $DATABASE_URL",
+    "biome:check": "biome check .",
     "check": "biome check . --write && bun typecheck",
     "typecheck": "tsc --noEmit",
     "knip": "knip",
-    "setup": "bun run setup.ts"
+    "setup": "bun run setup.ts",
+    "prepare": "husky"
   },
   "dependencies": {
     "@fontsource-variable/geist-mono": "^5.2.7",
@@ -65,6 +67,7 @@
     "@vitejs/plugin-react": "^6.0.1",
     "babel-plugin-react-compiler": "^1.0.0",
     "dbmate": "^2.32.0",
+    "husky": "^9.1.7",
     "jsdom": "^29.0.1",
     "knip": "^6.1.0",
     "typescript": "^6.0.2",
