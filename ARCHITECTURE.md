@@ -1,547 +1,524 @@
 # RoundZero – Architecture
 
-## Stack
+## 0. Status
 
-| Layer           | Technology                                                                     |
-| --------------- | ------------------------------------------------------------------------------ |
-| Framework       | TanStack Start (React 19, Vite 7)                                              |
-| Server / Deploy | Cloudflare Workers + Wrangler                                                  |
-| Database        | Postgres (Neon for prod, Docker for local)                                     |
-| Typed queries   | SQLC                                                                           |
-| Migrations      | dbmate                                                                         |
-| AI agents       | Cloudflare Agents SDK (Durable Objects)                                        |
-| AI models       | Vercel AI SDK (`ai` package) with any provider (OpenAI, Anthropic, Workers AI) |
-| Auth            | Google OAuth (server-side sessions via cookies)                                |
-| UI              | shadcn/ui, Tailwind CSS v4, Hugeicons                                          |
-| Linting         | Biome                                                                          |
+This document reflects the app in its **current platform-first state**.
 
----
+Today, RoundZero is primarily:
 
-## Deployment
+- a TanStack Start application
+- a Postgres-backed hiring platform
+- role-based company/candidate workflows
+- public company and jobs browsing
+- one-click applications with profile snapshots
 
-Single Cloudflare deployment. TanStack Start runs on Workers via `@cloudflare/vite-plugin`. Agent Durable Objects are deployed alongside the main app in the same worker.
-
-```
-wrangler.jsonc
-├── main: TanStack Start SSR entry
-├── durable_objects:
-│   ├── InterviewAgent (AIChatAgent – per-interview session)
-│   └── EvaluationAgent (Agent – scoring/report generation)
-├── ai: { binding: "AI" }
-└── compatibility_flags: ["nodejs_compat"]
-```
+The AI interview, evaluation, report, and ranking layers are planned but not yet implemented in this codebase.
 
 ---
 
-## Directory Structure
+## 1. Stack
+
+| Layer | Technology |
+| --- | --- |
+| Framework | TanStack Start (React 19, Vite 7) |
+| Runtime (current) | TanStack Start server functions |
+| Runtime (target AI phase) | Cloudflare Workers + Wrangler |
+| Database | Postgres (Docker locally, Neon intended for prod) |
+| Typed queries | SQLC |
+| Migrations | dbmate |
+| Auth | Google OAuth with server-side cookie session |
+| UI | shadcn/ui, Tailwind CSS v4, Hugeicons |
+| Validation | Zod |
+| Notifications (planned) | Resend |
+| File storage (planned/current contract) | Cloudflare R2 |
+| AI layer (planned) | Cloudflare Agents SDK + Vercel AI SDK |
+| Linting | Biome |
+
+---
+
+## 2. Current Runtime vs Target Runtime
+
+### Current Runtime
+
+The app currently runs as a standard TanStack Start app with server functions for:
+
+- auth
+- jobs
+- applications
+- company profile management
+- candidate profile management
+- dashboard metrics
+
+### Target Runtime
+
+The AI layer is expected to move the app toward Cloudflare deployment with:
+
+- TanStack Start on Workers
+- Durable Objects for interview/evaluation agents
+- R2 for resume storage
+- AI binding / model provider integration
+
+The codebase should therefore prefer boundaries that survive that migration cleanly:
+
+- explicit server functions
+- storage behind server contracts
+- database-centric source of truth
+
+---
+
+## 3. Current Product Surface
+
+## Routes
+
+Current file-based routes:
+
+```
+app/routes/
+├── __root.tsx
+├── index.tsx
+├── company/login.tsx
+├── candidate/login.tsx
+├── companies/index.tsx
+├── companies/$slug.tsx
+├── jobs/index.tsx
+├── jobs/$jobId.tsx
+├── _authenticated.tsx
+├── _authenticated/onboarding.tsx
+├── _authenticated/onboarding/company.tsx
+├── _authenticated/onboarding/candidate.tsx
+├── _authenticated/dashboard.tsx
+├── _authenticated/dashboard/index.tsx
+├── _authenticated/dashboard/jobs/index.tsx
+├── _authenticated/dashboard/jobs/$jobId.tsx
+├── _authenticated/dashboard/applications.tsx
+└── _authenticated/dashboard/settings.tsx
+```
+
+What this means in practice:
+
+- public browsing exists
+- role-specific login exists
+- company/candidate onboarding exists
+- dashboard basics exist
+- applicant review exists at the per-job level
+- candidate application tracking exists
+
+Missing route surface today:
+
+- interview UI
+- evaluation/report UI
+- company candidate detail/workbench route
+- notification center
+
+---
+
+## 4. Current Feature Modules
+
+```
+app/features/
+├── auth/
+├── applications/
+├── candidates/
+├── companies/
+├── dashboard/
+└── jobs/
+```
+
+### What exists
+
+- `auth`: login/session/provider/query layer
+- `companies`: company CRUD/settings/public data
+- `candidates`: candidate profile/settings and resume contract
+- `jobs`: job CRUD, filtering, pagination, status/archive behavior
+- `applications`: one-click apply, applicant lists, application status
+- `dashboard`: role-specific metrics
+
+### What does not exist yet
+
+- `interviews/`
+- `reports/`
+- `ranking/`
+- `agents/`
+
+Those modules were part of the original target architecture, but the codebase is not there yet.
+
+---
+
+## 5. Directory Structure
 
 ```
 app/
-├── routes/                        # TanStack file-based routes
-│   ├── __root.tsx
-│   ├── index.tsx                  # Landing page
-│   ├── login.tsx
-│   ├── dashboard.tsx              # Company dashboard (layout)
-│   ├── dashboard.jobs.tsx
-│   ├── dashboard.jobs.$jobId.tsx
-│   ├── dashboard.candidates.$candidateId.tsx
-│   ├── jobs.tsx                   # Public job listing (candidates)
-│   ├── jobs.$jobId.tsx            # Job detail + apply
-│   ├── interview.$interviewId.tsx # Chat-based interview UI
-│   └── report.$reportId.tsx       # Candidate report view
-│
-├── features/
-│   ├── auth/
-│   │   ├── server/
-│   │   │   └── functions.ts       # Google OAuth login/logout/session
-│   │   ├── provider.tsx           # Auth context
-│   │   ├── queries/               # SQLC: users table
-│   │   └── services/
-│   │       └── session.ts
-│   │
-│   ├── jobs/
-│   │   ├── server/
-│   │   │   └── functions.ts       # CRUD for jobs
-│   │   ├── components/
-│   │   │   ├── job-form.tsx
-│   │   │   ├── job-card.tsx
-│   │   │   └── job-list.tsx
-│   │   ├── queries/               # SQLC: jobs table
-│   │   └── services/
-│   │       └── job.ts
-│   │
-│   ├── applications/
-│   │   ├── server/
-│   │   │   └── functions.ts       # Apply, upload resume, status
-│   │   ├── components/
-│   │   │   ├── apply-form.tsx
-│   │   │   └── application-list.tsx
-│   │   ├── queries/               # SQLC: applications table
-│   │   └── services/
-│   │       └── application.ts
-│   │
-│   ├── interviews/
-│   │   ├── server/
-│   │   │   └── functions.ts       # Create/fetch interview sessions
-│   │   ├── components/
-│   │   │   ├── interview-chat.tsx  # Main chat UI (useAgentChat)
-│   │   │   └── interview-status.tsx
-│   │   ├── queries/               # SQLC: interviews table
-│   │   └── services/
-│   │       └── interview.ts
-│   │
-│   ├── reports/
-│   │   ├── server/
-│   │   │   └── functions.ts       # Fetch/list candidate reports
-│   │   ├── components/
-│   │   │   ├── report-card.tsx
-│   │   │   ├── report-detail.tsx
-│   │   │   └── score-breakdown.tsx
-│   │   ├── queries/               # SQLC: reports table
-│   │   └── services/
-│   │       └── report.ts
-│   │
-│   └── ranking/
-│       ├── server/
-│       │   └── functions.ts       # Ranked candidate list per job
-│       ├── components/
-│       │   └── ranked-list.tsx
-│       └── queries/               # SQLC: ranking views/queries
-│
-├── agents/                         # Cloudflare Agents (Durable Objects)
-│   ├── interview-agent.ts          # AIChatAgent – conducts interviews
-│   └── evaluation-agent.ts         # Agent – runs evaluation pipeline
-│
-├── shared/
-│   ├── auth/
-│   │   └── session.ts              # Cookie session helpers
-│   ├── server/
-│   │   └── request-middleware.ts    # Shared server fn middleware
-│   └── db.ts                       # Postgres client
-│
-├── components/                     # Global UI
-│   ├── theme-provider.tsx
-│   ├── mode-toggle.tsx
-│   └── ui/                         # shadcn components
-│
-├── lib/
-│   ├── utils.ts                    # cn() etc
-│   └── theme.ts                    # Theme server fns
-│
+├── routes/              # TanStack file-based routes
+├── features/            # Product feature modules
+├── components/          # Shared/global UI
+├── shared/              # DB, middleware, form helpers, shared utilities
+├── lib/                 # Small app utilities
 ├── router.tsx
-├── routeTree.gen.ts
 └── styles.css
 
 db/
-├── migrations/
-│   └── 20260328081657_init.sql     # Init migration (source of truth)
-└── schema.sql                      # Auto-generated by dbmate (do not edit)
+├── migrations/          # dbmate init migration
+└── schema.sql           # generated schema dump
+```
+
+Conventions:
+
+- feature-first structure
+- SQL lives beside each feature under `queries/queries.sql`
+- generated SQLC output is the typed query boundary
+- server functions are the app-facing mutation/read boundary
+
+---
+
+## 6. Database Schema
+
+Source of truth:
+
+- `db/migrations/20260328081657_init.sql`
+
+Schema dump:
+
+- `db/schema.sql`
+
+### Key Tables
+
+#### `users`
+
+- identity
+- Google auth linkage
+- app role (`company` or `candidate`)
+
+#### `companies`
+
+- owned by a company user
+- contains both onboarding data and public profile data
+- includes public `slug`
+
+#### `candidate_profiles`
+
+- one per candidate user
+- stores:
+  - headline
+  - `resume_key`
+  - bio
+  - skills
+  - work history
+  - links
+
+#### `jobs`
+
+- owned by a company
+- stores structured hiring data
+- includes:
+  - status
+  - salary info
+  - team/headcount
+  - `expires_at`
+  - `archived_at`
+
+#### `applications`
+
+- unique per `(job_id, candidate_id)`
+- stores:
+  - `resume_key` snapshot
+  - `metadata` snapshot for non-resume candidate profile data
+  - status
+
+This is important architecturally:
+
+- `candidate_profiles` is the current source of truth
+- `applications` is the apply-time snapshot
+
+#### `interviews`
+
+- planned future link between applications and AI interview sessions
+- table exists, but interview runtime is not built yet
+
+#### `reports`
+
+- planned future evaluation output
+- table exists, but report generation and views are not built yet
+
+### Schema Decisions
+
+- No DB enums/check constraints for app-domain statuses
+- Zod validates enum-like values in app code
+- No triggers
+- `updated_at` is set explicitly in update queries
+- JSONB is used for structured but flexible data
+- all FKs use `ON DELETE RESTRICT`
+
+---
+
+## 7. Query and Type Strategy
+
+- SQLC is the typed DB layer
+- generated `queries_sql.ts` files are never hand-edited
+- no manual DB/data-shape types should be re-declared in app components when they can be inferred from SQLC or server function return types
+- JSONB columns should be passed as raw JS objects/arrays, not stringified
+
+Data flow pattern:
+
+1. SQL query in `queries.sql`
+2. SQLC generates typed query function
+3. feature server function wraps query and business rules
+4. route loader or mutation consumes server function
+5. components infer types from loader/server return values
+
+---
+
+## 8. Auth Architecture
+
+Current auth flow:
+
+1. Candidate or company hits a role-specific login route
+2. Google OAuth succeeds
+3. server upserts the user
+4. session cookie is written
+5. role determines onboarding/dashboard path
+
+Characteristics:
+
+- simple and sufficient for current phase
+- cookie-session based
+- no DB-backed session table
+
+Future note:
+
+- Better Auth remains a later optional migration if more auth methods are needed
+
+---
+
+## 9. Current Application Flow
+
+### Candidate profile + resume
+
+Current intended flow:
+
+1. Candidate completes onboarding
+2. Candidate uploads resume through the app
+3. app stores `resume_key` on `candidate_profiles`
+4. candidate can maintain profile in settings
+
+### Applying
+
+1. Candidate selects a job
+2. app checks if they already applied
+3. app checks whether `candidate_profiles.resume_key` exists
+4. app creates application row
+5. application snapshots:
+   - `resume_key`
+   - profile metadata
+
+### Company review
+
+1. Company views a job
+2. sees applicant list
+3. sees basic candidate info + snapshot-derived links
+4. updates application status
+
+This is functional, but still missing a stronger company-side applicant detail/workbench.
+
+---
+
+## 10. Resume Storage Architecture
+
+Resume handling uses a **contract-first** design.
+
+### Current model
+
+- the database stores `resume_key`, not `resume_url`
+- onboarding/settings use file-picking UI
+- the server already exposes resume upload/read boundaries
+- storage internals are still mocked in dev until R2 is fully wired
+
+### Resume server boundaries
+
+Current candidate resume server functions:
+
+- `createResumeUploadTarget`
+- `finalizeResumeUpload`
+- `getResumeDownloadUrl`
+
+### Intended final flow
+
+1. client requests signed upload target
+2. server creates user-scoped key:
+   - `resumes/<userId>/<uuid>.<ext>`
+3. client uploads directly to Cloudflare R2
+4. client finalizes upload
+5. server stores `resume_key` on `candidate_profiles`
+6. read access uses short-lived signed URLs
+
+Why `resume_key` instead of `resume_url`:
+
+- stable internal reference
+- avoids coupling DB state to delivery URL format
+- easier to move between CDN/signed URL strategies later
+
+---
+
+## 11. Notifications Architecture
+
+Notifications are not implemented yet, but the architecture should assume a durable in-app notification system with optional email delivery layered on top.
+
+Recommended provider:
+
+- **Resend**
+
+Recommended use cases:
+
+- application submitted confirmation
+- interview ready / interview reminder
+- application status updates
+- company-side applicant activity notifications
+
+Recommended architecture:
+
+- write a notification record to the database first
+- treat in-app notifications as the primary system of record
+- send email as a secondary best-effort delivery channel for selected events
+- keep notification sending behind server-side functions/services
+- trigger notifications from explicit workflow events, not UI-only actions
+- do not couple domain logic directly to a provider SDK in routes/components
+
+Recommended future data model:
+
+- `notifications`
+  - `id`
+  - `user_id`
+  - `type`
+  - `title`
+  - `body`
+  - `link`
+  - `read_at`
+  - `email_status` (optional)
+  - `created_at`
+
+Design principle:
+
+- if email delivery fails, the notification still exists in-app
+- email is a transport, not the canonical event record
+
+Suggested future module:
+
+```
+app/features/notifications/
+├── server/
+│   └── functions.ts
+└── services/
+    ├── notification-events.ts
+    └── resend.ts
 ```
 
 ---
 
-## Database Schema
+## 12. Job Lifecycle Architecture
 
-Source of truth: `db/migrations/20260328081657_init.sql` (schema dump: `db/schema.sql`, auto-generated by dbmate)
+Jobs already support:
 
-```sql
-CREATE TABLE users (
-  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email       TEXT UNIQUE NOT NULL,
-  name        TEXT NOT NULL,
-  picture     TEXT,
-  role        TEXT,                                             -- null until role selection
-  google_id   TEXT UNIQUE,
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()               -- set explicitly in UPDATE queries
-);
+- draft/open/closed states
+- archive behavior
+- `expires_at`
 
-CREATE TABLE companies (
-  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  owner_id    UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
-  name        TEXT NOT NULL,
-  description TEXT,
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
-);
+Still missing at the product layer:
 
-CREATE TABLE jobs (
-  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id       UUID NOT NULL REFERENCES companies(id) ON DELETE RESTRICT,
-  title            TEXT NOT NULL,
-  description      TEXT NOT NULL,
-  requirements     JSONB NOT NULL DEFAULT '[]',
-  status           TEXT NOT NULL DEFAULT 'draft',              -- validated via Zod, not CHECK
-  location         TEXT,
-  workplace_type   TEXT,
-  employment_type  TEXT,
-  experience_level TEXT,
-  salary_min       INTEGER,
-  salary_max       INTEGER,
-  salary_currency  TEXT NOT NULL DEFAULT 'USD',
-  team_size        INTEGER,
-  headcount        INTEGER DEFAULT 1,
-  archived_at      TIMESTAMPTZ,                                -- soft delete (null = active)
-  created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at       TIMESTAMPTZ NOT NULL DEFAULT now()
-);
+- expiry controls in the create/edit UI
+- stale role indicators
+- auto-close behavior for expired roles
+- consistent hidden-by-default behavior for expired/closed jobs on public surfaces
 
--- Partial index for efficient "active jobs" filtering
-CREATE INDEX idx_jobs_archived ON jobs(archived_at) WHERE archived_at IS NULL;
-
-CREATE TABLE applications (
-  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  job_id        UUID NOT NULL REFERENCES jobs(id) ON DELETE RESTRICT,
-  candidate_id  UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
-  resume_url    TEXT,
-  links         JSONB NOT NULL DEFAULT '[]',
-  status        TEXT NOT NULL DEFAULT 'applied',               -- validated via Zod, not CHECK
-  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE(job_id, candidate_id)
-);
-
-CREATE TABLE interviews (
-  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  application_id  UUID NOT NULL REFERENCES applications(id) ON DELETE RESTRICT,
-  agent_id        TEXT,                                        -- Durable Object ID, set on start
-  status          TEXT NOT NULL DEFAULT 'pending',
-  started_at      TIMESTAMPTZ,
-  completed_at    TIMESTAMPTZ,
-  created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-CREATE TABLE reports (
-  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  interview_id    UUID NOT NULL REFERENCES interviews(id) ON DELETE RESTRICT UNIQUE,
-  application_id  UUID NOT NULL REFERENCES applications(id) ON DELETE RESTRICT,
-  summary         TEXT NOT NULL,
-  strengths       JSONB NOT NULL DEFAULT '[]',
-  weaknesses      JSONB NOT NULL DEFAULT '[]',
-  insights        JSONB NOT NULL DEFAULT '[]',
-  evidence        JSONB NOT NULL DEFAULT '[]',
-  scores          JSONB NOT NULL,                              -- { technical, communication, experience, overall }
-  recommendation  TEXT NOT NULL,                               -- validated via Zod, not CHECK
-  created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-```
-
-**Key schema decisions:**
-- All FK constraints use `ON DELETE RESTRICT` — no cascading deletes. Data is never accidentally removed.
-- No `CHECK` constraints for enum-like columns — validation is handled by Zod schemas in `app/shared/enums.ts`.
-- No triggers — `updated_at` is set explicitly in every UPDATE query.
-- Jobs use soft delete (`archived_at`) with a partial index for efficient active-job queries.
+This means the schema is ahead of the UX and workflow implementation.
 
 ---
 
-## Agent Architecture
+## 13. Testing Architecture
 
-### Overview
+Two Postgres containers:
 
-Two specialized agents, both running as Cloudflare Durable Objects:
+| Container | Port | Purpose |
+| --- | --- | --- |
+| `rz_pg_dev` | 6311 | development |
+| `rz_pg_test` | 6312 | tests |
 
-```
-Candidate applies
-       │
-       ▼
-┌─────────────────┐
-│ InterviewAgent   │  ← AIChatAgent (Durable Object)
-│                  │  ← One per interview session
-│ - Resume analysis│  ← WebSocket chat with candidate
-│ - Adaptive Q&A   │  ← Tool calls for probing logic
-│ - Conversation   │  ← Messages auto-persisted to DO SQLite
-│   persistence    │
-└────────┬────────┘
-         │ interview completed
-         ▼
-┌─────────────────┐
-│ EvaluationAgent  │  ← Agent (Durable Object)
-│                  │  ← Triggered when interview completes
-│ - Skill scoring  │  ← Reads full transcript from InterviewAgent
-│ - Communication  │  ← Multi-pass evaluation (specialized prompts)
-│   scoring        │  ← Writes final report to Postgres
-│ - Consistency    │
-│   checking       │
-│ - Report gen     │
-└─────────────────┘
-```
+Testing approach:
 
-### InterviewAgent (AIChatAgent)
+- real Postgres for query and workflow tests
+- no DB mocking for query/business-logic layers
+- shared test setup handles cleanup
+- seed helpers create minimal valid records
 
-Extends `AIChatAgent` from `@cloudflare/ai-chat`. One instance per interview session.
+Current coverage focus:
 
-**Responsibilities:**
+- auth queries
+- companies queries
+- jobs queries/business logic
+- applications queries/business logic
+- dashboard metrics
 
-- Conduct the async chat interview with the candidate
-- Analyze uploaded resume (passed as context on session creation)
-- Adapt questions based on responses (LLM-driven branching)
-- Detect inconsistencies and probe deeper
-- Track interview progress and enforce time/question limits
+Coverage still needed as the platform hardening phase continues:
 
-**Key features used:**
-
-- `onChatMessage()` — handles each candidate message, streams AI response
-- Automatic message persistence to DO SQLite — survives disconnects
-- `useAgentChat` React hook — client-side chat UI
-- Server-side tools for structured evaluation during the conversation
-- Resumable streams — candidate can close tab and come back
-
-**System prompt structure:**
-
-```
-You are an interviewer for [job title] at [company name].
-Role requirements: [structured requirements from job posting]
-Candidate resume: [extracted resume data]
-Interview stage: [initial | probing | scenario | wrapping_up]
-
-Conduct a structured, adaptive interview. Your goals:
-1. Validate claims from the resume
-2. Assess technical depth for required skills
-3. Evaluate communication clarity
-4. Present real-world scenarios relevant to the role
-5. Flag any inconsistencies
-
-Ask one question at a time. Probe deeper on weak or vague answers.
-Do not ask more than 15 questions total.
-```
-
-**Tools available to the agent:**
-
-- `updateStage` — transitions interview stage (initial → probing → scenario → wrap-up)
-- `flagInconsistency` — records a contradiction for the evaluation phase
-- `completeInterview` — marks interview done, triggers evaluation
-
-### EvaluationAgent (Agent)
-
-Extends base `Agent`. Triggered when an interview completes.
-
-**Responsibilities:**
-
-- Read the full interview transcript
-- Run multi-pass evaluation with specialized prompts:
-  - **Technical assessment** — depth of knowledge, correctness, reasoning
-  - **Communication assessment** — clarity, structure, articulation
-  - **Experience validation** — ownership vs. contribution, verified claims
-  - **Consistency check** — contradictions, resume-vs-interview mismatches
-- Aggregate scores with configurable weights
-- Generate the final candidate report
-- Write report to Postgres
-
-**Why a separate agent (not a server function):**
-
-- Evaluation is multi-step and can take 30-60 seconds
-- Multiple LLM calls in sequence (one per evaluator dimension)
-- Durable Object guarantees completion even if the original request times out
-- Built-in scheduling allows retry on failure
+- resume upload contract behavior
+- expiry lifecycle behavior
+- applicant detail surfaces
+- public job detail apply behavior
 
 ---
 
-## System Flow
+## 14. Planned AI Architecture
 
-```
-1. Company posts job
-   └── POST /api/jobs → jobs table (status: open)
+This is the intended future architecture, not the current app state.
 
-2. Candidate applies
-   └── POST /api/applications → applications table
-   └── Upload resume → R2/S3 storage
-   └── Create interview row → interviews table (status: pending)
+### Interview Layer
 
-3. Candidate starts interview
-   └── GET /interview/:interviewId
-   └── Connect to InterviewAgent via WebSocket (useAgentChat)
-   └── InterviewAgent created as Durable Object (ID = interview.agent_id)
-   └── System prompt injected with job requirements + resume data
-   └── interviews.status → 'in_progress'
+- async in-app chat
+- likely Durable Object per interview session
+- resume/job context injected into system prompt
+- adaptive questioning
 
-4. Interview conversation
-   └── Candidate sends messages via WebSocket
-   └── InterviewAgent streams responses (adaptive questioning)
-   └── All messages auto-persisted in DO SQLite
-   └── ~15 questions, ~20-40 minutes
-   └── InterviewAgent calls completeInterview tool when done
+### Evaluation Layer
 
-5. Evaluation
-   └── InterviewAgent triggers EvaluationAgent
-   └── EvaluationAgent reads full transcript
-   └── Runs 4 evaluation passes (technical, communication, experience, consistency)
-   └── Aggregates scores, generates report
-   └── Writes report to Postgres → reports table
-   └── interviews.status → 'completed'
-   └── applications.status → 'evaluated'
+- separate evaluation pipeline after interview completion
+- multi-pass scoring:
+  - technical
+  - communication
+  - experience validation
+  - consistency
 
-6. Company reviews
-   └── Dashboard shows ranked candidates per job
-   └── Each candidate has: report, scores, recommendation
-   └── Company can view full transcript (optional)
-   └── Company decides who to bring to next round
-```
+### Output Layer
+
+- report generation
+- candidate ranking per job
+- explainable recommendations for companies
+
+The important constraint:
+
+- this AI layer should sit on top of a complete hiring platform, not replace unfinished platform basics
 
 ---
 
-## AI Model Strategy
+## 15. Near-Term Priorities Before AI
 
-Use the Vercel AI SDK (`ai` package) for model abstraction. This works with any provider:
+Architecturally, the next critical non-AI work is:
 
-```ts
-// Can swap providers without changing agent logic
-import { createOpenAI } from "@ai-sdk/openai";
-import { createAnthropic } from "@ai-sdk/anthropic";
-import { createWorkersAI } from "workers-ai-provider";
-
-// Interview agent — needs fast streaming, good at conversation
-const interviewModel = openai("gpt-4o-mini");
-
-// Evaluation agent — needs strong reasoning, ok with higher latency
-const evaluationModel = anthropic("claude-sonnet-4-20250514");
-```
-
-Workers AI can be used as a fallback or for cost-sensitive operations. The `ai` package's `streamText` and `generateObject` work identically regardless of provider.
+1. real R2 wiring for resumes
+2. consistent apply flow from every candidate surface
+3. complete job expiry/stale lifecycle
+4. stronger company applicant review workflow
+5. clearer candidate application tracking
+6. durable in-app notification layer with optional Resend email delivery
 
 ---
 
-## Auth Flow
+## 16. Key Decisions
 
-1. Google OAuth via `@react-oauth/google` on the client
-2. Server function receives access token, fetches Google user info
-3. Upsert user in Postgres
-4. Set session cookie (encrypted, httpOnly)
-5. Role selection on first login (company or candidate)
-6. Server functions read session from cookie via middleware
-
----
-
-## Testing
-
-### Infrastructure
-
-Two separate Postgres Docker containers ensure tests never interfere with dev data:
-
-| Container       | Port | Purpose           | Env Variable         |
-| --------------- | ---- | ----------------- | -------------------- |
-| `rz_pg_dev`     | 6311 | Local development | `DATABASE_URL`       |
-| `rz_pg_test`    | 6312 | Tests only        | `TEST_DATABASE_URL`  |
-
-Both containers are created and migrated by `bash setup-db.sh setup_pg`. The test container can be independently reset with `bash setup-db.sh reset_pg` (never touches dev).
-
-### Config
-
-Vitest 4 config lives in `vitest.config.ts` (separate from `vite.config.ts`):
-
-- `maxWorkers: 1`, `fileParallelism: false`, `isolate: false` — all test files share one DB connection
-- `setupFiles: ['app/shared/__tests__/setup.ts']` — global hooks run before any test file
-- `env: { loader: '.env' }` — loads `TEST_DATABASE_URL` from `.env`
-
-### Directory Structure
-
-```
-app/
-├── shared/__tests__/
-│   ├── setup.ts            # Global afterEach(cleanTestData) + afterAll(closeTestDb)
-│   ├── test-utils.ts       # getTestDb(), seed helpers (seedUser, seedCompany, seedJob)
-│   └── enums.test.ts       # Shared enum/business logic tests
-│
-├── features/auth/queries/__tests__/
-│   └── auth.test.ts        # User upsert, lookup, Google ID queries
-│
-├── features/companies/queries/__tests__/
-│   └── companies.test.ts   # Company CRUD, owner lookup queries
-│
-├── features/jobs/
-│   ├── queries/__tests__/
-│   │   └── jobs.test.ts    # Job CRUD, status filtering, archive queries
-│   └── __tests__/
-│       ├── schemas.test.ts         # Zod schema validation (pure, no DB)
-│       └── business-logic.test.ts  # Visibility rules, publish guards, isolation
-│
-├── features/applications/
-│   ├── queries/__tests__/
-│   │   └── applications.test.ts    # Apply, status update, constraint queries
-│   └── __tests__/
-│       └── business-logic.test.ts  # Apply guards, status transitions, access control
-│
-└── features/dashboard/__tests__/
-    └── dashboard.test.ts           # Company/candidate metrics aggregation
-```
-
-### Test Categories
-
-1. **Query-layer tests** (`queries/__tests__/`) — test SQLC-generated queries against real Postgres. Verify inserts, selects, updates, unique constraints, and FK violations.
-2. **Schema / validation tests** (`__tests__/schemas.test.ts`) — test Zod schemas and pure validation logic. No DB needed.
-3. **Business logic tests** (`__tests__/business-logic.test.ts`) — test multi-step workflows against real DB: apply guards, status transitions, access control, metrics aggregation.
-
-### Conventions
-
-- Global setup handles cleanup — individual test files must NOT add `afterEach`/`afterAll` hooks for DB cleanup.
-- Seed helpers (`seedUser`, `seedCompany`, `seedJob`) create minimal valid records with sensible defaults and accept overrides.
-- All tests run against the real test Postgres — no mocking of the database layer.
-
----
-
-## File Storage
-
-Resumes and attachments stored in Cloudflare R2 (S3-compatible):
-
-```
-wrangler.jsonc:
-  r2_buckets: [{ binding: "BUCKET", bucket_name: "roundzero-uploads" }]
-```
-
-Upload flow:
-
-1. Server function generates presigned upload URL
-2. Client uploads directly to R2
-3. Client finalizes the upload with the server
-4. Object key stored in `candidate_profiles.resume_key`
-
-### Resume Handling
-
-- Store `resume_key`, not `resume_url`, in the database.
-- Candidates upload resumes directly to R2 using a server-issued signed upload URL.
-- Resume keys are scoped by user, e.g. `resumes/<userId>/<uuid>.<ext>`.
-- Candidate profiles store the current source-of-truth `resume_key`.
-- Applications snapshot the apply-time `resume_key` into `applications.resume_key`.
-- Resume access uses short-lived signed read URLs derived from the stored key.
-- Until R2 is fully wired in dev, the app uses the same server contract with temporary/mock storage behavior behind it.
-
----
-
-## MVP Scope
-
-### Phase 1: Foundation
-
-- [ ] Auth (Google OAuth, sessions, role selection)
-- [ ] Company: create company, post jobs
-- [ ] Candidate: browse jobs, apply with resume
-
-### Phase 2: AI Interview
-
-- [ ] InterviewAgent (AIChatAgent with adaptive questioning)
-- [ ] Interview chat UI (useAgentChat)
-- [ ] Resume extraction and context injection
-
-### Phase 3: Evaluation & Reports
-
-- [ ] EvaluationAgent (multi-pass scoring)
-- [ ] Report generation and storage
-- [ ] Company dashboard with ranked candidates
-- [ ] Report detail view
-
-### Phase 4: Polish
-
-- [ ] Candidate interview status tracking
-- [ ] Email notifications (interview ready, report available)
-- [ ] Analytics (time-to-hire, funnel metrics)
-- [ ] Company-specific evaluation tuning
-
----
-
-## Key Decisions
-
-| Decision                  | Choice                            | Rationale                                                      |
-| ------------------------- | --------------------------------- | -------------------------------------------------------------- |
-| Interview mode            | Async chat (not email, not video) | Better UX, real-time context, easier orchestration             |
-| Agent runtime             | CF Durable Objects                | Built-in state, WebSocket, scheduling, survives disconnects    |
-| Separate evaluation agent | Yes                               | Decouples interview from scoring, allows async multi-pass eval |
-| Model abstraction         | Vercel AI SDK                     | Provider-agnostic, same API for OpenAI/Anthropic/Workers AI    |
-| Resume storage            | Cloudflare R2                     | Same platform, S3-compatible, no egress fees                   |
-| Session storage           | Cookies (not DB sessions)         | Simpler, stateless server, works with edge runtime             |
+| Decision | Choice | Rationale |
+| --- | --- | --- |
+| Product layering | Platform first, AI second | Avoids using AI to mask workflow gaps |
+| DB typing | SQLC + inference | Keeps DB layer authoritative |
+| Resume persistence | `resume_key` | Stable storage reference |
+| Resume delivery | Signed read URLs | Keeps resumes private |
+| Resume upload | Direct-to-R2 signed upload | Avoids proxying file bytes through app server |
+| Notifications | In-app notifications + Resend | Durable app record first, email as secondary delivery |
+| Auth | Google OAuth + cookie session | Good enough for current phase |
+| Future AI runtime | Cloudflare Durable Objects | Good fit for async conversational state |

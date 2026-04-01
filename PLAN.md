@@ -44,7 +44,7 @@
 - [x] Candidate "My Applications" page (`/dashboard/applications`)
 - [x] Company applicants view per job (on job detail page, with candidate info)
 - [x] Application status tracking (company can update via dropdown)
-- [ ] Resume upload to Cloudflare R2 (presigned URL flow) — deferred to Phase 4
+- [ ] Resume upload to Cloudflare R2 (signed upload/read flow) — deferred to platform hardening
 
 ## Phase 3: Product Solidification
 
@@ -69,7 +69,7 @@ Solidify RoundZero as a usable job platform before adding AI. Public browsing, p
 ### Sub-project 1: Schema + Auth Changes ✅
 
 - [x] Extend `companies` table: add `logo_url`, `website`, `industry`, `company_size`, `founded_year`, `location`, `tech_stack` (JSONB), `culture`, `social_links` (JSONB), `updated_at`
-- [x] Create `candidate_profiles` table: `user_id` (FK), `headline`, `resume_url`, `bio`, `skills` (JSONB), `work_history` (JSONB), `links` (JSONB), `created_at`, `updated_at`
+- [x] Create `candidate_profiles` table: `user_id` (FK), `headline`, `resume_key` (originally `resume_url`, later migrated to `resume_key`), `bio`, `skills` (JSONB), `work_history` (JSONB), `links` (JSONB), `created_at`, `updated_at`
 - [x] Add `expires_at` (TIMESTAMPTZ, nullable) to `jobs` table
 - [x] Add `slug` (TEXT UNIQUE) to `companies` table for public URLs
 - [x] Separate login routes: `/company/login` and `/candidate/login` with tailored messaging
@@ -119,15 +119,162 @@ Solidify RoundZero as a usable job platform before adding AI. Public browsing, p
 - [x] `/companies/` route — same pattern as jobs, filter changes reset to page 1
 - [x] Trimmed `AGENTS.md`, added JSONB rule, verified zero `JSON.stringify`/`JSON.parse` in codebase
 
-### Sub-project 5: Apply Flow Rework + Job Expiry ← NEXT
+### Sub-project 5: Apply Flow Rework + Job Expiry ✅ / In Progress
 
-- [ ] One-click apply: single button, uses resume from candidate profile
-- [ ] Guard: require resume in profile before applying (prompt to complete profile if missing)
-- [ ] Remove per-application resume URL and links fields from apply form
+- [x] One-click apply: single button, uses resume from candidate profile
+- [x] Guard: require resume in profile before applying (prompt to complete profile if missing)
+- [x] Remove per-application resume URL and links fields from apply form
+- [x] Replace candidate-entered resume URLs with resume upload contract (`resume_key`, upload/finalize/read server functions)
+- [ ] Wire real Cloudflare R2 signed upload/read behavior behind the resume upload contract
 - [ ] `expires_at` field on job create/edit form (optional date picker)
 - [ ] Stale job indicator: badge on jobs older than 90 days with no expiry set
 - [ ] Auto-close expired jobs: scheduled task or on-read check that sets `status = 'closed'` when `expires_at < now()`
 - [ ] Update job browsing UI to hide expired/closed jobs by default
+
+## Phase 3.5: Core Product Hardening Before AI ← NEXT
+
+Finish the non-AI hiring platform so the interview/evaluation layer lands on a solid product foundation instead of filling workflow gaps. This phase focuses on closing the candidate/company experience gaps that still exist after jobs, onboarding, and one-click apply.
+
+### Goals
+
+- Complete the resume/storage flow end-to-end
+- Finish job lifecycle behavior (expiry, stale roles, closed roles)
+- Make apply work consistently from every candidate entry point
+- Give companies a usable applicant-review workflow, not just a raw list
+- Improve post-application clarity for both candidates and companies
+
+### Sub-project 1: Resume Storage Completion
+
+- [ ] Add real Cloudflare R2 configuration (`wrangler.jsonc`, bucket binding, env wiring)
+- [ ] Replace mock upload behavior in candidate resume server functions with signed upload URL generation
+- [ ] Replace mock signed read behavior with short-lived signed download/view URLs
+- [ ] Validate allowed file types on server: PDF, DOC, DOCX
+- [ ] Enforce resume size limit on server before issuing upload target
+- [ ] Ensure uploaded resume keys are namespaced per user: `resumes/<userId>/<uuid>.<ext>`
+- [ ] Candidate onboarding: block profile completion until resume upload succeeds
+- [ ] Candidate settings: support replace-resume flow cleanly
+- [ ] Candidate settings: show meaningful current file state instead of generic “resume on file”
+- [ ] Company applicant views: wire “View resume” / “Download resume” to signed read URLs
+- [ ] Update seed/test helpers to use realistic `resume_key` values instead of legacy URL-shaped strings
+
+### Sub-project 2: Job Lifecycle Hardening
+
+- [ ] Add `expires_at` field to create/edit job UI
+- [ ] Add optional date picker UX for expiry selection
+- [ ] Show expiry date on company job detail and job management surfaces
+- [ ] Show expiry/stale state on public and candidate job listings where relevant
+- [ ] Add stale-job badge for roles older than 90 days with no expiry
+- [ ] Hide expired/closed jobs by default in public browsing
+- [ ] Ensure open-jobs queries consistently exclude expired jobs
+- [ ] Add on-read or scheduled auto-close behavior for `expires_at < now()`
+- [ ] Prevent applying to expired jobs with a user-facing message
+- [ ] Add tests covering expired job visibility and application blocking
+
+### Sub-project 3: Candidate Apply Surface Consistency
+
+- [ ] Wire authenticated candidate apply from public `/jobs/:id` to the real apply mutation instead of a placeholder CTA
+- [ ] Ensure unauthenticated public job detail still routes to candidate login correctly
+- [ ] Ensure authenticated candidate public job detail reflects:
+  - already applied state
+  - missing resume state
+  - just-applied success state
+- [ ] Reuse the same apply-state UX across dashboard and public job detail
+- [ ] Avoid duplicate logic paths for apply eligibility checks
+- [ ] Add tests for public job detail apply behavior
+
+### Sub-project 4: Candidate Application Experience
+
+- [ ] Improve “My Applications” from basic table to clearer application tracking
+- [ ] Add timeline-style metadata where useful: applied date, current status, last status change
+- [ ] Show clearer status descriptions, not just enum labels
+- [ ] Link candidates to relevant next actions when status changes
+- [ ] Add empty states and guidance for first-time candidates
+- [ ] Consider basic withdraw application flow
+- [ ] Consider showing what profile snapshot was submitted at apply time
+- [ ] Add tests for candidate application tracking views
+
+### Sub-project 5: Company Applicant Review Workflow
+
+- [ ] Add dedicated candidate/application detail route for company users
+- [ ] Show structured applicant detail beyond the compact list on the job page
+- [ ] Include:
+  - resume access
+  - submitted profile snapshot
+  - application timestamps
+  - current status
+- [ ] Preserve role-based authorization for company ownership on all applicant detail views
+- [ ] Add easier navigation between applicants for a job
+- [ ] Improve applicant status controls and feedback states
+- [ ] Add confirmation for destructive or terminal actions where appropriate
+- [ ] Add tests for company applicant detail authorization and rendering
+
+### Sub-project 6: Company Workflow Quality
+
+- [ ] Improve job management list/detail UX for active vs draft vs closed roles
+- [ ] Add more obvious pipeline summary cues beyond raw dashboard counts
+- [ ] Make it clearer which jobs are attracting applicants and which are stale
+- [ ] Ensure company settings and public profile are coherent and complete
+- [ ] Consider company-side shortlist/review markers if the raw applicant list remains too shallow
+
+### Sub-project 7: Product Communication + Notifications
+
+- [ ] Add user-facing feedback for key actions:
+  - application submitted
+  - resume uploaded/replaced
+  - job published/archived/closed
+- [ ] Improve status language from internal enum wording to product wording
+- [ ] Add durable in-app notifications as the primary notification system
+- [ ] Add `notifications` table for persisted notification records
+- [ ] Define notification event types for:
+  - candidate application updates
+  - company applicant activity
+  - interview-ready and report-ready events later
+- [ ] Add in-app notification read/unread state
+- [ ] Add notification surface in the app shell/dashboard
+- [ ] Use email as a secondary delivery channel, not the source of truth
+- [ ] Add Resend-backed email sending for selected notification events
+- [ ] Track email delivery attempt/result separately from in-app notification persistence
+- [ ] Ensure no surface leaves the user unsure about the next step
+
+### Exit Criteria Before AI
+
+- [ ] Candidate can browse, upload a resume, apply from any valid surface, and clearly track applications
+- [ ] Company can create/manage jobs, review applicants meaningfully, and access resumes reliably
+- [ ] Expired/stale jobs behave correctly across queries and UI
+- [ ] Resume storage is real, not mocked
+- [ ] Core hiring workflow feels complete without depending on the AI interview layer
+
+### Recommended Execution Order
+
+Build this phase in the following order to keep dependencies clean and avoid rework:
+
+1. **Resume Storage Completion**
+   - This is the main blocker for a credible hiring workflow.
+   - Company-side applicant review is incomplete until resumes are actually accessible.
+
+2. **Candidate Apply Surface Consistency**
+   - Once resume storage works, make sure candidates can apply correctly from every valid surface.
+   - Avoid shipping two different apply experiences with different rules.
+
+3. **Job Lifecycle Hardening**
+   - Expiry and stale-role behavior should be settled before polishing company/candidate workflows.
+   - This affects queries, listings, detail pages, and application eligibility.
+
+4. **Company Applicant Review Workflow**
+   - After resumes and apply flows are stable, give companies a real applicant review surface.
+   - This is the most important company-side gap before AI.
+
+5. **Candidate Application Experience**
+   - Improve post-apply tracking once the underlying application/job states are stable.
+   - This prevents building timelines/status UX on top of shifting logic.
+
+6. **Company Workflow Quality**
+   - Add management polish after the core applicant-review flow exists.
+   - This is useful, but lower priority than making the application funnel complete.
+
+7. **Product Communication + Notifications**
+   - Final pass for wording, durable in-app notifications, and secondary email delivery.
+   - Best done after the main user flows and statuses are settled.
 
 ## Phase 4: AI Interview
 
@@ -232,7 +379,7 @@ Accessibility, animation, typography, and interaction polish based on a full-cod
 
 ### Accessibility (medium priority)
 
-- [ ] Add `aria-label` to all icon-only buttons (back buttons, add/remove buttons, upload buttons across job-form, company-settings, candidate-settings, apply-form)
+- [ ] Add `aria-label` to all icon-only buttons (back buttons, add/remove buttons, upload buttons across job-form, company-settings, candidate-settings)
 - [ ] Add `aria-label` or `<label>` to filter `<Select>` and search `<Input>` on `/jobs/` and `/companies/` routes
 - [ ] Add `name` and `autocomplete` attributes to all form inputs (fix in `app/shared/form.tsx` base components)
 - [ ] Fix `pagination-nav.tsx` disabled links — add `tabIndex={-1}` alongside `aria-disabled` to prevent keyboard activation
