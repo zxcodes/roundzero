@@ -1,5 +1,6 @@
-import { Cancel01Icon, Upload04Icon } from "@hugeicons/core-free-icons";
+import { Cancel01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { useStore } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -9,7 +10,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { type getMyCompany, updateCompanyProfile } from "@/features/companies/server/functions";
+import { CompanyLogoUploadField } from "@/features/companies/components/company-logo-upload-field";
+import {
+  type getMyCompany,
+  updateCompanyProfile,
+  updateMyCompanyLogo,
+} from "@/features/companies/server/functions";
 import { AutoSaveIndicator, useAutoSaveStatus } from "@/shared/auto-save-indicator";
 import { type CompanySize, companySizeLabels, type Industry, industryLabels } from "@/shared/enums";
 import { useAppForm } from "@/shared/form";
@@ -24,11 +30,24 @@ export function CompanySettings({ company }: { company: Company }) {
   const id = useId();
 
   const updateFn = useServerFn(updateCompanyProfile);
+  const updateLogoFn = useServerFn(updateMyCompanyLogo);
 
   const autoSave = useAutoSaveStatus();
 
   const updateMutation = useMutation({
     mutationFn: updateFn,
+    onMutate: () => autoSave.setSaving(),
+    onSuccess: async () => {
+      autoSave.setSaved();
+      await router.invalidate();
+    },
+    onError: () => {
+      autoSave.setError();
+    },
+  });
+
+  const updateLogoMutation = useMutation({
+    mutationFn: updateLogoFn,
     onMutate: () => autoSave.setSaving(),
     onSuccess: async () => {
       autoSave.setSaved();
@@ -48,6 +67,7 @@ export function CompanySettings({ company }: { company: Company }) {
     defaultValues: {
       name: company.name,
       description: company.description ?? "",
+      logoKey: company.logoKey ?? "",
       website: company.website ?? "",
       industry: company.industry ?? "",
       companySize: company.companySize ?? "",
@@ -64,7 +84,7 @@ export function CompanySettings({ company }: { company: Company }) {
         data: {
           name: value.name,
           description: value.description || null,
-          logoUrl: company.logoUrl,
+          logoKey: value.logoKey || null,
           website: value.website || null,
           industry: (value.industry || null) as Industry | null,
           companySize: (value.companySize || null) as CompanySize | null,
@@ -96,7 +116,13 @@ export function CompanySettings({ company }: { company: Company }) {
   const [tagInput, setTagInput] = useState("");
 
   const tagInputId = `tag-input-${id}`;
-  const logoId = `logo-${id}`;
+  const currentLogoKey = useStore(form.store, (state) => state.values.logoKey);
+  const onLogoUploaded = async ({ logoKey }: { logoKey: string }) => {
+    form.setFieldValue("logoKey", logoKey);
+    await updateLogoMutation.mutateAsync({
+      data: { logoKey },
+    });
+  };
   const onTagInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTagInput(e.target.value);
   };
@@ -121,52 +147,37 @@ export function CompanySettings({ company }: { company: Company }) {
             <CardDescription>Your company name, logo, and description.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-start gap-5">
-              {/* Logo placeholder */}
-              <div className="space-y-1.5">
-                <Label htmlFor={logoId}>Logo</Label>
-                <button
-                  type="button"
-                  id={logoId}
-                  className="flex size-20 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-muted-foreground/25 transition-colors hover:border-muted-foreground/50 hover:bg-muted/50"
-                >
-                  <HugeiconsIcon
-                    icon={Upload04Icon}
-                    strokeWidth={1.5}
-                    className="size-5 text-muted-foreground/50"
-                  />
-                </button>
-              </div>
+            <CompanyLogoUploadField
+              value={currentLogoKey}
+              description="Upload a square or transparent company logo. This appears on your public company page."
+              onUploaded={onLogoUploaded}
+            />
 
-              <div className="flex-1 space-y-4">
-                <form.AppField
-                  name="name"
-                  children={(field) => (
-                    <field.TextField
-                      label="Company name"
-                      placeholder="Acme Inc."
-                      required
-                      maxLength={100}
-                    />
-                  )}
+            <form.AppField
+              name="name"
+              children={(field) => (
+                <field.TextField
+                  label="Company name"
+                  placeholder="Acme Inc."
+                  required
+                  maxLength={100}
                 />
+              )}
+            />
 
-                <div className="space-y-2">
-                  <Label>Slug</Label>
-                  <Input value={company.slug} disabled className="bg-muted font-mono text-sm" />
-                  <p className="text-muted-foreground text-xs">
-                    Your public URL:{" "}
-                    <a
-                      href={`${import.meta.env.VITE_APP_URL}/companies/${company.slug}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-medium text-primary underline underline-offset-2 hover:text-primary/80"
-                    >
-                      {import.meta.env.VITE_APP_URL}/companies/{company.slug}
-                    </a>
-                  </p>
-                </div>
-              </div>
+            <div className="space-y-2">
+              <Input value={company.slug} disabled className="bg-muted font-mono text-sm" />
+              <p className="text-muted-foreground text-xs">
+                Your public URL:{" "}
+                <a
+                  href={`${import.meta.env.VITE_APP_URL}/companies/${company.slug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-primary underline underline-offset-2 hover:text-primary/80"
+                >
+                  {import.meta.env.VITE_APP_URL}/companies/{company.slug}
+                </a>
+              </p>
             </div>
 
             <form.AppField
@@ -290,7 +301,7 @@ export function CompanySettings({ company }: { company: Company }) {
 
                     {techStackField.state.value.length > 0 ? (
                       <div className="flex flex-wrap gap-1.5">
-                        {techStackField.state.value.map((tag, index) => {
+                        {techStackField.state.value.map((tag: string, index: number) => {
                           const onRemoveTagClick = () => {
                             onRemoveTag(index);
                           };

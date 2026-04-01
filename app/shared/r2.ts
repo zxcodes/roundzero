@@ -26,6 +26,15 @@ function getR2Config() {
   };
 }
 
+function getPublicAssetBaseUrl() {
+  const value =
+    typeof window === "undefined"
+      ? process.env.VITE_PUBLIC_ASSET_BASE_URL
+      : import.meta.env.VITE_PUBLIC_ASSET_BASE_URL;
+
+  return value?.replace(/\/+$/, "") ?? null;
+}
+
 let r2Client: S3Client | null = null;
 
 function getR2Client() {
@@ -47,11 +56,11 @@ function getR2Client() {
   return r2Client;
 }
 
-export async function createR2ResumeUploadUrl({
-  resumeKey,
+export async function createR2UploadUrl({
+  objectKey,
   contentType,
 }: {
-  resumeKey: string;
+  objectKey: string;
   contentType: string;
 }) {
   const client = getR2Client();
@@ -59,11 +68,21 @@ export async function createR2ResumeUploadUrl({
 
   const command = new PutObjectCommand({
     Bucket: bucketName,
-    Key: resumeKey,
+    Key: objectKey,
     ContentType: contentType,
   });
 
   return getSignedUrl(client, command, { expiresIn: uploadUrlExpiresInSeconds });
+}
+
+export async function createR2ResumeUploadUrl({
+  resumeKey,
+  contentType,
+}: {
+  resumeKey: string;
+  contentType: string;
+}) {
+  return createR2UploadUrl({ objectKey: resumeKey, contentType });
 }
 
 export async function createR2ResumeDownloadUrl({
@@ -85,7 +104,7 @@ export async function createR2ResumeDownloadUrl({
   return getSignedUrl(client, command, { expiresIn: downloadUrlExpiresInSeconds });
 }
 
-export async function r2ResumeExists(resumeKey: string) {
+export async function r2ObjectExists(objectKey: string) {
   const client = getR2Client();
   const { bucketName } = getR2Config();
 
@@ -93,11 +112,24 @@ export async function r2ResumeExists(resumeKey: string) {
     await client.send(
       new HeadObjectCommand({
         Bucket: bucketName,
-        Key: resumeKey,
+        Key: objectKey,
       }),
     );
     return true;
   } catch {
     return false;
   }
+}
+
+export async function r2ResumeExists(resumeKey: string) {
+  return r2ObjectExists(resumeKey);
+}
+
+export function getPublicAssetUrl(objectKey: string) {
+  const baseUrl = getPublicAssetBaseUrl();
+  if (!baseUrl) {
+    return null;
+  }
+
+  return `${baseUrl}/${objectKey}`;
 }

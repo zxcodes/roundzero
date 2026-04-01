@@ -84,7 +84,7 @@ CREATE TABLE public.companies (
     slug text NOT NULL,
     onboarding_completed_at timestamp with time zone,
     description text,
-    logo_url text,
+    logo_key text,
     website text,
     industry text,
     company_size text,

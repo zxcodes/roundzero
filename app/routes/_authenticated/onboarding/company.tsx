@@ -1,13 +1,9 @@
-import { Upload04Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useId } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { createCompany } from "@/features/companies/server/functions";
 import { type CompanySize, companySizeLabels, type Industry, industryLabels } from "@/shared/enums";
 import { useAppForm } from "@/shared/form";
@@ -21,7 +17,6 @@ const sizeOptions = Object.entries(companySizeLabels).map(([value, label]) => ({
 
 function CompanyOnboardingPage() {
   const router = useRouter();
-  const id = useId();
   const onboardingSchema = z.object({
     name: z.string().trim().min(1, "Company name is required"),
     industry: z.string(),
@@ -69,13 +64,9 @@ function CompanyOnboardingPage() {
     },
   });
 
-  const logoId = `logo-${id}`;
   const onFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     form.handleSubmit();
-  };
-  const onLogoClick = () => {
-    toast.info("Logo upload will be available soon");
   };
 
   return (
@@ -88,24 +79,6 @@ function CompanyOnboardingPage() {
       </CardHeader>
       <CardContent>
         <form onSubmit={onFormSubmit} className="space-y-5">
-          {/* Logo upload placeholder */}
-          <div className="space-y-2">
-            <Label htmlFor={logoId}>Logo</Label>
-            <button
-              type="button"
-              className="flex size-20 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-muted-foreground/25 transition-colors hover:border-muted-foreground/50 hover:bg-muted/50"
-              id={logoId}
-              onClick={onLogoClick}
-            >
-              <HugeiconsIcon
-                icon={Upload04Icon}
-                strokeWidth={1.5}
-                className="size-5 text-muted-foreground/50"
-              />
-            </button>
-            <p className="text-muted-foreground text-xs">Upload your company logo (coming soon)</p>
-          </div>
-
           <form.AppField
             name="name"
             validators={{

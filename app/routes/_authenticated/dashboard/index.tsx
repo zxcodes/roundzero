@@ -74,7 +74,9 @@ function DashboardIndexPage() {
   const { user, isCompany, isCandidate } = context;
   const { metrics } = Route.useLoaderData();
   const candidateProfile = "candidateProfile" in context ? context.candidateProfile : null;
+  const company = "company" in context ? context.company : null;
   const showResumeBanner = isCandidate && candidateProfile && !candidateProfile.resumeKey;
+  const showCompanyLogoBanner = isCompany && company && !company.logoKey;
 
   const cards =
     metrics.type === "company" ? buildCompanyMetrics(metrics) : buildCandidateMetrics(metrics);
@@ -100,6 +102,22 @@ function DashboardIndexPage() {
           </p>
           <Button variant="outline" size="sm" asChild>
             <Link to="/dashboard/settings">Go to settings</Link>
+          </Button>
+        </div>
+      ) : null}
+
+      {showCompanyLogoBanner ? (
+        <div className="flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3">
+          <HugeiconsIcon
+            icon={Alert02Icon}
+            strokeWidth={2}
+            className="size-5 shrink-0 text-amber-500"
+          />
+          <p className="flex-1 text-sm text-amber-700 dark:text-amber-400">
+            Upload your company logo to complete your public brand presence.
+          </p>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/dashboard/settings">Add logo in settings</Link>
           </Button>
         </div>
       ) : null}

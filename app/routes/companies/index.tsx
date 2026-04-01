@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getAllCompaniesPaginated } from "@/features/companies/server/functions";
+import { getCompanyLogoUrl } from "@/shared/company-logo";
 import type { CompanySize, Industry } from "@/shared/enums";
 import {
   companySizeLabels,
@@ -215,6 +216,7 @@ function CompanyCard({ company, className }: { company: CompanyFromLoader; class
     .toUpperCase();
 
   const techStack: string[] = Array.isArray(company.techStack) ? company.techStack : [];
+  const logoUrl = getCompanyLogoUrl(company.logoKey);
 
   return (
     <Link to="/companies/$slug" params={{ slug: company.slug }} className={className}>
@@ -223,7 +225,7 @@ function CompanyCard({ company, className }: { company: CompanyFromLoader; class
           {/* Header row */}
           <div className="flex items-start gap-3.5">
             <Avatar className="size-11 rounded-xl">
-              {company.logoUrl ? <AvatarImage src={company.logoUrl} alt={company.name} /> : null}
+              {logoUrl ? <AvatarImage src={logoUrl} alt={company.name} /> : null}
               <AvatarFallback className="rounded-xl text-xs font-semibold">
                 {initials}
               </AvatarFallback>

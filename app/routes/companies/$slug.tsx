@@ -19,6 +19,7 @@ import { Card, CardContent } from "@/components/ui/card";
 
 import { getCompanyBySlug } from "@/features/companies/server/functions";
 import { getOpenJobsByCompanyId } from "@/features/jobs/server/functions";
+import { getCompanyLogoUrl } from "@/shared/company-logo";
 import type {
   CompanySize,
   EmploymentType,
@@ -64,6 +65,7 @@ function CompanyProfilePage() {
     .toUpperCase();
 
   const techStack: string[] = Array.isArray(company.techStack) ? company.techStack : [];
+  const logoUrl = getCompanyLogoUrl(company.logoKey);
   const socialLinks: Record<string, string> =
     company.socialLinks &&
     typeof company.socialLinks === "object" &&
@@ -90,7 +92,7 @@ function CompanyProfilePage() {
 
             <div className="animate-fade-in mt-8 flex flex-col gap-6 sm:flex-row sm:items-start">
               <Avatar className="size-16 rounded-xl">
-                {company.logoUrl ? <AvatarImage src={company.logoUrl} alt={company.name} /> : null}
+                {logoUrl ? <AvatarImage src={logoUrl} alt={company.name} /> : null}
                 <AvatarFallback className="rounded-xl text-lg font-bold">{initials}</AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1 space-y-3">

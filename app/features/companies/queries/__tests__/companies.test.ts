@@ -21,6 +21,7 @@ describe("createCompany", () => {
       name: "Acme Corp",
       slug: "acme-corp",
       description: "Building great things",
+      logoKey: null,
       industry: "technology",
       companySize: "51-200",
     });
@@ -44,6 +45,7 @@ describe("createCompany", () => {
       name: "No Extras Corp",
       slug: "no-extras-corp",
       description: null,
+      logoKey: null,
       industry: null,
       companySize: null,
     });
@@ -63,6 +65,7 @@ describe("createCompany", () => {
       name: "First",
       slug: "duplicate-slug",
       description: null,
+      logoKey: null,
       industry: null,
       companySize: null,
     });
@@ -73,6 +76,7 @@ describe("createCompany", () => {
         name: "Second",
         slug: "duplicate-slug",
         description: null,
+        logoKey: null,
         industry: null,
         companySize: null,
       }),
@@ -88,6 +92,7 @@ describe("getCompanyByOwnerId", () => {
       name: "My Co",
       slug: "my-co",
       description: null,
+      logoKey: null,
       industry: null,
       companySize: null,
     });
@@ -114,6 +119,7 @@ describe("getCompanyById", () => {
       name: "By ID Corp",
       slug: "by-id-corp",
       description: null,
+      logoKey: null,
       industry: null,
       companySize: null,
     });
@@ -137,6 +143,7 @@ describe("getCompanyBySlug", () => {
       name: "Slug Corp",
       slug: "slug-corp",
       description: "A test company",
+      logoKey: null,
       industry: "saas",
       companySize: "11-50",
     });
@@ -162,6 +169,7 @@ describe("updateCompanyProfile", () => {
       name: "Old Name",
       slug: "old-name",
       description: "Old desc",
+      logoKey: null,
       industry: null,
       companySize: null,
     });
@@ -171,7 +179,7 @@ describe("updateCompanyProfile", () => {
       ownerId: owner.id,
       name: "New Name",
       description: "New desc",
-      logoUrl: "https://example.com/logo.png",
+      logoKey: "company-logos/user-123/logo.png",
       website: "https://newname.com",
       industry: "finance",
       companySize: "201-500",
@@ -185,7 +193,7 @@ describe("updateCompanyProfile", () => {
     expect(updated).not.toBeNull();
     expect(updated!.name).toBe("New Name");
     expect(updated!.description).toBe("New desc");
-    expect(updated!.logoUrl).toBe("https://example.com/logo.png");
+    expect(updated!.logoKey).toBe("company-logos/user-123/logo.png");
     expect(updated!.website).toBe("https://newname.com");
     expect(updated!.industry).toBe("finance");
     expect(updated!.companySize).toBe("201-500");
@@ -203,6 +211,7 @@ describe("updateCompanyProfile", () => {
       name: "My Company",
       slug: "my-company",
       description: null,
+      logoKey: null,
       industry: null,
       companySize: null,
     });
@@ -212,7 +221,7 @@ describe("updateCompanyProfile", () => {
       ownerId: other.id,
       name: "Hacked",
       description: null,
-      logoUrl: null,
+      logoKey: null,
       website: null,
       industry: null,
       companySize: null,
@@ -239,6 +248,7 @@ describe("slugExists", () => {
       name: "Existing",
       slug: "existing-slug",
       description: null,
+      logoKey: null,
       industry: null,
       companySize: null,
     });
@@ -263,6 +273,7 @@ describe("getAllCompanies", () => {
       name: "Jobs Corp",
       slug: "jobs-corp",
       description: null,
+      logoKey: null,
       industry: "technology",
       companySize: "51-200",
     });

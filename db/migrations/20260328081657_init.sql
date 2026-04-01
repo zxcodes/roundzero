@@ -22,7 +22,7 @@ CREATE TABLE companies (
   slug           TEXT UNIQUE NOT NULL,
   onboarding_completed_at TIMESTAMPTZ,
   description    TEXT,
-  logo_url       TEXT,
+  logo_key       TEXT,
   website        TEXT,
   industry       TEXT,
   company_size   TEXT,

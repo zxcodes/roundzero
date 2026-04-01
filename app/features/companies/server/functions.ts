@@ -2,9 +2,12 @@ import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
+import { getUserById } from "@/features/auth/queries/queries_sql";
+import { sanitizeCompanyLogoFileName } from "@/shared/company-logo";
 import { getDb } from "@/shared/db";
 import { companySizeSchema, industrySchema } from "@/shared/enums";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
+import { createR2UploadUrl, r2ObjectExists } from "@/shared/r2";
 import { type SessionData, sessionConfig } from "@/shared/session";
 import {
   nullableTrimmedString,
@@ -20,6 +23,7 @@ import {
   getCompanyByOwnerId,
   getCompanyBySlug as getCompanyBySlugQuery,
   slugExists,
+  updateCompanyLogoByOwnerId,
   updateCompanyProfile as updateCompanyProfileQuery,
 } from "../queries/queries_sql";
 
@@ -63,7 +67,7 @@ const createCompanySchema = z.object({
 const updateCompanyProfileSchema = z.object({
   name: requiredTrimmedString(100, "Company name is required"),
   description: nullableTrimmedString(2000),
-  logoUrl: z.string().url().nullable(),
+  logoKey: z.string().min(1).nullable(),
   website: nullableTrimmedUrl(),
   industry: industrySchema.nullable(),
   companySize: companySizeSchema.nullable(),
@@ -79,6 +83,47 @@ const updateCompanyProfileSchema = z.object({
     })
     .nullable(),
 });
+
+const allowedLogoTypes = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/webp": "webp",
+  "image/svg+xml": "svg",
+} as const;
+
+const maxLogoFileSize = 2 * 1024 * 1024;
+
+const logoUploadTargetSchema = z.object({
+  fileName: z.string().min(1).max(255),
+  fileSize: z.number().int().positive().max(maxLogoFileSize),
+  contentType: z.enum(
+    Object.keys(allowedLogoTypes) as [
+      keyof typeof allowedLogoTypes,
+      ...Array<keyof typeof allowedLogoTypes>,
+    ],
+  ),
+});
+
+const finalizeLogoUploadSchema = z.object({
+  logoKey: z.string().min(1),
+});
+
+const updateCompanyLogoSchema = z.object({
+  logoKey: z.string().min(1),
+});
+
+const buildLogoKey = (
+  userId: string,
+  fileName: string,
+  contentType: keyof typeof allowedLogoTypes,
+) =>
+  `company-logos/${userId}/${crypto.randomUUID()}--${sanitizeCompanyLogoFileName(fileName).replace(/\.[^.]+$/, "")}.${allowedLogoTypes[contentType]}`;
+
+const assertLogoKeyBelongsToUser = (logoKey: string, userId: string) => {
+  if (!logoKey.startsWith(`company-logos/${userId}/`)) {
+    throw new Error("Invalid company logo key");
+  }
+};
 
 // --- Server Functions ---
 
@@ -102,6 +147,7 @@ export const createCompany = createServerFn({ method: "POST" })
       name: data.name,
       slug,
       description: data.description ?? null,
+      logoKey: null,
       industry: data.industry ?? null,
       companySize: data.companySize ?? null,
     });
@@ -133,10 +179,14 @@ export const updateCompanyProfile = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const db = getDb();
 
+    if (data.logoKey) {
+      assertLogoKeyBelongsToUser(data.logoKey, context.userId);
+    }
+
     const updated = await updateCompanyProfileQuery(db, {
       name: data.name,
       description: data.description,
-      logoUrl: data.logoUrl,
+      logoKey: data.logoKey,
       website: data.website,
       industry: data.industry,
       companySize: data.companySize,
@@ -151,6 +201,67 @@ export const updateCompanyProfile = createServerFn({ method: "POST" })
 
     if (!updated) {
       throw new Error("Failed to update company profile");
+    }
+
+    return { company: updated };
+  });
+
+export const createCompanyLogoUploadTarget = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .inputValidator(zodValidator(logoUploadTargetSchema))
+  .handler(async ({ data, context }) => {
+    const db = getDb();
+    const user = await getUserById(db, { id: context.userId });
+    if (!user || user.role !== "company") {
+      throw new Error("Only company users can upload logos");
+    }
+
+    const logoKey = buildLogoKey(context.userId, data.fileName, data.contentType);
+
+    return {
+      logoKey,
+      uploadUrl: await createR2UploadUrl({
+        objectKey: logoKey,
+        contentType: data.contentType,
+      }),
+      uploadMethod: "put" as const,
+      maxBytes: maxLogoFileSize,
+    };
+  });
+
+export const finalizeCompanyLogoUpload = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .inputValidator(zodValidator(finalizeLogoUploadSchema))
+  .handler(async ({ data, context }) => {
+    const db = getDb();
+    const user = await getUserById(db, { id: context.userId });
+    if (!user || user.role !== "company") {
+      throw new Error("Only company users can finalize logo uploads");
+    }
+
+    assertLogoKeyBelongsToUser(data.logoKey, context.userId);
+    const exists = await r2ObjectExists(data.logoKey);
+    if (!exists) {
+      throw new Error("Uploaded logo could not be found");
+    }
+
+    return { logoKey: data.logoKey };
+  });
+
+export const updateMyCompanyLogo = createServerFn({ method: "POST" })
+  .middleware([companyMiddleware])
+  .inputValidator(zodValidator(updateCompanyLogoSchema))
+  .handler(async ({ data, context }) => {
+    assertLogoKeyBelongsToUser(data.logoKey, context.userId);
+
+    const db = getDb();
+    const updated = await updateCompanyLogoByOwnerId(db, {
+      logoKey: data.logoKey,
+      ownerId: context.userId,
+    });
+
+    if (!updated) {
+      throw new Error("Failed to update company logo");
     }
 
     return { company: updated };

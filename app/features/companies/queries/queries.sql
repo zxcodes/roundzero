@@ -1,6 +1,15 @@
 -- name: createCompany :one
-INSERT INTO companies (owner_id, name, slug, description, industry, company_size, onboarding_completed_at)
-VALUES ($1, $2, $3, $4, $5, $6, now())
+INSERT INTO companies (
+  owner_id,
+  name,
+  slug,
+  description,
+  logo_key,
+  industry,
+  company_size,
+  onboarding_completed_at
+)
+VALUES ($1, $2, $3, $4, $5, $6, $7, now())
 RETURNING *;
 
 -- name: getCompanyByOwnerId :one
@@ -25,7 +34,7 @@ WHERE c.slug = $1;
 UPDATE companies
 SET name = $1,
     description = $2,
-    logo_url = $3,
+    logo_key = $3,
     website = $4,
     industry = $5,
     company_size = $6,
@@ -37,6 +46,13 @@ SET name = $1,
     updated_at = now()
 WHERE id = $12
   AND owner_id = $13
+RETURNING *;
+
+-- name: updateCompanyLogoByOwnerId :one
+UPDATE companies
+SET logo_key = $1,
+    updated_at = now()
+WHERE owner_id = $2
 RETURNING *;
 
 -- name: getAllCompanies :many
