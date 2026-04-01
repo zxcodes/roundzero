@@ -20,13 +20,14 @@ import {
   getCandidateProfileByUserId,
   getCandidateWorkHistoryByProfileId,
   updateCandidateProfileQuery,
+  type updateCandidateProfileRow,
 } from "../queries/queries_sql";
 
 // --- Schemas ---
 
 const createCandidateProfileSchema = z.object({
   headline: optionalTrimmedString(200),
-  resumeKey: z.string().min(1),
+  resumeKey: z.string().min(1).optional(),
 });
 
 const updateCandidateProfileSchema = z.object({
@@ -95,7 +96,6 @@ const updateCandidateProfileSchema = z.object({
     .nullable(),
 });
 export type UpdateCandidateProfileInput = z.infer<typeof updateCandidateProfileSchema>;
-type CandidateProfileRow = NonNullable<Awaited<ReturnType<typeof getCandidateProfileByUserId>>>;
 
 const allowedResumeTypes = {
   "application/pdf": "pdf",
@@ -177,7 +177,7 @@ export const createCandidateProfile = createServerFn({ method: "POST" })
     const profile = await createCandidateProfileQuery(db, {
       userId: context.userId,
       headline: data.headline ?? null,
-      resumeKey: data.resumeKey,
+      resumeKey: data.resumeKey ?? null,
     });
 
     if (!profile) {
@@ -245,17 +245,19 @@ export const updateMyCandidateProfile = createServerFn({ method: "POST" })
         .values();
 
       const row = updatedRows[0];
-      const updated: CandidateProfileRow | undefined = row
+      const updated: updateCandidateProfileRow | undefined = row
         ? {
             id: row[0],
             userId: row[1],
-            headline: row[2],
-            resumeKey: row[3],
-            bio: row[4],
-            skills: row[5],
-            links: row[6],
-            createdAt: row[7],
-            updatedAt: row[8],
+            onboardingCompletedAt: row[2],
+            headline: row[3],
+            resumeKey: row[4],
+            resumeUpdatedAt: row[5],
+            bio: row[6],
+            skills: row[7],
+            links: row[8],
+            createdAt: row[9],
+            updatedAt: row[10],
           }
         : undefined;
 

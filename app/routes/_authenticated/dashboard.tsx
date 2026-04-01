@@ -1,26 +1,10 @@
-import { createFileRoute, Outlet, redirect, useMatches } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useMatches } from "@tanstack/react-router";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { getMyCandidateProfile } from "@/features/candidates/server/functions";
-import { getMyCompany } from "@/features/companies/server/functions";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
-  beforeLoad: async ({ context }) => {
-    if (context.isCompany) {
-      const company = await getMyCompany();
-      if (!company) {
-        throw redirect({ to: "/onboarding/company" });
-      }
-    }
-    if (context.isCandidate) {
-      const profile = await getMyCandidateProfile();
-      if (!profile) {
-        throw redirect({ to: "/onboarding/candidate" });
-      }
-    }
-  },
   component: DashboardLayout,
 });
 

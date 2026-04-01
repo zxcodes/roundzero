@@ -26,14 +26,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           },
         });
         pendingRoleRef.current = undefined;
-        await router.invalidate();
 
-        if (result.user.role) {
-          await router.navigate({ to: "/dashboard" });
-        } else {
-          // Shouldn't happen with role-based login, but fallback
-          await router.navigate({ to: "/" });
+        if (!result.user.role) {
+          await router.invalidate();
+          return;
         }
+
+        const destination = result.onboardingComplete
+          ? "/dashboard"
+          : result.user.role === "company"
+            ? "/onboarding/company"
+            : "/onboarding/candidate";
+
+        await router.navigate({ to: destination });
+        await router.invalidate();
       } catch (error) {
         console.error("Authentication error:", error);
         pendingRoleRef.current = undefined;

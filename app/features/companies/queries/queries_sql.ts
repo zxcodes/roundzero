@@ -1,9 +1,9 @@
 import { Sql } from "postgres";
 
 export const createCompanyQuery = `-- name: createCompany :one
-INSERT INTO companies (owner_id, name, slug, description, industry, company_size)
-VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING id, owner_id, name, slug, description, logo_url, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, created_at, updated_at`;
+INSERT INTO companies (owner_id, name, slug, description, industry, company_size, onboarding_completed_at)
+VALUES ($1, $2, $3, $4, $5, $6, now())
+RETURNING id, owner_id, name, slug, onboarding_completed_at, description, logo_url, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, created_at, updated_at`;
 
 export interface createCompanyArgs {
     ownerId: string;
@@ -19,6 +19,7 @@ export interface createCompanyRow {
     ownerId: string;
     name: string;
     slug: string;
+    onboardingCompletedAt: Date | null;
     description: string | null;
     logoUrl: string | null;
     website: string | null;
@@ -44,23 +45,24 @@ export async function createCompany(sql: Sql, args: createCompanyArgs): Promise<
         ownerId: row[1],
         name: row[2],
         slug: row[3],
-        description: row[4],
-        logoUrl: row[5],
-        website: row[6],
-        industry: row[7],
-        companySize: row[8],
-        foundedYear: row[9],
-        location: row[10],
-        techStack: row[11],
-        culture: row[12],
-        socialLinks: row[13],
-        createdAt: row[14],
-        updatedAt: row[15]
+        onboardingCompletedAt: row[4],
+        description: row[5],
+        logoUrl: row[6],
+        website: row[7],
+        industry: row[8],
+        companySize: row[9],
+        foundedYear: row[10],
+        location: row[11],
+        techStack: row[12],
+        culture: row[13],
+        socialLinks: row[14],
+        createdAt: row[15],
+        updatedAt: row[16]
     };
 }
 
 export const getCompanyByOwnerIdQuery = `-- name: getCompanyByOwnerId :one
-SELECT id, owner_id, name, slug, description, logo_url, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, created_at, updated_at
+SELECT id, owner_id, name, slug, onboarding_completed_at, description, logo_url, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, created_at, updated_at
 FROM companies
 WHERE owner_id = $1`;
 
@@ -73,6 +75,7 @@ export interface getCompanyByOwnerIdRow {
     ownerId: string;
     name: string;
     slug: string;
+    onboardingCompletedAt: Date | null;
     description: string | null;
     logoUrl: string | null;
     website: string | null;
@@ -98,23 +101,24 @@ export async function getCompanyByOwnerId(sql: Sql, args: getCompanyByOwnerIdArg
         ownerId: row[1],
         name: row[2],
         slug: row[3],
-        description: row[4],
-        logoUrl: row[5],
-        website: row[6],
-        industry: row[7],
-        companySize: row[8],
-        foundedYear: row[9],
-        location: row[10],
-        techStack: row[11],
-        culture: row[12],
-        socialLinks: row[13],
-        createdAt: row[14],
-        updatedAt: row[15]
+        onboardingCompletedAt: row[4],
+        description: row[5],
+        logoUrl: row[6],
+        website: row[7],
+        industry: row[8],
+        companySize: row[9],
+        foundedYear: row[10],
+        location: row[11],
+        techStack: row[12],
+        culture: row[13],
+        socialLinks: row[14],
+        createdAt: row[15],
+        updatedAt: row[16]
     };
 }
 
 export const getCompanyByIdQuery = `-- name: getCompanyById :one
-SELECT id, owner_id, name, slug, description, logo_url, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, created_at, updated_at
+SELECT id, owner_id, name, slug, onboarding_completed_at, description, logo_url, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, created_at, updated_at
 FROM companies
 WHERE id = $1`;
 
@@ -127,6 +131,7 @@ export interface getCompanyByIdRow {
     ownerId: string;
     name: string;
     slug: string;
+    onboardingCompletedAt: Date | null;
     description: string | null;
     logoUrl: string | null;
     website: string | null;
@@ -152,23 +157,24 @@ export async function getCompanyById(sql: Sql, args: getCompanyByIdArgs): Promis
         ownerId: row[1],
         name: row[2],
         slug: row[3],
-        description: row[4],
-        logoUrl: row[5],
-        website: row[6],
-        industry: row[7],
-        companySize: row[8],
-        foundedYear: row[9],
-        location: row[10],
-        techStack: row[11],
-        culture: row[12],
-        socialLinks: row[13],
-        createdAt: row[14],
-        updatedAt: row[15]
+        onboardingCompletedAt: row[4],
+        description: row[5],
+        logoUrl: row[6],
+        website: row[7],
+        industry: row[8],
+        companySize: row[9],
+        foundedYear: row[10],
+        location: row[11],
+        techStack: row[12],
+        culture: row[13],
+        socialLinks: row[14],
+        createdAt: row[15],
+        updatedAt: row[16]
     };
 }
 
 export const getCompanyBySlugQuery = `-- name: getCompanyBySlug :one
-SELECT c.id, c.owner_id, c.name, c.slug, c.description, c.logo_url, c.website, c.industry, c.company_size, c.founded_year, c.location, c.tech_stack, c.culture, c.social_links, c.created_at, c.updated_at,
+SELECT c.id, c.owner_id, c.name, c.slug, c.onboarding_completed_at, c.description, c.logo_url, c.website, c.industry, c.company_size, c.founded_year, c.location, c.tech_stack, c.culture, c.social_links, c.created_at, c.updated_at,
        u.name AS owner_name,
        u.picture AS owner_picture
 FROM companies c
@@ -184,6 +190,7 @@ export interface getCompanyBySlugRow {
     ownerId: string;
     name: string;
     slug: string;
+    onboardingCompletedAt: Date | null;
     description: string | null;
     logoUrl: string | null;
     website: string | null;
@@ -211,20 +218,21 @@ export async function getCompanyBySlug(sql: Sql, args: getCompanyBySlugArgs): Pr
         ownerId: row[1],
         name: row[2],
         slug: row[3],
-        description: row[4],
-        logoUrl: row[5],
-        website: row[6],
-        industry: row[7],
-        companySize: row[8],
-        foundedYear: row[9],
-        location: row[10],
-        techStack: row[11],
-        culture: row[12],
-        socialLinks: row[13],
-        createdAt: row[14],
-        updatedAt: row[15],
-        ownerName: row[16],
-        ownerPicture: row[17]
+        onboardingCompletedAt: row[4],
+        description: row[5],
+        logoUrl: row[6],
+        website: row[7],
+        industry: row[8],
+        companySize: row[9],
+        foundedYear: row[10],
+        location: row[11],
+        techStack: row[12],
+        culture: row[13],
+        socialLinks: row[14],
+        createdAt: row[15],
+        updatedAt: row[16],
+        ownerName: row[17],
+        ownerPicture: row[18]
     };
 }
 
@@ -244,7 +252,7 @@ SET name = $1,
     updated_at = now()
 WHERE id = $12
   AND owner_id = $13
-RETURNING id, owner_id, name, slug, description, logo_url, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, created_at, updated_at`;
+RETURNING id, owner_id, name, slug, onboarding_completed_at, description, logo_url, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, created_at, updated_at`;
 
 export interface updateCompanyProfileArgs {
     name: string;
@@ -267,6 +275,7 @@ export interface updateCompanyProfileRow {
     ownerId: string;
     name: string;
     slug: string;
+    onboardingCompletedAt: Date | null;
     description: string | null;
     logoUrl: string | null;
     website: string | null;
@@ -292,23 +301,24 @@ export async function updateCompanyProfile(sql: Sql, args: updateCompanyProfileA
         ownerId: row[1],
         name: row[2],
         slug: row[3],
-        description: row[4],
-        logoUrl: row[5],
-        website: row[6],
-        industry: row[7],
-        companySize: row[8],
-        foundedYear: row[9],
-        location: row[10],
-        techStack: row[11],
-        culture: row[12],
-        socialLinks: row[13],
-        createdAt: row[14],
-        updatedAt: row[15]
+        onboardingCompletedAt: row[4],
+        description: row[5],
+        logoUrl: row[6],
+        website: row[7],
+        industry: row[8],
+        companySize: row[9],
+        foundedYear: row[10],
+        location: row[11],
+        techStack: row[12],
+        culture: row[13],
+        socialLinks: row[14],
+        createdAt: row[15],
+        updatedAt: row[16]
     };
 }
 
 export const getAllCompaniesQuery = `-- name: getAllCompanies :many
-SELECT c.id, c.owner_id, c.name, c.slug, c.description, c.logo_url, c.website, c.industry, c.company_size, c.founded_year, c.location, c.tech_stack, c.culture, c.social_links, c.created_at, c.updated_at,
+SELECT c.id, c.owner_id, c.name, c.slug, c.onboarding_completed_at, c.description, c.logo_url, c.website, c.industry, c.company_size, c.founded_year, c.location, c.tech_stack, c.culture, c.social_links, c.created_at, c.updated_at,
        (SELECT count(*)::int FROM jobs j WHERE j.company_id = c.id AND j.status = 'open' AND j.archived_at IS NULL) AS open_job_count
 FROM companies c
 ORDER BY c.created_at DESC`;
@@ -318,6 +328,7 @@ export interface getAllCompaniesRow {
     ownerId: string;
     name: string;
     slug: string;
+    onboardingCompletedAt: Date | null;
     description: string | null;
     logoUrl: string | null;
     website: string | null;
@@ -339,24 +350,25 @@ export async function getAllCompanies(sql: Sql): Promise<getAllCompaniesRow[]> {
         ownerId: row[1],
         name: row[2],
         slug: row[3],
-        description: row[4],
-        logoUrl: row[5],
-        website: row[6],
-        industry: row[7],
-        companySize: row[8],
-        foundedYear: row[9],
-        location: row[10],
-        techStack: row[11],
-        culture: row[12],
-        socialLinks: row[13],
-        createdAt: row[14],
-        updatedAt: row[15],
-        openJobCount: row[16]
+        onboardingCompletedAt: row[4],
+        description: row[5],
+        logoUrl: row[6],
+        website: row[7],
+        industry: row[8],
+        companySize: row[9],
+        foundedYear: row[10],
+        location: row[11],
+        techStack: row[12],
+        culture: row[13],
+        socialLinks: row[14],
+        createdAt: row[15],
+        updatedAt: row[16],
+        openJobCount: row[17]
     }));
 }
 
 export const getAllCompaniesPaginatedQuery = `-- name: getAllCompaniesPaginated :many
-SELECT c.id, c.owner_id, c.name, c.slug, c.description, c.logo_url, c.website, c.industry, c.company_size, c.founded_year, c.location, c.tech_stack, c.culture, c.social_links, c.created_at, c.updated_at,
+SELECT c.id, c.owner_id, c.name, c.slug, c.onboarding_completed_at, c.description, c.logo_url, c.website, c.industry, c.company_size, c.founded_year, c.location, c.tech_stack, c.culture, c.social_links, c.created_at, c.updated_at,
        (SELECT count(*)::int FROM jobs j WHERE j.company_id = c.id AND j.status = 'open' AND j.archived_at IS NULL) AS open_job_count
 FROM companies c
 WHERE ($1::text = '' OR c.name ILIKE '%' || $1 || '%' OR c.description ILIKE '%' || $1 || '%')
@@ -378,6 +390,7 @@ export interface getAllCompaniesPaginatedRow {
     ownerId: string;
     name: string;
     slug: string;
+    onboardingCompletedAt: Date | null;
     description: string | null;
     logoUrl: string | null;
     website: string | null;
@@ -399,19 +412,20 @@ export async function getAllCompaniesPaginated(sql: Sql, args: getAllCompaniesPa
         ownerId: row[1],
         name: row[2],
         slug: row[3],
-        description: row[4],
-        logoUrl: row[5],
-        website: row[6],
-        industry: row[7],
-        companySize: row[8],
-        foundedYear: row[9],
-        location: row[10],
-        techStack: row[11],
-        culture: row[12],
-        socialLinks: row[13],
-        createdAt: row[14],
-        updatedAt: row[15],
-        openJobCount: row[16]
+        onboardingCompletedAt: row[4],
+        description: row[5],
+        logoUrl: row[6],
+        website: row[7],
+        industry: row[8],
+        companySize: row[9],
+        foundedYear: row[10],
+        location: row[11],
+        techStack: row[12],
+        culture: row[13],
+        socialLinks: row[14],
+        createdAt: row[15],
+        updatedAt: row[16],
+        openJobCount: row[17]
     }));
 }
 

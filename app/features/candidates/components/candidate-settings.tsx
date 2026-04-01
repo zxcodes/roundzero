@@ -408,6 +408,12 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
               description="Upload a PDF, DOC, or DOCX file. This is the resume attached when you apply."
               onUploaded={onResumeUploaded}
             />
+            {profile.resumeUpdatedAt ? (
+              <p className="text-xs text-muted-foreground">
+                Resume last updated{" "}
+                {format(new Date(profile.resumeUpdatedAt), "MMM d, yyyy 'at' h:mm a")}
+              </p>
+            ) : null}
           </CardContent>
         </Card>
 

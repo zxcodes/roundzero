@@ -1,9 +1,9 @@
 import { Sql } from "postgres";
 
 export const createCandidateProfileQuery = `-- name: createCandidateProfile :one
-INSERT INTO candidate_profiles (user_id, headline, resume_key)
-VALUES ($1, $2, $3)
-RETURNING id, user_id, headline, resume_key, bio, skills, links, created_at, updated_at`;
+INSERT INTO candidate_profiles (user_id, headline, resume_key, onboarding_completed_at, resume_updated_at)
+VALUES ($1, $2, $3, now(), CASE WHEN $3::text IS NOT NULL THEN now() ELSE NULL END)
+RETURNING id, user_id, onboarding_completed_at, headline, resume_key, resume_updated_at, bio, skills, links, created_at, updated_at`;
 
 export interface createCandidateProfileArgs {
     userId: string;
@@ -14,8 +14,10 @@ export interface createCandidateProfileArgs {
 export interface createCandidateProfileRow {
     id: string;
     userId: string;
+    onboardingCompletedAt: Date | null;
     headline: string | null;
     resumeKey: string | null;
+    resumeUpdatedAt: Date | null;
     bio: string | null;
     skills: any | null;
     links: any | null;
@@ -32,18 +34,20 @@ export async function createCandidateProfile(sql: Sql, args: createCandidateProf
     return {
         id: row[0],
         userId: row[1],
-        headline: row[2],
-        resumeKey: row[3],
-        bio: row[4],
-        skills: row[5],
-        links: row[6],
-        createdAt: row[7],
-        updatedAt: row[8]
+        onboardingCompletedAt: row[2],
+        headline: row[3],
+        resumeKey: row[4],
+        resumeUpdatedAt: row[5],
+        bio: row[6],
+        skills: row[7],
+        links: row[8],
+        createdAt: row[9],
+        updatedAt: row[10]
     };
 }
 
 export const getCandidateProfileByUserIdQuery = `-- name: getCandidateProfileByUserId :one
-SELECT id, user_id, headline, resume_key, bio, skills, links, created_at, updated_at
+SELECT id, user_id, onboarding_completed_at, headline, resume_key, resume_updated_at, bio, skills, links, created_at, updated_at
 FROM candidate_profiles
 WHERE user_id = $1`;
 
@@ -54,8 +58,10 @@ export interface getCandidateProfileByUserIdArgs {
 export interface getCandidateProfileByUserIdRow {
     id: string;
     userId: string;
+    onboardingCompletedAt: Date | null;
     headline: string | null;
     resumeKey: string | null;
+    resumeUpdatedAt: Date | null;
     bio: string | null;
     skills: any | null;
     links: any | null;
@@ -72,13 +78,15 @@ export async function getCandidateProfileByUserId(sql: Sql, args: getCandidatePr
     return {
         id: row[0],
         userId: row[1],
-        headline: row[2],
-        resumeKey: row[3],
-        bio: row[4],
-        skills: row[5],
-        links: row[6],
-        createdAt: row[7],
-        updatedAt: row[8]
+        onboardingCompletedAt: row[2],
+        headline: row[3],
+        resumeKey: row[4],
+        resumeUpdatedAt: row[5],
+        bio: row[6],
+        skills: row[7],
+        links: row[8],
+        createdAt: row[9],
+        updatedAt: row[10]
     };
 }
 
@@ -201,9 +209,10 @@ SET headline = $1,
     bio = $3,
     skills = $4,
     links = $5,
+    resume_updated_at = CASE WHEN $2 IS DISTINCT FROM resume_key THEN now() ELSE resume_updated_at END,
     updated_at = now()
 WHERE user_id = $6
-RETURNING id, user_id, headline, resume_key, bio, skills, links, created_at, updated_at`;
+RETURNING id, user_id, onboarding_completed_at, headline, resume_key, resume_updated_at, bio, skills, links, created_at, updated_at`;
 
 export interface updateCandidateProfileArgs {
     headline: string | null;
@@ -217,8 +226,10 @@ export interface updateCandidateProfileArgs {
 export interface updateCandidateProfileRow {
     id: string;
     userId: string;
+    onboardingCompletedAt: Date | null;
     headline: string | null;
     resumeKey: string | null;
+    resumeUpdatedAt: Date | null;
     bio: string | null;
     skills: any | null;
     links: any | null;
@@ -235,13 +246,15 @@ export async function updateCandidateProfile(sql: Sql, args: updateCandidateProf
     return {
         id: row[0],
         userId: row[1],
-        headline: row[2],
-        resumeKey: row[3],
-        bio: row[4],
-        skills: row[5],
-        links: row[6],
-        createdAt: row[7],
-        updatedAt: row[8]
+        onboardingCompletedAt: row[2],
+        headline: row[3],
+        resumeKey: row[4],
+        resumeUpdatedAt: row[5],
+        bio: row[6],
+        skills: row[7],
+        links: row[8],
+        createdAt: row[9],
+        updatedAt: row[10]
     };
 }
 

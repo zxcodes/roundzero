@@ -1,4 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Alert02Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getDashboardMetrics } from "@/features/dashboard/server/functions";
 
@@ -67,8 +70,11 @@ const buildCandidateMetrics = (m: CandidateMetrics): MetricCard[] => [
 ];
 
 function DashboardIndexPage() {
-  const { user, isCompany } = Route.useRouteContext();
+  const context = Route.useRouteContext();
+  const { user, isCompany, isCandidate } = context;
   const { metrics } = Route.useLoaderData();
+  const candidateProfile = "candidateProfile" in context ? context.candidateProfile : null;
+  const showResumeBanner = isCandidate && candidateProfile && !candidateProfile.resumeKey;
 
   const cards =
     metrics.type === "company" ? buildCompanyMetrics(metrics) : buildCandidateMetrics(metrics);
@@ -81,6 +87,22 @@ function DashboardIndexPage() {
           Here's what's happening with your {isCompany ? "hiring pipeline" : "applications"}.
         </p>
       </div>
+
+      {showResumeBanner ? (
+        <div className="flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3">
+          <HugeiconsIcon
+            icon={Alert02Icon}
+            strokeWidth={2}
+            className="size-5 shrink-0 text-amber-500"
+          />
+          <p className="flex-1 text-sm text-amber-700 dark:text-amber-400">
+            Upload your resume to start applying for jobs.
+          </p>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/dashboard/settings">Go to settings</Link>
+          </Button>
+        </div>
+      ) : null}
 
       <div className="grid gap-3 sm:grid-cols-2">
         {cards.map((card, i) => (

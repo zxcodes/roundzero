@@ -2,6 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { clearSession, updateSession, useSession } from "@tanstack/react-start/server";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
+import { getCandidateProfileByUserId } from "@/features/candidates/queries/queries_sql";
+import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { userRoleSchema } from "@/shared/enums";
 import { authMiddleware } from "@/shared/middleware";
@@ -50,20 +52,29 @@ export const loginWithGoogle = createServerFn({ method: "POST" })
     }
 
     // Auto-assign role if provided and user doesn't have one yet
+    let activeUser = user;
     if (data.role && !user.role) {
       const updated = await setUserRoleQuery(db, {
         role: data.role,
         id: user.id,
       });
       if (updated) {
-        await updateSession<SessionData>(sessionConfig, { userId: updated.id });
-        return { user: updated };
+        activeUser = updated;
       }
     }
 
-    await updateSession<SessionData>(sessionConfig, { userId: user.id });
+    await updateSession<SessionData>(sessionConfig, { userId: activeUser.id });
 
-    return { user };
+    let onboardingComplete = false;
+    if (activeUser.role === "company") {
+      const company = await getCompanyByOwnerId(db, { ownerId: activeUser.id });
+      onboardingComplete = Boolean(company?.onboardingCompletedAt);
+    } else if (activeUser.role === "candidate") {
+      const profile = await getCandidateProfileByUserId(db, { userId: activeUser.id });
+      onboardingComplete = Boolean(profile?.onboardingCompletedAt);
+    }
+
+    return { user: activeUser, onboardingComplete };
   });
 
 export const logout = createServerFn({ method: "POST" }).handler(async () => {

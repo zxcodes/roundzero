@@ -1,6 +1,6 @@
 -- name: createCompany :one
-INSERT INTO companies (owner_id, name, slug, description, industry, company_size)
-VALUES ($1, $2, $3, $4, $5, $6)
+INSERT INTO companies (owner_id, name, slug, description, industry, company_size, onboarding_completed_at)
+VALUES ($1, $2, $3, $4, $5, $6, now())
 RETURNING *;
 
 -- name: getCompanyByOwnerId :one

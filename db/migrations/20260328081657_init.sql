@@ -20,6 +20,7 @@ CREATE TABLE companies (
   owner_id       UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
   name           TEXT NOT NULL,
   slug           TEXT UNIQUE NOT NULL,
+  onboarding_completed_at TIMESTAMPTZ,
   description    TEXT,
   logo_url       TEXT,
   website        TEXT,
@@ -40,8 +41,10 @@ CREATE INDEX idx_companies_owner ON companies(owner_id);
 CREATE TABLE candidate_profiles (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id       UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE RESTRICT,
+  onboarding_completed_at TIMESTAMPTZ,
   headline      TEXT,
   resume_key    TEXT,
+  resume_updated_at TIMESTAMPTZ,
   bio           TEXT,
   skills        JSONB DEFAULT '[]',
   links         JSONB DEFAULT '{}',

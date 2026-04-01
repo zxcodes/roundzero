@@ -1,30 +1,18 @@
 import { Upload04Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
-import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useId } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { createCompany, getMyCompany } from "@/features/companies/server/functions";
+import { createCompany } from "@/features/companies/server/functions";
 import { type CompanySize, companySizeLabels, type Industry, industryLabels } from "@/shared/enums";
 import { useAppForm } from "@/shared/form";
 
 export const Route = createFileRoute("/_authenticated/onboarding/company")({
-  beforeLoad: ({ context }) => {
-    if (!context.isCompany) {
-      throw redirect({ to: "/dashboard" });
-    }
-  },
-  loader: async () => {
-    const company = await getMyCompany();
-    if (company) {
-      throw redirect({ to: "/dashboard" });
-    }
-    return null;
-  },
   component: CompanyOnboardingPage,
 });
 

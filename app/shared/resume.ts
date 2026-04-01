@@ -1,10 +1,3 @@
-const resumeStorageKeyPrefix = "pending-resume";
-
-export type PendingResume = {
-  fileName: string;
-  resumeKey: string;
-};
-
 export function sanitizeResumeFileName(fileName: string) {
   const trimmed = fileName.trim().toLowerCase();
   const lastDotIndex = trimmed.lastIndexOf(".");
@@ -36,43 +29,6 @@ export function getResumeDisplayName(resumeKey: string | null | undefined) {
   }
 
   return fileName.slice(markerIndex + 2).replace(/-/g, " ");
-}
-
-export function getPendingResumeStorageKey(userId: string) {
-  return `${resumeStorageKeyPrefix}:${userId}`;
-}
-
-export function readPendingResume(storageKey: string): PendingResume | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  const raw = window.sessionStorage.getItem(storageKey);
-  if (!raw) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(raw) as PendingResume;
-  } catch {
-    return null;
-  }
-}
-
-export function writePendingResume(storageKey: string, pendingResume: PendingResume) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.sessionStorage.setItem(storageKey, JSON.stringify(pendingResume));
-}
-
-export function clearPendingResume(storageKey: string) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.sessionStorage.removeItem(storageKey);
 }
 
 export function uploadFileToSignedUrl({

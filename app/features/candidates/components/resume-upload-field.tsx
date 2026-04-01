@@ -10,21 +10,14 @@ import {
   finalizeResumeUpload,
   getResumeDownloadUrl,
 } from "@/features/candidates/server/functions";
-import {
-  getResumeDisplayName,
-  type PendingResume,
-  readPendingResume,
-  uploadFileToSignedUrl,
-  writePendingResume,
-} from "@/shared/resume";
+import { getResumeDisplayName, uploadFileToSignedUrl } from "@/shared/resume";
 
 type ResumeUploadFieldProps = {
   value: string | null | undefined;
-  onUploaded: (resume: PendingResume) => Promise<void> | void;
+  onUploaded: (resume: { resumeKey: string }) => Promise<void> | void;
   description: string;
   error?: string | null;
   label?: string;
-  storageKey?: string;
   showViewButton?: boolean;
   onErrorChange?: (error: string | null) => void;
 };
@@ -35,19 +28,11 @@ export function ResumeUploadField({
   description,
   error = null,
   label = "Resume",
-  storageKey,
   showViewButton = false,
   onErrorChange,
 }: ResumeUploadFieldProps) {
   const id = useId();
-  const persistedResume = storageKey ? readPendingResume(storageKey) : null;
-  const [uploadedResumeName, setUploadedResumeName] = useState<string | null>(() => {
-    if (persistedResume && (!value || persistedResume.resumeKey === value)) {
-      return persistedResume.fileName;
-    }
-
-    return getResumeDisplayName(value);
-  });
+  const [uploadedResumeName, setUploadedResumeName] = useState<string | null>(null);
   const [resumeUploadState, setResumeUploadState] = useState<{
     status: "idle" | "uploading" | "uploaded";
     progress: number;
@@ -97,17 +82,8 @@ export function ResumeUploadField({
         data: { resumeKey: target.resumeKey },
       });
 
-      const nextResume = {
-        fileName: file.name,
-        resumeKey: finalized.resumeKey,
-      };
-
-      if (storageKey) {
-        writePendingResume(storageKey, nextResume);
-      }
-
-      await onUploaded(nextResume);
-      setUploadedResumeName(nextResume.fileName);
+      await onUploaded({ resumeKey: finalized.resumeKey });
+      setUploadedResumeName(file.name);
       setResumeUploadState({ status: "uploaded", progress: 100 });
       toast.success("Resume uploaded");
     } catch (error) {

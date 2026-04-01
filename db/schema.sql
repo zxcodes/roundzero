@@ -42,8 +42,10 @@ CREATE TABLE public.applications (
 CREATE TABLE public.candidate_profiles (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid NOT NULL,
+    onboarding_completed_at timestamp with time zone,
     headline text,
     resume_key text,
+    resume_updated_at timestamp with time zone,
     bio text,
     skills jsonb DEFAULT '[]'::jsonb,
     links jsonb DEFAULT '{}'::jsonb,
@@ -80,6 +82,7 @@ CREATE TABLE public.companies (
     owner_id uuid NOT NULL,
     name text NOT NULL,
     slug text NOT NULL,
+    onboarding_completed_at timestamp with time zone,
     description text,
     logo_url text,
     website text,
