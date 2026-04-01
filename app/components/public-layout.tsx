@@ -8,6 +8,9 @@ import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/s
 export function PublicHeader() {
   const { user } = useRouteContext({ from: "__root__" });
   const [mobileOpen, setMobileOpen] = useState(false);
+  const onCloseMobileMenu = () => {
+    setMobileOpen(false);
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-xl backdrop-saturate-150">
@@ -67,7 +70,7 @@ export function PublicHeader() {
                   variant="ghost"
                   className="justify-start text-muted-foreground"
                   asChild
-                  onClick={() => setMobileOpen(false)}
+                  onClick={onCloseMobileMenu}
                 >
                   <Link to="/jobs" activeProps={{ className: "text-foreground bg-accent" }}>
                     Jobs
@@ -77,7 +80,7 @@ export function PublicHeader() {
                   variant="ghost"
                   className="justify-start text-muted-foreground"
                   asChild
-                  onClick={() => setMobileOpen(false)}
+                  onClick={onCloseMobileMenu}
                 >
                   <Link to="/companies" activeProps={{ className: "text-foreground bg-accent" }}>
                     Companies
@@ -90,7 +93,7 @@ export function PublicHeader() {
                       variant="ghost"
                       className="justify-start text-muted-foreground"
                       asChild
-                      onClick={() => setMobileOpen(false)}
+                      onClick={onCloseMobileMenu}
                     >
                       <Link to="/company/login">For companies</Link>
                     </Button>
@@ -98,7 +101,7 @@ export function PublicHeader() {
                       variant="ghost"
                       className="justify-start text-muted-foreground"
                       asChild
-                      onClick={() => setMobileOpen(false)}
+                      onClick={onCloseMobileMenu}
                     >
                       <Link to="/candidate/login">For job seekers</Link>
                     </Button>

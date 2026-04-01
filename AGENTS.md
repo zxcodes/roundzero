@@ -41,6 +41,7 @@ Always consult both before making design decisions or implementing features.
 - **No manual memoization** — React Compiler is enabled. Never use `useCallback`, `useMemo`, `React.memo`.
 - **Single `useId()` per component** — call once, derive IDs: `` const id = useId(); const nameId = `name-${id}`; ``
 - **Ternaries for conditionals** — `{x ? (...) : null}`, never `{x && (...)}`.
+- **No inline event handlers** — define `on...` handlers in component scope or local render scope and reference them from JSX instead of inline arrow functions.
 - `function` declarations for UI components, `const` for non-UI. `on` prefix for handlers (not `handle`).
 
 ## Tooling + Commands

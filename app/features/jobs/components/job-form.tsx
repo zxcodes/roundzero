@@ -88,11 +88,11 @@ export function JobForm({
     },
     onSubmit: ({ value }) => {
       onSubmit({
-        title: value.title.trim(),
-        description: value.description.trim(),
+        title: value.title,
+        description: value.description,
         requirements: value.requirements,
         status: value.status as JobStatus,
-        location: value.location.trim() || null,
+        location: value.location || null,
         workplaceType: emptyToNull(value.workplaceType) as WorkplaceType | null,
         employmentType: emptyToNull(value.employmentType) as EmploymentType | null,
         experienceLevel: emptyToNull(value.experienceLevel) as ExperienceLevel | null,
@@ -104,30 +104,16 @@ export function JobForm({
       });
     },
   });
-
-  const onAddRequirement = () => {
-    const trimmed = requirementInput.trim();
-    if (trimmed && !form.getFieldValue("requirements").includes(trimmed)) {
-      form.pushFieldValue("requirements", trimmed);
-      setRequirementInput("");
-    }
+  const onFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    form.handleSubmit();
   };
-
-  const onKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      onAddRequirement();
-    }
+  const onRequirementInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setRequirementInput(e.target.value);
   };
 
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        form.handleSubmit();
-      }}
-      className="space-y-6"
-    >
+    <form onSubmit={onFormSubmit} className="space-y-6">
       {/* Basic info */}
       <div className="space-y-4">
         <form.AppField
@@ -261,47 +247,82 @@ export function JobForm({
       {/* Requirements */}
       <div className="space-y-4">
         <form.Field name="requirements" mode="array">
-          {(reqField) => (
-            <div className="space-y-2">
-              <Label>Requirements</Label>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="e.g. 3+ years React experience"
-                  value={requirementInput}
-                  onChange={(e) => setRequirementInput(e.target.value)}
-                  onKeyDown={onKeyDown}
-                  maxLength={200}
-                />
-                <Button type="button" variant="outline" size="icon" onClick={onAddRequirement}>
-                  <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-4" />
-                </Button>
+          {(reqField) => {
+            const onRequirementInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+              const trimmed = requirementInput.trim();
+              if (e.key === "Enter" && trimmed) {
+                e.preventDefault();
+                if (!reqField.state.value.includes(trimmed)) {
+                  reqField.pushValue(trimmed);
+                }
+                setRequirementInput("");
+              }
+            };
+            const onAddRequirement = () => {
+              const trimmed = requirementInput.trim();
+              if (trimmed && !reqField.state.value.includes(trimmed)) {
+                reqField.pushValue(trimmed);
+              }
+              setRequirementInput("");
+            };
+            const onRemoveRequirement = (index: number) => {
+              reqField.removeValue(index);
+            };
+
+            return (
+              <div className="space-y-2">
+                <Label>Requirements</Label>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="e.g. 3+ years React experience"
+                    value={requirementInput}
+                    onChange={onRequirementInputChange}
+                    onKeyDown={onRequirementInputKeyDown}
+                    maxLength={200}
+                  />
+                  <Button type="button" variant="outline" size="icon" onClick={onAddRequirement}>
+                    <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-4" />
+                  </Button>
+                </div>
+                {reqField.state.value.length > 0 ? (
+                  <ul className="mt-2 space-y-1">
+                    {reqField.state.value.map((req, i) =>
+                      (() => {
+                        const onRemoveRequirementClick = () => {
+                          onRemoveRequirement(i);
+                        };
+
+                        return (
+                          <li
+                            key={`${req}-${i}`}
+                            className="flex items-center justify-between gap-2 rounded-md bg-muted px-3 py-2 text-sm"
+                          >
+                            <span className="flex items-center gap-2">
+                              <span className="block size-1 shrink-0 rounded-full bg-primary" />
+                              {req}
+                            </span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-xs"
+                              onClick={onRemoveRequirementClick}
+                              className="shrink-0 text-muted-foreground hover:text-foreground"
+                            >
+                              <HugeiconsIcon
+                                icon={Cancel01Icon}
+                                strokeWidth={2}
+                                className="size-3.5"
+                              />
+                            </Button>
+                          </li>
+                        );
+                      })(),
+                    )}
+                  </ul>
+                ) : null}
               </div>
-              {reqField.state.value.length > 0 ? (
-                <ul className="mt-2 space-y-1">
-                  {reqField.state.value.map((req, i) => (
-                    <li
-                      key={`${req}-${i}`}
-                      className="flex items-center justify-between gap-2 rounded-md bg-muted px-3 py-2 text-sm"
-                    >
-                      <span className="flex items-center gap-2">
-                        <span className="block size-1 shrink-0 rounded-full bg-primary" />
-                        {req}
-                      </span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-xs"
-                        onClick={() => reqField.removeValue(i)}
-                        className="shrink-0 text-muted-foreground hover:text-foreground"
-                      >
-                        <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-3.5" />
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </div>
-          )}
+            );
+          }}
         </form.Field>
       </div>
 

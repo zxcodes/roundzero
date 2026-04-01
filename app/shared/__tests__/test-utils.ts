@@ -17,7 +17,10 @@ let _sql: ReturnType<typeof postgres> | null = null;
 /** Get the shared test database connection. */
 export const getTestDb = () => {
   if (!_sql) {
-    _sql = postgres(TEST_DATABASE_URL, { max: 5 });
+    _sql = postgres(TEST_DATABASE_URL, {
+      max: 5,
+      onnotice: () => {},
+    });
   }
   return _sql;
 };
@@ -33,7 +36,18 @@ export const closeTestDb = async () => {
 /** Delete all test data in correct FK order. Call in afterEach or afterAll. */
 export const cleanTestData = async () => {
   const sql = getTestDb();
-  await sql`TRUNCATE reports, interviews, applications, jobs, companies, candidate_profiles, users CASCADE`;
+  await sql`
+    TRUNCATE
+      reports,
+      interviews,
+      applications,
+      jobs,
+      candidate_work_history,
+      candidate_profiles,
+      companies,
+      users
+    CASCADE
+  `;
 };
 
 // ─── Seed helpers ────────────────────────────────────────────────

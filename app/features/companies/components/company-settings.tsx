@@ -1,6 +1,5 @@
 import { Cancel01Icon, Upload04Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useStore } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -63,22 +62,22 @@ export function CompanySettings({ company }: { company: Company }) {
     onSubmit: async ({ value }) => {
       await updateMutation.mutateAsync({
         data: {
-          name: value.name.trim(),
-          description: value.description.trim() || null,
+          name: value.name,
+          description: value.description || null,
           logoUrl: company.logoUrl,
-          website: value.website.trim() || null,
+          website: value.website || null,
           industry: (value.industry || null) as Industry | null,
           companySize: (value.companySize || null) as CompanySize | null,
           foundedYear: value.foundedYear,
-          location: value.location.trim() || null,
+          location: value.location || null,
           techStack: value.techStack.length > 0 ? value.techStack : null,
-          culture: value.culture.trim() || null,
+          culture: value.culture || null,
           socialLinks:
             value.linkedinUrl || value.twitterUrl || value.githubUrl
               ? {
-                  linkedin: value.linkedinUrl.trim() || undefined,
-                  twitter: value.twitterUrl.trim() || undefined,
-                  github: value.githubUrl.trim() || undefined,
+                  linkedin: value.linkedinUrl || undefined,
+                  twitter: value.twitterUrl || undefined,
+                  github: value.githubUrl || undefined,
                 }
               : null,
         },
@@ -95,28 +94,11 @@ export function CompanySettings({ company }: { company: Company }) {
   });
 
   const [tagInput, setTagInput] = useState("");
-  const techStackTags = useStore(form.store, (state) => state.values.techStack);
 
   const tagInputId = `tag-input-${id}`;
   const logoId = `logo-${id}`;
-
-  const onAddTag = (value: string) => {
-    const trimmed = value.trim();
-    const currentTags = form.getFieldValue("techStack");
-    if (trimmed && !currentTags.includes(trimmed)) {
-      form.setFieldValue("techStack", [...currentTags, trimmed]);
-      form.handleSubmit();
-    }
-    setTagInput("");
-  };
-
-  const onRemoveTag = (tag: string) => {
-    const currentTags = form.getFieldValue("techStack");
-    form.setFieldValue(
-      "techStack",
-      currentTags.filter((t: string) => t !== tag),
-    );
-    form.handleSubmit();
+  const onTagInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTagInput(e.target.value);
   };
 
   return (
@@ -268,44 +250,76 @@ export function CompanySettings({ company }: { company: Company }) {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="space-y-2">
-              <Label htmlFor={tagInputId}>Add technologies</Label>
-              <Input
-                id={tagInputId}
-                placeholder="Type and press Enter (e.g. TypeScript, React)"
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    onAddTag(tagInput);
+            <form.Field name="techStack" mode="array">
+              {(techStackField) => {
+                const onTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+                  const trimmed = tagInput.trim();
+                  if (!trimmed) {
+                    return;
                   }
-                  if (e.key === "," && tagInput.trim()) {
-                    e.preventDefault();
-                    onAddTag(tagInput);
-                  }
-                }}
-              />
-            </div>
 
-            {techStackTags.length > 0 ? (
-              <div className="flex flex-wrap gap-1.5">
-                {techStackTags.map((tag) => (
-                  <Badge key={tag} variant="secondary" className="gap-1 pr-1">
-                    {tag}
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-xs"
-                      onClick={() => onRemoveTag(tag)}
-                      className="ml-0.5 size-4 hover:bg-muted-foreground/20"
-                    >
-                      <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-3" />
-                    </Button>
-                  </Badge>
-                ))}
-              </div>
-            ) : null}
+                  if (e.key === "Enter" || e.key === ",") {
+                    e.preventDefault();
+
+                    if (!techStackField.state.value.includes(trimmed)) {
+                      techStackField.pushValue(trimmed);
+                      form.handleSubmit();
+                    }
+
+                    setTagInput("");
+                  }
+                };
+
+                const onRemoveTag = (index: number) => {
+                  techStackField.removeValue(index);
+                  form.handleSubmit();
+                };
+
+                return (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor={tagInputId}>Add technologies</Label>
+                      <Input
+                        id={tagInputId}
+                        placeholder="Type and press Enter (e.g. TypeScript, React)"
+                        value={tagInput}
+                        onChange={onTagInputChange}
+                        onKeyDown={onTagInputKeyDown}
+                      />
+                    </div>
+
+                    {techStackField.state.value.length > 0 ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {techStackField.state.value.map((tag, index) => {
+                          const onRemoveTagClick = () => {
+                            onRemoveTag(index);
+                          };
+
+                          return (
+                            <Badge key={tag} variant="secondary" className="gap-1 pr-1">
+                              {tag}
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-xs"
+                                onClick={onRemoveTagClick}
+                                className="ml-0.5 size-4 hover:bg-muted-foreground/20"
+                              >
+                                <HugeiconsIcon
+                                  icon={Cancel01Icon}
+                                  strokeWidth={2}
+                                  className="size-3"
+                                />
+                              </Button>
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                  </>
+                );
+              }}
+            </form.Field>
           </CardContent>
         </Card>
 

@@ -11,6 +11,9 @@ export function ErrorBoundary({
   reset?: () => void;
 }) {
   const router = useRouter();
+  const onRetry = () => {
+    router.invalidate();
+  };
 
   return (
     <div className="animate-fade-in-up flex min-h-[50vh] flex-col items-center justify-center gap-5 p-6 text-center">
@@ -24,13 +27,7 @@ export function ErrorBoundary({
         </p>
       </div>
       <div className="flex gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            router.invalidate();
-          }}
-        >
+        <Button variant="outline" size="sm" onClick={onRetry}>
           Try again
         </Button>
         <Button size="sm" asChild>

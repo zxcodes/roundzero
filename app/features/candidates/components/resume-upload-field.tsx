@@ -136,6 +136,9 @@ export function ResumeUploadField({
       toast.error("Failed to open resume. Please try again.");
     }
   };
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onResumeSelected(e.target.files?.[0] ?? null);
+  };
 
   return (
     <div className="space-y-2">
@@ -145,7 +148,7 @@ export function ResumeUploadField({
         type="file"
         accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         className="sr-only"
-        onChange={(e) => onResumeSelected(e.target.files?.[0] ?? null)}
+        onChange={onFileChange}
       />
       <label
         htmlFor={inputId}

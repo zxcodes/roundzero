@@ -7,6 +7,13 @@ import { companySizeSchema, industrySchema } from "@/shared/enums";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
 import { type SessionData, sessionConfig } from "@/shared/session";
 import {
+  nullableTrimmedString,
+  nullableTrimmedUrl,
+  optionalTrimmedString,
+  optionalTrimmedUrl,
+  requiredTrimmedString,
+} from "@/shared/validation";
+import {
   countCompaniesFiltered,
   createCompany as createCompanyQuery,
   getAllCompaniesPaginated as getAllCompaniesPaginatedQuery,
@@ -47,28 +54,28 @@ const generateUniqueSlug = async (name: string): Promise<string> => {
 // --- Schemas ---
 
 const createCompanySchema = z.object({
-  name: z.string().min(1, "Company name is required").max(100),
-  description: z.string().max(500).optional(),
+  name: requiredTrimmedString(100, "Company name is required"),
+  description: optionalTrimmedString(500),
   industry: industrySchema.optional(),
   companySize: companySizeSchema.optional(),
 });
 
 const updateCompanyProfileSchema = z.object({
-  name: z.string().min(1, "Company name is required").max(100),
-  description: z.string().max(2000).nullable(),
+  name: requiredTrimmedString(100, "Company name is required"),
+  description: nullableTrimmedString(2000),
   logoUrl: z.string().url().nullable(),
-  website: z.string().url().nullable(),
+  website: nullableTrimmedUrl(),
   industry: industrySchema.nullable(),
   companySize: companySizeSchema.nullable(),
   foundedYear: z.number().int().min(1800).max(new Date().getFullYear()).nullable(),
-  location: z.string().max(200).nullable(),
+  location: nullableTrimmedString(200),
   techStack: z.array(z.string()).nullable(),
-  culture: z.string().max(5000).nullable(),
+  culture: nullableTrimmedString(5000),
   socialLinks: z
     .object({
-      linkedin: z.string().url().optional(),
-      twitter: z.string().url().optional(),
-      github: z.string().url().optional(),
+      linkedin: optionalTrimmedUrl(),
+      twitter: optionalTrimmedUrl(),
+      github: optionalTrimmedUrl(),
     })
     .nullable(),
 });

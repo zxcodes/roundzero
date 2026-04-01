@@ -6,6 +6,7 @@ import { getDb } from "@/shared/db";
 import { userRoleSchema } from "@/shared/enums";
 import { authMiddleware } from "@/shared/middleware";
 import { type SessionData, sessionConfig } from "@/shared/session";
+import { requiredTrimmedString } from "@/shared/validation";
 import {
   getUserById,
   setUserRole as setUserRoleQuery,
@@ -83,7 +84,7 @@ export const getCurrentUser = createServerFn({ method: "GET" }).handler(async ()
 });
 
 const updateNameSchema = z.object({
-  name: z.string().min(1, "Name is required").max(100),
+  name: requiredTrimmedString(100, "Name is required"),
 });
 
 export const updateUserName = createServerFn({ method: "POST" })
@@ -92,7 +93,7 @@ export const updateUserName = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const db = getDb();
     const user = await updateUserNameQuery(db, {
-      name: data.name.trim(),
+      name: data.name,
       id: context.userId,
     });
 

@@ -5,6 +5,7 @@ import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useId } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { createCompany, getMyCompany } from "@/features/companies/server/functions";
@@ -17,7 +18,13 @@ export const Route = createFileRoute("/_authenticated/onboarding/company")({
       throw redirect({ to: "/dashboard" });
     }
   },
-  loader: () => getMyCompany(),
+  loader: async () => {
+    const company = await getMyCompany();
+    if (company) {
+      throw redirect({ to: "/dashboard" });
+    }
+    return null;
+  },
   component: CompanyOnboardingPage,
 });
 
@@ -25,9 +32,14 @@ const industryOptions = Object.entries(industryLabels).map(([value, label]) => (
 const sizeOptions = Object.entries(companySizeLabels).map(([value, label]) => ({ value, label }));
 
 function CompanyOnboardingPage() {
-  const existingCompany = Route.useLoaderData();
   const router = useRouter();
   const id = useId();
+  const onboardingSchema = z.object({
+    name: z.string().trim().min(1, "Company name is required"),
+    industry: z.string(),
+    companySize: z.string(),
+    description: z.string(),
+  });
 
   const createCompanyFn = useServerFn(createCompany);
   const createCompanyMutation = useMutation({
@@ -49,28 +61,34 @@ function CompanyOnboardingPage() {
       description: "",
     },
     onSubmit: async ({ value }) => {
-      if (!value.name.trim()) {
-        toast.error("Company name is required");
-        return;
-      }
-
       await createCompanyMutation.mutateAsync({
         data: {
-          name: value.name.trim(),
-          description: value.description.trim() || undefined,
+          name: value.name,
+          description: value.description || undefined,
           industry: (value.industry || undefined) as Industry | undefined,
           companySize: (value.companySize || undefined) as CompanySize | undefined,
         },
       });
     },
+    onSubmitInvalid: () => {
+      const firstError = form.getFieldInfo("name").instance?.state.meta.errors[0];
+
+      if (typeof firstError === "string") {
+        toast.error(firstError);
+      } else {
+        toast.error("Complete all required fields before creating your company.");
+      }
+    },
   });
 
-  if (existingCompany) {
-    router.navigate({ to: "/dashboard" });
-    return null;
-  }
-
   const logoId = `logo-${id}`;
+  const onFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    form.handleSubmit();
+  };
+  const onLogoClick = () => {
+    toast.info("Logo upload will be available soon");
+  };
 
   return (
     <Card>
@@ -81,13 +99,7 @@ function CompanyOnboardingPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            form.handleSubmit();
-          }}
-          className="space-y-5"
-        >
+        <form onSubmit={onFormSubmit} className="space-y-5">
           {/* Logo upload placeholder */}
           <div className="space-y-2">
             <Label htmlFor={logoId}>Logo</Label>
@@ -95,7 +107,7 @@ function CompanyOnboardingPage() {
               type="button"
               className="flex size-20 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-muted-foreground/25 transition-colors hover:border-muted-foreground/50 hover:bg-muted/50"
               id={logoId}
-              onClick={() => toast.info("Logo upload will be available soon")}
+              onClick={onLogoClick}
             >
               <HugeiconsIcon
                 icon={Upload04Icon}
@@ -108,6 +120,10 @@ function CompanyOnboardingPage() {
 
           <form.AppField
             name="name"
+            validators={{
+              onBlur: z.string().trim().min(1, "Company name is required"),
+              onSubmit: onboardingSchema.shape.name,
+            }}
             children={(field) => (
               <field.TextField
                 label="Company name"

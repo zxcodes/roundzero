@@ -77,6 +77,9 @@ function CompaniesPage() {
   const onSearchChange = (value: string) => {
     navigate({ search: (prev) => ({ ...prev, search: value, page: 1 }) });
   };
+  const onSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onSearchChange(e.target.value);
+  };
 
   const onIndustryChange = (value: string) => {
     navigate({ search: (prev) => ({ ...prev, industry: value, page: 1 }) });
@@ -122,7 +125,7 @@ function CompaniesPage() {
               <Input
                 placeholder="Search companies..."
                 value={search}
-                onChange={(e) => onSearchChange(e.target.value)}
+                onChange={onSearchInputChange}
                 className="pl-10"
               />
             </div>

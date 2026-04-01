@@ -5,20 +5,21 @@ import {
   jobStatusSchema,
   workplaceTypeSchema,
 } from "@/shared/enums";
+import { nullableTrimmedString, requiredTrimmedString } from "@/shared/validation";
 
 export const jobFieldsSchema = z
   .object({
-    title: z.string().min(1, "Job title is required").max(200),
-    description: z.string().min(1, "Job description is required").max(5000),
-    requirements: z.array(z.string()).default([]),
+    title: requiredTrimmedString(200, "Job title is required"),
+    description: requiredTrimmedString(5000, "Job description is required"),
+    requirements: z.array(z.string().trim().min(1).max(200)).default([]),
     status: jobStatusSchema.default("draft"),
-    location: z.string().max(200).nullable().optional(),
+    location: nullableTrimmedString(200).optional(),
     workplaceType: workplaceTypeSchema.nullable().optional(),
     employmentType: employmentTypeSchema.nullable().optional(),
     experienceLevel: experienceLevelSchema.nullable().optional(),
     salaryMin: z.number().int().positive().nullable().optional(),
     salaryMax: z.number().int().positive().nullable().optional(),
-    salaryCurrency: z.string().max(10).default("USD"),
+    salaryCurrency: requiredTrimmedString(10, "Salary currency is required").default("USD"),
     teamSize: z.number().int().positive().nullable().optional(),
     headcount: z.number().int().positive().nullable().optional(),
     expiresAt: z.coerce.date().nullable().optional(),

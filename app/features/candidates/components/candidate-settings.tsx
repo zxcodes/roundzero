@@ -40,7 +40,6 @@ import { useAppForm } from "@/shared/form";
 
 type CandidateProfile = NonNullable<Awaited<ReturnType<typeof getMyCandidateProfile>>>;
 type WorkHistoryEntry = NonNullable<UpdateCandidateProfileInput["workHistory"]>[number];
-type WorkHistoryTextField = "company" | "title" | "startMonth" | "description";
 
 function parseMonthValue(value: string | null | undefined) {
   if (!value) {
@@ -97,6 +96,17 @@ function WorkHistoryMonthPicker({
     onSelect(`${selectedYear}-${month}`);
     setOpen(false);
   };
+  const onYearChange = (nextYear: string) => {
+    if (selected) {
+      onSelect(`${nextYear}-${format(selected, "MM")}`);
+      return;
+    }
+    onSelect(`${nextYear}-01`);
+  };
+  const onClear = () => {
+    onSelect(null);
+    setOpen(false);
+  };
 
   return (
     <div className="space-y-2">
@@ -121,16 +131,7 @@ function WorkHistoryMonthPicker({
           <div className="flex flex-col gap-4">
             <div className="space-y-2">
               <Label>Year</Label>
-              <Select
-                value={String(selectedYear)}
-                onValueChange={(nextYear) => {
-                  if (selected) {
-                    onSelect(`${nextYear}-${format(selected, "MM")}`);
-                    return;
-                  }
-                  onSelect(`${nextYear}-01`);
-                }}
-              >
+              <Select value={String(selectedYear)} onValueChange={onYearChange}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select year" />
                 </SelectTrigger>
@@ -149,6 +150,9 @@ function WorkHistoryMonthPicker({
               <div className="grid grid-cols-3 gap-2">
                 {months.map((month, index) => {
                   const isSelected = selected?.getMonth() === index;
+                  const onMonthClick = () => {
+                    onSelectMonth(index);
+                  };
 
                   return (
                     <Button
@@ -156,7 +160,7 @@ function WorkHistoryMonthPicker({
                       type="button"
                       variant={isSelected ? "default" : "outline"}
                       size="sm"
-                      onClick={() => onSelectMonth(index)}
+                      onClick={onMonthClick}
                     >
                       {month}
                     </Button>
@@ -166,15 +170,7 @@ function WorkHistoryMonthPicker({
             </div>
 
             <div className="flex justify-end border-t pt-3">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  onSelect(null);
-                  setOpen(false);
-                }}
-              >
+              <Button type="button" variant="ghost" size="sm" onClick={onClear}>
                 Clear
               </Button>
             </div>
@@ -232,27 +228,25 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
         : [],
     },
     onSubmit: async ({ value }) => {
-      const trimmedName = value.name.trim();
-
-      if (trimmedName && trimmedName !== user.name) {
+      if (value.name && value.name !== user.name) {
         await updateNameMutation.mutateAsync({
-          data: { name: trimmedName },
+          data: { name: value.name },
         });
       }
 
       await updateProfileMutation.mutateAsync({
         data: {
-          headline: value.headline.trim() || null,
+          headline: value.headline || null,
           resumeKey: value.resumeKey || null,
-          bio: value.bio.trim() || null,
+          bio: value.bio || null,
           skills: value.skills.length > 0 ? value.skills : null,
           workHistory: value.workHistory.length > 0 ? value.workHistory : null,
           links:
             value.linkedinUrl || value.githubUrl || value.portfolioUrl
               ? {
-                  linkedin: value.linkedinUrl.trim() || undefined,
-                  github: value.githubUrl.trim() || undefined,
-                  portfolio: value.portfolioUrl.trim() || undefined,
+                  linkedin: value.linkedinUrl || undefined,
+                  github: value.githubUrl || undefined,
+                  portfolio: value.portfolioUrl || undefined,
                 }
               : null,
         },
@@ -271,16 +265,16 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
   const [skillInput, setSkillInput] = useState("");
   const [entrySaveStatus, setEntrySaveStatus] = useState<Record<number, "saving" | "saved">>({});
   const currentResumeKey = useStore(form.store, (state) => state.values.resumeKey);
-  const currentSkillTags = useStore(form.store, (state) => state.values.skills);
-  const currentWorkEntries = useStore(form.store, (state) => state.values.workHistory);
 
   const skillInputId = `skill-input-${id}`;
-  const onSaveWorkEntry = async (index: number) => {
-    const entry = form.getFieldValue("workHistory")[index];
-    if (!entry) {
-      return;
-    }
-
+  const onResumeUploaded = async (resume: { resumeKey: string }) => {
+    form.setFieldValue("resumeKey", resume.resumeKey);
+    await form.handleSubmit();
+  };
+  const onSkillInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSkillInput(e.target.value);
+  };
+  const onSaveWorkEntry = async (index: number, entry: WorkHistoryEntry) => {
     if (!entry.company.trim() || !entry.title.trim() || !entry.startMonth) {
       toast.error("Add company, title, and start month before saving this role.");
       return;
@@ -308,72 +302,53 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
       return next;
     });
   };
-
-  const onAddSkill = (value: string) => {
-    const trimmed = value.trim();
-    const currentSkills = form.getFieldValue("skills");
-    if (trimmed && !currentSkills.includes(trimmed)) {
-      form.setFieldValue("skills", [...currentSkills, trimmed]);
-      form.handleSubmit();
-    }
-    setSkillInput("");
+  const onUpdateWorkEntry = (index: number, entry: WorkHistoryEntry) => {
+    form.setFieldValue(`workHistory[${index}]`, {
+      ...entry,
+      description: entry.description ?? undefined,
+    });
   };
-
-  const onRemoveSkill = (skill: string) => {
-    const currentSkills = form.getFieldValue("skills");
-    form.setFieldValue(
-      "skills",
-      currentSkills.filter((s: string) => s !== skill),
-    );
-    form.handleSubmit();
+  const onUpdateWorkEntryCompany = (index: number, entry: WorkHistoryEntry, company: string) => {
+    onUpdateWorkEntry(index, { ...entry, company });
   };
-
-  const onAddWorkEntry = () => {
-    const currentEntries = form.getFieldValue("workHistory");
-    form.setFieldValue("workHistory", [
-      ...currentEntries,
-      {
-        company: "",
-        title: "",
-        startMonth: "",
-        endMonth: null,
-        currentlyWorkingHere: false,
-        description: undefined,
-      },
-    ]);
+  const onUpdateWorkEntryTitle = (index: number, entry: WorkHistoryEntry, title: string) => {
+    onUpdateWorkEntry(index, { ...entry, title });
   };
-
-  const onUpdateWorkEntryText = (index: number, field: WorkHistoryTextField, value: string) => {
-    const currentEntries = form.getFieldValue("workHistory");
-    const updated = currentEntries.map((entry, i) =>
-      i === index
-        ? field === "company"
-          ? { ...entry, company: value, description: entry.description ?? undefined }
-          : field === "title"
-            ? { ...entry, title: value, description: entry.description ?? undefined }
-            : field === "startMonth"
-              ? { ...entry, startMonth: value, description: entry.description ?? undefined }
-              : { ...entry, description: value || undefined }
-        : entry,
-    );
-    form.setFieldValue("workHistory", updated);
+  const onUpdateWorkEntryStartMonth = (
+    index: number,
+    entry: WorkHistoryEntry,
+    value: string | null,
+  ) => {
+    onUpdateWorkEntry(index, { ...entry, startMonth: value ?? "" });
   };
-
-  const onUpdateWorkEntryEndMonth = (index: number, endMonth: string | null) => {
-    const currentEntries = form.getFieldValue("workHistory");
-    const updated = currentEntries.map((entry, i) =>
-      i === index ? { ...entry, endMonth, description: entry.description ?? undefined } : entry,
-    );
-    form.setFieldValue("workHistory", updated);
+  const onUpdateWorkEntryEndMonth = (
+    index: number,
+    entry: WorkHistoryEntry,
+    value: string | null,
+  ) => {
+    onUpdateWorkEntry(index, { ...entry, endMonth: value });
   };
-
-  const onRemoveWorkEntry = (index: number) => {
-    const currentEntries = form.getFieldValue("workHistory");
-    form.setFieldValue(
-      "workHistory",
-      currentEntries.filter((_: WorkHistoryEntry, i: number) => i !== index),
-    );
-    form.handleSubmit();
+  const onUpdateWorkEntryCurrent = (
+    index: number,
+    entry: WorkHistoryEntry,
+    checked: boolean | "indeterminate",
+  ) => {
+    const isChecked = checked === true;
+    onUpdateWorkEntry(index, {
+      ...entry,
+      currentlyWorkingHere: isChecked,
+      endMonth: isChecked ? null : entry.endMonth,
+    });
+  };
+  const onUpdateWorkEntryDescription = (
+    index: number,
+    entry: WorkHistoryEntry,
+    description: string,
+  ) => {
+    onUpdateWorkEntry(index, {
+      ...entry,
+      description: description || undefined,
+    });
   };
 
   return (
@@ -431,10 +406,7 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
               value={currentResumeKey}
               showViewButton
               description="Upload a PDF, DOC, or DOCX file. This is the resume attached when you apply."
-              onUploaded={async (resume) => {
-                form.setFieldValue("resumeKey", resume.resumeKey);
-                await form.handleSubmit();
-              }}
+              onUploaded={onResumeUploaded}
             />
           </CardContent>
         </Card>
@@ -448,44 +420,77 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="space-y-2">
-              <Label htmlFor={skillInputId}>Add skills</Label>
-              <Input
-                id={skillInputId}
-                placeholder="Type and press Enter (e.g. TypeScript, React)"
-                value={skillInput}
-                onChange={(e) => setSkillInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    onAddSkill(skillInput);
+            <form.Field name="skills" mode="array">
+              {(skillsField) => {
+                const onSkillInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+                  const trimmed = skillInput.trim();
+                  if (!trimmed) {
+                    return;
                   }
-                  if (e.key === "," && skillInput.trim()) {
-                    e.preventDefault();
-                    onAddSkill(skillInput);
-                  }
-                }}
-              />
-            </div>
 
-            {currentSkillTags.length > 0 ? (
-              <div className="flex flex-wrap gap-1.5">
-                {currentSkillTags.map((skill) => (
-                  <Badge key={skill} variant="secondary" className="gap-1 pr-1">
-                    {skill}
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-xs"
-                      onClick={() => onRemoveSkill(skill)}
-                      className="ml-0.5 size-4 hover:bg-muted-foreground/20"
-                    >
-                      <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-3" />
-                    </Button>
-                  </Badge>
-                ))}
-              </div>
-            ) : null}
+                  if (e.key === "Enter" || e.key === ",") {
+                    e.preventDefault();
+
+                    if (!skillsField.state.value.includes(trimmed)) {
+                      skillsField.pushValue(trimmed);
+                      form.handleSubmit();
+                    }
+
+                    setSkillInput("");
+                  }
+                };
+                const onRemoveSkill = (index: number) => {
+                  skillsField.removeValue(index);
+                  form.handleSubmit();
+                };
+
+                return (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor={skillInputId}>Add skills</Label>
+                      <Input
+                        id={skillInputId}
+                        placeholder="Type and press Enter (e.g. TypeScript, React)"
+                        value={skillInput}
+                        onChange={onSkillInputChange}
+                        onKeyDown={onSkillInputKeyDown}
+                      />
+                    </div>
+
+                    {skillsField.state.value.length > 0 ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {skillsField.state.value.map((skill, index) =>
+                          (() => {
+                            const onRemoveSkillClick = () => {
+                              onRemoveSkill(index);
+                            };
+
+                            return (
+                              <Badge key={skill} variant="secondary" className="gap-1 pr-1">
+                                {skill}
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon-xs"
+                                  onClick={onRemoveSkillClick}
+                                  className="ml-0.5 size-4 hover:bg-muted-foreground/20"
+                                >
+                                  <HugeiconsIcon
+                                    icon={Cancel01Icon}
+                                    strokeWidth={2}
+                                    className="size-3"
+                                  />
+                                </Button>
+                              </Badge>
+                            );
+                          })(),
+                        )}
+                      </div>
+                    ) : null}
+                  </>
+                );
+              }}
+            </form.Field>
           </CardContent>
         </Card>
 
@@ -496,140 +501,198 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
             <CardDescription>Your professional experience. Most recent first.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {currentWorkEntries.map((entry, index) => (
-              <div
-                key={`work-${index}`}
-                className="space-y-3 rounded-lg border border-border/50 bg-muted/30 p-4"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-muted-foreground">
-                      Position {index + 1}
-                    </span>
-                    {entrySaveStatus[index] === "saving" ? (
-                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <HugeiconsIcon
-                          icon={Loading03Icon}
-                          strokeWidth={2}
-                          className="size-3 animate-spin"
-                        />
-                        Saving...
-                      </span>
-                    ) : entrySaveStatus[index] === "saved" ? (
-                      <span className="flex items-center gap-1 text-xs text-emerald-500">
-                        <HugeiconsIcon icon={Tick02Icon} strokeWidth={2} className="size-3" />
-                        Saved
-                        <button
-                          type="button"
-                          onClick={() => onDismissEntrySaved(index)}
-                          className="ml-0.5 rounded-sm p-0.5 hover:bg-muted"
-                        >
-                          <HugeiconsIcon
-                            icon={Cancel01Icon}
-                            strokeWidth={2}
-                            className="size-2.5 text-muted-foreground"
-                          />
-                        </button>
-                      </span>
-                    ) : null}
-                  </div>
-                  <div className="flex items-center gap-1">
+            <form.Field name="workHistory" mode="array">
+              {(workHistoryField) => {
+                const onRemoveWorkEntry = (index: number) => {
+                  workHistoryField.removeValue(index);
+                  form.handleSubmit();
+                };
+                const onAddWorkEntry = () => {
+                  workHistoryField.pushValue({
+                    company: "",
+                    title: "",
+                    startMonth: "",
+                    endMonth: null,
+                    currentlyWorkingHere: false,
+                    description: undefined,
+                  });
+                };
+
+                return (
+                  <>
+                    {workHistoryField.state.value.map((entry, index) =>
+                      (() => {
+                        const onDismissEntrySavedClick = () => {
+                          onDismissEntrySaved(index);
+                        };
+                        const onSaveWorkEntryClick = () => {
+                          onSaveWorkEntry(index, entry);
+                        };
+                        const onRemoveWorkEntryClick = () => {
+                          onRemoveWorkEntry(index);
+                        };
+                        const onCompanyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+                          onUpdateWorkEntryCompany(index, entry, e.target.value);
+                        };
+                        const onTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+                          onUpdateWorkEntryTitle(index, entry, e.target.value);
+                        };
+                        const onStartMonthSelect = (value: string | null) => {
+                          onUpdateWorkEntryStartMonth(index, entry, value);
+                        };
+                        const onEndMonthSelect = (value: string | null) => {
+                          onUpdateWorkEntryEndMonth(index, entry, value);
+                        };
+                        const onCurrentChange = (checked: boolean | "indeterminate") => {
+                          onUpdateWorkEntryCurrent(index, entry, checked);
+                        };
+                        const onDescriptionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+                          onUpdateWorkEntryDescription(index, entry, e.target.value);
+                        };
+
+                        return (
+                          <div
+                            key={`work-${index}`}
+                            className="space-y-3 rounded-lg border border-border/50 bg-muted/30 p-4"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium text-muted-foreground">
+                                  Position {index + 1}
+                                </span>
+                                {entrySaveStatus[index] === "saving" ? (
+                                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                    <HugeiconsIcon
+                                      icon={Loading03Icon}
+                                      strokeWidth={2}
+                                      className="size-3 animate-spin"
+                                    />
+                                    Saving...
+                                  </span>
+                                ) : entrySaveStatus[index] === "saved" ? (
+                                  <span className="flex items-center gap-1 text-xs text-emerald-500">
+                                    <HugeiconsIcon
+                                      icon={Tick02Icon}
+                                      strokeWidth={2}
+                                      className="size-3"
+                                    />
+                                    Saved
+                                    <button
+                                      type="button"
+                                      onClick={onDismissEntrySavedClick}
+                                      className="ml-0.5 rounded-sm p-0.5 hover:bg-muted"
+                                    >
+                                      <HugeiconsIcon
+                                        icon={Cancel01Icon}
+                                        strokeWidth={2}
+                                        className="size-2.5 text-muted-foreground"
+                                      />
+                                    </button>
+                                  </span>
+                                ) : null}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon-xs"
+                                  onClick={onSaveWorkEntryClick}
+                                  disabled={entrySaveStatus[index] === "saving"}
+                                  className="text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-500"
+                                >
+                                  <HugeiconsIcon
+                                    icon={Tick02Icon}
+                                    strokeWidth={2}
+                                    className="size-4"
+                                  />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon-xs"
+                                  onClick={onRemoveWorkEntryClick}
+                                  className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                                >
+                                  <HugeiconsIcon
+                                    icon={Cancel01Icon}
+                                    strokeWidth={2}
+                                    className="size-4"
+                                  />
+                                </Button>
+                              </div>
+                            </div>
+
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              <div className="space-y-2">
+                                <Label>Company</Label>
+                                <Input
+                                  placeholder="Company name"
+                                  value={entry.company}
+                                  onChange={onCompanyChange}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Title</Label>
+                                <Input
+                                  placeholder="Job title"
+                                  value={entry.title}
+                                  onChange={onTitleChange}
+                                />
+                              </div>
+                            </div>
+
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              <WorkHistoryMonthPicker
+                                label="Start month"
+                                value={entry.startMonth}
+                                onSelect={onStartMonthSelect}
+                              />
+                              <WorkHistoryMonthPicker
+                                label="End month"
+                                value={entry.endMonth}
+                                disabled={entry.currentlyWorkingHere}
+                                onSelect={onEndMonthSelect}
+                              />
+                            </div>
+
+                            <p className="text-xs text-muted-foreground">
+                              Use month and year only. Current roles can leave end month empty.
+                            </p>
+
+                            <div className="flex items-center gap-2">
+                              <Checkbox
+                                checked={entry.currentlyWorkingHere}
+                                onCheckedChange={onCurrentChange}
+                              />
+                              <Label>Currently working here</Label>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label>Description</Label>
+                              <Input
+                                placeholder="Brief description of your role"
+                                value={entry.description ?? ""}
+                                onChange={onDescriptionChange}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })(),
+                    )}
+
                     <Button
                       type="button"
-                      variant="ghost"
-                      size="icon-xs"
-                      onClick={() => onSaveWorkEntry(index)}
-                      disabled={entrySaveStatus[index] === "saving"}
-                      className="text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-500"
+                      variant="outline"
+                      className="w-full"
+                      onClick={onAddWorkEntry}
                     >
-                      <HugeiconsIcon icon={Tick02Icon} strokeWidth={2} className="size-4" />
+                      <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="mr-1.5 size-4" />
+                      Add position
                     </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-xs"
-                      onClick={() => onRemoveWorkEntry(index)}
-                      className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                    >
-                      <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Company</Label>
-                    <Input
-                      placeholder="Company name"
-                      value={entry.company}
-                      onChange={(e) => onUpdateWorkEntryText(index, "company", e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Title</Label>
-                    <Input
-                      placeholder="Job title"
-                      value={entry.title}
-                      onChange={(e) => onUpdateWorkEntryText(index, "title", e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <WorkHistoryMonthPicker
-                    label="Start month"
-                    value={entry.startMonth}
-                    onSelect={(value) => onUpdateWorkEntryText(index, "startMonth", value ?? "")}
-                  />
-                  <WorkHistoryMonthPicker
-                    label="End month"
-                    value={entry.endMonth}
-                    disabled={entry.currentlyWorkingHere}
-                    onSelect={(value) => onUpdateWorkEntryEndMonth(index, value)}
-                  />
-                </div>
-
-                <p className="text-xs text-muted-foreground">
-                  Use month and year only. Current roles can leave end month empty.
-                </p>
-
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={entry.currentlyWorkingHere}
-                    onCheckedChange={(checked) => {
-                      const isChecked = checked === true;
-                      const currentEntries = form.getFieldValue("workHistory");
-                      const updated = currentEntries.map((currentEntry, i) =>
-                        i === index
-                          ? {
-                              ...currentEntry,
-                              description: currentEntry.description ?? undefined,
-                              currentlyWorkingHere: isChecked,
-                              endMonth: isChecked ? null : currentEntry.endMonth,
-                            }
-                          : currentEntry,
-                      );
-                      form.setFieldValue("workHistory", updated);
-                    }}
-                  />
-                  <Label>Currently working here</Label>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Description</Label>
-                  <Input
-                    placeholder="Brief description of your role"
-                    value={entry.description ?? ""}
-                    onChange={(e) => onUpdateWorkEntryText(index, "description", e.target.value)}
-                  />
-                </div>
-              </div>
-            ))}
-
-            <Button type="button" variant="outline" className="w-full" onClick={onAddWorkEntry}>
-              <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="mr-1.5 size-4" />
-              Add position
-            </Button>
+                  </>
+                );
+              }}
+            </form.Field>
           </CardContent>
         </Card>
 

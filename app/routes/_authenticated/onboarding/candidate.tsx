@@ -21,12 +21,17 @@ export const Route = createFileRoute("/_authenticated/onboarding/candidate")({
       throw redirect({ to: "/dashboard" });
     }
   },
-  loader: () => getMyCandidateProfile(),
+  loader: async () => {
+    const profile = await getMyCandidateProfile();
+    if (profile) {
+      throw redirect({ to: "/dashboard" });
+    }
+    return null;
+  },
   component: CandidateOnboardingPage,
 });
 
 function CandidateOnboardingPage() {
-  const existingProfile = Route.useLoaderData();
   const { user } = Route.useRouteContext();
   const router = useRouter();
   const pendingResumeStorageKey = getPendingResumeStorageKey(user?.id ?? "candidate");
@@ -70,16 +75,15 @@ function CandidateOnboardingPage() {
         return;
       }
 
-      const trimmedName = value.name.trim();
-      if (trimmedName && trimmedName !== user?.name) {
+      if (value.name && value.name !== user?.name) {
         await updateNameMutation.mutateAsync({
-          data: { name: trimmedName },
+          data: { name: value.name },
         });
       }
 
       await createProfileMutation.mutateAsync({
         data: {
-          headline: value.headline.trim() || undefined,
+          headline: value.headline || undefined,
           resumeKey: value.resumeKey,
         },
       });
@@ -105,11 +109,13 @@ function CandidateOnboardingPage() {
     },
   });
   const currentResumeKey = useStore(form.store, (state) => state.values.resumeKey);
-
-  if (existingProfile) {
-    router.navigate({ to: "/dashboard" });
-    return null;
-  }
+  const onFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    form.handleSubmit();
+  };
+  const onResumeUploaded = (resume: { resumeKey: string }) => {
+    form.setFieldValue("resumeKey", resume.resumeKey);
+  };
 
   return (
     <Card>
@@ -120,13 +126,7 @@ function CandidateOnboardingPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            form.handleSubmit();
-          }}
-          className="space-y-5"
-        >
+        <form onSubmit={onFormSubmit} className="space-y-5">
           <form.AppField
             name="name"
             validators={{
@@ -165,9 +165,7 @@ function CandidateOnboardingPage() {
             error={resumeError}
             onErrorChange={setResumeError}
             description="Upload a PDF, DOC, or DOCX resume. This is required to apply."
-            onUploaded={(resume) => {
-              form.setFieldValue("resumeKey", resume.resumeKey);
-            }}
+            onUploaded={onResumeUploaded}
           />
 
           <form.AppForm>

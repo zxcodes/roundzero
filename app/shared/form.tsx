@@ -50,6 +50,9 @@ function TextField({
 }) {
   const field = useFieldContext<string>();
   const errorMessage = getFieldErrorMessage(field.state.meta.errors);
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    field.handleChange(e.target.value);
+  };
   return (
     <div className="space-y-2">
       <Label htmlFor={field.name}>{label}</Label>
@@ -63,7 +66,7 @@ function TextField({
         type={type}
         value={field.state.value}
         onBlur={field.handleBlur}
-        onChange={(e) => field.handleChange(e.target.value)}
+        onChange={onChange}
       />
       {errorMessage ? <p className="text-xs text-destructive">{errorMessage}</p> : null}
       {description ? <p className="text-muted-foreground text-xs">{description}</p> : null}
@@ -84,6 +87,10 @@ function NumberField({
 }) {
   const field = useFieldContext<number | null>();
   const errorMessage = getFieldErrorMessage(field.state.meta.errors);
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const parsed = Number.parseInt(e.target.value, 10);
+    field.handleChange(Number.isNaN(parsed) ? null : parsed);
+  };
   return (
     <div className="space-y-2">
       <Label htmlFor={field.name}>{label}</Label>
@@ -96,10 +103,7 @@ function NumberField({
         min={min}
         value={field.state.value ?? ""}
         onBlur={field.handleBlur}
-        onChange={(e) => {
-          const parsed = Number.parseInt(e.target.value, 10);
-          field.handleChange(Number.isNaN(parsed) ? null : parsed);
-        }}
+        onChange={onChange}
       />
       {errorMessage ? <p className="text-xs text-destructive">{errorMessage}</p> : null}
       {description ? <p className="text-muted-foreground text-xs">{description}</p> : null}
@@ -124,6 +128,9 @@ function TextareaField({
 }) {
   const field = useFieldContext<string>();
   const errorMessage = getFieldErrorMessage(field.state.meta.errors);
+  const onChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    field.handleChange(e.target.value);
+  };
   return (
     <div className="space-y-2">
       <Label htmlFor={field.name}>{label}</Label>
@@ -137,7 +144,7 @@ function TextareaField({
         rows={rows}
         value={field.state.value}
         onBlur={field.handleBlur}
-        onChange={(e) => field.handleChange(e.target.value)}
+        onChange={onChange}
       />
       {errorMessage ? <p className="text-xs text-destructive">{errorMessage}</p> : null}
       {description ? <p className="text-muted-foreground text-xs">{description}</p> : null}
@@ -158,10 +165,13 @@ function SelectField({
 }) {
   const field = useFieldContext<string>();
   const errorMessage = getFieldErrorMessage(field.state.meta.errors);
+  const onValueChange = (value: string) => {
+    field.handleChange(value);
+  };
   return (
     <div className="space-y-2">
       <Label htmlFor={field.name}>{label}</Label>
-      <Select value={field.state.value} onValueChange={(v) => field.handleChange(v)}>
+      <Select value={field.state.value} onValueChange={onValueChange}>
         <SelectTrigger
           id={field.name}
           className={cn(errorMessage ? "border-destructive focus-visible:ring-destructive/20" : "")}

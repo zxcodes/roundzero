@@ -76,6 +76,9 @@ function JobsPage() {
   const onSearchChange = (value: string) => {
     navigate({ search: (prev) => ({ ...prev, search: value, page: 1 }) });
   };
+  const onSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onSearchChange(e.target.value);
+  };
 
   const onTypeChange = (value: string) => {
     navigate({ search: (prev) => ({ ...prev, type: value, page: 1 }) });
@@ -119,7 +122,7 @@ function JobsPage() {
               <Input
                 placeholder="Search by title, company, or location..."
                 value={search}
-                onChange={(e) => onSearchChange(e.target.value)}
+                onChange={onSearchInputChange}
                 className="pl-10"
               />
             </div>
@@ -205,6 +208,11 @@ function JobCard({ job, className }: { job: JobFromLoader; className?: string })
     e.stopPropagation();
     navigate({ to: "/companies/$slug", params: { slug: job.companySlug } });
   };
+  const onCompanyKeyDown = (e: React.KeyboardEvent<HTMLSpanElement>) => {
+    if (e.key === "Enter" || e.key === " ") {
+      onCompanyClick(e as unknown as React.MouseEvent);
+    }
+  };
 
   return (
     <Link to="/jobs/$jobId" params={{ jobId: job.id }} className={className}>
@@ -220,10 +228,7 @@ function JobCard({ job, className }: { job: JobFromLoader; className?: string })
               role="link"
               tabIndex={0}
               onClick={onCompanyClick}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ")
-                  onCompanyClick(e as unknown as React.MouseEvent);
-              }}
+              onKeyDown={onCompanyKeyDown}
               className="cursor-pointer text-xs text-muted-foreground transition-colors hover:text-primary"
             >
               {job.companyName}

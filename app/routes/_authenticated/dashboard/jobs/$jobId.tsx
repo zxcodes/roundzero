@@ -368,6 +368,9 @@ function ApplicantsSection({
       data: { applicationId },
     });
   };
+  const onResumeViewClick = (applicationId: string) => {
+    onViewResume(applicationId);
+  };
 
   return (
     <Card className="animate-fade-in stagger-3">
@@ -411,6 +414,12 @@ function ApplicantsSection({
                       (value): value is string => typeof value === "string" && value.length > 0,
                     )
                   : [];
+              const onStatusValueChange = (value: string) => {
+                onStatusChange(applicant.id, applicationStatusSchema.parse(value));
+              };
+              const onApplicantResumeViewClick = () => {
+                onResumeViewClick(applicant.id);
+              };
 
               return (
                 <div
@@ -444,9 +453,7 @@ function ApplicantsSection({
                     </div>
                     <Select
                       value={applicant.status}
-                      onValueChange={(value) =>
-                        onStatusChange(applicant.id, applicationStatusSchema.parse(value))
-                      }
+                      onValueChange={onStatusValueChange}
                       disabled={updateStatusMutation.isPending}
                     >
                       <SelectTrigger className="w-32">
@@ -469,7 +476,7 @@ function ApplicantsSection({
                       {applicant.resumeKey ? (
                         <button
                           type="button"
-                          onClick={() => onViewResume(applicant.id)}
+                          onClick={onApplicantResumeViewClick}
                           className="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                         >
                           <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-3" />
@@ -662,6 +669,12 @@ function CompanyActions({
   const onArchive = async () => {
     await archiveJobMutation.mutateAsync({ data: { id: job.id } });
   };
+  const onCancelEdit = () => {
+    setIsEditing(false);
+  };
+  const onStartEdit = () => {
+    setIsEditing(true);
+  };
 
   if (isEditing) {
     return (
@@ -692,7 +705,7 @@ function CompanyActions({
             onSubmit={onUpdate}
             submitLabel="Save changes"
           />
-          <Button variant="ghost" className="mt-3 w-full" onClick={() => setIsEditing(false)}>
+          <Button variant="ghost" className="mt-3 w-full" onClick={onCancelEdit}>
             Cancel
           </Button>
         </CardContent>
@@ -713,7 +726,7 @@ function CompanyActions({
           {publishJobMutation.isPending ? "Publishing..." : "Publish"}
         </Button>
       ) : null}
-      <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+      <Button variant="outline" size="sm" onClick={onStartEdit}>
         <HugeiconsIcon icon={Edit02Icon} strokeWidth={2} className="size-3.5" />
         Edit
       </Button>

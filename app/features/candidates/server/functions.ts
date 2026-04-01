@@ -9,6 +9,11 @@ import { createR2ResumeDownloadUrl, createR2ResumeUploadUrl, r2ResumeExists } fr
 import { sanitizeResumeFileName } from "@/shared/resume";
 import { type SessionData, sessionConfig } from "@/shared/session";
 import {
+  nullableTrimmedString,
+  optionalTrimmedString,
+  optionalTrimmedUrl,
+} from "@/shared/validation";
+import {
   createCandidateProfile as createCandidateProfileQuery,
   createCandidateWorkHistoryEntryQuery,
   deleteCandidateWorkHistoryByProfileIdQuery,
@@ -20,35 +25,35 @@ import {
 // --- Schemas ---
 
 const createCandidateProfileSchema = z.object({
-  headline: z.string().max(200).optional(),
+  headline: optionalTrimmedString(200),
   resumeKey: z.string().min(1),
 });
 
 const updateCandidateProfileSchema = z.object({
-  headline: z.string().max(200).nullable(),
+  headline: nullableTrimmedString(200),
   resumeKey: z.string().min(1).nullable(),
-  bio: z.string().max(5000).nullable(),
-  skills: z.array(z.string()).nullable(),
+  bio: nullableTrimmedString(5000),
+  skills: z.array(z.string().trim().min(1)).nullable(),
   workHistory: z
     .array(
       z
         .object({
-          company: z.string().max(200),
-          title: z.string().max(200),
+          company: z.string().trim().max(200),
+          title: z.string().trim().max(200),
           startMonth: z.string().max(7),
           endMonth: z.string().max(7).nullable(),
           currentlyWorkingHere: z.boolean(),
-          description: z.string().max(1000).optional(),
+          description: optionalTrimmedString(1000),
         })
         .superRefine((entry, ctx) => {
           const monthSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/);
           const hasAnyValue = Boolean(
-            entry.company.trim() ||
-              entry.title.trim() ||
+            entry.company ||
+              entry.title ||
               entry.startMonth ||
               entry.endMonth ||
               entry.currentlyWorkingHere ||
-              entry.description?.trim(),
+              entry.description,
           );
 
           if (!hasAnyValue) {
@@ -83,9 +88,9 @@ const updateCandidateProfileSchema = z.object({
     .nullable(),
   links: z
     .object({
-      linkedin: z.string().url().optional(),
-      github: z.string().url().optional(),
-      portfolio: z.string().url().optional(),
+      linkedin: optionalTrimmedUrl(),
+      github: optionalTrimmedUrl(),
+      portfolio: optionalTrimmedUrl(),
     })
     .nullable(),
 });
@@ -212,12 +217,12 @@ export const updateMyCandidateProfile = createServerFn({ method: "POST" })
 
     const sanitizedWorkHistory = (data.workHistory ?? [])
       .map((entry) => ({
-        company: entry.company.trim(),
-        title: entry.title.trim(),
+        company: entry.company,
+        title: entry.title,
         startMonth: entry.startMonth,
         endMonth: entry.currentlyWorkingHere ? null : entry.endMonth,
         currentlyWorkingHere: entry.currentlyWorkingHere,
-        description: entry.description?.trim() || undefined,
+        description: entry.description,
       }))
       .filter(
         (entry) =>
