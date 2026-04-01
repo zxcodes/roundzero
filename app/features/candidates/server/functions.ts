@@ -8,8 +8,11 @@ import { authMiddleware } from "@/shared/middleware";
 import { type SessionData, sessionConfig } from "@/shared/session";
 import {
   createCandidateProfile as createCandidateProfileQuery,
+  createCandidateWorkHistoryEntryQuery,
+  deleteCandidateWorkHistoryByProfileIdQuery,
   getCandidateProfileByUserId,
-  updateCandidateProfile as updateCandidateProfileQuery,
+  getCandidateWorkHistoryByProfileId,
+  updateCandidateProfileQuery,
 } from "../queries/queries_sql";
 
 // --- Schemas ---
@@ -26,13 +29,54 @@ const updateCandidateProfileSchema = z.object({
   skills: z.array(z.string()).nullable(),
   workHistory: z
     .array(
-      z.object({
-        company: z.string(),
-        title: z.string(),
-        startDate: z.string(),
-        endDate: z.string().optional(),
-        description: z.string().optional(),
-      }),
+      z
+        .object({
+          company: z.string().max(200),
+          title: z.string().max(200),
+          startMonth: z.string().max(7),
+          endMonth: z.string().max(7).nullable(),
+          currentlyWorkingHere: z.boolean(),
+          description: z.string().max(1000).optional(),
+        })
+        .superRefine((entry, ctx) => {
+          const monthSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/);
+          const hasAnyValue = Boolean(
+            entry.company.trim() ||
+              entry.title.trim() ||
+              entry.startMonth ||
+              entry.endMonth ||
+              entry.currentlyWorkingHere ||
+              entry.description?.trim(),
+          );
+
+          if (!hasAnyValue) {
+            return;
+          }
+
+          if (entry.startMonth && !monthSchema.safeParse(entry.startMonth).success) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["startMonth"],
+              message: "Start month must use YYYY-MM format",
+            });
+          }
+
+          if (entry.endMonth && !monthSchema.safeParse(entry.endMonth).success) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["endMonth"],
+              message: "End month must use YYYY-MM format",
+            });
+          }
+
+          if (entry.startMonth && entry.endMonth && entry.endMonth < entry.startMonth) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["endMonth"],
+              message: "End month must be after start month",
+            });
+          }
+        }),
     )
     .nullable(),
   links: z
@@ -44,6 +88,7 @@ const updateCandidateProfileSchema = z.object({
     .nullable(),
 });
 export type UpdateCandidateProfileInput = z.infer<typeof updateCandidateProfileSchema>;
+type CandidateProfileRow = NonNullable<Awaited<ReturnType<typeof getCandidateProfileByUserId>>>;
 
 const allowedResumeTypes = {
   "application/pdf": "pdf",
@@ -77,6 +122,29 @@ const assertResumeKeyBelongsToUser = (resumeKey: string, userId: string) => {
   }
 };
 
+const buildCandidateProfilePayload = async (db: ReturnType<typeof getDb>, userId: string) => {
+  const profile = await getCandidateProfileByUserId(db, { userId });
+  if (!profile) {
+    return null;
+  }
+
+  const workHistory = await getCandidateWorkHistoryByProfileId(db, {
+    candidateProfileId: profile.id,
+  });
+
+  return {
+    ...profile,
+    workHistory: workHistory.map((entry) => ({
+      company: entry.company,
+      title: entry.title,
+      startMonth: entry.startMonth,
+      endMonth: entry.endMonth,
+      currentlyWorkingHere: entry.currentlyWorkingHere,
+      description: entry.description ?? undefined,
+    })),
+  };
+};
+
 // --- Server Functions ---
 
 export const createCandidateProfile = createServerFn({ method: "POST" })
@@ -85,9 +153,7 @@ export const createCandidateProfile = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const db = getDb();
 
-    const existing = await getCandidateProfileByUserId(db, {
-      userId: context.userId,
-    });
+    const existing = await buildCandidateProfilePayload(db, context.userId);
     if (existing) {
       throw new Error("You already have a candidate profile");
     }
@@ -102,7 +168,12 @@ export const createCandidateProfile = createServerFn({ method: "POST" })
       throw new Error("Failed to create candidate profile");
     }
 
-    return { profile };
+    return {
+      profile: {
+        ...profile,
+        workHistory: [],
+      },
+    };
   });
 
 export const getMyCandidateProfile = createServerFn({ method: "GET" }).handler(async () => {
@@ -113,9 +184,7 @@ export const getMyCandidateProfile = createServerFn({ method: "GET" }).handler(a
   }
 
   const db = getDb();
-  const profile = await getCandidateProfileByUserId(db, {
-    userId: session.data.userId,
-  });
+  const profile = await buildCandidateProfilePayload(db, session.data.userId);
   return profile;
 });
 
@@ -125,28 +194,81 @@ export const updateMyCandidateProfile = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const db = getDb();
 
-    const existing = await getCandidateProfileByUserId(db, {
-      userId: context.userId,
-    });
+    const existing = await buildCandidateProfilePayload(db, context.userId);
     if (!existing) {
       throw new Error("No candidate profile found");
     }
 
-    const updated = await updateCandidateProfileQuery(db, {
-      headline: data.headline,
-      resumeKey: data.resumeKey,
-      bio: data.bio,
-      skills: data.skills,
-      workHistory: data.workHistory,
-      links: data.links,
-      userId: context.userId,
+    const sanitizedWorkHistory = (data.workHistory ?? [])
+      .map((entry) => ({
+        company: entry.company.trim(),
+        title: entry.title.trim(),
+        startMonth: entry.startMonth,
+        endMonth: entry.currentlyWorkingHere ? null : entry.endMonth,
+        currentlyWorkingHere: entry.currentlyWorkingHere,
+        description: entry.description?.trim() || undefined,
+      }))
+      .filter(
+        (entry) =>
+          entry.company &&
+          entry.title &&
+          entry.startMonth &&
+          (entry.currentlyWorkingHere || entry.endMonth),
+      );
+
+    await db.begin(async (tx) => {
+      const updatedRows = await tx
+        .unsafe(updateCandidateProfileQuery, [
+          data.headline,
+          data.resumeKey,
+          data.bio,
+          data.skills,
+          data.links,
+          context.userId,
+        ])
+        .values();
+
+      const row = updatedRows[0];
+      const updated: CandidateProfileRow | undefined = row
+        ? {
+            id: row[0],
+            userId: row[1],
+            headline: row[2],
+            resumeKey: row[3],
+            bio: row[4],
+            skills: row[5],
+            links: row[6],
+            createdAt: row[7],
+            updatedAt: row[8],
+          }
+        : undefined;
+
+      if (!updated) {
+        throw new Error("Failed to update candidate profile");
+      }
+
+      await tx.unsafe(deleteCandidateWorkHistoryByProfileIdQuery, [updated.id]);
+
+      for (const [index, entry] of sanitizedWorkHistory.entries()) {
+        await tx.unsafe(createCandidateWorkHistoryEntryQuery, [
+          updated.id,
+          entry.company,
+          entry.title,
+          entry.startMonth,
+          entry.endMonth,
+          entry.currentlyWorkingHere,
+          entry.description ?? null,
+          index,
+        ]);
+      }
     });
 
-    if (!updated) {
-      throw new Error("Failed to update candidate profile");
+    const profile = await buildCandidateProfilePayload(db, context.userId);
+    if (!profile) {
+      throw new Error("Failed to load updated candidate profile");
     }
 
-    return { profile: updated };
+    return { profile };
   });
 
 export const createResumeUploadTarget = createServerFn({ method: "POST" })

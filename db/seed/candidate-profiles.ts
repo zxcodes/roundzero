@@ -35,16 +35,16 @@ const skillSets = [
 ] as const;
 
 const workHistoryTemplates = [
-  { company: "Google", title: "Software Engineer", years: "2019-2022" },
-  { company: "Meta", title: "Frontend Engineer", years: "2020-2023" },
-  { company: "Stripe", title: "Backend Engineer", years: "2018-2021" },
-  { company: "Shopify", title: "Full Stack Developer", years: "2021-2024" },
-  { company: "Datadog", title: "Platform Engineer", years: "2019-2023" },
-  { company: "Cloudflare", title: "Systems Engineer", years: "2020-2024" },
-  { company: "Vercel", title: "Product Engineer", years: "2022-2025" },
-  { company: "Linear", title: "Staff Engineer", years: "2021-2025" },
-  { company: "Figma", title: "Frontend Engineer", years: "2018-2022" },
-  { company: "Notion", title: "Full Stack Engineer", years: "2020-2023" },
+  { company: "Google", title: "Software Engineer", startMonth: "2019-01", endMonth: "2022-12" },
+  { company: "Meta", title: "Frontend Engineer", startMonth: "2020-02", endMonth: "2023-11" },
+  { company: "Stripe", title: "Backend Engineer", startMonth: "2018-03", endMonth: "2021-09" },
+  { company: "Shopify", title: "Full Stack Developer", startMonth: "2021-01", endMonth: "2024-08" },
+  { company: "Datadog", title: "Platform Engineer", startMonth: "2019-06", endMonth: "2023-10" },
+  { company: "Cloudflare", title: "Systems Engineer", startMonth: "2020-04", endMonth: "2024-07" },
+  { company: "Vercel", title: "Product Engineer", startMonth: "2022-01", endMonth: null },
+  { company: "Linear", title: "Staff Engineer", startMonth: "2021-05", endMonth: null },
+  { company: "Figma", title: "Frontend Engineer", startMonth: "2018-02", endMonth: "2022-06" },
+  { company: "Notion", title: "Full Stack Engineer", startMonth: "2020-07", endMonth: "2023-12" },
 ] as const;
 
 const linkTypes = ["github", "linkedin", "website", "twitter"] as const;
@@ -72,8 +72,24 @@ async function seedCandidateProfiles() {
     const historyA = pick(workHistoryTemplates, index);
     const historyB = pick(workHistoryTemplates, index + 3);
     const workHistory = [
-      { company: historyA.company, title: historyA.title, years: historyA.years },
-      { company: historyB.company, title: historyB.title, years: historyB.years },
+      {
+        id: makeUuid("rz-seed-candidate-work-history", (index + 1) * 10 + 1),
+        company: historyA.company,
+        title: historyA.title,
+        startMonth: historyA.startMonth,
+        endMonth: historyA.endMonth,
+        currentlyWorkingHere: historyA.endMonth === null,
+        sortOrder: 0,
+      },
+      {
+        id: makeUuid("rz-seed-candidate-work-history", (index + 1) * 10 + 2),
+        company: historyB.company,
+        title: historyB.title,
+        startMonth: historyB.startMonth,
+        endMonth: historyB.endMonth,
+        currentlyWorkingHere: historyB.endMonth === null,
+        sortOrder: 1,
+      },
     ];
 
     const links = [
@@ -88,6 +104,7 @@ async function seedCandidateProfiles() {
       id: makeUuid("rz-seed-candidate-profile", index + 1),
       userId: user.id,
       headline,
+      resumeKey: `resumes/${user.id}/seed-resume-${index + 1}.pdf`,
       bio: `${bio} Passionate about building reliable software and working with great teams.`,
       skills,
       workHistory,
@@ -97,20 +114,59 @@ async function seedCandidateProfiles() {
 
   for (const profile of profiles) {
     await sql`
-      INSERT INTO candidate_profiles (id, user_id, headline, bio, skills, work_history, links)
+      INSERT INTO candidate_profiles (id, user_id, headline, resume_key, bio, skills, links)
       VALUES (
-        ${profile.id}, ${profile.userId}, ${profile.headline}, ${profile.bio},
-        ${sql.json(profile.skills)}, ${sql.json(profile.workHistory)}, ${sql.json(profile.links)}
+        ${profile.id}, ${profile.userId}, ${profile.headline}, ${profile.resumeKey}, ${profile.bio},
+        ${sql.json(profile.skills)}, ${sql.json(profile.links)}
       )
       ON CONFLICT (user_id) DO UPDATE
       SET
         headline = EXCLUDED.headline,
+        resume_key = EXCLUDED.resume_key,
         bio = EXCLUDED.bio,
         skills = EXCLUDED.skills,
-        work_history = EXCLUDED.work_history,
         links = EXCLUDED.links,
         updated_at = now()
     `;
+
+    await sql`
+      DELETE FROM candidate_work_history
+      WHERE candidate_profile_id = ${profile.id}
+    `;
+
+    for (const entry of profile.workHistory) {
+      await sql`
+        INSERT INTO candidate_work_history (
+          id,
+          candidate_profile_id,
+          company,
+          title,
+          start_month,
+          end_month,
+          currently_working_here,
+          sort_order
+        )
+        VALUES (
+          ${entry.id},
+          ${profile.id},
+          ${entry.company},
+          ${entry.title},
+          ${entry.startMonth},
+          ${entry.endMonth},
+          ${entry.currentlyWorkingHere},
+          ${entry.sortOrder}
+        )
+        ON CONFLICT (id) DO UPDATE
+        SET
+          company = EXCLUDED.company,
+          title = EXCLUDED.title,
+          start_month = EXCLUDED.start_month,
+          end_month = EXCLUDED.end_month,
+          currently_working_here = EXCLUDED.currently_working_here,
+          sort_order = EXCLUDED.sort_order,
+          updated_at = now()
+      `;
+    }
   }
 
   console.log(`Candidate profiles seeded/upserted: ${profiles.length}`);

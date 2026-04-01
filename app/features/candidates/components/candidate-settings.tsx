@@ -1,5 +1,6 @@
 import {
   Add01Icon,
+  Calendar03Icon,
   Cancel01Icon,
   Loading03Icon,
   Tick02Icon,
@@ -10,13 +11,23 @@ import { useStore } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { format } from "date-fns";
 import { useId, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { updateUserName } from "@/features/auth/server/functions";
 import {
   createResumeUploadTarget,
@@ -32,6 +43,150 @@ import { useAppForm } from "@/shared/form";
 
 type CandidateProfile = NonNullable<Awaited<ReturnType<typeof getMyCandidateProfile>>>;
 type WorkHistoryEntry = NonNullable<UpdateCandidateProfileInput["workHistory"]>[number];
+type WorkHistoryTextField = "company" | "title" | "startMonth" | "description";
+
+function parseMonthValue(value: string | null | undefined) {
+  if (!value) {
+    return undefined;
+  }
+
+  const [year, month] = value.split("-").map(Number);
+  if (!year || !month) {
+    return undefined;
+  }
+
+  return new Date(year, month - 1, 1);
+}
+
+function formatMonthValue(value: string | null | undefined) {
+  const date = parseMonthValue(value);
+  return date ? format(date, "MMM yyyy") : "Pick month";
+}
+
+function WorkHistoryMonthPicker({
+  label,
+  value,
+  disabled = false,
+  onSelect,
+}: {
+  label: string;
+  value: string | null;
+  disabled?: boolean;
+  onSelect: (value: string | null) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = parseMonthValue(value);
+  const selectedYear = selected?.getFullYear() ?? new Date().getFullYear();
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  const years = Array.from({ length: new Date().getFullYear() - 1980 + 3 }, (_, index) =>
+    String(1980 + index),
+  );
+
+  const onSelectMonth = (monthIndex: number) => {
+    const month = String(monthIndex + 1).padStart(2, "0");
+    onSelect(`${selectedYear}-${month}`);
+    setOpen(false);
+  };
+
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full justify-between font-normal"
+            disabled={disabled}
+          >
+            <span>{formatMonthValue(value)}</span>
+            <HugeiconsIcon
+              icon={Calendar03Icon}
+              strokeWidth={2}
+              className="size-4 text-muted-foreground"
+            />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-72 p-4" align="start">
+          <div className="flex flex-col gap-4">
+            <div className="space-y-2">
+              <Label>Year</Label>
+              <Select
+                value={String(selectedYear)}
+                onValueChange={(nextYear) => {
+                  if (selected) {
+                    onSelect(`${nextYear}-${format(selected, "MM")}`);
+                    return;
+                  }
+                  onSelect(`${nextYear}-01`);
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {years.map((year) => (
+                    <SelectItem key={year} value={year}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Month</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {months.map((month, index) => {
+                  const isSelected = selected?.getMonth() === index;
+
+                  return (
+                    <Button
+                      key={month}
+                      type="button"
+                      variant={isSelected ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => onSelectMonth(index)}
+                    >
+                      {month}
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex justify-end border-t pt-3">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  onSelect(null);
+                  setOpen(false);
+                }}
+              >
+                Clear
+              </Button>
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
 
 export function CandidateSettings({ profile, user }: { profile: CandidateProfile; user: User }) {
   const router = useRouter();
@@ -76,7 +231,12 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
       githubUrl: links.github ?? "",
       portfolioUrl: links.portfolio ?? "",
       skills: Array.isArray(profile.skills) ? profile.skills : [],
-      workHistory: Array.isArray(profile.workHistory) ? profile.workHistory : [],
+      workHistory: Array.isArray(profile.workHistory)
+        ? profile.workHistory.map((entry) => ({
+            ...entry,
+            description: entry.description ?? undefined,
+          }))
+        : [],
     },
     onSubmit: async ({ value }) => {
       const trimmedName = value.name.trim();
@@ -184,6 +344,26 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
     toast.info("Resume storage is not wired yet in this environment.");
   };
   const onSaveWorkEntry = async (index: number) => {
+    const entry = form.getFieldValue("workHistory")[index];
+    if (!entry) {
+      return;
+    }
+
+    if (!entry.company.trim() || !entry.title.trim() || !entry.startMonth) {
+      toast.error("Add company, title, and start month before saving this role.");
+      return;
+    }
+
+    if (!entry.currentlyWorkingHere && !entry.endMonth) {
+      toast.error("Add an end month or mark the role as current.");
+      return;
+    }
+
+    if (entry.endMonth && entry.endMonth < entry.startMonth) {
+      toast.error("End month must be after start month.");
+      return;
+    }
+
     setEntrySaveStatus((prev) => ({ ...prev, [index]: "saving" }));
     await form.handleSubmit();
     setEntrySaveStatus((prev) => ({ ...prev, [index]: "saved" }));
@@ -220,14 +400,37 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
     const currentEntries = form.getFieldValue("workHistory");
     form.setFieldValue("workHistory", [
       ...currentEntries,
-      { company: "", title: "", startDate: "", endDate: "", description: "" },
+      {
+        company: "",
+        title: "",
+        startMonth: "",
+        endMonth: null,
+        currentlyWorkingHere: false,
+        description: undefined,
+      },
     ]);
   };
 
-  const onUpdateWorkEntry = (index: number, field: keyof WorkHistoryEntry, value: string) => {
+  const onUpdateWorkEntryText = (index: number, field: WorkHistoryTextField, value: string) => {
     const currentEntries = form.getFieldValue("workHistory");
-    const updated = currentEntries.map((entry: WorkHistoryEntry, i: number) =>
-      i === index ? { ...entry, [field]: value } : entry,
+    const updated = currentEntries.map((entry, i) =>
+      i === index
+        ? field === "company"
+          ? { ...entry, company: value, description: entry.description ?? undefined }
+          : field === "title"
+            ? { ...entry, title: value, description: entry.description ?? undefined }
+            : field === "startMonth"
+              ? { ...entry, startMonth: value, description: entry.description ?? undefined }
+              : { ...entry, description: value || undefined }
+        : entry,
+    );
+    form.setFieldValue("workHistory", updated);
+  };
+
+  const onUpdateWorkEntryEndMonth = (index: number, endMonth: string | null) => {
+    const currentEntries = form.getFieldValue("workHistory");
+    const updated = currentEntries.map((entry, i) =>
+      i === index ? { ...entry, endMonth, description: entry.description ?? undefined } : entry,
     );
     form.setFieldValue("workHistory", updated);
   };
@@ -469,7 +672,7 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
                     <Input
                       placeholder="Company name"
                       value={entry.company}
-                      onChange={(e) => onUpdateWorkEntry(index, "company", e.target.value)}
+                      onChange={(e) => onUpdateWorkEntryText(index, "company", e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
@@ -477,28 +680,49 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
                     <Input
                       placeholder="Job title"
                       value={entry.title}
-                      onChange={(e) => onUpdateWorkEntry(index, "title", e.target.value)}
+                      onChange={(e) => onUpdateWorkEntryText(index, "title", e.target.value)}
                     />
                   </div>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Start date</Label>
-                    <Input
-                      placeholder="Jan 2022"
-                      value={entry.startDate}
-                      onChange={(e) => onUpdateWorkEntry(index, "startDate", e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>End date</Label>
-                    <Input
-                      placeholder="Present"
-                      value={entry.endDate ?? ""}
-                      onChange={(e) => onUpdateWorkEntry(index, "endDate", e.target.value)}
-                    />
-                  </div>
+                  <WorkHistoryMonthPicker
+                    label="Start month"
+                    value={entry.startMonth}
+                    onSelect={(value) => onUpdateWorkEntryText(index, "startMonth", value ?? "")}
+                  />
+                  <WorkHistoryMonthPicker
+                    label="End month"
+                    value={entry.endMonth}
+                    disabled={entry.currentlyWorkingHere}
+                    onSelect={(value) => onUpdateWorkEntryEndMonth(index, value)}
+                  />
+                </div>
+
+                <p className="text-xs text-muted-foreground">
+                  Use month and year only. Current roles can leave end month empty.
+                </p>
+
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={entry.currentlyWorkingHere}
+                    onCheckedChange={(checked) => {
+                      const isChecked = checked === true;
+                      const currentEntries = form.getFieldValue("workHistory");
+                      const updated = currentEntries.map((currentEntry, i) =>
+                        i === index
+                          ? {
+                              ...currentEntry,
+                              description: currentEntry.description ?? undefined,
+                              currentlyWorkingHere: isChecked,
+                              endMonth: isChecked ? null : currentEntry.endMonth,
+                            }
+                          : currentEntry,
+                      );
+                      form.setFieldValue("workHistory", updated);
+                    }}
+                  />
+                  <Label>Currently working here</Label>
                 </div>
 
                 <div className="space-y-2">
@@ -506,7 +730,7 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
                   <Input
                     placeholder="Brief description of your role"
                     value={entry.description ?? ""}
-                    onChange={(e) => onUpdateWorkEntry(index, "description", e.target.value)}
+                    onChange={(e) => onUpdateWorkEntryText(index, "description", e.target.value)}
                   />
                 </div>
               </div>

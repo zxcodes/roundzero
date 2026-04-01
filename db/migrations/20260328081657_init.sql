@@ -44,13 +44,29 @@ CREATE TABLE candidate_profiles (
   resume_key    TEXT,
   bio           TEXT,
   skills        JSONB DEFAULT '[]',
-  work_history  JSONB DEFAULT '[]',
   links         JSONB DEFAULT '{}',
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX idx_candidate_profiles_user ON candidate_profiles(user_id);
+
+CREATE TABLE candidate_work_history (
+  id                       UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  candidate_profile_id     UUID NOT NULL REFERENCES candidate_profiles(id) ON DELETE RESTRICT,
+  company                  TEXT NOT NULL,
+  title                    TEXT NOT NULL,
+  start_month              TEXT NOT NULL,
+  end_month                TEXT,
+  currently_working_here   BOOLEAN NOT NULL DEFAULT false,
+  description              TEXT,
+  sort_order               INTEGER NOT NULL DEFAULT 0,
+  created_at               TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at               TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_candidate_work_history_profile
+  ON candidate_work_history(candidate_profile_id, sort_order);
 
 -- Jobs
 CREATE TABLE jobs (

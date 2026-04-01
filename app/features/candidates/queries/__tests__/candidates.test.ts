@@ -2,38 +2,37 @@ import { describe, expect, it } from "vitest";
 import { getTestDb, seedCandidateProfile, seedUser } from "@/shared/__tests__/test-utils";
 import {
   createCandidateProfile,
+  createCandidateWorkHistoryEntry,
+  deleteCandidateWorkHistoryByProfileId,
   getCandidateProfileByUserId,
+  getCandidateWorkHistoryByProfileId,
   updateCandidateProfile,
 } from "../queries_sql";
 
 const sql = getTestDb();
 
-// ─── createCandidateProfile ─────────────────────────────────────
-
 describe("createCandidateProfile", () => {
-  it("creates a profile with headline and resume URL", async () => {
+  it("creates a profile with headline and resume key", async () => {
     const user = await seedUser({ role: "candidate" });
 
     const profile = await createCandidateProfile(sql, {
       userId: user.id,
       headline: "Full-Stack Developer",
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: "resumes/test-user/resume.pdf",
     });
 
     expect(profile).not.toBeNull();
     expect(profile!.userId).toBe(user.id);
     expect(profile!.headline).toBe("Full-Stack Developer");
-    expect(profile!.resumeKey).toBe("https://example.com/resume.pdf");
+    expect(profile!.resumeKey).toBe("resumes/test-user/resume.pdf");
     expect(profile!.bio).toBeNull();
-    // JSONB columns default to '[]' (NOT NULL)
     expect(profile!.skills).toEqual([]);
-    expect(profile!.workHistory).toEqual([]);
     expect(profile!.links).toEqual({});
     expect(profile!.createdAt).toBeInstanceOf(Date);
     expect(profile!.updatedAt).toBeInstanceOf(Date);
   });
 
-  it("creates a profile with null headline and resume", async () => {
+  it("allows null headline and resume key", async () => {
     const user = await seedUser({ role: "candidate" });
 
     const profile = await createCandidateProfile(sql, {
@@ -66,8 +65,6 @@ describe("createCandidateProfile", () => {
   });
 });
 
-// ─── getCandidateProfileByUserId ────────────────────────────────
-
 describe("getCandidateProfileByUserId", () => {
   it("returns the profile for an existing user", async () => {
     const { profile: seeded, user } = await seedCandidateProfile({
@@ -90,39 +87,30 @@ describe("getCandidateProfileByUserId", () => {
   });
 });
 
-// ─── updateCandidateProfile ─────────────────────────────────────
-
 describe("updateCandidateProfile", () => {
-  it("updates all profile fields", async () => {
+  it("updates profile fields without touching relational work history", async () => {
     const { user } = await seedCandidateProfile({ headline: "Old Headline" });
-
-    const skills = ["TypeScript", "Go", "PostgreSQL"];
-    const workHistory = [{ company: "Acme", role: "Engineer", years: 3 }];
-    const links = [{ label: "GitHub", url: "https://github.com/test" }];
 
     const updated = await updateCandidateProfile(sql, {
       userId: user.id,
       headline: "Senior Engineer",
-      resumeKey: "https://example.com/new-resume.pdf",
+      resumeKey: "resumes/test-user/new-resume.pdf",
       bio: "I build scalable systems.",
-      skills,
-      workHistory,
-      links,
+      skills: ["TypeScript", "Go", "PostgreSQL"],
+      links: { github: "https://github.com/test" },
     });
 
     expect(updated).not.toBeNull();
     expect(updated!.headline).toBe("Senior Engineer");
-    expect(updated!.resumeKey).toBe("https://example.com/new-resume.pdf");
+    expect(updated!.resumeKey).toBe("resumes/test-user/new-resume.pdf");
     expect(updated!.bio).toBe("I build scalable systems.");
-    expect(updated!.skills).toEqual(skills);
-    expect(updated!.workHistory).toEqual(workHistory);
-    expect(updated!.links).toEqual(links);
+    expect(updated!.skills).toEqual(["TypeScript", "Go", "PostgreSQL"]);
+    expect(updated!.links).toEqual({ github: "https://github.com/test" });
   });
 
   it("sets updated_at to a newer timestamp", async () => {
     const { user } = await seedCandidateProfile();
 
-    // Small delay to ensure timestamp difference
     await new Promise((resolve) => setTimeout(resolve, 50));
 
     const updated = await updateCandidateProfile(sql, {
@@ -131,8 +119,7 @@ describe("updateCandidateProfile", () => {
       resumeKey: null,
       bio: null,
       skills: [],
-      workHistory: [],
-      links: [],
+      links: {},
     });
 
     expect(updated).not.toBeNull();
@@ -148,36 +135,31 @@ describe("updateCandidateProfile", () => {
       resumeKey: null,
       bio: null,
       skills: [],
-      workHistory: [],
-      links: [],
+      links: {},
     });
 
     expect(result).toBeNull();
   });
 
-  it("resets JSONB fields to empty arrays", async () => {
+  it("clears optional profile fields", async () => {
     const { user } = await seedCandidateProfile();
 
-    // First set values
     await updateCandidateProfile(sql, {
       userId: user.id,
       headline: "Engineer",
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: "resumes/test-user/resume.pdf",
       bio: "Some bio",
       skills: ["TypeScript"],
-      workHistory: [{ company: "Test" }],
-      links: [{ url: "https://example.com" }],
+      links: { github: "https://github.com/test" },
     });
 
-    // Then reset JSONB fields to empty and clear text fields
     const cleared = await updateCandidateProfile(sql, {
       userId: user.id,
       headline: null,
       resumeKey: null,
       bio: null,
       skills: [],
-      workHistory: [],
-      links: [],
+      links: {},
     });
 
     expect(cleared).not.toBeNull();
@@ -185,7 +167,69 @@ describe("updateCandidateProfile", () => {
     expect(cleared!.resumeKey).toBeNull();
     expect(cleared!.bio).toBeNull();
     expect(cleared!.skills).toEqual([]);
-    expect(cleared!.workHistory).toEqual([]);
-    expect(cleared!.links).toEqual([]);
+    expect(cleared!.links).toEqual({});
+  });
+});
+
+describe("candidate work history queries", () => {
+  it("creates and returns ordered work history rows", async () => {
+    const { profile } = await seedCandidateProfile();
+
+    await createCandidateWorkHistoryEntry(sql, {
+      candidateProfileId: profile.id,
+      company: "Acme",
+      title: "Engineer",
+      startMonth: "2021-01",
+      endMonth: "2022-06",
+      currentlyWorkingHere: false,
+      description: "Built APIs",
+      sortOrder: 1,
+    });
+
+    await createCandidateWorkHistoryEntry(sql, {
+      candidateProfileId: profile.id,
+      company: "Beta",
+      title: "Senior Engineer",
+      startMonth: "2022-07",
+      endMonth: null,
+      currentlyWorkingHere: true,
+      description: null,
+      sortOrder: 0,
+    });
+
+    const history = await getCandidateWorkHistoryByProfileId(sql, {
+      candidateProfileId: profile.id,
+    });
+
+    expect(history).toHaveLength(2);
+    expect(history[0]!.company).toBe("Beta");
+    expect(history[0]!.currentlyWorkingHere).toBe(true);
+    expect(history[1]!.company).toBe("Acme");
+    expect(history[1]!.endMonth).toBe("2022-06");
+  });
+
+  it("deletes all work history rows for a profile", async () => {
+    const { profile } = await seedCandidateProfile();
+
+    await createCandidateWorkHistoryEntry(sql, {
+      candidateProfileId: profile.id,
+      company: "Acme",
+      title: "Engineer",
+      startMonth: "2021-01",
+      endMonth: "2022-06",
+      currentlyWorkingHere: false,
+      description: null,
+      sortOrder: 0,
+    });
+
+    await deleteCandidateWorkHistoryByProfileId(sql, {
+      candidateProfileId: profile.id,
+    });
+
+    const history = await getCandidateWorkHistoryByProfileId(sql, {
+      candidateProfileId: profile.id,
+    });
+
+    expect(history).toEqual([]);
   });
 });

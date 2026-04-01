@@ -2,7 +2,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { getUserById } from "@/features/auth/queries/queries_sql";
-import { getCandidateProfileByUserId } from "@/features/candidates/queries/queries_sql";
+import {
+  getCandidateProfileByUserId,
+  getCandidateWorkHistoryByProfileId,
+} from "@/features/candidates/queries/queries_sql";
 import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
 import { getJobById } from "@/features/jobs/queries/queries_sql";
 import { getDb } from "@/shared/db";
@@ -65,6 +68,10 @@ export const applyToJob = createServerFn({ method: "POST" })
       throw new Error("Add your resume to your profile before applying");
     }
 
+    const workHistory = await getCandidateWorkHistoryByProfileId(db, {
+      candidateProfileId: profile.id,
+    });
+
     const application = await createApplicationQuery(db, {
       jobId: data.jobId,
       candidateId: context.userId,
@@ -73,7 +80,14 @@ export const applyToJob = createServerFn({ method: "POST" })
         headline: profile.headline,
         bio: profile.bio,
         skills: profile.skills,
-        workHistory: profile.workHistory,
+        workHistory: workHistory.map((entry) => ({
+          company: entry.company,
+          title: entry.title,
+          startMonth: entry.startMonth,
+          endMonth: entry.endMonth,
+          currentlyWorkingHere: entry.currentlyWorkingHere,
+          description: entry.description,
+        })),
         links: profile.links,
       },
       status: "applied",
