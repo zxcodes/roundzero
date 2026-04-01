@@ -330,7 +330,7 @@ Resume handling uses a **contract-first** design.
 - the database stores `resume_key`, not `resume_url`
 - onboarding/settings use file-picking UI
 - the server already exposes resume upload/read boundaries
-- storage internals are still mocked in dev until R2 is fully wired
+- resume uploads now use real Cloudflare R2 signed URLs in the current runtime
 
 ### Resume server boundaries
 
@@ -340,15 +340,24 @@ Current candidate resume server functions:
 - `finalizeResumeUpload`
 - `getResumeDownloadUrl`
 
-### Intended final flow
+Current company/application resume server function:
+
+- `getApplicationResumeDownloadUrl`
+
+### Current flow
 
 1. client requests signed upload target
 2. server creates user-scoped key:
-   - `resumes/<userId>/<uuid>.<ext>`
+   - `resumes/<userId>/<uuid>--<sanitized-file-name>.<ext>`
 3. client uploads directly to Cloudflare R2
-4. client finalizes upload
+4. server verifies the object exists in R2 during finalize
 5. server stores `resume_key` on `candidate_profiles`
-6. read access uses short-lived signed URLs
+6. candidate self-view and company applicant review use short-lived signed URLs
+
+### Runtime note
+
+- Today this runs via the S3-compatible R2 API from the app server using account credentials and presigned `PUT`/`GET` URLs.
+- When more of the platform moves onto Cloudflare Workers, the browser contract can stay the same while server-side storage internals move to Workers-native bindings where useful.
 
 Why `resume_key` instead of `resume_url`:
 

@@ -11,6 +11,7 @@ import { getJobById } from "@/features/jobs/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { applicationStatusSchema, isValidTransition } from "@/shared/enums";
 import { authMiddleware } from "@/shared/middleware";
+import { createR2ResumeDownloadUrl } from "@/shared/r2";
 import {
   createApplication as createApplicationQuery,
   getApplicationById,
@@ -31,6 +32,10 @@ const updateStatusSchema = z.object({
 
 const jobIdSchema = z.object({
   jobId: z.string().uuid(),
+});
+
+const applicationIdSchema = z.object({
+  applicationId: z.string().uuid(),
 });
 
 export const applyToJob = createServerFn({ method: "POST" })
@@ -195,4 +200,49 @@ export const hasApplied = createServerFn({ method: "GET" })
       candidateId: context.userId,
     });
     return !!existing;
+  });
+
+export const getApplicationResumeDownloadUrl = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .inputValidator(zodValidator(applicationIdSchema))
+  .handler(async ({ data, context }) => {
+    const db = getDb();
+
+    const application = await getApplicationById(db, { id: data.applicationId });
+    if (!application || !application.resumeKey) {
+      throw new Error("Resume not found");
+    }
+
+    const user = await getUserById(db, { id: context.userId });
+    if (!user) {
+      throw new Error("Not authorized");
+    }
+
+    if (user.role === "candidate" && application.candidateId === context.userId) {
+      return {
+        url: await createR2ResumeDownloadUrl({
+          resumeKey: application.resumeKey,
+        }),
+      };
+    }
+
+    if (user.role === "company") {
+      const company = await getCompanyByOwnerId(db, { ownerId: context.userId });
+      if (!company) {
+        throw new Error("Not authorized");
+      }
+
+      const job = await getJobById(db, { id: application.jobId });
+      if (!job || job.companyId !== company.id) {
+        throw new Error("Not authorized");
+      }
+
+      return {
+        url: await createR2ResumeDownloadUrl({
+          resumeKey: application.resumeKey,
+        }),
+      };
+    }
+
+    throw new Error("Not authorized");
   });

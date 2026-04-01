@@ -44,7 +44,7 @@
 - [x] Candidate "My Applications" page (`/dashboard/applications`)
 - [x] Company applicants view per job (on job detail page, with candidate info)
 - [x] Application status tracking (company can update via dropdown)
-- [ ] Resume upload to Cloudflare R2 (signed upload/read flow) — deferred to platform hardening
+- [x] Resume upload to Cloudflare R2 (signed upload/read flow)
 
 ## Phase 3: Product Solidification
 
@@ -63,13 +63,13 @@ Solidify RoundZero as a usable job platform before adding AI. Public browsing, p
 | Candidate onboarding | Name (pre-filled from Google) + headline + resume upload |
 | Apply flow | True one-click: button only, uses resume from candidate profile |
 | Job expiry | Optional `expires_at` on jobs + stale indicator after 90 days |
-| Resume storage | CF R2 (UI now, endpoint wired in Phase 4) |
+| Resume storage | CF R2 with signed upload/read URLs |
 | Login messaging | Tailored copy per role (company: "Start hiring smarter", candidate: "Find your next role") |
 
 ### Sub-project 1: Schema + Auth Changes ✅
 
 - [x] Extend `companies` table: add `logo_url`, `website`, `industry`, `company_size`, `founded_year`, `location`, `tech_stack` (JSONB), `culture`, `social_links` (JSONB), `updated_at`
-- [x] Create `candidate_profiles` table: `user_id` (FK), `headline`, `resume_key` (originally `resume_url`, later migrated to `resume_key`), `bio`, `skills` (JSONB), `work_history` (JSONB), `links` (JSONB), `created_at`, `updated_at`
+- [x] Create `candidate_profiles` table: `user_id` (FK), `headline`, `resume_key` (originally `resume_url`, later migrated to `resume_key`), `bio`, `skills` (JSONB), `links` (JSONB), `created_at`, `updated_at`
 - [x] Add `expires_at` (TIMESTAMPTZ, nullable) to `jobs` table
 - [x] Add `slug` (TEXT UNIQUE) to `companies` table for public URLs
 - [x] Separate login routes: `/company/login` and `/candidate/login` with tailored messaging
@@ -125,7 +125,7 @@ Solidify RoundZero as a usable job platform before adding AI. Public browsing, p
 - [x] Guard: require resume in profile before applying (prompt to complete profile if missing)
 - [x] Remove per-application resume URL and links fields from apply form
 - [x] Replace candidate-entered resume URLs with resume upload contract (`resume_key`, upload/finalize/read server functions)
-- [ ] Wire real Cloudflare R2 signed upload/read behavior behind the resume upload contract
+- [x] Wire real Cloudflare R2 signed upload/read behavior behind the resume upload contract
 - [ ] `expires_at` field on job create/edit form (optional date picker)
 - [ ] Stale job indicator: badge on jobs older than 90 days with no expiry set
 - [ ] Auto-close expired jobs: scheduled task or on-read check that sets `status = 'closed'` when `expires_at < now()`
@@ -145,17 +145,18 @@ Finish the non-AI hiring platform so the interview/evaluation layer lands on a s
 
 ### Sub-project 1: Resume Storage Completion
 
-- [ ] Add real Cloudflare R2 configuration (`wrangler.jsonc`, bucket binding, env wiring)
-- [ ] Replace mock upload behavior in candidate resume server functions with signed upload URL generation
-- [ ] Replace mock signed read behavior with short-lived signed download/view URLs
-- [ ] Validate allowed file types on server: PDF, DOC, DOCX
-- [ ] Enforce resume size limit on server before issuing upload target
-- [ ] Ensure uploaded resume keys are namespaced per user: `resumes/<userId>/<uuid>.<ext>`
-- [ ] Candidate onboarding: block profile completion until resume upload succeeds
-- [ ] Candidate settings: support replace-resume flow cleanly
-- [ ] Candidate settings: show meaningful current file state instead of generic “resume on file”
-- [ ] Company applicant views: wire “View resume” / “Download resume” to signed read URLs
+- [x] Add current-runtime Cloudflare R2 configuration (`.env` wiring, bucket CORS, signed URL credentials)
+- [x] Replace mock upload behavior in candidate resume server functions with signed upload URL generation
+- [x] Replace mock signed read behavior with short-lived signed download/view URLs
+- [x] Validate allowed file types on server: PDF, DOC, DOCX
+- [x] Enforce resume size limit on server before issuing upload target
+- [x] Ensure uploaded resume keys are namespaced per user: `resumes/<userId>/<uuid>.<ext>`
+- [x] Candidate onboarding: block profile completion until resume upload succeeds
+- [x] Candidate settings: support replace-resume flow cleanly
+- [x] Candidate settings: show meaningful current file state instead of generic “resume on file”
+- [x] Company applicant views: wire “View resume” / “Download resume” to signed read URLs
 - [ ] Update seed/test helpers to use realistic `resume_key` values instead of legacy URL-shaped strings
+- [ ] Add Worker/Wrangler-side R2 bindings when the runtime moves onto Cloudflare
 
 ### Sub-project 2: Job Lifecycle Hardening
 
@@ -241,7 +242,7 @@ Finish the non-AI hiring platform so the interview/evaluation layer lands on a s
 - [ ] Candidate can browse, upload a resume, apply from any valid surface, and clearly track applications
 - [ ] Company can create/manage jobs, review applicants meaningfully, and access resumes reliably
 - [ ] Expired/stale jobs behave correctly across queries and UI
-- [ ] Resume storage is real, not mocked
+- [x] Resume storage is real, not mocked
 - [ ] Core hiring workflow feels complete without depending on the AI interview layer
 
 ### Recommended Execution Order

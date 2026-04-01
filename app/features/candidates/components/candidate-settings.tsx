@@ -4,7 +4,6 @@ import {
   Cancel01Icon,
   Loading03Icon,
   Tick02Icon,
-  Upload04Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useStore } from "@tanstack/react-form";
@@ -30,13 +29,11 @@ import {
 } from "@/components/ui/select";
 import { updateUserName } from "@/features/auth/server/functions";
 import {
-  createResumeUploadTarget,
-  finalizeResumeUpload,
   type getMyCandidateProfile,
-  getResumeDownloadUrl,
   type UpdateCandidateProfileInput,
   updateMyCandidateProfile,
 } from "@/features/candidates/server/functions";
+import { ResumeUploadField } from "@/features/candidates/components/resume-upload-field";
 import type { User } from "@/router";
 import { AutoSaveIndicator, useAutoSaveStatus } from "@/shared/auto-save-indicator";
 import { useAppForm } from "@/shared/form";
@@ -191,7 +188,6 @@ function WorkHistoryMonthPicker({
 export function CandidateSettings({ profile, user }: { profile: CandidateProfile; user: User }) {
   const router = useRouter();
   const id = useId();
-  const [uploadedResumeName, setUploadedResumeName] = useState<string | null>(null);
 
   const autoSave = useAutoSaveStatus();
 
@@ -212,9 +208,6 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
   const updateNameMutation = useMutation({
     mutationFn: updateNameFn,
   });
-  const createUploadTargetFn = useServerFn(createResumeUploadTarget);
-  const finalizeResumeUploadFn = useServerFn(finalizeResumeUpload);
-  const getResumeDownloadUrlFn = useServerFn(getResumeDownloadUrl);
 
   const links =
     profile.links && typeof profile.links === "object" && !Array.isArray(profile.links)
@@ -277,72 +270,11 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
 
   const [skillInput, setSkillInput] = useState("");
   const [entrySaveStatus, setEntrySaveStatus] = useState<Record<number, "saving" | "saved">>({});
+  const currentResumeKey = useStore(form.store, (state) => state.values.resumeKey);
   const currentSkillTags = useStore(form.store, (state) => state.values.skills);
   const currentWorkEntries = useStore(form.store, (state) => state.values.workHistory);
 
   const skillInputId = `skill-input-${id}`;
-  const resumeInputId = `resume-${id}`;
-
-  const onResumeSelected = async (file: File | null) => {
-    if (!file) {
-      return;
-    }
-
-    try {
-      const target = await createUploadTargetFn({
-        data: {
-          fileName: file.name,
-          fileSize: file.size,
-          contentType: file.type as
-            | "application/pdf"
-            | "application/msword"
-            | "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        },
-      });
-
-      if (target.uploadUrl) {
-        const response = await fetch(target.uploadUrl, {
-          method: "PUT",
-          headers: { "Content-Type": file.type },
-          body: file,
-        });
-
-        if (!response.ok) {
-          throw new Error("Upload failed");
-        }
-      }
-
-      const finalized = await finalizeResumeUploadFn({
-        data: { resumeKey: target.resumeKey },
-      });
-
-      form.setFieldValue("resumeKey", finalized.resumeKey);
-      setUploadedResumeName(file.name);
-      await form.handleSubmit();
-      toast.success("Resume uploaded");
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to upload resume";
-      toast.error(message);
-    }
-  };
-
-  const onViewResume = async () => {
-    const resumeKey = form.getFieldValue("resumeKey");
-    if (!resumeKey) {
-      return;
-    }
-
-    const result = await getResumeDownloadUrlFn({
-      data: { resumeKey },
-    });
-
-    if (result.url) {
-      window.open(result.url, "_blank", "noopener,noreferrer");
-      return;
-    }
-
-    toast.info("Resume storage is not wired yet in this environment.");
-  };
   const onSaveWorkEntry = async (index: number) => {
     const entry = form.getFieldValue("workHistory")[index];
     if (!entry) {
@@ -495,57 +427,15 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
               )}
             />
 
-            <div className="space-y-2">
-              <Label htmlFor={resumeInputId}>Resume</Label>
-              <input
-                id={resumeInputId}
-                type="file"
-                accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                className="sr-only"
-                onChange={(e) => onResumeSelected(e.target.files?.[0] ?? null)}
-              />
-              <label
-                htmlFor={resumeInputId}
-                className="flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-border bg-muted/30 px-4 py-3 transition-colors hover:border-primary/40 hover:bg-muted/50"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex size-10 items-center justify-center rounded-lg bg-background shadow-xs">
-                    <HugeiconsIcon
-                      icon={Upload04Icon}
-                      strokeWidth={2}
-                      className="size-4 text-primary"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">
-                      {form.getFieldValue("resumeKey") ? "Replace resume" : "Choose resume file"}
-                    </p>
-                    <p className="text-xs text-muted-foreground">PDF, DOC, or DOCX</p>
-                  </div>
-                </div>
-                <span className="rounded-md border bg-background px-2.5 py-1 text-xs font-medium">
-                  Browse
-                </span>
-              </label>
-              <p className="text-muted-foreground text-xs">
-                Upload a PDF, DOC, or DOCX file. This is the resume attached when you apply.
-              </p>
-              {form.getFieldValue("resumeKey") ? (
-                <div className="flex items-center justify-between rounded-lg border px-3 py-2">
-                  <div className="flex items-center gap-2 text-sm">
-                    <HugeiconsIcon
-                      icon={Upload04Icon}
-                      strokeWidth={2}
-                      className="size-4 text-primary"
-                    />
-                    <span>{uploadedResumeName ?? "Resume on file"}</span>
-                  </div>
-                  <Button type="button" variant="outline" size="sm" onClick={onViewResume}>
-                    View
-                  </Button>
-                </div>
-              ) : null}
-            </div>
+            <ResumeUploadField
+              value={currentResumeKey}
+              showViewButton
+              description="Upload a PDF, DOC, or DOCX file. This is the resume attached when you apply."
+              onUploaded={async (resume) => {
+                form.setFieldValue("resumeKey", resume.resumeKey);
+                await form.handleSubmit();
+              }}
+            />
           </CardContent>
         </Card>
 

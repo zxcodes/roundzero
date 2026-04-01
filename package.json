@@ -18,6 +18,8 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1021.0",
+    "@aws-sdk/s3-request-presigner": "^3.1021.0",
     "@fontsource-variable/geist-mono": "^5.2.7",
     "@fontsource-variable/plus-jakarta-sans": "^5.2.8",
     "@hugeicons/core-free-icons": "^4.1.0",

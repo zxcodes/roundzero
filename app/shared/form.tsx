@@ -1,4 +1,5 @@
 import { createFormHook, createFormHookContexts } from "@tanstack/react-form";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +14,22 @@ import { Textarea } from "@/components/ui/textarea";
 
 export const { fieldContext, useFieldContext, formContext, useFormContext } =
   createFormHookContexts();
+
+function getFieldErrorMessage(errors: unknown[]) {
+  const firstError = errors[0];
+  if (typeof firstError === "string") {
+    return firstError;
+  }
+  if (
+    firstError &&
+    typeof firstError === "object" &&
+    "message" in firstError &&
+    typeof firstError.message === "string"
+  ) {
+    return firstError.message;
+  }
+  return null;
+}
 
 // --- Field Components ---
 
@@ -32,11 +49,14 @@ function TextField({
   description?: string;
 }) {
   const field = useFieldContext<string>();
+  const errorMessage = getFieldErrorMessage(field.state.meta.errors);
   return (
     <div className="space-y-2">
       <Label htmlFor={field.name}>{label}</Label>
       <Input
         id={field.name}
+        className={cn(errorMessage ? "border-destructive focus-visible:ring-destructive/20" : "")}
+        aria-invalid={Boolean(errorMessage)}
         placeholder={placeholder}
         required={required}
         maxLength={maxLength}
@@ -45,6 +65,7 @@ function TextField({
         onBlur={field.handleBlur}
         onChange={(e) => field.handleChange(e.target.value)}
       />
+      {errorMessage ? <p className="text-xs text-destructive">{errorMessage}</p> : null}
       {description ? <p className="text-muted-foreground text-xs">{description}</p> : null}
     </div>
   );
@@ -62,12 +83,15 @@ function NumberField({
   description?: string;
 }) {
   const field = useFieldContext<number | null>();
+  const errorMessage = getFieldErrorMessage(field.state.meta.errors);
   return (
     <div className="space-y-2">
       <Label htmlFor={field.name}>{label}</Label>
       <Input
         id={field.name}
         type="number"
+        className={cn(errorMessage ? "border-destructive focus-visible:ring-destructive/20" : "")}
+        aria-invalid={Boolean(errorMessage)}
         placeholder={placeholder}
         min={min}
         value={field.state.value ?? ""}
@@ -77,6 +101,7 @@ function NumberField({
           field.handleChange(Number.isNaN(parsed) ? null : parsed);
         }}
       />
+      {errorMessage ? <p className="text-xs text-destructive">{errorMessage}</p> : null}
       {description ? <p className="text-muted-foreground text-xs">{description}</p> : null}
     </div>
   );
@@ -98,11 +123,14 @@ function TextareaField({
   description?: string;
 }) {
   const field = useFieldContext<string>();
+  const errorMessage = getFieldErrorMessage(field.state.meta.errors);
   return (
     <div className="space-y-2">
       <Label htmlFor={field.name}>{label}</Label>
       <Textarea
         id={field.name}
+        className={cn(errorMessage ? "border-destructive focus-visible:ring-destructive/20" : "")}
+        aria-invalid={Boolean(errorMessage)}
         placeholder={placeholder}
         required={required}
         maxLength={maxLength}
@@ -111,6 +139,7 @@ function TextareaField({
         onBlur={field.handleBlur}
         onChange={(e) => field.handleChange(e.target.value)}
       />
+      {errorMessage ? <p className="text-xs text-destructive">{errorMessage}</p> : null}
       {description ? <p className="text-muted-foreground text-xs">{description}</p> : null}
     </div>
   );
@@ -128,11 +157,16 @@ function SelectField({
   description?: string;
 }) {
   const field = useFieldContext<string>();
+  const errorMessage = getFieldErrorMessage(field.state.meta.errors);
   return (
     <div className="space-y-2">
       <Label htmlFor={field.name}>{label}</Label>
       <Select value={field.state.value} onValueChange={(v) => field.handleChange(v)}>
-        <SelectTrigger id={field.name}>
+        <SelectTrigger
+          id={field.name}
+          className={cn(errorMessage ? "border-destructive focus-visible:ring-destructive/20" : "")}
+          aria-invalid={Boolean(errorMessage)}
+        >
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
@@ -143,6 +177,7 @@ function SelectField({
           ))}
         </SelectContent>
       </Select>
+      {errorMessage ? <p className="text-xs text-destructive">{errorMessage}</p> : null}
       {description ? <p className="text-muted-foreground text-xs">{description}</p> : null}
     </div>
   );

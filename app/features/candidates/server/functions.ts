@@ -5,6 +5,8 @@ import { z } from "zod";
 import { getUserById } from "@/features/auth/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { authMiddleware } from "@/shared/middleware";
+import { createR2ResumeDownloadUrl, createR2ResumeUploadUrl, r2ResumeExists } from "@/shared/r2";
+import { sanitizeResumeFileName } from "@/shared/resume";
 import { type SessionData, sessionConfig } from "@/shared/session";
 import {
   createCandidateProfile as createCandidateProfileQuery,
@@ -113,8 +115,16 @@ const finalizeResumeUploadSchema = z.object({
   resumeKey: z.string().min(1),
 });
 
-const buildResumeKey = (userId: string, contentType: keyof typeof allowedResumeTypes) =>
-  `resumes/${userId}/${crypto.randomUUID()}.${allowedResumeTypes[contentType]}`;
+const resumeFileNameSchema = z.object({
+  resumeKey: z.string().min(1),
+  fileName: z.string().min(1).max(255).optional(),
+});
+
+const buildResumeKey = (
+  userId: string,
+  fileName: string,
+  contentType: keyof typeof allowedResumeTypes,
+) => `resumes/${userId}/${crypto.randomUUID()}--${sanitizeResumeFileName(fileName).replace(/\.[^.]+$/, "")}.${allowedResumeTypes[contentType]}`;
 
 const assertResumeKeyBelongsToUser = (resumeKey: string, userId: string) => {
   if (!resumeKey.startsWith(`resumes/${userId}/`)) {
@@ -280,11 +290,15 @@ export const createResumeUploadTarget = createServerFn({ method: "POST" })
     if (!user || user.role !== "candidate") {
       throw new Error("Only candidates can upload resumes");
     }
+    const resumeKey = buildResumeKey(context.userId, data.fileName, data.contentType);
 
     return {
-      resumeKey: buildResumeKey(context.userId, data.contentType),
-      uploadUrl: null as string | null,
-      uploadMethod: "mock" as const,
+      resumeKey,
+      uploadUrl: await createR2ResumeUploadUrl({
+        resumeKey,
+        contentType: data.contentType,
+      }),
+      uploadMethod: "put" as const,
       maxBytes: maxResumeFileSize,
     };
   });
@@ -299,13 +313,21 @@ export const finalizeResumeUpload = createServerFn({ method: "POST" })
       throw new Error("Only candidates can finalize resume uploads");
     }
     assertResumeKeyBelongsToUser(data.resumeKey, context.userId);
+    const exists = await r2ResumeExists(data.resumeKey);
+    if (!exists) {
+      throw new Error("Uploaded resume could not be found");
+    }
     return { resumeKey: data.resumeKey };
   });
 
 export const getResumeDownloadUrl = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidator(finalizeResumeUploadSchema))
+  .inputValidator(zodValidator(resumeFileNameSchema))
   .handler(async ({ data, context }) => {
     assertResumeKeyBelongsToUser(data.resumeKey, context.userId);
-    return { url: null as string | null };
+    const url = await createR2ResumeDownloadUrl({
+      resumeKey: data.resumeKey,
+      fileName: data.fileName,
+    });
+    return { url };
   });

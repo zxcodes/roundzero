@@ -43,6 +43,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import {
   applyToJob,
+  getApplicationResumeDownloadUrl,
   getJobApplicants,
   hasApplied,
   updateApplicationStatus,
@@ -333,6 +334,7 @@ function ApplicantsSection({
 }) {
   const router = useRouter();
 
+  const getApplicationResumeDownloadUrlFn = useServerFn(getApplicationResumeDownloadUrl);
   const updateStatusFn = useServerFn(updateApplicationStatus);
   const updateStatusMutation = useMutation({
     mutationFn: updateStatusFn,
@@ -345,9 +347,25 @@ function ApplicantsSection({
     },
   });
 
+  const resumeDownloadMutation = useMutation({
+    mutationFn: getApplicationResumeDownloadUrlFn,
+    onSuccess: ({ url }) => {
+      window.open(url, "_blank", "noopener,noreferrer");
+    },
+    onError: () => {
+      toast.error("Failed to open resume. Please try again.");
+    },
+  });
+
   const onStatusChange = async (applicationId: string, status: ApplicationStatus) => {
     await updateStatusMutation.mutateAsync({
       data: { applicationId, status },
+    });
+  };
+
+  const onViewResume = async (applicationId: string) => {
+    await resumeDownloadMutation.mutateAsync({
+      data: { applicationId },
     });
   };
 
@@ -449,10 +467,14 @@ function ApplicantsSection({
                   {applicant.resumeKey || links.length > 0 ? (
                     <div className="mt-2 flex flex-wrap items-center gap-2 pl-11">
                       {applicant.resumeKey ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs text-muted-foreground">
+                        <button
+                          type="button"
+                          onClick={() => onViewResume(applicant.id)}
+                          className="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        >
                           <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-3" />
-                          Resume on file
-                        </span>
+                          View resume
+                        </button>
                       ) : null}
                       {links.map((link, i) => (
                         <a
