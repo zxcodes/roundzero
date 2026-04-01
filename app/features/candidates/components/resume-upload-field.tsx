@@ -18,6 +18,7 @@ type ResumeUploadFieldProps = {
   description: string;
   error?: string | null;
   label?: string;
+  details?: string | null;
   showViewButton?: boolean;
   onErrorChange?: (error: string | null) => void;
 };
@@ -28,6 +29,7 @@ export function ResumeUploadField({
   description,
   error = null,
   label = "Resume",
+  details = null,
   showViewButton = false,
   onErrorChange,
 }: ResumeUploadFieldProps) {
@@ -160,10 +162,15 @@ export function ResumeUploadField({
         </div>
       ) : null}
       {value ? (
-        <div className="flex items-center justify-between rounded-lg border px-3 py-2">
-          <div className="flex items-center gap-2 text-sm">
-            <HugeiconsIcon icon={Upload04Icon} strokeWidth={2} className="size-4 text-primary" />
-            <span>{displayName}</span>
+        <div className="flex items-center justify-between rounded-xl border bg-background px-3 py-3">
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-lg bg-muted/60">
+              <HugeiconsIcon icon={Upload04Icon} strokeWidth={2} className="size-4 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium">{displayName}</p>
+              {details ? <p className="text-xs text-muted-foreground">{details}</p> : null}
+            </div>
           </div>
           {showViewButton ? (
             <Button type="button" variant="outline" size="sm" onClick={onViewResume}>

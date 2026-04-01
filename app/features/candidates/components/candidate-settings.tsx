@@ -265,6 +265,9 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
   const [skillInput, setSkillInput] = useState("");
   const [entrySaveStatus, setEntrySaveStatus] = useState<Record<number, "saving" | "saved">>({});
   const currentResumeKey = useStore(form.store, (state) => state.values.resumeKey);
+  const resumeDetails = profile.resumeUpdatedAt
+    ? `Resume last updated ${format(new Date(profile.resumeUpdatedAt), "MMM d, yyyy 'at' h:mm a")}`
+    : null;
 
   const skillInputId = `skill-input-${id}`;
   const onResumeUploaded = async (resume: { resumeKey: string }) => {
@@ -404,16 +407,11 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
 
             <ResumeUploadField
               value={currentResumeKey}
+              details={resumeDetails}
               showViewButton
               description="Upload a PDF, DOC, or DOCX file. This is the resume attached when you apply."
               onUploaded={onResumeUploaded}
             />
-            {profile.resumeUpdatedAt ? (
-              <p className="text-xs text-muted-foreground">
-                Resume last updated{" "}
-                {format(new Date(profile.resumeUpdatedAt), "MMM d, yyyy 'at' h:mm a")}
-              </p>
-            ) : null}
           </CardContent>
         </Card>
 
