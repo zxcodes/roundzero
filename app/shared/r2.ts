@@ -79,9 +79,7 @@ export async function createR2ResumeDownloadUrl({
   const command = new GetObjectCommand({
     Bucket: bucketName,
     Key: resumeKey,
-    ResponseContentDisposition: fileName
-      ? `inline; filename="${fileName}"`
-      : undefined,
+    ResponseContentDisposition: fileName ? `inline; filename="${fileName}"` : undefined,
   });
 
   return getSignedUrl(client, command, { expiresIn: downloadUrlExpiresInSeconds });

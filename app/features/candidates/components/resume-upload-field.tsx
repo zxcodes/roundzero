@@ -12,8 +12,8 @@ import {
 } from "@/features/candidates/server/functions";
 import {
   getResumeDisplayName,
-  readPendingResume,
   type PendingResume,
+  readPendingResume,
   uploadFileToSignedUrl,
   writePendingResume,
 } from "@/shared/resume";

@@ -28,12 +28,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { updateUserName } from "@/features/auth/server/functions";
+import { ResumeUploadField } from "@/features/candidates/components/resume-upload-field";
 import {
   type getMyCandidateProfile,
   type UpdateCandidateProfileInput,
   updateMyCandidateProfile,
 } from "@/features/candidates/server/functions";
-import { ResumeUploadField } from "@/features/candidates/components/resume-upload-field";
 import type { User } from "@/router";
 import { AutoSaveIndicator, useAutoSaveStatus } from "@/shared/auto-save-indicator";
 import { useAppForm } from "@/shared/form";

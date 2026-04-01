@@ -13,11 +13,7 @@ import {
   getMyCandidateProfile,
 } from "@/features/candidates/server/functions";
 import { useAppForm } from "@/shared/form";
-import {
-  clearPendingResume,
-  getPendingResumeStorageKey,
-  readPendingResume,
-} from "@/shared/resume";
+import { clearPendingResume, getPendingResumeStorageKey, readPendingResume } from "@/shared/resume";
 
 export const Route = createFileRoute("/_authenticated/onboarding/candidate")({
   beforeLoad: ({ context }) => {

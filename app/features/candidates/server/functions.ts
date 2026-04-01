@@ -124,7 +124,8 @@ const buildResumeKey = (
   userId: string,
   fileName: string,
   contentType: keyof typeof allowedResumeTypes,
-) => `resumes/${userId}/${crypto.randomUUID()}--${sanitizeResumeFileName(fileName).replace(/\.[^.]+$/, "")}.${allowedResumeTypes[contentType]}`;
+) =>
+  `resumes/${userId}/${crypto.randomUUID()}--${sanitizeResumeFileName(fileName).replace(/\.[^.]+$/, "")}.${allowedResumeTypes[contentType]}`;
 
 const assertResumeKeyBelongsToUser = (resumeKey: string, userId: string) => {
   if (!resumeKey.startsWith(`resumes/${userId}/`)) {
