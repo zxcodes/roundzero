@@ -8,7 +8,7 @@ import {
   createCompanyLogoUploadTarget,
   finalizeCompanyLogoUpload,
 } from "@/features/companies/server/functions";
-import { getCompanyLogoUrl } from "@/shared/company-logo";
+import { getPublicAssetUrl } from "@/shared/r2";
 import { uploadFileToSignedUrl } from "@/shared/resume";
 
 type CompanyLogoUploadFieldProps = {
@@ -37,7 +37,7 @@ export function CompanyLogoUploadField({
   const createUploadTargetFn = useServerFn(createCompanyLogoUploadTarget);
   const finalizeUploadFn = useServerFn(finalizeCompanyLogoUpload);
   const inputId = `company-logo-${id}`;
-  const logoUrl = getCompanyLogoUrl(value);
+  const logoUrl = value ? getPublicAssetUrl(value) : null;
 
   const onLogoSelected = async (file: File | null) => {
     if (!file) {

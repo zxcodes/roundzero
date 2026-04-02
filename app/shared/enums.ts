@@ -33,13 +33,9 @@ export const APPLICATION_STATUS_TRANSITIONS: Record<ApplicationStatus, Applicati
   rejected: [],
 };
 
-/** Returns the list of statuses an application can transition to from the current status. */
-export const getValidTransitions = (current: ApplicationStatus): ApplicationStatus[] =>
-  APPLICATION_STATUS_TRANSITIONS[current] ?? [];
-
 /** Returns true if the transition from `current` to `next` is valid. */
 export const isValidTransition = (current: ApplicationStatus, next: ApplicationStatus): boolean =>
-  getValidTransitions(current).includes(next);
+  (APPLICATION_STATUS_TRANSITIONS[current] ?? []).includes(next);
 
 export const companySizeSchema = z.enum([
   "1-10",

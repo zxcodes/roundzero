@@ -19,7 +19,7 @@ import { Card, CardContent } from "@/components/ui/card";
 
 import { getCompanyBySlug } from "@/features/companies/server/functions";
 import { getOpenJobsByCompanyId } from "@/features/jobs/server/functions";
-import { getCompanyLogoUrl } from "@/shared/company-logo";
+import { getPublicAssetUrl } from "@/shared/r2";
 import type {
   CompanySize,
   EmploymentType,
@@ -65,7 +65,7 @@ function CompanyProfilePage() {
     .toUpperCase();
 
   const techStack: string[] = Array.isArray(company.techStack) ? company.techStack : [];
-  const logoUrl = getCompanyLogoUrl(company.logoKey);
+  const logoUrl = company.logoKey ? getPublicAssetUrl(company.logoKey) : null;
   const socialLinks: Record<string, string> =
     company.socialLinks &&
     typeof company.socialLinks === "object" &&

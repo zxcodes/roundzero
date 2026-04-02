@@ -5,7 +5,7 @@ import { z } from "zod";
 import { getUserById } from "@/features/auth/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { authMiddleware } from "@/shared/middleware";
-import { createR2ResumeDownloadUrl, createR2ResumeUploadUrl, r2ResumeExists } from "@/shared/r2";
+import { createR2ResumeDownloadUrl, createR2UploadUrl, r2ObjectExists } from "@/shared/r2";
 import { sanitizeResumeFileName } from "@/shared/resume";
 import { type SessionData, sessionConfig } from "@/shared/session";
 import {
@@ -302,8 +302,8 @@ export const createResumeUploadTarget = createServerFn({ method: "POST" })
 
     return {
       resumeKey,
-      uploadUrl: await createR2ResumeUploadUrl({
-        resumeKey,
+      uploadUrl: await createR2UploadUrl({
+        objectKey: resumeKey,
         contentType: data.contentType,
       }),
       uploadMethod: "put" as const,
@@ -321,7 +321,7 @@ export const finalizeResumeUpload = createServerFn({ method: "POST" })
       throw new Error("Only candidates can finalize resume uploads");
     }
     assertResumeKeyBelongsToUser(data.resumeKey, context.userId);
-    const exists = await r2ResumeExists(data.resumeKey);
+    const exists = await r2ObjectExists(data.resumeKey);
     if (!exists) {
       throw new Error("Uploaded resume could not be found");
     }
