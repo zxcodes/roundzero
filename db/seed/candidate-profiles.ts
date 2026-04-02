@@ -114,15 +114,34 @@ async function seedCandidateProfiles() {
 
   for (const profile of profiles) {
     await sql`
-      INSERT INTO candidate_profiles (id, user_id, headline, resume_key, bio, skills, links)
+      INSERT INTO candidate_profiles (
+        id,
+        user_id,
+        onboarding_completed_at,
+        headline,
+        resume_key,
+        resume_updated_at,
+        bio,
+        skills,
+        links
+      )
       VALUES (
-        ${profile.id}, ${profile.userId}, ${profile.headline}, ${profile.resumeKey}, ${profile.bio},
-        ${sql.json(profile.skills)}, ${sql.json(profile.links)}
+        ${profile.id},
+        ${profile.userId},
+        now(),
+        ${profile.headline},
+        ${profile.resumeKey},
+        now(),
+        ${profile.bio},
+        ${sql.json(profile.skills)},
+        ${sql.json(profile.links)}
       )
       ON CONFLICT (user_id) DO UPDATE
       SET
+        onboarding_completed_at = EXCLUDED.onboarding_completed_at,
         headline = EXCLUDED.headline,
         resume_key = EXCLUDED.resume_key,
+        resume_updated_at = EXCLUDED.resume_updated_at,
         bio = EXCLUDED.bio,
         skills = EXCLUDED.skills,
         links = EXCLUDED.links,
