@@ -4,10 +4,7 @@ import { getMyCompany } from "@/features/companies/server/functions";
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async ({ context, location }) => {
-    if (!context.user) {
-      throw redirect({ to: "/" });
-    }
-    if (!context.user.role) {
+    if (!context?.user?.role) {
       throw redirect({ to: "/" });
     }
 
@@ -16,11 +13,17 @@ export const Route = createFileRoute("/_authenticated")({
     if (context.isCompany) {
       const company = await getMyCompany();
       const onboarded = Boolean(company?.onboardingCompletedAt);
+
       if (!onboarded && !isOnboardingRoute) {
-        throw redirect({ to: "/onboarding/company" });
+        throw redirect({
+          to: "/onboarding/company",
+        });
       }
+
       if (onboarded && isOnboardingRoute) {
-        throw redirect({ to: "/dashboard" });
+        throw redirect({
+          to: "/dashboard",
+        });
       }
       return { company };
     }
@@ -28,11 +31,17 @@ export const Route = createFileRoute("/_authenticated")({
     if (context.isCandidate) {
       const profile = await getMyCandidateProfile();
       const onboarded = Boolean(profile?.onboardingCompletedAt);
+
       if (!onboarded && !isOnboardingRoute) {
-        throw redirect({ to: "/onboarding/candidate" });
+        throw redirect({
+          to: "/onboarding/candidate",
+        });
       }
+
       if (onboarded && isOnboardingRoute) {
-        throw redirect({ to: "/dashboard" });
+        throw redirect({
+          to: "/dashboard",
+        });
       }
       return { candidateProfile: profile };
     }
