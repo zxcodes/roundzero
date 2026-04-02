@@ -42,12 +42,7 @@ const jobsSearchSchema = z.object({
 export const Route = createFileRoute("/jobs/")({
   validateSearch: jobsSearchSchema,
   search: { middlewares: [stripSearchParams(searchDefaults)] },
-  loaderDeps: ({ search }) => ({
-    search: search.search,
-    type: search.type,
-    level: search.level,
-    page: search.page,
-  }),
+  loaderDeps: ({ search }) => search,
   head: () => ({
     meta: [{ title: "Browse Jobs | RoundZero" }],
   }),

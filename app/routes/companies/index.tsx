@@ -23,7 +23,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getAllCompaniesPaginated } from "@/features/companies/server/functions";
-import { getPublicAssetUrl } from "@/shared/r2";
 import type { CompanySize, Industry } from "@/shared/enums";
 import {
   companySizeLabels,
@@ -31,6 +30,7 @@ import {
   industryLabels,
   industrySchema,
 } from "@/shared/enums";
+import { getPublicAssetUrl } from "@/shared/r2";
 
 const searchDefaults = { search: "", industry: "all", size: "all", page: 1 } as const;
 
@@ -44,12 +44,7 @@ const companiesSearchSchema = z.object({
 export const Route = createFileRoute("/companies/")({
   validateSearch: companiesSearchSchema,
   search: { middlewares: [stripSearchParams(searchDefaults)] },
-  loaderDeps: ({ search }) => ({
-    search: search.search,
-    industry: search.industry,
-    size: search.size,
-    page: search.page,
-  }),
+  loaderDeps: ({ search }) => search,
   head: () => ({
     meta: [{ title: "Browse Companies | RoundZero" }],
   }),

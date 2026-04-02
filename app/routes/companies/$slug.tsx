@@ -19,7 +19,6 @@ import { Card, CardContent } from "@/components/ui/card";
 
 import { getCompanyBySlug } from "@/features/companies/server/functions";
 import { getOpenJobsByCompanyId } from "@/features/jobs/server/functions";
-import { getPublicAssetUrl } from "@/shared/r2";
 import type {
   CompanySize,
   EmploymentType,
@@ -34,6 +33,7 @@ import {
   industryLabels,
   workplaceTypeLabels,
 } from "@/shared/enums";
+import { getPublicAssetUrl } from "@/shared/r2";
 
 export const Route = createFileRoute("/companies/$slug")({
   loader: async ({ params }) => {
