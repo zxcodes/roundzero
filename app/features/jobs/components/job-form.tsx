@@ -20,6 +20,7 @@ export interface JobFormData {
   title: string;
   description: string;
   requirements: string[];
+  interviewQuestions: string[];
   status: JobStatus;
   location: string | null;
   workplaceType: WorkplaceType | null;
@@ -30,6 +31,7 @@ export interface JobFormData {
   salaryCurrency: string;
   teamSize: number | null;
   headcount: number | null;
+  expiresAt: Date | null;
 }
 
 const emptyToNull = <T,>(value: T | ""): T | null => (value === "" ? null : value);
@@ -69,12 +71,14 @@ export function JobForm({
   submitLabel: string;
 }) {
   const [requirementInput, setRequirementInput] = useState("");
+  const [interviewQuestionInput, setInterviewQuestionInput] = useState("");
 
   const form = useAppForm({
     defaultValues: {
       title: defaultValues?.title ?? "",
       description: defaultValues?.description ?? "",
       requirements: defaultValues?.requirements ?? ([] as string[]),
+      interviewQuestions: defaultValues?.interviewQuestions ?? ([] as string[]),
       status: defaultValues?.status ?? ("draft" as string),
       location: defaultValues?.location ?? "",
       workplaceType: (defaultValues?.workplaceType ?? "") as string,
@@ -85,12 +89,18 @@ export function JobForm({
       salaryCurrency: defaultValues?.salaryCurrency ?? "USD",
       teamSize: defaultValues?.teamSize ?? null,
       headcount: defaultValues?.headcount ?? null,
+      expiresAt: defaultValues?.expiresAt ? defaultValues.expiresAt.toISOString().slice(0, 10) : "",
     },
     onSubmit: ({ value }) => {
+      const expiresAt = value.expiresAt?.trim()
+        ? new Date(`${value.expiresAt}T23:59:59.999`)
+        : null;
+
       onSubmit({
         title: value.title,
         description: value.description,
         requirements: value.requirements,
+        interviewQuestions: value.interviewQuestions,
         status: value.status as JobStatus,
         location: value.location || null,
         workplaceType: emptyToNull(value.workplaceType) as WorkplaceType | null,
@@ -101,6 +111,7 @@ export function JobForm({
         salaryCurrency: value.salaryCurrency,
         teamSize: value.teamSize,
         headcount: value.headcount,
+        expiresAt,
       });
     },
   });
@@ -111,10 +122,12 @@ export function JobForm({
   const onRequirementInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setRequirementInput(e.target.value);
   };
+  const onInterviewQuestionInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInterviewQuestionInput(e.target.value);
+  };
 
   return (
     <form onSubmit={onFormSubmit} className="space-y-6">
-      {/* Basic info */}
       <div className="space-y-4">
         <form.AppField
           name="title"
@@ -143,7 +156,95 @@ export function JobForm({
 
       <Separator />
 
-      {/* Job metadata */}
+      <div className="space-y-4">
+        <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
+          Interview questions
+        </p>
+        <form.Field name="interviewQuestions" mode="array">
+          {(iqField) => {
+            const onInterviewQuestionInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+              const trimmed = interviewQuestionInput.trim();
+              if (e.key === "Enter" && trimmed) {
+                e.preventDefault();
+                if (!iqField.state.value.includes(trimmed)) {
+                  iqField.pushValue(trimmed);
+                }
+                setInterviewQuestionInput("");
+              }
+            };
+            const onAddInterviewQuestion = () => {
+              const trimmed = interviewQuestionInput.trim();
+              if (trimmed && !iqField.state.value.includes(trimmed)) {
+                iqField.pushValue(trimmed);
+              }
+              setInterviewQuestionInput("");
+            };
+            const onRemoveInterviewQuestion = (index: number) => {
+              iqField.removeValue(index);
+            };
+
+            return (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  Questions the interview agent will ask candidates during their conversational
+                  application.
+                </p>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="e.g. Are you authorized to work in the US?"
+                    value={interviewQuestionInput}
+                    onChange={onInterviewQuestionInputChange}
+                    onKeyDown={onInterviewQuestionInputKeyDown}
+                    maxLength={300}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={onAddInterviewQuestion}
+                  >
+                    <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-4" />
+                  </Button>
+                </div>
+                {iqField.state.value.length > 0 ? (
+                  <ul className="mt-2 space-y-1">
+                    {iqField.state.value.map((q, i) => {
+                      const onRemoveClick = () => onRemoveInterviewQuestion(i);
+                      return (
+                        <li
+                          key={`${q}-${i}`}
+                          className="flex items-center justify-between gap-2 rounded-md bg-muted px-3 py-2 text-sm"
+                        >
+                          <span className="flex items-center gap-2">
+                            <span className="block size-1 shrink-0 rounded-full bg-primary" />
+                            {q}
+                          </span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-xs"
+                            onClick={onRemoveClick}
+                            className="shrink-0 text-muted-foreground hover:text-foreground"
+                          >
+                            <HugeiconsIcon
+                              icon={Cancel01Icon}
+                              strokeWidth={2}
+                              className="size-3.5"
+                            />
+                          </Button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : null}
+              </div>
+            );
+          }}
+        </form.Field>
+      </div>
+
+      <Separator />
+
       <div className="space-y-4">
         <p className="text-[11px] font-bold uppercase tracking-widest text-primary">Job details</p>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -183,12 +284,34 @@ export function JobForm({
               />
             )}
           />
+          <form.Field name="expiresAt">
+            {(field) => {
+              const onExpiresAtBlur = () => field.handleBlur();
+              const onExpiresAtChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+                field.handleChange(e.target.value);
+
+              return (
+                <div className="space-y-2">
+                  <Label htmlFor={field.name}>Application deadline</Label>
+                  <Input
+                    id={field.name}
+                    type="date"
+                    value={field.state.value}
+                    onBlur={onExpiresAtBlur}
+                    onChange={onExpiresAtChange}
+                  />
+                  <p className="text-muted-foreground text-xs">
+                    Optional. If set, this role will automatically close after that date.
+                  </p>
+                </div>
+              );
+            }}
+          </form.Field>
         </div>
       </div>
 
       <Separator />
 
-      {/* Compensation */}
       <div className="space-y-4">
         <p className="text-[11px] font-bold uppercase tracking-widest text-primary">Compensation</p>
         <div className="grid gap-4 sm:grid-cols-3">
@@ -213,7 +336,6 @@ export function JobForm({
 
       <Separator />
 
-      {/* Team info */}
       <div className="space-y-4">
         <p className="text-[11px] font-bold uppercase tracking-widest text-primary">Team</p>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -244,7 +366,6 @@ export function JobForm({
 
       <Separator />
 
-      {/* Requirements */}
       <div className="space-y-4">
         <form.Field name="requirements" mode="array">
           {(reqField) => {
@@ -265,9 +386,7 @@ export function JobForm({
               }
               setRequirementInput("");
             };
-            const onRemoveRequirement = (index: number) => {
-              reqField.removeValue(index);
-            };
+            const onRemoveRequirement = (index: number) => reqField.removeValue(index);
 
             return (
               <div className="space-y-2">
@@ -286,38 +405,33 @@ export function JobForm({
                 </div>
                 {reqField.state.value.length > 0 ? (
                   <ul className="mt-2 space-y-1">
-                    {reqField.state.value.map((req, i) =>
-                      (() => {
-                        const onRemoveRequirementClick = () => {
-                          onRemoveRequirement(i);
-                        };
-
-                        return (
-                          <li
-                            key={`${req}-${i}`}
-                            className="flex items-center justify-between gap-2 rounded-md bg-muted px-3 py-2 text-sm"
+                    {reqField.state.value.map((req, i) => {
+                      const onRemoveClick = () => onRemoveRequirement(i);
+                      return (
+                        <li
+                          key={`${req}-${i}`}
+                          className="flex items-center justify-between gap-2 rounded-md bg-muted px-3 py-2 text-sm"
+                        >
+                          <span className="flex items-center gap-2">
+                            <span className="block size-1 shrink-0 rounded-full bg-primary" />
+                            {req}
+                          </span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-xs"
+                            onClick={onRemoveClick}
+                            className="shrink-0 text-muted-foreground hover:text-foreground"
                           >
-                            <span className="flex items-center gap-2">
-                              <span className="block size-1 shrink-0 rounded-full bg-primary" />
-                              {req}
-                            </span>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon-xs"
-                              onClick={onRemoveRequirementClick}
-                              className="shrink-0 text-muted-foreground hover:text-foreground"
-                            >
-                              <HugeiconsIcon
-                                icon={Cancel01Icon}
-                                strokeWidth={2}
-                                className="size-3.5"
-                              />
-                            </Button>
-                          </li>
-                        );
-                      })(),
-                    )}
+                            <HugeiconsIcon
+                              icon={Cancel01Icon}
+                              strokeWidth={2}
+                              className="size-3.5"
+                            />
+                          </Button>
+                        </li>
+                      );
+                    })}
                   </ul>
                 ) : null}
               </div>
@@ -328,7 +442,6 @@ export function JobForm({
 
       <Separator />
 
-      {/* Status + Submit */}
       <div className="space-y-4">
         <form.AppField
           name="status"

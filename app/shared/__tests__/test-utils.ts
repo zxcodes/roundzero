@@ -172,7 +172,7 @@ export const seedCandidateProfile = async (overrides?: {
 
   const [row] = await sql`
     INSERT INTO candidate_profiles (user_id, headline, resume_key, onboarding_completed_at, resume_updated_at)
-    VALUES (${user.id}, ${headline}, ${resumeKey}, now(), CASE WHEN ${resumeKey} IS NOT NULL THEN now() ELSE NULL END)
+    VALUES (${user.id}, ${headline}, ${resumeKey}, now(), ${resumeKey ? new Date() : null})
     RETURNING id, user_id AS "userId", headline
   `;
   return { profile: row as TestCandidateProfile, user };

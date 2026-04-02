@@ -7,7 +7,7 @@ import {
   getCandidateWorkHistoryByProfileId,
 } from "@/features/candidates/queries/queries_sql";
 import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
-import { getJobById } from "@/features/jobs/queries/queries_sql";
+import { closeExpiredJobsQuery, getJobById } from "@/features/jobs/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { applicationStatusSchema, isValidTransition } from "@/shared/enums";
 import { authMiddleware } from "@/shared/middleware";
@@ -43,6 +43,7 @@ export const applyToJob = createServerFn({ method: "POST" })
   .inputValidator(zodValidator(applySchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
+    await db.unsafe(closeExpiredJobsQuery);
 
     // Only candidates can apply
     const user = await getUserById(db, { id: context.userId });
@@ -57,6 +58,9 @@ export const applyToJob = createServerFn({ method: "POST" })
     }
     if (job.status !== "open") {
       throw new Error("This job is not accepting applications");
+    }
+    if (job.expiresAt && job.expiresAt <= new Date()) {
+      throw new Error("This job has expired and is no longer accepting applications");
     }
 
     // Check if already applied

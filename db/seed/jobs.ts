@@ -125,6 +125,19 @@ function buildRequirements(template: DomainTemplate, seed: string): string[] {
   ];
 }
 
+function buildInterviewQuestions(template: DomainTemplate, seed: string): string[] {
+  const priorityA = pick(template.priorities, randomInt(`${seed}-assessment-a`, 0, 100));
+  const priorityB = pick(template.priorities, randomInt(`${seed}-assessment-b`, 0, 100));
+  const stack = pick(template.techStack, randomInt(`${seed}-assessment-stack`, 0, 100));
+
+  return [
+    `Are you comfortable working with ${stack} in production?`,
+    `Can you describe your experience with ${priorityA}?`,
+    `What's your approach to ${priorityB} in real-world projects?`,
+    "Are you open to occasional on-site collaboration?",
+  ];
+}
+
 async function seedJobs() {
   const companies = await sql<{ id: string; name: string }[]>`
     SELECT c.id, c.name
@@ -155,6 +168,8 @@ async function seedJobs() {
     salaryCurrency: string;
     teamSize: number;
     headcount: number;
+    interviewQuestions: string[];
+    expiresAt: Date | null;
   }>;
 
   let counter = 1;
@@ -183,6 +198,10 @@ async function seedJobs() {
 
       const teamSize = randomInt(`${seed}-team`, 4, 20);
       const headcount = randomInt(`${seed}-headcount`, 1, 4);
+      const expiresAt =
+        status === "open" && counter % 5 === 0
+          ? new Date(Date.now() + randomInt(`${seed}-expiry-days`, 10, 45) * 24 * 60 * 60 * 1000)
+          : null;
 
       jobs.push({
         id: makeUuid("rz-seed-job", counter),
@@ -200,6 +219,8 @@ async function seedJobs() {
         salaryCurrency: template.compensation.currency,
         teamSize,
         headcount,
+        interviewQuestions: buildInterviewQuestions(template, seed),
+        expiresAt,
       });
 
       counter += 1;
@@ -210,14 +231,15 @@ async function seedJobs() {
     await sql`
       INSERT INTO jobs (
         id, company_id, title, description, requirements, status,
-        location, workplace_type, employment_type, experience_level,
-        salary_min, salary_max, salary_currency, team_size, headcount
+        interview_questions, location, workplace_type, employment_type, experience_level,
+        salary_min, salary_max, salary_currency, team_size, headcount, expires_at
       )
       VALUES (
         ${job.id}, ${job.companyId}, ${job.title}, ${job.description},
         ${sql.json(job.requirements)}, ${job.status},
+        ${sql.json(job.interviewQuestions)},
         ${job.location}, ${job.workplaceType}, ${job.employmentType}, ${job.experienceLevel},
-        ${job.salaryMin}, ${job.salaryMax}, ${job.salaryCurrency}, ${job.teamSize}, ${job.headcount}
+        ${job.salaryMin}, ${job.salaryMax}, ${job.salaryCurrency}, ${job.teamSize}, ${job.headcount}, ${job.expiresAt}
       )
       ON CONFLICT (id) DO UPDATE
       SET
@@ -226,6 +248,7 @@ async function seedJobs() {
         description = EXCLUDED.description,
         requirements = EXCLUDED.requirements,
         status = EXCLUDED.status,
+        interview_questions = EXCLUDED.interview_questions,
         location = EXCLUDED.location,
         workplace_type = EXCLUDED.workplace_type,
         employment_type = EXCLUDED.employment_type,
@@ -235,6 +258,7 @@ async function seedJobs() {
         salary_currency = EXCLUDED.salary_currency,
         team_size = EXCLUDED.team_size,
         headcount = EXCLUDED.headcount,
+        expires_at = EXCLUDED.expires_at,
         updated_at = now()
     `;
   }
