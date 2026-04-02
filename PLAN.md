@@ -148,7 +148,7 @@ Finish the non-AI hiring platform so the interview/evaluation layer lands on a s
 - Give companies a usable applicant-review workflow, not just a raw list
 - Improve post-application clarity for both candidates and companies
 
-### Sub-project 1: Resume Storage Completion
+### Sub-project 1: Resume Storage Completion ✅ / Final Cleanup
 
 - [x] Add current-runtime Cloudflare R2 configuration (`.env` wiring, bucket CORS, signed URL credentials)
 - [x] Replace mock upload behavior in candidate resume server functions with signed upload URL generation
@@ -161,7 +161,8 @@ Finish the non-AI hiring platform so the interview/evaluation layer lands on a s
 - [x] Candidate settings: show meaningful current file state instead of generic “resume on file”
 - [x] Candidate settings: show resume-specific last-updated timestamp
 - [x] Company applicant views: wire “View resume” / “Download resume” to signed read URLs
-- [ ] Update seed/test helpers to use realistic `resume_key` values instead of legacy URL-shaped strings
+- [x] Update seed data to use realistic `resume_key` values and onboarding/timestamp fields
+- [ ] Update remaining legacy application/dashboard test fixtures to use realistic `resume_key` values instead of URL-shaped strings
 - [ ] Add Worker/Wrangler-side R2 bindings when the runtime moves onto Cloudflare
 
 ### Sub-project 2: Company Logo Uploads ✅
@@ -172,7 +173,7 @@ Finish the non-AI hiring platform so the interview/evaluation layer lands on a s
 - [x] Company settings supports logo upload and replace-logo flow
 - [x] Logos rendered from R2 public CDN URL across public and dashboard surfaces
 - [x] Company onboarding logo upload intentionally omitted (logo added via settings)
-- [ ] Update seed/test helpers to use realistic uploaded logo references
+- [x] Seed companies with real public-facing logo image URLs
 
 ### Sub-project 3: Job Lifecycle Hardening
 
@@ -270,8 +271,8 @@ Build this phase in the following order to keep dependencies clean and avoid rew
    - Company-side applicant review is incomplete until resumes are actually accessible.
 
 2. **Company Logo Uploads**
-   - Company profiles still treat logos as URL-shaped data.
-   - This should follow the same storage pattern as resumes before deeper company-surface polish.
+   - Company logo uploads now exist in settings only, with seeded public demo logos for browse surfaces.
+   - Keep onboarding simpler and treat logo upload as a profile-quality improvement, not a setup blocker.
 
 3. **Candidate Apply Surface Consistency**
    - Once resume storage works, make sure candidates can apply correctly from every valid surface.
