@@ -164,15 +164,14 @@ Finish the non-AI hiring platform so the interview/evaluation layer lands on a s
 - [ ] Update seed/test helpers to use realistic `resume_key` values instead of legacy URL-shaped strings
 - [ ] Add Worker/Wrangler-side R2 bindings when the runtime moves onto Cloudflare
 
-### Sub-project 2: Company Logo Uploads
+### Sub-project 2: Company Logo Uploads ✅
 
-- [ ] Replace company logo URL input paths with direct upload
-- [ ] Add Cloudflare R2 signed upload/read flow for company logos
-- [ ] Decide canonical storage field: prefer `logo_key` over `logo_url` for parity with resume uploads
-- [ ] Update company onboarding to support real logo upload
-- [ ] Update company settings to support replace-logo flow
-- [ ] Render company logos from uploaded storage references across public and dashboard surfaces
-- [ ] Decide delivery model: signed reads vs public CDN URL for logos
+- [x] Replace company logo URL input paths with direct upload
+- [x] Add Cloudflare R2 signed upload/read flow for company logos
+- [x] Canonical storage field is `logo_key` (no `logo_url` anywhere)
+- [x] Company settings supports logo upload and replace-logo flow
+- [x] Logos rendered from R2 public CDN URL across public and dashboard surfaces
+- [x] Company onboarding logo upload intentionally omitted (logo added via settings)
 - [ ] Update seed/test helpers to use realistic uploaded logo references
 
 ### Sub-project 3: Job Lifecycle Hardening
