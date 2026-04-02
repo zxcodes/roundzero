@@ -1,5 +1,3 @@
-import { getPublicAssetUrl } from "@/shared/r2";
-
 export function sanitizeCompanyLogoFileName(fileName: string) {
   const trimmed = fileName.trim().toLowerCase();
   const lastDotIndex = trimmed.lastIndexOf(".");
@@ -13,12 +11,4 @@ export function sanitizeCompanyLogoFileName(fileName: string) {
       .slice(0, 80) || "logo";
 
   return extension ? `${sanitizedBaseName}.${extension}` : sanitizedBaseName;
-}
-
-export function getCompanyLogoUrl(logoKey: string | null | undefined) {
-  if (!logoKey) {
-    return null;
-  }
-
-  return getPublicAssetUrl(logoKey);
 }

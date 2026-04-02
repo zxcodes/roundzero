@@ -12,6 +12,7 @@ Always consult both before making design decisions or implementing features.
 - Feature-first folders: `app/features/<feature>/` with `routes/`, `components/`, `hooks/`, `queries/`, `services/`, `types.ts`.
 - Shared utilities in `app/shared/`. File-based routes in `app/routes/`.
 - No barrel exports (`index.ts` re-export files).
+- **No thin wrappers or trivial abstractions.** Don't create helper functions that just forward to another function with renamed args, add a null check, or wrap a single call. Inline the logic at the call site instead. Only extract a shared helper when it contains real logic and is used across multiple features.
 
 ## Database + SQLC
 

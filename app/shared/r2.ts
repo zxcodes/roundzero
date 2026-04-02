@@ -75,16 +75,6 @@ export async function createR2UploadUrl({
   return getSignedUrl(client, command, { expiresIn: uploadUrlExpiresInSeconds });
 }
 
-export async function createR2ResumeUploadUrl({
-  resumeKey,
-  contentType,
-}: {
-  resumeKey: string;
-  contentType: string;
-}) {
-  return createR2UploadUrl({ objectKey: resumeKey, contentType });
-}
-
 export async function createR2ResumeDownloadUrl({
   resumeKey,
   fileName,
@@ -119,10 +109,6 @@ export async function r2ObjectExists(objectKey: string) {
   } catch {
     return false;
   }
-}
-
-export async function r2ResumeExists(resumeKey: string) {
-  return r2ObjectExists(resumeKey);
 }
 
 export function getPublicAssetUrl(objectKey: string) {

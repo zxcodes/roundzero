@@ -9,7 +9,6 @@ import {
   employmentTypeSchema,
   experienceLevelLabels,
   experienceLevelSchema,
-  getValidTransitions,
   isValidTransition,
   jobStatusSchema,
   userRoleSchema,
@@ -99,24 +98,6 @@ describe("APPLICATION_STATUS_TRANSITIONS", () => {
         expect(validStatuses.has(target)).toBe(true);
       }
     }
-  });
-});
-
-describe("getValidTransitions", () => {
-  it("applied → interviewing, rejected", () => {
-    expect(getValidTransitions("applied")).toEqual(["interviewing", "rejected"]);
-  });
-
-  it("interviewing → evaluated, rejected", () => {
-    expect(getValidTransitions("interviewing")).toEqual(["evaluated", "rejected"]);
-  });
-
-  it("evaluated → rejected", () => {
-    expect(getValidTransitions("evaluated")).toEqual(["rejected"]);
-  });
-
-  it("rejected → nothing (terminal)", () => {
-    expect(getValidTransitions("rejected")).toEqual([]);
   });
 });
 
