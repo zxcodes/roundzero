@@ -530,6 +530,7 @@ function CandidateApplySection({
   const [justApplied, setJustApplied] = useState(false);
 
   const applyToJobFn = useServerFn(applyToJob);
+
   const applyMutation = useMutation({
     mutationFn: applyToJobFn,
     onSuccess: async () => {
