@@ -130,11 +130,11 @@ Solidify RoundZero as a usable job platform before adding AI. Public browsing, p
 - [x] Wire real Cloudflare R2 signed upload/read behavior behind the resume upload contract
 - [x] Persist candidate `resume_key` immediately after upload so settings/onboarding refreshes read from the DB
 - [x] Track `resume_updated_at` and show last-updated state in candidate settings
-- [ ] `expires_at` field on job create/edit form (optional date picker)
-- [ ] When creating a job posting, let companies enter questions and even set answers to those questions in a plain text box or in natural language. Also let them know our agent will pick it up and pass those when assessing a candidate. This will be an optional text box.
-- [ ] Stale job indicator: badge on jobs older than 90 days with no expiry set
-- [ ] Auto-close expired jobs: scheduled task or on-read check that sets `status = 'closed'` when `expires_at < now()`
-- [ ] Update job browsing UI to hide expired/closed jobs by default
+- [x] `expires_at` field on job create/edit form (optional date picker)
+- [x] When creating a job posting, let companies enter questions and even set answers to those questions in a plain text box or in natural language. Also let them know our agent will pick it up and pass those when assessing a candidate. This will be an optional text box.
+- [x] Stale job indicator: badge on jobs older than 90 days with no expiry set
+- [x] Auto-close expired jobs: scheduled task or on-read check that sets `status = 'closed'` when `expires_at < now()`
+- [x] Update job browsing UI to hide expired/closed jobs by default
 
 ## Phase 3.5: Core Product Hardening Before AI ← NEXT
 
@@ -177,16 +177,16 @@ Finish the non-AI hiring platform so the interview/evaluation layer lands on a s
 
 ### Sub-project 3: Job Lifecycle Hardening
 
-- [ ] Add `expires_at` field to create/edit job UI
-- [ ] Add optional date picker UX for expiry selection
-- [ ] Show expiry date on company job detail and job management surfaces
-- [ ] Show expiry/stale state on public and candidate job listings where relevant
-- [ ] Add stale-job badge for roles older than 90 days with no expiry
-- [ ] Hide expired/closed jobs by default in public browsing
-- [ ] Ensure open-jobs queries consistently exclude expired jobs
-- [ ] Add on-read or scheduled auto-close behavior for `expires_at < now()`
-- [ ] Prevent applying to expired jobs with a user-facing message
-- [ ] Add tests covering expired job visibility and application blocking
+- [x] Add `expires_at` field to create/edit job UI
+- [x] Add optional date picker UX for expiry selection
+- [x] Show expiry date on company job detail and job management surfaces
+- [x] Show expiry/stale state on public and candidate job listings where relevant
+- [x] Add stale-job badge for roles older than 90 days with no expiry
+- [x] Hide expired/closed jobs by default in public browsing
+- [x] Ensure open-jobs queries consistently exclude expired jobs
+- [x] Add on-read or scheduled auto-close behavior for `expires_at < now()`
+- [x] Prevent applying to expired jobs with a user-facing message
+- [x] Add tests covering expired job visibility and application blocking
 
 ### Sub-project 4: Candidate Apply Surface Consistency
 

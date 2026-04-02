@@ -22,6 +22,7 @@ const makeOpenJob = async (companyId: string, title = "Open Job") => {
     title,
     description: "Test",
     requirements: [],
+    interviewQuestions: [],
     status: "open",
     location: null,
     workplaceType: null,

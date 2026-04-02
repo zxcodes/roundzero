@@ -6,6 +6,7 @@ import { getDb } from "@/shared/db";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
 import {
   archiveJob as archiveJobQuery,
+  closeExpiredJobsQuery,
   countOpenJobsFiltered,
   createJob as createJobQuery,
   getArchivedJobsByCompanyId,
@@ -29,6 +30,7 @@ export const createJob = createServerFn({ method: "POST" })
       title: data.title,
       description: data.description,
       requirements: data.requirements,
+      interviewQuestions: data.interviewQuestions,
       status: data.status,
       location: data.location ?? null,
       workplaceType: data.workplaceType ?? null,
@@ -53,6 +55,7 @@ export const getMyJobs = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
     const db = getDb();
+    await db.unsafe(closeExpiredJobsQuery);
     const company = await getCompanyByOwnerId(db, { ownerId: context.userId });
     if (!company) {
       return [];
@@ -78,6 +81,7 @@ export const getJob = createServerFn({ method: "GET" })
   .inputValidator(zodValidator(jobIdSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
+    await db.unsafe(closeExpiredJobsQuery);
     const job = await getJobById(db, { id: data.id });
     if (!job) {
       throw new Error("Job not found");
@@ -106,6 +110,7 @@ export const updateJob = createServerFn({ method: "POST" })
       title: data.title,
       description: data.description,
       requirements: data.requirements,
+      interviewQuestions: data.interviewQuestions,
       status: data.status,
       location: data.location ?? null,
       workplaceType: data.workplaceType ?? null,
@@ -140,6 +145,7 @@ export const archiveJob = createServerFn({ method: "POST" })
 
 export const getOpenJobs = createServerFn({ method: "GET" }).handler(async () => {
   const db = getDb();
+  await db.unsafe(closeExpiredJobsQuery);
   const jobs = await getOpenJobsQuery(db);
   return jobs;
 });
@@ -149,6 +155,7 @@ export const publishJob = createServerFn({ method: "POST" })
   .inputValidator(zodValidator(jobIdSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
+    await db.unsafe(closeExpiredJobsQuery);
 
     const job = await getJobById(db, { id: data.id });
     if (!job || job.companyId !== context.company.id) {
@@ -159,12 +166,17 @@ export const publishJob = createServerFn({ method: "POST" })
       throw new Error("Only draft jobs can be published");
     }
 
+    if (job.expiresAt && job.expiresAt <= new Date()) {
+      throw new Error("This job has already expired. Update the deadline before publishing.");
+    }
+
     const updated = await updateJobQuery(db, {
       id: data.id,
       companyId: context.company.id,
       title: job.title,
       description: job.description,
       requirements: job.requirements,
+      interviewQuestions: job.interviewQuestions,
       status: "open",
       location: job.location,
       workplaceType: job.workplaceType,
@@ -195,6 +207,7 @@ export const getPublicJobById = createServerFn({ method: "GET" })
   .inputValidator(zodValidator(jobIdSchema))
   .handler(async ({ data }) => {
     const db = getDb();
+    await db.unsafe(closeExpiredJobsQuery);
     const job = await getJobById(db, { id: data.id });
 
     if (!job || job.status !== "open" || job.archivedAt) {
@@ -208,6 +221,7 @@ export const getOpenJobsByCompanyId = createServerFn({ method: "GET" })
   .inputValidator(zodValidator(companyIdSchema))
   .handler(async ({ data }) => {
     const db = getDb();
+    await db.unsafe(closeExpiredJobsQuery);
     return getOpenJobsByCompanyIdQuery(db, { companyId: data.companyId });
   });
 
@@ -224,6 +238,7 @@ export const getOpenJobsPaginated = createServerFn({ method: "GET" })
   .inputValidator(zodValidator(paginatedJobsSchema))
   .handler(async ({ data }) => {
     const db = getDb();
+    await db.unsafe(closeExpiredJobsQuery);
     const offset = (data.page - 1) * JOBS_PER_PAGE;
 
     const [items, countRow] = await Promise.all([

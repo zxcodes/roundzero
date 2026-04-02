@@ -124,6 +124,7 @@ CREATE TABLE public.jobs (
     title text NOT NULL,
     description text NOT NULL,
     requirements jsonb DEFAULT '[]'::jsonb NOT NULL,
+    interview_questions jsonb DEFAULT '[]'::jsonb NOT NULL,
     status text DEFAULT 'draft'::text NOT NULL,
     location text,
     workplace_type text,

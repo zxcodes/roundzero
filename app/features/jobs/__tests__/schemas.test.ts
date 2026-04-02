@@ -13,12 +13,14 @@ describe("jobFieldsSchema", () => {
     expect(result.requirements).toEqual([]);
     expect(result.status).toBe("draft");
     expect(result.salaryCurrency).toBe("USD");
+    expect(result.interviewQuestions).toEqual([]);
   });
 
   it("accepts full input with all fields", () => {
     const result = jobFieldsSchema.parse({
       ...validJob,
       requirements: ["TypeScript", "React"],
+      interviewQuestions: ["Are you authorized to work in the US?"],
       status: "open",
       location: "NYC",
       workplaceType: "hybrid",
@@ -31,6 +33,7 @@ describe("jobFieldsSchema", () => {
       headcount: 3,
     });
     expect(result.workplaceType).toBe("hybrid");
+    expect(result.interviewQuestions).toEqual(["Are you authorized to work in the US?"]);
     expect(result.salaryMin).toBe(100000);
     expect(result.salaryMax).toBe(200000);
   });
@@ -46,9 +49,11 @@ describe("jobFieldsSchema", () => {
       salaryMax: null,
       teamSize: null,
       headcount: null,
+      interviewQuestions: [],
     });
     expect(result.location).toBeNull();
     expect(result.workplaceType).toBeNull();
+    expect(result.interviewQuestions).toEqual([]);
   });
 
   // ─── Validation failures ─────────────────────────────────

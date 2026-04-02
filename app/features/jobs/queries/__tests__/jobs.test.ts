@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { getTestDb, seedCompany } from "@/shared/__tests__/test-utils";
 import {
   archiveJob,
+  closeExpiredJobsQuery,
   countJobsByCompanyAndStatus,
   createJob,
   getArchivedJobsByCompanyId,
@@ -18,6 +19,7 @@ const makeJobArgs = (companyId: string, overrides?: Record<string, unknown>) => 
   title: "Software Engineer",
   description: "Build stuff",
   requirements: ["TypeScript", "React"],
+  interviewQuestions: ["Are you authorized to work in the US?"],
   status: "draft" as string,
   location: "Remote",
   workplaceType: "remote",
@@ -40,6 +42,7 @@ describe("createJob", () => {
     expect(job).not.toBeNull();
     expect(job!.title).toBe("Software Engineer");
     expect(job!.description).toBe("Build stuff");
+    expect(job!.interviewQuestions).toEqual(["Are you authorized to work in the US?"]);
     expect(job!.status).toBe("draft");
     expect(job!.companyId).toBe(company.id);
     expect(job!.location).toBe("Remote");
@@ -152,6 +155,7 @@ describe("updateJob", () => {
       title: "Senior Engineer",
       description: "Lead stuff",
       requirements: ["Go", "Kubernetes"],
+      interviewQuestions: ["Are you authorized to work in the US?"],
       status: "open",
       location: "NYC",
       workplaceType: "hybrid",
@@ -167,6 +171,7 @@ describe("updateJob", () => {
 
     expect(updated).not.toBeNull();
     expect(updated!.title).toBe("Senior Engineer");
+    expect(updated!.interviewQuestions).toEqual(["Are you authorized to work in the US?"]);
     expect(updated!.status).toBe("open");
     expect(updated!.location).toBe("NYC");
     expect(updated!.salaryCurrency).toBe("EUR");
@@ -285,6 +290,25 @@ describe("getOpenJobs", () => {
     expect(titles).toContain("Future Job");
     expect(titles).toContain("No Expiry Job");
     expect(titles).not.toContain("Expired Job");
+  });
+});
+
+describe("closeExpiredJobs", () => {
+  it("auto-closes expired open jobs without archiving them", async () => {
+    const { company } = await seedCompany({ name: "Closure Corp" });
+    const pastDate = new Date("2020-01-01");
+
+    const created = await createJob(
+      sql,
+      makeJobArgs(company.id, { title: "Should Close", status: "open", expiresAt: pastDate }),
+    );
+
+    await sql.unsafe(closeExpiredJobsQuery);
+
+    const job = await getJobById(sql, { id: created!.id });
+    expect(job).not.toBeNull();
+    expect(job!.status).toBe("closed");
+    expect(job!.archivedAt).toBeNull();
   });
 });
 

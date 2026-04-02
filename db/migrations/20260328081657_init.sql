@@ -78,6 +78,7 @@ CREATE TABLE jobs (
   title            TEXT NOT NULL,
   description      TEXT NOT NULL,
   requirements     JSONB NOT NULL DEFAULT '[]',
+  interview_questions JSONB NOT NULL DEFAULT '[]',
   status           TEXT NOT NULL DEFAULT 'draft',
   location         TEXT,
   workplace_type   TEXT,

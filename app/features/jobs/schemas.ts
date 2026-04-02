@@ -12,6 +12,7 @@ export const jobFieldsSchema = z
     title: requiredTrimmedString(200, "Job title is required"),
     description: requiredTrimmedString(5000, "Job description is required"),
     requirements: z.array(z.string().trim().min(1).max(200)).default([]),
+    interviewQuestions: z.array(z.string().trim().min(1).max(300)).default([]),
     status: jobStatusSchema.default("draft"),
     location: nullableTrimmedString(200).optional(),
     workplaceType: workplaceTypeSchema.nullable().optional(),
