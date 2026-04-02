@@ -112,6 +112,10 @@ export async function r2ObjectExists(objectKey: string) {
 }
 
 export function getPublicAssetUrl(objectKey: string) {
+  if (objectKey.startsWith("http://") || objectKey.startsWith("https://")) {
+    return objectKey;
+  }
+
   const baseUrl = getPublicAssetBaseUrl();
   if (!baseUrl) {
     return null;

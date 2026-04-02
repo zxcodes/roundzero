@@ -108,6 +108,7 @@ async function seedCompanies() {
       ownerId: owner.id,
       name: companyNames[index]!,
       slug,
+      logoKey: `https://ui-avatars.com/api/?name=${encodeURIComponent(companyNames[index]!)}&background=0f8f8b&color=ffffff&size=256&bold=true&format=svg`,
       description: `${companyNames[index]!} is a ${sector.toLowerCase()} company based in ${city}. We build software for enterprise operators and product teams, with a strong focus on reliability, measurable outcomes, and long-term platform scalability.`,
       industry,
       companySize,
@@ -126,12 +127,12 @@ async function seedCompanies() {
   for (const company of companies) {
     await sql`
       INSERT INTO companies (
-        id, owner_id, name, slug, description, industry, company_size,
+        id, owner_id, name, slug, onboarding_completed_at, description, logo_key, industry, company_size,
         location, website, founded_year, tech_stack, culture, social_links
       )
       VALUES (
-        ${company.id}, ${company.ownerId}, ${company.name}, ${company.slug},
-        ${company.description}, ${company.industry}, ${company.companySize},
+        ${company.id}, ${company.ownerId}, ${company.name}, ${company.slug}, now(),
+        ${company.description}, ${company.logoKey}, ${company.industry}, ${company.companySize},
         ${company.location}, ${company.website}, ${company.foundedYear},
         ${sql.json(company.techStack)}, ${company.culture}, ${sql.json(company.socialLinks)}
       )
@@ -140,7 +141,9 @@ async function seedCompanies() {
         owner_id = EXCLUDED.owner_id,
         name = EXCLUDED.name,
         slug = EXCLUDED.slug,
+        onboarding_completed_at = EXCLUDED.onboarding_completed_at,
         description = EXCLUDED.description,
+        logo_key = EXCLUDED.logo_key,
         industry = EXCLUDED.industry,
         company_size = EXCLUDED.company_size,
         location = EXCLUDED.location,

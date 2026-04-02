@@ -3,7 +3,6 @@ import { useSession } from "@tanstack/react-start/server";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { getUserById } from "@/features/auth/queries/queries_sql";
-import { sanitizeCompanyLogoFileName } from "@/shared/company-logo";
 import { getDb } from "@/shared/db";
 import { companySizeSchema, industrySchema } from "@/shared/enums";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
@@ -112,12 +111,25 @@ const updateCompanyLogoSchema = z.object({
   logoKey: z.string().min(1),
 });
 
+const sanitizeLogoFileName = (fileName: string) => {
+  const trimmed = fileName.trim().toLowerCase();
+  const lastDotIndex = trimmed.lastIndexOf(".");
+  const baseName = lastDotIndex > 0 ? trimmed.slice(0, lastDotIndex) : trimmed;
+
+  return (
+    baseName
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 80) || "logo"
+  );
+};
+
 const buildLogoKey = (
   userId: string,
   fileName: string,
   contentType: keyof typeof allowedLogoTypes,
 ) =>
-  `company-logos/${userId}/${crypto.randomUUID()}--${sanitizeCompanyLogoFileName(fileName).replace(/\.[^.]+$/, "")}.${allowedLogoTypes[contentType]}`;
+  `company-logos/${userId}/${crypto.randomUUID()}--${sanitizeLogoFileName(fileName)}.${allowedLogoTypes[contentType]}`;
 
 const assertLogoKeyBelongsToUser = (logoKey: string, userId: string) => {
   if (!logoKey.startsWith(`company-logos/${userId}/`)) {
