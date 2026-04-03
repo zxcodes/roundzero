@@ -15,15 +15,26 @@ import { JobDetailSkeleton } from "@/components/route-skeletons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-
+import { CandidateApplySection } from "@/features/applications/components/candidate-apply-section";
+import { hasApplied } from "@/features/applications/server/functions";
+import { getMyCandidateProfile } from "@/features/candidates/server/functions";
 import { getPublicJobById } from "@/features/jobs/server/functions";
 import type { EmploymentType, ExperienceLevel, WorkplaceType } from "@/shared/enums";
 import { employmentTypeLabels, experienceLevelLabels, workplaceTypeLabels } from "@/shared/enums";
 
 export const Route = createFileRoute("/jobs/$jobId")({
-  loader: async ({ params }) => {
+  loader: async ({ params, context }) => {
     const job = await getPublicJobById({ data: { id: params.jobId } });
-    return { job };
+
+    const [alreadyApplied, candidateProfile] =
+      context.isCandidate && job.status === "open"
+        ? await Promise.all([
+            hasApplied({ data: { jobId: params.jobId } }),
+            getMyCandidateProfile(),
+          ])
+        : [false, null];
+
+    return { job, alreadyApplied, candidateProfile };
   },
   head: ({ loaderData }) => ({
     meta: [
@@ -39,8 +50,8 @@ export const Route = createFileRoute("/jobs/$jobId")({
 });
 
 function JobDetailPage() {
-  const { job } = Route.useLoaderData();
-  const { user, isCandidate, isCompany } = useRouteContext({ from: "__root__" });
+  const { job, alreadyApplied, candidateProfile } = Route.useLoaderData();
+  const { isCandidate, isCompany } = useRouteContext({ from: "__root__" });
 
   const salary = formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency);
   const requirements: string[] = Array.isArray(job.requirements) ? job.requirements : [];
@@ -51,6 +62,8 @@ function JobDetailPage() {
   });
 
   const dashboardJobPath = `/dashboard/jobs/${job.id}`;
+  const canApply = isCandidate && job.status === "open";
+  const hasResume = Boolean(candidateProfile?.resumeKey);
 
   return (
     <div className="bg-background text-foreground min-h-svh">
@@ -87,29 +100,14 @@ function JobDetailPage() {
 
                 {!isCompany ? (
                   <div className="shrink-0">
-                    {user && isCandidate ? (
-                      <Button size="lg" asChild>
-                        <Link to={dashboardJobPath}>
-                          View in dashboard
-                          <HugeiconsIcon
-                            icon={ArrowRight01Icon}
-                            strokeWidth={2}
-                            className="ml-1.5 size-4"
-                          />
-                        </Link>
-                      </Button>
-                    ) : user ? null : (
-                      <Button size="lg" asChild>
-                        <Link to="/candidate/login" search={{ redirect: dashboardJobPath }}>
-                          Log in to apply
-                          <HugeiconsIcon
-                            icon={ArrowRight01Icon}
-                            strokeWidth={2}
-                            className="ml-1.5 size-4"
-                          />
-                        </Link>
-                      </Button>
-                    )}
+                    <PublicJobCTA
+                      isCandidate={isCandidate}
+                      dashboardJobPath={dashboardJobPath}
+                      canApply={canApply}
+                      alreadyApplied={alreadyApplied}
+                      hasResume={hasResume}
+                      job={job}
+                    />
                   </div>
                 ) : null}
               </div>
@@ -188,45 +186,15 @@ function JobDetailPage() {
             {/* Bottom CTA */}
             {!isCompany ? (
               <div className="animate-fade-in stagger-2 rounded-xl border border-dashed border-primary/20 bg-primary/5 p-6 text-center">
-                {user && isCandidate ? (
-                  <>
-                    <p className="text-sm font-medium">Interested in this role?</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      View this job in your dashboard to apply and interview.
-                    </p>
-                    <div className="mt-4">
-                      <Button asChild>
-                        <Link to={dashboardJobPath}>
-                          View in dashboard
-                          <HugeiconsIcon
-                            icon={ArrowRight01Icon}
-                            strokeWidth={2}
-                            className="ml-1.5 size-4"
-                          />
-                        </Link>
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-sm font-medium">Interested in this role?</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Sign in to apply with one click and interview on your schedule.
-                    </p>
-                    <div className="mt-4">
-                      <Button asChild>
-                        <Link to="/candidate/login" search={{ redirect: dashboardJobPath }}>
-                          Log in to apply
-                          <HugeiconsIcon
-                            icon={ArrowRight01Icon}
-                            strokeWidth={2}
-                            className="ml-1.5 size-4"
-                          />
-                        </Link>
-                      </Button>
-                    </div>
-                  </>
-                )}
+                <PublicJobCTA
+                  isCandidate={isCandidate}
+                  dashboardJobPath={dashboardJobPath}
+                  canApply={canApply}
+                  alreadyApplied={alreadyApplied}
+                  hasResume={hasResume}
+                  job={job}
+                  variant="bottom"
+                />
               </div>
             ) : null}
           </div>
@@ -284,6 +252,128 @@ function JobDetailPage() {
       </main>
 
       <PublicFooter />
+    </div>
+  );
+}
+
+function PublicJobCTA({
+  isCandidate,
+  dashboardJobPath,
+  canApply,
+  alreadyApplied,
+  hasResume,
+  job,
+  variant = "header",
+}: {
+  isCandidate: boolean;
+  dashboardJobPath: string;
+  canApply: boolean;
+  alreadyApplied: boolean;
+  hasResume: boolean;
+  job: { id: string; title: string; companyName: string | null };
+  variant?: "header" | "bottom";
+}) {
+  if (canApply && alreadyApplied) {
+    return (
+      <div className={variant === "bottom" ? "space-y-3" : ""}>
+        {variant === "bottom" ? (
+          <>
+            <p className="text-sm font-medium">Application submitted</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Track your application status and updates from your dashboard.
+            </p>
+          </>
+        ) : null}
+        <Button size={variant === "header" ? "lg" : "default"} variant="outline" asChild>
+          <Link to={dashboardJobPath}>
+            {variant === "header" ? "View in dashboard" : "View application"}
+            <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="ml-1.5 size-4" />
+          </Link>
+        </Button>
+      </div>
+    );
+  }
+
+  if (canApply && !hasResume) {
+    return (
+      <div className={variant === "bottom" ? "space-y-3" : ""}>
+        {variant === "bottom" ? (
+          <>
+            <p className="text-sm font-medium">Interested in this role?</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Add a resume to your profile to apply.
+            </p>
+          </>
+        ) : null}
+        <Button size={variant === "header" ? "lg" : "default"} asChild>
+          <Link to="/dashboard/settings">
+            {variant === "header" ? "Add resume" : "Add resume to apply"}
+            <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="ml-1.5 size-4" />
+          </Link>
+        </Button>
+      </div>
+    );
+  }
+
+  if (canApply && hasResume) {
+    return (
+      <div className={variant === "bottom" ? "space-y-3" : ""}>
+        {variant === "bottom" ? (
+          <>
+            <p className="text-sm font-medium">Apply with one click</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Uses the resume from your profile. No cover letter needed.
+            </p>
+          </>
+        ) : null}
+        <CandidateApplySection
+          jobId={job.id}
+          jobTitle={job.title}
+          companyName={job.companyName ?? "the company"}
+          alreadyApplied={alreadyApplied}
+          hasResume={hasResume}
+        />
+      </div>
+    );
+  }
+
+  if (isCandidate) {
+    return (
+      <div className={variant === "bottom" ? "space-y-3" : ""}>
+        {variant === "bottom" ? (
+          <>
+            <p className="text-sm font-medium">Interested in this role?</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              View this job in your dashboard to apply and interview.
+            </p>
+          </>
+        ) : null}
+        <Button size={variant === "header" ? "lg" : "default"} asChild>
+          <Link to={dashboardJobPath}>
+            {variant === "header" ? "View in dashboard" : "View in dashboard"}
+            <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="ml-1.5 size-4" />
+          </Link>
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className={variant === "bottom" ? "space-y-3" : ""}>
+      {variant === "bottom" ? (
+        <>
+          <p className="text-sm font-medium">Interested in this role?</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Sign in to apply with one click and interview on your schedule.
+          </p>
+        </>
+      ) : null}
+      <Button size={variant === "header" ? "lg" : "default"} asChild>
+        <Link to="/candidate/login" search={{ redirect: dashboardJobPath }}>
+          {variant === "header" ? "Log in to apply" : "Log in to apply"}
+          <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="ml-1.5 size-4" />
+        </Link>
+      </Button>
     </div>
   );
 }

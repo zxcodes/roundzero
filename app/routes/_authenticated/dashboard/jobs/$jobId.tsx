@@ -1,7 +1,6 @@
 import {
   Archive01Icon,
   ArrowLeft01Icon,
-  CheckmarkCircle02Icon,
   Edit02Icon,
   File02Icon,
   Link04Icon,
@@ -41,8 +40,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { CandidateApplySection } from "@/features/applications/components/candidate-apply-section";
 import {
-  applyToJob,
   getApplicationResumeDownloadUrl,
   getJobApplicants,
   hasApplied,
@@ -52,6 +51,7 @@ import { getMyCandidateProfile } from "@/features/candidates/server/functions";
 import { JobForm, type JobFormData } from "@/features/jobs/components/job-form";
 import { archiveJob, getJob, publishJob, updateJob } from "@/features/jobs/server/functions";
 import {
+  APPLICATION_STATUS_TRANSITIONS,
   type ApplicationStatus,
   applicationStatusSchema,
   type EmploymentType,
@@ -304,19 +304,12 @@ function JobDetailPage() {
   );
 }
 
-const APPLICATION_STATUSES = [
+const APPLICATION_STATUSES: { value: ApplicationStatus; label: string }[] = [
   { value: "applied", label: "Applied" },
   { value: "interviewing", label: "Interviewing" },
   { value: "evaluated", label: "Evaluated" },
   { value: "rejected", label: "Rejected" },
 ];
-
-const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
-  applied: ["applied", "interviewing", "rejected"],
-  interviewing: ["interviewing", "evaluated", "rejected"],
-  evaluated: ["evaluated", "rejected"],
-  rejected: ["rejected"],
-};
 
 const getInitials = (name: string) => {
   return name
@@ -460,8 +453,12 @@ function ApplicantsSection({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {APPLICATION_STATUSES.filter((s) =>
-                          (VALID_STATUS_TRANSITIONS[applicant.status] ?? []).includes(s.value),
+                        {APPLICATION_STATUSES.filter(
+                          (s) =>
+                            s.value === applicant.status ||
+                            APPLICATION_STATUS_TRANSITIONS[
+                              applicant.status as ApplicationStatus
+                            ]?.includes(s.value),
                         ).map((s) => (
                           <SelectItem key={s.value} value={s.value}>
                             {s.label}
@@ -510,99 +507,6 @@ function ApplicantsSection({
         )}
       </CardContent>
     </Card>
-  );
-}
-
-function CandidateApplySection({
-  jobId,
-  jobTitle,
-  companyName,
-  alreadyApplied,
-  hasResume,
-}: {
-  jobId: string;
-  jobTitle: string;
-  companyName: string;
-  alreadyApplied: boolean;
-  hasResume: boolean;
-}) {
-  const router = useRouter();
-  const [justApplied, setJustApplied] = useState(false);
-
-  const applyToJobFn = useServerFn(applyToJob);
-
-  const applyMutation = useMutation({
-    mutationFn: applyToJobFn,
-    onSuccess: async () => {
-      toast.success(`Successfully applied to ${jobTitle} at ${companyName}`);
-      setJustApplied(true);
-      await router.invalidate();
-    },
-    onError: (error) => {
-      toast.error(error.message || "Failed to submit application. Please try again.");
-    },
-  });
-
-  const onApply = async () => {
-    await applyMutation.mutateAsync({
-      data: { jobId },
-    });
-  };
-
-  if (justApplied) {
-    return (
-      <Card className="animate-scale-in">
-        <CardContent className="flex items-center justify-center gap-2 py-6">
-          <HugeiconsIcon
-            icon={CheckmarkCircle02Icon}
-            strokeWidth={2}
-            className="size-4 text-emerald-500"
-          />
-          <p className="text-sm font-medium text-muted-foreground">Application submitted</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (alreadyApplied) {
-    return (
-      <Card className="animate-scale-in">
-        <CardContent className="flex items-center justify-center gap-2 py-6">
-          <HugeiconsIcon
-            icon={CheckmarkCircle02Icon}
-            strokeWidth={2}
-            className="size-4 text-emerald-500"
-          />
-          <p className="text-sm font-medium text-muted-foreground">You have already applied</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!hasResume) {
-    return (
-      <Card className="animate-scale-in">
-        <CardHeader>
-          <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
-            Resume required
-          </p>
-          <CardDescription className="text-xs">
-            Add a resume to your profile before applying to jobs.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button className="w-full" asChild>
-            <Link to="/dashboard/settings">Add resume in settings</Link>
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <Button className="w-full" size="lg" onClick={onApply} disabled={applyMutation.isPending}>
-      {applyMutation.isPending ? "Applying..." : "Apply for this position"}
-    </Button>
   );
 }
 

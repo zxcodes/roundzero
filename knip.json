@@ -10,9 +10,16 @@
     "app/shared/middleware.ts",
     "app/shared/__tests__/test-utils.ts"
   ],
-  "project": ["app/**/*.{ts,tsx}"],
-  "ignore": ["app/**/*_sql.ts", "app/components/ui/**"],
-  "ignoreBinaries": ["sqlc"],
+  "project": [
+    "app/**/*.{ts,tsx}"
+  ],
+  "ignore": [
+    "app/**/*_sql.ts",
+    "app/components/ui/**"
+  ],
+  "ignoreBinaries": [
+    "sqlc"
+  ],
   "ignoreDependencies": [
     "@fontsource-variable/geist-mono",
     "@fontsource-variable/plus-jakarta-sans",
@@ -22,7 +29,10 @@
     "vaul",
     "shadcn",
     "@tanstack/router-plugin",
-    "@snaplet/copycat"
+    "@snaplet/copycat",
+    "react-day-picker"
   ],
-  "exclude": ["unlisted"]
+  "exclude": [
+    "unlisted"
+  ]
 }

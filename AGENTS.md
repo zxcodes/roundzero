@@ -50,6 +50,7 @@ Always consult both before making design decisions or implementing features.
 - Lint: Biome (`biome.json`). SQLC outputs excluded from lint/typecheck.
 - `bun run setup.ts` — full setup | `bun run dev` — dev server | `bun run sqlgen` — generate SQLC
 - `bun run test` — tests | `bun run typecheck` — types | `bun run check` — lint + types
+- **After every change, run `bun run check` to verify linter and typechecking pass.**
 - `bash setup-db.sh setup_pg` — create dev+test DBs | `bash setup-db.sh reset_pg` — reset both | `bash setup-db.sh rm_pg` — remove
 
 ## Testing
