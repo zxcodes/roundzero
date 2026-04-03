@@ -8,7 +8,12 @@ import { createCompany } from "@/features/companies/server/functions";
 import { type CompanySize, companySizeLabels, type Industry, industryLabels } from "@/shared/enums";
 import { useAppForm } from "@/shared/form";
 
+const onboardingSearchSchema = z.object({
+  redirect: z.string().optional(),
+});
+
 export const Route = createFileRoute("/_authenticated/onboarding/company")({
+  validateSearch: onboardingSearchSchema,
   component: CompanyOnboardingPage,
 });
 
@@ -16,6 +21,7 @@ const industryOptions = Object.entries(industryLabels).map(([value, label]) => (
 const sizeOptions = Object.entries(companySizeLabels).map(([value, label]) => ({ value, label }));
 
 function CompanyOnboardingPage() {
+  const { redirect: redirectTo } = Route.useSearch();
   const router = useRouter();
   const onboardingSchema = z.object({
     name: z.string().trim().min(1, "Company name is required"),
@@ -29,7 +35,7 @@ function CompanyOnboardingPage() {
     mutationFn: createCompanyFn,
     onSuccess: async () => {
       await router.invalidate();
-      await router.navigate({ to: "/dashboard" });
+      await router.navigate({ to: redirectTo ?? "/dashboard" });
     },
     onError: () => {
       toast.error("Failed to create company. Please try again.");

@@ -10,12 +10,18 @@ import { ResumeUploadField } from "@/features/candidates/components/resume-uploa
 import { createCandidateProfile } from "@/features/candidates/server/functions";
 import { useAppForm } from "@/shared/form";
 
+const onboardingSearchSchema = z.object({
+  redirect: z.string().optional(),
+});
+
 export const Route = createFileRoute("/_authenticated/onboarding/candidate")({
+  validateSearch: onboardingSearchSchema,
   component: CandidateOnboardingPage,
 });
 
 function CandidateOnboardingPage() {
   const { user } = Route.useRouteContext();
+  const { redirect: redirectTo } = Route.useSearch();
   const router = useRouter();
 
   const onboardingSchema = z.object({
@@ -29,7 +35,7 @@ function CandidateOnboardingPage() {
     mutationFn: createProfileFn,
     onSuccess: async () => {
       await router.invalidate();
-      await router.navigate({ to: "/dashboard" });
+      await router.navigate({ to: redirectTo ?? "/dashboard" });
     },
     onError: () => {
       toast.error("Failed to create profile. Please try again.");

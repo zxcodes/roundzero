@@ -40,7 +40,7 @@ export const Route = createFileRoute("/jobs/$jobId")({
 
 function JobDetailPage() {
   const { job } = Route.useLoaderData();
-  const { user, isCandidate } = useRouteContext({ from: "__root__" });
+  const { user, isCandidate, isCompany } = useRouteContext({ from: "__root__" });
 
   const salary = formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency);
   const requirements: string[] = Array.isArray(job.requirements) ? job.requirements : [];
@@ -49,6 +49,8 @@ function JobDetailPage() {
     day: "numeric",
     year: "numeric",
   });
+
+  const dashboardJobPath = `/dashboard/jobs/${job.id}`;
 
   return (
     <div className="bg-background text-foreground min-h-svh">
@@ -83,30 +85,33 @@ function JobDetailPage() {
                   </Link>
                 </div>
 
-                {/* Apply CTA */}
-                <div className="shrink-0">
-                  {user && isCandidate ? (
-                    <Button size="lg">
-                      Apply now
-                      <HugeiconsIcon
-                        icon={ArrowRight01Icon}
-                        strokeWidth={2}
-                        className="ml-1.5 size-4"
-                      />
-                    </Button>
-                  ) : user ? null : (
-                    <Button size="lg" asChild>
-                      <Link to="/candidate/login">
-                        Log in to apply
-                        <HugeiconsIcon
-                          icon={ArrowRight01Icon}
-                          strokeWidth={2}
-                          className="ml-1.5 size-4"
-                        />
-                      </Link>
-                    </Button>
-                  )}
-                </div>
+                {!isCompany ? (
+                  <div className="shrink-0">
+                    {user && isCandidate ? (
+                      <Button size="lg" asChild>
+                        <Link to={dashboardJobPath}>
+                          View in dashboard
+                          <HugeiconsIcon
+                            icon={ArrowRight01Icon}
+                            strokeWidth={2}
+                            className="ml-1.5 size-4"
+                          />
+                        </Link>
+                      </Button>
+                    ) : user ? null : (
+                      <Button size="lg" asChild>
+                        <Link to="/candidate/login" search={{ redirect: dashboardJobPath }}>
+                          Log in to apply
+                          <HugeiconsIcon
+                            icon={ArrowRight01Icon}
+                            strokeWidth={2}
+                            className="ml-1.5 size-4"
+                          />
+                        </Link>
+                      </Button>
+                    )}
+                  </div>
+                ) : null}
               </div>
 
               {/* Meta badges */}
@@ -180,38 +185,50 @@ function JobDetailPage() {
               </div>
             ) : null}
 
-            {/* Bottom CTA (mobile + desktop) */}
-            <div className="animate-fade-in stagger-2 rounded-xl border border-dashed border-primary/20 bg-primary/5 p-6 text-center">
-              <p className="text-sm font-medium">Interested in this role?</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {user && isCandidate
-                  ? "Apply now and complete an AI-powered interview on your schedule."
-                  : "Sign in to apply with one click and interview on your schedule."}
-              </p>
-              <div className="mt-4">
+            {/* Bottom CTA */}
+            {!isCompany ? (
+              <div className="animate-fade-in stagger-2 rounded-xl border border-dashed border-primary/20 bg-primary/5 p-6 text-center">
                 {user && isCandidate ? (
-                  <Button>
-                    Apply now
-                    <HugeiconsIcon
-                      icon={ArrowRight01Icon}
-                      strokeWidth={2}
-                      className="ml-1.5 size-4"
-                    />
-                  </Button>
-                ) : user ? null : (
-                  <Button asChild>
-                    <Link to="/candidate/login">
-                      Log in to apply
-                      <HugeiconsIcon
-                        icon={ArrowRight01Icon}
-                        strokeWidth={2}
-                        className="ml-1.5 size-4"
-                      />
-                    </Link>
-                  </Button>
+                  <>
+                    <p className="text-sm font-medium">Interested in this role?</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      View this job in your dashboard to apply and interview.
+                    </p>
+                    <div className="mt-4">
+                      <Button asChild>
+                        <Link to={dashboardJobPath}>
+                          View in dashboard
+                          <HugeiconsIcon
+                            icon={ArrowRight01Icon}
+                            strokeWidth={2}
+                            className="ml-1.5 size-4"
+                          />
+                        </Link>
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm font-medium">Interested in this role?</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Sign in to apply with one click and interview on your schedule.
+                    </p>
+                    <div className="mt-4">
+                      <Button asChild>
+                        <Link to="/candidate/login" search={{ redirect: dashboardJobPath }}>
+                          Log in to apply
+                          <HugeiconsIcon
+                            icon={ArrowRight01Icon}
+                            strokeWidth={2}
+                            className="ml-1.5 size-4"
+                          />
+                        </Link>
+                      </Button>
+                    </div>
+                  </>
                 )}
               </div>
-            </div>
+            ) : null}
           </div>
 
           {/* Right sidebar */}

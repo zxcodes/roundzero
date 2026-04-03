@@ -6,7 +6,7 @@ import type { UserRole } from "@/shared/enums";
 import { loginWithGoogle, logout } from "./server/functions";
 
 interface AuthContextType {
-  signIn: (role?: UserRole) => void;
+  signIn: (role?: UserRole, redirectTo?: string) => void;
   signOut: () => Promise<void>;
 }
 
@@ -15,6 +15,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pendingRoleRef = useRef<UserRole | undefined>(undefined);
+  const pendingRedirectRef = useRef<string | undefined>(undefined);
 
   const login = useGoogleLogin({
     onSuccess: async (tokenResponse: TokenResponse) => {
@@ -25,35 +26,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             role: pendingRoleRef.current,
           },
         });
+        const redirectTo = pendingRedirectRef.current;
         pendingRoleRef.current = undefined;
+        pendingRedirectRef.current = undefined;
 
         if (!result.user.role) {
           await router.invalidate();
           return;
         }
 
-        const destination = result.onboardingComplete
-          ? "/dashboard"
-          : result.user.role === "company"
-            ? "/onboarding/company"
-            : "/onboarding/candidate";
-
-        await router.navigate({ to: destination });
+        if (result.onboardingComplete) {
+          await router.navigate({ to: redirectTo ?? "/dashboard" });
+        } else {
+          const onboardingPath =
+            result.user.role === "company" ? "/onboarding/company" : "/onboarding/candidate";
+          await router.navigate({
+            to: onboardingPath,
+            search: redirectTo ? { redirect: redirectTo } : {},
+          });
+        }
         await router.invalidate();
       } catch (error) {
         console.error("Authentication error:", error);
         pendingRoleRef.current = undefined;
+        pendingRedirectRef.current = undefined;
         toast.error("Failed to sign in with Google");
       }
     },
     onError: () => {
       pendingRoleRef.current = undefined;
+      pendingRedirectRef.current = undefined;
       toast.error("Google sign in failed");
     },
   });
 
-  const signIn = (role?: UserRole) => {
+  const signIn = (role?: UserRole, redirectTo?: string) => {
     pendingRoleRef.current = role;
+    pendingRedirectRef.current = redirectTo;
     login();
   };
 
