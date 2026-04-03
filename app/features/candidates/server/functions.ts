@@ -12,6 +12,7 @@ import {
   nullableTrimmedString,
   optionalTrimmedString,
   optionalTrimmedUrl,
+  zodValidatorWithFormattedErrors,
 } from "@/shared/validation";
 import {
   createCandidateProfile as createCandidateProfileQuery,
@@ -107,12 +108,13 @@ const maxResumeFileSize = 5 * 1024 * 1024;
 
 const resumeUploadTargetSchema = z.object({
   fileName: z.string().min(1).max(255),
-  fileSize: z.number().int().positive().max(maxResumeFileSize),
+  fileSize: z.number().int().positive().max(maxResumeFileSize, "Resume must be 5MB or smaller"),
   contentType: z.enum(
     Object.keys(allowedResumeTypes) as [
       keyof typeof allowedResumeTypes,
       ...Array<keyof typeof allowedResumeTypes>,
     ],
+    "Unsupported file format. Use PDF, DOC, or DOCX",
   ),
 });
 
@@ -291,7 +293,7 @@ export const updateMyCandidateProfile = createServerFn({ method: "POST" })
 
 export const createResumeUploadTarget = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidator(resumeUploadTargetSchema))
+  .inputValidator(zodValidatorWithFormattedErrors(resumeUploadTargetSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
     const user = await getUserById(db, { id: context.userId });
