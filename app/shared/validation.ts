@@ -1,4 +1,24 @@
+import { zodValidator } from "@tanstack/zod-adapter";
+import type { ZodSchema } from "zod";
 import { z } from "zod";
+
+export function zodValidatorWithFormattedErrors<T extends ZodSchema>(schema: T) {
+  const validator = zodValidator(schema);
+  return {
+    ...validator,
+    parse: (input: unknown) => {
+      try {
+        return validator.parse(input);
+      } catch (err) {
+        if (err instanceof z.ZodError && err.issues?.length) {
+          const messages = err.issues.map((issue) => issue.message);
+          throw new Error(messages.join(", "));
+        }
+        throw err;
+      }
+    },
+  };
+}
 
 export function requiredTrimmedString(max: number, message: string) {
   return z.string().trim().min(1, message).max(max);

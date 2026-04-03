@@ -14,6 +14,7 @@ import {
   optionalTrimmedString,
   optionalTrimmedUrl,
   requiredTrimmedString,
+  zodValidatorWithFormattedErrors,
 } from "@/shared/validation";
 import {
   countCompaniesFiltered,
@@ -94,12 +95,13 @@ const maxLogoFileSize = 2 * 1024 * 1024;
 
 const logoUploadTargetSchema = z.object({
   fileName: z.string().min(1).max(255),
-  fileSize: z.number().int().positive().max(maxLogoFileSize),
+  fileSize: z.number().int().positive().max(maxLogoFileSize, "Logo must be 2MB or smaller"),
   contentType: z.enum(
     Object.keys(allowedLogoTypes) as [
       keyof typeof allowedLogoTypes,
       ...Array<keyof typeof allowedLogoTypes>,
     ],
+    "Unsupported image format. Use PNG, JPG, WEBP, or SVG",
   ),
 });
 
@@ -220,7 +222,7 @@ export const updateCompanyProfile = createServerFn({ method: "POST" })
 
 export const createCompanyLogoUploadTarget = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidator(logoUploadTargetSchema))
+  .inputValidator(zodValidatorWithFormattedErrors(logoUploadTargetSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
     const user = await getUserById(db, { id: context.userId });
