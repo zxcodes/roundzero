@@ -9,6 +9,10 @@ export const Route = createFileRoute("/_authenticated")({
     }
 
     const isOnboardingRoute = location.pathname.startsWith("/onboarding");
+    const redirectParam = (location.search as Record<string, unknown>)?.redirect as
+      | string
+      | undefined;
+    const search = redirectParam ? { redirect: redirectParam } : {};
 
     if (context.isCompany) {
       const company = await getMyCompany();
@@ -17,6 +21,7 @@ export const Route = createFileRoute("/_authenticated")({
       if (!onboarded && !isOnboardingRoute) {
         throw redirect({
           to: "/onboarding/company",
+          search,
         });
       }
 
@@ -35,6 +40,7 @@ export const Route = createFileRoute("/_authenticated")({
       if (!onboarded && !isOnboardingRoute) {
         throw redirect({
           to: "/onboarding/candidate",
+          search,
         });
       }
 

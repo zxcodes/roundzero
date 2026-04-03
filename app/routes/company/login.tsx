@@ -6,10 +6,23 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/features/auth/provider";
 
+function sanitizeRedirect(url: unknown): string | undefined {
+  if (typeof url !== "string" || !url.startsWith("/") || url.startsWith("//")) {
+    return undefined;
+  }
+  return url;
+}
+
+const loginSearchSchema = z.object({
+  redirect: z.string().optional().transform(sanitizeRedirect),
+});
+
 export const Route = createFileRoute("/company/login")({
+  validateSearch: loginSearchSchema,
   beforeLoad: ({ context }) => {
     if (context.user) {
       throw redirect({ to: "/dashboard" });
@@ -23,9 +36,10 @@ export const Route = createFileRoute("/company/login")({
 
 function CompanyLoginPage() {
   const { signIn } = useAuth();
+  const { redirect: redirectTo } = Route.useSearch();
 
   const onSignIn = () => {
-    signIn("company");
+    signIn("company", redirectTo);
   };
 
   return (
