@@ -190,15 +190,18 @@ Finish the non-AI hiring platform so the interview/evaluation layer lands on a s
 
 ### Sub-project 4: Candidate Apply Surface Consistency
 
-- [ ] Wire authenticated candidate apply from public `/jobs/:id` to the real apply mutation instead of a placeholder CTA
-- [ ] Ensure unauthenticated public job detail still routes to candidate login correctly
-- [ ] Ensure authenticated candidate public job detail reflects:
-  - already applied state
-  - missing resume state
-  - just-applied success state
-- [ ] Reuse the same apply-state UX across dashboard and public job detail
-- [ ] Avoid duplicate logic paths for apply eligibility checks
-- [ ] Add tests for public job detail apply behavior
+- [x] Wire authenticated candidate apply from public `/jobs/:id` to the real apply mutation instead of a placeholder CTA
+- [x] Ensure unauthenticated public job detail still routes to candidate login correctly
+- [x] Ensure authenticated candidate public job detail reflects:
+  - [x] already applied state
+  - [x] missing resume state
+  - [x] just-applied success state
+- [x] Reuse the same apply-state UX across dashboard and public job detail (shared `CandidateApplySection` component)
+- [x] Avoid duplicate logic paths for apply eligibility checks (single `PublicJobCTA` component with `variant` prop)
+- [ ] Add custom error UI for expired jobs on public route (`JobExpiredError` component)
+- [x] Add inline error state in `CandidateApplySection` on apply failure
+- [x] Add "no longer accepting applications" message for candidates viewing archived jobs in dashboard
+- [ ] Remove dead code branches in `PublicJobCTA`
 
 ### Sub-project 5: Candidate Application Experience
 

@@ -289,14 +289,29 @@ function JobDetailPage() {
           </Card>
 
           {/* Apply section for candidates */}
-          {!isCompany && job.status === "open" ? (
-            <CandidateApplySection
-              jobId={job.id}
-              jobTitle={job.title}
-              companyName={job.companyName ?? "the company"}
-              alreadyApplied={alreadyApplied}
-              hasResume={Boolean(candidateProfile?.resumeKey)}
-            />
+          {!isCompany ? (
+            job.status === "open" ? (
+              <CandidateApplySection
+                jobId={job.id}
+                jobTitle={job.title}
+                companyName={job.companyName ?? "the company"}
+                alreadyApplied={alreadyApplied}
+                hasResume={Boolean(candidateProfile?.resumeKey)}
+              />
+            ) : (
+              <Card className="animate-scale-in">
+                <CardHeader>
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+                    No longer accepting applications
+                  </p>
+                  <CardDescription className="text-xs">
+                    {job.status === "closed"
+                      ? "This position has been closed by the company."
+                      : "This job is currently in draft status."}
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            )
           ) : null}
         </div>
       </div>
