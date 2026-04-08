@@ -26,6 +26,7 @@ export function CandidateApplySection({
 }: CandidateApplySectionProps) {
   const router = useRouter();
   const [justApplied, setJustApplied] = useState(false);
+  const [applyError, setApplyError] = useState<string | null>(null);
 
   const applyToJobFn = useServerFn(applyToJob);
 
@@ -37,11 +38,12 @@ export function CandidateApplySection({
       await router.invalidate();
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to submit application. Please try again.");
+      setApplyError(error.message || "Failed to submit application. Please try again.");
     },
   });
 
   const onApply = async () => {
+    setApplyError(null);
     await applyMutation.mutateAsync({
       data: { jobId },
     });
@@ -91,6 +93,24 @@ export function CandidateApplySection({
         <CardContent>
           <Button className="w-full" asChild>
             <Link to="/dashboard/settings">Add resume in settings</Link>
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (applyError) {
+    return (
+      <Card className="animate-scale-in">
+        <CardHeader>
+          <p className="text-[11px] font-bold uppercase tracking-widest text-destructive">
+            Unable to apply
+          </p>
+          <CardDescription className="text-xs">{applyError}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button className="w-full" variant="outline" asChild>
+            <Link to="/jobs">Browse other jobs</Link>
           </Button>
         </CardContent>
       </Card>
