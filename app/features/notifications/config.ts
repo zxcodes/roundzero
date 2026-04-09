@@ -21,7 +21,7 @@ export const notificationPayloadSchemas = {
   new_applicant: newApplicantPayloadSchema,
 } satisfies Record<z.infer<typeof notificationTypeSchema>, z.ZodTypeAny>;
 
-export const notificationTone = {
+const notificationTone = {
   application_status_changed: "bg-sky-500/10 text-sky-700 dark:text-sky-300",
   new_applicant: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
 } as const;
