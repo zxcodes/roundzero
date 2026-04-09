@@ -1,11 +1,9 @@
 import {
   Archive01Icon,
   ArrowLeft01Icon,
+  ArrowRight01Icon,
   Edit02Icon,
-  File02Icon,
-  Link04Icon,
   Location01Icon,
-  Mail01Icon,
   MoneyBag02Icon,
   Rocket01Icon,
   UserGroupIcon,
@@ -28,32 +26,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { CandidateApplySection } from "@/features/applications/components/candidate-apply-section";
-import {
-  getApplicationResumeDownloadUrl,
-  getJobApplicants,
-  hasApplied,
-  updateApplicationStatus,
-} from "@/features/applications/server/functions";
+import { getJobApplicants, hasApplied } from "@/features/applications/server/functions";
 import { getMyCandidateProfile } from "@/features/candidates/server/functions";
 import { JobForm, type JobFormData } from "@/features/jobs/components/job-form";
 import { archiveJob, getJob, publishJob, updateJob } from "@/features/jobs/server/functions";
 import {
-  APPLICATION_STATUS_TRANSITIONS,
-  type ApplicationStatus,
-  applicationStatusSchema,
   type EmploymentType,
   type ExperienceLevel,
   employmentTypeLabels,
@@ -189,7 +171,9 @@ function JobDetailPage() {
             </Card>
           ) : null}
 
-          {isCompany ? <ApplicantsSection applicants={applicants} /> : null}
+          {isCompany ? (
+            <ApplicantsSummaryCard jobId={job.id} applicantsCount={applicants.length} />
+          ) : null}
         </div>
 
         {/* Right column — metadata sidebar */}
@@ -319,85 +303,49 @@ function JobDetailPage() {
   );
 }
 
-const APPLICATION_STATUSES: { value: ApplicationStatus; label: string }[] = [
-  { value: "applied", label: "Applied" },
-  { value: "interviewing", label: "Interviewing" },
-  { value: "evaluated", label: "Evaluated" },
-  { value: "rejected", label: "Rejected" },
-];
-
-const getInitials = (name: string) => {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-};
-
-function ApplicantsSection({
-  applicants,
+function ApplicantsSummaryCard({
+  jobId,
+  applicantsCount,
 }: {
-  applicants: Awaited<ReturnType<typeof getJobApplicants>>;
+  jobId: string;
+  applicantsCount: number;
 }) {
-  const router = useRouter();
-
-  const getApplicationResumeDownloadUrlFn = useServerFn(getApplicationResumeDownloadUrl);
-  const updateStatusFn = useServerFn(updateApplicationStatus);
-  const updateStatusMutation = useMutation({
-    mutationFn: updateStatusFn,
-    onSuccess: async () => {
-      toast.success("Application status updated");
-      await router.invalidate();
-    },
-    onError: () => {
-      toast.error("Failed to update status. Please try again.");
-    },
-  });
-
-  const resumeDownloadMutation = useMutation({
-    mutationFn: getApplicationResumeDownloadUrlFn,
-    onSuccess: ({ url }) => {
-      window.open(url, "_blank", "noopener,noreferrer");
-    },
-    onError: () => {
-      toast.error("Failed to open resume. Please try again.");
-    },
-  });
-
-  const onStatusChange = async (applicationId: string, status: ApplicationStatus) => {
-    await updateStatusMutation.mutateAsync({
-      data: { applicationId, status },
-    });
-  };
-
-  const onViewResume = async (applicationId: string) => {
-    await resumeDownloadMutation.mutateAsync({
-      data: { applicationId },
-    });
-  };
-  const onResumeViewClick = (applicationId: string) => {
-    onViewResume(applicationId);
-  };
-
   return (
-    <Card className="animate-fade-in stagger-3">
+    <Card className="animate-fade-in stagger-3 border-border/70">
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <CardTitle>Applicants</CardTitle>
             <Badge variant="secondary" className="font-mono text-[11px]">
-              {applicants.length}
+              {applicantsCount}
             </Badge>
           </div>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/dashboard/job-applicants/$jobId" params={{ jobId }}>
+              View applicants
+              <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-3.5" />
+            </Link>
+          </Button>
         </div>
         <CardDescription className="text-xs">
-          Review candidates and update their application status.
+          Review candidate snapshots, submitted resumes, and application status in the dedicated
+          applicants view.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {applicants.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-8">
+        {applicantsCount > 0 ? (
+          <div className="rounded-xl border border-border/70 bg-muted/20 p-4">
+            <p className="text-sm font-medium">
+              {applicantsCount} {applicantsCount === 1 ? "candidate has" : "candidates have"}{" "}
+              applied
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Open the applicants page to move through each submission with direct access to resume,
+              profile snapshot, and status controls.
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-10">
             <div className="mb-3 flex size-10 items-center justify-center rounded-xl bg-muted">
               <HugeiconsIcon
                 icon={UserGroupIcon}
@@ -405,119 +353,10 @@ function ApplicantsSection({
                 className="size-5 text-muted-foreground"
               />
             </div>
-            <p className="text-xs text-muted-foreground">No one has applied yet.</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {applicants.map((applicant) => {
-              const metadata =
-                applicant.metadata && typeof applicant.metadata === "object"
-                  ? applicant.metadata
-                  : {};
-              const links =
-                metadata.links &&
-                typeof metadata.links === "object" &&
-                !Array.isArray(metadata.links)
-                  ? Object.values(metadata.links).filter(
-                      (value): value is string => typeof value === "string" && value.length > 0,
-                    )
-                  : [];
-              const onStatusValueChange = (value: string) => {
-                onStatusChange(applicant.id, applicationStatusSchema.parse(value));
-              };
-              const onApplicantResumeViewClick = () => {
-                onResumeViewClick(applicant.id);
-              };
-
-              return (
-                <div
-                  key={applicant.id}
-                  className="rounded-lg border p-3 transition-colors hover:bg-muted/50"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 overflow-hidden">
-                      <Avatar className="size-8">
-                        <AvatarImage
-                          src={applicant.candidatePicture ?? undefined}
-                          alt={applicant.candidateName}
-                        />
-                        <AvatarFallback className="text-[10px]">
-                          {getInitials(applicant.candidateName)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium">{applicant.candidateName}</p>
-                        <div className="flex items-center gap-1">
-                          <HugeiconsIcon
-                            icon={Mail01Icon}
-                            strokeWidth={2}
-                            className="size-3 text-muted-foreground"
-                          />
-                          <p className="truncate text-xs text-muted-foreground">
-                            {applicant.candidateEmail}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    <Select
-                      value={applicant.status}
-                      onValueChange={onStatusValueChange}
-                      disabled={updateStatusMutation.isPending}
-                    >
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {APPLICATION_STATUSES.filter(
-                          (s) =>
-                            s.value === applicant.status ||
-                            APPLICATION_STATUS_TRANSITIONS[
-                              applicant.status as ApplicationStatus
-                            ]?.includes(s.value),
-                        ).map((s) => (
-                          <SelectItem key={s.value} value={s.value}>
-                            {s.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {applicant.resumeKey || links.length > 0 ? (
-                    <div className="mt-2 flex flex-wrap items-center gap-2 pl-11">
-                      {applicant.resumeKey ? (
-                        <button
-                          type="button"
-                          onClick={onApplicantResumeViewClick}
-                          className="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                        >
-                          <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-3" />
-                          View resume
-                        </button>
-                      ) : null}
-                      {links.map((link, i) => (
-                        <a
-                          key={`${link}-${i}`}
-                          href={link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                        >
-                          <HugeiconsIcon icon={Link04Icon} strokeWidth={2} className="size-3" />
-                          {(() => {
-                            try {
-                              return new URL(link).hostname;
-                            } catch {
-                              return "Link";
-                            }
-                          })()}
-                        </a>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
-              );
-            })}
+            <p className="text-sm font-medium">No applicants yet</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              When candidates apply, they will appear in the applicants view for this role.
+            </p>
           </div>
         )}
       </CardContent>
@@ -635,6 +474,12 @@ function CompanyActions({
 
   return (
     <div className="flex gap-2">
+      <Button variant="outline" size="sm" asChild>
+        <Link to="/dashboard/job-applicants/$jobId" params={{ jobId: job.id }}>
+          <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} className="size-3.5" />
+          View applicants
+        </Link>
+      </Button>
       {job.status === "draft" ? (
         <Button
           variant="default"

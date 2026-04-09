@@ -8,6 +8,7 @@ import {
   getApplicationById,
   getApplicationByJobAndCandidate,
   getApplicationCountByJob,
+  getApplicationReviewById,
   getApplicationsByCandidate,
   getApplicationsByJob,
   updateApplicationStatus,
@@ -166,6 +167,33 @@ describe("getApplicationById", () => {
       id: "00000000-0000-0000-0000-000000000000",
     });
     expect(found).toBeNull();
+  });
+});
+
+describe("getApplicationReviewById", () => {
+  it("returns application review context with candidate and company ownership fields", async () => {
+    const { company } = await seedCompany({ name: "Review Co", slug: "review-co" });
+    const candidate = await seedUser({
+      name: "Nadia Malik",
+      email: "nadia@example.com",
+      role: "candidate",
+    });
+    const job = await makeOpenJob(company.id, "Platform Engineer");
+    const created = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: "https://example.com/resume.pdf",
+      metadata: { headline: "Senior Engineer" },
+      status: "applied",
+    });
+
+    const found = await getApplicationReviewById(sql, { id: created!.id });
+    expect(found).not.toBeNull();
+    expect(found!.candidateName).toBe("Nadia Malik");
+    expect(found!.candidateEmail).toBe("nadia@example.com");
+    expect(found!.companyId).toBe(company.id);
+    expect(found!.companySlug).toBe("review-co");
+    expect(found!.jobTitle).toBe("Platform Engineer");
   });
 });
 

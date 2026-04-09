@@ -10,12 +10,13 @@ import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
 import { closeExpiredJobsQuery, getJobById } from "@/features/jobs/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { applicationStatusSchema, isValidTransition } from "@/shared/enums";
-import { authMiddleware } from "@/shared/middleware";
+import { authMiddleware, companyMiddleware } from "@/shared/middleware";
 import { createR2ResumeDownloadUrl } from "@/shared/r2";
 import {
   createApplication as createApplicationQuery,
   getApplicationById,
   getApplicationByJobAndCandidate,
+  getApplicationReviewById,
   getApplicationsByCandidate,
   getApplicationsByJob,
   updateApplicationStatus as updateApplicationStatusQuery,
@@ -249,4 +250,35 @@ export const getApplicationResumeDownloadUrl = createServerFn({ method: "POST" }
     }
 
     throw new Error("Not authorized");
+  });
+
+export const getCompanyApplicantReview = createServerFn({ method: "GET" })
+  .middleware([companyMiddleware])
+  .inputValidator(zodValidator(applicationIdSchema))
+  .handler(async ({ data, context }) => {
+    const db = getDb();
+
+    const application = await getApplicationReviewById(db, { id: data.applicationId });
+    if (!application) {
+      throw new Error("Application not found");
+    }
+
+    if (application.companyId !== context.company.id) {
+      throw new Error("Not authorized");
+    }
+
+    const applicants = await getApplicationsByJob(db, { jobId: application.jobId });
+    const currentIndex = applicants.findIndex((applicant) => applicant.id === application.id);
+    const previousApplicant = currentIndex > 0 ? applicants[currentIndex - 1] : null;
+    const nextApplicant =
+      currentIndex >= 0 && currentIndex < applicants.length - 1
+        ? applicants[currentIndex + 1]
+        : null;
+
+    return {
+      application,
+      applicantCount: applicants.length,
+      previousApplicant,
+      nextApplicant,
+    };
   });

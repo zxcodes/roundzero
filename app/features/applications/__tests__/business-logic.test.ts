@@ -6,6 +6,7 @@ import {
   createApplication,
   getApplicationById,
   getApplicationByJobAndCandidate,
+  getApplicationReviewById,
   updateApplicationStatus,
 } from "../queries/queries_sql";
 
@@ -251,6 +252,25 @@ describe("application access control", () => {
     expect(detail!.jobId).toBe(job.id);
     expect(detail!.companyName).toBe("Auth Co");
     expect(detail!.jobTitle).toBe("Auth Job");
+  });
+
+  it("getApplicationReviewById exposes company ownership for applicant-review authorization", async () => {
+    const { company } = await seedCompany({ name: "Auth Co", slug: "auth-co" });
+    const candidate = await seedUser({ role: "candidate" });
+    const job = await makeOpenJob(company.id, "Applicant Review Job");
+    const app = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: "https://example.com/resume.pdf",
+      metadata: { headline: "Backend Engineer" },
+      status: "applied",
+    });
+
+    const detail = await getApplicationReviewById(sql, { id: app!.id });
+    expect(detail).not.toBeNull();
+    expect(detail!.companyId).toBe(company.id);
+    expect(detail!.candidateId).toBe(candidate.id);
+    expect(detail!.jobId).toBe(job.id);
   });
 });
 

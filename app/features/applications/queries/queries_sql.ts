@@ -216,6 +216,66 @@ export async function getApplicationById(sql: Sql, args: getApplicationByIdArgs)
     };
 }
 
+export const getApplicationReviewByIdQuery = `-- name: getApplicationReviewById :one
+SELECT a.id, a.job_id, a.candidate_id, a.resume_key, a.metadata, a.status, a.created_at, a.updated_at,
+       j.title AS job_title, j.status AS job_status, j.company_id,
+       c.name AS company_name, c.slug AS company_slug,
+       u.name AS candidate_name, u.email AS candidate_email, u.picture AS candidate_picture
+FROM applications a
+JOIN jobs j ON j.id = a.job_id
+JOIN companies c ON c.id = j.company_id
+JOIN users u ON u.id = a.candidate_id
+WHERE a.id = $1`;
+
+export interface getApplicationReviewByIdArgs {
+    id: string;
+}
+
+export interface getApplicationReviewByIdRow {
+    id: string;
+    jobId: string;
+    candidateId: string;
+    resumeKey: string | null;
+    metadata: any;
+    status: string;
+    createdAt: Date;
+    updatedAt: Date;
+    jobTitle: string;
+    jobStatus: string;
+    companyId: string;
+    companyName: string;
+    companySlug: string;
+    candidateName: string;
+    candidateEmail: string;
+    candidatePicture: string | null;
+}
+
+export async function getApplicationReviewById(sql: Sql, args: getApplicationReviewByIdArgs): Promise<getApplicationReviewByIdRow | null> {
+    const rows = await sql.unsafe(getApplicationReviewByIdQuery, [args.id]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        jobId: row[1],
+        candidateId: row[2],
+        resumeKey: row[3],
+        metadata: row[4],
+        status: row[5],
+        createdAt: row[6],
+        updatedAt: row[7],
+        jobTitle: row[8],
+        jobStatus: row[9],
+        companyId: row[10],
+        companyName: row[11],
+        companySlug: row[12],
+        candidateName: row[13],
+        candidateEmail: row[14],
+        candidatePicture: row[15]
+    };
+}
+
 export const updateApplicationStatusQuery = `-- name: updateApplicationStatus :one
 UPDATE applications
 SET status = $1,
