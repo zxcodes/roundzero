@@ -52,7 +52,7 @@ Today, the app is primarily the **core platform layer**:
 - company job management
 - candidate profile/settings
 - one-click apply
-- applicant lists and status tracking
+- applicant review pages and status tracking
 - in-app workflow notifications
 
 The AI interview, evaluation, report, and ranking systems are still future layers.
@@ -150,7 +150,8 @@ Current company flow:
 4. Create jobs
 5. Manage open/draft/archived jobs
 6. View applicants per job
-7. Update application statuses
+7. Review applicants on dedicated applicant detail pages
+8. Update application statuses
 
 ### 4.3 Public Experience
 
@@ -171,41 +172,30 @@ This matters because RoundZero is both:
 
 ## 5. Core Product Gaps Before AI
 
-The following are considered platform-hardening work and should be completed before the AI layer becomes the main focus:
+The following are the remaining platform-hardening priorities before the AI layer becomes the main focus:
 
-### 5.1 Resume Storage Completion
+### 5.1 Candidate Post-Apply Polish
 
-- real Cloudflare R2 upload wiring
-- signed upload URLs
-- signed read URLs
-- reliable resume access for both candidates and authorized companies
+- better empty states and guidance on application tracking surfaces
+- clearer next-step communication after status changes
+- optional decision on withdraw vs explicit deferral
 
-### 5.2 Apply Surface Consistency
+### 5.2 Company Workflow Quality
 
-- authenticated candidates should be able to apply from every valid surface, especially public job detail
-- apply states should be consistent:
-  - missing resume
-  - already applied
-  - just applied
+- clearer pipeline summary cues
+- better signals for which jobs are active, stale, or attracting applicants
+- stronger management UX beyond raw counts
 
-### 5.3 Job Lifecycle Completion
+### 5.3 Notifications Delivery Layer
 
-- expiry UI
-- stale role indicators
-- expired-role hiding
-- auto-close behavior
+- keep in-app notifications as the canonical workflow record
+- add secondary email delivery for selected events
+- track delivery attempts/results separately from the inbox
 
-### 5.4 Better Applicant Review Workflow
+### 5.4 Public Route Cleanup
 
-- company-side applicant detail/workbench
-- better resume/profile snapshot review
-- better status progression UX
-
-### 5.5 Better Candidate Post-Apply Experience
-
-- clearer status meanings
-- better application tracking
-- stronger feedback about next steps
+- expired-job-specific public error UI
+- final cleanup of dead CTA branches on public job detail
 
 ---
 
@@ -388,14 +378,14 @@ After AI:
 
 RoundZero will need transactional communication for key workflow events.
 
-Planned uses:
+Current and planned uses:
 
 - application submitted confirmations
-- interview-ready notifications
 - application status updates
 - company-facing applicant activity notifications
+- interview-ready notifications later
 
-Recommended provider:
+Recommended provider for email delivery:
 
 - **Resend** for transactional email
 

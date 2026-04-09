@@ -21,8 +21,8 @@
 - [x] Google OAuth (server-side, access token → user info → upsert)
 - [x] Session management (encrypted httpOnly cookies)
 - [x] Auth context provider (`app/features/auth/provider.tsx`)
-- [x] Login page (`app/routes/login.tsx`)
-- [x] Role selection (company / candidate) on first login
+- [x] Role-specific login pages (`app/routes/company/login.tsx`, `app/routes/candidate/login.tsx`)
+- [x] Role assignment from login URL context (no separate choose-role step)
 - [x] Zod enums for all domain values (`app/shared/enums.ts`)
 
 ## Phase 2: Jobs & Applications
@@ -34,15 +34,15 @@
 - [x] Job server functions (createJob, getMyJobs, getJob, updateJob, archiveJob, getOpenJobs)
 - [x] Job form component (reusable for create/edit, dynamic requirements list)
 - [x] Dashboard jobs list — role-aware (company: management table, candidate: browse grid)
-- [x] Job detail page — role-aware (company: edit/archive, candidate: read-only + apply placeholder)
+- [x] Job detail page — role-aware (company: edit/archive, candidate: one-click apply states)
 - [x] New job page (`/dashboard/jobs/new`)
 - [x] Error boundary + not found components (defaultErrorComponent, defaultNotFoundComponent, root notFoundComponent)
 - [x] SQLC queries for applications table
 - [x] Application server functions (apply, list my applications, list applicants per job)
-- [x] Application form (resume URL + optional links)
+- [x] One-click apply contract (resume snapshot + metadata, no per-application form)
 - [x] Wire "Apply" button on job detail to application flow (hasApplied check, apply form, success state)
 - [x] Candidate "My Applications" page (`/dashboard/applications`)
-- [x] Company applicants view per job (on job detail page, with candidate info)
+- [x] Company applicants workflow (per-job list plus dedicated applicants pages)
 - [x] Application status tracking (company can update via dropdown)
 - [x] Resume upload to Cloudflare R2 (signed upload/read flow)
 
@@ -59,7 +59,7 @@ Solidify RoundZero as a usable job platform before adding AI. Public browsing, p
 | Wrong-URL login | Redirect to correct dashboard with toast |
 | Public URL structure | Marketing landing at `/` + public `/companies` directory + public `/jobs` board |
 | Company profile fields | Full: name, description, logo, website, industry, size, founded year, location(s), tech stack (tags), culture/perks, social links |
-| Company onboarding | Minimal: name, logo, industry, size, short description — rest in profile settings |
+| Company onboarding | Minimal: name, industry, size, short description — logo in settings |
 | Candidate onboarding | Name (pre-filled from Google) + headline + resume upload |
 | Apply flow | True one-click: button only, uses resume from candidate profile |
 | Job expiry | Optional `expires_at` on jobs + stale indicator after 90 days |
@@ -68,8 +68,8 @@ Solidify RoundZero as a usable job platform before adding AI. Public browsing, p
 
 ### Sub-project 1: Schema + Auth Changes ✅
 
-- [x] Extend `companies` table: add `logo_url`, `website`, `industry`, `company_size`, `founded_year`, `location`, `tech_stack` (JSONB), `culture`, `social_links` (JSONB), `updated_at`
-- [x] Create `candidate_profiles` table: `user_id` (FK), `headline`, `resume_key` (originally `resume_url`, later migrated to `resume_key`), `bio`, `skills` (JSONB), `links` (JSONB), `created_at`, `updated_at`
+- [x] Extend `companies` table: add `logo_key`, `website`, `industry`, `company_size`, `founded_year`, `location`, `tech_stack` (JSONB), `culture`, `social_links` (JSONB), `updated_at`
+- [x] Create `candidate_profiles` table: `user_id` (FK), `headline`, `resume_key`, `resume_updated_at`, `bio`, `skills` (JSONB), `links` (JSONB), `onboarding_completed_at`, `created_at`, `updated_at`
 - [x] Add `expires_at` (TIMESTAMPTZ, nullable) to `jobs` table
 - [x] Add `slug` (TEXT UNIQUE) to `companies` table for public URLs
 - [x] Separate login routes: `/company/login` and `/candidate/login` with tailored messaging
@@ -101,7 +101,7 @@ Solidify RoundZero as a usable job platform before adding AI. Public browsing, p
 
 ### Sub-project 3: Onboarding Flows ✅
 
-- [x] Company onboarding redesign — minimal fields (name, logo, industry, size, description), polished centered layout
+- [x] Company onboarding redesign — minimal fields (name, industry, size, description), polished centered layout
 - [x] Candidate onboarding — new flow: name (pre-filled), headline, resume upload
 - [x] Company profile settings page — all fields editable, organized in sections
 - [x] Candidate profile settings page — resume, headline, bio, skills, work history, links
@@ -136,7 +136,7 @@ Solidify RoundZero as a usable job platform before adding AI. Public browsing, p
 - [x] Auto-close expired jobs: scheduled task or on-read check that sets `status = 'closed'` when `expires_at < now()`
 - [x] Update job browsing UI to hide expired/closed jobs by default
 
-## Phase 3.5: Core Product Hardening Before AI ← NEXT
+## Phase 3.5: Core Product Hardening Before AI
 
 Finish the non-AI hiring platform so the interview/evaluation layer lands on a solid product foundation instead of filling workflow gaps. This phase focuses on closing the candidate/company experience gaps that still exist after jobs, onboarding, and one-click apply.
 
@@ -203,7 +203,7 @@ Finish the non-AI hiring platform so the interview/evaluation layer lands on a s
 - [x] Add "no longer accepting applications" message for candidates viewing archived jobs in dashboard
 - [ ] Remove dead code branches in `PublicJobCTA`
 
-### Sub-project 5: Candidate Application Experience ✅ / In Progress
+### Sub-project 5: Candidate Application Experience ✅ / Minor Cleanup
 
 - [x] Improve “My Applications” from basic table to clearer application tracking
 - [x] Keep the main applications page lightweight and route detailed tracking to a dedicated application detail page
@@ -215,16 +215,16 @@ Finish the non-AI hiring platform so the interview/evaluation layer lands on a s
 - [x] Consider showing what profile snapshot was submitted at apply time
 - [ ] Add tests for candidate application tracking views
 
-### Sub-project 6: Company Applicant Review Workflow
+### Sub-project 6: Company Applicant Review Workflow ✅ / Minor Cleanup
 
 - [x] Add dedicated candidate/application detail route for company users
 - [x] Show structured applicant detail beyond the compact list on the job page
-- [ ] Include:
+- [x] Include:
   - [x] resume access
   - [x] submitted profile snapshot
-  - application timestamps
-  - current status
-- [ ] Preserve role-based authorization for company ownership on all applicant detail views
+  - [x] application timestamps
+  - [x] current status
+- [x] Preserve role-based authorization for company ownership on all applicant detail views
 - [x] Add easier navigation between applicants for a job
 - [x] Improve applicant status controls and feedback states
 - [x] Add confirmation for destructive or terminal actions where appropriate
@@ -240,10 +240,10 @@ Finish the non-AI hiring platform so the interview/evaluation layer lands on a s
 
 ### Sub-project 8: Product Communication + Notifications ✅ / In Progress
 
-- [ ] Add user-facing feedback for key actions:
-  - application submitted
-  - resume uploaded/replaced
-  - job published/archived/closed
+- [ ] Complete remaining user-facing feedback for company job lifecycle actions:
+  - job published
+  - job archived
+  - job closed
 - [ ] Improve status language from internal enum wording to product wording
 - [x] Add durable in-app notifications as the primary notification system
 - [x] Add `notifications` table for persisted notification records
@@ -260,8 +260,8 @@ Finish the non-AI hiring platform so the interview/evaluation layer lands on a s
 
 ### Exit Criteria Before AI
 
-- [ ] Candidate can browse, upload a resume, apply from any valid surface, and clearly track applications
-- [ ] Company can create/manage jobs, review applicants meaningfully, and access resumes reliably
+- [ ] Candidate can browse, upload a resume, apply from any valid surface, and clearly track applications with strong empty states and guidance
+- [ ] Company can create/manage jobs, review applicants meaningfully, and access resumes reliably with stronger pipeline summary cues
 - [x] Expired/stale jobs behave correctly across queries and UI
 - [x] Resume storage is real, not mocked
 - [ ] Core hiring workflow feels complete without depending on the AI interview layer
@@ -274,21 +274,21 @@ Build this phase in the following order to keep dependencies clean and avoid rew
    - Replace the remaining legacy URL-shaped `resumeKey` test fixtures with realistic key-shaped values.
    - Keep tests aligned with the now-real storage model before adding more workflow depth.
 
-2. **Company Applicant Review Workflow**
-   - After resumes and apply flows are stable, give companies a real applicant review surface.
-   - This is the most important company-side gap before AI.
+2. **Notifications Email Layer**
+   - Keep in-app inbox as the source of truth and add Resend-backed secondary delivery for selected events.
+   - Add delivery tracking without coupling workflow success to email success.
 
-3. **Candidate Application Experience**
-   - Improve post-apply tracking once the underlying application/job states are stable.
-   - This prevents building timelines/status UX on top of shifting logic.
+3. **Candidate Application Experience Cleanup**
+   - Add empty states, guidance, and view-level tests to finish the candidate post-apply surface.
+   - Decide explicitly whether withdraw belongs in the pre-AI platform or gets deferred.
 
 4. **Company Workflow Quality**
-   - Add management polish after the core applicant-review flow exists.
-   - This is useful, but lower priority than making the application funnel complete.
+   - Add better signals for which jobs need attention, which are stale, and where applicant activity is happening.
+   - This is now the main company-side product gap after applicant detail landed.
 
-5. **Product Communication + Notifications**
-   - Final pass for wording, durable in-app notifications, and secondary email delivery.
-   - Best done after the main user flows and statuses are settled.
+5. **Public Route Cleanup**
+   - Add expired-job-specific public error UI and remove the remaining dead code in `PublicJobCTA`.
+   - This is small but keeps public/apply behavior coherent before AI work starts.
 
 ## Phase 4: AI Interview
 

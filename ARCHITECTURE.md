@@ -11,6 +11,7 @@ Today, RoundZero is primarily:
 - role-based company/candidate workflows
 - public company and jobs browsing
 - one-click applications with profile snapshots
+- durable in-app workflow notifications
 
 The AI interview, evaluation, report, and ranking layers are planned but not yet implemented in this codebase.
 
@@ -30,7 +31,7 @@ The AI interview, evaluation, report, and ranking layers are planned but not yet
 | UI | shadcn/ui, Tailwind CSS v4, Hugeicons |
 | Validation | Zod |
 | Notifications | In-app inbox now, Resend planned for email delivery |
-| File storage (planned/current contract) | Cloudflare R2 |
+| File storage | Cloudflare R2 for resumes and company logos |
 | AI layer (planned) | Cloudflare Agents SDK + Vercel AI SDK |
 | Linting | Biome |
 
@@ -48,6 +49,8 @@ The app currently runs as a standard TanStack Start app with server functions fo
 - company profile management
 - candidate profile management
 - dashboard metrics
+- notifications
+- resume/logo storage contracts
 
 ### Target Runtime
 
@@ -75,23 +78,27 @@ Current file-based routes:
 ```
 app/routes/
 ├── __root.tsx
-├── index.tsx
-├── company/login.tsx
-├── candidate/login.tsx
-├── companies/index.tsx
-├── companies/$slug.tsx
-├── jobs/index.tsx
-├── jobs/$jobId.tsx
 ├── _authenticated.tsx
-├── _authenticated/onboarding.tsx
-├── _authenticated/onboarding/company.tsx
-├── _authenticated/onboarding/candidate.tsx
 ├── _authenticated/dashboard.tsx
+├── _authenticated/dashboard/application/$applicationId.tsx
+├── _authenticated/dashboard/applicants/$applicationId.tsx
 ├── _authenticated/dashboard/index.tsx
+├── _authenticated/dashboard/job-applicants/$jobId.tsx
+├── _authenticated/dashboard/jobs/new.tsx
 ├── _authenticated/dashboard/jobs/index.tsx
 ├── _authenticated/dashboard/jobs/$jobId.tsx
 ├── _authenticated/dashboard/applications.tsx
-└── _authenticated/dashboard/settings.tsx
+├── _authenticated/dashboard/settings.tsx
+├── _authenticated/onboarding.tsx
+├── _authenticated/onboarding/candidate.tsx
+├── _authenticated/onboarding/company.tsx
+├── candidate/login.tsx
+├── companies/index.tsx
+├── companies/$slug.tsx
+├── company/login.tsx
+├── index.tsx
+├── jobs/index.tsx
+└── jobs/$jobId.tsx
 ```
 
 What this means in practice:
@@ -100,15 +107,15 @@ What this means in practice:
 - role-specific login exists
 - company/candidate onboarding exists
 - dashboard basics exist
-- applicant review exists at the per-job level
+- dedicated company applicant review pages exist
+- dedicated candidate application detail pages exist
 - candidate application tracking exists
+- notification inbox exists in the app shell
 
 Missing route surface today:
 
 - interview UI
 - evaluation/report UI
-- company candidate detail/workbench route
-- notification center
 
 ---
 
@@ -314,12 +321,10 @@ Current intended flow:
 
 ### Company review
 
-1. Company views a job
-2. sees applicant list
-3. sees basic candidate info + snapshot-derived links
-4. updates application status
-
-This is functional, but still missing a stronger company-side applicant detail/workbench.
+1. Company views a job or the dedicated applicants page for that job
+2. navigates into a dedicated applicant/application detail route
+3. sees submitted resume, snapshot data, timestamps, and current status
+4. updates application status from that review surface
 
 ---
 
@@ -371,7 +376,35 @@ Why `resume_key` instead of `resume_url`:
 
 ## 11. Notifications Architecture
 
-Notifications are now partially implemented as a durable in-app inbox. Email delivery is still a later layer, but the architecture continues to treat in-app notification records as the primary system of record.
+Notifications are implemented as a durable in-app inbox. Email delivery is still a later layer, and the architecture continues to treat in-app notification records as the primary system of record.
+
+### Current model
+
+- `notifications` table stores:
+  - `id`
+  - `user_id`
+  - `type`
+  - `payload`
+  - `read_at`
+  - `created_at`
+- supported event types today:
+  - `new_applicant`
+  - `application_status_changed`
+- the app shell/dashboard header renders the inbox surface
+
+### Current module layout
+
+```
+app/features/notifications/
+├── components/
+│   └── notification-inbox.tsx
+├── config.ts
+├── queries/
+│   ├── queries.sql
+│   └── queries_sql.ts
+└── server/
+    └── functions.ts
+```
 
 Recommended provider:
 
@@ -393,34 +426,21 @@ Recommended architecture:
 - trigger notifications from explicit workflow events, not UI-only actions
 - do not couple domain logic directly to a provider SDK in routes/components
 
-Recommended future data model:
+Future extension points:
 
 - `notifications`
-  - `id`
-  - `user_id`
-  - `type`
-  - `title`
-  - `body`
-  - `link`
-  - `read_at`
-  - `email_status` (optional)
-  - `created_at`
+  - keep `type` + `payload` as the core record
+  - optionally add delivery-attempt/result fields if email transport tracking is needed
 
 Design principle:
 
 - if email delivery fails, the notification still exists in-app
 - email is a transport, not the canonical event record
 
-Suggested future module:
+Suggested future additions:
 
-```
-app/features/notifications/
-├── server/
-│   └── functions.ts
-└── services/
-    ├── notification-events.ts
-    └── resend.ts
-```
+- `app/features/notifications/services/resend.ts`
+- event-trigger helpers only if more than one workflow starts sharing the same notification write/send logic
 
 ---
 
@@ -431,15 +451,15 @@ Jobs already support:
 - draft/open/closed states
 - archive behavior
 - `expires_at`
-
-Still missing at the product layer:
-
-- expiry controls in the create/edit UI
+- expiry controls in create/edit UI
 - stale role indicators
 - auto-close behavior for expired roles
-- consistent hidden-by-default behavior for expired/closed jobs on public surfaces
+- hidden-by-default expired/closed jobs on public surfaces
 
-This means the schema is ahead of the UX and workflow implementation.
+Remaining cleanup is mostly small:
+
+- expired-job-specific public error UI
+- final cleanup of dead public CTA branches
 
 ---
 
@@ -466,13 +486,13 @@ Current coverage focus:
 - jobs queries/business logic
 - applications queries/business logic
 - dashboard metrics
+- notifications queries
 
 Coverage still needed as the platform hardening phase continues:
 
-- resume upload contract behavior
-- expiry lifecycle behavior
-- applicant detail surfaces
-- public job detail apply behavior
+- application-triggered notification integration
+- candidate application tracking views
+- remaining public expired-job/error handling views
 
 ---
 
@@ -512,12 +532,11 @@ The important constraint:
 
 Architecturally, the next critical non-AI work is:
 
-1. real R2 wiring for resumes
-2. consistent apply flow from every candidate surface
-3. complete job expiry/stale lifecycle
-4. stronger company applicant review workflow
-5. clearer candidate application tracking
-6. durable in-app notification layer with optional Resend email delivery
+1. Resend-backed secondary email delivery for selected notification events
+2. candidate application empty states, guidance, and tests
+3. stronger company workflow summary cues
+4. public expired-job cleanup
+5. AI runtime foundation when the platform hardening list is genuinely closed
 
 ---
 
