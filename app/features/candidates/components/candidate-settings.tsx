@@ -398,7 +398,7 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
               children={(field) => (
                 <field.TextareaField
                   label="Bio"
-                  placeholder="Tell companies about yourself — your experience, interests, and what you're looking for."
+                  placeholder="Tell companies about yourself. Your experience, interests, and what you're looking for."
                   maxLength={5000}
                   rows={4}
                 />

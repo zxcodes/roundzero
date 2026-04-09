@@ -63,13 +63,14 @@ function CandidateLoginPage() {
                 For job seekers
               </p>
               <h1 className="text-3xl font-extrabold leading-tight tracking-tight xl:text-4xl">
-                Interview on your
+                Skip the
                 <br />
-                own terms.
+                resume black hole.
               </h1>
               <p className="max-w-md text-base leading-relaxed text-muted-foreground">
-                Browse open positions, apply with one click, and complete AI-powered interviews
-                whenever you're ready — no scheduling, no phone screens.
+                Most applications disappear into an inbox. On RoundZero, every application gets an
+                AI interview, so companies see what you can actually do. No scheduling, no phone
+                screens.
               </p>
             </div>
 
@@ -81,13 +82,13 @@ function CandidateLoginPage() {
               />
               <ValueProp
                 icon={BubbleChatIcon}
-                title="AI interviews, your schedule"
-                text="20-40 minute structured conversations, anytime, anywhere"
+                title="Interview on your schedule"
+                text="20-40 minute async conversations, anytime, anywhere"
               />
               <ValueProp
                 icon={Clock01Icon}
-                title="Faster responses"
-                text="Companies get your report immediately — no waiting weeks to hear back"
+                title="Stand out from the pile"
+                text="Companies see a scored report, not just another resume in the stack"
               />
             </div>
           </div>
@@ -134,9 +135,9 @@ function CandidateLoginPage() {
             <p className="text-[11px] font-bold uppercase tracking-widest text-primary lg:hidden">
               For job seekers
             </p>
-            <h2 className="text-2xl font-bold tracking-tight">Find your next role</h2>
+            <h2 className="text-2xl font-bold tracking-tight">Skip the resume black hole</h2>
             <p className="text-sm text-muted-foreground">
-              Sign in to browse jobs, apply with one click, and complete AI-powered interviews.
+              Sign in to browse jobs, apply with one click, and show companies what you can do.
             </p>
           </div>
 
@@ -173,9 +174,9 @@ function CandidateLoginPage() {
                 />
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-medium">AI interviews, your schedule</p>
+                <p className="text-sm font-medium">Interview on your schedule</p>
                 <p className="text-xs text-muted-foreground">
-                  20-40 minute structured conversations, anytime, anywhere
+                  20-40 minute async conversations, anytime, anywhere
                 </p>
               </div>
             </div>
@@ -184,9 +185,9 @@ function CandidateLoginPage() {
                 <HugeiconsIcon icon={Clock01Icon} strokeWidth={2} className="size-4 text-primary" />
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-medium">Faster responses</p>
+                <p className="text-sm font-medium">Stand out from the pile</p>
                 <p className="text-xs text-muted-foreground">
-                  Companies get your report immediately — no waiting weeks
+                  Companies see a scored report, not just another resume
                 </p>
               </div>
             </div>

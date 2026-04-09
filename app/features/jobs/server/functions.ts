@@ -125,7 +125,7 @@ export const updateJob = createServerFn({ method: "POST" })
     });
 
     if (!job) {
-      throw new Error("Failed to update job — not found or not authorized");
+      throw new Error("Failed to update job: not found or not authorized");
     }
 
     return { job };

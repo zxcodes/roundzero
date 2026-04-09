@@ -597,7 +597,7 @@ function formatMonthRange(entry: {
       ? formatMonth(entry.endMonth)
       : "Unknown end";
 
-  return `${start} — ${end}`;
+  return `${start} – ${end}`;
 }
 
 function formatMonth(value: string) {
