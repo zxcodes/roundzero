@@ -104,7 +104,7 @@ export function NotificationInbox({ feed }: { feed: NotificationFeed }) {
       size="icon-sm"
       className="relative size-9 rounded-full bg-muted/35 text-foreground hover:bg-muted/60"
     >
-      <HugeiconsIcon icon={Notification02Icon} strokeWidth={2} className="size-[18px]" />
+      <HugeiconsIcon icon={Notification02Icon} strokeWidth={2} className="size-4.5" />
       {feed.unreadCount > 0 ? (
         <span className="absolute -top-0.5 -right-0.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-background bg-primary px-1 text-[10px] font-semibold leading-none text-primary-foreground shadow-sm">
           {feed.unreadCount > 9 ? "9+" : feed.unreadCount}
@@ -243,7 +243,7 @@ export function NotificationInbox({ feed }: { feed: NotificationFeed }) {
       <PopoverTrigger asChild>{trigger}</PopoverTrigger>
       <PopoverContent
         align="end"
-        className="w-[26rem] overflow-hidden rounded-3xl border-border/60 bg-background/96 p-0 shadow-2xl backdrop-blur"
+        className="w-104 overflow-hidden rounded-3xl border-border/60 bg-background/96 p-0 shadow-2xl backdrop-blur"
       >
         <PopoverHeader className="sr-only">
           <PopoverTitle>Notifications</PopoverTitle>
