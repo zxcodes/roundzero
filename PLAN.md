@@ -253,6 +253,7 @@ Finish the non-AI hiring platform so the interview/evaluation layer lands on a s
   - interview-ready and report-ready events later
 - [x] Add in-app notification read/unread state
 - [x] Add notification surface in the app shell/dashboard
+- [x] Add integration coverage for application-triggered notification writes
 - [ ] Use email as a secondary delivery channel, not the source of truth
 - [ ] Add Resend-backed email sending for selected notification events
 - [ ] Track email delivery attempt/result separately from in-app notification persistence

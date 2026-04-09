@@ -490,7 +490,6 @@ Current coverage focus:
 
 Coverage still needed as the platform hardening phase continues:
 
-- application-triggered notification integration
 - candidate application tracking views
 - remaining public expired-job/error handling views
 
