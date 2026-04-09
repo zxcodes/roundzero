@@ -203,15 +203,16 @@ Finish the non-AI hiring platform so the interview/evaluation layer lands on a s
 - [x] Add "no longer accepting applications" message for candidates viewing archived jobs in dashboard
 - [ ] Remove dead code branches in `PublicJobCTA`
 
-### Sub-project 5: Candidate Application Experience
+### Sub-project 5: Candidate Application Experience ✅ / In Progress
 
-- [ ] Improve “My Applications” from basic table to clearer application tracking
-- [ ] Add timeline-style metadata where useful: applied date, current status, last status change
-- [ ] Show clearer status descriptions, not just enum labels
-- [ ] Link candidates to relevant next actions when status changes
+- [x] Improve “My Applications” from basic table to clearer application tracking
+- [x] Keep the main applications page lightweight and route detailed tracking to a dedicated application detail page
+- [x] Add timeline-style metadata where useful: applied date, current status, last status change
+- [x] Show clearer status descriptions, not just enum labels
+- [x] Link candidates to relevant next actions when status changes
 - [ ] Add empty states and guidance for first-time candidates
 - [ ] Consider basic withdraw application flow
-- [ ] Consider showing what profile snapshot was submitted at apply time
+- [x] Consider showing what profile snapshot was submitted at apply time
 - [ ] Add tests for candidate application tracking views
 
 ### Sub-project 6: Company Applicant Review Workflow

@@ -1,16 +1,14 @@
-import { Briefcase01Icon } from "@hugeicons/core-free-icons";
+import {
+  ArrowRight01Icon,
+  Briefcase01Icon,
+  Clock01Icon,
+  Rocket01Icon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getMyApplications } from "@/features/applications/server/functions";
 
 export const Route = createFileRoute("/_authenticated/dashboard/applications")({
@@ -23,20 +21,31 @@ export const Route = createFileRoute("/_authenticated/dashboard/applications")({
   component: MyApplicationsPage,
 });
 
-const statusVariant = (status: string) => {
-  switch (status) {
-    case "applied":
-      return "default" as const;
-    case "interviewing":
-      return "secondary" as const;
-    case "evaluated":
-      return "outline" as const;
-    case "rejected":
-      return "destructive" as const;
-    default:
-      return "secondary" as const;
-  }
-};
+type Applications = Awaited<ReturnType<typeof getMyApplications>>;
+type Application = Applications[number];
+
+const stageCopy = {
+  applied: {
+    badge: "Applied",
+    tone: "bg-sky-500/10 text-sky-700 dark:text-sky-300",
+    blurb: "Waiting on first review",
+  },
+  interviewing: {
+    badge: "Interviewing",
+    tone: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
+    blurb: "Moved into the interview stage",
+  },
+  evaluated: {
+    badge: "Evaluated",
+    tone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+    blurb: "Reviewed by the hiring team",
+  },
+  rejected: {
+    badge: "Closed",
+    tone: "bg-rose-500/10 text-rose-700 dark:text-rose-300",
+    blurb: "No longer moving forward",
+  },
+} as const;
 
 const formatDate = (date: Date | string) => {
   return new Date(date).toLocaleDateString("en-US", {
@@ -46,85 +55,187 @@ const formatDate = (date: Date | string) => {
   });
 };
 
-const formatStatus = (status: string) => {
-  return status.charAt(0).toUpperCase() + status.slice(1);
+const toApplicationStage = (status: string) => {
+  switch (status) {
+    case "interviewing":
+    case "evaluated":
+    case "rejected":
+      return status;
+    default:
+      return "applied";
+  }
+};
+
+const getStatusMeta = (status: string) => {
+  const stage = toApplicationStage(status);
+  return stageCopy[stage];
+};
+
+const getJobStateLabel = (jobStatus: Application["jobStatus"]) => {
+  if (jobStatus === "closed") {
+    return "Role closed";
+  }
+
+  if (jobStatus === "draft") {
+    return "Role paused";
+  }
+
+  return "Role open";
+};
+
+const buildMetrics = (applications: Applications) => {
+  return [
+    {
+      label: "Total applications",
+      value: String(applications.length),
+      description: "Everything you have submitted so far.",
+      icon: Briefcase01Icon,
+    },
+    {
+      label: "Still active",
+      value: String(applications.filter((application) => application.status !== "rejected").length),
+      description: "Applications still moving through review.",
+      icon: Rocket01Icon,
+    },
+    {
+      label: "Interview stage",
+      value: String(
+        applications.filter((application) => application.status === "interviewing").length,
+      ),
+      description: "The strongest sign of real traction.",
+      icon: Clock01Icon,
+    },
+  ];
 };
 
 function MyApplicationsPage() {
   const applications = Route.useLoaderData();
+  const metrics = buildMetrics(applications);
 
   return (
     <div className="animate-fade-in space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">My Applications</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Track the status of your job applications.
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="space-y-1">
+          <h2 className="text-2xl font-bold tracking-tight">My Applications</h2>
+          <p className="max-w-2xl text-sm text-muted-foreground">
+            Scan your active submissions quickly, then open any application for the full record.
+          </p>
+        </div>
+        <Button asChild>
+          <Link to="/dashboard/jobs">
+            Browse Jobs
+            <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-4" />
+          </Link>
+        </Button>
       </div>
 
       {applications.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-16">
-          <div className="mb-4 flex size-12 items-center justify-center rounded-xl bg-muted">
-            <HugeiconsIcon
-              icon={Briefcase01Icon}
-              strokeWidth={2}
-              className="size-6 text-muted-foreground"
-            />
-          </div>
-          <h3 className="text-sm font-semibold">No applications yet</h3>
-          <p className="mt-1 mb-4 text-xs text-muted-foreground">
-            Browse open jobs and submit your first application.
-          </p>
-          <Button size="sm" asChild>
-            <Link to="/dashboard/jobs">Browse Jobs</Link>
-          </Button>
-        </div>
+        <Card className="border-dashed">
+          <CardContent className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+            <div className="flex size-14 items-center justify-center rounded-2xl bg-muted">
+              <HugeiconsIcon
+                icon={Briefcase01Icon}
+                strokeWidth={2}
+                className="size-7 text-muted-foreground"
+              />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-sm font-semibold">No applications yet</h3>
+              <p className="text-sm text-muted-foreground">
+                Browse open roles, submit your first application, and this page will turn into your
+                tracking list.
+              </p>
+            </div>
+            <Button asChild>
+              <Link to="/dashboard/jobs">Browse Jobs</Link>
+            </Button>
+          </CardContent>
+        </Card>
       ) : (
-        <div className="animate-fade-in stagger-1 overflow-hidden rounded-xl border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Job</TableHead>
-                <TableHead>Company</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Applied</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {applications.map((app) => (
-                <TableRow key={app.id}>
-                  <TableCell className="font-medium">
-                    <Link
-                      to="/dashboard/jobs/$jobId"
-                      params={{ jobId: app.jobId }}
-                      className="transition-colors hover:text-primary hover:underline"
-                    >
-                      {app.jobTitle}
-                    </Link>
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{app.companyName}</TableCell>
-                  <TableCell>
-                    <Badge variant={statusVariant(app.status)} className="capitalize">
-                      {formatStatus(app.status)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="font-mono text-xs text-muted-foreground">
-                    {formatDate(app.createdAt)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link to="/dashboard/jobs/$jobId" params={{ jobId: app.jobId }}>
-                        View Job
-                      </Link>
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        <>
+          <div className="grid gap-3 md:grid-cols-3">
+            {metrics.map((metric, index) => (
+              <Card key={metric.label} size="sm" className={`animate-fade-in stagger-${index + 1}`}>
+                <CardHeader className="gap-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                      {metric.label}
+                    </p>
+                    <div className="flex size-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <HugeiconsIcon icon={metric.icon} strokeWidth={2} className="size-4" />
+                    </div>
+                  </div>
+                  <CardTitle className="font-mono text-3xl font-semibold tracking-tight">
+                    {metric.value}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-xs text-muted-foreground">{metric.description}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <div className="space-y-3">
+            {applications.map((application, index) => (
+              <ApplicationListCard
+                key={application.id}
+                application={application}
+                className={`animate-fade-in stagger-${Math.min(index + 1, 5)}`}
+              />
+            ))}
+          </div>
+        </>
       )}
     </div>
+  );
+}
+
+function ApplicationListCard({
+  application,
+  className,
+}: {
+  application: Application;
+  className?: string;
+}) {
+  const statusMeta = getStatusMeta(application.status);
+
+  return (
+    <Card size="sm" className={className}>
+      <CardContent className="py-0">
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border/70 p-4">
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary">
+                {application.companyName}
+              </p>
+              <Badge variant="outline" className="font-mono text-[11px]">
+                {getJobStateLabel(application.jobStatus)}
+              </Badge>
+              <Badge className={statusMeta.tone}>{statusMeta.badge}</Badge>
+            </div>
+
+            <div className="space-y-1">
+              <CardTitle className="text-lg">{application.jobTitle}</CardTitle>
+              <CardDescription>{statusMeta.blurb}</CardDescription>
+            </div>
+
+            <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+              <span>Applied {formatDate(application.createdAt)}</span>
+              <span>Last updated {formatDate(application.updatedAt)}</span>
+            </div>
+          </div>
+
+          <Button variant="outline" asChild>
+            <Link
+              to="/dashboard/application/$applicationId"
+              params={{ applicationId: application.id }}
+            >
+              View details
+            </Link>
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
