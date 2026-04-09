@@ -36,6 +36,17 @@ JOIN jobs j ON j.id = a.job_id
 JOIN companies c ON c.id = j.company_id
 WHERE a.id = $1;
 
+-- name: getApplicationReviewById :one
+SELECT a.id, a.job_id, a.candidate_id, a.resume_key, a.metadata, a.status, a.created_at, a.updated_at,
+       j.title AS job_title, j.status AS job_status, j.company_id,
+       c.name AS company_name, c.slug AS company_slug,
+       u.name AS candidate_name, u.email AS candidate_email, u.picture AS candidate_picture
+FROM applications a
+JOIN jobs j ON j.id = a.job_id
+JOIN companies c ON c.id = j.company_id
+JOIN users u ON u.id = a.candidate_id
+WHERE a.id = $1;
+
 -- name: updateApplicationStatus :one
 UPDATE applications
 SET status = $1,

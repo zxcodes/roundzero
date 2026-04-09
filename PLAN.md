@@ -216,18 +216,18 @@ Finish the non-AI hiring platform so the interview/evaluation layer lands on a s
 
 ### Sub-project 6: Company Applicant Review Workflow
 
-- [ ] Add dedicated candidate/application detail route for company users
-- [ ] Show structured applicant detail beyond the compact list on the job page
+- [x] Add dedicated candidate/application detail route for company users
+- [x] Show structured applicant detail beyond the compact list on the job page
 - [ ] Include:
-  - resume access
-  - submitted profile snapshot
+  - [x] resume access
+  - [x] submitted profile snapshot
   - application timestamps
   - current status
 - [ ] Preserve role-based authorization for company ownership on all applicant detail views
-- [ ] Add easier navigation between applicants for a job
-- [ ] Improve applicant status controls and feedback states
-- [ ] Add confirmation for destructive or terminal actions where appropriate
-- [ ] Add tests for company applicant detail authorization and rendering
+- [x] Add easier navigation between applicants for a job
+- [x] Improve applicant status controls and feedback states
+- [x] Add confirmation for destructive or terminal actions where appropriate
+- [x] Add tests for company applicant detail authorization context and rendering query shape
 
 ### Sub-project 7: Company Workflow Quality
 

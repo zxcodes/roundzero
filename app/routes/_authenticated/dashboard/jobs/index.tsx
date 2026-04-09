@@ -268,6 +268,11 @@ function ActiveJobsTable({
                       </Button>
                     ) : null}
                     <Button variant="ghost" size="sm" asChild>
+                      <Link to="/dashboard/job-applicants/$jobId" params={{ jobId: job.id }}>
+                        Applicants
+                      </Link>
+                    </Button>
+                    <Button variant="ghost" size="sm" asChild>
                       <Link to="/dashboard/jobs/$jobId" params={{ jobId: job.id }}>
                         View
                       </Link>
