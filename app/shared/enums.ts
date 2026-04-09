@@ -25,6 +25,9 @@ export type ExperienceLevel = z.infer<typeof experienceLevelSchema>;
 export const applicationStatusSchema = z.enum(["applied", "interviewing", "evaluated", "rejected"]);
 export type ApplicationStatus = z.infer<typeof applicationStatusSchema>;
 
+export const notificationTypeSchema = z.enum(["application_status_changed", "new_applicant"]);
+export type NotificationType = z.infer<typeof notificationTypeSchema>;
+
 /** Valid status transitions for applications. */
 export const APPLICATION_STATUS_TRANSITIONS: Record<ApplicationStatus, ApplicationStatus[]> = {
   applied: ["interviewing", "rejected"],

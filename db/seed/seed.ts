@@ -8,6 +8,7 @@ try {
   await $`bun ./db/seed/candidate-profiles.ts`;
   await $`bun ./db/seed/jobs.ts`;
   await $`bun ./db/seed/applications.ts`;
+  await $`bun ./db/seed/notifications.ts`;
   await $`bun ./db/seed/interviews.ts`;
   await $`bun ./db/seed/reports.ts`;
 

@@ -29,7 +29,7 @@ The AI interview, evaluation, report, and ranking layers are planned but not yet
 | Auth | Google OAuth with server-side cookie session |
 | UI | shadcn/ui, Tailwind CSS v4, Hugeicons |
 | Validation | Zod |
-| Notifications (planned) | Resend |
+| Notifications | In-app inbox now, Resend planned for email delivery |
 | File storage (planned/current contract) | Cloudflare R2 |
 | AI layer (planned) | Cloudflare Agents SDK + Vercel AI SDK |
 | Linting | Biome |
@@ -121,6 +121,7 @@ app/features/
 ├── candidates/
 ├── companies/
 ├── dashboard/
+├── notifications/
 └── jobs/
 ```
 
@@ -132,6 +133,7 @@ app/features/
 - `jobs`: job CRUD, filtering, pagination, status/archive behavior
 - `applications`: one-click apply, applicant lists, application status
 - `dashboard`: role-specific metrics
+- `notifications`: per-user in-app notification inbox and workflow event records
 
 ### What does not exist yet
 
@@ -369,7 +371,7 @@ Why `resume_key` instead of `resume_url`:
 
 ## 11. Notifications Architecture
 
-Notifications are not implemented yet, but the architecture should assume a durable in-app notification system with optional email delivery layered on top.
+Notifications are now partially implemented as a durable in-app inbox. Email delivery is still a later layer, but the architecture continues to treat in-app notification records as the primary system of record.
 
 Recommended provider:
 

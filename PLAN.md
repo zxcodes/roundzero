@@ -131,7 +131,7 @@ Solidify RoundZero as a usable job platform before adding AI. Public browsing, p
 - [x] Persist candidate `resume_key` immediately after upload so settings/onboarding refreshes read from the DB
 - [x] Track `resume_updated_at` and show last-updated state in candidate settings
 - [x] `expires_at` field on job create/edit form (optional date picker)
-- [x] When creating a job posting, let companies enter questions and even set answers to those questions in a plain text box or in natural language. Also let them know our agent will pick it up and pass those when assessing a candidate. This will be an optional text box.
+- [x] When creating a job posting, let companies enter optional interview questions or screening prompts that the future interview agent should cover with candidates during the conversational flow.
 - [x] Stale job indicator: badge on jobs older than 90 days with no expiry set
 - [x] Auto-close expired jobs: scheduled task or on-read check that sets `status = 'closed'` when `expires_at < now()`
 - [x] Update job browsing UI to hide expired/closed jobs by default
@@ -238,21 +238,21 @@ Finish the non-AI hiring platform so the interview/evaluation layer lands on a s
 - [ ] Ensure company settings and public profile are coherent and complete
 - [ ] Consider company-side shortlist/review markers if the raw applicant list remains too shallow
 
-### Sub-project 8: Product Communication + Notifications
+### Sub-project 8: Product Communication + Notifications ✅ / In Progress
 
 - [ ] Add user-facing feedback for key actions:
   - application submitted
   - resume uploaded/replaced
   - job published/archived/closed
 - [ ] Improve status language from internal enum wording to product wording
-- [ ] Add durable in-app notifications as the primary notification system
-- [ ] Add `notifications` table for persisted notification records
-- [ ] Define notification event types for:
+- [x] Add durable in-app notifications as the primary notification system
+- [x] Add `notifications` table for persisted notification records
+- [x] Define notification event types for:
   - candidate application updates
   - company applicant activity
   - interview-ready and report-ready events later
-- [ ] Add in-app notification read/unread state
-- [ ] Add notification surface in the app shell/dashboard
+- [x] Add in-app notification read/unread state
+- [x] Add notification surface in the app shell/dashboard
 - [ ] Use email as a secondary delivery channel, not the source of truth
 - [ ] Add Resend-backed email sending for selected notification events
 - [ ] Track email delivery attempt/result separately from in-app notification persistence

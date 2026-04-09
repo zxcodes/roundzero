@@ -53,6 +53,7 @@ Today, the app is primarily the **core platform layer**:
 - candidate profile/settings
 - one-click apply
 - applicant lists and status tracking
+- in-app workflow notifications
 
 The AI interview, evaluation, report, and ranking systems are still future layers.
 

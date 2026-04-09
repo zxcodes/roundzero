@@ -6,8 +6,10 @@ import {
   getCandidateProfileByUserId,
   getCandidateWorkHistoryByProfileId,
 } from "@/features/candidates/queries/queries_sql";
-import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
+import { getCompanyById, getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
 import { closeExpiredJobsQuery, getJobById } from "@/features/jobs/queries/queries_sql";
+import { notificationPayloadSchemas } from "@/features/notifications/config";
+import { createNotification } from "@/features/notifications/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { applicationStatusSchema, isValidTransition } from "@/shared/enums";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
@@ -107,6 +109,22 @@ export const applyToJob = createServerFn({ method: "POST" })
       throw new Error("Failed to submit application");
     }
 
+    const company = await getCompanyById(db, { id: job.companyId });
+    if (company) {
+      const payload = notificationPayloadSchemas.new_applicant.parse({
+        applicationId: application.id,
+        jobId: job.id,
+        jobTitle: job.title,
+        candidateName: user.name,
+      });
+
+      await createNotification(db, {
+        userId: company.ownerId,
+        type: "new_applicant",
+        payload,
+      });
+    }
+
     return { application };
   });
 
@@ -203,6 +221,22 @@ export const updateApplicationStatus = createServerFn({ method: "POST" })
 
     if (!updated) {
       throw new Error("Failed to update application status");
+    }
+
+    if (currentStatus !== data.status) {
+      const payload = notificationPayloadSchemas.application_status_changed.parse({
+        applicationId: application.id,
+        jobId: application.jobId,
+        jobTitle: application.jobTitle,
+        companyName: application.companyName,
+        status: data.status,
+      });
+
+      await createNotification(db, {
+        userId: application.candidateId,
+        type: "application_status_changed",
+        payload,
+      });
     }
 
     return { application: updated };
