@@ -14,6 +14,7 @@ const routeTitles: Record<string, string> = {
   "/_authenticated/dashboard/jobs/new": "Post a Job",
   "/_authenticated/dashboard/jobs/$jobId": "Job Details",
   "/_authenticated/dashboard/applications": "My Applications",
+  "/_authenticated/dashboard/application/$applicationId": "Application Details",
   "/_authenticated/dashboard/settings": "Settings",
 };
 

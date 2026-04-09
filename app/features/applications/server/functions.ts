@@ -126,6 +126,25 @@ export const getMyApplications = createServerFn({ method: "GET" })
     return applications;
   });
 
+export const getMyApplicationDetail = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .inputValidator(zodValidator(applicationIdSchema))
+  .handler(async ({ data, context }) => {
+    const db = getDb();
+
+    const user = await getUserById(db, { id: context.userId });
+    if (!user || user.role !== "candidate") {
+      throw new Error("Only candidates can view applications");
+    }
+
+    const application = await getApplicationById(db, { id: data.applicationId });
+    if (!application || application.candidateId !== context.userId) {
+      throw new Error("Application not found");
+    }
+
+    return application;
+  });
+
 export const getJobApplicants = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .inputValidator(zodValidator(jobIdSchema))

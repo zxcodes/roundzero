@@ -28,6 +28,7 @@ import { Route as AuthenticatedDashboardJobsIndexRouteImport } from './routes/_a
 import { Route as AuthenticatedDashboardJobsNewRouteImport } from './routes/_authenticated/dashboard/jobs/new'
 import { Route as AuthenticatedDashboardJobsJobIdRouteImport } from './routes/_authenticated/dashboard/jobs/$jobId'
 import { Route as AuthenticatedDashboardJobApplicantsJobIdRouteImport } from './routes/_authenticated/dashboard/job-applicants/$jobId'
+import { Route as AuthenticatedDashboardApplicationApplicationIdRouteImport } from './routes/_authenticated/dashboard/application/$applicationId'
 import { Route as AuthenticatedDashboardApplicantsApplicationIdRouteImport } from './routes/_authenticated/dashboard/applicants/$applicationId'
 
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
@@ -133,6 +134,12 @@ const AuthenticatedDashboardJobApplicantsJobIdRoute =
     path: '/job-applicants/$jobId',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
+const AuthenticatedDashboardApplicationApplicationIdRoute =
+  AuthenticatedDashboardApplicationApplicationIdRouteImport.update({
+    id: '/application/$applicationId',
+    path: '/application/$applicationId',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
 const AuthenticatedDashboardApplicantsApplicationIdRoute =
   AuthenticatedDashboardApplicantsApplicationIdRouteImport.update({
     id: '/applicants/$applicationId',
@@ -156,6 +163,7 @@ export interface FileRoutesByFullPath {
   '/onboarding/company': typeof AuthenticatedOnboardingCompanyRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/dashboard/applicants/$applicationId': typeof AuthenticatedDashboardApplicantsApplicationIdRoute
+  '/dashboard/application/$applicationId': typeof AuthenticatedDashboardApplicationApplicationIdRoute
   '/dashboard/job-applicants/$jobId': typeof AuthenticatedDashboardJobApplicantsJobIdRoute
   '/dashboard/jobs/$jobId': typeof AuthenticatedDashboardJobsJobIdRoute
   '/dashboard/jobs/new': typeof AuthenticatedDashboardJobsNewRoute
@@ -176,6 +184,7 @@ export interface FileRoutesByTo {
   '/onboarding/company': typeof AuthenticatedOnboardingCompanyRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
   '/dashboard/applicants/$applicationId': typeof AuthenticatedDashboardApplicantsApplicationIdRoute
+  '/dashboard/application/$applicationId': typeof AuthenticatedDashboardApplicationApplicationIdRoute
   '/dashboard/job-applicants/$jobId': typeof AuthenticatedDashboardJobApplicantsJobIdRoute
   '/dashboard/jobs/$jobId': typeof AuthenticatedDashboardJobsJobIdRoute
   '/dashboard/jobs/new': typeof AuthenticatedDashboardJobsNewRoute
@@ -199,6 +208,7 @@ export interface FileRoutesById {
   '/_authenticated/onboarding/company': typeof AuthenticatedOnboardingCompanyRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/_authenticated/dashboard/applicants/$applicationId': typeof AuthenticatedDashboardApplicantsApplicationIdRoute
+  '/_authenticated/dashboard/application/$applicationId': typeof AuthenticatedDashboardApplicationApplicationIdRoute
   '/_authenticated/dashboard/job-applicants/$jobId': typeof AuthenticatedDashboardJobApplicantsJobIdRoute
   '/_authenticated/dashboard/jobs/$jobId': typeof AuthenticatedDashboardJobsJobIdRoute
   '/_authenticated/dashboard/jobs/new': typeof AuthenticatedDashboardJobsNewRoute
@@ -222,6 +232,7 @@ export interface FileRouteTypes {
     | '/onboarding/company'
     | '/dashboard/'
     | '/dashboard/applicants/$applicationId'
+    | '/dashboard/application/$applicationId'
     | '/dashboard/job-applicants/$jobId'
     | '/dashboard/jobs/$jobId'
     | '/dashboard/jobs/new'
@@ -242,6 +253,7 @@ export interface FileRouteTypes {
     | '/onboarding/company'
     | '/dashboard'
     | '/dashboard/applicants/$applicationId'
+    | '/dashboard/application/$applicationId'
     | '/dashboard/job-applicants/$jobId'
     | '/dashboard/jobs/$jobId'
     | '/dashboard/jobs/new'
@@ -264,6 +276,7 @@ export interface FileRouteTypes {
     | '/_authenticated/onboarding/company'
     | '/_authenticated/dashboard/'
     | '/_authenticated/dashboard/applicants/$applicationId'
+    | '/_authenticated/dashboard/application/$applicationId'
     | '/_authenticated/dashboard/job-applicants/$jobId'
     | '/_authenticated/dashboard/jobs/$jobId'
     | '/_authenticated/dashboard/jobs/new'
@@ -416,6 +429,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardJobApplicantsJobIdRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
+    '/_authenticated/dashboard/application/$applicationId': {
+      id: '/_authenticated/dashboard/application/$applicationId'
+      path: '/application/$applicationId'
+      fullPath: '/dashboard/application/$applicationId'
+      preLoaderRoute: typeof AuthenticatedDashboardApplicationApplicationIdRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
     '/_authenticated/dashboard/applicants/$applicationId': {
       id: '/_authenticated/dashboard/applicants/$applicationId'
       path: '/applicants/$applicationId'
@@ -431,6 +451,7 @@ interface AuthenticatedDashboardRouteChildren {
   AuthenticatedDashboardSettingsRoute: typeof AuthenticatedDashboardSettingsRoute
   AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
   AuthenticatedDashboardApplicantsApplicationIdRoute: typeof AuthenticatedDashboardApplicantsApplicationIdRoute
+  AuthenticatedDashboardApplicationApplicationIdRoute: typeof AuthenticatedDashboardApplicationApplicationIdRoute
   AuthenticatedDashboardJobApplicantsJobIdRoute: typeof AuthenticatedDashboardJobApplicantsJobIdRoute
   AuthenticatedDashboardJobsJobIdRoute: typeof AuthenticatedDashboardJobsJobIdRoute
   AuthenticatedDashboardJobsNewRoute: typeof AuthenticatedDashboardJobsNewRoute
@@ -445,6 +466,8 @@ const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
     AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
     AuthenticatedDashboardApplicantsApplicationIdRoute:
       AuthenticatedDashboardApplicantsApplicationIdRoute,
+    AuthenticatedDashboardApplicationApplicationIdRoute:
+      AuthenticatedDashboardApplicationApplicationIdRoute,
     AuthenticatedDashboardJobApplicantsJobIdRoute:
       AuthenticatedDashboardJobApplicantsJobIdRoute,
     AuthenticatedDashboardJobsJobIdRoute: AuthenticatedDashboardJobsJobIdRoute,
