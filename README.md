@@ -4,13 +4,14 @@ AI-powered hiring platform that replaces the first round of hiring with structur
 
 ## Stack
 
-- **Framework:** TanStack Start (React 19, Vite 7)
+- **Framework:** TanStack Start (React 19 with React Compiler, Vite 7)
 - **Server:** Cloudflare Workers
 - **Database:** Postgres (Neon prod, Docker local) + SQLC
 - **AI Agents:** Cloudflare Agents SDK (Durable Objects)
 - **AI Models:** Vercel AI SDK (OpenAI, Anthropic, Workers AI)
-- **UI:** shadcn/ui, Tailwind CSS v4, Phosphor Icons
-- **Linting:** Biome
+- **UI:** shadcn/ui, Tailwind CSS v4, Huge Icons
+- **Linting & Formatting:** Biome
+- **Finding Unused Code & Dependencies:** Knip
 
 ## Getting Started
 
