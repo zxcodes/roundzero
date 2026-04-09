@@ -69,7 +69,7 @@ function CompanyLoginPage() {
               </h1>
               <p className="max-w-md text-base leading-relaxed text-muted-foreground">
                 Post a job and RoundZero handles the initial screen. Every candidate gets a
-                structured, adaptive AI interview — and you get a scored report with evidence.
+                structured, adaptive AI interview, and you get a scored report with evidence.
               </p>
             </div>
 

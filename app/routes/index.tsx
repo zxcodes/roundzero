@@ -54,21 +54,20 @@ function Hero() {
         <div className="animate-fade-in-up space-y-5">
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1">
             <div className="size-1.5 animate-pulse rounded-full bg-primary" />
-            <span className="text-xs font-medium text-primary">
-              Replace your first interview round
-            </span>
+            <span className="text-xs font-medium text-primary">Hiring just changed</span>
           </div>
           <h1 className="text-[2.5rem] font-extrabold leading-[1.08] tracking-tight sm:text-5xl lg:text-[3.5rem]">
-            AI interviews your{" "}
+            Candidates use AI{" "}
             <span className="bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              candidates.
+              to apply.
             </span>
             <br />
-            You get the report.
+            Now you can use AI to screen.
           </h1>
           <p className="max-w-lg text-base leading-relaxed text-muted-foreground lg:text-lg">
-            RoundZero conducts adaptive, structured interviews and produces scored candidate reports
-            with evidence — so your team only talks to people worth their time.
+            AI-polished resumes and one-click applications have buried your inbox. RoundZero
+            interviews every candidate for you and delivers scored reports with evidence, so your
+            team only talks to people worth their time.
           </p>
           <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center">
             <Button size="lg" asChild>
@@ -158,7 +157,7 @@ function InterviewSection() {
             />
             <ChatBubble
               sender="candidate"
-              text="We used a pub/sub model with Redis Streams for message brokering. The main tradeoff was latency vs. ordering guarantees — we chose at-least-once delivery with client-side dedup."
+              text="We used a pub/sub model with Redis Streams for message brokering. The main tradeoff was latency vs. ordering guarantees, so we chose at-least-once delivery with client-side dedup."
             />
             <ChatBubble
               sender="ai"
@@ -170,15 +169,15 @@ function InterviewSection() {
         {/* Right — text */}
         <div className="space-y-4">
           <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
-            Adaptive interviews
+            Beyond keyword matching
           </p>
           <h2 className="text-2xl font-bold tracking-tight lg:text-3xl">
-            Questions that go deeper, not wider
+            Your ATS filters keywords. RoundZero interviews candidates.
           </h2>
           <p className="text-base leading-relaxed text-muted-foreground">
-            Every interview adapts in real-time. The AI probes weak answers, validates strong
-            claims, and detects inconsistencies between the resume and conversation — the way a
-            senior interviewer would.
+            Keyword filters were built for a world where humans wrote resumes. That world is gone.
+            RoundZero runs adaptive interviews that probe weak answers, validate claims, and catch
+            inconsistencies, the way a senior interviewer would.
           </p>
           <ul className="space-y-2.5 pt-1">
             <li className="flex items-start gap-2.5 text-sm text-muted-foreground">
@@ -254,7 +253,7 @@ function ReportSection() {
         <div className="lg:ml-auto lg:max-w-md">
           <div className="rounded-xl border border-border/60 bg-card shadow-sm ring-1 ring-foreground/3">
             <div className="border-b border-border/40 px-5 py-3">
-              <p className="text-sm font-medium">Report — Sarah Chen</p>
+              <p className="text-sm font-medium">Report: Sarah Chen</p>
             </div>
             <div className="space-y-5 p-5">
               <div>
@@ -342,12 +341,12 @@ function RankingSection() {
             Ranked shortlists
           </p>
           <h2 className="text-2xl font-bold tracking-tight lg:text-3xl">
-            Your top candidates, sorted and explained
+            500 applicants. 5 worth talking to. Found in minutes.
           </h2>
           <p className="text-base leading-relaxed text-muted-foreground">
-            Stop scrolling through 200 applications. RoundZero scores every candidate across
-            technical skill, communication, and experience depth — then gives you a ranked list with
-            clear hire/pass recommendations.
+            Every candidate is scored across technical depth, communication, and experience, then
+            ranked with clear hire/pass recommendations. No more scrolling through hundreds of
+            applications hoping to spot the right one.
           </p>
         </div>
       </div>
@@ -399,13 +398,13 @@ function BottomCTA() {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,var(--color-primary)/4%,transparent_70%)]" />
         <div className="relative">
           <h2 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
-            Stop screening resumes.
+            Stop reading resumes.
             <br />
-            Start reviewing reports.
+            Start reading reports.
           </h2>
           <p className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-muted-foreground">
-            Post your first job and let RoundZero handle the first round. Your team gets scored,
-            explained candidates — ready for a real conversation.
+            Post your first job and let RoundZero run the first round. Every candidate interviewed,
+            scored, and explained before your team spends a single minute.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Button size="lg" asChild>
