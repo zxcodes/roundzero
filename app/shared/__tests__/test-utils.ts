@@ -40,6 +40,7 @@ export const cleanTestData = async () => {
     TRUNCATE
       reports,
       interviews,
+      notifications,
       applications,
       jobs,
       candidate_work_history,

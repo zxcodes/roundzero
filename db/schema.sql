@@ -143,6 +143,20 @@ CREATE TABLE public.jobs (
 
 
 --
+-- Name: notifications; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.notifications (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    type text NOT NULL,
+    payload jsonb DEFAULT '{}'::jsonb NOT NULL,
+    read_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: reports; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -259,6 +273,14 @@ ALTER TABLE ONLY public.jobs
 
 
 --
+-- Name: notifications notifications_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notifications
+    ADD CONSTRAINT notifications_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: reports reports_interview_id_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -362,6 +384,20 @@ CREATE INDEX idx_jobs_status ON public.jobs USING btree (status);
 
 
 --
+-- Name: idx_notifications_unread; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_notifications_unread ON public.notifications USING btree (user_id, read_at) WHERE (read_at IS NULL);
+
+
+--
+-- Name: idx_notifications_user_created; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_notifications_user_created ON public.notifications USING btree (user_id, created_at DESC);
+
+
+--
 -- Name: idx_reports_application; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -429,6 +465,14 @@ ALTER TABLE ONLY public.interviews
 
 ALTER TABLE ONLY public.jobs
     ADD CONSTRAINT jobs_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id) ON DELETE RESTRICT;
+
+
+--
+-- Name: notifications notifications_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notifications
+    ADD CONSTRAINT notifications_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE RESTRICT;
 
 
 --
