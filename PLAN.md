@@ -156,7 +156,7 @@ Finish the non-AI hiring platform so the interview/evaluation layer lands on a s
 - [x] Validate allowed file types on server: PDF, DOC, DOCX
 - [x] Enforce resume size limit on server before issuing upload target
 - [x] Ensure uploaded resume keys are namespaced per user: `resumes/<userId>/<uuid>.<ext>`
-- [x] Candidate onboarding: block profile completion until resume upload succeeds
+- [x] Candidate onboarding: support resume upload during onboarding, while allowing candidates to continue and surfacing missing-resume guidance later in dashboard/apply states
 - [x] Candidate settings: support replace-resume flow cleanly
 - [x] Candidate settings: show meaningful current file state instead of generic “resume on file”
 - [x] Candidate settings: show resume-specific last-updated timestamp
@@ -175,7 +175,7 @@ Finish the non-AI hiring platform so the interview/evaluation layer lands on a s
 - [x] Company onboarding logo upload intentionally omitted (logo added via settings)
 - [x] Seed companies with real public-facing logo image URLs
 
-### Sub-project 3: Job Lifecycle Hardening
+### Sub-project 3: Job Lifecycle Hardening ✅
 
 - [x] Add `expires_at` field to create/edit job UI
 - [x] Add optional date picker UX for expiry selection
@@ -188,7 +188,7 @@ Finish the non-AI hiring platform so the interview/evaluation layer lands on a s
 - [x] Prevent applying to expired jobs with a user-facing message
 - [x] Add tests covering expired job visibility and application blocking
 
-### Sub-project 4: Candidate Apply Surface Consistency
+### Sub-project 4: Candidate Apply Surface Consistency ✅ / Minor Cleanup
 
 - [x] Wire authenticated candidate apply from public `/jobs/:id` to the real apply mutation instead of a placeholder CTA
 - [x] Ensure unauthenticated public job detail still routes to candidate login correctly
@@ -261,7 +261,7 @@ Finish the non-AI hiring platform so the interview/evaluation layer lands on a s
 
 - [ ] Candidate can browse, upload a resume, apply from any valid surface, and clearly track applications
 - [ ] Company can create/manage jobs, review applicants meaningfully, and access resumes reliably
-- [ ] Expired/stale jobs behave correctly across queries and UI
+- [x] Expired/stale jobs behave correctly across queries and UI
 - [x] Resume storage is real, not mocked
 - [ ] Core hiring workflow feels complete without depending on the AI interview layer
 
@@ -269,35 +269,23 @@ Finish the non-AI hiring platform so the interview/evaluation layer lands on a s
 
 Build this phase in the following order to keep dependencies clean and avoid rework:
 
-1. **Resume Storage Completion**
-   - This is the main blocker for a credible hiring workflow.
-   - Company-side applicant review is incomplete until resumes are actually accessible.
+1. **Resume/Test Cleanup**
+   - Replace the remaining legacy URL-shaped `resumeKey` test fixtures with realistic key-shaped values.
+   - Keep tests aligned with the now-real storage model before adding more workflow depth.
 
-2. **Company Logo Uploads**
-   - Company logo uploads now exist in settings only, with seeded public demo logos for browse surfaces.
-   - Keep onboarding simpler and treat logo upload as a profile-quality improvement, not a setup blocker.
-
-3. **Candidate Apply Surface Consistency**
-   - Once resume storage works, make sure candidates can apply correctly from every valid surface.
-   - Avoid shipping two different apply experiences with different rules.
-
-4. **Job Lifecycle Hardening**
-   - Expiry and stale-role behavior should be settled before polishing company/candidate workflows.
-   - This affects queries, listings, detail pages, and application eligibility.
-
-5. **Company Applicant Review Workflow**
+2. **Company Applicant Review Workflow**
    - After resumes and apply flows are stable, give companies a real applicant review surface.
    - This is the most important company-side gap before AI.
 
-6. **Candidate Application Experience**
+3. **Candidate Application Experience**
    - Improve post-apply tracking once the underlying application/job states are stable.
    - This prevents building timelines/status UX on top of shifting logic.
 
-7. **Company Workflow Quality**
+4. **Company Workflow Quality**
    - Add management polish after the core applicant-review flow exists.
    - This is useful, but lower priority than making the application funnel complete.
 
-8. **Product Communication + Notifications**
+5. **Product Communication + Notifications**
    - Final pass for wording, durable in-app notifications, and secondary email delivery.
    - Best done after the main user flows and statuses are settled.
 
