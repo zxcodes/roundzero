@@ -218,7 +218,7 @@ function CompanyCard({ company, className }: { company: CompanyFromLoader; class
 
   return (
     <Link to="/companies/$slug" params={{ slug: company.slug }} className={className}>
-      <Card className="group h-full transition-all duration-200 hover:border-primary/30 hover:shadow-md hover:shadow-primary/5">
+      <Card className="group h-full ring-foreground/5 transition-all duration-200 hover:ring-primary/30 hover:shadow-md hover:shadow-primary/5">
         <CardContent className="space-y-4">
           {/* Header row */}
           <div className="flex items-start gap-3.5">
