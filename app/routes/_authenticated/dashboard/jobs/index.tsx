@@ -21,6 +21,14 @@ import { DashboardJobsListSkeleton } from "@/components/route-skeletons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import {
   Table,
   TableBody,
   TableCell,
@@ -186,25 +194,25 @@ function ActiveJobsTable({
 }) {
   if (jobs.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-16">
-        <div className="mb-4 flex size-12 items-center justify-center rounded-xl bg-muted">
-          <HugeiconsIcon
-            icon={Briefcase01Icon}
-            strokeWidth={2}
-            className="size-6 text-muted-foreground"
-          />
-        </div>
-        <h3 className="text-sm font-semibold">No active jobs</h3>
-        <p className="mt-1 mb-4 text-xs text-muted-foreground">
-          Create your first job posting to start receiving applications.
-        </p>
-        <Button size="sm" asChild>
-          <Link to="/dashboard/jobs/new">
-            <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-3.5" />
-            Post a job
-          </Link>
-        </Button>
-      </div>
+      <Empty className="border">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} />
+          </EmptyMedia>
+          <EmptyTitle>No active jobs</EmptyTitle>
+          <EmptyDescription>
+            Create your first job posting to start receiving applications.
+          </EmptyDescription>
+        </EmptyHeader>
+        <EmptyContent>
+          <Button size="sm" asChild>
+            <Link to="/dashboard/jobs/new">
+              <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-3.5" />
+              Post a job
+            </Link>
+          </Button>
+        </EmptyContent>
+      </Empty>
     );
   }
 
@@ -297,7 +305,7 @@ function ArchivedJobsTable({
 }) {
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center rounded-xl border border-dashed py-16">
+      <div className="flex items-center justify-center rounded-lg border border-dashed py-16">
         <p className="text-sm text-muted-foreground">Loading archived jobs...</p>
       </div>
     );
@@ -305,17 +313,15 @@ function ArchivedJobsTable({
 
   if (jobs.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-16">
-        <div className="mb-4 flex size-12 items-center justify-center rounded-xl bg-muted">
-          <HugeiconsIcon
-            icon={Archive01Icon}
-            strokeWidth={2}
-            className="size-6 text-muted-foreground"
-          />
-        </div>
-        <h3 className="text-sm font-semibold">No archived jobs</h3>
-        <p className="mt-1 text-xs text-muted-foreground">Archived jobs will appear here.</p>
-      </div>
+      <Empty className="border">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <HugeiconsIcon icon={Archive01Icon} strokeWidth={2} />
+          </EmptyMedia>
+          <EmptyTitle>No archived jobs</EmptyTitle>
+          <EmptyDescription>Archived jobs will appear here.</EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     );
   }
 
@@ -378,19 +384,17 @@ function CandidateJobsList({ jobs }: { jobs: Awaited<ReturnType<typeof getOpenJo
       </div>
 
       {jobs.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-16">
-          <div className="mb-4 flex size-12 items-center justify-center rounded-xl bg-muted">
-            <HugeiconsIcon
-              icon={Briefcase01Icon}
-              strokeWidth={2}
-              className="size-6 text-muted-foreground"
-            />
-          </div>
-          <h3 className="text-sm font-semibold">No open jobs</h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            There are no open positions right now. Check back later.
-          </p>
-        </div>
+        <Empty className="border">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} />
+            </EmptyMedia>
+            <EmptyTitle>No open jobs</EmptyTitle>
+            <EmptyDescription>
+              There are no open positions right now. Check back later.
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {jobs.map((job, i) => {

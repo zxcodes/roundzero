@@ -16,6 +16,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 
 import { getCompanyBySlug } from "@/features/companies/server/functions";
 import { getOpenJobsByCompanyId } from "@/features/jobs/server/functions";
@@ -195,19 +202,15 @@ function CompanyProfilePage() {
               </div>
 
               {jobs.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-border/60 py-16 text-center">
-                  <div className="mx-auto flex size-12 items-center justify-center rounded-xl bg-muted">
-                    <HugeiconsIcon
-                      icon={Briefcase01Icon}
-                      strokeWidth={1.5}
-                      className="size-5 text-muted-foreground/60"
-                    />
-                  </div>
-                  <p className="mt-3 text-sm font-medium text-foreground">No open positions</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Check back later for new opportunities.
-                  </p>
-                </div>
+                <Empty className="border">
+                  <EmptyHeader>
+                    <EmptyMedia variant="icon">
+                      <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={1.5} />
+                    </EmptyMedia>
+                    <EmptyTitle>No open positions</EmptyTitle>
+                    <EmptyDescription>Check back later for new opportunities.</EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
               ) : (
                 <div className="space-y-3 flex flex-col">
                   {jobs.map((job) => (

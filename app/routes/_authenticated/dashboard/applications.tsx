@@ -9,6 +9,14 @@ import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { getMyApplications } from "@/features/applications/server/functions";
 
 export const Route = createFileRoute("/_authenticated/dashboard/applications")({
@@ -130,27 +138,23 @@ function MyApplicationsPage() {
       </div>
 
       {applications.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center gap-4 py-16 text-center">
-            <div className="flex size-14 items-center justify-center rounded-2xl bg-muted">
-              <HugeiconsIcon
-                icon={Briefcase01Icon}
-                strokeWidth={2}
-                className="size-7 text-muted-foreground"
-              />
-            </div>
-            <div className="space-y-1">
-              <h3 className="text-sm font-semibold">No applications yet</h3>
-              <p className="text-sm text-muted-foreground">
-                Browse open roles, submit your first application, and this page will turn into your
-                tracking list.
-              </p>
-            </div>
+        <Empty className="border">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} />
+            </EmptyMedia>
+            <EmptyTitle>No applications yet</EmptyTitle>
+            <EmptyDescription>
+              Browse open roles, submit your first application, and this page will turn into your
+              tracking list.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
             <Button asChild>
               <Link to="/dashboard/jobs">Browse Jobs</Link>
             </Button>
-          </CardContent>
-        </Card>
+          </EmptyContent>
+        </Empty>
       ) : (
         <>
           <div className="grid gap-3 md:grid-cols-3">

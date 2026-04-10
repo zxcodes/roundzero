@@ -29,6 +29,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { Separator } from "@/components/ui/separator";
 import { CandidateApplySection } from "@/features/applications/components/candidate-apply-section";
 import { getJobApplicants, hasApplied } from "@/features/applications/server/functions";
@@ -345,19 +352,17 @@ function ApplicantsSummaryCard({
             </p>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-10">
-            <div className="mb-3 flex size-10 items-center justify-center rounded-xl bg-muted">
-              <HugeiconsIcon
-                icon={UserGroupIcon}
-                strokeWidth={2}
-                className="size-5 text-muted-foreground"
-              />
-            </div>
-            <p className="text-sm font-medium">No applicants yet</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              When candidates apply, they will appear in the applicants view for this role.
-            </p>
-          </div>
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} />
+              </EmptyMedia>
+              <EmptyTitle>No applicants yet</EmptyTitle>
+              <EmptyDescription>
+                When candidates apply, they will appear in the applicants view for this role.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         )}
       </CardContent>
     </Card>
