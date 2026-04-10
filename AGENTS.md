@@ -44,6 +44,7 @@ Always consult both before making design decisions or implementing features.
 - **Ternaries for conditionals** — `{x ? (...) : null}`, never `{x && (...)}`.
 - **No inline event handlers** — define `on...` handlers in component scope or local render scope and reference them from JSX instead of inline arrow functions.
 - `function` declarations for UI components, `const` for non-UI. `on` prefix for handlers (not `handle`).
+- **Use `@app/components/ui/empty.tsx`** for all empty states in the app. Import and compose `Empty`, `EmptyHeader`, `EmptyTitle`, `EmptyDescription`, `EmptyContent`, and `EmptyMedia` components.
 
 ## Tooling + Commands
 
