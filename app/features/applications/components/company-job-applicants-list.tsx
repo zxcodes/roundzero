@@ -148,108 +148,113 @@ export function CompanyJobApplicantsList({
               };
 
               return (
-                <div
+                <Card
                   key={applicant.id}
-                  className="rounded-xl border border-border/70 bg-card p-4 transition-colors hover:bg-muted/30"
+                  className="ring-foreground/5 transition-colors hover:bg-muted/30 hover:ring-primary/20"
                 >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <Avatar className="size-10">
-                        <AvatarImage
-                          src={applicant.candidatePicture ?? undefined}
-                          alt={applicant.candidateName}
-                        />
-                        <AvatarFallback className="text-[10px]">
-                          {getInitials(applicant.candidateName)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0">
-                        <Link
-                          to="/dashboard/applicants/$applicationId"
-                          params={{ applicationId: applicant.id }}
-                          className="truncate text-sm font-medium transition-colors hover:text-primary"
-                        >
-                          {applicant.candidateName}
-                        </Link>
-                        <div className="mt-1 flex items-center gap-1">
-                          <HugeiconsIcon
-                            icon={Mail01Icon}
-                            strokeWidth={2}
-                            className="size-3 text-muted-foreground"
+                  <CardContent className="p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <Avatar className="size-10">
+                          <AvatarImage
+                            src={applicant.candidatePicture ?? undefined}
+                            alt={applicant.candidateName}
                           />
-                          <p className="truncate text-xs text-muted-foreground">
-                            {applicant.candidateEmail}
-                          </p>
+                          <AvatarFallback className="text-[10px]">
+                            {getInitials(applicant.candidateName)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <Link
+                            to="/dashboard/applicants/$applicationId"
+                            params={{ applicationId: applicant.id }}
+                            className="truncate text-sm font-medium transition-colors hover:text-primary"
+                          >
+                            {applicant.candidateName}
+                          </Link>
+                          <div className="mt-1 flex items-center gap-1">
+                            <HugeiconsIcon
+                              icon={Mail01Icon}
+                              strokeWidth={2}
+                              className="size-3 text-muted-foreground"
+                            />
+                            <p className="truncate text-xs text-muted-foreground">
+                              {applicant.candidateEmail}
+                            </p>
+                          </div>
                         </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Select
+                          value={applicant.status}
+                          onValueChange={onStatusValueChange}
+                          disabled={updateStatusMutation.isPending}
+                        >
+                          <SelectTrigger className="w-36">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {APPLICATION_STATUSES.filter(
+                              (status) =>
+                                status.value === applicant.status ||
+                                APPLICATION_STATUS_TRANSITIONS[
+                                  applicant.status as ApplicationStatus
+                                ]?.includes(status.value),
+                            ).map((status) => (
+                              <SelectItem key={status.value} value={status.value}>
+                                {status.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link
+                            to="/dashboard/applicants/$applicationId"
+                            params={{ applicationId: applicant.id }}
+                          >
+                            Review
+                            <HugeiconsIcon
+                              icon={ArrowRight01Icon}
+                              strokeWidth={2}
+                              className="size-3.5"
+                            />
+                          </Link>
+                        </Button>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <Select
-                        value={applicant.status}
-                        onValueChange={onStatusValueChange}
-                        disabled={updateStatusMutation.isPending}
-                      >
-                        <SelectTrigger className="w-36">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {APPLICATION_STATUSES.filter(
-                            (status) =>
-                              status.value === applicant.status ||
-                              APPLICATION_STATUS_TRANSITIONS[
-                                applicant.status as ApplicationStatus
-                              ]?.includes(status.value),
-                          ).map((status) => (
-                            <SelectItem key={status.value} value={status.value}>
-                              {status.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button variant="ghost" size="sm" asChild>
-                        <Link
-                          to="/dashboard/applicants/$applicationId"
-                          params={{ applicationId: applicant.id }}
-                        >
-                          Review
-                          <HugeiconsIcon
-                            icon={ArrowRight01Icon}
-                            strokeWidth={2}
-                            className="size-3.5"
-                          />
-                        </Link>
-                      </Button>
-                    </div>
-                  </div>
-
-                  {applicant.resumeKey || links.length > 0 ? (
-                    <div className="mt-3 flex flex-wrap items-center gap-2 pl-13">
-                      {applicant.resumeKey ? (
-                        <button
-                          type="button"
-                          onClick={onApplicantResumeViewClick}
-                          className="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                        >
-                          <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-3" />
-                          View resume
-                        </button>
-                      ) : null}
-                      {links.map((link, index) => (
-                        <a
-                          key={`${link}-${index}`}
-                          href={link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                        >
-                          <HugeiconsIcon icon={Link04Icon} strokeWidth={2} className="size-3" />
-                          {getLinkLabel(link)}
-                        </a>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
+                    {applicant.resumeKey || links.length > 0 ? (
+                      <div className="mt-3 flex flex-wrap items-center gap-2 pl-13">
+                        {applicant.resumeKey ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={onApplicantResumeViewClick}
+                            className="h-auto gap-1.5 px-2.5 py-1.5 text-xs text-muted-foreground"
+                          >
+                            <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-3" />
+                            View resume
+                          </Button>
+                        ) : null}
+                        {links.map((link, index) => (
+                          <Button
+                            key={`${link}-${index}`}
+                            variant="outline"
+                            size="sm"
+                            asChild
+                            className="h-auto gap-1.5 px-2.5 py-1.5 text-xs text-muted-foreground"
+                          >
+                            <a href={link} target="_blank" rel="noopener noreferrer">
+                              <HugeiconsIcon icon={Link04Icon} strokeWidth={2} className="size-3" />
+                              {getLinkLabel(link)}
+                            </a>
+                          </Button>
+                        ))}
+                      </div>
+                    ) : null}
+                  </CardContent>
+                </Card>
               );
             })}
           </div>

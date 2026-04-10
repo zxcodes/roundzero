@@ -186,11 +186,11 @@ export function NotificationInbox({ feed }: { feed: NotificationFeed }) {
             }
 
             return (
-              <button
+              <Button
                 key={notification.id}
-                type="button"
+                variant="ghost"
                 onClick={onClick}
-                className={`w-full rounded-xl text-left transition-all hover:bg-muted/50 ${
+                className={`w-full justify-start rounded-xl text-left transition-all ${
                   notification.readAt ? "bg-muted/20" : "bg-muted/35"
                 }`}
               >
@@ -219,7 +219,7 @@ export function NotificationInbox({ feed }: { feed: NotificationFeed }) {
                     <span className="mt-1 size-2.5 shrink-0 rounded-full bg-primary" />
                   )}
                 </div>
-              </button>
+              </Button>
             );
           })}
         </div>
