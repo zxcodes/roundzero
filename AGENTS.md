@@ -7,12 +7,13 @@
 
 Always consult both before making design decisions or implementing features.
 
-## Project Structure
+## Project Structure & Code Quality
 
 - Feature-first folders: `app/features/<feature>/` with `routes/`, `components/`, `hooks/`, `queries/`, `services/`, `types.ts`.
 - Shared utilities in `app/shared/`. File-based routes in `app/routes/`.
 - No barrel exports (`index.ts` re-export files).
 - **No thin wrappers or trivial abstractions.** Don't create helper functions that just forward to another function with renamed args, add a null check, or wrap a single call. Inline the logic at the call site instead. Only extract a shared helper when it contains real logic and is used across multiple features.
+- Always use early returns in functions when possible. This applies to both UI components and server functions.
 
 ## Database + SQLC
 
@@ -45,9 +46,6 @@ Always consult both before making design decisions or implementing features.
 - **No inline event handlers** — define `on...` handlers in component scope or local render scope and reference them from JSX instead of inline arrow functions.
 - `function` declarations for UI components, `const` for non-UI. `on` prefix for handlers (not `handle`).
 - **Use `@app/components/ui/empty.tsx`** for all empty states in the app. Import and compose `Empty`, `EmptyHeader`, `EmptyTitle`, `EmptyDescription`, `EmptyContent`, and `EmptyMedia` components.
-
-## Code Quality:
-- Always use early returns in functions when possible. This applies to both UI components and server functions.
 
 ## Tooling + Commands
 
