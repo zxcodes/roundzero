@@ -101,6 +101,7 @@ export async function deliverNotificationEmail(
       to: input.recipient.email,
       subject: presentation.title,
       react: jsx(NotificationEmailTemplate, {
+        previewText: presentation.title,
         body: presentation.body,
         ctaHref: link,
       }),
