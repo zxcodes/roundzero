@@ -5,18 +5,15 @@ import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useId, useState } from "react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { UnsavedChangesBar } from "@/components/unsaved-changes-bar";
 import { CompanyLogoUploadField } from "@/features/companies/components/company-logo-upload-field";
-import {
-  type getMyCompany,
-  updateCompanyProfile,
-  updateMyCompanyLogo,
-} from "@/features/companies/server/functions";
-import { AutoSaveIndicator, useAutoSaveStatus } from "@/shared/auto-save-indicator";
+import { type getMyCompany, updateCompanyProfile } from "@/features/companies/server/functions";
 import { type CompanySize, companySizeLabels, type Industry, industryLabels } from "@/shared/enums";
 import { useAppForm } from "@/shared/form";
 
@@ -30,31 +27,15 @@ export function CompanySettings({ company }: { company: Company }) {
   const id = useId();
 
   const updateFn = useServerFn(updateCompanyProfile);
-  const updateLogoFn = useServerFn(updateMyCompanyLogo);
-
-  const autoSave = useAutoSaveStatus();
 
   const updateMutation = useMutation({
     mutationFn: updateFn,
-    onMutate: () => autoSave.setSaving(),
     onSuccess: async () => {
-      autoSave.setSaved();
       await router.invalidate();
+      form.reset();
     },
     onError: () => {
-      autoSave.setError();
-    },
-  });
-
-  const updateLogoMutation = useMutation({
-    mutationFn: updateLogoFn,
-    onMutate: () => autoSave.setSaving(),
-    onSuccess: async () => {
-      autoSave.setSaved();
-      await router.invalidate();
-    },
-    onError: () => {
-      autoSave.setError();
+      toast.error("Failed to save changes.");
     },
   });
 
@@ -103,14 +84,6 @@ export function CompanySettings({ company }: { company: Company }) {
         },
       });
     },
-    listeners: {
-      onChange: ({ formApi }) => {
-        if (formApi.state.isDirty) {
-          formApi.handleSubmit();
-        }
-      },
-      onChangeDebounceMs: 1500,
-    },
   });
 
   const [tagInput, setTagInput] = useState("");
@@ -119,24 +92,37 @@ export function CompanySettings({ company }: { company: Company }) {
   const currentLogoKey = useStore(form.store, (state) => state.values.logoKey);
   const onLogoUploaded = async ({ logoKey }: { logoKey: string }) => {
     form.setFieldValue("logoKey", logoKey);
-    await updateLogoMutation.mutateAsync({
-      data: { logoKey },
-    });
   };
   const onTagInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTagInput(e.target.value);
   };
+  const onSave = () => {
+    form.handleSubmit();
+  };
+  const onDiscard = () => {
+    form.reset();
+  };
 
   return (
-    <div className="animate-fade-in space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Company Settings</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Manage your company profile. This information is visible on your public company page.
-          </p>
-        </div>
-        <AutoSaveIndicator status={autoSave.status} />
+    <div className="animate-fade-in space-y-6 pb-28">
+      <form.Subscribe
+        selector={(state) => ({ isDirty: state.isDirty, isSubmitting: state.isSubmitting })}
+      >
+        {({ isDirty, isSubmitting }) => (
+          <UnsavedChangesBar
+            isDirty={isDirty}
+            isSubmitting={isSubmitting}
+            onDiscard={onDiscard}
+            onSave={onSave}
+          />
+        )}
+      </form.Subscribe>
+
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight">Company Settings</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Manage your company profile. This information is visible on your public company page.
+        </p>
       </div>
 
       <div className="space-y-6">
@@ -274,7 +260,6 @@ export function CompanySettings({ company }: { company: Company }) {
 
                     if (!techStackField.state.value.includes(trimmed)) {
                       techStackField.pushValue(trimmed);
-                      form.handleSubmit();
                     }
 
                     setTagInput("");
@@ -283,7 +268,6 @@ export function CompanySettings({ company }: { company: Company }) {
 
                 const onRemoveTag = (index: number) => {
                   techStackField.removeValue(index);
-                  form.handleSubmit();
                 };
 
                 return (

@@ -34,7 +34,10 @@ export function ResumeUploadField({
   onErrorChange,
 }: ResumeUploadFieldProps) {
   const id = useId();
-  const [uploadedResumeName, setUploadedResumeName] = useState<string | null>(null);
+  const [uploadedResume, setUploadedResume] = useState<{
+    resumeKey: string;
+    name: string;
+  } | null>(null);
   const [resumeUploadState, setResumeUploadState] = useState<{
     status: "idle" | "uploading" | "uploaded";
     progress: number;
@@ -47,6 +50,8 @@ export function ResumeUploadField({
   const finalizeResumeUploadFn = useServerFn(finalizeResumeUpload);
   const getResumeDownloadUrlFn = useServerFn(getResumeDownloadUrl);
   const inputId = `resume-${id}`;
+  const uploadedResumeName =
+    uploadedResume && uploadedResume.resumeKey === value ? uploadedResume.name : null;
   const displayName = uploadedResumeName ?? getResumeDisplayName(value) ?? "Resume on file";
 
   const onResumeSelected = async (file: File | null) => {
@@ -58,7 +63,7 @@ export function ResumeUploadField({
 
     try {
       onErrorChange?.(null);
-      setUploadedResumeName(file.name);
+      setUploadedResume({ resumeKey: "", name: file.name });
       setResumeUploadState({ status: "uploading", progress: 0 });
 
       const target = await createUploadTargetFn({
@@ -85,11 +90,18 @@ export function ResumeUploadField({
       });
 
       await onUploaded({ resumeKey: finalized.resumeKey });
-      setUploadedResumeName(file.name);
+      setUploadedResume({ resumeKey: finalized.resumeKey, name: file.name });
       setResumeUploadState({ status: "uploaded", progress: 100 });
       toast.success("Resume uploaded");
     } catch (error) {
-      setUploadedResumeName(previousDisplayName);
+      setUploadedResume(
+        value
+          ? {
+              resumeKey: value,
+              name: previousDisplayName,
+            }
+          : null,
+      );
       setResumeUploadState({ status: "idle", progress: 0 });
       const message = error instanceof Error ? error.message : "Failed to upload resume";
       toast.error(message);
@@ -150,7 +162,7 @@ export function ResumeUploadField({
       {resumeUploadState.status === "uploading" ? (
         <div className="space-y-2 rounded-lg border px-3 py-2">
           <div className="flex items-center justify-between text-sm">
-            <span>{uploadedResumeName ?? "Uploading resume..."}</span>
+            <span>{uploadedResume?.name ?? "Uploading resume..."}</span>
             <span className="text-muted-foreground">{resumeUploadState.progress}%</span>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-muted">
