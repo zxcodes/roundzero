@@ -376,7 +376,7 @@ Why `resume_key` instead of `resume_url`:
 
 ## 11. Notifications Architecture
 
-Notifications are implemented as a durable in-app inbox. Email delivery is still a later layer, and the architecture continues to treat in-app notification records as the primary system of record.
+Notifications are implemented as a durable in-app inbox. Resend-backed email delivery now exists as a secondary best-effort layer, while the architecture continues to treat in-app notification records as the primary system of record.
 
 ### Current model
 
@@ -386,6 +386,11 @@ Notifications are implemented as a durable in-app inbox. Email delivery is still
   - `type`
   - `payload`
   - `read_at`
+  - `email_delivery_status`
+  - `email_delivery_error`
+  - `email_delivery_attempted_at`
+  - `email_delivery_sent_at`
+  - `email_provider_message_id`
   - `created_at`
 - supported event types today:
   - `new_applicant`
@@ -406,16 +411,19 @@ app/features/notifications/
     └── functions.ts
 ```
 
-Recommended provider:
+Provider:
 
 - **Resend**
 
-Recommended use cases:
+Current email-backed use cases:
 
-- application submitted confirmation
+- candidate application status updates
+- company-side new applicant activity alerts
+
+Future email-backed use cases:
+
 - interview ready / interview reminder
-- application status updates
-- company-side applicant activity notifications
+- report ready notifications
 
 Recommended architecture:
 
@@ -424,23 +432,27 @@ Recommended architecture:
 - send email as a secondary best-effort delivery channel for selected events
 - keep notification sending behind server-side functions/services
 - trigger notifications from explicit workflow events, not UI-only actions
+- persist delivery result directly on the notification row while there is only one secondary transport
 - do not couple domain logic directly to a provider SDK in routes/components
+
+Current delivery tracking:
+
+- `notifications`
+  - keeps `type` + `payload` as the canonical event record
+  - stores email delivery attempt/result fields directly on the row
 
 Future extension points:
 
-- `notifications`
-  - keep `type` + `payload` as the core record
-  - optionally add delivery-attempt/result fields if email transport tracking is needed
+- move email delivery attempts into a separate table once we need retries, webhooks, or multiple secondary channels
 
 Design principle:
 
 - if email delivery fails, the notification still exists in-app
 - email is a transport, not the canonical event record
 
-Suggested future additions:
+Current module additions:
 
-- `app/features/notifications/services/resend.ts`
-- event-trigger helpers only if more than one workflow starts sharing the same notification write/send logic
+- `app/features/notifications/services/email.ts`
 
 ---
 

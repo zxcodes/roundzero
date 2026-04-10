@@ -3,7 +3,7 @@ import { Sql } from "postgres";
 export const createNotificationQuery = `-- name: createNotification :one
 INSERT INTO notifications (user_id, type, payload)
 VALUES ($1, $2, $3)
-RETURNING id, user_id, type, payload, read_at, created_at`;
+RETURNING id, user_id, type, payload, read_at, email_delivery_status, email_delivery_error, email_delivery_attempted_at, email_delivery_sent_at, email_provider_message_id, created_at`;
 
 export interface createNotificationArgs {
     userId: string;
@@ -17,6 +17,11 @@ export interface createNotificationRow {
     type: string;
     payload: any;
     readAt: Date | null;
+    emailDeliveryStatus: string | null;
+    emailDeliveryError: string | null;
+    emailDeliveryAttemptedAt: Date | null;
+    emailDeliverySentAt: Date | null;
+    emailProviderMessageId: string | null;
     createdAt: Date;
 }
 
@@ -32,12 +37,17 @@ export async function createNotification(sql: Sql, args: createNotificationArgs)
         type: row[2],
         payload: row[3],
         readAt: row[4],
-        createdAt: row[5]
+        emailDeliveryStatus: row[5],
+        emailDeliveryError: row[6],
+        emailDeliveryAttemptedAt: row[7],
+        emailDeliverySentAt: row[8],
+        emailProviderMessageId: row[9],
+        createdAt: row[10]
     };
 }
 
 export const getNotificationsByUserQuery = `-- name: getNotificationsByUser :many
-SELECT id, user_id, type, payload, read_at, created_at
+SELECT id, user_id, type, payload, read_at, email_delivery_status, email_delivery_error, email_delivery_attempted_at, email_delivery_sent_at, email_provider_message_id, created_at
 FROM notifications
 WHERE user_id = $1
 ORDER BY created_at DESC
@@ -54,6 +64,11 @@ export interface getNotificationsByUserRow {
     type: string;
     payload: any;
     readAt: Date | null;
+    emailDeliveryStatus: string | null;
+    emailDeliveryError: string | null;
+    emailDeliveryAttemptedAt: Date | null;
+    emailDeliverySentAt: Date | null;
+    emailProviderMessageId: string | null;
     createdAt: Date;
 }
 
@@ -64,7 +79,12 @@ export async function getNotificationsByUser(sql: Sql, args: getNotificationsByU
         type: row[2],
         payload: row[3],
         readAt: row[4],
-        createdAt: row[5]
+        emailDeliveryStatus: row[5],
+        emailDeliveryError: row[6],
+        emailDeliveryAttemptedAt: row[7],
+        emailDeliverySentAt: row[8],
+        emailProviderMessageId: row[9],
+        createdAt: row[10]
     }));
 }
 
@@ -98,7 +118,7 @@ UPDATE notifications
 SET read_at = COALESCE(read_at, now())
 WHERE id = $1
   AND user_id = $2
-RETURNING id, user_id, type, payload, read_at, created_at`;
+RETURNING id, user_id, type, payload, read_at, email_delivery_status, email_delivery_error, email_delivery_attempted_at, email_delivery_sent_at, email_provider_message_id, created_at`;
 
 export interface markNotificationReadByUserArgs {
     id: string;
@@ -111,6 +131,11 @@ export interface markNotificationReadByUserRow {
     type: string;
     payload: any;
     readAt: Date | null;
+    emailDeliveryStatus: string | null;
+    emailDeliveryError: string | null;
+    emailDeliveryAttemptedAt: Date | null;
+    emailDeliverySentAt: Date | null;
+    emailProviderMessageId: string | null;
     createdAt: Date;
 }
 
@@ -126,7 +151,12 @@ export async function markNotificationReadByUser(sql: Sql, args: markNotificatio
         type: row[2],
         payload: row[3],
         readAt: row[4],
-        createdAt: row[5]
+        emailDeliveryStatus: row[5],
+        emailDeliveryError: row[6],
+        emailDeliveryAttemptedAt: row[7],
+        emailDeliverySentAt: row[8],
+        emailProviderMessageId: row[9],
+        createdAt: row[10]
     };
 }
 
@@ -142,5 +172,155 @@ export interface markAllNotificationsReadByUserArgs {
 
 export async function markAllNotificationsReadByUser(sql: Sql, args: markAllNotificationsReadByUserArgs): Promise<void> {
     await sql.unsafe(markAllNotificationsReadByUserQuery, [args.userId]);
+}
+
+export const markNotificationEmailDeliveredQuery = `-- name: markNotificationEmailDelivered :one
+UPDATE notifications
+SET email_delivery_status = 'sent',
+    email_delivery_error = NULL,
+    email_delivery_attempted_at = now(),
+    email_delivery_sent_at = now(),
+    email_provider_message_id = $2
+WHERE id = $1
+RETURNING id, user_id, type, payload, read_at, email_delivery_status, email_delivery_error, email_delivery_attempted_at, email_delivery_sent_at, email_provider_message_id, created_at`;
+
+export interface markNotificationEmailDeliveredArgs {
+    id: string;
+    providerMessageId: string | null;
+}
+
+export interface markNotificationEmailDeliveredRow {
+    id: string;
+    userId: string;
+    type: string;
+    payload: any;
+    readAt: Date | null;
+    emailDeliveryStatus: string | null;
+    emailDeliveryError: string | null;
+    emailDeliveryAttemptedAt: Date | null;
+    emailDeliverySentAt: Date | null;
+    emailProviderMessageId: string | null;
+    createdAt: Date;
+}
+
+export async function markNotificationEmailDelivered(sql: Sql, args: markNotificationEmailDeliveredArgs): Promise<markNotificationEmailDeliveredRow | null> {
+    const rows = await sql.unsafe(markNotificationEmailDeliveredQuery, [args.id, args.providerMessageId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        userId: row[1],
+        type: row[2],
+        payload: row[3],
+        readAt: row[4],
+        emailDeliveryStatus: row[5],
+        emailDeliveryError: row[6],
+        emailDeliveryAttemptedAt: row[7],
+        emailDeliverySentAt: row[8],
+        emailProviderMessageId: row[9],
+        createdAt: row[10]
+    };
+}
+
+export const markNotificationEmailFailedQuery = `-- name: markNotificationEmailFailed :one
+UPDATE notifications
+SET email_delivery_status = 'failed',
+    email_delivery_error = $2,
+    email_delivery_attempted_at = now(),
+    email_delivery_sent_at = NULL,
+    email_provider_message_id = NULL
+WHERE id = $1
+RETURNING id, user_id, type, payload, read_at, email_delivery_status, email_delivery_error, email_delivery_attempted_at, email_delivery_sent_at, email_provider_message_id, created_at`;
+
+export interface markNotificationEmailFailedArgs {
+    id: string;
+    errorMessage: string | null;
+}
+
+export interface markNotificationEmailFailedRow {
+    id: string;
+    userId: string;
+    type: string;
+    payload: any;
+    readAt: Date | null;
+    emailDeliveryStatus: string | null;
+    emailDeliveryError: string | null;
+    emailDeliveryAttemptedAt: Date | null;
+    emailDeliverySentAt: Date | null;
+    emailProviderMessageId: string | null;
+    createdAt: Date;
+}
+
+export async function markNotificationEmailFailed(sql: Sql, args: markNotificationEmailFailedArgs): Promise<markNotificationEmailFailedRow | null> {
+    const rows = await sql.unsafe(markNotificationEmailFailedQuery, [args.id, args.errorMessage]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        userId: row[1],
+        type: row[2],
+        payload: row[3],
+        readAt: row[4],
+        emailDeliveryStatus: row[5],
+        emailDeliveryError: row[6],
+        emailDeliveryAttemptedAt: row[7],
+        emailDeliverySentAt: row[8],
+        emailProviderMessageId: row[9],
+        createdAt: row[10]
+    };
+}
+
+export const markNotificationEmailSkippedQuery = `-- name: markNotificationEmailSkipped :one
+UPDATE notifications
+SET email_delivery_status = 'skipped',
+    email_delivery_error = $2,
+    email_delivery_attempted_at = now(),
+    email_delivery_sent_at = NULL,
+    email_provider_message_id = NULL
+WHERE id = $1
+RETURNING id, user_id, type, payload, read_at, email_delivery_status, email_delivery_error, email_delivery_attempted_at, email_delivery_sent_at, email_provider_message_id, created_at`;
+
+export interface markNotificationEmailSkippedArgs {
+    id: string;
+    reason: string | null;
+}
+
+export interface markNotificationEmailSkippedRow {
+    id: string;
+    userId: string;
+    type: string;
+    payload: any;
+    readAt: Date | null;
+    emailDeliveryStatus: string | null;
+    emailDeliveryError: string | null;
+    emailDeliveryAttemptedAt: Date | null;
+    emailDeliverySentAt: Date | null;
+    emailProviderMessageId: string | null;
+    createdAt: Date;
+}
+
+export async function markNotificationEmailSkipped(sql: Sql, args: markNotificationEmailSkippedArgs): Promise<markNotificationEmailSkippedRow | null> {
+    const rows = await sql.unsafe(markNotificationEmailSkippedQuery, [args.id, args.reason]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        userId: row[1],
+        type: row[2],
+        payload: row[3],
+        readAt: row[4],
+        emailDeliveryStatus: row[5],
+        emailDeliveryError: row[6],
+        emailDeliveryAttemptedAt: row[7],
+        emailDeliverySentAt: row[8],
+        emailProviderMessageId: row[9],
+        createdAt: row[10]
+    };
 }
 
