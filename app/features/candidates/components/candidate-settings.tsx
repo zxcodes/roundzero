@@ -1,10 +1,4 @@
-import {
-  Add01Icon,
-  Calendar03Icon,
-  Cancel01Icon,
-  Loading03Icon,
-  Tick02Icon,
-} from "@hugeicons/core-free-icons";
+import { Add01Icon, Calendar03Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useStore } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
@@ -27,19 +21,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { UnsavedChangesBar } from "@/components/unsaved-changes-bar";
 import { updateUserName } from "@/features/auth/server/functions";
 import { ResumeUploadField } from "@/features/candidates/components/resume-upload-field";
 import {
   type getMyCandidateProfile,
-  type UpdateCandidateProfileInput,
   updateMyCandidateProfile,
 } from "@/features/candidates/server/functions";
 import type { User } from "@/router";
-import { AutoSaveIndicator, useAutoSaveStatus } from "@/shared/auto-save-indicator";
 import { useAppForm } from "@/shared/form";
 
 type CandidateProfile = NonNullable<Awaited<ReturnType<typeof getMyCandidateProfile>>>;
-type WorkHistoryEntry = NonNullable<UpdateCandidateProfileInput["workHistory"]>[number];
 
 function parseMonthValue(value: string | null | undefined) {
   if (!value) {
@@ -185,18 +178,15 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
   const router = useRouter();
   const id = useId();
 
-  const autoSave = useAutoSaveStatus();
-
   const updateProfileFn = useServerFn(updateMyCandidateProfile);
   const updateProfileMutation = useMutation({
     mutationFn: updateProfileFn,
-    onMutate: () => autoSave.setSaving(),
     onSuccess: async () => {
-      autoSave.setSaved();
       await router.invalidate();
+      form.reset();
     },
     onError: () => {
-      autoSave.setError();
+      toast.error("Failed to save changes.");
     },
   });
 
@@ -252,18 +242,9 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
         },
       });
     },
-    listeners: {
-      onChange: ({ formApi }) => {
-        if (formApi.state.isDirty) {
-          formApi.handleSubmit();
-        }
-      },
-      onChangeDebounceMs: 1500,
-    },
   });
 
   const [skillInput, setSkillInput] = useState("");
-  const [entrySaveStatus, setEntrySaveStatus] = useState<Record<number, "saving" | "saved">>({});
   const currentResumeKey = useStore(form.store, (state) => state.values.resumeKey);
   const resumeDetails = profile.resumeUpdatedAt
     ? `Resume last updated ${format(new Date(profile.resumeUpdatedAt), "MMM d, yyyy 'at' h:mm a")}`
@@ -272,98 +253,36 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
   const skillInputId = `skill-input-${id}`;
   const onResumeUploaded = async (resume: { resumeKey: string }) => {
     form.setFieldValue("resumeKey", resume.resumeKey);
-    await form.handleSubmit();
+  };
+  const onSave = () => {
+    form.handleSubmit();
+  };
+  const onDiscard = () => {
+    form.reset();
   };
   const onSkillInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSkillInput(e.target.value);
   };
-  const onSaveWorkEntry = async (index: number, entry: WorkHistoryEntry) => {
-    if (!entry.company.trim() || !entry.title.trim() || !entry.startMonth) {
-      toast.error("Add company, title, and start month before saving this role.");
-      return;
-    }
-
-    if (!entry.currentlyWorkingHere && !entry.endMonth) {
-      toast.error("Add an end month or mark the role as current.");
-      return;
-    }
-
-    if (entry.endMonth && entry.endMonth < entry.startMonth) {
-      toast.error("End month must be after start month.");
-      return;
-    }
-
-    setEntrySaveStatus((prev) => ({ ...prev, [index]: "saving" }));
-    await form.handleSubmit();
-    setEntrySaveStatus((prev) => ({ ...prev, [index]: "saved" }));
-  };
-
-  const onDismissEntrySaved = (index: number) => {
-    setEntrySaveStatus((prev) => {
-      const next = { ...prev };
-      delete next[index];
-      return next;
-    });
-  };
-  const onUpdateWorkEntry = (index: number, entry: WorkHistoryEntry) => {
-    form.setFieldValue(`workHistory[${index}]`, {
-      ...entry,
-      description: entry.description ?? undefined,
-    });
-  };
-  const onUpdateWorkEntryCompany = (index: number, entry: WorkHistoryEntry, company: string) => {
-    onUpdateWorkEntry(index, { ...entry, company });
-  };
-  const onUpdateWorkEntryTitle = (index: number, entry: WorkHistoryEntry, title: string) => {
-    onUpdateWorkEntry(index, { ...entry, title });
-  };
-  const onUpdateWorkEntryStartMonth = (
-    index: number,
-    entry: WorkHistoryEntry,
-    value: string | null,
-  ) => {
-    onUpdateWorkEntry(index, { ...entry, startMonth: value ?? "" });
-  };
-  const onUpdateWorkEntryEndMonth = (
-    index: number,
-    entry: WorkHistoryEntry,
-    value: string | null,
-  ) => {
-    onUpdateWorkEntry(index, { ...entry, endMonth: value });
-  };
-  const onUpdateWorkEntryCurrent = (
-    index: number,
-    entry: WorkHistoryEntry,
-    checked: boolean | "indeterminate",
-  ) => {
-    const isChecked = checked === true;
-    onUpdateWorkEntry(index, {
-      ...entry,
-      currentlyWorkingHere: isChecked,
-      endMonth: isChecked ? null : entry.endMonth,
-    });
-  };
-  const onUpdateWorkEntryDescription = (
-    index: number,
-    entry: WorkHistoryEntry,
-    description: string,
-  ) => {
-    onUpdateWorkEntry(index, {
-      ...entry,
-      description: description || undefined,
-    });
-  };
-
   return (
-    <div className="animate-fade-in space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Profile Settings</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Manage your candidate profile. This information is visible to companies when you apply.
-          </p>
-        </div>
-        <AutoSaveIndicator status={autoSave.status} />
+    <div className="animate-fade-in space-y-6 pb-28">
+      <form.Subscribe
+        selector={(state) => ({ isDirty: state.isDirty, isSubmitting: state.isSubmitting })}
+      >
+        {({ isDirty, isSubmitting }) => (
+          <UnsavedChangesBar
+            isDirty={isDirty}
+            isSubmitting={isSubmitting}
+            onDiscard={onDiscard}
+            onSave={onSave}
+          />
+        )}
+      </form.Subscribe>
+
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight">Profile Settings</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Manage your candidate profile. This information is visible to companies when you apply.
+        </p>
       </div>
 
       <div className="space-y-6">
@@ -437,7 +356,6 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
 
                     if (!skillsField.state.value.includes(trimmed)) {
                       skillsField.pushValue(trimmed);
-                      form.handleSubmit();
                     }
 
                     setSkillInput("");
@@ -445,7 +363,6 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
                 };
                 const onRemoveSkill = (index: number) => {
                   skillsField.removeValue(index);
-                  form.handleSubmit();
                 };
 
                 return (
@@ -509,7 +426,6 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
               {(workHistoryField) => {
                 const onRemoveWorkEntry = (index: number) => {
                   workHistoryField.removeValue(index);
-                  form.handleSubmit();
                 };
                 const onAddWorkEntry = () => {
                   workHistoryField.pushValue({
@@ -524,162 +440,170 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
 
                 return (
                   <>
-                    {workHistoryField.state.value.map((entry, index) =>
+                    {workHistoryField.state.value.map((_entry, index) =>
                       (() => {
-                        const onDismissEntrySavedClick = () => {
-                          onDismissEntrySaved(index);
-                        };
-                        const onSaveWorkEntryClick = () => {
-                          onSaveWorkEntry(index, entry);
-                        };
                         const onRemoveWorkEntryClick = () => {
                           onRemoveWorkEntry(index);
                         };
-                        const onCompanyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-                          onUpdateWorkEntryCompany(index, entry, e.target.value);
-                        };
-                        const onTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-                          onUpdateWorkEntryTitle(index, entry, e.target.value);
-                        };
-                        const onStartMonthSelect = (value: string | null) => {
-                          onUpdateWorkEntryStartMonth(index, entry, value);
-                        };
-                        const onEndMonthSelect = (value: string | null) => {
-                          onUpdateWorkEntryEndMonth(index, entry, value);
-                        };
                         const onCurrentChange = (checked: boolean | "indeterminate") => {
-                          onUpdateWorkEntryCurrent(index, entry, checked);
-                        };
-                        const onDescriptionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-                          onUpdateWorkEntryDescription(index, entry, e.target.value);
+                          const isChecked = checked === true;
+                          form.setFieldValue(
+                            `workHistory[${index}].currentlyWorkingHere`,
+                            isChecked,
+                          );
+                          if (isChecked) {
+                            form.setFieldValue(`workHistory[${index}].endMonth`, null);
+                          }
                         };
 
                         return (
-                          <div
-                            key={`work-${index}`}
-                            className="space-y-3 rounded-lg border border-border/50 bg-muted/30 p-4"
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-muted-foreground">
-                                  Position {index + 1}
-                                </span>
-                                {entrySaveStatus[index] === "saving" ? (
-                                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                                    <HugeiconsIcon
-                                      icon={Loading03Icon}
-                                      strokeWidth={2}
-                                      className="size-3 animate-spin"
-                                    />
-                                    Saving...
+                          <form.Field key={`work-${index}`} name={`workHistory[${index}]`}>
+                            {() => (
+                              <div className="space-y-3 rounded-lg border border-border/50 bg-muted/30 p-4">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm font-medium text-muted-foreground">
+                                    Position {index + 1}
                                   </span>
-                                ) : entrySaveStatus[index] === "saved" ? (
-                                  <span className="flex items-center gap-1 text-xs text-emerald-500">
-                                    <HugeiconsIcon
-                                      icon={Tick02Icon}
-                                      strokeWidth={2}
-                                      className="size-3"
-                                    />
-                                    Saved
-                                    <button
+                                  <div className="flex items-center gap-1">
+                                    <Button
                                       type="button"
-                                      onClick={onDismissEntrySavedClick}
-                                      className="ml-0.5 rounded-sm p-0.5 hover:bg-muted"
+                                      variant="ghost"
+                                      size="icon-xs"
+                                      onClick={onRemoveWorkEntryClick}
+                                      className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                                     >
                                       <HugeiconsIcon
                                         icon={Cancel01Icon}
                                         strokeWidth={2}
-                                        className="size-2.5 text-muted-foreground"
+                                        className="size-4"
                                       />
-                                    </button>
-                                  </span>
-                                ) : null}
+                                    </Button>
+                                  </div>
+                                </div>
+
+                                <div className="grid gap-3 sm:grid-cols-2">
+                                  <form.Field name={`workHistory[${index}].company`}>
+                                    {(field) => {
+                                      const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+                                        field.handleChange(e.target.value);
+                                      };
+
+                                      return (
+                                        <div className="space-y-2">
+                                          <Label htmlFor={field.name}>Company</Label>
+                                          <Input
+                                            id={field.name}
+                                            placeholder="Company name"
+                                            value={field.state.value}
+                                            onBlur={field.handleBlur}
+                                            onChange={onChange}
+                                          />
+                                        </div>
+                                      );
+                                    }}
+                                  </form.Field>
+                                  <form.Field name={`workHistory[${index}].title`}>
+                                    {(field) => {
+                                      const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+                                        field.handleChange(e.target.value);
+                                      };
+
+                                      return (
+                                        <div className="space-y-2">
+                                          <Label htmlFor={field.name}>Title</Label>
+                                          <Input
+                                            id={field.name}
+                                            placeholder="Job title"
+                                            value={field.state.value}
+                                            onBlur={field.handleBlur}
+                                            onChange={onChange}
+                                          />
+                                        </div>
+                                      );
+                                    }}
+                                  </form.Field>
+                                </div>
+
+                                <form.Field name={`workHistory[${index}].currentlyWorkingHere`}>
+                                  {(currentField) => (
+                                    <>
+                                      <div className="grid gap-3 sm:grid-cols-2">
+                                        <form.Field name={`workHistory[${index}].startMonth`}>
+                                          {(field) => {
+                                            const onSelect = (value: string | null) => {
+                                              field.handleChange(value ?? "");
+                                            };
+
+                                            return (
+                                              <WorkHistoryMonthPicker
+                                                label="Start month"
+                                                value={field.state.value}
+                                                onSelect={onSelect}
+                                              />
+                                            );
+                                          }}
+                                        </form.Field>
+                                        <form.Field name={`workHistory[${index}].endMonth`}>
+                                          {(field) => {
+                                            const onSelect = (value: string | null) => {
+                                              field.handleChange(value);
+                                            };
+
+                                            return (
+                                              <WorkHistoryMonthPicker
+                                                label="End month"
+                                                value={field.state.value}
+                                                disabled={currentField.state.value}
+                                                onSelect={onSelect}
+                                              />
+                                            );
+                                          }}
+                                        </form.Field>
+                                      </div>
+
+                                      <p className="text-xs text-muted-foreground">
+                                        Use month and year only. Current roles can leave end month
+                                        empty.
+                                      </p>
+
+                                      <div className="flex items-center gap-2">
+                                        <Checkbox
+                                          checked={currentField.state.value}
+                                          onCheckedChange={onCurrentChange}
+                                        />
+                                        <Label>Currently working here</Label>
+                                      </div>
+                                    </>
+                                  )}
+                                </form.Field>
+
+                                <form.Field name={`workHistory[${index}].description`}>
+                                  {(field) => {
+                                    const onChange = (
+                                      e: React.ChangeEvent<HTMLTextAreaElement>,
+                                    ) => {
+                                      field.handleChange(e.target.value);
+                                    };
+
+                                    return (
+                                      <div className="space-y-2">
+                                        <Label htmlFor={field.name}>Description</Label>
+                                        <Textarea
+                                          id={field.name}
+                                          placeholder="Brief description of your role"
+                                          rows={4}
+                                          className="min-h-24 max-h-56 resize-y overflow-y-auto"
+                                          value={field.state.value ?? ""}
+                                          onBlur={field.handleBlur}
+                                          onChange={onChange}
+                                        />
+                                      </div>
+                                    );
+                                  }}
+                                </form.Field>
                               </div>
-                              <div className="flex items-center gap-1">
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon-xs"
-                                  onClick={onSaveWorkEntryClick}
-                                  disabled={entrySaveStatus[index] === "saving"}
-                                  className="text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-500"
-                                >
-                                  <HugeiconsIcon
-                                    icon={Tick02Icon}
-                                    strokeWidth={2}
-                                    className="size-4"
-                                  />
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon-xs"
-                                  onClick={onRemoveWorkEntryClick}
-                                  className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                                >
-                                  <HugeiconsIcon
-                                    icon={Cancel01Icon}
-                                    strokeWidth={2}
-                                    className="size-4"
-                                  />
-                                </Button>
-                              </div>
-                            </div>
-
-                            <div className="grid gap-3 sm:grid-cols-2">
-                              <div className="space-y-2">
-                                <Label>Company</Label>
-                                <Input
-                                  placeholder="Company name"
-                                  value={entry.company}
-                                  onChange={onCompanyChange}
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label>Title</Label>
-                                <Input
-                                  placeholder="Job title"
-                                  value={entry.title}
-                                  onChange={onTitleChange}
-                                />
-                              </div>
-                            </div>
-
-                            <div className="grid gap-3 sm:grid-cols-2">
-                              <WorkHistoryMonthPicker
-                                label="Start month"
-                                value={entry.startMonth}
-                                onSelect={onStartMonthSelect}
-                              />
-                              <WorkHistoryMonthPicker
-                                label="End month"
-                                value={entry.endMonth}
-                                disabled={entry.currentlyWorkingHere}
-                                onSelect={onEndMonthSelect}
-                              />
-                            </div>
-
-                            <p className="text-xs text-muted-foreground">
-                              Use month and year only. Current roles can leave end month empty.
-                            </p>
-
-                            <div className="flex items-center gap-2">
-                              <Checkbox
-                                checked={entry.currentlyWorkingHere}
-                                onCheckedChange={onCurrentChange}
-                              />
-                              <Label>Currently working here</Label>
-                            </div>
-
-                            <div className="space-y-2">
-                              <Label>Description</Label>
-                              <Input
-                                placeholder="Brief description of your role"
-                                value={entry.description ?? ""}
-                                onChange={onDescriptionChange}
-                              />
-                            </div>
-                          </div>
+                            )}
+                          </form.Field>
                         );
                       })(),
                     )}
