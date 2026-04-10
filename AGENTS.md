@@ -46,6 +46,9 @@ Always consult both before making design decisions or implementing features.
 - `function` declarations for UI components, `const` for non-UI. `on` prefix for handlers (not `handle`).
 - **Use `@app/components/ui/empty.tsx`** for all empty states in the app. Import and compose `Empty`, `EmptyHeader`, `EmptyTitle`, `EmptyDescription`, `EmptyContent`, and `EmptyMedia` components.
 
+## Code Quality:
+- Always use early returns in functions when possible. This applies to both UI components and server functions.
+
 ## Tooling + Commands
 
 - Lint: Biome (`biome.json`). SQLC outputs excluded from lint/typecheck.
