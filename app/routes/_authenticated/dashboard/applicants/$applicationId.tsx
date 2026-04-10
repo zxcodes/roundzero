@@ -29,6 +29,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Empty, EmptyDescription } from "@/components/ui/empty";
 import {
   Select,
   SelectContent,
@@ -284,25 +285,27 @@ function ApplicantReviewPage() {
                 {workHistory.length > 0 ? (
                   <div className="space-y-3">
                     {workHistory.map((entry, index) => (
-                      <div
+                      <Card
                         key={`${entry.company}-${entry.title}-${index}`}
-                        className="rounded-2xl border border-border/70 bg-muted/25 p-4"
+                        className="bg-muted/25 border-border/70"
                       >
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                          <div>
-                            <p className="text-sm font-semibold">{entry.title}</p>
-                            <p className="text-sm text-muted-foreground">{entry.company}</p>
+                        <CardContent className="p-4">
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                              <p className="text-sm font-semibold">{entry.title}</p>
+                              <p className="text-sm text-muted-foreground">{entry.company}</p>
+                            </div>
+                            <Badge variant="outline" className="font-mono text-[11px]">
+                              {formatMonthRange(entry)}
+                            </Badge>
                           </div>
-                          <Badge variant="outline" className="font-mono text-[11px]">
-                            {formatMonthRange(entry)}
-                          </Badge>
-                        </div>
-                        {entry.description ? (
-                          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                            {entry.description}
-                          </p>
-                        ) : null}
-                      </div>
+                          {entry.description ? (
+                            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                              {entry.description}
+                            </p>
+                          ) : null}
+                        </CardContent>
+                      </Card>
                     ))}
                   </div>
                 ) : (
@@ -315,26 +318,24 @@ function ApplicantReviewPage() {
                 {links.length > 0 ? (
                   <div className="space-y-2">
                     {links.map((link) => (
-                      <a
-                        key={link.href}
-                        href={link.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-between rounded-xl border border-border/70 bg-card px-3 py-3 text-sm transition-colors hover:bg-muted/40"
-                      >
-                        <span className="inline-flex items-center gap-2 truncate">
-                          <HugeiconsIcon
-                            icon={Link04Icon}
-                            strokeWidth={2}
-                            className="size-4 shrink-0 text-muted-foreground"
-                          />
-                          <span className="truncate">{link.label}</span>
-                        </span>
-                        <HugeiconsIcon
-                          icon={ArrowRight01Icon}
-                          strokeWidth={2}
-                          className="size-4 shrink-0 text-muted-foreground"
-                        />
+                      <a key={link.href} href={link.href} target="_blank" rel="noopener noreferrer">
+                        <Card className="transition-colors hover:bg-muted/40">
+                          <CardContent className="flex items-center justify-between px-3 py-3 text-sm">
+                            <span className="inline-flex items-center gap-2 truncate">
+                              <HugeiconsIcon
+                                icon={Link04Icon}
+                                strokeWidth={2}
+                                className="size-4 shrink-0 text-muted-foreground"
+                              />
+                              <span className="truncate">{link.label}</span>
+                            </span>
+                            <HugeiconsIcon
+                              icon={ArrowRight01Icon}
+                              strokeWidth={2}
+                              className="size-4 shrink-0 text-muted-foreground"
+                            />
+                          </CardContent>
+                        </Card>
                       </a>
                     ))}
                   </div>
@@ -358,10 +359,12 @@ function ApplicantReviewPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="rounded-xl border border-border/70 bg-muted/30 p-3">
-                <p className="text-xs font-medium text-muted-foreground">Current status</p>
-                <p className="mt-1 text-sm font-semibold">{statusMeta.label}</p>
-              </div>
+              <Card className="bg-muted/30 border-border/70">
+                <CardContent className="p-3">
+                  <p className="text-xs font-medium text-muted-foreground">Current status</p>
+                  <p className="mt-1 text-sm font-semibold">{statusMeta.label}</p>
+                </CardContent>
+              </Card>
 
               <div className="space-y-2">
                 <p className="text-xs font-medium text-muted-foreground">Move application to</p>
@@ -393,10 +396,12 @@ function ApplicantReviewPage() {
                 {resumeDownloadMutation.isPending ? "Opening resume…" : "View submitted resume"}
               </Button>
 
-              <div className="rounded-xl border border-dashed border-border/70 bg-muted/20 p-3 text-xs text-muted-foreground">
-                This page shows the candidate snapshot that was attached at apply time, so later
-                profile edits do not silently change what your team reviewed.
-              </div>
+              <Empty className="border">
+                <EmptyDescription>
+                  This page shows the candidate snapshot that was attached at apply time, so later
+                  profile edits do not silently change what your team reviewed.
+                </EmptyDescription>
+              </Empty>
             </CardContent>
           </Card>
 
@@ -458,15 +463,17 @@ function InfoTile({
   value: string;
 }) {
   return (
-    <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
-      <div className="mb-2 inline-flex size-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
-        <HugeiconsIcon icon={icon} strokeWidth={2} className="size-4" />
-      </div>
-      <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-        {label}
-      </p>
-      <p className="mt-1 text-sm font-medium leading-relaxed">{value}</p>
-    </div>
+    <Card className="bg-muted/20 border-border/70">
+      <CardContent className="p-4">
+        <div className="mb-2 inline-flex size-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <HugeiconsIcon icon={icon} strokeWidth={2} className="size-4" />
+        </div>
+        <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+          {label}
+        </p>
+        <p className="mt-1 text-sm font-medium leading-relaxed">{value}</p>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -495,9 +502,11 @@ function SnapshotSection({
     <div className="space-y-3">
       <SectionHeading title={title} />
       {content ? (
-        <div className="rounded-2xl border border-border/70 bg-muted/20 p-4 text-sm leading-relaxed text-muted-foreground">
-          {content}
-        </div>
+        <Card className="bg-muted/20 border-border/70">
+          <CardContent className="p-4 text-sm leading-relaxed text-muted-foreground">
+            {content}
+          </CardContent>
+        </Card>
       ) : (
         <EmptyStateText text={empty} />
       )}
@@ -507,9 +516,9 @@ function SnapshotSection({
 
 function EmptyStateText({ text }: { text: string }) {
   return (
-    <div className="rounded-2xl border border-dashed border-border/80 bg-muted/10 px-4 py-3 text-sm text-muted-foreground">
+    <p className="rounded-2xl border border-dashed border-border/80 bg-muted/10 px-4 py-3 text-sm text-muted-foreground">
       {text}
-    </div>
+    </p>
   );
 }
 

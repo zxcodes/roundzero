@@ -341,16 +341,18 @@ function ApplicantsSummaryCard({
       </CardHeader>
       <CardContent>
         {applicantsCount > 0 ? (
-          <div className="rounded-xl border border-border/70 bg-muted/20 p-4">
-            <p className="text-sm font-medium">
-              {applicantsCount} {applicantsCount === 1 ? "candidate has" : "candidates have"}{" "}
-              applied
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Open the applicants page to move through each submission with direct access to resume,
-              profile snapshot, and status controls.
-            </p>
-          </div>
+          <Card className="bg-muted/20 border-border/70">
+            <CardContent className="p-4">
+              <p className="text-sm font-medium">
+                {applicantsCount} {applicantsCount === 1 ? "candidate has" : "candidates have"}{" "}
+                applied
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Open the applicants page to move through each submission with direct access to
+                resume, profile snapshot, and status controls.
+              </p>
+            </CardContent>
+          </Card>
         ) : (
           <Empty>
             <EmptyHeader>

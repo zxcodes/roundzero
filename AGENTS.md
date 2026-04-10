@@ -39,7 +39,8 @@ Always consult both before making design decisions or implementing features.
 
 ## UI
 
-- Always use shadcn components. Icons: `@hugeicons/react` + `@hugeicons/core-free-icons` (no Lucide, no Phosphor).
+- **Always use shadcn components.** Never hand-roll UI patterns that shadcn already provides — use `<Card>` / `<CardContent>` instead of `<div className="rounded-xl border bg-card ...">`, use `<Button>` instead of `<button className="rounded-md border ...">`, use `<Empty>` components instead of dashed-border divs, etc. Only use custom divs when shadcn has no equivalent.
+- Icons: `@hugeicons/react` + `@hugeicons/core-free-icons` (no Lucide, no Phosphor).
 - **No manual memoization** — React Compiler is enabled. Never use `useCallback`, `useMemo`, `React.memo`.
 - **Single `useId()` per component** — call once, derive IDs: `` const id = useId(); const nameId = `name-${id}`; ``
 - **Ternaries for conditionals** — `{x ? (...) : null}`, never `{x && (...)}`.
