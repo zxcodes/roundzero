@@ -8,6 +8,11 @@ import { getCompanyById, getCompanyByOwnerId } from "@/features/companies/querie
 import { closeExpiredJobsQuery, getJobById } from "@/features/jobs/queries/queries_sql";
 import { notificationPayloadSchemas } from "@/features/notifications/config";
 import { createNotification } from "@/features/notifications/queries/queries_sql";
+import {
+  deliverNotificationEmail,
+  type NotificationEmailSender,
+  sendNotificationEmailViaResend,
+} from "@/features/notifications/services/email";
 import { type ApplicationStatus, applicationStatusSchema, isValidTransition } from "@/shared/enums";
 import {
   createApplication as createApplicationQuery,
@@ -21,6 +26,9 @@ export const applyToJobWorkflow = async (
   input: {
     userId: string;
     jobId: string;
+  },
+  options?: {
+    sendNotificationEmail?: NotificationEmailSender;
   },
 ) => {
   await db.unsafe(closeExpiredJobsQuery);
@@ -92,11 +100,20 @@ export const applyToJobWorkflow = async (
       candidateName: user.name,
     });
 
-    await createNotification(db, {
+    const notification = await createNotification(db, {
       userId: company.ownerId,
       type: "new_applicant",
       payload,
     });
+
+    if (notification) {
+      const owner = await getUserById(db, { id: company.ownerId });
+      await deliverNotificationEmail(db, {
+        notification,
+        recipient: owner ? { email: owner.email } : null,
+        sendEmail: options?.sendNotificationEmail ?? sendNotificationEmailViaResend,
+      });
+    }
   }
 
   return { application };
@@ -108,6 +125,9 @@ export const updateApplicationStatusWorkflow = async (
     userId: string;
     applicationId: string;
     status: ApplicationStatus;
+  },
+  options?: {
+    sendNotificationEmail?: NotificationEmailSender;
   },
 ) => {
   const application = await getApplicationById(db, {
@@ -150,11 +170,20 @@ export const updateApplicationStatusWorkflow = async (
       status: input.status,
     });
 
-    await createNotification(db, {
+    const notification = await createNotification(db, {
       userId: application.candidateId,
       type: "application_status_changed",
       payload,
     });
+
+    if (notification) {
+      const candidate = await getUserById(db, { id: application.candidateId });
+      await deliverNotificationEmail(db, {
+        notification,
+        recipient: candidate ? { email: candidate.email } : null,
+        sendEmail: options?.sendNotificationEmail ?? sendNotificationEmailViaResend,
+      });
+    }
   }
 
   return { application: updated };

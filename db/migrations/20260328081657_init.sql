@@ -117,12 +117,17 @@ CREATE INDEX idx_applications_candidate ON applications(candidate_id);
 
 -- Notifications
 CREATE TABLE notifications (
-  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id       UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
-  type          TEXT NOT NULL,
-  payload       JSONB NOT NULL DEFAULT '{}',
-  read_at       TIMESTAMPTZ,
-  created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+  id                         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id                    UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  type                       TEXT NOT NULL,
+  payload                    JSONB NOT NULL DEFAULT '{}',
+  read_at                    TIMESTAMPTZ,
+  email_delivery_status      TEXT,
+  email_delivery_error       TEXT,
+  email_delivery_attempted_at TIMESTAMPTZ,
+  email_delivery_sent_at     TIMESTAMPTZ,
+  email_provider_message_id  TEXT,
+  created_at                 TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX idx_notifications_user_created

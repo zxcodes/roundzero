@@ -5,6 +5,9 @@ import {
   createNotification,
   getNotificationsByUser,
   markAllNotificationsReadByUser,
+  markNotificationEmailDelivered,
+  markNotificationEmailFailed,
+  markNotificationEmailSkipped,
   markNotificationReadByUser,
 } from "../queries_sql";
 
@@ -138,5 +141,81 @@ describe("notification read state", () => {
 
     const unread = await countUnreadNotificationsByUser(sql, { userId: user.id });
     expect(unread?.unreadCount).toBe(0);
+  });
+});
+
+describe("notification email delivery state", () => {
+  it("marks a notification as email-delivered", async () => {
+    const user = await seedUser({ role: "candidate" });
+    const notification = await createNotification(sql, {
+      userId: user.id,
+      type: "application_status_changed",
+      payload: {
+        applicationId: crypto.randomUUID(),
+        jobId: crypto.randomUUID(),
+        jobTitle: "Platform Engineer",
+        companyName: "RoundZero",
+        status: "interviewing",
+      },
+    });
+
+    const updated = await markNotificationEmailDelivered(sql, {
+      id: notification!.id,
+      providerMessageId: "re_123",
+    });
+
+    expect(updated).not.toBeNull();
+    expect(updated!.emailDeliveryStatus).toBe("sent");
+    expect(updated!.emailDeliveryAttemptedAt).toBeInstanceOf(Date);
+    expect(updated!.emailDeliverySentAt).toBeInstanceOf(Date);
+    expect(updated!.emailProviderMessageId).toBe("re_123");
+    expect(updated!.emailDeliveryError).toBeNull();
+  });
+
+  it("marks a notification as email-failed or skipped", async () => {
+    const user = await seedUser({ role: "company" });
+    const failed = await createNotification(sql, {
+      userId: user.id,
+      type: "new_applicant",
+      payload: {
+        applicationId: crypto.randomUUID(),
+        jobId: crypto.randomUUID(),
+        jobTitle: "Designer",
+        candidateName: "Nadia Khan",
+      },
+    });
+    const skipped = await createNotification(sql, {
+      userId: user.id,
+      type: "new_applicant",
+      payload: {
+        applicationId: crypto.randomUUID(),
+        jobId: crypto.randomUUID(),
+        jobTitle: "Designer",
+        candidateName: "Hana Ali",
+      },
+    });
+
+    const failedUpdated = await markNotificationEmailFailed(sql, {
+      id: failed!.id,
+      errorMessage: "Resend rejected request",
+    });
+    const skippedUpdated = await markNotificationEmailSkipped(sql, {
+      id: skipped!.id,
+      reason: "Email delivery is not configured",
+    });
+
+    expect(failedUpdated).not.toBeNull();
+    expect(failedUpdated!.emailDeliveryStatus).toBe("failed");
+    expect(failedUpdated!.emailDeliveryAttemptedAt).toBeInstanceOf(Date);
+    expect(failedUpdated!.emailDeliverySentAt).toBeNull();
+    expect(failedUpdated!.emailDeliveryError).toBe("Resend rejected request");
+    expect(failedUpdated!.emailProviderMessageId).toBeNull();
+
+    expect(skippedUpdated).not.toBeNull();
+    expect(skippedUpdated!.emailDeliveryStatus).toBe("skipped");
+    expect(skippedUpdated!.emailDeliveryAttemptedAt).toBeInstanceOf(Date);
+    expect(skippedUpdated!.emailDeliverySentAt).toBeNull();
+    expect(skippedUpdated!.emailDeliveryError).toBe("Email delivery is not configured");
+    expect(skippedUpdated!.emailProviderMessageId).toBeNull();
   });
 });

@@ -152,6 +152,11 @@ CREATE TABLE public.notifications (
     type text NOT NULL,
     payload jsonb DEFAULT '{}'::jsonb NOT NULL,
     read_at timestamp with time zone,
+    email_delivery_status text,
+    email_delivery_error text,
+    email_delivery_attempted_at timestamp with time zone,
+    email_delivery_sent_at timestamp with time zone,
+    email_provider_message_id text,
     created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
