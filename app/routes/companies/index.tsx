@@ -14,6 +14,13 @@ import { CompaniesListSkeleton } from "@/components/route-skeletons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -165,19 +172,15 @@ function CompaniesPage() {
         {/* Grid */}
         <section className="mx-auto max-w-6xl px-6 py-4 pb-12 lg:px-8 lg:pb-16">
           {items.length === 0 ? (
-            <div className="animate-fade-in py-24 text-center">
-              <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-muted">
-                <HugeiconsIcon
-                  icon={Building01Icon}
-                  strokeWidth={1.5}
-                  className="size-6 text-muted-foreground/60"
-                />
-              </div>
-              <p className="mt-4 text-sm font-medium text-foreground">No companies found</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Try adjusting your search or filters.
-              </p>
-            </div>
+            <Empty className="border">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <HugeiconsIcon icon={Building01Icon} strokeWidth={1.5} />
+                </EmptyMedia>
+                <EmptyTitle>No companies found</EmptyTitle>
+                <EmptyDescription>Try adjusting your search or filters.</EmptyDescription>
+              </EmptyHeader>
+            </Empty>
           ) : (
             <div className="animate-fade-in grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {items.map((company, i) => (

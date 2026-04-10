@@ -15,6 +15,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -105,19 +112,17 @@ export function CompanyJobApplicantsList({
       </CardHeader>
       <CardContent>
         {applicants.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-12">
-            <div className="mb-3 flex size-10 items-center justify-center rounded-xl bg-muted">
-              <HugeiconsIcon
-                icon={UserGroupIcon}
-                strokeWidth={2}
-                className="size-5 text-muted-foreground"
-              />
-            </div>
-            <p className="text-sm font-medium">No applicants yet</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Candidate submissions for this role will show up here.
-            </p>
-          </div>
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} />
+              </EmptyMedia>
+              <EmptyTitle>No applicants yet</EmptyTitle>
+              <EmptyDescription>
+                Candidate submissions for this role will show up here.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         ) : (
           <div className="space-y-2">
             {applicants.map((applicant) => {
