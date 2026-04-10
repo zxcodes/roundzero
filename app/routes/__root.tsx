@@ -10,7 +10,6 @@ import { AuthProvider } from "@/features/auth/provider";
 import { getCurrentUser } from "@/features/auth/server/functions";
 import { getThemeServerFn } from "@/lib/theme";
 import type { RouterContext } from "@/router";
-
 import appCss from "../styles.css?url";
 
 export const Route = createRootRouteWithContext<RouterContext>()({

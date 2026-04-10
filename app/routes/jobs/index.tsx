@@ -214,7 +214,7 @@ function JobCard({ job, className }: { job: JobFromLoader; className?: string })
 
   return (
     <Link to="/jobs/$jobId" params={{ jobId: job.id }} className={className}>
-      <Card className="group h-full transition-all duration-200 hover:border-primary/30 hover:shadow-md hover:shadow-primary/5">
+      <Card className="group h-full ring-foreground/5 transition-all duration-200 hover:ring-primary/30 hover:shadow-md hover:shadow-primary/5">
         <CardContent className="flex h-full flex-col space-y-3">
           {/* Title + company */}
           <div>

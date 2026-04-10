@@ -3,6 +3,7 @@ import {
   Archive01Icon,
   Briefcase01Icon,
   Location01Icon,
+  MoneyBag02Icon,
   Rocket01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -20,6 +21,7 @@ import { z } from "zod";
 import { DashboardJobsListSkeleton } from "@/components/route-skeletons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Empty,
   EmptyContent,
@@ -396,7 +398,7 @@ function CandidateJobsList({ jobs }: { jobs: Awaited<ReturnType<typeof getOpenJo
           </EmptyHeader>
         </Empty>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {jobs.map((job, i) => {
             const salary = formatSalaryCompact(job.salaryMin, job.salaryMax, job.salaryCurrency);
             return (
@@ -404,53 +406,68 @@ function CandidateJobsList({ jobs }: { jobs: Awaited<ReturnType<typeof getOpenJo
                 key={job.id}
                 to="/dashboard/jobs/$jobId"
                 params={{ jobId: job.id }}
-                className={`animate-fade-in stagger-${Math.min(i + 1, 6)} group flex flex-col rounded-xl border bg-card p-4 ring-1 ring-foreground/3 transition-all hover:border-primary/30 hover:shadow-sm`}
+                className={`animate-fade-in stagger-${Math.min(i + 1, 6)}`}
               >
-                <div className="mb-2.5">
-                  <h3 className="text-sm font-semibold leading-tight group-hover:text-primary transition-colors">
-                    {job.title}
-                  </h3>
-                  <p className="mt-0.5 text-xs text-muted-foreground">{job.companyName}</p>
-                </div>
+                <Card className="group h-full ring-foreground/5 transition-all duration-200 hover:ring-primary/30 hover:shadow-md hover:shadow-primary/5">
+                  <CardContent className="flex h-full flex-col space-y-3">
+                    <div>
+                      <p className="text-sm font-semibold transition-colors group-hover:text-primary">
+                        {job.title}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{job.companyName}</p>
+                    </div>
 
-                <div className="mb-2.5 flex flex-wrap gap-1">
-                  {job.location ? (
-                    <Badge variant="secondary" className="gap-1 text-[11px] font-normal">
-                      <HugeiconsIcon icon={Location01Icon} strokeWidth={2} className="size-2.5" />
-                      {job.location}
-                    </Badge>
-                  ) : null}
-                  {job.workplaceType ? (
-                    <Badge variant="secondary" className="text-[11px] font-normal">
-                      {workplaceTypeLabels[job.workplaceType as WorkplaceType]}
-                    </Badge>
-                  ) : null}
-                  {job.employmentType ? (
-                    <Badge variant="secondary" className="text-[11px] font-normal">
-                      {employmentTypeLabels[job.employmentType as EmploymentType]}
-                    </Badge>
-                  ) : null}
-                  {job.experienceLevel ? (
-                    <Badge variant="outline" className="text-[11px] font-normal">
-                      {experienceLevelLabels[job.experienceLevel as ExperienceLevel]}
-                    </Badge>
-                  ) : null}
-                </div>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
+                      {job.location ? (
+                        <span className="inline-flex items-center gap-1">
+                          <HugeiconsIcon
+                            icon={Location01Icon}
+                            strokeWidth={2}
+                            className="size-3.5"
+                          />
+                          {job.location}
+                        </span>
+                      ) : null}
+                      {salary ? (
+                        <span className="inline-flex items-center gap-1">
+                          <HugeiconsIcon
+                            icon={MoneyBag02Icon}
+                            strokeWidth={2}
+                            className="size-3.5"
+                          />
+                          {salary}
+                        </span>
+                      ) : null}
+                    </div>
 
-                <p className="mb-3 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-                  {job.description}
-                </p>
+                    {job.description ? (
+                      <p className="line-clamp-2 flex-1 text-[13px] leading-relaxed text-muted-foreground">
+                        {job.description}
+                      </p>
+                    ) : null}
 
-                <div className="mt-auto flex items-center justify-between">
-                  {salary ? (
-                    <span className="font-mono text-xs font-medium">{salary}</span>
-                  ) : (
-                    <span />
-                  )}
-                  <span className="font-mono text-[11px] text-muted-foreground">
-                    {formatDate(job.createdAt)}
-                  </span>
-                </div>
+                    <div className="flex flex-wrap gap-1.5 border-t border-border/40 pt-3">
+                      {job.employmentType ? (
+                        <Badge variant="secondary" className="text-[11px]">
+                          {employmentTypeLabels[job.employmentType as EmploymentType] ??
+                            job.employmentType}
+                        </Badge>
+                      ) : null}
+                      {job.experienceLevel ? (
+                        <Badge variant="secondary" className="text-[11px]">
+                          {experienceLevelLabels[job.experienceLevel as ExperienceLevel] ??
+                            job.experienceLevel}
+                        </Badge>
+                      ) : null}
+                      {job.workplaceType ? (
+                        <Badge variant="outline" className="text-[11px]">
+                          {workplaceTypeLabels[job.workplaceType as WorkplaceType] ??
+                            job.workplaceType}
+                        </Badge>
+                      ) : null}
+                    </div>
+                  </CardContent>
+                </Card>
               </Link>
             );
           })}
