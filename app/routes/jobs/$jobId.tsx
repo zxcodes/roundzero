@@ -15,6 +15,7 @@ import { JobDetailSkeleton } from "@/components/route-skeletons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Empty, EmptyContent } from "@/components/ui/empty";
 import { CandidateApplySection } from "@/features/applications/components/candidate-apply-section";
 import { hasApplied } from "@/features/applications/server/functions";
 import { getMyCandidateProfile } from "@/features/candidates/server/functions";
@@ -185,17 +186,19 @@ function JobDetailPage() {
 
             {/* Bottom CTA */}
             {!isCompany ? (
-              <div className="animate-fade-in stagger-2 rounded-xl border border-dashed border-primary/20 bg-primary/5 p-6 text-center">
-                <PublicJobCTA
-                  isCandidate={isCandidate}
-                  dashboardJobPath={dashboardJobPath}
-                  canApply={canApply}
-                  alreadyApplied={alreadyApplied}
-                  hasResume={hasResume}
-                  job={job}
-                  variant="bottom"
-                />
-              </div>
+              <Empty className="border animate-fade-in stagger-2 bg-muted">
+                <EmptyContent>
+                  <PublicJobCTA
+                    isCandidate={isCandidate}
+                    dashboardJobPath={dashboardJobPath}
+                    canApply={canApply}
+                    alreadyApplied={alreadyApplied}
+                    hasResume={hasResume}
+                    job={job}
+                    variant="bottom"
+                  />
+                </EmptyContent>
+              </Empty>
             ) : null}
           </div>
 
