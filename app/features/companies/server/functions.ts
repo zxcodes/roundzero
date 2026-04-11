@@ -23,7 +23,6 @@ import {
   getCompanyByOwnerId,
   getCompanyBySlug as getCompanyBySlugQuery,
   slugExists,
-  updateCompanyLogoByOwnerId,
   updateCompanyProfile as updateCompanyProfileQuery,
 } from "../queries/queries_sql";
 
@@ -106,10 +105,6 @@ const logoUploadTargetSchema = z.object({
 });
 
 const finalizeLogoUploadSchema = z.object({
-  logoKey: z.string().min(1),
-});
-
-const updateCompanyLogoSchema = z.object({
   logoKey: z.string().min(1),
 });
 
@@ -260,25 +255,6 @@ export const finalizeCompanyLogoUpload = createServerFn({ method: "POST" })
     }
 
     return { logoKey: data.logoKey };
-  });
-
-export const updateMyCompanyLogo = createServerFn({ method: "POST" })
-  .middleware([companyMiddleware])
-  .inputValidator(zodValidator(updateCompanyLogoSchema))
-  .handler(async ({ data, context }) => {
-    assertLogoKeyBelongsToUser(data.logoKey, context.userId);
-
-    const db = getDb();
-    const updated = await updateCompanyLogoByOwnerId(db, {
-      logoKey: data.logoKey,
-      ownerId: context.userId,
-    });
-
-    if (!updated) {
-      throw new Error("Failed to update company logo");
-    }
-
-    return { company: updated };
   });
 
 // --- Public Server Functions ---
