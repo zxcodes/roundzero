@@ -36,6 +36,12 @@ Always consult both before making design decisions or implementing features.
 - **Check TanStack Intent skills first** — run `bunx @tanstack/intent@latest list`, read `node_modules/@tanstack/<package>/skills/<skill>/SKILL.md`.
 - **Use `zodValidator()` from `@tanstack/zod-adapter`** for `inputValidator`. Never use manual `schema.parse()` callbacks.
 - **All forms use TanStack Form** via `useAppForm` from `@/shared/form` (provides `TextField`, `NumberField`, `TextareaField`, `SelectField`, `SubmitButton`). Use `form.AppField` for simple fields, `form.Field` with `mode="array"` for arrays. Forms manage submit state internally — never pass `isSubmitting` from parents.
+- **Never use `NumberField` (type="number") for numeric inputs.** It renders spinner arrows which look bad. Use `TextField` with string defaults instead, and convert to `number | null` in `onSubmit`:
+  - Default: `salaryMin: defaultValues?.salaryMin != null ? String(defaultValues.salaryMin) : ""`
+  - Submit: `salaryMin: value.salaryMin ? Number(value.salaryMin) : null`
+  - Add `onBlur` validation via a helper (e.g. `positiveIntBlur`) or inline Zod schema to catch non-numeric input.
+  - For cross-field validation (e.g. salaryMin ≤ salaryMax), use form-level `validators.onSubmit` returning `{ fields: { fieldName: "error message" } }`.
+- **Client-side form validation** — use `validators={{ onBlur: z.string().trim().min(1, "...").max(N, "...") }}` on required fields for instant, user-friendly errors. Put numeric/string format validation on blur too. Cross-field checks go on the form's `validators`.
 
 ## UI
 

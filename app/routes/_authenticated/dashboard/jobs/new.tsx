@@ -32,8 +32,8 @@ function NewJobPage() {
         params: { jobId: job.id },
       });
     },
-    onError: () => {
-      toast.error("Failed to create job. Please try again.");
+    onError: (error) => {
+      toast.error(error.message || "Failed to create job. Please try again.");
     },
   });
 
