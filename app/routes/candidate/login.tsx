@@ -45,7 +45,7 @@ function CandidateLoginPage() {
   return (
     <div className="min-h-svh lg:grid lg:grid-cols-2">
       {/* Left — value proposition */}
-      <div className="relative hidden overflow-hidden bg-card lg:block">
+      <div className="relative hidden overflow-hidden bg-muted lg:block">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,var(--color-primary)/8%,transparent_60%)]" />
         <div className="relative flex h-full flex-col justify-between p-10 xl:p-14">
           {/* Logo */}

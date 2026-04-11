@@ -1,8 +1,5 @@
 import { GoogleOAuthProvider } from "@react-oauth/google";
-import { TanStackDevtools } from "@tanstack/react-devtools";
-import { ReactQueryDevtoolsPanel } from "@tanstack/react-query-devtools";
 import { createRootRouteWithContext, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
-import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { NotFound } from "@/components/not-found";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -111,9 +108,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         {children}
-        <TanStackDevtools
+        {/*<TanStackDevtools
           config={{
             position: "bottom-right",
+            hideUntilHover: true,
           }}
           plugins={[
             {
@@ -125,7 +123,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
               render: <ReactQueryDevtoolsPanel />,
             },
           ]}
-        />
+        />*/}
         <Scripts />
       </body>
     </html>
