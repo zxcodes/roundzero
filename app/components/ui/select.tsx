@@ -60,23 +60,23 @@ function SelectTrigger({
           fill="none"
           color="currentColor"
           className="cn-select-trigger-icon pointer-events-none"
-          stroke-width="2"
+          strokeWidth="2"
           stroke="currentColor"
           aria-hidden="true"
         >
           <path
             d="M17.9999 14C17.9999 14 13.581 19 11.9999 19C10.4188 19 5.99994 14 5.99994 14"
             stroke="currentColor"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
           ></path>
           <path
             d="M17.9999 9.99996C17.9999 9.99996 13.581 5.00001 11.9999 5C10.4188 4.99999 5.99994 10 5.99994 10"
             stroke="currentColor"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
           ></path>
         </svg>
       </SelectPrimitive.Icon>
