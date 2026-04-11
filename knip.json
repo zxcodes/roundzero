@@ -14,16 +14,18 @@
   "ignore": ["app/**/*_sql.ts", "app/components/ui/**"],
   "ignoreBinaries": ["sqlc"],
   "ignoreDependencies": [
+    "@tanstack/react-devtools",
+    "@tanstack/react-router-devtools",
+    "@tanstack/react-query-devtools",
     "@fontsource-variable/geist-mono",
-    "@fontsource-variable/plus-jakarta-sans",
+    "@fontsource-variable/geist",
     "tailwindcss",
     "tw-animate-css",
     "recharts",
     "vaul",
     "shadcn",
     "@tanstack/router-plugin",
-    "@snaplet/copycat",
-    "react-day-picker"
+    "@snaplet/copycat"
   ],
   "exclude": ["unlisted"]
 }

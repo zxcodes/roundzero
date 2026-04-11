@@ -96,7 +96,6 @@ const updateCandidateProfileSchema = z.object({
     })
     .nullable(),
 });
-export type UpdateCandidateProfileInput = z.infer<typeof updateCandidateProfileSchema>;
 
 const allowedResumeTypes = {
   "application/pdf": "pdf",
