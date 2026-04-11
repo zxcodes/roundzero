@@ -3,6 +3,8 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { useServerFn } from "@tanstack/react-start";
 import { useId, useState } from "react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
   createCompanyLogoUploadTarget,
@@ -93,83 +95,86 @@ export function CompanyLogoUploadField({
         className="sr-only"
         onChange={onFileChange}
       />
-      <div className="flex flex-col gap-4 rounded-2xl border bg-card/80 p-4 sm:flex-row sm:items-start">
-        <label
-          htmlFor={inputId}
-          className="group relative flex size-24 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-dashed border-border bg-muted/40 transition-colors hover:border-primary/40 hover:bg-muted/60"
-        >
-          {logoUrl ? (
-            <img src={logoUrl} alt="Company logo" className="size-full object-contain p-3" />
-          ) : (
-            <div className="flex flex-col items-center gap-1 text-center">
-              <HugeiconsIcon
-                icon={Image02Icon}
-                strokeWidth={1.75}
-                className="size-5 text-primary/80"
-              />
-              <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                Logo
-              </span>
-            </div>
-          )}
-          {uploadState.status === "uploading" ? (
-            <div className="absolute inset-0 flex items-end bg-background/70 p-2">
-              <div className="w-full overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-1.5 bg-primary transition-all"
-                  style={{ width: `${uploadState.progress}%` }}
+      <Card className="bg-card/80 py-0">
+        <CardContent className="flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-start">
+          <label
+            htmlFor={inputId}
+            className="group relative flex size-24 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-dashed border-border bg-muted/40 transition-colors hover:border-primary/40 hover:bg-muted/60"
+          >
+            {logoUrl ? (
+              <img src={logoUrl} alt="Company logo" className="size-full object-contain p-3" />
+            ) : (
+              <div className="flex flex-col items-center gap-1 text-center">
+                <HugeiconsIcon
+                  icon={Image02Icon}
+                  strokeWidth={1.75}
+                  className="size-5 text-primary/80"
                 />
+                <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                  Logo
+                </span>
               </div>
-            </div>
-          ) : null}
-        </label>
+            )}
+            {uploadState.status === "uploading" ? (
+              <div className="absolute inset-0 flex items-end bg-background/70 p-2">
+                <div className="w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-1.5 bg-primary transition-all"
+                    style={{ width: `${uploadState.progress}%` }}
+                  />
+                </div>
+              </div>
+            ) : null}
+          </label>
 
-        <div className="min-w-0 flex-1 space-y-3">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0">
-              <p className="text-sm font-semibold">{value ? "Company logo" : "Add company logo"}</p>
-              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{description}</p>
+          <div className="min-w-0 flex-1 space-y-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold">
+                  {value ? "Company logo" : "Add company logo"}
+                </p>
+                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{description}</p>
+              </div>
+              <Button variant="outline" size="sm" asChild className="sm:shrink-0">
+                <label htmlFor={inputId}>{value ? "Replace" : "Upload"}</label>
+              </Button>
             </div>
-            <label
-              htmlFor={inputId}
-              className="inline-flex cursor-pointer items-center justify-center rounded-lg border bg-background px-3 py-1.5 text-xs font-medium transition-colors hover:border-primary/40 hover:text-primary sm:shrink-0"
-            >
-              <span>{value ? "Replace" : "Upload"}</span>
-            </label>
+
+            {uploadState.status === "uploading" ? (
+              <Card className="bg-muted/25">
+                <CardContent className="space-y-2 px-3 py-0">
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Uploading company logo...</span>
+                    <span className="text-muted-foreground">{uploadState.progress}%</span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full bg-primary transition-all"
+                      style={{ width: `${uploadState.progress}%` }}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            ) : value ? (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <HugeiconsIcon
+                  icon={Upload04Icon}
+                  strokeWidth={2}
+                  className="size-3.5 text-primary"
+                />
+                <span>Visible across your public company profile and job surfaces</span>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                <span className="rounded-full bg-muted px-2.5 py-1">Square works best</span>
+                <span className="rounded-full bg-muted px-2.5 py-1">PNG, JPG, WEBP, or SVG</span>
+              </div>
+            )}
+
+            {error ? <p className="text-xs text-destructive">{error}</p> : null}
           </div>
-
-          {uploadState.status === "uploading" ? (
-            <div className="space-y-2 rounded-xl border bg-muted/25 px-3 py-2.5">
-              <div className="flex items-center justify-between text-sm">
-                <span>Uploading company logo...</span>
-                <span className="text-muted-foreground">{uploadState.progress}%</span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full bg-primary transition-all"
-                  style={{ width: `${uploadState.progress}%` }}
-                />
-              </div>
-            </div>
-          ) : value ? (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <HugeiconsIcon
-                icon={Upload04Icon}
-                strokeWidth={2}
-                className="size-3.5 text-primary"
-              />
-              <span>Visible across your public company profile and job surfaces</span>
-            </div>
-          ) : (
-            <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-              <span className="rounded-full bg-muted px-2.5 py-1">Square works best</span>
-              <span className="rounded-full bg-muted px-2.5 py-1">PNG, JPG, WEBP, or SVG</span>
-            </div>
-          )}
-
-          {error ? <p className="text-xs text-destructive">{error}</p> : null}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
