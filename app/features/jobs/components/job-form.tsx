@@ -1,6 +1,7 @@
 import { Add01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useState } from "react";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,6 +36,16 @@ export interface JobFormData {
 }
 
 const emptyToNull = <T,>(value: T | ""): T | null => (value === "" ? null : value);
+
+const positiveIntBlur =
+  (label: string) =>
+  ({ value }: { value: string }) => {
+    if (!value) return undefined;
+    const num = Number(value);
+    if (Number.isNaN(num) || !Number.isInteger(num)) return `${label} must be a whole number`;
+    if (num <= 0) return `${label} must be positive`;
+    return undefined;
+  };
 
 const workplaceOptions = Object.entries(workplaceTypeLabels).map(([value, label]) => ({
   value,
@@ -84,13 +95,29 @@ export function JobForm({
       workplaceType: (defaultValues?.workplaceType ?? "") as string,
       employmentType: (defaultValues?.employmentType ?? "") as string,
       experienceLevel: (defaultValues?.experienceLevel ?? "") as string,
-      salaryMin: defaultValues?.salaryMin ?? null,
-      salaryMax: defaultValues?.salaryMax ?? null,
+      salaryMin: defaultValues?.salaryMin != null ? String(defaultValues.salaryMin) : "",
+      salaryMax: defaultValues?.salaryMax != null ? String(defaultValues.salaryMax) : "",
       salaryCurrency: defaultValues?.salaryCurrency ?? "USD",
-      teamSize: defaultValues?.teamSize ?? null,
-      headcount: defaultValues?.headcount ?? null,
+      teamSize: defaultValues?.teamSize != null ? String(defaultValues.teamSize) : "",
+      headcount: defaultValues?.headcount != null ? String(defaultValues.headcount) : "",
       expiresAt: defaultValues?.expiresAt ? defaultValues.expiresAt.toISOString().slice(0, 10) : "",
     },
+
+    validators: {
+      onSubmit: ({ value }) => {
+        const min = value.salaryMin ? Number(value.salaryMin) : null;
+        const max = value.salaryMax ? Number(value.salaryMax) : null;
+        if (min != null && max != null && min > max) {
+          return {
+            fields: {
+              salaryMin: "Minimum salary cannot exceed maximum salary",
+            },
+          };
+        }
+        return undefined;
+      },
+    },
+
     onSubmit: ({ value }) => {
       const expiresAt = value.expiresAt?.trim()
         ? new Date(`${value.expiresAt}T23:59:59.999`)
@@ -106,11 +133,11 @@ export function JobForm({
         workplaceType: emptyToNull(value.workplaceType) as WorkplaceType | null,
         employmentType: emptyToNull(value.employmentType) as EmploymentType | null,
         experienceLevel: emptyToNull(value.experienceLevel) as ExperienceLevel | null,
-        salaryMin: value.salaryMin,
-        salaryMax: value.salaryMax,
+        salaryMin: value.salaryMin ? Number(value.salaryMin) : null,
+        salaryMax: value.salaryMax ? Number(value.salaryMax) : null,
         salaryCurrency: value.salaryCurrency,
-        teamSize: value.teamSize,
-        headcount: value.headcount,
+        teamSize: value.teamSize ? Number(value.teamSize) : null,
+        headcount: value.headcount ? Number(value.headcount) : null,
         expiresAt,
       });
     },
@@ -131,6 +158,13 @@ export function JobForm({
       <div className="space-y-4">
         <form.AppField
           name="title"
+          validators={{
+            onBlur: z
+              .string()
+              .trim()
+              .min(1, "Job title is required")
+              .max(200, "Job title must be under 200 characters"),
+          }}
           children={(field) => (
             <field.TextField
               label="Job title"
@@ -142,6 +176,13 @@ export function JobForm({
         />
         <form.AppField
           name="description"
+          validators={{
+            onBlur: z
+              .string()
+              .trim()
+              .min(1, "Job description is required")
+              .max(5000, "Description must be under 5,000 characters"),
+          }}
           children={(field) => (
             <field.TextareaField
               label="Description"
@@ -317,15 +358,13 @@ export function JobForm({
         <div className="grid gap-4 sm:grid-cols-3">
           <form.AppField
             name="salaryMin"
-            children={(field) => (
-              <field.NumberField label="Min salary" placeholder="120000" min={0} />
-            )}
+            validators={{ onBlur: positiveIntBlur("Minimum salary") }}
+            children={(field) => <field.TextField label="Min salary" placeholder="120000" />}
           />
           <form.AppField
             name="salaryMax"
-            children={(field) => (
-              <field.NumberField label="Max salary" placeholder="180000" min={0} />
-            )}
+            validators={{ onBlur: positiveIntBlur("Maximum salary") }}
+            children={(field) => <field.TextField label="Max salary" placeholder="180000" />}
           />
           <form.AppField
             name="salaryCurrency"
@@ -341,22 +380,22 @@ export function JobForm({
         <div className="grid gap-4 sm:grid-cols-2">
           <form.AppField
             name="teamSize"
+            validators={{ onBlur: positiveIntBlur("Team size") }}
             children={(field) => (
-              <field.NumberField
+              <field.TextField
                 label="Team size"
                 placeholder="8"
-                min={1}
                 description="Number of people on the team"
               />
             )}
           />
           <form.AppField
             name="headcount"
+            validators={{ onBlur: positiveIntBlur("Headcount") }}
             children={(field) => (
-              <field.NumberField
+              <field.TextField
                 label="Open positions"
                 placeholder="1"
-                min={1}
                 description="How many hires for this role"
               />
             )}

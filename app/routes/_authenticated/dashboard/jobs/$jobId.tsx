@@ -389,8 +389,8 @@ function CompanyActions({
       setIsEditing(false);
       await router.invalidate();
     },
-    onError: () => {
-      toast.error("Failed to update job. Please try again.");
+    onError: (error) => {
+      toast.error(error.message || "Failed to update job. Please try again.");
     },
   });
 
