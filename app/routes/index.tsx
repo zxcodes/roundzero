@@ -81,7 +81,7 @@ function Hero() {
 
         {/* Right — mock report card */}
         <div className="animate-fade-in-up stagger-2 lg:ml-auto lg:max-w-md">
-          <div className="rounded-xl border border-border/60 bg-card p-5 shadow-sm ring-1 ring-foreground/3">
+          <div className="rounded-4xl border border-border/60 bg-card p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-widest text-emerald-500">
@@ -142,7 +142,7 @@ function InterviewSection() {
     <section className="border-t border-border/40">
       <div className="mx-auto grid max-w-6xl gap-12 px-6 py-20 lg:grid-cols-2 lg:items-center lg:gap-16 lg:px-8 lg:py-28">
         {/* Left — mock chat */}
-        <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm ring-1 ring-foreground/3">
+        <div className="overflow-hidden rounded-4xl border border-border/60 bg-card shadow-sm">
           <div className="flex items-center gap-2 border-b border-border/40 px-5 py-3">
             <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={2} className="size-4 text-primary" />
             <span className="text-sm font-medium">Interview session</span>
@@ -215,7 +215,7 @@ function ChatBubble({ sender, text }: { sender: "ai" | "candidate"; text: string
   return (
     <div className={sender === "ai" ? "" : "flex justify-end"}>
       <div
-        className={`max-w-[85%] rounded-xl px-3.5 py-2.5 text-[13px] leading-relaxed ${
+        className={`max-w-[85%] rounded-4xl px-3.5 py-2.5 text-[13px] leading-relaxed ${
           sender === "ai"
             ? "rounded-tl-sm bg-muted text-foreground"
             : "rounded-tr-sm bg-primary text-primary-foreground"
@@ -251,7 +251,7 @@ function ReportSection() {
 
         {/* Right — mock report breakdown */}
         <div className="lg:ml-auto lg:max-w-md">
-          <div className="rounded-xl border border-border/60 bg-card shadow-sm ring-1 ring-foreground/3">
+          <div className="rounded-4xl border border-border/60 bg-card shadow-sm">
             <div className="border-b border-border/40 px-5 py-3">
               <p className="text-sm font-medium">Report: Sarah Chen</p>
             </div>
@@ -321,7 +321,7 @@ function RankingSection() {
     <section className="border-t border-border/40">
       <div className="mx-auto grid max-w-6xl gap-12 px-6 py-20 lg:grid-cols-2 lg:items-center lg:gap-16 lg:px-8 lg:py-28">
         {/* Left — mock ranked list */}
-        <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm ring-1 ring-foreground/3">
+        <div className="overflow-hidden rounded-4xl border border-border/60 bg-card shadow-sm">
           <div className="flex items-center gap-2.5 border-b border-border/40 px-5 py-3">
             <HugeiconsIcon icon={RankingIcon} strokeWidth={2} className="size-4 text-primary" />
             <span className="text-sm font-medium">Senior Backend Engineer</span>
