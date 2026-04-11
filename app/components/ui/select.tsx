@@ -1,11 +1,11 @@
 "use client"
 
-import * as React from "react"
 import { Select as SelectPrimitive } from "radix-ui"
+import * as React from "react"
 
 import { cn } from "@/lib/utils"
+import { ArrowDown01Icon, ArrowUp01Icon, Tick02Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { UnfoldMoreIcon, Tick02Icon, ArrowUp01Icon, ArrowDown01Icon } from "@hugeicons/core-free-icons"
 
 function Select({
   ...props
@@ -52,7 +52,33 @@ function SelectTrigger({
     >
       {children}
       <SelectPrimitive.Icon asChild>
-        <HugeiconsIcon icon={UnfoldMoreIcon} strokeWidth={2} className="pointer-events-none size-4 text-muted-foreground" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          color="currentColor"
+          className="cn-select-trigger-icon pointer-events-none"
+          stroke-width="2"
+          stroke="currentColor"
+          aria-hidden="true"
+        >
+          <path
+            d="M17.9999 14C17.9999 14 13.581 19 11.9999 19C10.4188 19 5.99994 14 5.99994 14"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+          ></path>
+          <path
+            d="M17.9999 9.99996C17.9999 9.99996 13.581 5.00001 11.9999 5C10.4188 4.99999 5.99994 10 5.99994 10"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+          ></path>
+        </svg>
       </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
   )
@@ -181,14 +207,14 @@ function SelectScrollDownButton({
 }
 
 export {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectScrollDownButton,
-  SelectScrollUpButton,
-  SelectSeparator,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectLabel,
+    SelectScrollDownButton,
+    SelectScrollUpButton,
+    SelectSeparator,
+    SelectTrigger,
+    SelectValue
 }
