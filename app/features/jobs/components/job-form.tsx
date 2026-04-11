@@ -1,10 +1,12 @@
-import { Add01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
+import { Add01Icon, Calendar03Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import {
   type EmploymentType,
@@ -83,6 +85,7 @@ export function JobForm({
 }) {
   const [requirementInput, setRequirementInput] = useState("");
   const [interviewQuestionInput, setInterviewQuestionInput] = useState("");
+  const [deadlineOpen, setDeadlineOpen] = useState(false);
 
   const form = useAppForm({
     defaultValues: {
@@ -327,20 +330,64 @@ export function JobForm({
           />
           <form.Field name="expiresAt">
             {(field) => {
-              const onExpiresAtBlur = () => field.handleBlur();
-              const onExpiresAtChange = (e: React.ChangeEvent<HTMLInputElement>) =>
-                field.handleChange(e.target.value);
+              const selectedDate = field.state.value
+                ? new Date(`${field.state.value}T00:00:00`)
+                : undefined;
+              const onDateSelect = (date: Date | undefined) => {
+                field.handleChange(date ? date.toISOString().slice(0, 10) : "");
+                setDeadlineOpen(false);
+              };
+              const onClearDeadline = () => {
+                field.handleChange("");
+                setDeadlineOpen(false);
+              };
 
               return (
                 <div className="space-y-2">
                   <Label htmlFor={field.name}>Application deadline</Label>
-                  <Input
-                    id={field.name}
-                    type="date"
-                    value={field.state.value}
-                    onBlur={onExpiresAtBlur}
-                    onChange={onExpiresAtChange}
-                  />
+                  <Popover open={deadlineOpen} onOpenChange={setDeadlineOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full justify-between font-normal"
+                      >
+                        <span className={field.state.value ? "" : "text-muted-foreground"}>
+                          {field.state.value
+                            ? new Date(`${field.state.value}T00:00:00`).toLocaleDateString(
+                                "en-US",
+                                {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                },
+                              )
+                            : "Pick a date"}
+                        </span>
+                        <HugeiconsIcon
+                          icon={Calendar03Icon}
+                          strokeWidth={2}
+                          className="size-4 text-muted-foreground"
+                        />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar mode="single" selected={selectedDate} onSelect={onDateSelect} />
+                      {field.state.value ? (
+                        <div className="border-t p-2">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="w-full"
+                            onClick={onClearDeadline}
+                          >
+                            Clear date
+                          </Button>
+                        </div>
+                      ) : null}
+                    </PopoverContent>
+                  </Popover>
                   <p className="text-muted-foreground text-xs">
                     Optional. If set, this role will automatically close after that date.
                   </p>
