@@ -12,6 +12,7 @@ import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { DashboardApplicationDetailSkeleton } from "@/components/route-skeletons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +32,7 @@ export const Route = createFileRoute("/_authenticated/dashboard/application/$app
       data: { applicationId: params.applicationId },
     });
   },
+  pendingComponent: DashboardApplicationDetailSkeleton,
   component: CandidateApplicationDetailPage,
 });
 

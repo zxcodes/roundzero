@@ -1,7 +1,7 @@
 import { ArrowLeft01Icon, Briefcase01Icon, UserGroupIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { DashboardJobDetailSkeleton } from "@/components/route-skeletons";
+import { DashboardJobApplicantsSkeleton } from "@/components/route-skeletons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,7 +23,7 @@ export const Route = createFileRoute("/_authenticated/dashboard/job-applicants/$
 
     return { job, applicants };
   },
-  pendingComponent: DashboardJobDetailSkeleton,
+  pendingComponent: DashboardJobApplicantsSkeleton,
   component: JobApplicantsPage,
 });
 
