@@ -10,7 +10,7 @@ Always consult both before making design decisions or implementing features.
 ## Project Structure & Code Quality
 
 - Feature-first folders: `app/features/<feature>/` with `routes/`, `components/`, `hooks/`, `queries/`, `server/functions.ts`, `types.ts`.
-- Shared utilities in `app/shared/`. File-based routes in `app/routes/`.
+- Shared utilities in `app/shared/`. File-based routes in `app/routes/`. DO NOT ADD THESE IF THEY ARE NOT REUSED.
 - No barrel exports (`index.ts` re-export files).
 - **No thin wrappers or trivial abstractions.** Don't create helper functions that just forward to another function with renamed args, add a null check, or wrap a single call. Inline the logic at the call site instead. Only extract a shared helper when it contains real logic and is used across multiple features.
 - Always use early returns in functions when possible. This applies to both UI components and server functions.
