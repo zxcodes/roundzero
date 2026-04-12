@@ -56,7 +56,7 @@ export const cleanTestData = async () => {
 export const makeTestResumeKey = (userId: string, fileName = "test-resume.pdf") =>
   `resumes/${userId}/00000000-0000-0000-0000-000000000000--${fileName.replace(/[^a-zA-Z0-9.-]+/g, "-").toLowerCase()}`;
 
-export interface TestUser {
+interface TestUser {
   id: string;
   email: string;
   name: string;
@@ -84,7 +84,7 @@ export const seedUser = async (overrides?: {
   return row as TestUser;
 };
 
-export interface TestCompany {
+interface TestCompany {
   id: string;
   ownerId: string;
   name: string;
@@ -120,7 +120,7 @@ export const seedCompany = async (overrides?: {
   return { company: row as TestCompany, owner };
 };
 
-export interface TestJob {
+interface TestJob {
   id: string;
   companyId: string;
   title: string;
@@ -151,7 +151,7 @@ export const seedJob = async (overrides?: {
   return { job: row as TestJob, companyId };
 };
 
-export interface TestCandidateProfile {
+interface TestCandidateProfile {
   id: string;
   userId: string;
   headline: string | null;

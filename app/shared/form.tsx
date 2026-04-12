@@ -12,8 +12,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
-export const { fieldContext, useFieldContext, formContext, useFormContext } =
-  createFormHookContexts();
+const { fieldContext, useFieldContext, formContext, useFormContext } = createFormHookContexts();
 
 function getFieldErrorMessage(errors: unknown[]) {
   const firstError = errors[0];
