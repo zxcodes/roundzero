@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { DashboardSettingsSkeleton } from "@/components/route-skeletons";
 import { CandidateSettings } from "@/features/candidates/components/candidate-settings";
 import { getMyCandidateProfile } from "@/features/candidates/server/functions";
 import { CompanySettings } from "@/features/companies/components/company-settings";
@@ -13,6 +14,7 @@ export const Route = createFileRoute("/_authenticated/dashboard/settings")({
     const profile = await getMyCandidateProfile();
     return { type: "candidate" as const, company: null, profile };
   },
+  pendingComponent: DashboardSettingsSkeleton,
   component: SettingsPage,
 });
 

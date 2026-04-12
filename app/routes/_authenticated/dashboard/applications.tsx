@@ -6,6 +6,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { DashboardApplicationsSkeleton } from "@/components/route-skeletons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +27,7 @@ export const Route = createFileRoute("/_authenticated/dashboard/applications")({
     }
   },
   loader: () => getMyApplications(),
+  pendingComponent: DashboardApplicationsSkeleton,
   component: MyApplicationsPage,
 });
 

@@ -15,6 +15,7 @@ import { createFileRoute, Link, redirect, useRouter } from "@tanstack/react-rout
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
+import { DashboardApplicantReviewSkeleton } from "@/components/route-skeletons";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -59,6 +60,7 @@ export const Route = createFileRoute("/_authenticated/dashboard/applicants/$appl
       data: { applicationId: params.applicationId },
     });
   },
+  pendingComponent: DashboardApplicantReviewSkeleton,
   component: ApplicantReviewPage,
 });
 

@@ -1,6 +1,7 @@
 import { Alert02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { DashboardIndexSkeleton } from "@/components/route-skeletons";
 import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +16,7 @@ export const Route = createFileRoute("/_authenticated/dashboard/")({
     const metrics = await getDashboardMetrics();
     return { metrics };
   },
+  pendingComponent: DashboardIndexSkeleton,
   component: DashboardIndexPage,
 });
 
