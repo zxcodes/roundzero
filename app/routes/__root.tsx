@@ -66,9 +66,6 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     ],
   }),
   beforeLoad: async () => {
-    // Uncomment to test loading skeletons in development:
-    await new Promise((r) => setTimeout(r, 2000));
-
     try {
       const user = await getCurrentUser();
       return {
