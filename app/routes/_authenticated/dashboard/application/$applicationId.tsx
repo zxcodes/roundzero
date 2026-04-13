@@ -274,7 +274,7 @@ function CandidateApplicationDetailPage() {
                 {headline ? (
                   <Card size="sm">
                     <CardContent className="py-0">
-                      <p className="text-[11px] font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                      <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
                         Headline
                       </p>
                       <p className="mt-1 text-sm text-foreground">{headline}</p>
@@ -284,7 +284,7 @@ function CandidateApplicationDetailPage() {
                 {application.resumeKey ? (
                   <Card size="sm">
                     <CardContent className="py-0">
-                      <p className="text-[11px] font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                      <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
                         Resume
                       </p>
                       <p className="mt-1 text-sm text-foreground">Attached at apply time</p>
@@ -297,7 +297,7 @@ function CandidateApplicationDetailPage() {
             {bio ? (
               <Card size="sm">
                 <CardContent className="py-0">
-                  <p className="text-[11px] font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                  <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
                     Bio
                   </p>
                   <p className="mt-1 text-sm leading-6 text-foreground">{bio}</p>
@@ -308,7 +308,7 @@ function CandidateApplicationDetailPage() {
             {skills.length > 0 ? (
               <Card size="sm">
                 <CardContent className="py-0">
-                  <p className="text-[11px] font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                  <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
                     Skills
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1.5">
@@ -325,7 +325,7 @@ function CandidateApplicationDetailPage() {
             {links.length > 0 ? (
               <Card size="sm">
                 <CardContent className="py-0">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground">
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
                     Links
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
