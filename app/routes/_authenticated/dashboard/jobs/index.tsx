@@ -5,6 +5,7 @@ import {
   Location01Icon,
   MoneyBag02Icon,
   Rocket01Icon,
+  Search01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
@@ -18,6 +19,7 @@ import {
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { z } from "zod";
+import { PaginationNav } from "@/components/pagination-nav";
 import { DashboardJobsListSkeleton } from "@/components/route-skeletons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,6 +32,14 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -42,35 +52,76 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   getMyArchivedJobs,
   getMyJobs,
-  getOpenJobs,
+  getOpenJobsPaginated,
   publishJob,
 } from "@/features/jobs/server/functions";
 import {
   type EmploymentType,
   type ExperienceLevel,
   employmentTypeLabels,
+  employmentTypeSchema,
   experienceLevelLabels,
+  experienceLevelSchema,
+  type SalaryCurrency,
+  salaryCurrencyLabels,
+  salaryCurrencySchema,
   type WorkplaceType,
   workplaceTypeLabels,
+  workplaceTypeSchema,
 } from "@/shared/enums";
+import { formatSalary, SALARY_BRACKETS } from "@/shared/format";
 
-const tabDefaults = { tab: "active" } as const;
+const searchDefaults = {
+  tab: "active",
+  search: "",
+  type: "all",
+  level: "all",
+  workplace: "all",
+  salaryMin: 0,
+  salaryCurrency: "all",
+  page: 1,
+} as const;
 
 const dashboardJobsSearchSchema = z.object({
-  tab: z.enum(["active", "archived"]).default(tabDefaults.tab).catch(tabDefaults.tab),
+  tab: z.enum(["active", "archived"]).default(searchDefaults.tab).catch(searchDefaults.tab),
+  search: z.string().default(searchDefaults.search).catch(searchDefaults.search),
+  type: z.string().default(searchDefaults.type).catch(searchDefaults.type),
+  level: z.string().default(searchDefaults.level).catch(searchDefaults.level),
+  workplace: z.string().default(searchDefaults.workplace).catch(searchDefaults.workplace),
+  salaryMin: z
+    .number()
+    .int()
+    .min(0)
+    .default(searchDefaults.salaryMin)
+    .catch(searchDefaults.salaryMin),
+  salaryCurrency: z
+    .string()
+    .default(searchDefaults.salaryCurrency)
+    .catch(searchDefaults.salaryCurrency),
+  page: z.number().int().min(1).default(searchDefaults.page).catch(searchDefaults.page),
 });
 
 export const Route = createFileRoute("/_authenticated/dashboard/jobs/")({
   validateSearch: dashboardJobsSearchSchema,
-  search: { middlewares: [stripSearchParams(tabDefaults)] },
-  loaderDeps: ({ search: { tab } }) => ({ tab }),
+  search: { middlewares: [stripSearchParams(searchDefaults)] },
+  loaderDeps: ({ search }) => search,
   loader: async ({ context, deps }) => {
     if (context.isCompany) {
       const jobs = deps.tab === "archived" ? await getMyArchivedJobs() : await getMyJobs();
-      return { jobs, isCompany: true as const };
+      return { jobs, isCompany: true as const, paginatedJobs: null };
     }
-    const jobs = await getOpenJobs();
-    return { jobs, isCompany: false as const };
+    const paginatedJobs = await getOpenJobsPaginated({
+      data: {
+        search: deps.search,
+        type: deps.type,
+        level: deps.level,
+        workplace: deps.workplace,
+        salaryMin: deps.salaryMin,
+        salaryCurrency: deps.salaryCurrency,
+        page: deps.page,
+      },
+    });
+    return { jobs: null, isCompany: false as const, paginatedJobs };
   },
   pendingComponent: DashboardJobsListSkeleton,
   component: JobsListPage,
@@ -97,25 +148,14 @@ const formatDate = (date: Date | string) => {
   });
 };
 
-const formatSalaryCompact = (min: number | null, max: number | null, currency: string) => {
-  if (!min && !max) return null;
-  const fmt = (n: number) => {
-    if (n >= 1000) return `${Math.round(n / 1000)}k`;
-    return String(n);
-  };
-  if (min && max) return `${currency} ${fmt(min)}-${fmt(max)}`;
-  if (min) return `${currency} ${fmt(min)}+`;
-  return `Up to ${currency} ${fmt(max!)}`;
-};
-
 function JobsListPage() {
-  const { jobs, isCompany } = Route.useLoaderData();
+  const data = Route.useLoaderData();
 
-  if (isCompany) {
-    return <CompanyJobsList jobs={jobs} />;
+  if (data.isCompany) {
+    return <CompanyJobsList jobs={data.jobs!} />;
   }
 
-  return <CandidateJobsList jobs={jobs} />;
+  return <CandidateJobsList data={data.paginatedJobs!} />;
 }
 
 function CompanyJobsList({ jobs }: { jobs: Awaited<ReturnType<typeof getMyJobs>> }) {
@@ -377,7 +417,53 @@ function ArchivedJobsTable({
   );
 }
 
-function CandidateJobsList({ jobs }: { jobs: Awaited<ReturnType<typeof getOpenJobs>> }) {
+function CandidateJobsList({ data }: { data: Awaited<ReturnType<typeof getOpenJobsPaginated>> }) {
+  const {
+    search,
+    type: typeFilter,
+    level: levelFilter,
+    workplace: workplaceFilter,
+    salaryMin,
+    salaryCurrency,
+    page,
+  } = Route.useSearch();
+  const navigate = useNavigate({ from: "/dashboard/jobs/" });
+
+  const hasFilters =
+    search ||
+    typeFilter !== "all" ||
+    levelFilter !== "all" ||
+    workplaceFilter !== "all" ||
+    salaryCurrency !== "all" ||
+    salaryMin > 0;
+  const brackets =
+    SALARY_BRACKETS[(salaryCurrency === "all" ? "USD" : salaryCurrency) as SalaryCurrency] ??
+    SALARY_BRACKETS.USD;
+
+  const onSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    navigate({ search: (prev) => ({ ...prev, search: e.target.value, page: 1 }) });
+  };
+
+  const onTypeChange = (value: string) => {
+    navigate({ search: (prev) => ({ ...prev, type: value, page: 1 }) });
+  };
+
+  const onLevelChange = (value: string) => {
+    navigate({ search: (prev) => ({ ...prev, level: value, page: 1 }) });
+  };
+
+  const onWorkplaceChange = (value: string) => {
+    navigate({ search: (prev) => ({ ...prev, workplace: value, page: 1 }) });
+  };
+
+  const onCurrencyChange = (value: string) => {
+    navigate({ search: (prev) => ({ ...prev, salaryCurrency: value, salaryMin: 0, page: 1 }) });
+  };
+
+  const onSalaryChange = (value: string) => {
+    navigate({ search: (prev) => ({ ...prev, salaryMin: Number(value), page: 1 }) });
+  };
+
   return (
     <div className="animate-fade-in space-y-6">
       <div>
@@ -385,22 +471,111 @@ function CandidateJobsList({ jobs }: { jobs: Awaited<ReturnType<typeof getOpenJo
         <p className="mt-1 text-sm text-muted-foreground">Find open positions and apply.</p>
       </div>
 
-      {jobs.length === 0 ? (
+      {/* Filters */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <HugeiconsIcon
+            icon={Search01Icon}
+            strokeWidth={2}
+            className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+          />
+          <Input
+            placeholder="Search by title, company, or location..."
+            value={search}
+            onChange={onSearchInputChange}
+            className="pl-10"
+          />
+        </div>
+        <Select value={typeFilter} onValueChange={onTypeChange}>
+          <SelectTrigger className="w-full sm:w-36">
+            <SelectValue placeholder="Job type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All types</SelectItem>
+            {employmentTypeSchema.options.map((value) => (
+              <SelectItem key={value} value={value}>
+                {employmentTypeLabels[value]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={levelFilter} onValueChange={onLevelChange}>
+          <SelectTrigger className="w-full sm:w-36">
+            <SelectValue placeholder="Experience" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All levels</SelectItem>
+            {experienceLevelSchema.options.map((value) => (
+              <SelectItem key={value} value={value}>
+                {experienceLevelLabels[value]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={workplaceFilter} onValueChange={onWorkplaceChange}>
+          <SelectTrigger className="w-full sm:w-36">
+            <SelectValue placeholder="Workplace" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All workplaces</SelectItem>
+            {workplaceTypeSchema.options.map((value) => (
+              <SelectItem key={value} value={value}>
+                {workplaceTypeLabels[value]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={salaryCurrency} onValueChange={onCurrencyChange}>
+          <SelectTrigger className="w-full sm:w-36">
+            <SelectValue placeholder="Currency" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All currencies</SelectItem>
+            {salaryCurrencySchema.options.map((value) => (
+              <SelectItem key={value} value={value}>
+                {salaryCurrencyLabels[value]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={String(salaryMin)} onValueChange={onSalaryChange}>
+          <SelectTrigger className="w-full sm:w-36">
+            <SelectValue placeholder="Salary" />
+          </SelectTrigger>
+          <SelectContent>
+            {brackets.map((bracket) => (
+              <SelectItem key={bracket.value} value={bracket.value}>
+                {bracket.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Results count */}
+      <p className="text-xs font-medium text-muted-foreground">
+        {data.total} {data.total === 1 ? "position" : "positions"}
+        {hasFilters ? " matching your filters" : ""}
+      </p>
+
+      {data.items.length === 0 ? (
         <Empty className="border">
           <EmptyHeader>
             <EmptyMedia variant="icon">
               <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} />
             </EmptyMedia>
-            <EmptyTitle>No open jobs</EmptyTitle>
+            <EmptyTitle>{hasFilters ? "No jobs found" : "No open jobs"}</EmptyTitle>
             <EmptyDescription>
-              There are no open positions right now. Check back later.
+              {hasFilters
+                ? "Try adjusting your search or filters."
+                : "There are no open positions right now. Check back later."}
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {jobs.map((job, i) => {
-            const salary = formatSalaryCompact(job.salaryMin, job.salaryMax, job.salaryCurrency);
+          {data.items.map((job, i) => {
+            const salary = formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency);
             return (
               <Link
                 key={job.id}
@@ -473,6 +648,8 @@ function CandidateJobsList({ jobs }: { jobs: Awaited<ReturnType<typeof getOpenJo
           })}
         </div>
       )}
+
+      <PaginationNav currentPage={page} totalPages={data.totalPages} />
     </div>
   );
 }

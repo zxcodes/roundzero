@@ -38,7 +38,7 @@ const templates: DomainTemplate[] = [
       "Healthcare Integrations Engineer",
       "Platform Engineer",
     ],
-    compensation: { min: 145000, max: 220000, currency: "USD" },
+    compensation: { min: 1200000, max: 3500000, currency: "INR" },
     experienceLevels: ["mid", "senior", "staff"],
   },
   {
@@ -53,7 +53,7 @@ const templates: DomainTemplate[] = [
       "Site Reliability Engineer",
       "Developer Experience Engineer",
     ],
-    compensation: { min: 155000, max: 240000, currency: "USD" },
+    compensation: { min: 120000, max: 190000, currency: "CAD" },
     experienceLevels: ["senior", "staff", "principal"],
   },
   {
@@ -71,20 +71,77 @@ const templates: DomainTemplate[] = [
     compensation: { min: 140000, max: 210000, currency: "USD" },
     experienceLevels: ["mid", "senior", "lead"],
   },
+  {
+    domain: "edtech",
+    mission:
+      "Make quality education accessible at scale through adaptive learning platforms and seamless content delivery.",
+    techStack: ["TypeScript", "React", "Python", "PostgreSQL", "AWS"],
+    priorities: ["learner engagement", "content delivery speed", "accessibility", "data-driven personalization"],
+    roleTitles: [
+      "Fullstack Engineer",
+      "Platform Engineer",
+      "ML Engineer",
+      "Frontend Engineer",
+    ],
+    compensation: { min: 800000, max: 2500000, currency: "INR" },
+    experienceLevels: ["junior", "mid", "senior"],
+  },
+  {
+    domain: "e-commerce",
+    mission:
+      "Build high-performance marketplace infrastructure that drives conversion and delivers a seamless shopping experience.",
+    techStack: ["TypeScript", "Next.js", "PostgreSQL", "Elasticsearch", "Stripe"],
+    priorities: ["checkout reliability", "search relevance", "page performance", "inventory accuracy"],
+    roleTitles: [
+      "Senior Frontend Engineer",
+      "Search Engineer",
+      "Payments Engineer",
+      "Backend Engineer",
+    ],
+    compensation: { min: 55000, max: 95000, currency: "GBP" },
+    experienceLevels: ["mid", "senior", "lead"],
+  },
+  {
+    domain: "cybersecurity",
+    mission:
+      "Protect enterprise infrastructure through proactive threat detection, zero-trust architecture, and rapid incident response.",
+    techStack: ["Go", "Python", "Kubernetes", "PostgreSQL", "Terraform"],
+    priorities: ["threat detection", "incident response time", "compliance", "zero-trust adoption"],
+    roleTitles: [
+      "Security Engineer",
+      "Detection Engineer",
+      "Infrastructure Security Engineer",
+      "AppSec Engineer",
+    ],
+    compensation: { min: 70000, max: 120000, currency: "EUR" },
+    experienceLevels: ["senior", "staff", "lead"],
+  },
+  {
+    domain: "climate-tech",
+    mission:
+      "Accelerate the energy transition through real-time grid analytics, carbon accounting, and renewable optimization software.",
+    techStack: ["Python", "TypeScript", "TimescaleDB", "Kafka", "GCP"],
+    priorities: ["data accuracy", "real-time processing", "regulatory compliance", "scalability"],
+    roleTitles: [
+      "Data Engineer",
+      "Backend Engineer",
+      "Analytics Engineer",
+      "Platform Engineer",
+    ],
+    compensation: { min: 110000, max: 175000, currency: "CAD" },
+    experienceLevels: ["mid", "senior", "staff"],
+  },
 ];
 
-const offices = [
-  "San Francisco, CA",
-  "New York, NY",
-  "Austin, TX",
-  "Seattle, WA",
-  "Chicago, IL",
-  "Boston, MA",
-  "Denver, CO",
-  "Los Angeles, CA",
-  "Portland, OR",
-  "Miami, FL",
-] as const;
+const officesByCurrency: Record<string, readonly string[]> = {
+  USD: ["San Francisco, CA", "New York, NY", "Austin, TX", "Seattle, WA", "Chicago, IL", "Boston, MA", "Denver, CO", "Los Angeles, CA"],
+  INR: ["Bangalore, India", "Mumbai, India", "Hyderabad, India", "Pune, India", "Delhi NCR, India", "Chennai, India"],
+  CAD: ["Toronto, Canada", "Vancouver, Canada", "Montreal, Canada", "Ottawa, Canada", "Calgary, Canada"],
+  GBP: ["London, UK", "Manchester, UK", "Edinburgh, UK", "Bristol, UK"],
+  EUR: ["Berlin, Germany", "Amsterdam, Netherlands", "Dublin, Ireland", "Paris, France"],
+  AUD: ["Sydney, Australia", "Melbourne, Australia", "Brisbane, Australia"],
+};
+const defaultOffices = ["San Francisco, CA", "New York, NY", "London, UK"] as const;
 
 const workplaceTypes = ["remote", "hybrid", "onsite"] as const;
 const employmentTypes = ["full_time", "contract"] as const;
@@ -186,6 +243,7 @@ async function seedJobs() {
       const status: "draft" | "open" | "closed" =
         counter % 6 === 0 ? "draft" : counter % 9 === 0 ? "closed" : "open";
 
+      const offices = officesByCurrency[template.compensation.currency] ?? defaultOffices;
       const location = pick(offices, randomInt(`${seed}-office`, 0, 100));
       const workplace = pick(workplaceTypes, randomInt(`${seed}-workplace`, 0, 100));
       const employment = pick(employmentTypes, randomInt(`${seed}-employment`, 0, 100));

@@ -114,6 +114,9 @@ WHERE j.status = 'open'
   AND (sqlc.arg('search')::text = '' OR j.title ILIKE '%' || sqlc.arg('search') || '%' OR c.name ILIKE '%' || sqlc.arg('search') || '%' OR j.location ILIKE '%' || sqlc.arg('search') || '%')
   AND (sqlc.arg('employment_type')::text = 'all' OR j.employment_type = sqlc.arg('employment_type'))
   AND (sqlc.arg('experience_level')::text = 'all' OR j.experience_level = sqlc.arg('experience_level'))
+  AND (sqlc.arg('workplace_type')::text = 'all' OR j.workplace_type = sqlc.arg('workplace_type'))
+  AND (sqlc.arg('salary_currency')::text = 'all' OR j.salary_currency = sqlc.arg('salary_currency'))
+  AND (sqlc.arg('salary_min')::int = 0 OR j.salary_max IS NULL OR j.salary_max >= sqlc.arg('salary_min')::int)
 ORDER BY j.created_at DESC
 LIMIT sqlc.arg('limit')::int OFFSET sqlc.arg('offset')::int;
 
@@ -126,4 +129,7 @@ WHERE j.status = 'open'
   AND (j.expires_at IS NULL OR j.expires_at > now())
   AND (sqlc.arg('search')::text = '' OR j.title ILIKE '%' || sqlc.arg('search') || '%' OR c.name ILIKE '%' || sqlc.arg('search') || '%' OR j.location ILIKE '%' || sqlc.arg('search') || '%')
   AND (sqlc.arg('employment_type')::text = 'all' OR j.employment_type = sqlc.arg('employment_type'))
-  AND (sqlc.arg('experience_level')::text = 'all' OR j.experience_level = sqlc.arg('experience_level'));
+  AND (sqlc.arg('experience_level')::text = 'all' OR j.experience_level = sqlc.arg('experience_level'))
+  AND (sqlc.arg('workplace_type')::text = 'all' OR j.workplace_type = sqlc.arg('workplace_type'))
+  AND (sqlc.arg('salary_currency')::text = 'all' OR j.salary_currency = sqlc.arg('salary_currency'))
+  AND (sqlc.arg('salary_min')::int = 0 OR j.salary_max IS NULL OR j.salary_max >= sqlc.arg('salary_min')::int);

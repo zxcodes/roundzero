@@ -22,6 +22,7 @@ import { getMyCandidateProfile } from "@/features/candidates/server/functions";
 import { getPublicJobById } from "@/features/jobs/server/functions";
 import type { EmploymentType, ExperienceLevel, WorkplaceType } from "@/shared/enums";
 import { employmentTypeLabels, experienceLevelLabels, workplaceTypeLabels } from "@/shared/enums";
+import { formatSalaryFull } from "@/shared/format";
 
 export const Route = createFileRoute("/jobs/$jobId")({
   loader: async ({ params, context }) => {
@@ -54,7 +55,7 @@ function JobDetailPage() {
   const { job, alreadyApplied, candidateProfile } = Route.useLoaderData();
   const { isCandidate, isCompany } = useRouteContext({ from: "__root__" });
 
-  const salary = formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency);
+  const salary = formatSalaryFull(job.salaryMin, job.salaryMax, job.salaryCurrency);
   const requirements: string[] = Array.isArray(job.requirements) ? job.requirements : [];
   const postedDate = new Date(job.createdAt).toLocaleDateString("en-US", {
     month: "short",
@@ -400,15 +401,3 @@ function DetailRow({
     </div>
   );
 }
-
-const formatSalary = (min: number | null, max: number | null, currency: string): string | null => {
-  if (!min && !max) return null;
-  const fmt = (n: number) => {
-    if (n >= 1000) return `${Math.round(n / 1000)}k`;
-    return String(n);
-  };
-  const sym = currency === "USD" ? "$" : currency === "EUR" ? "\u20AC" : `${currency} `;
-  if (min && max) return `${sym}${fmt(min)}\u2013${sym}${fmt(max)}`;
-  if (min) return `From ${sym}${fmt(min)}`;
-  return `Up to ${sym}${fmt(max!)}`;
-};

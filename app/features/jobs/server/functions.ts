@@ -231,6 +231,9 @@ const paginatedJobsSchema = z.object({
   search: z.string(),
   type: z.string(),
   level: z.string(),
+  workplace: z.string(),
+  salaryMin: z.number().int().min(0),
+  salaryCurrency: z.string(),
   page: z.number().int().min(1),
 });
 
@@ -241,19 +244,18 @@ export const getOpenJobsPaginated = createServerFn({ method: "GET" })
     await db.unsafe(closeExpiredJobsQuery);
     const offset = (data.page - 1) * JOBS_PER_PAGE;
 
+    const filterArgs = {
+      search: data.search,
+      employmentType: data.type,
+      experienceLevel: data.level,
+      workplaceType: data.workplace,
+      salaryMin: data.salaryMin,
+      salaryCurrency: data.salaryCurrency,
+    };
+
     const [items, countRow] = await Promise.all([
-      getOpenJobsPaginatedQuery(db, {
-        search: data.search,
-        employmentType: data.type,
-        experienceLevel: data.level,
-        limit: JOBS_PER_PAGE,
-        offset,
-      }),
-      countOpenJobsFiltered(db, {
-        search: data.search,
-        employmentType: data.type,
-        experienceLevel: data.level,
-      }),
+      getOpenJobsPaginatedQuery(db, { ...filterArgs, limit: JOBS_PER_PAGE, offset }),
+      countOpenJobsFiltered(db, filterArgs),
     ]);
 
     const total = countRow?.total ?? 0;
