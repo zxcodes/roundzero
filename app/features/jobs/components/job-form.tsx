@@ -74,13 +74,22 @@ const currencyOptions = salaryCurrencySchema.options.map((value) => ({
   label: salaryCurrencyLabels[value],
 }));
 
+const LOCALE_BY_CURRENCY: Record<SalaryCurrency, string> = {
+  USD: "en-US",
+  EUR: "de-DE",
+  GBP: "en-GB",
+  CAD: "en-CA",
+  AUD: "en-AU",
+  INR: "en-IN",
+};
+
 const SALARY_PLACEHOLDERS: Record<SalaryCurrency, { min: string; max: string }> = {
-  USD: { min: "80000", max: "150000" },
-  EUR: { min: "60000", max: "120000" },
-  GBP: { min: "50000", max: "100000" },
-  CAD: { min: "80000", max: "160000" },
-  AUD: { min: "90000", max: "170000" },
-  INR: { min: "800000", max: "2500000" },
+  USD: { min: "80,000", max: "150,000" },
+  EUR: { min: "60,000", max: "120,000" },
+  GBP: { min: "50,000", max: "100,000" },
+  CAD: { min: "80,000", max: "160,000" },
+  AUD: { min: "90,000", max: "170,000" },
+  INR: { min: "8,00,000", max: "25,00,000" },
 };
 
 export function JobForm({
@@ -415,20 +424,29 @@ export function JobForm({
           {(currency) => {
             const placeholders =
               SALARY_PLACEHOLDERS[(currency || "USD") as SalaryCurrency] ?? SALARY_PLACEHOLDERS.USD;
+            const locale = LOCALE_BY_CURRENCY[(currency || "USD") as SalaryCurrency] ?? "en-US";
             return (
               <div className="grid gap-4 sm:grid-cols-3">
                 <form.AppField
                   name="salaryMin"
                   validators={{ onBlur: positiveIntBlur("Minimum salary") }}
                   children={(field) => (
-                    <field.TextField label="Min salary" placeholder={placeholders.min} />
+                    <field.FormattedNumberField
+                      label="Min salary"
+                      placeholder={placeholders.min}
+                      locale={locale}
+                    />
                   )}
                 />
                 <form.AppField
                   name="salaryMax"
                   validators={{ onBlur: positiveIntBlur("Maximum salary") }}
                   children={(field) => (
-                    <field.TextField label="Max salary" placeholder={placeholders.max} />
+                    <field.FormattedNumberField
+                      label="Max salary"
+                      placeholder={placeholders.max}
+                      locale={locale}
+                    />
                   )}
                 />
                 <form.AppField
