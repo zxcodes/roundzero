@@ -1,11 +1,8 @@
 import {
   ArrowLeft01Icon,
-  Clock01Icon,
+  Calendar01Icon,
   File02Icon,
   Link04Icon,
-  NoteIcon,
-  Rocket01Icon,
-  UserIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
@@ -15,7 +12,7 @@ import { toast } from "sonner";
 import { DashboardApplicationDetailSkeleton } from "@/components/route-skeletons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   getApplicationResumeDownloadUrl,
   getMyApplicationDetail,
@@ -44,49 +41,46 @@ const stageCopy = {
   applied: {
     badge: "Applied",
     tone: "bg-sky-500/10 text-sky-700 dark:text-sky-300",
-    title: "Submission received",
-    description: "Your application is in the company’s review queue.",
-    nextStep: "Keep your profile sharp. The next signal is typically a move to interview review.",
+    dot: "bg-sky-500",
+    summary: "Your application is in the review queue.",
+    nextStep: "Keep your profile sharp — the next signal is typically a move to interview review.",
   },
   interviewing: {
     badge: "Interviewing",
     tone: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
-    title: "Moving through review",
-    description: "The company has advanced this role into the interview stage.",
+    dot: "bg-amber-500",
+    summary: "The company has advanced this role into the interview stage.",
     nextStep:
       "Watch this application closely. This is the strongest signal that a live next step is coming.",
   },
   evaluated: {
     badge: "Evaluated",
     tone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-    title: "Reviewed by the hiring team",
-    description: "The company has finished an evaluation pass on this application.",
+    dot: "bg-emerald-500",
+    summary: "The company has finished an evaluation pass on this application.",
     nextStep: "Expect either a final decision or a follow-up step from the company.",
   },
   rejected: {
     badge: "Closed",
     tone: "bg-rose-500/10 text-rose-700 dark:text-rose-300",
-    title: "No longer active",
-    description: "This application is no longer moving forward.",
+    dot: "bg-rose-500",
+    summary: "This application is no longer moving forward.",
     nextStep: "Use what you learned here and keep applying to roles that match your profile.",
   },
 } as const;
 
 const formatDate = (date: Date | string) => {
   return new Date(date).toLocaleDateString("en-US", {
-    month: "short",
+    month: "long",
     day: "numeric",
     year: "numeric",
   });
 };
 
-const formatDateTime = (date: Date | string) => {
-  return new Date(date).toLocaleString("en-US", {
+const formatDateShort = (date: Date | string) => {
+  return new Date(date).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
   });
 };
 
@@ -135,11 +129,6 @@ const getLinks = (value: unknown) => {
     .filter((entry): entry is { label: string; value: string } => entry.value !== null);
 };
 
-const getStatusMeta = (status: string) => {
-  const stage = toApplicationStage(status);
-  return stageCopy[stage];
-};
-
 const getJobStateLabel = (jobStatus: Application["jobStatus"]) => {
   if (jobStatus === "closed") {
     return "Role closed";
@@ -150,26 +139,6 @@ const getJobStateLabel = (jobStatus: Application["jobStatus"]) => {
   }
 
   return "Role open";
-};
-
-const getNextStepLabel = (application: Application) => {
-  if (application.status === "rejected") {
-    return "Browse more roles";
-  }
-
-  if (application.status === "interviewing") {
-    return "Review role details";
-  }
-
-  if (application.status === "evaluated") {
-    return "Stay ready for a decision";
-  }
-
-  if (application.jobStatus === "closed") {
-    return "Track final outcome";
-  }
-
-  return "Keep profile ready";
 };
 
 function CandidateApplicationDetailPage() {
@@ -187,12 +156,13 @@ function CandidateApplicationDetailPage() {
   });
 
   const metadata = toRecord(application.metadata);
-  const statusMeta = getStatusMeta(application.status);
   const currentStage = toApplicationStage(application.status);
+  const meta = stageCopy[currentStage];
   const skills = getStringArray(metadata.skills);
   const links = getLinks(metadata.links);
   const headline = getStringValue(metadata.headline);
   const bio = getStringValue(metadata.bio);
+  const jobStateLabel = getJobStateLabel(application.jobStatus);
 
   const onResumeView = async () => {
     await resumeDownloadMutation.mutateAsync({
@@ -200,264 +170,184 @@ function CandidateApplicationDetailPage() {
     });
   };
 
+  const hasSnapshotContent =
+    headline || application.resumeKey || bio || skills.length > 0 || links.length > 0;
+
   return (
-    <div className="animate-fade-in grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
-      <div className="space-y-5">
-        <Card size="sm" className="border-border/70 bg-card">
-          <CardContent className="space-y-4 py-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <Button variant="ghost" size="sm" asChild className="-ml-2">
-                <Link to="/dashboard/applications">
-                  <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
-                  Back to applications
-                </Link>
-              </Button>
-              <Badge variant="outline" className="font-mono text-[11px]">
-                Application detail
-              </Badge>
-            </div>
+    <div className="animate-fade-in space-y-6">
+      <Button variant="ghost" size="sm" asChild className="-ml-2">
+        <Link to="/dashboard/applications">
+          <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
+          Applications
+        </Link>
+      </Button>
 
-            <div className="rounded-2xl border border-border/70 p-4">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="space-y-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">
-                      {application.companyName}
-                    </p>
-                    <Badge variant="outline" className="font-mono text-[11px]">
-                      {getJobStateLabel(application.jobStatus)}
-                    </Badge>
-                  </div>
-
-                  <div className="space-y-1">
-                    <h2 className="text-2xl font-bold tracking-tight">{application.jobTitle}</h2>
-                    <p className="text-sm text-muted-foreground">{statusMeta.title}</p>
-                  </div>
-                </div>
-
-                <Badge className={statusMeta.tone}>{statusMeta.badge}</Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="grid gap-3 md:grid-cols-3">
-          <TimelineTile
-            icon={Clock01Icon}
-            label="Applied"
-            value={formatDate(application.createdAt)}
-            hint={`Submitted ${formatDateTime(application.createdAt)}`}
-          />
-          <TimelineTile
-            icon={Rocket01Icon}
-            label="Last activity"
-            value={formatDate(application.updatedAt)}
-            hint={`Updated ${formatDateTime(application.updatedAt)}`}
-          />
-          <TimelineTile
-            icon={NoteIcon}
-            label="Next step"
-            value={getNextStepLabel(application)}
-            hint={statusMeta.nextStep}
-          />
-        </div>
-
-        <Card>
-          <CardHeader>
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
             <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">
-              Application progress
+              {application.companyName}
             </p>
-            <CardTitle className="text-lg">{statusMeta.title}</CardTitle>
-            <CardDescription>{statusMeta.description}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {APPLICATION_STAGES.map((stage) => {
-                const stageMeta = getStatusMeta(stage);
-                const isCurrent = stage === currentStage;
-                const isCompleted =
-                  APPLICATION_STAGES.indexOf(stage) < APPLICATION_STAGES.indexOf(currentStage) &&
-                  currentStage !== "rejected";
+            <Badge variant="outline" className="font-mono text-[11px]">
+              {jobStateLabel}
+            </Badge>
+          </div>
+          <h2 className="text-2xl font-bold tracking-tight">{application.jobTitle}</h2>
+        </div>
+        <Badge className={meta.tone}>{meta.badge}</Badge>
+      </div>
 
-                return (
-                  <Badge
-                    key={stage}
-                    variant={isCurrent || isCompleted ? "secondary" : "outline"}
-                    className={
-                      isCurrent
-                        ? stageMeta.tone
-                        : isCompleted
-                          ? "bg-primary/10 text-primary"
-                          : "text-muted-foreground"
-                    }
+      <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5">
+          <HugeiconsIcon icon={Calendar01Icon} strokeWidth={2} className="size-3.5" />
+          Applied {formatDate(application.createdAt)}
+        </span>
+        {application.createdAt !== application.updatedAt ? (
+          <span>Updated {formatDateShort(application.updatedAt)}</span>
+        ) : null}
+      </div>
+
+      <Card size="sm">
+        <CardContent className="space-y-2 py-0">
+          <div className="flex flex-wrap gap-2">
+            {APPLICATION_STAGES.map((stage) => {
+              const isCurrent = stage === currentStage;
+              const isCompleted =
+                APPLICATION_STAGES.indexOf(stage) < APPLICATION_STAGES.indexOf(currentStage) &&
+                currentStage !== "rejected";
+              const stageMeta = stageCopy[stage];
+
+              return (
+                <div key={stage} className="flex items-center gap-2">
+                  <div
+                    className={`size-2 rounded-full ${isCurrent ? stageMeta.dot : isCompleted ? "bg-primary" : "bg-muted-foreground/30"}`}
+                  />
+                  <span
+                    className={`text-xs font-medium ${isCurrent ? "text-foreground" : isCompleted ? "text-muted-foreground" : "text-muted-foreground/60"}`}
                   >
                     {stageMeta.badge}
-                  </Badge>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-sm text-muted-foreground">{meta.summary}</p>
+          <p className="text-xs text-muted-foreground/80">{meta.nextStep}</p>
+        </CardContent>
+      </Card>
 
-        <Card>
-          <CardHeader>
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">
-              Submitted snapshot
-            </p>
-            <CardTitle className="text-lg">What the company received</CardTitle>
-            <CardDescription>
-              This is the profile snapshot that was attached when you applied.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <div className="grid gap-4 md:grid-cols-2">
-              <InfoTile
-                icon={UserIcon}
-                label="Headline"
-                value={headline ?? "No headline was attached to this submission."}
-              />
-              <InfoTile
-                icon={File02Icon}
-                label="Resume"
-                value={
-                  application.resumeKey
-                    ? "Resume attached to this application"
-                    : "No resume snapshot"
-                }
-              />
-            </div>
+      {application.resumeKey ? (
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onResumeView}
+            disabled={resumeDownloadMutation.isPending}
+          >
+            <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-4" />
+            View submitted resume
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/dashboard/jobs/$jobId" params={{ jobId: application.jobId }}>
+              View job listing
+            </Link>
+          </Button>
+        </div>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/dashboard/jobs/$jobId" params={{ jobId: application.jobId }}>
+              View job listing
+            </Link>
+          </Button>
+        </div>
+      )}
+
+      {hasSnapshotContent ? (
+        <div className="space-y-4">
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
+            Submitted profile
+          </p>
+          <div className="space-y-3">
+            {headline || application.resumeKey ? (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {headline ? (
+                  <Card size="sm">
+                    <CardContent className="py-0">
+                      <p className="text-[11px] font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                        Headline
+                      </p>
+                      <p className="mt-1 text-sm text-foreground">{headline}</p>
+                    </CardContent>
+                  </Card>
+                ) : null}
+                {application.resumeKey ? (
+                  <Card size="sm">
+                    <CardContent className="py-0">
+                      <p className="text-[11px] font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                        Resume
+                      </p>
+                      <p className="mt-1 text-sm text-foreground">Attached at apply time</p>
+                    </CardContent>
+                  </Card>
+                ) : null}
+              </div>
+            ) : null}
 
             {bio ? (
-              <div className="rounded-2xl border border-border/70 p-4">
-                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                  Bio
-                </p>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">{bio}</p>
-              </div>
+              <Card size="sm">
+                <CardContent className="py-0">
+                  <p className="text-[11px] font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                    Bio
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-foreground">{bio}</p>
+                </CardContent>
+              </Card>
             ) : null}
 
             {skills.length > 0 ? (
-              <div className="rounded-2xl border border-border/70 p-4">
-                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                  Skills
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {skills.map((skill) => (
-                    <Badge key={skill} variant="secondary">
-                      {skill}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
+              <Card size="sm">
+                <CardContent className="py-0">
+                  <p className="text-[11px] font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                    Skills
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {skills.map((skill) => (
+                      <Badge key={skill} variant="secondary" className="text-xs">
+                        {skill}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             ) : null}
 
             {links.length > 0 ? (
-              <div className="rounded-2xl border border-border/70 p-4">
-                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                  Links
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {links.map((link) => (
-                    <a
-                      key={link.label}
-                      href={link.value}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-                    >
-                      <HugeiconsIcon icon={Link04Icon} strokeWidth={2} className="size-3" />
-                      {link.label}
-                    </a>
-                  ))}
-                </div>
-              </div>
+              <Card size="sm">
+                <CardContent className="py-0">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground">
+                    Links
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {links.map((link) => (
+                      <a
+                        key={link.label}
+                        href={link.value}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+                      >
+                        <HugeiconsIcon icon={Link04Icon} strokeWidth={2} className="size-3" />
+                        {link.label}
+                      </a>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             ) : null}
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="space-y-5 xl:sticky xl:top-6 xl:self-start">
-        <Card>
-          <CardHeader>
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">
-              Context
-            </p>
-            <CardTitle className="text-lg">Application record</CardTitle>
-            <CardDescription>
-              Track timing and open the exact resume that was attached at apply time.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <InfoTile
-              icon={Clock01Icon}
-              label="Applied"
-              value={formatDateTime(application.createdAt)}
-            />
-            <InfoTile
-              icon={Rocket01Icon}
-              label="Last updated"
-              value={formatDateTime(application.updatedAt)}
-            />
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={onResumeView}
-              disabled={!application.resumeKey || resumeDownloadMutation.isPending}
-            >
-              <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-4" />
-              View submitted resume
-            </Button>
-            <Button variant="outline" className="w-full" asChild>
-              <Link to="/dashboard/jobs/$jobId" params={{ jobId: application.jobId }}>
-                View job
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-}
-
-function TimelineTile({
-  icon,
-  label,
-  value,
-  hint,
-}: {
-  icon: typeof Clock01Icon;
-  label: string;
-  value: string;
-  hint: string;
-}) {
-  return (
-    <Card size="sm">
-      <CardContent className="space-y-3 py-0">
-        <div className="flex size-10 items-center justify-center rounded-xl bg-muted">
-          <HugeiconsIcon icon={icon} strokeWidth={2} className="size-4 text-muted-foreground" />
+          </div>
         </div>
-        <div className="space-y-1">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-            {label}
-          </p>
-          <p className="text-base font-semibold text-foreground">{value}</p>
-          <p className="text-xs leading-5 text-muted-foreground">{hint}</p>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function InfoTile({ icon, label, value }: { icon: typeof UserIcon; label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-border/70 p-4">
-      <div className="mb-3 flex size-10 items-center justify-center rounded-xl bg-muted">
-        <HugeiconsIcon icon={icon} strokeWidth={2} className="size-4 text-muted-foreground" />
-      </div>
-      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-        {label}
-      </p>
-      <p className="mt-2 text-sm leading-6 text-foreground">{value}</p>
+      ) : null}
     </div>
   );
 }

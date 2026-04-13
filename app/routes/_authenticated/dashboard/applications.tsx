@@ -209,7 +209,7 @@ function ApplicationListCard({
   return (
     <Card size="sm" className={className}>
       <CardContent className="py-0">
-        <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border/70 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="min-w-0 flex-1 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary">
