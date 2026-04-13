@@ -192,6 +192,44 @@ function SelectField({
   );
 }
 
+function FormattedNumberField({
+  label,
+  placeholder,
+  description,
+  locale = "en-US",
+}: {
+  label: string;
+  placeholder?: string;
+  description?: string;
+  locale?: string;
+}) {
+  const field = useFieldContext<string>();
+  const errorMessage = getFieldErrorMessage(field.state.meta.errors);
+  const rawValue = field.state.value;
+  const displayValue = rawValue ? new Intl.NumberFormat(locale).format(Number(rawValue)) : "";
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const digits = e.target.value.replace(/\D/g, "");
+    field.handleChange(digits);
+  };
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={field.name}>{label}</Label>
+      <Input
+        id={field.name}
+        inputMode="numeric"
+        className={cn(errorMessage ? "border-destructive focus-visible:ring-destructive/20" : "")}
+        aria-invalid={Boolean(errorMessage)}
+        placeholder={placeholder}
+        value={displayValue}
+        onBlur={field.handleBlur}
+        onChange={onChange}
+      />
+      {errorMessage ? <p className="text-xs text-destructive">{errorMessage}</p> : null}
+      {description ? <p className="text-muted-foreground text-xs">{description}</p> : null}
+    </div>
+  );
+}
+
 function SubmitButton({ label, submittingLabel }: { label: string; submittingLabel?: string }) {
   const form = useFormContext();
   return (
@@ -213,6 +251,7 @@ export const { useAppForm } = createFormHook({
     NumberField,
     TextareaField,
     SelectField,
+    FormattedNumberField,
   },
   formComponents: {
     SubmitButton,
