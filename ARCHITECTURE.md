@@ -11,7 +11,7 @@ Today, RoundZero is primarily:
 - role-based company/candidate workflows
 - public company and jobs browsing
 - one-click applications with profile snapshots
-- durable in-app workflow notifications
+- durable in-app notifications with Resend email delivery
 
 The AI interview, evaluation, report, and ranking layers are planned but not yet implemented in this codebase.
 
@@ -30,7 +30,7 @@ The AI interview, evaluation, report, and ranking layers are planned but not yet
 | Auth | Google OAuth with server-side cookie session |
 | UI | shadcn/ui, Tailwind CSS v4, Hugeicons |
 | Validation | Zod |
-| Notifications | In-app inbox now, Resend planned for email delivery |
+| Notifications | In-app inbox + Resend email delivery |
 | File storage | Cloudflare R2 for resumes and company logos |
 | AI layer (planned) | Cloudflare Agents SDK + Vercel AI SDK |
 | Linting | Biome |
@@ -80,14 +80,14 @@ app/routes/
 ├── __root.tsx
 ├── _authenticated.tsx
 ├── _authenticated/dashboard.tsx
-├── _authenticated/dashboard/application/$applicationId.tsx
 ├── _authenticated/dashboard/applicants/$applicationId.tsx
+├── _authenticated/dashboard/application/$applicationId.tsx
+├── _authenticated/dashboard/applications.tsx
 ├── _authenticated/dashboard/index.tsx
 ├── _authenticated/dashboard/job-applicants/$jobId.tsx
 ├── _authenticated/dashboard/jobs/new.tsx
 ├── _authenticated/dashboard/jobs/index.tsx
 ├── _authenticated/dashboard/jobs/$jobId.tsx
-├── _authenticated/dashboard/applications.tsx
 ├── _authenticated/dashboard/settings.tsx
 ├── _authenticated/onboarding.tsx
 ├── _authenticated/onboarding/candidate.tsx
@@ -135,12 +135,12 @@ app/features/
 ### What exists
 
 - `auth`: login/session/provider/query layer
-- `companies`: company CRUD/settings/public data
+- `companies`: company CRUD/settings/logo upload/public data
 - `candidates`: candidate profile/settings and resume contract
-- `jobs`: job CRUD, filtering, pagination, status/archive behavior
-- `applications`: one-click apply, applicant lists, application status
+- `jobs`: job CRUD, filtering, pagination, status/archive/expiry behavior, interview questions
+- `applications`: one-click apply, applicant lists, application status, notification workflows
 - `dashboard`: role-specific metrics
-- `notifications`: per-user in-app notification inbox and workflow event records
+- `notifications`: per-user in-app notification inbox, Resend email delivery, workflow event records
 
 ### What does not exist yet
 
@@ -222,6 +222,7 @@ Schema dump:
   - status
   - salary info
   - team/headcount
+  - `interview_questions` (JSONB, for future AI agent context)
   - `expires_at`
   - `archived_at`
 
@@ -231,7 +232,7 @@ Schema dump:
 - stores:
   - `resume_key` snapshot
   - `metadata` snapshot for non-resume candidate profile data
-  - status
+  - status (`applied`, `interviewing`, `evaluated`, `rejected`)
 
 This is important architecturally:
 
@@ -376,7 +377,7 @@ Why `resume_key` instead of `resume_url`:
 
 ## 11. Notifications Architecture
 
-Notifications are implemented as a durable in-app inbox. Resend-backed email delivery now exists as a secondary best-effort layer, while the architecture continues to treat in-app notification records as the primary system of record.
+Notifications are implemented as a durable in-app inbox with Resend-backed email delivery as a secondary best-effort channel. In-app notification records are the primary system of record.
 
 ### Current model
 
@@ -395,6 +396,7 @@ Notifications are implemented as a durable in-app inbox. Resend-backed email del
 - supported event types today:
   - `new_applicant`
   - `application_status_changed`
+- application statuses include `applied`, `interviewing`, `evaluated`, `rejected` (interviewing and evaluated are AI-ready placeholders)
 - the app shell/dashboard header renders the inbox surface
 
 ### Current module layout
@@ -402,13 +404,16 @@ Notifications are implemented as a durable in-app inbox. Resend-backed email del
 ```
 app/features/notifications/
 ├── components/
+│   ├── notification-email-template.tsx
 │   └── notification-inbox.tsx
 ├── config.ts
 ├── queries/
 │   ├── queries.sql
 │   └── queries_sql.ts
-└── server/
-    └── functions.ts
+├── server/
+│   └── functions.ts
+└── services/
+    └── email.ts
 ```
 
 Provider:
@@ -458,20 +463,20 @@ Current module additions:
 
 ## 12. Job Lifecycle Architecture
 
-Jobs already support:
+Jobs support:
 
 - draft/open/closed states
 - archive behavior
-- `expires_at`
-- expiry controls in create/edit UI
-- stale role indicators
-- auto-close behavior for expired roles
+- `expires_at` with date picker on create/edit
+- stale role indicator (90+ days with no expiry)
+- auto-close on read for expired jobs
 - hidden-by-default expired/closed jobs on public surfaces
+- `interview_questions` JSONB field for future AI agent context
 
-Remaining cleanup is mostly small:
+Remaining cleanup:
 
 - expired-job-specific public error UI
-- final cleanup of dead public CTA branches
+- dead code branches in `PublicJobCTA`
 
 ---
 
@@ -497,6 +502,7 @@ Current coverage focus:
 - companies queries
 - jobs queries/business logic
 - applications queries/business logic
+- application notification workflows
 - dashboard metrics
 - notifications queries
 
@@ -541,13 +547,14 @@ The important constraint:
 
 ## 15. Near-Term Priorities Before AI
 
-Architecturally, the next critical non-AI work is:
+See `PLAN.md` Phase 3.5 for the full pre-AI build list and product decisions. Key items:
 
-1. Resend-backed secondary email delivery for selected notification events
-2. candidate application empty states, guidance, and tests
-3. stronger company workflow summary cues
-4. public expired-job cleanup
-5. AI runtime foundation when the platform hardening list is genuinely closed
+1. candidate application empty states, guidance, and tests
+2. company pipeline summary cues (applicant counts per status per job)
+3. notification status copy (replace enum labels with product wording)
+4. public expired-job error UI + dead code cleanup
+5. legacy test fixture cleanup (resume_key values)
+6. product decisions: status lifecycle, candidate messaging, medium-fit format, company pre/post-AI view, pre-evaluation output validation
 
 ---
 
