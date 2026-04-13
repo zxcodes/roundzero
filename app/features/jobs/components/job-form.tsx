@@ -14,6 +14,9 @@ import {
   employmentTypeLabels,
   experienceLevelLabels,
   type JobStatus,
+  type SalaryCurrency,
+  salaryCurrencyLabels,
+  salaryCurrencySchema,
   type WorkplaceType,
   workplaceTypeLabels,
 } from "@/shared/enums";
@@ -66,13 +69,19 @@ const statusOptions = [
   { value: "open", label: "Open" },
   { value: "closed", label: "Closed" },
 ];
-const currencyOptions = [
-  { value: "USD", label: "USD" },
-  { value: "EUR", label: "EUR" },
-  { value: "GBP", label: "GBP" },
-  { value: "CAD", label: "CAD" },
-  { value: "AUD", label: "AUD" },
-];
+const currencyOptions = salaryCurrencySchema.options.map((value) => ({
+  value,
+  label: salaryCurrencyLabels[value],
+}));
+
+const SALARY_PLACEHOLDERS: Record<SalaryCurrency, { min: string; max: string }> = {
+  USD: { min: "80000", max: "150000" },
+  EUR: { min: "60000", max: "120000" },
+  GBP: { min: "50000", max: "100000" },
+  CAD: { min: "80000", max: "160000" },
+  AUD: { min: "90000", max: "170000" },
+  INR: { min: "800000", max: "2500000" },
+};
 
 export function JobForm({
   defaultValues,
@@ -402,22 +411,36 @@ export function JobForm({
 
       <div className="space-y-4">
         <p className="text-[11px] font-bold uppercase tracking-widest text-primary">Compensation</p>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <form.AppField
-            name="salaryMin"
-            validators={{ onBlur: positiveIntBlur("Minimum salary") }}
-            children={(field) => <field.TextField label="Min salary" placeholder="120000" />}
-          />
-          <form.AppField
-            name="salaryMax"
-            validators={{ onBlur: positiveIntBlur("Maximum salary") }}
-            children={(field) => <field.TextField label="Max salary" placeholder="180000" />}
-          />
-          <form.AppField
-            name="salaryCurrency"
-            children={(field) => <field.SelectField label="Currency" options={currencyOptions} />}
-          />
-        </div>
+        <form.Subscribe selector={(state) => state.values.salaryCurrency}>
+          {(currency) => {
+            const placeholders =
+              SALARY_PLACEHOLDERS[(currency || "USD") as SalaryCurrency] ?? SALARY_PLACEHOLDERS.USD;
+            return (
+              <div className="grid gap-4 sm:grid-cols-3">
+                <form.AppField
+                  name="salaryMin"
+                  validators={{ onBlur: positiveIntBlur("Minimum salary") }}
+                  children={(field) => (
+                    <field.TextField label="Min salary" placeholder={placeholders.min} />
+                  )}
+                />
+                <form.AppField
+                  name="salaryMax"
+                  validators={{ onBlur: positiveIntBlur("Maximum salary") }}
+                  children={(field) => (
+                    <field.TextField label="Max salary" placeholder={placeholders.max} />
+                  )}
+                />
+                <form.AppField
+                  name="salaryCurrency"
+                  children={(field) => (
+                    <field.SelectField label="Currency" options={currencyOptions} />
+                  )}
+                />
+              </div>
+            );
+          }}
+        </form.Subscribe>
       </div>
 
       <Separator />

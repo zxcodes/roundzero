@@ -51,6 +51,7 @@ import {
   type WorkplaceType,
   workplaceTypeLabels,
 } from "@/shared/enums";
+import { formatSalaryFull } from "@/shared/format";
 
 export const Route = createFileRoute("/_authenticated/dashboard/jobs/$jobId")({
   loader: async ({ params, context }) => {
@@ -91,25 +92,12 @@ const formatDate = (date: Date | string) => {
   });
 };
 
-const formatSalary = (min: number | null, max: number | null, currency: string) => {
-  if (!min && !max) return null;
-  const fmt = (n: number) =>
-    new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency,
-      maximumFractionDigits: 0,
-    }).format(n);
-  if (min && max) return `${fmt(min)} - ${fmt(max)}`;
-  if (min) return `From ${fmt(min)}`;
-  return `Up to ${fmt(max!)}`;
-};
-
 function JobDetailPage() {
   const { job, alreadyApplied, applicants, candidateProfile } = Route.useLoaderData();
   const { isCompany } = Route.useRouteContext();
 
   const requirements: string[] = Array.isArray(job.requirements) ? job.requirements : [];
-  const salary = formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency);
+  const salary = formatSalaryFull(job.salaryMin, job.salaryMax, job.salaryCurrency);
 
   return (
     <div className="animate-fade-in space-y-6">

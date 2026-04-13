@@ -63,6 +63,9 @@ export const industrySchema = z.enum([
 ]);
 export type Industry = z.infer<typeof industrySchema>;
 
+export const salaryCurrencySchema = z.enum(["USD", "EUR", "GBP", "CAD", "AUD", "INR"]);
+export type SalaryCurrency = z.infer<typeof salaryCurrencySchema>;
+
 // Display label helpers
 
 export const companySizeLabels: Record<CompanySize, string> = {
@@ -107,4 +110,13 @@ export const experienceLevelLabels: Record<ExperienceLevel, string> = {
   staff: "Staff",
   lead: "Lead",
   principal: "Principal",
+};
+
+export const salaryCurrencyLabels: Record<SalaryCurrency, string> = {
+  USD: "USD ($)",
+  EUR: "EUR (€)",
+  GBP: "GBP (£)",
+  CAD: "CAD (C$)",
+  AUD: "AUD (A$)",
+  INR: "INR (₹)",
 };

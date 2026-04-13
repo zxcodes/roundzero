@@ -28,21 +28,49 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getOpenJobsPaginated } from "@/features/jobs/server/functions";
-import type { EmploymentType, ExperienceLevel, WorkplaceType } from "@/shared/enums";
+import type {
+  EmploymentType,
+  ExperienceLevel,
+  SalaryCurrency,
+  WorkplaceType,
+} from "@/shared/enums";
 import {
   employmentTypeLabels,
   employmentTypeSchema,
   experienceLevelLabels,
   experienceLevelSchema,
+  salaryCurrencyLabels,
+  salaryCurrencySchema,
   workplaceTypeLabels,
+  workplaceTypeSchema,
 } from "@/shared/enums";
+import { formatSalary, SALARY_BRACKETS } from "@/shared/format";
 
-const searchDefaults = { search: "", type: "all", level: "all", page: 1 } as const;
+const searchDefaults = {
+  search: "",
+  type: "all",
+  level: "all",
+  workplace: "all",
+  salaryMin: 0,
+  salaryCurrency: "all",
+  page: 1,
+} as const;
 
 const jobsSearchSchema = z.object({
   search: z.string().default(searchDefaults.search).catch(searchDefaults.search),
   type: z.string().default(searchDefaults.type).catch(searchDefaults.type),
   level: z.string().default(searchDefaults.level).catch(searchDefaults.level),
+  workplace: z.string().default(searchDefaults.workplace).catch(searchDefaults.workplace),
+  salaryMin: z
+    .number()
+    .int()
+    .min(0)
+    .default(searchDefaults.salaryMin)
+    .catch(searchDefaults.salaryMin),
+  salaryCurrency: z
+    .string()
+    .default(searchDefaults.salaryCurrency)
+    .catch(searchDefaults.salaryCurrency),
   page: z.number().int().min(1).default(searchDefaults.page).catch(searchDefaults.page),
 });
 
@@ -59,6 +87,9 @@ export const Route = createFileRoute("/jobs/")({
         search: deps.search,
         type: deps.type,
         level: deps.level,
+        workplace: deps.workplace,
+        salaryMin: deps.salaryMin,
+        salaryCurrency: deps.salaryCurrency,
         page: deps.page,
       },
     });
@@ -70,16 +101,30 @@ export const Route = createFileRoute("/jobs/")({
 
 function JobsPage() {
   const { items, total, totalPages } = Route.useLoaderData();
-  const { search, type: typeFilter, level: levelFilter, page } = Route.useSearch();
+  const {
+    search,
+    type: typeFilter,
+    level: levelFilter,
+    workplace: workplaceFilter,
+    salaryMin,
+    salaryCurrency,
+    page,
+  } = Route.useSearch();
   const navigate = useNavigate({ from: "/jobs/" });
 
-  const hasFilters = search || typeFilter !== "all" || levelFilter !== "all";
+  const hasFilters =
+    search ||
+    typeFilter !== "all" ||
+    levelFilter !== "all" ||
+    workplaceFilter !== "all" ||
+    salaryCurrency !== "all" ||
+    salaryMin > 0;
+  const brackets =
+    SALARY_BRACKETS[(salaryCurrency === "all" ? "USD" : salaryCurrency) as SalaryCurrency] ??
+    SALARY_BRACKETS.USD;
 
-  const onSearchChange = (value: string) => {
-    navigate({ search: (prev) => ({ ...prev, search: value, page: 1 }) });
-  };
   const onSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onSearchChange(e.target.value);
+    navigate({ search: (prev) => ({ ...prev, search: e.target.value, page: 1 }) });
   };
 
   const onTypeChange = (value: string) => {
@@ -88,6 +133,18 @@ function JobsPage() {
 
   const onLevelChange = (value: string) => {
     navigate({ search: (prev) => ({ ...prev, level: value, page: 1 }) });
+  };
+
+  const onWorkplaceChange = (value: string) => {
+    navigate({ search: (prev) => ({ ...prev, workplace: value, page: 1 }) });
+  };
+
+  const onCurrencyChange = (value: string) => {
+    navigate({ search: (prev) => ({ ...prev, salaryCurrency: value, salaryMin: 0, page: 1 }) });
+  };
+
+  const onSalaryChange = (value: string) => {
+    navigate({ search: (prev) => ({ ...prev, salaryMin: Number(value), page: 1 }) });
   };
 
   return (
@@ -129,7 +186,7 @@ function JobsPage() {
               />
             </div>
             <Select value={typeFilter} onValueChange={onTypeChange}>
-              <SelectTrigger className="w-full sm:w-40">
+              <SelectTrigger className="w-full sm:w-36">
                 <SelectValue placeholder="Job type" />
               </SelectTrigger>
               <SelectContent>
@@ -142,7 +199,7 @@ function JobsPage() {
               </SelectContent>
             </Select>
             <Select value={levelFilter} onValueChange={onLevelChange}>
-              <SelectTrigger className="w-full sm:w-40">
+              <SelectTrigger className="w-full sm:w-36">
                 <SelectValue placeholder="Experience" />
               </SelectTrigger>
               <SelectContent>
@@ -150,6 +207,44 @@ function JobsPage() {
                 {experienceLevelSchema.options.map((value) => (
                   <SelectItem key={value} value={value}>
                     {experienceLevelLabels[value]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={workplaceFilter} onValueChange={onWorkplaceChange}>
+              <SelectTrigger className="w-full sm:w-36">
+                <SelectValue placeholder="Workplace" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All workplaces</SelectItem>
+                {workplaceTypeSchema.options.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {workplaceTypeLabels[value]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={salaryCurrency} onValueChange={onCurrencyChange}>
+              <SelectTrigger className="w-full sm:w-36">
+                <SelectValue placeholder="Currency" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All currencies</SelectItem>
+                {salaryCurrencySchema.options.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {salaryCurrencyLabels[value]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={String(salaryMin)} onValueChange={onSalaryChange}>
+              <SelectTrigger className="w-full sm:w-36">
+                <SelectValue placeholder="Salary" />
+              </SelectTrigger>
+              <SelectContent>
+                {brackets.map((bracket) => (
+                  <SelectItem key={bracket.value} value={bracket.value}>
+                    {bracket.label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -280,15 +375,3 @@ function JobCard({ job, className }: { job: JobFromLoader; className?: string })
     </Link>
   );
 }
-
-const formatSalary = (min: number | null, max: number | null, currency: string): string | null => {
-  if (!min && !max) return null;
-  const fmt = (n: number) => {
-    if (n >= 1000) return `${Math.round(n / 1000)}k`;
-    return String(n);
-  };
-  const sym = currency === "USD" ? "$" : currency === "EUR" ? "\u20AC" : `${currency} `;
-  if (min && max) return `${sym}${fmt(min)}\u2013${sym}${fmt(max)}`;
-  if (min) return `From ${sym}${fmt(min)}`;
-  return `Up to ${sym}${fmt(max!)}`;
-};

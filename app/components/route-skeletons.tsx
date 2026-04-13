@@ -47,8 +47,11 @@ export function JobsListSkeleton() {
         <section className="sticky top-14 z-40 border-b border-border/40 bg-background/80 backdrop-blur-xl backdrop-saturate-150">
           <div className="mx-auto flex max-w-6xl flex-col gap-3 px-6 py-3.5 sm:flex-row sm:items-center lg:px-8">
             <Skeleton className="h-9 flex-1" />
-            <Skeleton className="h-9 w-full sm:w-40" />
-            <Skeleton className="h-9 w-full sm:w-40" />
+            <Skeleton className="h-9 w-full sm:w-36" />
+            <Skeleton className="h-9 w-full sm:w-36" />
+            <Skeleton className="h-9 w-full sm:w-36" />
+            <Skeleton className="h-9 w-full sm:w-36" />
+            <Skeleton className="h-9 w-full sm:w-36" />
           </div>
         </section>
 

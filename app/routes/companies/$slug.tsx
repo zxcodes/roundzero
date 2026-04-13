@@ -40,6 +40,7 @@ import {
   industryLabels,
   workplaceTypeLabels,
 } from "@/shared/enums";
+import { formatSalary } from "@/shared/format";
 import { getPublicAssetUrl } from "@/shared/r2";
 
 export const Route = createFileRoute("/companies/$slug")({
@@ -343,15 +344,3 @@ function CompanyJobCard({ job }: { job: JobFromLoader }) {
     </Link>
   );
 }
-
-const formatSalary = (min: number | null, max: number | null, currency: string): string | null => {
-  if (!min && !max) return null;
-  const fmt = (n: number) => {
-    if (n >= 1000) return `${Math.round(n / 1000)}k`;
-    return String(n);
-  };
-  const sym = currency === "USD" ? "$" : currency === "EUR" ? "\u20AC" : `${currency} `;
-  if (min && max) return `${sym}${fmt(min)}\u2013${sym}${fmt(max)}`;
-  if (min) return `From ${sym}${fmt(min)}`;
-  return `Up to ${sym}${fmt(max!)}`;
-};
