@@ -14,7 +14,6 @@ import {
   getJobsByCompanyId,
   getOpenJobsByCompanyId as getOpenJobsByCompanyIdQuery,
   getOpenJobsPaginated as getOpenJobsPaginatedQuery,
-  getOpenJobs as getOpenJobsQuery,
   updateJob as updateJobQuery,
 } from "../queries/queries_sql";
 import { jobFieldsSchema, jobIdSchema, updateJobSchema } from "../schemas";
@@ -142,13 +141,6 @@ export const archiveJob = createServerFn({ method: "POST" })
     }
     return { job: archived };
   });
-
-export const getOpenJobs = createServerFn({ method: "GET" }).handler(async () => {
-  const db = getDb();
-  await db.unsafe(closeExpiredJobsQuery);
-  const jobs = await getOpenJobsQuery(db);
-  return jobs;
-});
 
 export const publishJob = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
