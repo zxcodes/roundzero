@@ -32,6 +32,45 @@ Always consult both before making design decisions or implementing features.
 
 - Postgres via Docker. Client uses `postgres` package (`app/db.ts`). `DATABASE_URL` in `.env`.
 
+## Server Functions + Route Loaders
+
+- **Server functions return `null` for not-found resources.** Never `throw new Error("...not found")`. Return `null` so loaders can distinguish "doesn't exist" (→ `notFound()`) from real errors (→ error boundary). Auth/authorization errors (e.g. "Only candidates can view", "Not authorized to view this applicant") still `throw new Error()`. Do not conflate auth violations with not-found — they have different UI outcomes (error boundary vs 404 page).
+- **Validate UUID params in `beforeLoad`.** Routes with UUID path params (`$jobId`, `$applicationId`, etc.) must validate them in `beforeLoad` using `validateUuidParams()` from `@/shared/validation`. This catches invalid formats (e.g. `xxxid`) before the server function's Zod `inputValidator` throws a generic error:
+  ```ts
+  beforeLoad: ({ params }) => {
+    validateUuidParams({ jobId: params.jobId });
+  },
+  ```
+  Merge with existing `beforeLoad` logic (auth checks, etc.) in a single function.
+- **Loaders check for `null` and throw `notFound()`.** This is the only place `notFound()` is thrown — right after the server function call:
+  ```ts
+  const job = await getJob({ data: { id: params.jobId } });
+  if (!job) throw notFound();
+  ```
+- **Never use `.catch(() => throw notFound())`.** This swallows all errors (network, auth, 500s) and shows a "not found" page. Always check the return value instead.
+- **No per-route `notFoundComponent`.** The global `NotFound` component in `@/components/not-found.tsx` handles all 404s uniformly. Don't create route-specific not-found components.
+- **Discriminated unions in loaders** when data varies by user type. Each branch returns only its own data — no `null` companion fields:
+  ```ts
+  // ✅ Good
+  loader: async ({ context }) => {
+    if (context.isCompany) {
+      const company = await getMyCompany();
+      if (!company) throw redirect({ to: "/onboarding/company" });
+      return { type: "company" as const, company };
+    }
+    const profile = await getMyCandidateProfile();
+    if (!profile) throw redirect({ to: "/onboarding/candidate" });
+    return { type: "candidate" as const, profile };
+  }
+  // ❌ Bad — null companion fields bloat the type and force ! assertions
+  return { type: "company", company, profile: null }
+  ```
+- **Type narrowing for nullable server functions.** When a loader guarantees non-null data after a `notFound()` check, define a `NonNullable<>` type alias for use in components:
+  ```ts
+  type JobDetail = NonNullable<Awaited<ReturnType<typeof getJob>>>;
+  ```
+- **Conditional fetching, not `Promise.all` hacks.** Never use `Promise.all([condition ? fetch() : Promise.resolve(null), ...])` with placeholder values. Branch the loader and fetch only what each branch needs.
+
 ## TanStack
 
 - **Check TanStack Intent skills first** — run `bunx @tanstack/intent@latest list`, read `node_modules/@tanstack/<package>/skills/<skill>/SKILL.md`.

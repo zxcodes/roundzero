@@ -7,7 +7,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
-import { createFileRoute, Link, redirect, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, redirect, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -44,17 +44,23 @@ import {
   type ApplicationStatus,
   applicationStatusSchema,
 } from "@/shared/enums";
+import { validateUuidParams } from "@/shared/validation";
 
 export const Route = createFileRoute("/_authenticated/dashboard/applicants/$applicationId")({
-  beforeLoad: ({ context }) => {
+  beforeLoad: ({ context, params }) => {
     if (!context.isCompany) {
       throw redirect({ to: "/dashboard" });
     }
+    validateUuidParams({ applicationId: params.applicationId });
   },
   loader: async ({ params }) => {
-    return await getCompanyApplicantReview({
+    const data = await getCompanyApplicantReview({
       data: { applicationId: params.applicationId },
     });
+    if (!data) {
+      throw notFound();
+    }
+    return data;
   },
   pendingComponent: DashboardApplicantReviewSkeleton,
   component: ApplicantReviewPage,

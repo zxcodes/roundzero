@@ -1,25 +1,31 @@
 import { ArrowLeft01Icon, Briefcase01Icon, UserGroupIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, redirect } from "@tanstack/react-router";
 import { DashboardJobApplicantsSkeleton } from "@/components/route-skeletons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CompanyJobApplicantsList } from "@/features/applications/components/company-job-applicants-list";
 import { getJobApplicants } from "@/features/applications/server/functions";
 import { getJob } from "@/features/jobs/server/functions";
+import { validateUuidParams } from "@/shared/validation";
+
+type JobDetail = NonNullable<Awaited<ReturnType<typeof getJob>>>;
 
 export const Route = createFileRoute("/_authenticated/dashboard/job-applicants/$jobId")({
-  beforeLoad: ({ context }) => {
+  beforeLoad: ({ context, params }) => {
     if (!context.isCompany) {
       throw redirect({ to: "/dashboard" });
     }
+    validateUuidParams({ jobId: params.jobId });
   },
   loader: async ({ params }) => {
-    const [job, applicants] = await Promise.all([
-      getJob({ data: { id: params.jobId } }),
-      getJobApplicants({ data: { jobId: params.jobId } }),
-    ]);
+    const jobResult = await getJob({ data: { id: params.jobId } });
+    if (!jobResult) {
+      throw notFound();
+    }
+    const job: JobDetail = jobResult;
 
+    const applicants = await getJobApplicants({ data: { jobId: params.jobId } });
     return { job, applicants };
   },
   pendingComponent: DashboardJobApplicantsSkeleton,

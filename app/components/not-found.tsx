@@ -1,7 +1,9 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useRouter } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 
 export function NotFound() {
+  const router = useRouter();
+
   return (
     <div className="animate-fade-in-up flex min-h-svh flex-col items-center justify-center gap-6 p-6 text-center">
       <div className="flex flex-col gap-1.5">
@@ -11,9 +13,14 @@ export function NotFound() {
           The page you're looking for doesn't exist or has been moved.
         </p>
       </div>
-      <Button size="sm" asChild>
-        <Link to="/">Go home</Link>
-      </Button>
+      <div className="flex gap-2">
+        <Button variant="outline" size="sm" onClick={() => router.history.back()}>
+          Go back
+        </Button>
+        <Button size="sm" asChild>
+          <Link to="/">Go home</Link>
+        </Button>
+      </div>
     </div>
   );
 }
