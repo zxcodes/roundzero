@@ -120,3 +120,5 @@ export const salaryCurrencyLabels: Record<SalaryCurrency, string> = {
   AUD: "AUD (A$)",
   INR: "INR (₹)",
 };
+
+export const MAX_COMPANY_DESCRIPTION_LENGTH = 5000;

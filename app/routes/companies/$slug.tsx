@@ -145,15 +145,15 @@ function CompanyProfilePage() {
                       </a>
                     </Button>
                   ) : null}
-                  {Object.entries(socialLinks).map(([label, url]) => (
-                    <Button key={label} variant="ghost" size="sm" asChild>
+                  {Object.entries(socialLinks).map(([key, url]) => (
+                    <Button key={key} variant="ghost" size="sm" asChild>
                       <a
                         href={url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-muted-foreground"
                       >
-                        {label}
+                        {socialLinkLabel(key)}
                       </a>
                     </Button>
                   ))}
@@ -277,6 +277,16 @@ function CompanyProfilePage() {
       <PublicFooter />
     </div>
   );
+}
+
+const SOCIAL_LINK_LABELS: Record<string, string> = {
+  linkedin: "LinkedIn",
+  twitter: "Twitter / X",
+  github: "GitHub",
+};
+
+function socialLinkLabel(key: string) {
+  return SOCIAL_LINK_LABELS[key] ?? key.charAt(0).toUpperCase() + key.slice(1);
 }
 
 function StatRow({ label, value }: { label: string; value: string }) {

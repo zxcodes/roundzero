@@ -5,7 +5,13 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createCompany } from "@/features/companies/server/functions";
-import { type CompanySize, companySizeLabels, type Industry, industryLabels } from "@/shared/enums";
+import {
+  type CompanySize,
+  companySizeLabels,
+  type Industry,
+  industryLabels,
+  MAX_COMPANY_DESCRIPTION_LENGTH,
+} from "@/shared/enums";
 import { useAppForm } from "@/shared/form";
 
 const onboardingSearchSchema = z.object({
@@ -130,7 +136,7 @@ function CompanyOnboardingPage() {
               <field.TextareaField
                 label="Short description"
                 placeholder="What does your company do? One or two sentences is great."
-                maxLength={500}
+                maxLength={MAX_COMPANY_DESCRIPTION_LENGTH}
                 rows={3}
               />
             )}

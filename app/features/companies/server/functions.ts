@@ -4,7 +4,7 @@ import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { getUserById } from "@/features/auth/queries/queries_sql";
 import { getDb } from "@/shared/db";
-import { companySizeSchema, industrySchema } from "@/shared/enums";
+import { companySizeSchema, industrySchema, MAX_COMPANY_DESCRIPTION_LENGTH } from "@/shared/enums";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
 import { createR2UploadUrl, r2ObjectExists } from "@/shared/r2";
 import { type SessionData, sessionConfig } from "@/shared/session";
@@ -58,14 +58,14 @@ const generateUniqueSlug = async (name: string): Promise<string> => {
 
 const createCompanySchema = z.object({
   name: requiredTrimmedString(100, "Company name is required"),
-  description: optionalTrimmedString(500),
+  description: optionalTrimmedString(MAX_COMPANY_DESCRIPTION_LENGTH),
   industry: industrySchema.optional(),
   companySize: companySizeSchema.optional(),
 });
 
 const updateCompanyProfileSchema = z.object({
   name: requiredTrimmedString(100, "Company name is required"),
-  description: nullableTrimmedString(2000),
+  description: nullableTrimmedString(MAX_COMPANY_DESCRIPTION_LENGTH),
   logoKey: z.string().min(1).nullable(),
   website: nullableTrimmedUrl(),
   industry: industrySchema.nullable(),
