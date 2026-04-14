@@ -558,47 +558,44 @@ export function DashboardJobDetailSkeleton() {
 
 /**
  * Skeleton for /dashboard/job-applicants/$jobId — applicants list page.
- * Matches: card header with back button + job title banner + applicant list.
+ * Matches: back nav + header (title + badges) + applicant list cards.
  */
 export function DashboardJobApplicantsSkeleton() {
   return (
     <div className="animate-fade-in space-y-6">
-      {/* Header card */}
-      <Card size="sm" className="border-border/70">
-        <CardContent className="space-y-4 py-0">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <Skeleton className="h-8 w-28 rounded-md" />
-              <Skeleton className="h-5 w-20 rounded-full" />
-            </div>
-          </div>
-          {/* Job title banner */}
-          <div className="rounded-2xl border border-border/70 p-4">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="space-y-2">
-                <Skeleton className="h-8 w-56" />
-                <Skeleton className="h-4 w-72" />
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Skeleton className="h-5 w-24 rounded-full" />
-                <Skeleton className="h-5 w-16 rounded-full" />
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Back nav + badges */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Skeleton className="h-8 w-28 rounded-md" />
+        <div className="flex gap-2">
+          <Skeleton className="h-5 w-24 rounded-full" />
+          <Skeleton className="h-5 w-16 rounded-full" />
+        </div>
+      </div>
 
-      {/* Applicant cards placeholder */}
+      {/* Title */}
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-56" />
+        <Skeleton className="h-4 w-72" />
+      </div>
+
+      {/* Applicant list — clickable cards */}
       <div className="space-y-3">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <Card key={i}>
-            <CardContent className="flex items-center gap-4">
-              <Skeleton className="size-10 rounded-full" />
-              <div className="min-w-0 flex-1 space-y-1.5">
-                <Skeleton className="h-4 w-40" />
-                <Skeleton className="h-3 w-28" />
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Card key={i} size="sm" className="ring-foreground/5">
+            <CardContent className="py-0">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <Skeleton className="size-9 rounded-full" />
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-5 w-16 rounded-full" />
+                    </div>
+                    <Skeleton className="mt-0.5 h-3 w-40" />
+                  </div>
+                </div>
+                <Skeleton className="size-4" />
               </div>
-              <Skeleton className="h-5 w-16 shrink-0 rounded-full" />
             </CardContent>
           </Card>
         ))}
@@ -796,86 +793,72 @@ export function DashboardApplicationDetailSkeleton() {
 
 /**
  * Skeleton for /dashboard/applicants/$applicationId — company applicant review.
- * Matches: 2-col layout with header card (avatar + badges) + snapshot + sidebar.
+ * Matches: back nav + header (avatar + name + badges) + status pipeline + actions + snapshot.
  */
 export function DashboardApplicantReviewSkeleton() {
   return (
-    <div className="animate-fade-in">
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="space-y-5">
-          {/* Header card */}
-          <Card size="sm" className="border-border/70">
-            <CardContent className="space-y-4 py-0">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Skeleton className="h-8 w-28 rounded-md" />
-                  <Skeleton className="h-5 w-24 rounded-full" />
-                </div>
-                <div className="flex gap-2">
-                  <Skeleton className="h-9 w-24 rounded-md" />
-                  <Skeleton className="h-9 w-20 rounded-md" />
-                </div>
-              </div>
-              <div className="rounded-2xl border border-border/70 p-4">
-                <div className="flex flex-wrap items-start gap-4">
-                  <Skeleton className="size-14 rounded-full" />
-                  <div className="min-w-0 flex-1 space-y-2.5">
-                    <div className="space-y-1">
-                      <Skeleton className="h-8 w-48" />
-                      <Skeleton className="h-4 w-56" />
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Skeleton className="h-5 w-20 rounded-full" />
-                      <Skeleton className="h-5 w-28 rounded-full" />
-                      <Skeleton className="h-5 w-36 rounded-full" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Snapshot card */}
-          <Card className="border-border/70">
-            <CardHeader>
-              <Skeleton className="h-3 w-20" />
-              <Skeleton className="h-5 w-52" />
-              <Skeleton className="h-3.5 w-80 max-w-full" />
-            </CardHeader>
-            <CardContent className="space-y-5">
-              <Skeleton className="h-20 w-full rounded-2xl" />
-              <Skeleton className="h-20 w-full rounded-2xl" />
-            </CardContent>
-          </Card>
+    <div className="animate-fade-in space-y-6">
+      {/* Back nav with prev/next */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Skeleton className="h-8 w-28 rounded-md" />
+        <div className="flex gap-2">
+          <Skeleton className="h-8 w-20 rounded-md" />
+          <Skeleton className="h-8 w-20 rounded-md" />
         </div>
+      </div>
 
-        {/* Right sidebar */}
-        <div className="space-y-5 xl:sticky xl:top-6 xl:self-start">
-          <Card className="border-border/70">
-            <CardHeader>
-              <Skeleton className="h-3 w-20" />
-              <Skeleton className="h-5 w-28" />
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Skeleton className="h-16 w-full rounded-2xl" />
-              <div className="space-y-2">
-                <Skeleton className="h-3 w-32" />
-                <Skeleton className="h-9 w-full" />
+      {/* Avatar + name + badges */}
+      <div className="flex items-start gap-4">
+        <Skeleton className="size-14 rounded-full" />
+        <div className="min-w-0 flex-1 space-y-2">
+          <Skeleton className="h-7 w-48" />
+          <Skeleton className="h-4 w-64" />
+          <div className="flex flex-wrap gap-2">
+            <Skeleton className="h-5 w-20 rounded-full" />
+            <Skeleton className="h-5 w-32 rounded-full" />
+          </div>
+        </div>
+      </div>
+
+      {/* Status pipeline */}
+      <Card size="sm">
+        <CardContent className="space-y-2 py-0">
+          <div className="flex gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <Skeleton className="size-2 rounded-full" />
+                <Skeleton className="h-3.5 w-16" />
               </div>
-              <Skeleton className="h-9 w-full rounded-md" />
+            ))}
+          </div>
+          <Skeleton className="h-4 w-72" />
+        </CardContent>
+      </Card>
+
+      {/* Actions */}
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="space-y-2">
+          <Skeleton className="h-3 w-32" />
+          <Skeleton className="h-9 w-48 rounded-md" />
+        </div>
+        <Skeleton className="h-9 w-28 rounded-md" />
+        <Skeleton className="h-9 w-28 rounded-md" />
+      </div>
+
+      {/* Snapshot */}
+      <div className="space-y-4">
+        <Skeleton className="h-3 w-28" />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Card size="sm">
+            <CardContent className="py-0">
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="mt-1.5 h-4 w-48" />
             </CardContent>
           </Card>
-
-          <Card className="border-border/70">
-            <CardHeader>
-              <Skeleton className="h-3 w-16" />
-              <Skeleton className="h-5 w-36" />
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <Skeleton key={i} className="h-16 w-full rounded-2xl" />
-              ))}
-              <Skeleton className="h-9 w-full rounded-md" />
+          <Card size="sm">
+            <CardContent className="py-0">
+              <Skeleton className="h-3 w-14" />
+              <Skeleton className="mt-1.5 h-4 w-28" />
             </CardContent>
           </Card>
         </div>

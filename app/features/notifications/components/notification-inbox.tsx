@@ -190,7 +190,7 @@ export function NotificationInbox({ feed }: { feed: NotificationFeed }) {
                 key={notification.id}
                 variant="ghost"
                 onClick={onClick}
-                className={`w-full justify-start rounded-xl text-left transition-all ${
+                className={`h-auto w-full justify-start whitespace-normal rounded-xl text-left transition-all ${
                   notification.readAt ? "bg-muted/20" : "bg-muted/35"
                 }`}
               >

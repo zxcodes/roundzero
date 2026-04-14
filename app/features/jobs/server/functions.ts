@@ -12,6 +12,7 @@ import {
   getArchivedJobsByCompanyId,
   getJobById,
   getJobsByCompanyId,
+  getJobsWithPipelineByCompanyId,
   getOpenJobsByCompanyId as getOpenJobsByCompanyIdQuery,
   getOpenJobsPaginated as getOpenJobsPaginatedQuery,
   updateJob as updateJobQuery,
@@ -61,6 +62,18 @@ export const getMyJobs = createServerFn({ method: "GET" })
     }
     const jobs = await getJobsByCompanyId(db, { companyId: company.id });
     return jobs;
+  });
+
+export const getMyJobsWithPipeline = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }) => {
+    const db = getDb();
+    await db.unsafe(closeExpiredJobsQuery);
+    const company = await getCompanyByOwnerId(db, { ownerId: context.userId });
+    if (!company) {
+      return [];
+    }
+    return getJobsWithPipelineByCompanyId(db, { companyId: company.id });
   });
 
 export const getMyArchivedJobs = createServerFn({ method: "GET" })

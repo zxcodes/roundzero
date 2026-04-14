@@ -14,6 +14,20 @@ WHERE company_id = $1
   AND archived_at IS NULL
 ORDER BY created_at DESC;
 
+-- name: getJobsWithPipelineByCompanyId :many
+SELECT j.*,
+       count(a.id)::int AS total_applicants,
+       count(a.id) FILTER (WHERE a.status = 'applied')::int AS applied_count,
+       count(a.id) FILTER (WHERE a.status = 'interviewing')::int AS interviewing_count,
+       count(a.id) FILTER (WHERE a.status = 'evaluated')::int AS evaluated_count,
+       count(a.id) FILTER (WHERE a.status = 'rejected')::int AS rejected_count
+FROM jobs j
+LEFT JOIN applications a ON a.job_id = j.id
+WHERE j.company_id = $1
+  AND j.archived_at IS NULL
+GROUP BY j.id
+ORDER BY j.created_at DESC;
+
 -- name: getJobById :one
 SELECT j.*,
        c.name AS company_name,

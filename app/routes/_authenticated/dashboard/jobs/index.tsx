@@ -1,5 +1,6 @@
 import {
   Add01Icon,
+  Alert01Icon,
   Archive01Icon,
   Briefcase01Icon,
   Location01Icon,
@@ -51,7 +52,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   getMyArchivedJobs,
-  getMyJobs,
+  getMyJobsWithPipeline,
   getOpenJobsPaginated,
   publishJob,
 } from "@/features/jobs/server/functions";
@@ -107,7 +108,8 @@ export const Route = createFileRoute("/_authenticated/dashboard/jobs/")({
   loaderDeps: ({ search }) => search,
   loader: async ({ context, deps }) => {
     if (context.isCompany) {
-      const jobs = deps.tab === "archived" ? await getMyArchivedJobs() : await getMyJobs();
+      const jobs =
+        deps.tab === "archived" ? await getMyArchivedJobs() : await getMyJobsWithPipeline();
       return { jobs, isCompany: true as const, paginatedJobs: null };
     }
     const paginatedJobs = await getOpenJobsPaginated({
@@ -158,7 +160,15 @@ function JobsListPage() {
   return <CandidateJobsList data={data.paginatedJobs!} />;
 }
 
-function CompanyJobsList({ jobs }: { jobs: Awaited<ReturnType<typeof getMyJobs>> }) {
+type PipelineJob = Awaited<ReturnType<typeof getMyJobsWithPipeline>>[number];
+
+function CompanyJobsList({
+  jobs,
+}: {
+  jobs:
+    | Awaited<ReturnType<typeof getMyJobsWithPipeline>>
+    | Awaited<ReturnType<typeof getMyArchivedJobs>>;
+}) {
   const router = useRouter();
   const { tab } = Route.useSearch();
   const navigate = useNavigate({ from: "/dashboard/jobs/" });
@@ -211,7 +221,7 @@ function CompanyJobsList({ jobs }: { jobs: Awaited<ReturnType<typeof getMyJobs>>
 
         <TabsContent value="active">
           <ActiveJobsTable
-            jobs={tab === "active" ? jobs : []}
+            jobs={tab === "active" ? (jobs as PipelineJob[]) : []}
             onPublish={onPublish}
             isPending={publishJobMutation.isPending}
           />
@@ -225,12 +235,29 @@ function CompanyJobsList({ jobs }: { jobs: Awaited<ReturnType<typeof getMyJobs>>
   );
 }
 
+const STALE_DAYS = 7;
+
+const isStaleJob = (job: PipelineJob) => {
+  if (job.status !== "open" || job.totalApplicants > 0) {
+    return false;
+  }
+  const age = Date.now() - new Date(job.createdAt).getTime();
+  return age > STALE_DAYS * 24 * 60 * 60 * 1000;
+};
+
+const pipelineSegments = [
+  { key: "appliedCount", label: "Applied", tone: "bg-sky-500" },
+  { key: "interviewingCount", label: "Interviewing", tone: "bg-amber-500" },
+  { key: "evaluatedCount", label: "Evaluated", tone: "bg-emerald-500" },
+  { key: "rejectedCount", label: "Closed", tone: "bg-rose-500" },
+] as const;
+
 function ActiveJobsTable({
   jobs,
   onPublish,
   isPending,
 }: {
-  jobs: Awaited<ReturnType<typeof getMyJobs>>;
+  jobs: PipelineJob[];
   onPublish: (jobId: string) => Promise<void>;
   isPending: boolean;
 }) {
@@ -264,42 +291,54 @@ function ActiveJobsTable({
         <TableHeader>
           <TableRow>
             <TableHead>Title</TableHead>
-            <TableHead>Location</TableHead>
-            <TableHead>Type</TableHead>
             <TableHead>Status</TableHead>
+            <TableHead>Pipeline</TableHead>
             <TableHead>Created</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {jobs.map((job) => {
+            const stale = isStaleJob(job);
+
             const onPublishClick = () => {
               onPublish(job.id);
             };
 
             return (
               <TableRow key={job.id}>
-                <TableCell className="font-medium">
-                  <Link
-                    to="/dashboard/jobs/$jobId"
-                    params={{ jobId: job.id }}
-                    className="hover:underline"
-                  >
-                    {job.title}
-                  </Link>
-                </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
-                  {job.location || "\u2014"}
-                </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
-                  {job.employmentType
-                    ? employmentTypeLabels[job.employmentType as EmploymentType]
-                    : "\u2014"}
+                <TableCell>
+                  <div className="space-y-0.5">
+                    <Link
+                      to="/dashboard/jobs/$jobId"
+                      params={{ jobId: job.id }}
+                      className="font-medium hover:underline"
+                    >
+                      {job.title}
+                    </Link>
+                    {job.location ? (
+                      <p className="text-xs text-muted-foreground">{job.location}</p>
+                    ) : null}
+                  </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant={statusVariant(job.status)} className="capitalize">
-                    {job.status}
-                  </Badge>
+                  <div className="flex items-center gap-1.5">
+                    <Badge variant={statusVariant(job.status)} className="capitalize">
+                      {job.status}
+                    </Badge>
+                    {stale ? (
+                      <span
+                        className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-600 dark:text-amber-400"
+                        title={`Open ${STALE_DAYS}+ days with no applicants`}
+                      >
+                        <HugeiconsIcon icon={Alert01Icon} strokeWidth={2.5} className="size-3" />
+                        Stale
+                      </span>
+                    ) : null}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <PipelineSummary job={job} />
                 </TableCell>
                 <TableCell className="font-mono text-xs text-muted-foreground">
                   {formatDate(job.createdAt)}
@@ -334,6 +373,30 @@ function ActiveJobsTable({
           })}
         </TableBody>
       </Table>
+    </div>
+  );
+}
+
+function PipelineSummary({ job }: { job: PipelineJob }) {
+  if (job.totalApplicants === 0) {
+    return <span className="text-xs text-muted-foreground">—</span>;
+  }
+
+  const activeSegments = pipelineSegments.filter((s) => job[s.key] > 0);
+
+  return (
+    <div className="flex items-center gap-2">
+      {activeSegments.map((segment, i) => (
+        <span
+          key={segment.key}
+          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"
+        >
+          {i > 0 ? <span className="text-border">·</span> : null}
+          <span className={`size-1.5 rounded-full ${segment.tone}`} />
+          <span className="tabular-nums">{job[segment.key]}</span>
+          {segment.label.toLowerCase()}
+        </span>
+      ))}
     </div>
   );
 }
