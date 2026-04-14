@@ -1,4 +1,5 @@
 import {
+  Alert02Icon,
   ArrowLeft01Icon,
   ArrowRight01Icon,
   Briefcase01Icon,
@@ -9,9 +10,10 @@ import {
   UserGroupIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { createFileRoute, Link, useRouteContext } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useRouteContext } from "@tanstack/react-router";
 import { PublicFooter, PublicHeader } from "@/components/public-layout";
 import { JobDetailSkeleton } from "@/components/route-skeletons";
+import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,7 +28,9 @@ import { formatSalaryFull } from "@/shared/format";
 
 export const Route = createFileRoute("/jobs/$jobId")({
   loader: async ({ params, context }) => {
-    const job = await getPublicJobById({ data: { id: params.jobId } });
+    const job = await getPublicJobById({ data: { id: params.jobId } }).catch(() => {
+      throw notFound();
+    });
 
     const [alreadyApplied, candidateProfile] =
       context.isCandidate && job.status === "open"
@@ -64,7 +68,7 @@ function JobDetailPage() {
   });
 
   const dashboardJobPath = `/dashboard/jobs/${job.id}`;
-  const canApply = isCandidate && job.status === "open";
+  const isClosed = job.status !== "open";
   const hasResume = Boolean(candidateProfile?.resumeKey);
 
   return (
@@ -72,6 +76,27 @@ function JobDetailPage() {
       <PublicHeader />
 
       <main>
+        {isClosed ? (
+          <div className="mx-auto max-w-6xl px-6 pt-4 lg:px-8">
+            <Alert>
+              <HugeiconsIcon icon={Alert02Icon} strokeWidth={2} className="size-4" />
+              <AlertDescription>
+                This position is no longer accepting applications. You can still view the details
+                below.
+              </AlertDescription>
+              <AlertAction>
+                <Button variant="outline" size="sm" asChild>
+                  {isCandidate ? (
+                    <Link to="/dashboard/applications">Your applications</Link>
+                  ) : (
+                    <Link to="/jobs">Browse open jobs</Link>
+                  )}
+                </Button>
+              </AlertAction>
+            </Alert>
+          </div>
+        ) : null}
+
         {/* Header section */}
         <section className="relative overflow-hidden border-b border-border/40">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--color-primary)/5%,transparent_60%)]" />
@@ -100,12 +125,11 @@ function JobDetailPage() {
                   </Link>
                 </div>
 
-                {!isCompany ? (
+                {!isCompany && !isClosed ? (
                   <div className="shrink-0">
                     <PublicJobCTA
                       isCandidate={isCandidate}
                       dashboardJobPath={dashboardJobPath}
-                      canApply={canApply}
                       alreadyApplied={alreadyApplied}
                       hasResume={hasResume}
                       job={job}
@@ -186,13 +210,12 @@ function JobDetailPage() {
             ) : null}
 
             {/* Bottom CTA */}
-            {!isCompany ? (
+            {!isCompany && !isClosed ? (
               <Empty className="border animate-fade-in stagger-2 bg-muted">
                 <EmptyContent>
                   <PublicJobCTA
                     isCandidate={isCandidate}
                     dashboardJobPath={dashboardJobPath}
-                    canApply={canApply}
                     alreadyApplied={alreadyApplied}
                     hasResume={hasResume}
                     job={job}
@@ -263,7 +286,6 @@ function JobDetailPage() {
 function PublicJobCTA({
   isCandidate,
   dashboardJobPath,
-  canApply,
   alreadyApplied,
   hasResume,
   job,
@@ -271,13 +293,12 @@ function PublicJobCTA({
 }: {
   isCandidate: boolean;
   dashboardJobPath: string;
-  canApply: boolean;
   alreadyApplied: boolean;
   hasResume: boolean;
   job: { id: string; title: string; companyName: string | null };
   variant?: "header" | "bottom";
 }) {
-  if (canApply && alreadyApplied) {
+  if (alreadyApplied) {
     return (
       <div className={variant === "bottom" ? "space-y-3" : ""}>
         {variant === "bottom" ? (
@@ -298,7 +319,7 @@ function PublicJobCTA({
     );
   }
 
-  if (canApply && !hasResume) {
+  if (isCandidate && !hasResume) {
     return (
       <div className={variant === "bottom" ? "space-y-3" : ""}>
         {variant === "bottom" ? (
@@ -319,7 +340,7 @@ function PublicJobCTA({
     );
   }
 
-  if (canApply && hasResume) {
+  if (isCandidate && hasResume) {
     return (
       <div className={variant === "bottom" ? "space-y-3" : ""}>
         {variant === "bottom" ? (
@@ -341,27 +362,6 @@ function PublicJobCTA({
     );
   }
 
-  if (isCandidate) {
-    return (
-      <div className={variant === "bottom" ? "space-y-3" : ""}>
-        {variant === "bottom" ? (
-          <>
-            <p className="text-sm font-medium">Interested in this role?</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              View this job in your dashboard to apply and interview.
-            </p>
-          </>
-        ) : null}
-        <Button size={variant === "header" ? "lg" : "default"} asChild>
-          <Link to={dashboardJobPath}>
-            {variant === "header" ? "View in dashboard" : "View in dashboard"}
-            <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="ml-1.5 size-4" />
-          </Link>
-        </Button>
-      </div>
-    );
-  }
-
   return (
     <div className={variant === "bottom" ? "space-y-3" : ""}>
       {variant === "bottom" ? (
@@ -374,7 +374,7 @@ function PublicJobCTA({
       ) : null}
       <Button size={variant === "header" ? "lg" : "default"} asChild>
         <Link to="/candidate/login" search={{ redirect: dashboardJobPath }}>
-          {variant === "header" ? "Log in to apply" : "Log in to apply"}
+          Log in to apply
           <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="ml-1.5 size-4" />
         </Link>
       </Button>

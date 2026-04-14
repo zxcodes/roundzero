@@ -29,8 +29,8 @@ Finish the non-AI hiring platform so the AI layer lands on a solid foundation.
 
 #### 4. Public Route Cleanup
 
-- [ ] Add `JobExpiredError` component for expired jobs on public route
-- [ ] Remove dead code branches in `PublicJobCTA`
+- [x] Add `JobExpiredNotice` component for expired/closed jobs on public route
+- [x] Remove dead code branches in `PublicJobCTA`
 
 #### 5. Test Cleanup
 

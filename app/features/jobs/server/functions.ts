@@ -215,7 +215,7 @@ export const getPublicJobById = createServerFn({ method: "GET" })
     await db.unsafe(closeExpiredJobsQuery);
     const job = await getJobById(db, { id: data.id });
 
-    if (!job || job.status !== "open" || job.archivedAt) {
+    if (!job || job.archivedAt || job.status === "draft") {
       throw new Error("Job not found");
     }
 
