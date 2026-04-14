@@ -10,7 +10,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -52,20 +52,30 @@ import {
   workplaceTypeLabels,
 } from "@/shared/enums";
 import { formatSalaryFull } from "@/shared/format";
+import { validateUuidParams } from "@/shared/validation";
+
+type JobDetail = NonNullable<Awaited<ReturnType<typeof getJob>>>;
 
 export const Route = createFileRoute("/_authenticated/dashboard/jobs/$jobId")({
+  beforeLoad: ({ params }) => {
+    validateUuidParams({ jobId: params.jobId });
+  },
   loader: async ({ params, context }) => {
-    const job = await getJob({ data: { id: params.jobId } });
+    const jobResult = await getJob({ data: { id: params.jobId } });
+    if (!jobResult) {
+      throw notFound();
+    }
+    const job: JobDetail = jobResult;
 
-    const [alreadyApplied, applicants, candidateProfile] = await Promise.all([
-      context.isCandidate && job.status === "open"
-        ? hasApplied({ data: { jobId: params.jobId } })
-        : Promise.resolve(false),
-      context.isCompany ? getJobApplicants({ data: { jobId: params.jobId } }) : Promise.resolve([]),
-      context.isCandidate ? getMyCandidateProfile() : Promise.resolve(null),
-    ]);
+    if (context.isCompany) {
+      const applicants = await getJobApplicants({ data: { jobId: params.jobId } });
+      return { type: "company" as const, job, applicants };
+    }
 
-    return { job, alreadyApplied, applicants, candidateProfile };
+    const alreadyApplied =
+      job.status === "open" ? await hasApplied({ data: { jobId: params.jobId } }) : false;
+    const candidateProfile = await getMyCandidateProfile();
+    return { type: "candidate" as const, job, alreadyApplied, candidateProfile };
   },
   pendingComponent: DashboardJobDetailSkeleton,
   component: JobDetailPage,
@@ -93,8 +103,9 @@ const formatDate = (date: Date | string) => {
 };
 
 function JobDetailPage() {
-  const { job, alreadyApplied, applicants, candidateProfile } = Route.useLoaderData();
-  const { isCompany } = Route.useRouteContext();
+  const data = Route.useLoaderData();
+  const { job } = data;
+  const isCompany = data.type === "company";
 
   const requirements: string[] = Array.isArray(job.requirements) ? job.requirements : [];
   const salary = formatSalaryFull(job.salaryMin, job.salaryMax, job.salaryCurrency);
@@ -167,7 +178,7 @@ function JobDetailPage() {
           ) : null}
 
           {isCompany ? (
-            <ApplicantsSummaryCard jobId={job.id} applicantsCount={applicants.length} />
+            <ApplicantsSummaryCard jobId={job.id} applicantsCount={data.applicants.length} />
           ) : null}
         </div>
 
@@ -274,8 +285,8 @@ function JobDetailPage() {
                 jobId={job.id}
                 jobTitle={job.title}
                 companyName={job.companyName ?? "the company"}
-                alreadyApplied={alreadyApplied}
-                hasResume={Boolean(candidateProfile?.resumeKey)}
+                alreadyApplied={data.alreadyApplied}
+                hasResume={Boolean(data.candidateProfile?.resumeKey)}
               />
             ) : (
               <Card className="animate-scale-in">
@@ -359,13 +370,7 @@ function ApplicantsSummaryCard({
   );
 }
 
-function CompanyActions({
-  job,
-  requirements,
-}: {
-  job: Awaited<ReturnType<typeof getJob>>;
-  requirements: string[];
-}) {
+function CompanyActions({ job, requirements }: { job: JobDetail; requirements: string[] }) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
 

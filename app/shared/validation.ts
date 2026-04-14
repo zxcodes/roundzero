@@ -1,6 +1,17 @@
+import { notFound } from "@tanstack/react-router";
 import { zodValidator } from "@tanstack/zod-adapter";
 import type { ZodSchema } from "zod";
 import { z } from "zod";
+
+const uuidSchema = z.string().uuid();
+
+export function validateUuidParams(params: Record<string, string | undefined>) {
+  for (const [_key, value] of Object.entries(params)) {
+    if (value !== undefined && !uuidSchema.safeParse(value).success) {
+      throw notFound();
+    }
+  }
+}
 
 export function zodValidatorWithFormattedErrors<T extends ZodSchema>(schema: T) {
   const validator = zodValidator(schema);

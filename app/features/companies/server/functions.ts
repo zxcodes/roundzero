@@ -268,9 +268,6 @@ export const getCompanyBySlug = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const db = getDb();
     const company = await getCompanyBySlugQuery(db, { slug: data.slug });
-    if (!company) {
-      throw new Error("Company not found");
-    }
     return company;
   });
 

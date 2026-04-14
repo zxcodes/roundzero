@@ -73,8 +73,12 @@ export const getMyApplicationDetail = createServerFn({ method: "GET" })
     }
 
     const application = await getApplicationById(db, { id: data.applicationId });
-    if (!application || application.candidateId !== context.userId) {
-      throw new Error("Application not found");
+    if (!application) {
+      return null;
+    }
+
+    if (application.candidateId !== context.userId) {
+      throw new Error("Not authorized to view this application");
     }
 
     return application;
@@ -184,11 +188,11 @@ export const getCompanyApplicantReview = createServerFn({ method: "GET" })
 
     const application = await getApplicationReviewById(db, { id: data.applicationId });
     if (!application) {
-      throw new Error("Application not found");
+      return null;
     }
 
     if (application.companyId !== context.company.id) {
-      throw new Error("Not authorized");
+      throw new Error("Not authorized to view this applicant");
     }
 
     const applicants = await getApplicationsByJob(db, { jobId: application.jobId });

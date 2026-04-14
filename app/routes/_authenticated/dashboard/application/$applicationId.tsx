@@ -6,7 +6,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, redirect } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { DashboardApplicationDetailSkeleton } from "@/components/route-skeletons";
@@ -17,23 +17,29 @@ import {
   getApplicationResumeDownloadUrl,
   getMyApplicationDetail,
 } from "@/features/applications/server/functions";
+import { validateUuidParams } from "@/shared/validation";
 
 export const Route = createFileRoute("/_authenticated/dashboard/application/$applicationId")({
-  beforeLoad: ({ context }) => {
+  beforeLoad: ({ context, params }) => {
     if (!context.isCandidate) {
       throw redirect({ to: "/dashboard" });
     }
+    validateUuidParams({ applicationId: params.applicationId });
   },
   loader: async ({ params }) => {
-    return await getMyApplicationDetail({
+    const application = await getMyApplicationDetail({
       data: { applicationId: params.applicationId },
     });
+    if (!application) {
+      throw notFound();
+    }
+    return application;
   },
   pendingComponent: DashboardApplicationDetailSkeleton,
   component: CandidateApplicationDetailPage,
 });
 
-type Application = Awaited<ReturnType<typeof getMyApplicationDetail>>;
+type Application = NonNullable<Awaited<ReturnType<typeof getMyApplicationDetail>>>;
 
 const APPLICATION_STAGES = ["applied", "interviewing", "evaluated", "rejected"] as const;
 

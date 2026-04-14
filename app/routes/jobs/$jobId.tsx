@@ -25,22 +25,27 @@ import { getPublicJobById } from "@/features/jobs/server/functions";
 import type { EmploymentType, ExperienceLevel, WorkplaceType } from "@/shared/enums";
 import { employmentTypeLabels, experienceLevelLabels, workplaceTypeLabels } from "@/shared/enums";
 import { formatSalaryFull } from "@/shared/format";
+import { validateUuidParams } from "@/shared/validation";
 
 export const Route = createFileRoute("/jobs/$jobId")({
+  beforeLoad: ({ params }) => {
+    validateUuidParams({ jobId: params.jobId });
+  },
   loader: async ({ params, context }) => {
-    const job = await getPublicJobById({ data: { id: params.jobId } }).catch(() => {
+    const job = await getPublicJobById({ data: { id: params.jobId } });
+    if (!job) {
       throw notFound();
-    });
+    }
 
-    const [alreadyApplied, candidateProfile] =
-      context.isCandidate && job.status === "open"
-        ? await Promise.all([
-            hasApplied({ data: { jobId: params.jobId } }),
-            getMyCandidateProfile(),
-          ])
-        : [false, null];
+    if (context.isCandidate && job.status === "open") {
+      const [alreadyApplied, candidateProfile] = await Promise.all([
+        hasApplied({ data: { jobId: params.jobId } }),
+        getMyCandidateProfile(),
+      ]);
+      return { type: "candidate" as const, job, alreadyApplied, candidateProfile };
+    }
 
-    return { job, alreadyApplied, candidateProfile };
+    return { type: "other" as const, job };
   },
   head: ({ loaderData }) => ({
     meta: [
@@ -56,8 +61,12 @@ export const Route = createFileRoute("/jobs/$jobId")({
 });
 
 function JobDetailPage() {
-  const { job, alreadyApplied, candidateProfile } = Route.useLoaderData();
-  const { isCandidate, isCompany } = useRouteContext({ from: "__root__" });
+  const data = Route.useLoaderData();
+  const { job } = data;
+  const isCandidate = data.type === "candidate";
+  const alreadyApplied = isCandidate ? data.alreadyApplied : false;
+  const candidateProfile = isCandidate ? data.candidateProfile : null;
+  const { isCompany } = useRouteContext({ from: "__root__" });
 
   const salary = formatSalaryFull(job.salaryMin, job.salaryMax, job.salaryCurrency);
   const requirements: string[] = Array.isArray(job.requirements) ? job.requirements : [];

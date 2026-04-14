@@ -110,7 +110,7 @@ export const Route = createFileRoute("/_authenticated/dashboard/jobs/")({
     if (context.isCompany) {
       const jobs =
         deps.tab === "archived" ? await getMyArchivedJobs() : await getMyJobsWithPipeline();
-      return { jobs, isCompany: true as const, paginatedJobs: null };
+      return { type: "company" as const, jobs };
     }
     const paginatedJobs = await getOpenJobsPaginated({
       data: {
@@ -123,7 +123,7 @@ export const Route = createFileRoute("/_authenticated/dashboard/jobs/")({
         page: deps.page,
       },
     });
-    return { jobs: null, isCompany: false as const, paginatedJobs };
+    return { type: "candidate" as const, paginatedJobs };
   },
   pendingComponent: DashboardJobsListSkeleton,
   component: JobsListPage,
@@ -153,11 +153,11 @@ const formatDate = (date: Date | string) => {
 function JobsListPage() {
   const data = Route.useLoaderData();
 
-  if (data.isCompany) {
-    return <CompanyJobsList jobs={data.jobs!} />;
+  if (data.type === "company") {
+    return <CompanyJobsList jobs={data.jobs} />;
   }
 
-  return <CandidateJobsList data={data.paginatedJobs!} />;
+  return <CandidateJobsList data={data.paginatedJobs} />;
 }
 
 type PipelineJob = Awaited<ReturnType<typeof getMyJobsWithPipeline>>[number];

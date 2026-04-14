@@ -9,7 +9,7 @@ import {
   UserGroupIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { PublicFooter, PublicHeader } from "@/components/public-layout";
 import { CompanyDetailSkeleton } from "@/components/route-skeletons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -46,13 +46,16 @@ import { getPublicAssetUrl } from "@/shared/r2";
 export const Route = createFileRoute("/companies/$slug")({
   loader: async ({ params }) => {
     const company = await getCompanyBySlug({ data: { slug: params.slug } });
+    if (!company) {
+      throw notFound();
+    }
     const jobs = await getOpenJobsByCompanyId({ data: { companyId: company.id } });
     return { company, jobs };
   },
   head: ({ loaderData }) => ({
     meta: [
       {
-        title: loaderData?.company
+        title: loaderData
           ? `${loaderData.company.name} | RoundZero`
           : "Company Not Found | RoundZero",
       },

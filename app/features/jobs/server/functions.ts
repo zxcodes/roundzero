@@ -96,14 +96,14 @@ export const getJob = createServerFn({ method: "GET" })
     await db.unsafe(closeExpiredJobsQuery);
     const job = await getJobById(db, { id: data.id });
     if (!job) {
-      throw new Error("Job not found");
+      return null;
     }
 
     // Non-open jobs are only visible to the company owner
     if (job.status !== "open") {
       const company = await getCompanyByOwnerId(db, { ownerId: context.userId });
       if (!company || company.id !== job.companyId) {
-        throw new Error("Job not found");
+        return null;
       }
     }
 
@@ -216,7 +216,7 @@ export const getPublicJobById = createServerFn({ method: "GET" })
     const job = await getJobById(db, { id: data.id });
 
     if (!job || job.archivedAt || job.status === "draft") {
-      throw new Error("Job not found");
+      return null;
     }
 
     return job;
