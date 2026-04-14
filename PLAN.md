@@ -24,8 +24,8 @@ Finish the non-AI hiring platform so the AI layer lands on a solid foundation.
 
 #### 3. Notification Completion
 
-- [ ] Add user-facing feedback for company job lifecycle actions (published, archived, closed)
-- [ ] Replace internal enum labels with product-facing status wording across all surfaces
+- [x] Add user-facing feedback for company job lifecycle actions (published, archived, closed)
+- [x] Replace internal enum labels with product-facing status wording across all surfaces
 
 #### 4. Public Route Cleanup
 

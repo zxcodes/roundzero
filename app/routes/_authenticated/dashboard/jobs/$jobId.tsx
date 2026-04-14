@@ -428,6 +428,8 @@ function CompanyActions({ job, requirements }: { job: JobDetail; requirements: s
   const onArchive = async () => {
     await archiveJobMutation.mutateAsync({ data: { id: job.id } });
   };
+  const isArchived = job.status === "closed" && job.archivedAt;
+
   const onCancelEdit = () => {
     setIsEditing(false);
   };
@@ -469,6 +471,24 @@ function CompanyActions({ job, requirements }: { job: JobDetail; requirements: s
           </Button>
         </CardContent>
       </Card>
+    );
+  }
+
+  // Archived jobs are read-only
+  if (isArchived) {
+    return (
+      <div className="flex gap-2">
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/dashboard/job-applicants/$jobId" params={{ jobId: job.id }}>
+            <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} className="size-3.5" />
+            View applicants
+          </Link>
+        </Button>
+        <Button variant="outline" size="sm" disabled title="Archived jobs cannot be edited">
+          <HugeiconsIcon icon={Edit02Icon} strokeWidth={2} className="size-3.5" />
+          Archived
+        </Button>
+      </div>
     );
   }
 

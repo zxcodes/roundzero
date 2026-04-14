@@ -25,7 +25,13 @@ export type ExperienceLevel = z.infer<typeof experienceLevelSchema>;
 export const applicationStatusSchema = z.enum(["applied", "interviewing", "evaluated", "rejected"]);
 export type ApplicationStatus = z.infer<typeof applicationStatusSchema>;
 
-export const notificationTypeSchema = z.enum(["application_status_changed", "new_applicant"]);
+export const notificationTypeSchema = z.enum([
+  "application_status_changed",
+  "new_applicant",
+  "job_published",
+  "job_archived",
+  "job_closed",
+]);
 
 /** Valid status transitions for applications. */
 export const APPLICATION_STATUS_TRANSITIONS: Record<ApplicationStatus, ApplicationStatus[]> = {
@@ -119,6 +125,12 @@ export const salaryCurrencyLabels: Record<SalaryCurrency, string> = {
   CAD: "CAD (C$)",
   AUD: "AUD (A$)",
   INR: "INR (₹)",
+};
+
+export const jobStatusLabels: Record<JobStatus, string> = {
+  draft: "Draft",
+  open: "Open",
+  closed: "Closed",
 };
 
 export const MAX_COMPANY_DESCRIPTION_LENGTH = 5000;
