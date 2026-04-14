@@ -67,7 +67,6 @@ const experienceOptions = Object.entries(experienceLevelLabels).map(([value, lab
 const statusOptions = [
   { value: "draft", label: "Draft" },
   { value: "open", label: "Open" },
-  { value: "closed", label: "Closed" },
 ];
 const currencyOptions = salaryCurrencySchema.options.map((value) => ({
   value,

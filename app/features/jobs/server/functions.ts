@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
+import { createNotification } from "@/features/notifications/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
 import {
@@ -152,6 +153,18 @@ export const archiveJob = createServerFn({ method: "POST" })
     if (!archived) {
       throw new Error("Job not found, not authorized, or already archived");
     }
+
+    // Create notification for job archived
+    await createNotification(db, {
+      userId: context.userId,
+      type: "job_archived",
+      payload: {
+        jobId: archived.id,
+        jobTitle: archived.title,
+        status: "closed",
+      },
+    });
+
     return { job: archived };
   });
 
@@ -198,6 +211,17 @@ export const publishJob = createServerFn({ method: "POST" })
     if (!updated) {
       throw new Error("Failed to publish job");
     }
+
+    // Create notification for job published
+    await createNotification(db, {
+      userId: context.userId,
+      type: "job_published",
+      payload: {
+        jobId: updated.id,
+        jobTitle: updated.title,
+        status: "open",
+      },
+    });
 
     return { job: updated };
   });
