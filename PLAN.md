@@ -10,8 +10,8 @@ Finish the non-AI hiring platform so the AI layer lands on a solid foundation.
 
 #### 1. Candidate Post-Apply Experience
 
-- [ ] Add empty states and guidance for first-time candidates on "My Applications"
-- [ ] Write clear candidate-facing copy for each application status
+- [x] Add empty states and guidance for first-time candidates on "My Applications"
+- [x] Write clear candidate-facing copy for each application status
 - [ ] Add next-action links per status (complete profile, check back, etc.)
 - [ ] Add tests for candidate application tracking views
 
