@@ -140,6 +140,82 @@ export async function getJobsByCompanyId(sql: Sql, args: getJobsByCompanyIdArgs)
     }));
 }
 
+export const getJobsWithPipelineByCompanyIdQuery = `-- name: getJobsWithPipelineByCompanyId :many
+SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.interview_questions, j.status, j.location, j.workplace_type, j.employment_type, j.experience_level, j.salary_min, j.salary_max, j.salary_currency, j.team_size, j.headcount, j.expires_at, j.archived_at, j.created_at, j.updated_at,
+       count(a.id)::int AS total_applicants,
+       count(a.id) FILTER (WHERE a.status = 'applied')::int AS applied_count,
+       count(a.id) FILTER (WHERE a.status = 'interviewing')::int AS interviewing_count,
+       count(a.id) FILTER (WHERE a.status = 'evaluated')::int AS evaluated_count,
+       count(a.id) FILTER (WHERE a.status = 'rejected')::int AS rejected_count
+FROM jobs j
+LEFT JOIN applications a ON a.job_id = j.id
+WHERE j.company_id = $1
+  AND j.archived_at IS NULL
+GROUP BY j.id
+ORDER BY j.created_at DESC`;
+
+export interface getJobsWithPipelineByCompanyIdArgs {
+    companyId: string;
+}
+
+export interface getJobsWithPipelineByCompanyIdRow {
+    id: string;
+    companyId: string;
+    title: string;
+    description: string;
+    requirements: any;
+    interviewQuestions: any;
+    status: string;
+    location: string | null;
+    workplaceType: string | null;
+    employmentType: string | null;
+    experienceLevel: string | null;
+    salaryMin: number | null;
+    salaryMax: number | null;
+    salaryCurrency: string;
+    teamSize: number | null;
+    headcount: number | null;
+    expiresAt: Date | null;
+    archivedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+    totalApplicants: number;
+    appliedCount: number;
+    interviewingCount: number;
+    evaluatedCount: number;
+    rejectedCount: number;
+}
+
+export async function getJobsWithPipelineByCompanyId(sql: Sql, args: getJobsWithPipelineByCompanyIdArgs): Promise<getJobsWithPipelineByCompanyIdRow[]> {
+    return (await sql.unsafe(getJobsWithPipelineByCompanyIdQuery, [args.companyId]).values()).map(row => ({
+        id: row[0],
+        companyId: row[1],
+        title: row[2],
+        description: row[3],
+        requirements: row[4],
+        interviewQuestions: row[5],
+        status: row[6],
+        location: row[7],
+        workplaceType: row[8],
+        employmentType: row[9],
+        experienceLevel: row[10],
+        salaryMin: row[11],
+        salaryMax: row[12],
+        salaryCurrency: row[13],
+        teamSize: row[14],
+        headcount: row[15],
+        expiresAt: row[16],
+        archivedAt: row[17],
+        createdAt: row[18],
+        updatedAt: row[19],
+        totalApplicants: row[20],
+        appliedCount: row[21],
+        interviewingCount: row[22],
+        evaluatedCount: row[23],
+        rejectedCount: row[24]
+    }));
+}
+
 export const getJobByIdQuery = `-- name: getJobById :one
 SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.interview_questions, j.status, j.location, j.workplace_type, j.employment_type, j.experience_level, j.salary_min, j.salary_max, j.salary_currency, j.team_size, j.headcount, j.expires_at, j.archived_at, j.created_at, j.updated_at,
        c.name AS company_name,
