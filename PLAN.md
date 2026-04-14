@@ -17,10 +17,10 @@ Finish the non-AI hiring platform so the AI layer lands on a solid foundation.
 
 #### 2. Company Pipeline Quality
 
-- [ ] Improve job management list/detail UX for active vs draft vs closed roles
-- [ ] Add pipeline summary cues: applicant count per status stage per job
-- [ ] Surface which jobs are attracting applicants vs stale (no applicants in X days)
-- [ ] Ensure company settings and public profile are coherent
+- [x] Improve job management list/detail UX for active vs draft vs closed roles
+- [x] Add pipeline summary cues: applicant count per status stage per job
+- [x] Surface which jobs are attracting applicants vs stale (no applicants in X days)
+- [x] Ensure company settings and public profile are coherent
 
 #### 3. Notification Completion
 
