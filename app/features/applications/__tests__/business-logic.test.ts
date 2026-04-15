@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { archiveJob, createJob } from "@/features/jobs/queries/queries_sql";
-import { getTestDb, seedCompany, seedUser } from "@/shared/__tests__/test-utils";
+import { getTestDb, makeTestResumeKey, seedCompany, seedUser } from "@/shared/__tests__/test-utils";
 import { isValidTransition } from "@/shared/enums";
 import {
   createApplication,
@@ -47,7 +47,7 @@ describe("apply to job — guard logic", () => {
     const app = await createApplication(sql, {
       jobId: job.id,
       candidateId: candidate.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(candidate.id),
       metadata: {},
       status: "applied",
     });
@@ -64,7 +64,7 @@ describe("apply to job — guard logic", () => {
     await createApplication(sql, {
       jobId: job.id,
       candidateId: candidate.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(candidate.id),
       metadata: {},
       status: "applied",
     });
@@ -73,7 +73,7 @@ describe("apply to job — guard logic", () => {
       createApplication(sql, {
         jobId: job.id,
         candidateId: candidate.id,
-        resumeKey: "https://example.com/resume.pdf",
+        resumeKey: makeTestResumeKey(candidate.id),
         metadata: {},
         status: "applied",
       }),
@@ -87,7 +87,7 @@ describe("apply to job — guard logic", () => {
       createApplication(sql, {
         jobId: "00000000-0000-0000-0000-000000000000",
         candidateId: candidate.id,
-        resumeKey: "https://example.com/resume.pdf",
+        resumeKey: makeTestResumeKey(candidate.id),
         metadata: {},
         status: "applied",
       }),
@@ -105,7 +105,7 @@ describe("application status transitions", () => {
     const app = await createApplication(sql, {
       jobId: job.id,
       candidateId: candidate.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(candidate.id),
       metadata: {},
       status: "applied",
     });
@@ -131,7 +131,7 @@ describe("application status transitions", () => {
     const app = await createApplication(sql, {
       jobId: job.id,
       candidateId: candidate.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(candidate.id),
       metadata: {},
       status: "applied",
     });
@@ -154,7 +154,7 @@ describe("application status transitions", () => {
     const app = await createApplication(sql, {
       jobId: job.id,
       candidateId: candidate.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(candidate.id),
       metadata: {},
       status: "applied",
     });
@@ -174,7 +174,7 @@ describe("application status transitions", () => {
     const app = await createApplication(sql, {
       jobId: job.id,
       candidateId: candidate.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(candidate.id),
       metadata: {},
       status: "applied",
     });
@@ -200,7 +200,7 @@ describe("application access control", () => {
     await createApplication(sql, {
       jobId: job.id,
       candidateId: candidate.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(candidate.id),
       metadata: {},
       status: "applied",
     });
@@ -221,7 +221,7 @@ describe("application access control", () => {
     await createApplication(sql, {
       jobId: job.id,
       candidateId: candidate1.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(candidate1.id),
       metadata: {},
       status: "applied",
     });
@@ -240,7 +240,7 @@ describe("application access control", () => {
     const app = await createApplication(sql, {
       jobId: job.id,
       candidateId: candidate.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(candidate.id),
       metadata: {},
       status: "applied",
     });
@@ -261,7 +261,7 @@ describe("application access control", () => {
     const app = await createApplication(sql, {
       jobId: job.id,
       candidateId: candidate.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(candidate.id),
       metadata: { headline: "Backend Engineer" },
       status: "applied",
     });
@@ -284,7 +284,7 @@ describe("applications on archived jobs", () => {
     const app = await createApplication(sql, {
       jobId: job.id,
       candidateId: candidate.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(candidate.id),
       metadata: {},
       status: "applied",
     });

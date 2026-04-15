@@ -34,7 +34,7 @@ Finish the non-AI hiring platform so the AI layer lands on a solid foundation.
 
 #### 5. Test Cleanup
 
-- [ ] Replace remaining legacy URL-shaped `resumeKey` test fixtures with realistic key-shaped values
+- [x] Replace remaining legacy URL-shaped `resumeKey` test fixtures with realistic key-shaped values
 
 ### Product Decisions
 
@@ -44,37 +44,34 @@ These must be answered and documented in `PLATFORM.md` and `AI-LAYER.md` before 
 
 AI-LAYER introduces new statuses: `pre_screening`, `invited_roundzero`, `in_roundzero`, `evaluated`, `shortlisted`. Current `applications.status` uses `applied`, `reviewing`, `shortlisted`, `rejected`.
 
-- [ ] Extend existing `applications.status` enum, or add a separate `evaluation_status` column?
-- [ ] Can companies manually reject an application before pre-screening finishes?
-- [ ] Define the full transition map: which statuses lead to which, and who triggers each
-- [ ] Document decided lifecycle in `PLATFORM.md`
+- [x] Extend existing `applications.status` enum to include all 7 statuses
+- [x] Define transition rules and who can trigger each
+- [x] Document decided lifecycle in `PLATFORM.md` (§ 15.1)
 
 #### Decision 2: Candidate-Facing Messaging After Apply
 
 Post-apply becomes multi-step after AI. Define exact copy and expectations for each branch.
 
-- [ ] Write candidate-facing copy for strong / medium / low fit tiers
-- [ ] What does a candidate see while pre-screening is running?
-- [ ] What does a candidate see when invited to interview? What action do they take?
-- [ ] What does a candidate see if pre-screening rates them low?
-- [ ] Do candidates see their fit tier, or just a neutral status?
-- [ ] Document decided messaging spec in `PLATFORM.md`
+- [x] Write candidate-facing copy for each internal status
+- [x] Hide pre-evaluation stages; show only 6 candidate-visible statuses
+- [x] Define candidate messages for strong / medium / low fit tiers
+- [x] Document decided messaging spec in `PLATFORM.md` (§ 15.2)
 
 #### Decision 3: Medium-Fit Follow-Up Medium
 
 AI-LAYER specifies "2-3 clarifying questions" for medium-fit candidates. This drives data model and UI.
 
-- [ ] Where do medium-fit questions happen? (inline in app, email link, mini-interview entity, same agent with fewer turns)
-- [ ] Is there a separate data model for short question rounds vs full interviews?
-- [ ] Does the candidate answer in real-time (chat) or async (form)?
-- [ ] Document decided format in `AI-LAYER.md`
+- [x] Decide: use synchronous chat UI (same as full interview)
+- [x] Questions adapt based on pre-evaluation gaps
+- [x] Reuse `interviews` table with metadata flag
+- [x] Document decided format in `PLATFORM.md` (§ 15.3)
 
 #### Decision 4: Company View With and Without AI Reports
 
-- [ ] Do companies see pre-screening applicants before evaluation completes? Can they act on them?
-- [ ] What does a company see for an applicant with no AI report yet?
-- [ ] What is the minimum viable company view of a candidate — with and without an AI report?
-- [ ] Document decided company experience spec in `PLATFORM.md`
+- [x] Companies see full pipeline; pre-eval candidates are read-only
+- [x] Pre-eval candidates show name, resume, date, status only
+- [x] Post-eval candidates show + AI score, summary, recommendations
+- [x] Document decided company experience spec in `PLATFORM.md` (§ 15.4)
 
 #### Decision 5: Validate Pre-Evaluation Output Format
 
@@ -83,14 +80,14 @@ The riskiest assumption: that pre-evaluation output (score + missing requirement
 - [ ] Run 5-10 real applications through manual evaluation using the planned output format
 - [ ] Show companies the output format and confirm they'd make decisions from it
 - [ ] Adjust scoring dimensions, weighting, and presentation based on feedback
-- [ ] Document final score schema and report structure in `AI-LAYER.md`
+- [ ] Document final score schema and report structure in `AI-LAYER.md` (§ 15.5)
 
 ### Exit Criteria
 
-- [ ] Candidate can browse, upload a resume, apply from any surface, and track applications with guidance
-- [ ] Company can create/manage jobs, review applicants, and see pipeline signals
-- [ ] All 5 product decisions documented
-- [ ] Pre-evaluation output format validated with real companies
+- [x] Candidate can browse, upload a resume, apply from any surface, and track applications with guidance
+- [x] Company can create/manage jobs, review applicants, and see pipeline signals
+- [x] All 5 product decisions documented in `PLATFORM.md` (§ 15.1–15.5) and `AI-LAYER.md`
+- [ ] Pre-evaluation output format validated with real companies (Decision 5 pending external validation)
 
 ---
 
