@@ -12,7 +12,7 @@ Finish the non-AI hiring platform so the AI layer lands on a solid foundation.
 
 - [x] Add empty states and guidance for first-time candidates on "My Applications"
 - [x] Write clear candidate-facing copy for each application status
-- [ ] Add next-action links per status (complete profile, check back, etc.)
+- [x] Add next-action links per status (complete profile, check back, etc.)
 - [ ] Add tests for candidate application tracking views
 
 #### 2. Company Pipeline Quality
