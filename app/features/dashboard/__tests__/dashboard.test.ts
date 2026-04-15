@@ -12,7 +12,7 @@ import {
   countJobsByCompanyAndStatus,
   createJob,
 } from "@/features/jobs/queries/queries_sql";
-import { getTestDb, seedCompany, seedUser } from "@/shared/__tests__/test-utils";
+import { getTestDb, makeTestResumeKey, seedCompany, seedUser } from "@/shared/__tests__/test-utils";
 
 const sql = getTestDb();
 
@@ -103,28 +103,28 @@ describe("company dashboard metrics", () => {
     await createApplication(sql, {
       jobId: job1.id,
       candidateId: c1.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(c1.id),
       metadata: {},
       status: "applied",
     });
     await createApplication(sql, {
       jobId: job1.id,
       candidateId: c2.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(c2.id),
       metadata: {},
       status: "applied",
     });
     await createApplication(sql, {
       jobId: job2.id,
       candidateId: c3.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(c3.id),
       metadata: {},
       status: "applied",
     });
     await createApplication(sql, {
       jobId: archivedJob.id,
       candidateId: c1.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(c1.id),
       metadata: {},
       status: "applied",
     });
@@ -163,28 +163,28 @@ describe("candidate dashboard metrics", () => {
     const a1 = await createApplication(sql, {
       jobId: job1.id,
       candidateId: candidate.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(candidate.id),
       metadata: {},
       status: "applied",
     });
     const a2 = await createApplication(sql, {
       jobId: job2.id,
       candidateId: candidate.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(candidate.id),
       metadata: {},
       status: "applied",
     });
     const a3 = await createApplication(sql, {
       jobId: job3.id,
       candidateId: candidate.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(candidate.id),
       metadata: {},
       status: "applied",
     });
     await createApplication(sql, {
       jobId: job4.id,
       candidateId: candidate.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(candidate.id),
       metadata: {},
       status: "applied",
     });
@@ -212,14 +212,14 @@ describe("candidate dashboard metrics", () => {
     await createApplication(sql, {
       jobId: activeJob.id,
       candidateId: candidate.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(candidate.id),
       metadata: {},
       status: "applied",
     });
     await createApplication(sql, {
       jobId: archivedJob.id,
       candidateId: candidate.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(candidate.id),
       metadata: {},
       status: "applied",
     });

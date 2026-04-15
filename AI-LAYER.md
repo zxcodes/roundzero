@@ -145,15 +145,19 @@ Instead of raw applicants, companies see evaluated candidates.
 
 ---
 
-# Suggested Status Flow
+# Application Status Lifecycle (Decided)
 
-- applied
-- pre_screening
-- invited_roundzero
-- in_roundzero
-- evaluated
-- shortlisted
-- rejected
+> See **PLATFORM.md § 15.1** for the full decision.
+
+**Decided:** Extend `applications.status` to include all 7 statuses in a single enum.
+
+**Status Funnel:**
+- `applied` → `pre_screening` → (`invited_roundzero` | other outcome) → `in_roundzero` → `evaluated` → (`shortlisted` | `rejected`)
+
+**Transition Rules:**
+- Only companies can move `evaluated` → `shortlisted` or `rejected`
+- System auto-advances through `pre_screening` → `invited_roundzero` → `in_roundzero` → `evaluated`
+- Companies can manually reject at any pre-evaluation stage
 
 ---
 
@@ -193,6 +197,22 @@ If a candidate completed RoundZero recently:
 - ask only role-specific delta questions
 
 This reduces cost and improves UX.
+
+---
+
+# Product Decisions (Phase 3.5 Exit Criteria)
+
+> All 5 product decisions are documented in **PLATFORM.md § 15**. Refer there for full context.
+
+## Decided Decisions
+
+| # | Decision | Status |
+|---|----------|--------|
+| 1 | Application Status Lifecycle | ✅ Extend single `applications.status` enum to all 7 statuses |
+| 2 | Candidate-Facing Messaging | ✅ Hide pre-evaluation stages; show only 6 candidate-visible statuses |
+| 3 | Medium-Fit Follow-Up | ✅ Use synchronous chat UI (same as full interview) with 2–3 questions |
+| 4 | Company View Pre/Post AI | ✅ Show full pipeline, pre-eval candidates are read-only |
+| 5 | Pre-Evaluation Output Format | ⏳ Pending validation with 5–10 real applications |
 
 ---
 

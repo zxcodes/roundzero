@@ -419,6 +419,143 @@ or
 
 ---
 
-## 15. One-Line Definition
+## 15. AI Layer Product Decisions
+
+The following decisions are required **before Phase 4 (AI Interview)** begins. These define how the AI layer integrates with the existing platform.
+
+### 15.1 Decision 1: Application Status Lifecycle
+
+**Question:** How do we model application statuses when the AI layer introduces new evaluation stages?
+
+**Current State:**
+- `applications.status` uses: `applied`, `interviewing`, `evaluated`, `rejected`
+- AI-LAYER.md suggests: `applied`, `pre_screening`, `invited_roundzero`, `in_roundzero`, `evaluated`, `shortlisted`, `rejected`
+
+**Decision:** **Extend the existing `applications.status` enum to include all 7 statuses**
+
+**Rationale:**
+- Simpler query patterns (single status column)
+- Clear audit trail of all state transitions
+- No schema duplication or hidden parallel state machines
+- Status transitions follow the funnel: `applied` → `pre_screening` → (`invited_roundzero` | other outcome) → `in_roundzero` → `evaluated` → (`shortlisted` | `rejected`)
+
+**Transition Rules:**
+- Only companies can move `evaluated` → `shortlisted` or `rejected`
+- The system auto-advances through `pre_screening` → `invited_roundzero` → `in_roundzero` → `evaluated`
+- A company can manually reject at any pre-evaluation stage
+
+**Implementation:**
+- Update `enums.ts`: extend `applicationStatusSchema` to include all 7 statuses
+- Update `APPLICATION_STATUS_TRANSITIONS` to enforce the funnel order
+- Update all client-facing status labels to distinguish internal (pre-evaluation) vs. external (candidate-visible) states
+
+---
+
+### 15.2 Decision 2: Candidate-Facing Messaging After Apply
+
+**Question:** What messaging do candidates see at each evaluation stage?
+
+**Decision: Hide pre-evaluation stages from candidates**
+
+**Candidate-Visible Status Mapping:**
+- `applied` / `pre_screening` → "Application Received"
+- `invited_roundzero` → "Interview Ready"
+- `in_roundzero` → "Interview in Progress"
+- `evaluated` → "Under Review"
+- `shortlisted` → "Shortlisted"
+- `rejected` → "Not Moving Forward"
+
+**Candidate Messages:**
+- Strong fit: "You've been invited to complete RoundZero for this role."
+- Medium fit: "A few additional questions will help evaluate your fit."
+- Low fit: "Application received and under review."
+
+**Implementation:**
+- Add `getVisibleApplicationStatus()` helper for status mapping
+- Add `applicationStatusCandidateLabelMap` in `config.ts` for exact copy
+- Update candidate dashboard to use visible status only
+
+---
+
+### 15.3 Decision 3: Medium-Fit Follow-Up Medium
+
+**Question:** Where and how do medium-fit candidates answer clarifying questions?
+
+**Decision: Use synchronous chat UI (same as full interview)**
+
+**Rationale:**
+- Preserves interview context and adaptability
+- Candidates get dynamic follow-ups based on answers
+- Lower barrier to answer 2–3 questions than to do a full interview
+- Reuses the same agent and transcript infrastructure
+
+**Implementation:**
+- Medium-fit candidates are invited to a "quick evaluation" via the interview chat UI
+- Agent system prompt is modified to ask 2–3 clarifying questions instead of full interview script
+- Questions adapt based on resume gaps identified in pre-evaluation
+- Output is still a structured report, same as full interview
+- Same `interviews` table is used; a `metadata` field can flag it as "quick_eval"
+
+---
+
+### 15.4 Decision 4: Company View With and Without AI Reports
+
+**Question:** Can companies see (and act on) applications before AI evaluation completes?
+
+**Decision: Companies see full pipeline, but pre-evaluation candidates are read-only**
+
+**Before AI Evaluation Completes:**
+- Raw applicant list with resume, profile snapshot
+- Status badge: "Application Received" or "Under Review"
+- No scoring or evaluation report yet
+- Cannot change status (read-only until evaluation completes)
+
+**After AI Evaluation Completes:**
+- Same applicant list, now includes:
+  - AI evaluation report (summary, scores, strengths, concerns)
+  - Can change status or shortlist/reject
+
+**Minimum Viable Company View:**
+| State | Shows | Actions |
+|---|---|---|
+| Pre-evaluation | Name, resume, date, status | None |
+| Post-evaluation | Above + AI score, summary, recommendations | Shortlist / Reject |
+
+**Implementation:**
+- `getApplicationReviewById` returns profile + evaluation report (if it exists)
+- UI conditionally renders "evaluation in progress" vs. full report view
+- Action buttons only appear post-evaluation
+
+---
+
+### 15.5 Decision 5: Pre-Evaluation Output Format Validation
+
+**Question:** Is the pre-evaluation output (score + missing requirements + confidence + next step) sufficient?
+
+**Current Spec:**
+- **Score:** 0–100 (overall fit)
+- **Missing Requirements:** List of role requirements not met
+- **Confidence:** High/Medium/Low
+- **Next Step:** "Invite to RoundZero" | "Ask follow-ups" | "Hold / Reject"
+
+**Validation Plan:**
+
+1. Run 5–10 real applications through manual evaluation using this format
+2. Get hiring manager feedback:
+   - Would you trust this to decide "invite" vs. "ask follow-ups"?
+   - Are missing requirements useful, or want different dimensions?
+   - Should confidence be visible to company or internal only?
+   - Is 0–100 score clear, or prefer tier (Strong/Medium/Low)?
+3. Adjust output based on feedback
+4. Document final schema in `AI-LAYER.md`
+
+**Current Assumption:**
+- Pre-evaluation only decides "invite to full interview" vs. "not yet"
+- It does NOT rank candidates or make final hiring decisions
+- If confidence is low, default to "ask follow-ups" rather than reject
+
+---
+
+## 16. One-Line Definition
 
 > “A hiring platform that starts with a solid async application workflow and evolves into an explainable AI-driven first-round interview and candidate evaluation system.”

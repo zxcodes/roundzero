@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { archiveJob, createJob } from "@/features/jobs/queries/queries_sql";
-import { getTestDb, seedCompany, seedUser } from "@/shared/__tests__/test-utils";
+import { getTestDb, makeTestResumeKey, seedCompany, seedUser } from "@/shared/__tests__/test-utils";
 import {
   countApplicationsByCandidate,
   countApplicationsByCompany,
@@ -48,7 +48,7 @@ describe("createApplication", () => {
     const app = await createApplication(sql, {
       jobId: job.id,
       candidateId: candidate.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(candidate.id),
       metadata: { headline: "Engineer", links: { github: "https://github.com/test" } },
       status: "applied",
     });
@@ -56,7 +56,7 @@ describe("createApplication", () => {
     expect(app).not.toBeNull();
     expect(app!.jobId).toBe(job.id);
     expect(app!.candidateId).toBe(candidate.id);
-    expect(app!.resumeKey).toBe("https://example.com/resume.pdf");
+    expect(app!.resumeKey).toBe(makeTestResumeKey(candidate.id));
     expect(app!.metadata).toEqual({
       headline: "Engineer",
       links: { github: "https://github.com/test" },
@@ -73,7 +73,7 @@ describe("createApplication", () => {
     const app = await createApplication(sql, {
       jobId: job.id,
       candidateId: candidate.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(candidate.id),
       metadata: { skills: ["TypeScript"] },
       status: "applied",
     });
@@ -90,7 +90,7 @@ describe("createApplication", () => {
     await createApplication(sql, {
       jobId: job.id,
       candidateId: candidate.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(candidate.id),
       metadata: {},
       status: "applied",
     });
@@ -99,7 +99,7 @@ describe("createApplication", () => {
       createApplication(sql, {
         jobId: job.id,
         candidateId: candidate.id,
-        resumeKey: "https://example.com/resume.pdf",
+        resumeKey: makeTestResumeKey(candidate.id),
         metadata: {},
         status: "applied",
       }),
@@ -115,7 +115,7 @@ describe("getApplicationByJobAndCandidate", () => {
     await createApplication(sql, {
       jobId: job.id,
       candidateId: candidate.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(candidate.id),
       metadata: {},
       status: "applied",
     });
@@ -150,7 +150,7 @@ describe("getApplicationById", () => {
     const created = await createApplication(sql, {
       jobId: job.id,
       candidateId: candidate.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(candidate.id),
       metadata: {},
       status: "applied",
     });
@@ -182,7 +182,7 @@ describe("getApplicationReviewById", () => {
     const created = await createApplication(sql, {
       jobId: job.id,
       candidateId: candidate.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(candidate.id),
       metadata: { headline: "Senior Engineer" },
       status: "applied",
     });
@@ -236,14 +236,14 @@ describe("getApplicationsByCandidate", () => {
     await createApplication(sql, {
       jobId: job1.id,
       candidateId: candidate.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(candidate.id),
       metadata: {},
       status: "applied",
     });
     await createApplication(sql, {
       jobId: job2.id,
       candidateId: candidate.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(candidate.id),
       metadata: {},
       status: "applied",
     });
@@ -266,7 +266,7 @@ describe("updateApplicationStatus", () => {
     const created = await createApplication(sql, {
       jobId: job.id,
       candidateId: candidate.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(candidate.id),
       metadata: {},
       status: "applied",
     });
@@ -300,14 +300,14 @@ describe("getApplicationCountByJob", () => {
     await createApplication(sql, {
       jobId: job.id,
       candidateId: c1.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(c1.id),
       metadata: {},
       status: "applied",
     });
     await createApplication(sql, {
       jobId: job.id,
       candidateId: c2.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(c2.id),
       metadata: {},
       status: "applied",
     });
@@ -339,14 +339,14 @@ describe("countApplicationsByCompany", () => {
     await createApplication(sql, {
       jobId: job1.id,
       candidateId: c1.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(c1.id),
       metadata: {},
       status: "applied",
     });
     await createApplication(sql, {
       jobId: job2.id,
       candidateId: c2.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(c2.id),
       metadata: {},
       status: "applied",
     });
@@ -372,21 +372,21 @@ describe("countApplicationsByCandidate", () => {
     const a1 = await createApplication(sql, {
       jobId: job1.id,
       candidateId: candidate.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(candidate.id),
       metadata: {},
       status: "applied",
     });
     const a2 = await createApplication(sql, {
       jobId: job2.id,
       candidateId: candidate.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(candidate.id),
       metadata: {},
       status: "applied",
     });
     await createApplication(sql, {
       jobId: job3.id,
       candidateId: candidate.id,
-      resumeKey: "https://example.com/resume.pdf",
+      resumeKey: makeTestResumeKey(candidate.id),
       metadata: {},
       status: "applied",
     });
