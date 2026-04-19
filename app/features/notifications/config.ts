@@ -16,6 +16,13 @@ const newApplicantPayloadSchema = z.object({
   candidateName: z.string().min(1),
 });
 
+const applicationWithdrawnPayloadSchema = z.object({
+  applicationId: z.string().uuid(),
+  jobId: z.string().uuid(),
+  jobTitle: z.string().min(1),
+  candidateName: z.string().min(1),
+});
+
 const jobLifecyclePayloadSchema = z.object({
   jobId: z.string().uuid(),
   jobTitle: z.string().min(1),
@@ -24,6 +31,7 @@ const jobLifecyclePayloadSchema = z.object({
 
 export const notificationPayloadSchemas = {
   application_status_changed: applicationStatusChangedPayloadSchema,
+  application_withdrawn: applicationWithdrawnPayloadSchema,
   new_applicant: newApplicantPayloadSchema,
   job_published: jobLifecyclePayloadSchema,
   job_archived: jobLifecyclePayloadSchema,
@@ -32,6 +40,7 @@ export const notificationPayloadSchemas = {
 
 const notificationTone = {
   application_status_changed: "bg-sky-500/10 text-sky-700 dark:text-sky-300",
+  application_withdrawn: "bg-rose-500/10 text-rose-700 dark:text-rose-300",
   new_applicant: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
   job_published: "bg-violet-500/10 text-violet-700 dark:text-violet-300",
   job_archived: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
@@ -48,6 +57,8 @@ const formatApplicationStatusLabel = (status: z.infer<typeof applicationStatusSc
       return "Evaluated";
     case "rejected":
       return "Rejected";
+    case "withdrawn":
+      return "Withdrawn";
   }
 };
 
@@ -100,6 +111,24 @@ export const getNotificationPresentation = (notification: { type: string; payloa
       body: `${payload.data.candidateName} just applied.`,
       to: "/dashboard/applicants/$applicationId" as const,
       params: { applicationId: payload.data.applicationId },
+    };
+  }
+
+  if (type === "application_withdrawn") {
+    const payload = notificationPayloadSchemas.application_withdrawn.safeParse(
+      toRecord(notification.payload),
+    );
+    if (!payload.success) {
+      return null;
+    }
+
+    return {
+      type,
+      tone: notificationTone[type],
+      title: `${payload.data.candidateName} withdrew their application`,
+      body: `Application for ${payload.data.jobTitle} was withdrawn.`,
+      to: "/dashboard/job-applicants/$jobId" as const,
+      params: { jobId: payload.data.jobId },
     };
   }
 

@@ -22,11 +22,18 @@ export const experienceLevelSchema = z.enum([
 ]);
 export type ExperienceLevel = z.infer<typeof experienceLevelSchema>;
 
-export const applicationStatusSchema = z.enum(["applied", "interviewing", "evaluated", "rejected"]);
+export const applicationStatusSchema = z.enum([
+  "applied",
+  "interviewing",
+  "evaluated",
+  "rejected",
+  "withdrawn",
+]);
 export type ApplicationStatus = z.infer<typeof applicationStatusSchema>;
 
 export const notificationTypeSchema = z.enum([
   "application_status_changed",
+  "application_withdrawn",
   "new_applicant",
   "job_published",
   "job_archived",
@@ -35,10 +42,11 @@ export const notificationTypeSchema = z.enum([
 
 /** Valid status transitions for applications. */
 export const APPLICATION_STATUS_TRANSITIONS: Record<ApplicationStatus, ApplicationStatus[]> = {
-  applied: ["interviewing", "rejected"],
-  interviewing: ["evaluated", "rejected"],
+  applied: ["interviewing", "rejected", "withdrawn"],
+  interviewing: ["evaluated", "rejected", "withdrawn"],
   evaluated: ["rejected"],
   rejected: [],
+  withdrawn: [],
 };
 
 /** Returns true if the transition from `current` to `next` is valid. */

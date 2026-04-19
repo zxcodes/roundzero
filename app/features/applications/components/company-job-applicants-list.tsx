@@ -19,6 +19,7 @@ const statusLabel: Record<string, string> = {
   interviewing: "Interviewing",
   evaluated: "Evaluated",
   rejected: "Rejected",
+  withdrawn: "Withdrawn",
 };
 
 const statusTone: Record<ApplicationStatus, string> = {
@@ -26,6 +27,7 @@ const statusTone: Record<ApplicationStatus, string> = {
   interviewing: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
   evaluated: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
   rejected: "bg-rose-500/10 text-rose-700 dark:text-rose-300",
+  withdrawn: "bg-gray-500/10 text-gray-700 dark:text-gray-300",
 };
 
 export function CompanyJobApplicantsList({

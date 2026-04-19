@@ -1,6 +1,7 @@
 import {
   ArrowLeft01Icon,
   Calendar01Icon,
+  Cancel01Icon,
   File02Icon,
   Link04Icon,
 } from "@hugeicons/core-free-icons";
@@ -10,12 +11,24 @@ import { createFileRoute, Link, notFound, redirect } from "@tanstack/react-route
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { DashboardApplicationDetailSkeleton } from "@/components/route-skeletons";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   getApplicationResumeDownloadUrl,
   getMyApplicationDetail,
+  withdrawApplication,
 } from "@/features/applications/server/functions";
 import { validateUuidParams } from "@/shared/validation";
 
@@ -41,7 +54,13 @@ export const Route = createFileRoute("/_authenticated/dashboard/application/$app
 
 type Application = NonNullable<Awaited<ReturnType<typeof getMyApplicationDetail>>>;
 
-const APPLICATION_STAGES = ["applied", "interviewing", "evaluated", "rejected"] as const;
+const APPLICATION_STAGES = [
+  "applied",
+  "interviewing",
+  "evaluated",
+  "rejected",
+  "withdrawn",
+] as const;
 
 const stageCopy = {
   applied: {
@@ -73,6 +92,13 @@ const stageCopy = {
     summary: "This application is no longer moving forward.",
     nextStep: "Use what you learned here and keep applying to roles that match your profile.",
   },
+  withdrawn: {
+    badge: "Withdrawn",
+    tone: "bg-muted text-muted-foreground",
+    dot: "bg-muted-foreground/50",
+    summary: "You withdrew this application.",
+    nextStep: "This decision is final. You can still apply to other roles from this company.",
+  },
 } as const;
 
 const formatDate = (date: Date | string) => {
@@ -95,6 +121,7 @@ const toApplicationStage = (status: string): (typeof APPLICATION_STAGES)[number]
     case "interviewing":
     case "evaluated":
     case "rejected":
+    case "withdrawn":
       return status;
     default:
       return "applied";
@@ -161,6 +188,25 @@ function CandidateApplicationDetailPage() {
     },
   });
 
+  const withdrawFn = useServerFn(withdrawApplication);
+
+  const withdrawMutation = useMutation({
+    mutationFn: withdrawFn,
+    onSuccess: () => {
+      toast.success("Application withdrawn.");
+      window.location.reload();
+    },
+    onError: () => {
+      toast.error("Failed to withdraw application. Please try again.");
+    },
+  });
+
+  const onWithdraw = async () => {
+    await withdrawMutation.mutateAsync({
+      data: { applicationId: application.id },
+    });
+  };
+
   const metadata = toRecord(application.metadata);
   const currentStage = toApplicationStage(application.status);
   const meta = stageCopy[currentStage];
@@ -169,6 +215,7 @@ function CandidateApplicationDetailPage() {
   const headline = getStringValue(metadata.headline);
   const bio = getStringValue(metadata.bio);
   const jobStateLabel = getJobStateLabel(application.jobStatus);
+  const canWithdraw = application.status === "applied" || application.status === "interviewing";
 
   const onResumeView = async () => {
     await resumeDownloadMutation.mutateAsync({
@@ -242,8 +289,8 @@ function CandidateApplicationDetailPage() {
         </CardContent>
       </Card>
 
-      {application.resumeKey ? (
-        <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2">
+        {application.resumeKey ? (
           <Button
             variant="outline"
             size="sm"
@@ -253,21 +300,47 @@ function CandidateApplicationDetailPage() {
             <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-4" />
             View submitted resume
           </Button>
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/dashboard/jobs/$jobId" params={{ jobId: application.jobId }}>
-              View job listing
-            </Link>
-          </Button>
-        </div>
-      ) : (
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/dashboard/jobs/$jobId" params={{ jobId: application.jobId }}>
-              View job listing
-            </Link>
-          </Button>
-        </div>
-      )}
+        ) : null}
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/dashboard/jobs/$jobId" params={{ jobId: application.jobId }}>
+            View job listing
+          </Link>
+        </Button>
+        {canWithdraw ? (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-destructive hover:bg-destructive/10"
+                disabled={withdrawMutation.isPending}
+              >
+                <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-4" />
+                Withdraw
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Withdraw application?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently withdraw your application for{" "}
+                  <span className="font-medium text-foreground">{application.jobTitle}</span> at{" "}
+                  {application.companyName}. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={onWithdraw}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Withdraw application
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        ) : null}
+      </div>
 
       {hasSnapshotContent ? (
         <div className="space-y-4">

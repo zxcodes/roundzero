@@ -15,7 +15,11 @@ import {
   getApplicationsByCandidate,
   getApplicationsByJob,
 } from "../queries/queries_sql";
-import { applyToJobWorkflow, updateApplicationStatusWorkflow } from "../services/workflows";
+import {
+  applyToJobWorkflow,
+  updateApplicationStatusWorkflow,
+  withdrawApplicationWorkflow,
+} from "../services/workflows";
 
 const applySchema = z.object({
   jobId: z.string().uuid(),
@@ -114,6 +118,17 @@ export const updateApplicationStatus = createServerFn({ method: "POST" })
       userId: context.userId,
       applicationId: data.applicationId,
       status: data.status,
+    });
+  });
+
+export const withdrawApplication = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .inputValidator(zodValidator(applicationIdSchema))
+  .handler(async ({ data, context }) => {
+    const db = getDb();
+    return await withdrawApplicationWorkflow(db, {
+      userId: context.userId,
+      applicationId: data.applicationId,
     });
   });
 
