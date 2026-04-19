@@ -69,7 +69,7 @@ WHERE j.company_id = $1
 -- name: countApplicationsByCandidate :one
 SELECT
   count(*)::int AS total_count,
-  count(*) FILTER (WHERE a.status != 'rejected')::int AS active_count,
+  count(*) FILTER (WHERE a.status NOT IN ('rejected', 'withdrawn'))::int AS active_count,
   count(*) FILTER (WHERE a.status = 'interviewing')::int AS interviewing_count,
   count(*) FILTER (WHERE a.status = 'evaluated')::int AS evaluated_count
 FROM applications a

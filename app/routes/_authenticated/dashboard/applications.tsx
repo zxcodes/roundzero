@@ -55,6 +55,11 @@ const stageCopy = {
     tone: "bg-rose-500/10 text-rose-700 dark:text-rose-300",
     blurb: "No longer moving forward",
   },
+  withdrawn: {
+    badge: "Withdrawn",
+    tone: "bg-muted text-muted-foreground",
+    blurb: "You withdrew this application",
+  },
 } as const;
 
 const formatDate = (date: Date | string) => {
@@ -70,6 +75,7 @@ const toApplicationStage = (status: string) => {
     case "interviewing":
     case "evaluated":
     case "rejected":
+    case "withdrawn":
       return status;
     default:
       return "applied";
@@ -103,7 +109,11 @@ const buildMetrics = (applications: Applications) => {
     },
     {
       label: "Still active",
-      value: String(applications.filter((application) => application.status !== "rejected").length),
+      value: String(
+        applications.filter(
+          (application) => application.status !== "rejected" && application.status !== "withdrawn",
+        ).length,
+      ),
       description: "Applications still moving through review.",
       icon: Rocket01Icon,
     },

@@ -96,6 +96,11 @@ const stageCopy = {
     tone: "bg-rose-500/10 text-rose-700 dark:text-rose-300",
     dot: "bg-rose-500",
   },
+  withdrawn: {
+    badge: "Withdrawn",
+    tone: "bg-muted text-muted-foreground",
+    dot: "bg-muted-foreground/50",
+  },
 } as const;
 
 const formatDate = (date: Date | string) => {
@@ -367,25 +372,27 @@ function ApplicantReviewPage() {
       </Card>
 
       <div className="flex flex-wrap gap-2">
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground">Move application to</p>
-          <Select
-            value={currentStatus}
-            onValueChange={onStatusValueChange}
-            disabled={updateStatusMutation.isPending}
-          >
-            <SelectTrigger className="w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {allowedStatuses.map((status) => (
-                <SelectItem key={status.value} value={status.value}>
-                  {status.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {allowedStatuses.length > 1 ? (
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">Move application to</p>
+            <Select
+              value={currentStatus}
+              onValueChange={onStatusValueChange}
+              disabled={updateStatusMutation.isPending}
+            >
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {allowedStatuses.map((status) => (
+                  <SelectItem key={status.value} value={status.value}>
+                    {status.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : null}
 
         {application.resumeKey ? (
           <div className="flex items-end">

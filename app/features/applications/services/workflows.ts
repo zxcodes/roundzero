@@ -188,3 +188,72 @@ export const updateApplicationStatusWorkflow = async (
 
   return { application: updated };
 };
+
+export const withdrawApplicationWorkflow = async (
+  db: Sql,
+  input: {
+    userId: string;
+    applicationId: string;
+  },
+  options?: {
+    sendNotificationEmail?: NotificationEmailSender;
+  },
+) => {
+  const user = await getUserById(db, { id: input.userId });
+  if (!user || user.role !== "candidate") {
+    throw new Error("Only candidates can withdraw applications");
+  }
+
+  const application = await getApplicationById(db, { id: input.applicationId });
+  if (!application) {
+    throw new Error("Application not found");
+  }
+
+  if (application.candidateId !== input.userId) {
+    throw new Error("Not authorized");
+  }
+
+  const currentStatus = applicationStatusSchema.parse(application.status);
+  if (!isValidTransition(currentStatus, "withdrawn")) {
+    throw new Error(`Cannot withdraw an application with status "${currentStatus}"`);
+  }
+
+  const updated = await updateApplicationStatusQuery(db, {
+    status: "withdrawn",
+    id: input.applicationId,
+  });
+
+  if (!updated) {
+    throw new Error("Failed to withdraw application");
+  }
+
+  const job = await getJobById(db, { id: application.jobId });
+  if (job) {
+    const company = await getCompanyById(db, { id: job.companyId });
+    if (company) {
+      const payload = notificationPayloadSchemas.application_withdrawn.parse({
+        applicationId: application.id,
+        jobId: application.jobId,
+        jobTitle: application.jobTitle,
+        candidateName: user.name,
+      });
+
+      const notification = await createNotification(db, {
+        userId: company.ownerId,
+        type: "application_withdrawn",
+        payload,
+      });
+
+      if (notification) {
+        const owner = await getUserById(db, { id: company.ownerId });
+        await deliverNotificationEmail(db, {
+          notification,
+          recipient: owner ? { email: owner.email } : null,
+          sendEmail: options?.sendNotificationEmail ?? sendNotificationEmailViaResend,
+        });
+      }
+    }
+  }
+
+  return { application: updated };
+};

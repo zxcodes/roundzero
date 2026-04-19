@@ -45,7 +45,7 @@ describe("jobStatusSchema", () => {
 
 describe("applicationStatusSchema", () => {
   it("accepts all valid statuses", () => {
-    for (const status of ["applied", "interviewing", "evaluated", "rejected"]) {
+    for (const status of ["applied", "interviewing", "evaluated", "rejected", "withdrawn"]) {
       expect(applicationStatusSchema.parse(status)).toBe(status);
     }
   });
@@ -126,8 +126,36 @@ describe("isValidTransition", () => {
   });
 
   it("rejected is terminal — no transitions out", () => {
-    for (const status of ["applied", "interviewing", "evaluated", "rejected"] as const) {
+    for (const status of [
+      "applied",
+      "interviewing",
+      "evaluated",
+      "rejected",
+      "withdrawn",
+    ] as const) {
       expect(isValidTransition("rejected", status)).toBe(false);
+    }
+  });
+
+  it("allows withdrawal from applied and interviewing", () => {
+    expect(isValidTransition("applied", "withdrawn")).toBe(true);
+    expect(isValidTransition("interviewing", "withdrawn")).toBe(true);
+  });
+
+  it("rejects withdrawal from evaluated and rejected", () => {
+    expect(isValidTransition("evaluated", "withdrawn")).toBe(false);
+    expect(isValidTransition("rejected", "withdrawn")).toBe(false);
+  });
+
+  it("withdrawn is terminal — no transitions out", () => {
+    for (const status of [
+      "applied",
+      "interviewing",
+      "evaluated",
+      "rejected",
+      "withdrawn",
+    ] as const) {
+      expect(isValidTransition("withdrawn", status)).toBe(false);
     }
   });
 });

@@ -274,6 +274,64 @@ describe("application access control", () => {
   });
 });
 
+// ─── Withdrawal logic ───────────────────────────────────────────
+
+describe("application withdrawal", () => {
+  it("applied → withdrawn (valid)", async () => {
+    const { company } = await seedCompany();
+    const candidate = await seedUser({ role: "candidate" });
+    const job = await makeOpenJob(company.id);
+    const app = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: {},
+      status: "applied",
+    });
+
+    expect(isValidTransition("applied", "withdrawn")).toBe(true);
+
+    const updated = await updateApplicationStatus(sql, {
+      id: app!.id,
+      status: "withdrawn",
+    });
+    expect(updated).not.toBeNull();
+    expect(updated!.status).toBe("withdrawn");
+  });
+
+  it("interviewing → withdrawn (valid)", async () => {
+    const { company } = await seedCompany();
+    const candidate = await seedUser({ role: "candidate" });
+    const job = await makeOpenJob(company.id);
+    const app = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: {},
+      status: "applied",
+    });
+    await updateApplicationStatus(sql, { id: app!.id, status: "interviewing" });
+
+    expect(isValidTransition("interviewing", "withdrawn")).toBe(true);
+
+    const updated = await updateApplicationStatus(sql, {
+      id: app!.id,
+      status: "withdrawn",
+    });
+    expect(updated).not.toBeNull();
+    expect(updated!.status).toBe("withdrawn");
+  });
+
+  it("evaluated → withdrawn (invalid)", () => {
+    expect(isValidTransition("evaluated", "withdrawn")).toBe(false);
+  });
+
+  it("withdrawn is terminal", () => {
+    expect(isValidTransition("withdrawn", "applied")).toBe(false);
+    expect(isValidTransition("withdrawn", "interviewing")).toBe(false);
+  });
+});
+
 // ─── Archived job interactions ──────────────────────────────────
 
 describe("applications on archived jobs", () => {

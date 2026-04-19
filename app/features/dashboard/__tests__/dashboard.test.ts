@@ -202,6 +202,35 @@ describe("candidate dashboard metrics", () => {
     expect(counts?.evaluatedCount).toBe(1);
   });
 
+  it("excludes withdrawn applications from active count", async () => {
+    const { company } = await seedCompany();
+    const candidate = await seedUser({ role: "candidate" });
+
+    const job1 = await makeOpenJob(company.id, "J1");
+    const job2 = await makeOpenJob(company.id, "J2");
+
+    await createApplication(sql, {
+      jobId: job1.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: {},
+      status: "applied",
+    });
+    const a2 = await createApplication(sql, {
+      jobId: job2.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: {},
+      status: "applied",
+    });
+
+    await updateApplicationStatus(sql, { id: a2!.id, status: "withdrawn" });
+
+    const counts = await countApplicationsByCandidate(sql, { candidateId: candidate.id });
+    expect(counts?.totalCount).toBe(2);
+    expect(counts?.activeCount).toBe(1); // withdrawn excluded from active
+  });
+
   it("excludes applications for archived jobs", async () => {
     const { company } = await seedCompany();
     const candidate = await seedUser({ role: "candidate" });
