@@ -1,13 +1,22 @@
 import {
   Alert02Icon,
   ArrowRightDoubleIcon,
+  Briefcase01Icon,
   BubbleChatIcon,
   CheckmarkCircle02Icon,
   RankingIcon,
+  TextIcon,
+  Tick02Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { PublicFooter, PublicHeader } from "@/components/public-layout";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
@@ -31,9 +40,12 @@ function HomePage() {
     <div className="bg-background text-foreground min-h-svh">
       <PublicHeader />
       <Hero />
+      <HowItWorksSection />
       <InterviewSection />
       <ReportSection />
       <RankingSection />
+      <PricingSection />
+      <FAQSection />
       <BottomCTA />
       <PublicFooter />
     </div>
@@ -131,6 +143,73 @@ function ScoreBar({ label, value }: { label: string; value: number }) {
       </div>
       <span className="w-8 text-right font-mono text-xs font-semibold">{value}</span>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// How it works
+// ---------------------------------------------------------------------------
+
+const steps = [
+  {
+    number: "01",
+    icon: Briefcase01Icon,
+    title: "Post a job",
+    description:
+      "Describe the role, requirements, and what good looks like. RoundZero builds an interview script tailored to the position.",
+  },
+  {
+    number: "02",
+    icon: BubbleChatIcon,
+    title: "AI interviews every applicant",
+    description:
+      "Each candidate completes an async, adaptive interview — probing their experience, validating claims, and testing role-relevant knowledge.",
+  },
+  {
+    number: "03",
+    icon: TextIcon,
+    title: "Get scored reports",
+    description:
+      "Your team receives ranked candidates with evidence-backed scores across technical depth, communication, and experience. No black boxes.",
+  },
+];
+
+function HowItWorksSection() {
+  return (
+    <section className="border-t border-border/40">
+      <div className="mx-auto max-w-6xl px-6 py-20 lg:px-8 lg:py-28">
+        <div className="text-center">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
+            How it works
+          </p>
+          <h2 className="mt-3 text-2xl font-bold tracking-tight lg:text-3xl">
+            Three steps. Zero scheduling.
+          </h2>
+        </div>
+
+        <div className="mt-14 grid gap-6 lg:grid-cols-3">
+          {steps.map((step) => (
+            <div
+              key={step.number}
+              className="relative rounded-4xl border border-border/60 bg-card p-6 shadow-sm"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex size-10 items-center justify-center rounded-2xl bg-primary/10">
+                  <HugeiconsIcon icon={step.icon} strokeWidth={2} className="size-5 text-primary" />
+                </div>
+                <span className="font-mono text-2xl font-bold text-muted-foreground/20">
+                  {step.number}
+                </span>
+              </div>
+              <h3 className="mt-4 text-base font-semibold">{step.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                {step.description}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -385,6 +464,226 @@ function RankRow({
       </span>
       <span className="w-8 text-right font-mono text-sm font-semibold">{score}</span>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Pricing
+// ---------------------------------------------------------------------------
+
+type PricingFeature = {
+  text: string;
+  included: boolean;
+};
+
+type PricingTier = {
+  name: string;
+  price: string;
+  period: string;
+  description: string;
+  features: PricingFeature[];
+  cta: string;
+  highlighted?: boolean;
+};
+
+const pricingTiers: PricingTier[] = [
+  {
+    name: "Starter",
+    price: "$0",
+    period: "forever",
+    description: "Try RoundZero on your next hire. No commitment.",
+    cta: "Get started free",
+    features: [
+      { text: "Up to 3 active job postings", included: true },
+      { text: "AI interviews for every applicant", included: true },
+      { text: "Scored candidate reports", included: true },
+      { text: "Ranked shortlists", included: true },
+      { text: "Email support", included: true },
+      { text: "Custom evaluation criteria", included: false },
+      { text: "Team seats & collaboration", included: false },
+      { text: "API access", included: false },
+    ],
+  },
+  {
+    name: "Pro",
+    price: "$149",
+    period: "per month",
+    description: "For teams actively hiring across multiple roles.",
+    cta: "Start free trial",
+    highlighted: true,
+    features: [
+      { text: "Unlimited active job postings", included: true },
+      { text: "AI interviews for every applicant", included: true },
+      { text: "Scored candidate reports", included: true },
+      { text: "Ranked shortlists", included: true },
+      { text: "Priority support", included: true },
+      { text: "Custom evaluation criteria", included: true },
+      { text: "Up to 5 team seats", included: true },
+      { text: "API access", included: false },
+    ],
+  },
+  {
+    name: "Enterprise",
+    price: "Custom",
+    period: "tailored",
+    description: "High-volume hiring with dedicated support.",
+    cta: "Talk to us",
+    features: [
+      { text: "Unlimited active job postings", included: true },
+      { text: "AI interviews for every applicant", included: true },
+      { text: "Scored candidate reports", included: true },
+      { text: "Ranked shortlists", included: true },
+      { text: "Dedicated account manager", included: true },
+      { text: "Custom evaluation criteria", included: true },
+      { text: "Unlimited team seats", included: true },
+      { text: "API access & integrations", included: true },
+    ],
+  },
+];
+
+function PricingSection() {
+  return (
+    <section className="border-t border-border/40">
+      <div className="mx-auto max-w-6xl px-6 py-20 lg:px-8 lg:py-28">
+        <div className="text-center">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-primary">Pricing</p>
+          <h2 className="mt-3 text-2xl font-bold tracking-tight lg:text-3xl">
+            Simple pricing. No per-candidate fees.
+          </h2>
+          <p className="mx-auto mt-3 max-w-lg text-base leading-relaxed text-muted-foreground">
+            Every plan includes AI interviews and scored reports for all applicants. Pay for the
+            capacity you need, not per candidate screened.
+          </p>
+        </div>
+
+        <div className="mt-14 grid gap-6 lg:grid-cols-3">
+          {pricingTiers.map((tier) => (
+            <PricingCard key={tier.name} tier={tier} />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PricingCard({ tier }: { tier: PricingTier }) {
+  return (
+    <div
+      className={`relative flex flex-col rounded-4xl border bg-card p-6 shadow-sm ${
+        tier.highlighted ? "border-primary/30 ring-1 ring-primary/20" : "border-border/60"
+      }`}
+    >
+      {tier.highlighted ? (
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-0.5 text-[11px] font-semibold text-primary-foreground">
+          Most popular
+        </div>
+      ) : null}
+
+      <div>
+        <p className="text-sm font-semibold">{tier.name}</p>
+        <div className="mt-3 flex items-baseline gap-1">
+          <span className="text-3xl font-bold tracking-tight">{tier.price}</span>
+          <span className="text-sm text-muted-foreground">/ {tier.period}</span>
+        </div>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{tier.description}</p>
+      </div>
+
+      <ul className="mt-6 flex-1 space-y-2.5">
+        {tier.features.map((feature) => (
+          <li key={feature.text} className="flex items-start gap-2.5 text-[13px]">
+            <HugeiconsIcon
+              icon={Tick02Icon}
+              strokeWidth={2.5}
+              className={`mt-0.5 size-3.5 shrink-0 ${
+                feature.included ? "text-primary" : "text-muted-foreground/30"
+              }`}
+            />
+            <span className={feature.included ? "text-foreground" : "text-muted-foreground/50"}>
+              {feature.text}
+            </span>
+          </li>
+        ))}
+      </ul>
+
+      <div className="mt-6">
+        <Button
+          variant={tier.highlighted ? "default" : "outline"}
+          className="w-full"
+          size="lg"
+          asChild
+        >
+          <Link to="/company/login">{tier.cta}</Link>
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// FAQ
+// ---------------------------------------------------------------------------
+
+const faqItems = [
+  {
+    question: "How does the AI interview work?",
+    answer:
+      "Candidates complete an async chat-based interview — no scheduling, no video. The AI adapts its questions based on the role requirements and the candidate's responses, probing weak answers and validating resume claims. Interviews typically take 20–40 minutes and can be completed anytime.",
+  },
+  {
+    question: "What do candidate reports include?",
+    answer:
+      "Each report scores candidates across technical depth, communication quality, and experience credibility. It includes specific strengths, areas of concern, key insights from the interview, and a clear hire/consider/pass recommendation — all backed by evidence from the actual conversation.",
+  },
+  {
+    question: "Can candidates cheat or use AI to answer?",
+    answer:
+      "The interview is designed to be adaptive. It follows up on vague answers, asks for specifics about claimed experience, and cross-references responses against the resume. Copied or AI-generated answers are flagged as inconsistent because they lack the context-specific details that real experience produces.",
+  },
+  {
+    question: "How long before I see results?",
+    answer:
+      "Candidates can complete interviews at their own pace, typically within a few days of applying. Reports are generated immediately after the interview ends. Your team gets scored, ranked candidates without waiting for manual screening rounds.",
+  },
+  {
+    question: "Do candidates need to install anything?",
+    answer:
+      "No. The entire experience runs in the browser — candidates apply, complete the interview, and track their application status from one place. No apps, plugins, or calendar links required.",
+  },
+  {
+    question: "What happens to candidates who aren't a strong fit?",
+    answer:
+      "Candidates who are a partial match may be asked 2–3 clarifying questions to fill gaps before a final evaluation. Everyone receives clear status updates throughout the process — no ghosting, no black holes.",
+  },
+  {
+    question: "Can I customize what the AI evaluates?",
+    answer:
+      "On the Pro and Enterprise plans, you can define custom evaluation criteria tailored to the role. The AI uses your job requirements, interview questions, and weighting preferences to score candidates on what matters most to your team.",
+  },
+];
+
+function FAQSection() {
+  return (
+    <section className="border-t border-border/40">
+      <div className="mx-auto max-w-6xl px-6 py-20 lg:px-8 lg:py-28">
+        <div className="mx-auto max-w-2xl">
+          <div className="text-center">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-primary">FAQ</p>
+            <h2 className="mt-3 text-2xl font-bold tracking-tight lg:text-3xl">Common questions</h2>
+          </div>
+
+          <Accordion type="single" collapsible className="mt-10">
+            {faqItems.map((item, index) => (
+              <AccordionItem key={item.question} value={`faq-${index}`}>
+                <AccordionTrigger>{item.question}</AccordionTrigger>
+                <AccordionContent>
+                  <p className="text-muted-foreground">{item.answer}</p>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </div>
+      </div>
+    </section>
   );
 }
 
