@@ -175,3 +175,9 @@ Replaces hand-rolled Google OAuth + encrypted cookie sessions. Unlocks magic lin
 - [ ] Add `text-wrap: balance` to headings
 - [ ] Add `tabular-nums` to numeric columns
 - [ ] Replace straight apostrophes with curly in `not-found.tsx`
+
+## Phase 9 (Post-Release): Landing Page Enhancements
+
+- [ ] Add social proof section (logos, testimonials, or metrics once available)
+- [ ] Add candidate-side value prop (brief section addressing job seekers)
+- [ ] Add comparison section (traditional screening vs RoundZero side-by-side)
