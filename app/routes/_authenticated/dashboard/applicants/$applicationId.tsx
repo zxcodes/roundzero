@@ -34,11 +34,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { AiEvaluationStateBadge, AiReportPanel } from "@/features/ai/components/evaluation-cards";
 import {
   getApplicationResumeDownloadUrl,
   getCompanyApplicantReview,
   updateApplicationStatus,
 } from "@/features/applications/server/functions";
+import { getMockAiEvaluation } from "@/mock/ai-evaluations";
 import {
   APPLICATION_STATUS_TRANSITIONS,
   type ApplicationStatus,
@@ -231,6 +233,7 @@ function ApplicantReviewPage() {
   const workHistory = getSnapshotWorkHistory(metadata.workHistory);
   const headline = getStringValue(metadata.headline);
   const bio = getStringValue(metadata.bio);
+  const aiEvaluation = getMockAiEvaluation(application.id);
   const currentStatus = applicationStatusSchema.parse(application.status);
   const currentStageIndex = APPLICATION_STAGES.indexOf(
     currentStatus as (typeof APPLICATION_STAGES)[number],
@@ -371,6 +374,21 @@ function ApplicantReviewPage() {
         </CardContent>
       </Card>
 
+      <AiReportPanel
+        evaluation={aiEvaluation}
+        action={
+          <Button variant="outline" size="sm" asChild>
+            <Link
+              to="/dashboard/applicant-reports/$applicationId"
+              params={{ applicationId: application.id }}
+            >
+              <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-4" />
+              Open full report
+            </Link>
+          </Button>
+        }
+      />
+
       <div className="flex flex-wrap gap-2">
         {allowedStatuses.length > 1 ? (
           <div className="space-y-2">
@@ -418,16 +436,19 @@ function ApplicantReviewPage() {
 
       <Empty className="border">
         <EmptyDescription>
-          This page shows the candidate snapshot that was attached at apply time, so later profile
-          edits do not silently change what your team reviewed.
+          This page shows the candidate snapshot attached at apply time. The AI report above is a
+          mock preview until the evaluation pipeline is wired.
         </EmptyDescription>
       </Empty>
 
       {hasSnapshotContent ? (
         <div className="space-y-4">
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
-            Submitted profile
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
+              Submitted profile
+            </p>
+            <AiEvaluationStateBadge state={aiEvaluation.state} />
+          </div>
           <div className="space-y-3">
             {headline || application.resumeKey ? (
               <div className="grid gap-3 sm:grid-cols-2">

@@ -25,11 +25,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { CandidateAiNextStepCard } from "@/features/ai/components/evaluation-cards";
 import {
   getApplicationResumeDownloadUrl,
   getMyApplicationDetail,
   withdrawApplication,
 } from "@/features/applications/server/functions";
+import { getMockAiEvaluation } from "@/mock/ai-evaluations";
 import { validateUuidParams } from "@/shared/validation";
 
 export const Route = createFileRoute("/_authenticated/dashboard/application/$applicationId")({
@@ -209,6 +211,7 @@ function CandidateApplicationDetailPage() {
 
   const metadata = toRecord(application.metadata);
   const currentStage = toApplicationStage(application.status);
+  const aiEvaluation = getMockAiEvaluation(application.id);
   const meta = stageCopy[currentStage];
   const skills = getStringArray(metadata.skills);
   const links = getLinks(metadata.links);
@@ -288,6 +291,8 @@ function CandidateApplicationDetailPage() {
           <p className="text-xs text-muted-foreground/80">{meta.nextStep}</p>
         </CardContent>
       </Card>
+
+      <CandidateAiNextStepCard evaluation={aiEvaluation} />
 
       <div className="flex flex-wrap gap-2">
         {application.resumeKey ? (

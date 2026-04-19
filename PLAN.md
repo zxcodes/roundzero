@@ -93,6 +93,24 @@ The riskiest assumption: that pre-evaluation output (score + missing requirement
 
 ## Phase 4: AI Interview
 
+Build the AI UI surfaces alongside the real interview data model. Avoid a separate throwaway mock-only phase; use temporary seeded/mock states only where they help validate layout before the backend path is fully wired.
+
+### Candidate AI Interview Surfaces
+
+- [x] Add mock candidate-facing AI next-step card to candidate application detail pages
+- [ ] Add interview invitation card on candidate application detail pages for `invited_roundzero`
+- [ ] Add medium-fit clarification prompt card for candidates who need 2-3 follow-up questions before a full interview
+- [ ] Extend candidate application progress UI for AI-aware statuses:
+  - pre-screening / under review
+  - interview ready
+  - interview in progress
+  - evaluated
+  - shortlisted / closed
+- [ ] Add interview completed state with submitted timestamp, question count, and clear "under review" messaging
+- [ ] Add candidate-facing empty/error states for expired, already-completed, or unavailable interviews
+
+### Interview System
+
 - [ ] Switch runtime from Nitro to Cloudflare Workers (`@cloudflare/vite-plugin`)
 - [ ] `wrangler.jsonc` config (Durable Objects, AI binding, R2 bucket)
 - [ ] InterviewAgent (`app/agents/interview-agent.ts`, extends AIChatAgent)
@@ -107,6 +125,55 @@ The riskiest assumption: that pre-evaluation output (score + missing requirement
 - [ ] Time/question limits enforcement
 
 ## Phase 5: Evaluation & Reports
+
+Build the report/recommendation UI against the real report shape as it lands. The goal is to make the company-facing AI layer legible before optimizing model quality.
+
+### Company AI Review Surfaces
+
+- [x] Add temporary mock data under `app/mock/` for report/ranking UI validation
+- [x] Add reusable AI score, recommendation, confidence, ranking, and report preview components
+- [x] Add mock company ranked applicant list to the job applicants page
+- [x] Add mock AI report panel to the company applicant detail page
+- [x] Add mock full AI report route with question/answer evidence timeline:
+  - route: `/dashboard/applicant-reports/$applicationId`
+  - includes question, answer, tested signal, dimension, score impact, evaluator note, and evidence tags
+- [x] Add mock pre-evaluation applicant states:
+  - not evaluated
+  - needs clarification
+  - evaluated
+  - shortlisted
+  - rejected
+- [x] Add mock report summary card on applicant detail pages
+- [x] Add reusable score components:
+  - score bar
+  - score badge
+  - recommendation badge
+  - confidence indicator
+- [ ] Replace mock AI data with real report records once the evaluation schema exists
+- [ ] Add real pre-evaluation applicant state on applicant detail pages:
+  - show candidate identity, submitted resume, apply date, and current status
+  - show "evaluation in progress" when no report exists
+  - keep report/actions disabled until evaluation exists
+- [ ] Add dedicated per-job ranked candidates page backed by real reports
+- [ ] Replace mock ranked candidate row/card states with real report-backed states:
+  - not evaluated yet
+  - needs clarification
+  - evaluated
+  - shortlisted
+  - rejected
+- [ ] Replace mock full candidate report view with real report data:
+  - overall score
+  - recommendation
+  - technical score
+  - communication score
+  - experience relevance score
+  - strengths
+  - concerns
+  - evidence quotes
+  - question/answer timeline
+  - resume/transcript links
+
+### Evaluation System
 
 - [ ] EvaluationAgent (`app/agents/evaluation-agent.ts`, extends Agent)
 - [ ] Trigger evaluation when interview completes
