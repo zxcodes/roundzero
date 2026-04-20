@@ -135,10 +135,4 @@ export const salaryCurrencyLabels: Record<SalaryCurrency, string> = {
   INR: "INR (₹)",
 };
 
-export const jobStatusLabels: Record<JobStatus, string> = {
-  draft: "Draft",
-  open: "Open",
-  closed: "Closed",
-};
-
 export const MAX_COMPANY_DESCRIPTION_LENGTH = 5000;
