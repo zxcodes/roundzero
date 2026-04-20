@@ -188,14 +188,13 @@ export function AiReportPanel({
             <h3 className="text-xl font-semibold tracking-tight">AI evaluation snapshot</h3>
             <p className="text-sm leading-6 text-muted-foreground">{evaluation.summary}</p>
           </div>
-          <div className="flex flex-col items-start gap-3 sm:items-end">
-            <div className="flex items-center gap-3">
-              <AiRecommendationBadge recommendation={evaluation.recommendation} />
-              <AiScoreBadge score={evaluation.score} />
-            </div>
-            {action ? <div>{action}</div> : null}
+          <div className="flex items-center gap-3">
+            <AiRecommendationBadge recommendation={evaluation.recommendation} />
+            <AiScoreBadge score={evaluation.score} />
           </div>
         </div>
+
+        {action ? <div>{action}</div> : null}
 
         <div className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
           <div className="space-y-4">
