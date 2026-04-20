@@ -83,7 +83,7 @@ function Hero() {
           </p>
           <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center">
             <Button size="lg" asChild>
-              <Link to="/company/login">For companies</Link>
+              <Link to="/company/login">For employers</Link>
             </Button>
             <Button variant="outline" size="lg" asChild>
               <Link to="/candidate/login">For job seekers</Link>
@@ -707,7 +707,7 @@ function BottomCTA() {
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Button size="lg" asChild>
-              <Link to="/company/login">For companies</Link>
+              <Link to="/company/login">For employers</Link>
             </Button>
             <Button variant="outline" size="lg" asChild>
               <Link to="/candidate/login">For job seekers</Link>
