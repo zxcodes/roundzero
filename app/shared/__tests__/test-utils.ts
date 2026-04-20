@@ -1,4 +1,5 @@
 import postgres from "postgres";
+import { serverEnv } from "../env.server";
 
 /**
  * Shared test database utilities.
@@ -9,7 +10,7 @@ import postgres from "postgres";
  */
 
 const TEST_DATABASE_URL =
-  process.env.TEST_DATABASE_URL ??
+  serverEnv.TEST_DATABASE_URL ??
   "postgres://postgres:password@localhost:6312/postgres?sslmode=disable";
 
 let _sql: ReturnType<typeof postgres> | null = null;
