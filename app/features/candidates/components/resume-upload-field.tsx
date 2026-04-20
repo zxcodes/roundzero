@@ -92,7 +92,7 @@ export function ResumeUploadField({
       await onUploaded({ resumeKey: finalized.resumeKey });
       setUploadedResume({ resumeKey: finalized.resumeKey, name: file.name });
       setResumeUploadState({ status: "uploaded", progress: 100 });
-      toast.success("Resume uploaded");
+      toast.success("Resume uploaded", { position: "top-right" });
     } catch (error) {
       setUploadedResume(
         value
@@ -104,7 +104,7 @@ export function ResumeUploadField({
       );
       setResumeUploadState({ status: "idle", progress: 0 });
       const message = error instanceof Error ? error.message : "Failed to upload resume";
-      toast.error(message);
+      toast.error(message, { position: "top-right" });
     }
   };
 
@@ -123,7 +123,7 @@ export function ResumeUploadField({
 
       window.open(result.url, "_blank", "noopener,noreferrer");
     } catch {
-      toast.error("Failed to open resume. Please try again.");
+      toast.error("Failed to open resume. Please try again.", { position: "top-right" });
     }
   };
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

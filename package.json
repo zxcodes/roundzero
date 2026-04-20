@@ -9,6 +9,7 @@
     "test": "vitest run",
     "sqlgen": "sqlc generate",
     "db:seed": "bun run seed.ts",
+    "db:seed:me": "bun ./db/seed/seed-me.ts",
     "db:migrate": "dbmate migrate up --url $DATABASE_URL",
     "biome:check": "biome check .",
     "check": "biome check . --write && bun typecheck",
