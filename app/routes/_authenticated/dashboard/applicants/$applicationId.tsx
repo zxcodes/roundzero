@@ -377,7 +377,7 @@ function ApplicantReviewPage() {
       <AiReportPanel
         evaluation={aiEvaluation}
         action={
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="outline" asChild>
             <Link
               to="/dashboard/applicant-reports/$applicationId"
               params={{ applicationId: application.id }}
