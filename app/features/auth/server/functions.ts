@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { clearSession, updateSession, useSession } from "@tanstack/react-start/server";
 import { zodValidator } from "@tanstack/zod-adapter";
+import { writeFile } from "fs/promises";
 import { z } from "zod";
 import { getCandidateProfileByUserId } from "@/features/candidates/queries/queries_sql";
 import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
@@ -58,9 +59,18 @@ export const loginWithGoogle = createServerFn({ method: "POST" })
         role: data.role,
         id: user.id,
       });
+
       if (updated) {
         activeUser = updated;
       }
+    }
+
+    // This is only for development and seed.
+    if (process.env.NODE_ENV === "development") {
+      await writeFile(
+        `user.${activeUser.role}.json`,
+        JSON.stringify({ user: activeUser }, null, 2),
+      );
     }
 
     await updateSession<SessionData>(sessionConfig, { userId: activeUser.id });
