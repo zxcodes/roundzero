@@ -62,7 +62,11 @@ async function seedForCompany(user: UserJson["user"]) {
     )
     ON CONFLICT (id) DO UPDATE
     SET name = EXCLUDED.name, slug = EXCLUDED.slug, description = EXCLUDED.description,
-        logo_key = EXCLUDED.logo_key, social_links = EXCLUDED.social_links,
+        logo_key = EXCLUDED.logo_key, industry = EXCLUDED.industry,
+        company_size = EXCLUDED.company_size, location = EXCLUDED.location,
+        website = EXCLUDED.website, founded_year = EXCLUDED.founded_year,
+        tech_stack = EXCLUDED.tech_stack, culture = EXCLUDED.culture,
+        social_links = EXCLUDED.social_links,
         onboarding_completed_at = now(),
         updated_at = now()
   `;
@@ -388,12 +392,12 @@ async function seedForCandidate(user: UserJson["user"]) {
     await sql`
       INSERT INTO candidate_work_history (
         id, candidate_profile_id, company, title, start_month, end_month,
-        currently_working_here, sort_order
+        currently_working_here, description, sort_order
       )
       VALUES (
         ${makeUuidFromSeed(`seed-me-work-${user.id}-${i}`)},
         ${actualProfileId}, ${entry.company}, ${entry.title}, ${entry.start}, ${entry.end},
-        ${entry.current}, ${i}
+        ${entry.current}, ${entry.description}, ${i}
       )
     `;
   }
