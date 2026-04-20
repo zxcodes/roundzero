@@ -7,7 +7,7 @@ import { getJobById } from "@/features/jobs/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { applicationStatusSchema } from "@/shared/enums";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
-import { createR2ResumeDownloadUrl } from "@/shared/r2";
+import { createR2ResumeDownloadUrl } from "@/shared/r2.server";
 import {
   getApplicationById,
   getApplicationByJobAndCandidate,
@@ -168,9 +168,7 @@ export const getApplicationResumeDownloadUrl = createServerFn({ method: "POST" }
 
     if (user.role === "candidate" && application.candidateId === context.userId) {
       return {
-        url: await createR2ResumeDownloadUrl({
-          resumeKey: application.resumeKey,
-        }),
+        url: await createR2ResumeDownloadUrl({ data: { resumeKey: application.resumeKey } }),
       };
     }
 
@@ -186,9 +184,7 @@ export const getApplicationResumeDownloadUrl = createServerFn({ method: "POST" }
       }
 
       return {
-        url: await createR2ResumeDownloadUrl({
-          resumeKey: application.resumeKey,
-        }),
+        url: await createR2ResumeDownloadUrl({ data: { resumeKey: application.resumeKey } }),
       };
     }
 
