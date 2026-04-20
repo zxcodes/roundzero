@@ -48,7 +48,7 @@ export function PublicHeader() {
                 className="hidden text-muted-foreground sm:inline-flex"
                 asChild
               >
-                <Link to="/company/login">For companies</Link>
+                <Link to="/company/login">For employers</Link>
               </Button>
               <Button size="sm" asChild>
                 <Link to="/candidate/login">For job seekers</Link>
@@ -95,7 +95,7 @@ export function PublicHeader() {
                       asChild
                       onClick={onCloseMobileMenu}
                     >
-                      <Link to="/company/login">For companies</Link>
+                      <Link to="/company/login">For employers</Link>
                     </Button>
                     <Button
                       variant="ghost"

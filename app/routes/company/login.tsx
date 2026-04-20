@@ -29,7 +29,7 @@ export const Route = createFileRoute("/company/login")({
     }
   },
   head: () => ({
-    meta: [{ title: "Sign In as Company | RoundZero" }],
+    meta: [{ title: "Sign In as Employer | RoundZero" }],
   }),
   component: CompanyLoginPage,
 });
@@ -60,7 +60,7 @@ function CompanyLoginPage() {
           <div className="space-y-8">
             <div className="space-y-4">
               <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
-                For companies
+                For employers
               </p>
               <h1 className="text-3xl font-extrabold leading-tight tracking-tight xl:text-4xl">
                 Replace your first
@@ -132,7 +132,7 @@ function CompanyLoginPage() {
 
           <div className="space-y-2 text-center">
             <p className="text-[11px] font-bold uppercase tracking-widest text-primary lg:hidden">
-              For companies
+              For employers
             </p>
             <h2 className="text-2xl font-bold tracking-tight">Start hiring smarter</h2>
             <p className="text-sm text-muted-foreground">
