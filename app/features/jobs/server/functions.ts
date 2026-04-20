@@ -12,7 +12,6 @@ import {
   createJob as createJobQuery,
   getArchivedJobsByCompanyId,
   getJobById,
-  getJobsByCompanyId,
   getJobsWithPipelineByCompanyId,
   getOpenJobsByCompanyId as getOpenJobsByCompanyIdQuery,
   getOpenJobsPaginated as getOpenJobsPaginatedQuery,
@@ -50,19 +49,6 @@ export const createJob = createServerFn({ method: "POST" })
     }
 
     return { job };
-  });
-
-export const getMyJobs = createServerFn({ method: "GET" })
-  .middleware([authMiddleware])
-  .handler(async ({ context }) => {
-    const db = getDb();
-    await db.unsafe(closeExpiredJobsQuery);
-    const company = await getCompanyByOwnerId(db, { ownerId: context.userId });
-    if (!company) {
-      return [];
-    }
-    const jobs = await getJobsByCompanyId(db, { companyId: company.id });
-    return jobs;
   });
 
 export const getMyJobsWithPipeline = createServerFn({ method: "GET" })

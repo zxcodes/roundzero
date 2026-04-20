@@ -74,7 +74,7 @@ const confidenceCopy: Record<MockAiEvaluation["confidence"], string> = {
   high: "High confidence",
 };
 
-export function AiScoreBadge({ score }: { score: number | null }) {
+function AiScoreBadge({ score }: { score: number | null }) {
   return (
     <div className="relative flex size-14 shrink-0 items-center justify-center rounded-3xl border border-primary/15 bg-primary/10 shadow-inner shadow-primary/10">
       <span className="font-mono text-lg font-semibold text-primary">
@@ -84,11 +84,7 @@ export function AiScoreBadge({ score }: { score: number | null }) {
   );
 }
 
-export function AiRecommendationBadge({
-  recommendation,
-}: {
-  recommendation: MockAiRecommendation;
-}) {
+function AiRecommendationBadge({ recommendation }: { recommendation: MockAiRecommendation }) {
   const copy = recommendationCopy[recommendation];
   return (
     <Badge variant="outline" className={copy.className}>
@@ -102,7 +98,7 @@ export function AiEvaluationStateBadge({ state }: { state: MockAiEvaluationState
   return <Badge className={copy.className}>{copy.label}</Badge>;
 }
 
-export function AiDimensionScores({ evaluation }: { evaluation: MockAiEvaluation }) {
+function AiDimensionScores({ evaluation }: { evaluation: MockAiEvaluation }) {
   if (evaluation.dimensions.length === 0) {
     return (
       <div className="rounded-4xl border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground">

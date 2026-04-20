@@ -26,5 +26,3 @@ const envSchema = z.object({
 });
 
 export const serverEnv = envSchema.parse(process.env);
-
-export type ServerENV = keyof typeof serverEnv;
