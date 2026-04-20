@@ -377,14 +377,15 @@ function ApplicantReviewPage() {
       <AiReportPanel
         evaluation={aiEvaluation}
         action={
-          <Link
-            to="/dashboard/applicant-reports/$applicationId"
-            params={{ applicationId: application.id }}
-            className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3.5 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
-          >
-            View full report
-            <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-4" />
-          </Link>
+          <Button variant="outline" size="sm" asChild>
+            <Link
+              to="/dashboard/applicant-reports/$applicationId"
+              params={{ applicationId: application.id }}
+            >
+              View full report
+              <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-4" />
+            </Link>
+          </Button>
         }
       />
 
