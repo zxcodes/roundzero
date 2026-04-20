@@ -6,7 +6,7 @@ import { getUserById } from "@/features/auth/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { companySizeSchema, industrySchema, MAX_COMPANY_DESCRIPTION_LENGTH } from "@/shared/enums";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
-import { createR2UploadUrl, r2ObjectExists } from "@/shared/r2";
+import { createR2UploadUrl, r2ObjectExists } from "@/shared/r2.server";
 import { type SessionData, sessionConfig } from "@/shared/session";
 import {
   nullableTrimmedString,
@@ -230,8 +230,7 @@ export const createCompanyLogoUploadTarget = createServerFn({ method: "POST" })
     return {
       logoKey,
       uploadUrl: await createR2UploadUrl({
-        objectKey: logoKey,
-        contentType: data.contentType,
+        data: { objectKey: logoKey, contentType: data.contentType },
       }),
       uploadMethod: "put" as const,
       maxBytes: maxLogoFileSize,
@@ -249,7 +248,7 @@ export const finalizeCompanyLogoUpload = createServerFn({ method: "POST" })
     }
 
     assertLogoKeyBelongsToUser(data.logoKey, context.userId);
-    const exists = await r2ObjectExists(data.logoKey);
+    const exists = await r2ObjectExists({ data: { key: data.logoKey } });
     if (!exists) {
       throw new Error("Uploaded logo could not be found");
     }

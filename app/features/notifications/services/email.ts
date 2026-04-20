@@ -8,6 +8,7 @@ import {
   markNotificationEmailFailed,
   markNotificationEmailSkipped,
 } from "@/features/notifications/queries/queries_sql";
+import { serverEnv } from "@/shared/env.server";
 
 type NotificationRecord = {
   id: string;
@@ -34,9 +35,9 @@ export type NotificationEmailSender = (
 ) => Promise<NotificationEmailSendResult>;
 
 export const sendNotificationEmailViaResend: NotificationEmailSender = async (message) => {
-  const resend = new Resend(process.env.RESEND_API_KEY);
+  const resend = new Resend(serverEnv.RESEND_API_KEY);
   const response = await resend.emails.send({
-    from: process.env.RESEND_FROM_EMAIL!,
+    from: serverEnv.RESEND_FROM_EMAIL,
     to: message.to,
     subject: message.subject,
     react: message.react,
@@ -76,7 +77,7 @@ export async function deliverNotificationEmail(
     return;
   }
 
-  const appUrl = process.env.VITE_APP_URL;
+  const appUrl = serverEnv.APP_URL;
   let pathname = String(presentation.to);
   for (const [key, value] of Object.entries(presentation.params)) {
     pathname = pathname.replace(`$${key}`, value);
@@ -87,7 +88,7 @@ export async function deliverNotificationEmail(
   if (
     !sendEmail ||
     (sendEmail === sendNotificationEmailViaResend &&
-      (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL))
+      (!serverEnv.RESEND_API_KEY || !serverEnv.RESEND_FROM_EMAIL))
   ) {
     await markNotificationEmailSkipped(db, {
       id: input.notification.id,
