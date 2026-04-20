@@ -16,6 +16,7 @@
       "**/app/**/*",
       "**/*.json",
       "**/vite.config.ts",
+      "**/vitest.config.ts",
       "!**/app/routeTree.gen.ts",
       "!**/app/**/*_sql.ts",
       "!**/app/components/ui",
