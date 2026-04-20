@@ -1,4 +1,4 @@
-import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
+import { UserGroupIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Empty,
@@ -21,7 +21,7 @@ export function CompanyJobApplicantsList({
       <Empty className="border">
         <EmptyHeader>
           <EmptyMedia variant="icon">
-            <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} />
+            <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} />
           </EmptyMedia>
           <EmptyTitle>No applicants yet</EmptyTitle>
           <EmptyDescription>
