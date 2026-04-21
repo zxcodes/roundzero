@@ -1,6 +1,7 @@
 ## TODO
 
 <!--- enforce resume types (pdf, doc, txt) so we have a deterministic parsing pipeline.-->
+- the work profile snapshot is duplicating markup. use single comp and also clean the entire thing up.
 - see shadcn dashboard block for inspiration on company dashboard. (bunx shadcn@latest add dashboard-01)
 - resend testing in dev. (candidates tested, need company reports testing, also add email preview instead of sending and checking emails (react-email))
 - company dashboard needs a big overhaul. graphs, charts, recent reports, etc
