@@ -33,7 +33,12 @@ export function CandidateApplySection({
   const applyMutation = useMutation({
     mutationFn: applyToJobFn,
     onSuccess: async () => {
-      toast.success(`Successfully applied to ${jobTitle} at ${companyName}`);
+      toast.success(`Successfully applied to ${jobTitle} at ${companyName}`, {
+        action: {
+          label: "View applications",
+          onClick: () => router.navigate({ to: "/dashboard/applications" }),
+        },
+      });
       setJustApplied(true);
       await router.invalidate();
     },
