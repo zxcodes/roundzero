@@ -71,7 +71,7 @@ export function AppSidebar({
   const mainItems = isCompany ? companyMain : candidateMain;
 
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
+    <Sidebar collapsible="offcanvas" {...props} variant="floating">
       <SidebarHeader>
         <Link to="/dashboard" className="flex items-center gap-2.5 px-1 py-0.5">
           <div className="flex size-7 items-center justify-center rounded-lg bg-primary">
