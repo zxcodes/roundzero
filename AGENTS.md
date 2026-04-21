@@ -93,6 +93,7 @@ Always consult both before making design decisions or implementing features.
 - **No inline event handlers** — define `on...` handlers in component scope or local render scope and reference them from JSX instead of inline arrow functions.
 - `function` declarations for UI components, `const` for non-UI. `on` prefix for handlers (not `handle`).
 - **Use `@app/components/ui/empty.tsx`** for all empty states in the app. Import and compose `Empty`, `EmptyHeader`, `EmptyTitle`, `EmptyDescription`, `EmptyContent`, and `EmptyMedia` components.
+- **Use `ScrollArea`** for contained scrollable UI panels (popovers, sheets, modals, notification lists, dropdowns with custom content) where native scrollbars look bad. Don't use it for main page content, sidebars, or native `<textarea>` elements — those should keep native scrolling for touch/trackpad behavior. Always give `ScrollArea` an explicit `h-` (not just `max-h-`).
 - **All route skeletons live in `app/components/route-skeletons.tsx`** — this is the single centralised file for every `pendingComponent` skeleton. Never create skeleton components in other files. Every route with a `loader` must have a `pendingComponent` that matches its rendered layout. When a page's layout changes, update the corresponding skeleton in this file to stay in sync. The base `<Skeleton>` primitive is in `app/components/ui/skeleton.tsx`.
 
 ## Tooling + Commands
