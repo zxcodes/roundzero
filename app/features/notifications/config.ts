@@ -90,7 +90,7 @@ export const getNotificationPresentation = (notification: { type: string; payloa
       type,
       tone: notificationTone[type],
       title: `${payload.data.companyName} updated your application`,
-      body: `${payload.data.jobTitle} is now ${formatApplicationStatusLabel(payload.data.status).toLowerCase()}.`,
+      body: `Your application for ${payload.data.jobTitle} at ${payload.data.companyName} is now ${formatApplicationStatusLabel(payload.data.status).toLowerCase()}.`,
       to: "/dashboard/application/$applicationId" as const,
       params: { applicationId: payload.data.applicationId },
     };
@@ -108,7 +108,7 @@ export const getNotificationPresentation = (notification: { type: string; payloa
       type,
       tone: notificationTone[type],
       title: `New applicant for ${payload.data.jobTitle}`,
-      body: `${payload.data.candidateName} just applied.`,
+      body: `${payload.data.candidateName} has applied for ${payload.data.jobTitle}. Review their application and resume.`,
       to: "/dashboard/applicants/$applicationId" as const,
       params: { applicationId: payload.data.applicationId },
     };
@@ -126,7 +126,7 @@ export const getNotificationPresentation = (notification: { type: string; payloa
       type,
       tone: notificationTone[type],
       title: `${payload.data.candidateName} withdrew their application`,
-      body: `Application for ${payload.data.jobTitle} was withdrawn.`,
+      body: `${payload.data.candidateName} has withdrawn their application for ${payload.data.jobTitle}.`,
       to: "/dashboard/job-applicants/$jobId" as const,
       params: { jobId: payload.data.jobId },
     };
@@ -148,15 +148,15 @@ export const getNotificationPresentation = (notification: { type: string; payloa
   const messages = {
     job_published: {
       title: `${jobPayload.data.jobTitle} is now live`,
-      body: `Your job posting is now accepting applications.`,
+      body: `Your job posting for ${jobPayload.data.jobTitle} is now live and accepting applications.`,
     },
     job_archived: {
       title: `${jobPayload.data.jobTitle} has been archived`,
-      body: `This job is no longer accepting applications.`,
+      body: `Your job posting for ${jobPayload.data.jobTitle} has been archived and is no longer accepting applications.`,
     },
     job_closed: {
       title: `${jobPayload.data.jobTitle} has closed`,
-      body: `This job posting has expired.`,
+      body: `Your job posting for ${jobPayload.data.jobTitle} has expired and is now closed.`,
     },
   };
 

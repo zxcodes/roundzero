@@ -52,7 +52,7 @@ export function NotificationEmailTemplate(props: NotificationEmailTemplateProps)
 
 NotificationEmailTemplate.PreviewProps = {
   previewText: "Acme Corp updated your application",
-  body: "Senior Frontend Engineer is now interviewing.",
+  body: "Your application for Senior Frontend Engineer at Acme Corp is now interviewing.",
   ctaHref: "https://roundzero.app/dashboard/application/123",
 } satisfies NotificationEmailTemplateProps;
 

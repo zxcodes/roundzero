@@ -50,10 +50,10 @@ async function seedForCompany(user: UserJson["user"]) {
       id, owner_id, name, slug, onboarding_completed_at, description, logo_key,
       industry, company_size, location, website, founded_year, tech_stack, culture, social_links
     )
-    VALUES (
-      ${companyId}, ${user.id}, ${`${user.name}'s Company`}, ${slug}, now(),
+      VALUES (
+      ${companyId}, ${user.id}, ${user.name}, ${slug}, now(),
       ${"Innovative technology company at the forefront of AI-powered productivity tools. We're building intuitive platforms that help knowledge workers automate repetitive tasks, collaborate seamlessly, and focus on high-impact work. Our mission is to eliminate workplace friction through thoughtful design and cutting-edge AI."},
-      ${`https://ui-avatars.com/api/?name=${encodeURIComponent(`${user.name}'s Company`)}&background=2563eb&color=ffffff&size=256&bold=true&format=svg`},
+      ${`https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=2563eb&color=ffffff&size=256&bold=true&format=svg`},
       ${"technology"}, ${"11-50"}, ${"San Francisco, CA"},
       ${`https://${slug}.com`}, ${2022},
       ${sql.json(["TypeScript", "React", "Node.js", "PostgreSQL", "AWS", "Docker", "Kubernetes", "GraphQL", "Redis"])},
@@ -70,7 +70,7 @@ async function seedForCompany(user: UserJson["user"]) {
         onboarding_completed_at = now(),
         updated_at = now()
   `;
-  console.log(`  Company created: ${user.name}'s Company`);
+  console.log(`  Company created: ${user.name}`);
 
   // Jobs - diverse mix of technical and non-technical roles
   const jobTemplates = [

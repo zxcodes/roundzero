@@ -72,12 +72,16 @@ export function CompanyLogoUploadField({
 
       await onUploaded({ logoKey: finalized.logoKey });
       setUploadState({ status: "idle", progress: 100 });
-      toast.success("Company logo uploaded");
+      toast.success("Company logo uploaded", {
+        style: { marginBottom: "4rem" },
+      });
     } catch (uploadError) {
       setUploadState({ status: "idle", progress: 0 });
       const message =
         uploadError instanceof Error ? uploadError.message : "Failed to upload company logo";
-      toast.error(message);
+      toast.error(message, {
+        style: { marginBottom: "4rem" },
+      });
     }
   };
 
