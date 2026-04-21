@@ -10,7 +10,6 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
 import { useTheme } from "@/components/theme-provider";
 import {
   Command,
@@ -27,6 +26,8 @@ import { useAuth } from "@/features/auth/provider";
 
 interface CommandPaletteProps {
   isCompany: boolean;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 const companyNavItems = [
@@ -75,42 +76,30 @@ const candidateNavItems = [
   },
 ];
 
-export function CommandPalette({ isCompany }: CommandPaletteProps) {
-  const [open, setOpen] = useState(false);
+export function CommandPalette({ isCompany, open, onOpenChange }: CommandPaletteProps) {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const { signOut } = useAuth();
 
   const navItems = isCompany ? companyNavItems : candidateNavItems;
 
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        setOpen((prev) => !prev);
-      }
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, []);
-
   const onSelectNav = (url: string) => {
-    setOpen(false);
+    onOpenChange(false);
     navigate({ to: url });
   };
 
   const onToggleTheme = () => {
-    setOpen(false);
+    onOpenChange(false);
     setTheme(theme === "light" ? "dark" : "light");
   };
 
   const onSignOut = () => {
-    setOpen(false);
+    onOpenChange(false);
     signOut();
   };
 
   return (
-    <CommandDialog open={open} onOpenChange={setOpen}>
+    <CommandDialog open={open} onOpenChange={onOpenChange}>
       <Command>
         <CommandInput placeholder="Type a command or search..." />
         <CommandList>
