@@ -1,4 +1,4 @@
-import { Image02Icon, Upload04Icon } from "@hugeicons/core-free-icons";
+import { Edit02Icon, Image02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useServerFn } from "@tanstack/react-start";
 import { useId, useState } from "react";
@@ -90,7 +90,7 @@ export function CompanyLogoUploadField({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col gap-3">
       <Label htmlFor={inputId}>{label}</Label>
       <input
         id={inputId}
@@ -106,7 +106,16 @@ export function CompanyLogoUploadField({
             className="group relative flex size-24 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-dashed border-border bg-muted/40 transition-colors hover:border-primary/40 hover:bg-muted/60"
           >
             {logoUrl ? (
-              <img src={logoUrl} alt="Company logo" className="size-full object-contain p-3" />
+              <>
+                <img src={logoUrl} alt="Company logo" className="size-full object-contain p-3" />
+                <div className="absolute inset-0 flex items-center justify-center bg-background/60 opacity-0 transition-opacity group-hover:opacity-100">
+                  <HugeiconsIcon
+                    icon={Edit02Icon}
+                    strokeWidth={2}
+                    className="size-4 text-foreground"
+                  />
+                </div>
+              </>
             ) : (
               <div className="flex flex-col items-center gap-1 text-center">
                 <HugeiconsIcon
@@ -120,8 +129,11 @@ export function CompanyLogoUploadField({
               </div>
             )}
             {uploadState.status === "uploading" ? (
-              <div className="absolute inset-0 flex items-end bg-background/70 p-2">
-                <div className="w-full overflow-hidden rounded-full bg-muted">
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-background/70">
+                <span className="text-xs font-medium tabular-nums text-foreground">
+                  {uploadState.progress}%
+                </span>
+                <div className="w-3/4 overflow-hidden rounded-full bg-muted">
                   <div
                     className="h-1.5 bg-primary transition-all"
                     style={{ width: `${uploadState.progress}%` }}
@@ -131,7 +143,7 @@ export function CompanyLogoUploadField({
             ) : null}
           </label>
 
-          <div className="min-w-0 flex-1 space-y-3">
+          <div className="min-w-0 flex-1 flex flex-col gap-3">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
                 <p className="text-sm font-semibold">
@@ -139,40 +151,27 @@ export function CompanyLogoUploadField({
                 </p>
                 <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{description}</p>
               </div>
-              <Button variant="outline" size="sm" asChild className="sm:shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                asChild
+                className="sm:shrink-0"
+                disabled={uploadState.status === "uploading"}
+              >
                 <label htmlFor={inputId}>{value ? "Replace" : "Upload"}</label>
               </Button>
             </div>
 
             {uploadState.status === "uploading" ? (
-              <Card className="bg-muted/25">
-                <CardContent className="space-y-2 px-3 py-0">
-                  <div className="flex items-center justify-between text-sm">
-                    <span>Uploading company logo...</span>
-                    <span className="text-muted-foreground">{uploadState.progress}%</span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full bg-primary transition-all"
-                      style={{ width: `${uploadState.progress}%` }}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+              <p className="text-xs text-muted-foreground">Uploading company logo...</p>
             ) : value ? (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <HugeiconsIcon
-                  icon={Upload04Icon}
-                  strokeWidth={2}
-                  className="size-3.5 text-primary"
-                />
-                <span>Visible across your public company profile and job surfaces</span>
-              </div>
+              <p className="text-xs text-muted-foreground">
+                Visible across your public company profile and job surfaces
+              </p>
             ) : (
-              <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                <span className="rounded-full bg-muted px-2.5 py-1">Square works best</span>
-                <span className="rounded-full bg-muted px-2.5 py-1">PNG, JPG, WEBP, or SVG</span>
-              </div>
+              <p className="text-xs text-muted-foreground">
+                Square works best · PNG, JPG, WEBP, or SVG
+              </p>
             )}
 
             {error ? <p className="text-xs text-destructive">{error}</p> : null}
