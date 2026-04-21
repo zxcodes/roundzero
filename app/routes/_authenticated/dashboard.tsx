@@ -1,4 +1,5 @@
 import { createFileRoute, Outlet, useMatches } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { CommandPalette } from "@/components/command-palette";
 import { SiteHeader } from "@/components/site-header";
@@ -32,6 +33,23 @@ function DashboardLayout() {
   const lastMatch = matches[matches.length - 1];
   const title = routeTitles[lastMatch?.routeId ?? ""] ?? "Dashboard";
 
+  const [commandOpen, setCommandOpen] = useState(false);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setCommandOpen((prev) => !prev);
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  const onOpenCommandPalette = () => {
+    setCommandOpen(true);
+  };
+
   return (
     <TooltipProvider>
       <SidebarProvider
@@ -42,9 +60,13 @@ function DashboardLayout() {
         }
       >
         <AppSidebar user={user!} isCompany={isCompany} variant="inset" />
-        <CommandPalette isCompany={isCompany} />
+        <CommandPalette isCompany={isCompany} open={commandOpen} onOpenChange={setCommandOpen} />
         <SidebarInset>
-          <SiteHeader title={title} notificationsFeed={notificationsFeed} />
+          <SiteHeader
+            title={title}
+            notificationsFeed={notificationsFeed}
+            onOpenCommandPalette={onOpenCommandPalette}
+          />
           <div className="flex flex-1 flex-col">
             <div className="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
               <Outlet />
