@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet, useMatches } from "@tanstack/react-router";
 import { AppSidebar } from "@/components/app-sidebar";
+import { CommandPalette } from "@/components/command-palette";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -41,6 +42,7 @@ function DashboardLayout() {
         }
       >
         <AppSidebar user={user!} isCompany={isCompany} variant="inset" />
+        <CommandPalette isCompany={isCompany} />
         <SidebarInset>
           <SiteHeader title={title} notificationsFeed={notificationsFeed} />
           <div className="flex flex-1 flex-col">
