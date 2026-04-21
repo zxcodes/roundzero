@@ -25,6 +25,7 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sheet,
   SheetContent,
@@ -152,77 +153,79 @@ export function NotificationInbox({ feed }: { feed: NotificationFeed }) {
           </EmptyHeader>
         </Empty>
       ) : (
-        <div className="max-h-[min(70vh,32rem)] space-y-2 overflow-y-auto px-3 pb-3">
-          {feed.items.map((notification: NotificationFeed["items"][number]) => {
-            const presentation = getNotificationPresentation(notification);
-            const onClick = () => {
+        <ScrollArea className="h-[min(70vh,32rem)]">
+          <div className="space-y-2 px-3 pb-3">
+            {feed.items.map((notification: NotificationFeed["items"][number]) => {
+              const presentation = getNotificationPresentation(notification);
+              const onClick = () => {
+                if (!presentation) {
+                  return;
+                }
+
+                void onNotificationClick(notification.id, presentation);
+              };
+
               if (!presentation) {
-                return;
+                return (
+                  <div key={notification.id} className="rounded-xl bg-muted/30 px-4 py-3">
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5 flex size-9 items-center justify-center rounded-lg bg-background/80">
+                        <HugeiconsIcon
+                          icon={Alert02Icon}
+                          strokeWidth={2}
+                          className="size-4 text-muted-foreground"
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium">Unsupported notification</p>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          This notification could not be rendered by the current app build.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
               }
 
-              void onNotificationClick(notification.id, presentation);
-            };
-
-            if (!presentation) {
               return (
-                <div key={notification.id} className="rounded-xl bg-muted/30 px-4 py-3">
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5 flex size-9 items-center justify-center rounded-lg bg-background/80">
+                <Button
+                  key={notification.id}
+                  variant="ghost"
+                  onClick={onClick}
+                  className={`h-auto w-full justify-start whitespace-normal rounded-xl text-left transition-all ${
+                    notification.readAt ? "bg-muted/20" : "bg-muted/35"
+                  }`}
+                >
+                  <div className="flex gap-3 px-4 py-3.5">
+                    <div
+                      className={`mt-0.5 flex size-9 items-center justify-center rounded-lg ${presentation.tone}`}
+                    >
                       <HugeiconsIcon
-                        icon={Alert02Icon}
+                        icon={
+                          presentation.type === "new_applicant" ? Rocket01Icon : Notification02Icon
+                        }
                         strokeWidth={2}
-                        className="size-4 text-muted-foreground"
+                        className="size-4"
                       />
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium">Unsupported notification</p>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        This notification could not be rendered by the current app build.
-                      </p>
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="text-sm font-medium text-foreground">{presentation.title}</p>
+                        <span className="shrink-0 text-[11px] text-muted-foreground">
+                          {formatRelativeTime(notification.createdAt)}
+                        </span>
+                      </div>
+                      <p className="text-sm leading-6 text-muted-foreground">{presentation.body}</p>
                     </div>
+                    {notification.readAt ? null : (
+                      <span className="mt-1 size-2.5 shrink-0 rounded-full bg-primary" />
+                    )}
                   </div>
-                </div>
+                </Button>
               );
-            }
-
-            return (
-              <Button
-                key={notification.id}
-                variant="ghost"
-                onClick={onClick}
-                className={`h-auto w-full justify-start whitespace-normal rounded-xl text-left transition-all ${
-                  notification.readAt ? "bg-muted/20" : "bg-muted/35"
-                }`}
-              >
-                <div className="flex gap-3 px-4 py-3.5">
-                  <div
-                    className={`mt-0.5 flex size-9 items-center justify-center rounded-lg ${presentation.tone}`}
-                  >
-                    <HugeiconsIcon
-                      icon={
-                        presentation.type === "new_applicant" ? Rocket01Icon : Notification02Icon
-                      }
-                      strokeWidth={2}
-                      className="size-4"
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <div className="flex items-start justify-between gap-3">
-                      <p className="text-sm font-medium text-foreground">{presentation.title}</p>
-                      <span className="shrink-0 text-[11px] text-muted-foreground">
-                        {formatRelativeTime(notification.createdAt)}
-                      </span>
-                    </div>
-                    <p className="text-sm leading-6 text-muted-foreground">{presentation.body}</p>
-                  </div>
-                  {notification.readAt ? null : (
-                    <span className="mt-1 size-2.5 shrink-0 rounded-full bg-primary" />
-                  )}
-                </div>
-              </Button>
-            );
-          })}
-        </div>
+            })}
+          </div>
+        </ScrollArea>
       )}
     </div>
   );
