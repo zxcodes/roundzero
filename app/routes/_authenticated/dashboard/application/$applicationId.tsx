@@ -7,7 +7,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
-import { createFileRoute, Link, notFound, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, redirect, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { DashboardApplicationDetailSkeleton } from "@/components/route-skeletons";
@@ -179,6 +179,7 @@ const getJobStateLabel = (jobStatus: Application["jobStatus"]) => {
 function CandidateApplicationDetailPage() {
   const application = Route.useLoaderData();
   const getResumeUrlFn = useServerFn(getApplicationResumeDownloadUrl);
+  const router = useRouter();
 
   const resumeDownloadMutation = useMutation({
     mutationFn: getResumeUrlFn,
@@ -194,9 +195,10 @@ function CandidateApplicationDetailPage() {
 
   const withdrawMutation = useMutation({
     mutationFn: withdrawFn,
-    onSuccess: () => {
+    onSuccess: (data) => {
+      if (!data?.application?.id) return;
       toast.success("Application withdrawn.");
-      window.location.reload();
+      router.invalidate();
     },
     onError: () => {
       toast.error("Failed to withdraw application. Please try again.");
