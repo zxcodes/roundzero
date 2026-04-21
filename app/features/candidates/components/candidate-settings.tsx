@@ -459,7 +459,7 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
                         return (
                           <form.Field key={`work-${index}`} name={`workHistory[${index}]`}>
                             {() => (
-                              <div className="space-y-3 rounded-lg border border-border/50 bg-muted/30 p-4">
+                              <div className="space-y-3 rounded-2xl border border-border/50 bg-muted/30 p-4">
                                 <div className="flex items-center justify-between">
                                   <span className="text-sm font-medium text-muted-foreground">
                                     Position {index + 1}
