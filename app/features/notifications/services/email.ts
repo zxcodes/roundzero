@@ -22,6 +22,7 @@ type NotificationEmailRecipient = {
 
 type NotificationEmailMessage = {
   to: string;
+  fromName: string;
   subject: string;
   react: ReturnType<typeof jsx>;
 };
@@ -34,10 +35,25 @@ export type NotificationEmailSender = (
   message: NotificationEmailMessage,
 ) => Promise<NotificationEmailSendResult>;
 
+function getNotificationFromName(type: string): string {
+  switch (type) {
+    case "application_status_changed":
+    case "job_published":
+    case "job_archived":
+    case "job_closed":
+      return "RoundZero Update";
+    case "new_applicant":
+    case "application_withdrawn":
+      return "RoundZero Alert";
+    default:
+      return "RoundZero";
+  }
+}
+
 export const sendNotificationEmailViaResend: NotificationEmailSender = async (message) => {
   const resend = new Resend(serverEnv.RESEND_API_KEY);
   const response = await resend.emails.send({
-    from: serverEnv.RESEND_FROM_EMAIL,
+    from: `${message.fromName} <${serverEnv.RESEND_FROM_EMAIL}>`,
     to: message.to,
     subject: message.subject,
     react: message.react,
@@ -100,6 +116,7 @@ export async function deliverNotificationEmail(
   try {
     const delivery = await sendEmail({
       to: input.recipient.email,
+      fromName: getNotificationFromName(input.notification.type),
       subject: presentation.title,
       react: jsx(NotificationEmailTemplate, {
         previewText: presentation.title,
