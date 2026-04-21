@@ -416,16 +416,12 @@ function CandidateApplicationDetailPage() {
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {links.map((link) => (
-                      <a
-                        key={link.label}
-                        href={link.value}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-                      >
-                        <HugeiconsIcon icon={Link04Icon} strokeWidth={2} className="size-3" />
-                        {link.label}
-                      </a>
+                      <Button key={link.label} variant="outline" asChild size="xs">
+                        <a href={link.value} target="_blank" rel="noopener noreferrer">
+                          <HugeiconsIcon icon={Link04Icon} strokeWidth={2} className="size-3" />
+                          {link.label}
+                        </a>
+                      </Button>
                     ))}
                   </div>
                 </CardContent>
