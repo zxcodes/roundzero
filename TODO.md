@@ -2,7 +2,6 @@
 
 <!--- enforce resume types (pdf, doc, txt) so we have a deterministic parsing pipeline.-->
 - add a job creation shortcut using "N" also indicate it on the button.
-- the work profile snapshot is duplicating markup. use single comp and also clean the entire thing up.
 - see shadcn dashboard block for inspiration on company dashboard. (bunx shadcn@latest add dashboard-01)
 - resend testing in dev. (candidates tested, need company reports testing, also add email preview instead of sending and checking emails (react-email))
 - company dashboard needs a big overhaul. graphs, charts, recent reports, etc
@@ -21,6 +20,7 @@
 
 
 
+<!--- the work profile snapshot is duplicating markup. use single comp and also clean the entire thing up.-->
 <!--- add better error and form handling. rn we throw generic errors instead of actual ones.-->
 <!--- fix the fucking forms. able to create a job with nothing wtf.-->
 <!--- add a timeline indicator for applicants who applied which clearly represents what stage their application is in.-->
