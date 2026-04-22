@@ -1,9 +1,21 @@
+import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { z } from "zod";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { createCompany } from "@/features/companies/server/functions";
 import {
   type CompanySize,
@@ -12,7 +24,6 @@ import {
   industryLabels,
   MAX_COMPANY_DESCRIPTION_LENGTH,
 } from "@/shared/enums";
-import { useAppForm } from "@/shared/form";
 
 const onboardingSearchSchema = z.object({
   redirect: z.string().optional(),
@@ -29,6 +40,7 @@ const sizeOptions = Object.entries(companySizeLabels).map(([value, label]) => ({
 function CompanyOnboardingPage() {
   const { redirect: redirectTo } = Route.useSearch();
   const router = useRouter();
+
   const onboardingSchema = z.object({
     name: z.string().trim().min(1, "Company name is required"),
     industry: z.string(),
@@ -48,12 +60,15 @@ function CompanyOnboardingPage() {
     },
   });
 
-  const form = useAppForm({
+  const form = useForm({
     defaultValues: {
       name: "",
       industry: "",
       companySize: "",
       description: "",
+    },
+    validators: {
+      onSubmit: onboardingSchema,
     },
     onSubmit: async ({ value }) => {
       await createCompanyMutation.mutateAsync({
@@ -64,15 +79,6 @@ function CompanyOnboardingPage() {
           companySize: (value.companySize || undefined) as CompanySize | undefined,
         },
       });
-    },
-    onSubmitInvalid: () => {
-      const firstError = form.getFieldInfo("name").instance?.state.meta.errors[0];
-
-      if (typeof firstError === "string") {
-        toast.error(firstError);
-      } else {
-        toast.error("Complete all required fields before creating your company.");
-      }
     },
   });
 
@@ -91,60 +97,110 @@ function CompanyOnboardingPage() {
       </CardHeader>
       <CardContent>
         <form onSubmit={onFormSubmit} className="space-y-5">
-          <form.AppField
+          <form.Field
             name="name"
             validators={{
               onBlur: z.string().trim().min(1, "Company name is required"),
-              onSubmit: onboardingSchema.shape.name,
             }}
-            children={(field) => (
-              <field.TextField
-                label="Company name"
-                placeholder="Acme Inc."
-                required
-                maxLength={100}
-              />
-            )}
-          />
+          >
+            {(field) => {
+              const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <Field data-invalid={isInvalid}>
+                  <FieldLabel htmlFor={field.name}>
+                    Company name <span className="text-destructive">*</span>
+                  </FieldLabel>
+                  <Input
+                    id={field.name}
+                    placeholder="Acme Inc."
+                    required
+                    maxLength={100}
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    aria-invalid={isInvalid}
+                  />
+                  {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+                </Field>
+              );
+            }}
+          </form.Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <form.AppField
-              name="industry"
-              children={(field) => (
-                <field.SelectField
-                  label="Industry"
-                  placeholder="Select industry"
-                  options={industryOptions}
-                />
-              )}
-            />
-            <form.AppField
-              name="companySize"
-              children={(field) => (
-                <field.SelectField
-                  label="Company size"
-                  placeholder="Select size"
-                  options={sizeOptions}
-                />
-              )}
-            />
+            <form.Field name="industry">
+              {(field) => {
+                return (
+                  <Field>
+                    <FieldLabel htmlFor={field.name}>Industry</FieldLabel>
+                    <Select value={field.state.value} onValueChange={field.handleChange}>
+                      <SelectTrigger id={field.name}>
+                        <SelectValue placeholder="Select industry" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {industryOptions.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                );
+              }}
+            </form.Field>
+
+            <form.Field name="companySize">
+              {(field) => {
+                return (
+                  <Field>
+                    <FieldLabel htmlFor={field.name}>Company size</FieldLabel>
+                    <Select value={field.state.value} onValueChange={field.handleChange}>
+                      <SelectTrigger id={field.name}>
+                        <SelectValue placeholder="Select size" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sizeOptions.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                );
+              }}
+            </form.Field>
           </div>
 
-          <form.AppField
-            name="description"
-            children={(field) => (
-              <field.TextareaField
-                label="Short description"
-                placeholder="What does your company do? One or two sentences is great."
-                maxLength={MAX_COMPANY_DESCRIPTION_LENGTH}
-                rows={3}
-              />
-            )}
-          />
+          <form.Field name="description">
+            {(field) => {
+              const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <Field data-invalid={isInvalid}>
+                  <FieldLabel htmlFor={field.name}>Short description</FieldLabel>
+                  <Textarea
+                    id={field.name}
+                    placeholder="What does your company do? One or two sentences is great."
+                    maxLength={MAX_COMPANY_DESCRIPTION_LENGTH}
+                    rows={3}
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    aria-invalid={isInvalid}
+                  />
+                  {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+                </Field>
+              );
+            }}
+          </form.Field>
 
-          <form.AppForm>
-            <form.SubmitButton label="Create company" submittingLabel="Creating..." />
-          </form.AppForm>
+          <form.Subscribe selector={(state) => state.isSubmitting}>
+            {(isSubmitting) => (
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Creating..." : "Create company"}
+              </Button>
+            )}
+          </form.Subscribe>
         </form>
       </CardContent>
     </Card>

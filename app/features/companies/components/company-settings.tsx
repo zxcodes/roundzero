@@ -1,6 +1,6 @@
 import { Cancel01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useStore } from "@tanstack/react-form";
+import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -9,13 +9,20 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { UnsavedChangesBar } from "@/components/unsaved-changes-bar";
 import { CompanyLogoUploadField } from "@/features/companies/components/company-logo-upload-field";
 import { type getMyCompany, updateCompanyProfile } from "@/features/companies/server/functions";
 import { type CompanySize, companySizeLabels, type Industry, industryLabels } from "@/shared/enums";
-import { useAppForm } from "@/shared/form";
 
 type Company = NonNullable<Awaited<ReturnType<typeof getMyCompany>>>;
 
@@ -44,7 +51,7 @@ export function CompanySettings({ company }: { company: Company }) {
       ? company.socialLinks
       : { linkedin: "", twitter: "", github: "" };
 
-  const form = useAppForm({
+  const form = useForm({
     defaultValues: {
       name: company.name,
       description: company.description ?? "",
@@ -52,7 +59,7 @@ export function CompanySettings({ company }: { company: Company }) {
       website: company.website ?? "",
       industry: company.industry ?? "",
       companySize: company.companySize ?? "",
-      foundedYear: company.foundedYear,
+      foundedYear: company.foundedYear != null ? String(company.foundedYear) : "",
       location: company.location ?? "",
       culture: company.culture ?? "",
       linkedinUrl: socialLinks.linkedin ?? "",
@@ -69,7 +76,7 @@ export function CompanySettings({ company }: { company: Company }) {
           website: value.website || null,
           industry: (value.industry || null) as Industry | null,
           companySize: (value.companySize || null) as CompanySize | null,
-          foundedYear: value.foundedYear,
+          foundedYear: value.foundedYear ? Number(value.foundedYear) : null,
           location: value.location || null,
           techStack: value.techStack.length > 0 ? value.techStack : null,
           culture: value.culture || null,
@@ -89,7 +96,7 @@ export function CompanySettings({ company }: { company: Company }) {
   const [tagInput, setTagInput] = useState("");
 
   const tagInputId = `tag-input-${id}`;
-  const currentLogoKey = useStore(form.store, (state) => state.values.logoKey);
+  const currentLogoKey = form.getFieldValue("logoKey");
   const onLogoUploaded = async ({ logoKey }: { logoKey: string }) => {
     form.setFieldValue("logoKey", logoKey);
   };
@@ -139,17 +146,29 @@ export function CompanySettings({ company }: { company: Company }) {
               onUploaded={onLogoUploaded}
             />
 
-            <form.AppField
-              name="name"
-              children={(field) => (
-                <field.TextField
-                  label="Company name"
-                  placeholder="Acme Inc."
-                  required
-                  maxLength={100}
-                />
-              )}
-            />
+            <form.Field name="name">
+              {(field) => {
+                const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                return (
+                  <Field data-invalid={isInvalid}>
+                    <FieldLabel htmlFor={field.name}>
+                      Company name <span className="text-destructive">*</span>
+                    </FieldLabel>
+                    <Input
+                      id={field.name}
+                      placeholder="Acme Inc."
+                      required
+                      maxLength={100}
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      aria-invalid={isInvalid}
+                    />
+                    {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+                  </Field>
+                );
+              }}
+            </form.Field>
 
             <div className="space-y-2">
               <Input value={company.slug} disabled className="bg-muted font-mono text-sm" />
@@ -166,17 +185,27 @@ export function CompanySettings({ company }: { company: Company }) {
               </p>
             </div>
 
-            <form.AppField
-              name="description"
-              children={(field) => (
-                <field.TextareaField
-                  label="Description"
-                  placeholder="Tell candidates what your company does and what makes it a great place to work."
-                  maxLength={2000}
-                  rows={4}
-                />
-              )}
-            />
+            <form.Field name="description">
+              {(field) => {
+                const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                return (
+                  <Field data-invalid={isInvalid}>
+                    <FieldLabel htmlFor={field.name}>Description</FieldLabel>
+                    <Textarea
+                      id={field.name}
+                      placeholder="Tell candidates what your company does and what makes it a great place to work."
+                      maxLength={2000}
+                      rows={4}
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      aria-invalid={isInvalid}
+                    />
+                    {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+                  </Field>
+                );
+              }}
+            </form.Field>
           </CardContent>
         </Card>
 
@@ -188,53 +217,115 @@ export function CompanySettings({ company }: { company: Company }) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <form.AppField
-                name="industry"
-                children={(field) => (
-                  <field.SelectField
-                    label="Industry"
-                    placeholder="Select industry"
-                    options={industryOptions}
-                  />
-                )}
-              />
-              <form.AppField
-                name="companySize"
-                children={(field) => (
-                  <field.SelectField
-                    label="Company size"
-                    placeholder="Select size"
-                    options={sizeOptions}
-                  />
-                )}
-              />
+              <form.Field name="industry">
+                {(field) => {
+                  return (
+                    <Field>
+                      <FieldLabel htmlFor={field.name}>Industry</FieldLabel>
+                      <Select value={field.state.value} onValueChange={field.handleChange}>
+                        <SelectTrigger id={field.name}>
+                          <SelectValue placeholder="Select industry" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {industryOptions.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                  );
+                }}
+              </form.Field>
+
+              <form.Field name="companySize">
+                {(field) => {
+                  return (
+                    <Field>
+                      <FieldLabel htmlFor={field.name}>Company size</FieldLabel>
+                      <Select value={field.state.value} onValueChange={field.handleChange}>
+                        <SelectTrigger id={field.name}>
+                          <SelectValue placeholder="Select size" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {sizeOptions.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                  );
+                }}
+              </form.Field>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <form.AppField
-                name="foundedYear"
-                children={(field) => (
-                  <field.NumberField label="Founded year" placeholder="2020" min={1800} />
-                )}
-              />
-              <form.AppField
-                name="location"
-                children={(field) => (
-                  <field.TextField
-                    label="Location"
-                    placeholder="San Francisco, CA"
-                    maxLength={200}
-                  />
-                )}
-              />
+              <form.Field name="foundedYear">
+                {(field) => {
+                  const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                  return (
+                    <Field data-invalid={isInvalid}>
+                      <FieldLabel htmlFor={field.name}>Founded year</FieldLabel>
+                      <Input
+                        id={field.name}
+                        inputMode="numeric"
+                        placeholder="2020"
+                        value={field.state.value}
+                        onBlur={field.handleBlur}
+                        onChange={(e) => field.handleChange(e.target.value.replace(/\D/g, ""))}
+                        aria-invalid={isInvalid}
+                      />
+                      {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+                    </Field>
+                  );
+                }}
+              </form.Field>
+
+              <form.Field name="location">
+                {(field) => {
+                  const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                  return (
+                    <Field data-invalid={isInvalid}>
+                      <FieldLabel htmlFor={field.name}>Location</FieldLabel>
+                      <Input
+                        id={field.name}
+                        placeholder="San Francisco, CA"
+                        maxLength={200}
+                        value={field.state.value}
+                        onBlur={field.handleBlur}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        aria-invalid={isInvalid}
+                      />
+                      {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+                    </Field>
+                  );
+                }}
+              </form.Field>
             </div>
 
-            <form.AppField
-              name="website"
-              children={(field) => (
-                <field.TextField label="Website" placeholder="https://yourcompany.com" type="url" />
-              )}
-            />
+            <form.Field name="website">
+              {(field) => {
+                const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                return (
+                  <Field data-invalid={isInvalid}>
+                    <FieldLabel htmlFor={field.name}>Website</FieldLabel>
+                    <Input
+                      id={field.name}
+                      type="url"
+                      placeholder="https://yourcompany.com"
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      aria-invalid={isInvalid}
+                    />
+                    {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+                  </Field>
+                );
+              }}
+            </form.Field>
           </CardContent>
         </Card>
 
@@ -272,8 +363,8 @@ export function CompanySettings({ company }: { company: Company }) {
 
                 return (
                   <>
-                    <div className="space-y-2">
-                      <Label htmlFor={tagInputId}>Add technologies</Label>
+                    <Field>
+                      <FieldLabel htmlFor={tagInputId}>Add technologies</FieldLabel>
                       <Input
                         id={tagInputId}
                         placeholder="Type and press Enter (e.g. TypeScript, React)"
@@ -281,7 +372,7 @@ export function CompanySettings({ company }: { company: Company }) {
                         onChange={onTagInputChange}
                         onKeyDown={onTagInputKeyDown}
                       />
-                    </div>
+                    </Field>
 
                     {techStackField.state.value.length > 0 ? (
                       <div className="flex flex-wrap gap-1.5">
@@ -327,17 +418,27 @@ export function CompanySettings({ company }: { company: Company }) {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form.AppField
-              name="culture"
-              children={(field) => (
-                <field.TextareaField
-                  label="Culture"
-                  placeholder="Remote-first, async communication, quarterly offsites..."
-                  maxLength={5000}
-                  rows={5}
-                />
-              )}
-            />
+            <form.Field name="culture">
+              {(field) => {
+                const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                return (
+                  <Field data-invalid={isInvalid}>
+                    <FieldLabel htmlFor={field.name}>Culture</FieldLabel>
+                    <Textarea
+                      id={field.name}
+                      placeholder="Remote-first, async communication, quarterly offsites..."
+                      maxLength={5000}
+                      rows={5}
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      aria-invalid={isInvalid}
+                    />
+                    {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+                  </Field>
+                );
+              }}
+            </form.Field>
           </CardContent>
         </Card>
 
@@ -348,36 +449,68 @@ export function CompanySettings({ company }: { company: Company }) {
             <CardDescription>Help candidates connect with your company online.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <form.AppField
-              name="linkedinUrl"
-              children={(field) => (
-                <field.TextField
-                  label="LinkedIn"
-                  placeholder="https://linkedin.com/company/yourcompany"
-                  type="url"
-                />
-              )}
-            />
-            <form.AppField
-              name="twitterUrl"
-              children={(field) => (
-                <field.TextField
-                  label="Twitter / X"
-                  placeholder="https://twitter.com/yourcompany"
-                  type="url"
-                />
-              )}
-            />
-            <form.AppField
-              name="githubUrl"
-              children={(field) => (
-                <field.TextField
-                  label="GitHub"
-                  placeholder="https://github.com/yourcompany"
-                  type="url"
-                />
-              )}
-            />
+            <form.Field name="linkedinUrl">
+              {(field) => {
+                const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                return (
+                  <Field data-invalid={isInvalid}>
+                    <FieldLabel htmlFor={field.name}>LinkedIn</FieldLabel>
+                    <Input
+                      id={field.name}
+                      type="url"
+                      placeholder="https://linkedin.com/company/yourcompany"
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      aria-invalid={isInvalid}
+                    />
+                    {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+                  </Field>
+                );
+              }}
+            </form.Field>
+
+            <form.Field name="twitterUrl">
+              {(field) => {
+                const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                return (
+                  <Field data-invalid={isInvalid}>
+                    <FieldLabel htmlFor={field.name}>Twitter / X</FieldLabel>
+                    <Input
+                      id={field.name}
+                      type="url"
+                      placeholder="https://twitter.com/yourcompany"
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      aria-invalid={isInvalid}
+                    />
+                    {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+                  </Field>
+                );
+              }}
+            </form.Field>
+
+            <form.Field name="githubUrl">
+              {(field) => {
+                const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                return (
+                  <Field data-invalid={isInvalid}>
+                    <FieldLabel htmlFor={field.name}>GitHub</FieldLabel>
+                    <Input
+                      id={field.name}
+                      type="url"
+                      placeholder="https://github.com/yourcompany"
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      aria-invalid={isInvalid}
+                    />
+                    {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+                  </Field>
+                );
+              }}
+            </form.Field>
           </CardContent>
         </Card>
       </div>

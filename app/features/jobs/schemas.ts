@@ -31,9 +31,9 @@ export const jobFieldsSchema = z
       .default([]),
     status: jobStatusSchema.default("draft"),
     location: nullableTrimmedString(200).optional(),
-    workplaceType: workplaceTypeSchema.nullable().optional(),
-    employmentType: employmentTypeSchema.nullable().optional(),
-    experienceLevel: experienceLevelSchema.nullable().optional(),
+    workplaceType: workplaceTypeSchema,
+    employmentType: employmentTypeSchema,
+    experienceLevel: experienceLevelSchema,
     salaryMin: z
       .number({ error: "Minimum salary must be a valid number" })
       .int("Minimum salary must be a whole number")
