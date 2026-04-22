@@ -56,48 +56,42 @@ export const Route = createFileRoute("/_authenticated/dashboard/application/$app
 
 type Application = NonNullable<Awaited<ReturnType<typeof getMyApplicationDetail>>>;
 
-const APPLICATION_STAGES = [
-  "applied",
-  "interviewing",
-  "evaluated",
-  "rejected",
-  "withdrawn",
-] as const;
+const HAPPY_PATH_STAGES = ["applied", "interviewing", "evaluated"] as const;
 
 const stageCopy = {
   applied: {
+    label: "Applied",
     badge: "Applied",
     tone: "bg-sky-500/10 text-sky-700 dark:text-sky-300",
-    dot: "bg-sky-500",
     summary: "Your application is in the review queue.",
     nextStep: "Keep your profile sharp — the next signal is typically a move to interview review.",
   },
   interviewing: {
+    label: "Interviewing",
     badge: "Interviewing",
     tone: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
-    dot: "bg-amber-500",
     summary: "The company has advanced this role into the interview stage.",
     nextStep:
       "Watch this application closely. This is the strongest signal that a live next step is coming.",
   },
   evaluated: {
+    label: "Evaluated",
     badge: "Evaluated",
     tone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-    dot: "bg-emerald-500",
     summary: "The company has finished an evaluation pass on this application.",
     nextStep: "Expect either a final decision or a follow-up step from the company.",
   },
   rejected: {
+    label: "Closed",
     badge: "Closed",
     tone: "bg-rose-500/10 text-rose-700 dark:text-rose-300",
-    dot: "bg-rose-500",
     summary: "This application is no longer moving forward.",
     nextStep: "Use what you learned here and keep applying to roles that match your profile.",
   },
   withdrawn: {
+    label: "Withdrawn",
     badge: "Withdrawn",
     tone: "bg-muted text-muted-foreground",
-    dot: "bg-muted-foreground/50",
     summary: "You withdrew this application.",
     nextStep: "This decision is final. You can still apply to other roles from this company.",
   },
@@ -118,7 +112,7 @@ const formatDateShort = (date: Date | string) => {
   });
 };
 
-const toApplicationStage = (status: string): (typeof APPLICATION_STAGES)[number] => {
+const toApplicationStage = (status: string): keyof typeof stageCopy => {
   switch (status) {
     case "interviewing":
     case "evaluated":
@@ -128,6 +122,10 @@ const toApplicationStage = (status: string): (typeof APPLICATION_STAGES)[number]
     default:
       return "applied";
   }
+};
+
+const isTerminalStage = (stage: string): stage is "rejected" | "withdrawn" => {
+  return stage === "rejected" || stage === "withdrawn";
 };
 
 const toRecord = (value: unknown): Record<string, unknown> => {
@@ -262,34 +260,50 @@ function CandidateApplicationDetailPage() {
         ) : null}
       </div>
 
-      <Card size="sm">
-        <CardContent className="space-y-2 py-0">
-          <div className="flex flex-wrap gap-2">
-            {APPLICATION_STAGES.map((stage) => {
-              const isCurrent = stage === currentStage;
-              const isCompleted =
-                APPLICATION_STAGES.indexOf(stage) < APPLICATION_STAGES.indexOf(currentStage) &&
-                currentStage !== "rejected";
-              const stageMeta = stageCopy[stage];
+      <div className="space-y-3">
+        <div className="flex gap-8">
+          {HAPPY_PATH_STAGES.map((stage) => {
+            const stageIndex = HAPPY_PATH_STAGES.indexOf(stage);
+            const currentIndex = isTerminalStage(currentStage)
+              ? HAPPY_PATH_STAGES.length
+              : HAPPY_PATH_STAGES.indexOf(currentStage as (typeof HAPPY_PATH_STAGES)[number]);
+            const isCompleted = stageIndex < currentIndex;
+            const isCurrent = stage === currentStage;
 
-              return (
-                <div key={stage} className="flex items-center gap-2">
-                  <div
-                    className={`size-2 rounded-full ${isCurrent ? stageMeta.dot : isCompleted ? "bg-primary" : "bg-muted-foreground/30"}`}
-                  />
-                  <span
-                    className={`text-xs font-medium ${isCurrent ? "text-foreground" : isCompleted ? "text-muted-foreground" : "text-muted-foreground/60"}`}
-                  >
-                    {stageMeta.badge}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-          <p className="text-sm text-muted-foreground">{meta.summary}</p>
-          <p className="text-xs text-muted-foreground/80">{meta.nextStep}</p>
-        </CardContent>
-      </Card>
+            return (
+              <div key={stage} className="flex-1 space-y-1.5">
+                <div
+                  className={`h-1.5 rounded-full ${
+                    isCompleted ? "bg-primary" : isCurrent ? "bg-primary/40" : "bg-muted"
+                  }`}
+                />
+                <p
+                  className={`text-[11px] font-medium uppercase tracking-widest ${
+                    isCurrent
+                      ? "text-foreground"
+                      : isCompleted
+                        ? "text-muted-foreground"
+                        : "text-muted-foreground/40"
+                  }`}
+                >
+                  {stageCopy[stage].label}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+
+        {isTerminalStage(currentStage) ? (
+          <Badge className={`${meta.tone} text-xs`}>{meta.badge}</Badge>
+        ) : null}
+
+        <Card size="sm">
+          <CardContent className="space-y-1 py-0">
+            <p className="text-sm text-foreground">{meta.summary}</p>
+            <p className="text-xs text-muted-foreground">{meta.nextStep}</p>
+          </CardContent>
+        </Card>
+      </div>
 
       <CandidateAiNextStepCard evaluation={aiEvaluation} />
 
