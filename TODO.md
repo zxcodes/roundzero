@@ -1,6 +1,7 @@
 ## TODO
 
 <!--- enforce resume types (pdf, doc, txt) so we have a deterministic parsing pipeline.-->
+- you just post a job and you will be notified with the reports. (major overhaul on company side.), also check how long should it take for reports to arrive, let companies choose how many reports they wanna see per job while creating it etc.
 - add a job creation shortcut using "N" also indicate it on the button.
 - see shadcn dashboard block for inspiration on company dashboard. (bunx shadcn@latest add dashboard-01)
 - resend testing in dev. (candidates tested, need company reports testing, also add email preview instead of sending and checking emails (react-email))
