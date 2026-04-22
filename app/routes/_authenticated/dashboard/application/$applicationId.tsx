@@ -3,7 +3,6 @@ import {
   Calendar01Icon,
   Cancel01Icon,
   File02Icon,
-  Link04Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
@@ -26,6 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CandidateAiNextStepCard } from "@/features/ai/components/evaluation-cards";
+import { SubmittedProfileSnapshot } from "@/features/applications/components/submitted-profile-snapshot";
 import {
   getApplicationResumeDownloadUrl,
   getMyApplicationDetail,
@@ -160,8 +160,8 @@ const getLinks = (value: unknown) => {
   const record = toRecord(value);
 
   return Object.entries(record)
-    .map(([label, entry]) => ({ label, value: getStringValue(entry) }))
-    .filter((entry): entry is { label: string; value: string } => entry.value !== null);
+    .map(([label, entry]) => ({ label, href: getStringValue(entry) }))
+    .filter((entry): entry is { label: string; href: string } => entry.href !== null);
 };
 
 const getJobStateLabel = (jobStatus: Application["jobStatus"]) => {
@@ -227,9 +227,6 @@ function CandidateApplicationDetailPage() {
       data: { applicationId: application.id },
     });
   };
-
-  const hasSnapshotContent =
-    headline || application.resumeKey || bio || skills.length > 0 || links.length > 0;
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -349,87 +346,14 @@ function CandidateApplicationDetailPage() {
         ) : null}
       </div>
 
-      {hasSnapshotContent ? (
-        <div className="space-y-4">
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
-            Submitted profile
-          </p>
-          <div className="space-y-3">
-            {headline || application.resumeKey ? (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {headline ? (
-                  <Card size="sm">
-                    <CardContent className="py-0">
-                      <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
-                        Headline
-                      </p>
-                      <p className="mt-1 text-sm text-foreground">{headline}</p>
-                    </CardContent>
-                  </Card>
-                ) : null}
-                {application.resumeKey ? (
-                  <Card size="sm">
-                    <CardContent className="py-0">
-                      <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
-                        Resume
-                      </p>
-                      <p className="mt-1 text-sm text-foreground">Attached at apply time</p>
-                    </CardContent>
-                  </Card>
-                ) : null}
-              </div>
-            ) : null}
-
-            {bio ? (
-              <Card size="sm">
-                <CardContent className="py-0">
-                  <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
-                    Bio
-                  </p>
-                  <p className="mt-1 text-sm leading-6 text-foreground">{bio}</p>
-                </CardContent>
-              </Card>
-            ) : null}
-
-            {skills.length > 0 ? (
-              <Card size="sm">
-                <CardContent className="py-0">
-                  <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
-                    Skills
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {skills.map((skill) => (
-                      <Badge key={skill} variant="secondary" className="text-xs">
-                        {skill}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ) : null}
-
-            {links.length > 0 ? (
-              <Card size="sm">
-                <CardContent className="py-0">
-                  <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-                    Links
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {links.map((link) => (
-                      <Button key={link.label} variant="outline" asChild size="xs">
-                        <a href={link.value} target="_blank" rel="noopener noreferrer">
-                          <HugeiconsIcon icon={Link04Icon} strokeWidth={2} className="size-3" />
-                          {link.label}
-                        </a>
-                      </Button>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
+      <SubmittedProfileSnapshot
+        headline={headline}
+        bio={bio}
+        skills={skills}
+        links={links}
+        workHistory={[]}
+        hasResume={Boolean(application.resumeKey)}
+      />
     </div>
   );
 }
