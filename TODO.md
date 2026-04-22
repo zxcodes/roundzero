@@ -17,11 +17,11 @@
 - add a really good resume and candidate test suite to pass thru the ai.
 - start with mock ui for ai layer. add it now. (for both candidate, and companies)
 - Basic analytics, company interest (like, dislike(why)? stretch)
-- add better error and form handling. rn we throw generic errors instead of actual ones.
 
 
 
 
+<!--- add better error and form handling. rn we throw generic errors instead of actual ones.-->
 <!--- fix the fucking forms. able to create a job with nothing wtf.-->
 <!--- add a timeline indicator for applicants who applied which clearly represents what stage their application is in.-->
 <!--- add toast actions after mutations (view job, view application, etc)-->
