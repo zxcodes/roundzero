@@ -2,7 +2,9 @@
 
 > Tech stack, schema, auth, storage, and module layout are documented in `ARCHITECTURE.md`.
 
-## Phase 3.5: Pre-AI Hardening
+---
+
+## Phase 3.5: Pre-AI Hardening (Current)
 
 Finish the non-AI hiring platform so the AI layer lands on a solid foundation.
 
@@ -42,15 +44,11 @@ These must be answered and documented in `PLATFORM.md` and `AI-LAYER.md` before 
 
 #### Decision 1: Application Status Lifecycle
 
-AI-LAYER introduces new statuses: `pre_screening`, `invited_roundzero`, `in_roundzero`, `evaluated`, `shortlisted`. Current `applications.status` uses `applied`, `reviewing`, `shortlisted`, `rejected`.
-
 - [x] Extend existing `applications.status` enum to include all 7 statuses
 - [x] Define transition rules and who can trigger each
 - [x] Document decided lifecycle in `PLATFORM.md` (§ 15.1)
 
 #### Decision 2: Candidate-Facing Messaging After Apply
-
-Post-apply becomes multi-step after AI. Define exact copy and expectations for each branch.
 
 - [x] Write candidate-facing copy for each internal status
 - [x] Hide pre-evaluation stages; show only 6 candidate-visible statuses
@@ -58,8 +56,6 @@ Post-apply becomes multi-step after AI. Define exact copy and expectations for e
 - [x] Document decided messaging spec in `PLATFORM.md` (§ 15.2)
 
 #### Decision 3: Medium-Fit Follow-Up Medium
-
-AI-LAYER specifies "2-3 clarifying questions" for medium-fit candidates. This drives data model and UI.
 
 - [x] Decide: use synchronous chat UI (same as full interview)
 - [x] Questions adapt based on pre-evaluation gaps
@@ -75,8 +71,6 @@ AI-LAYER specifies "2-3 clarifying questions" for medium-fit candidates. This dr
 
 #### Decision 5: Validate Pre-Evaluation Output Format
 
-The riskiest assumption: that pre-evaluation output (score + missing requirements + confidence + next step) is good enough for companies to trust.
-
 - [ ] Run 5-10 real applications through manual evaluation using the planned output format
 - [ ] Show companies the output format and confirm they'd make decisions from it
 - [ ] Adjust scoring dimensions, weighting, and presentation based on feedback
@@ -91,115 +85,365 @@ The riskiest assumption: that pre-evaluation output (score + missing requirement
 
 ---
 
-## Phase 4: AI Interview
+## Phase 4: Schema & Platform Prep for AI
 
-Build the AI UI surfaces alongside the real interview data model. Avoid a separate throwaway mock-only phase; use temporary seeded/mock states only where they help validate layout before the backend path is fully wired.
+Prepare the database, enums, and server boundaries before the AI funnel goes live.
 
-### Candidate AI Interview Surfaces
+### 4.1 Application Status Lifecycle
 
-- [x] Add mock candidate-facing AI next-step card to candidate application detail pages
-- [ ] Add interview invitation card on candidate application detail pages for `invited_roundzero`
-- [ ] Add medium-fit clarification prompt card for candidates who need 2-3 follow-up questions before a full interview
-- [ ] Extend candidate application progress UI for AI-aware statuses:
-  - pre-screening / under review
-  - interview ready
-  - interview in progress
-  - evaluated
-  - shortlisted / closed
-- [ ] Add interview completed state with submitted timestamp, question count, and clear "under review" messaging
+- [ ] Migration: extend `applications.status` to 7 statuses
+  - `applied`, `pre_screening`, `invited_roundzero`, `in_roundzero`, `evaluated`, `shortlisted`, `rejected`
+- [ ] Update `applicationStatusSchema` and `APPLICATION_STATUS_TRANSITIONS` in `app/shared/enums.ts`
+- [ ] Update all SQL queries that filter/group by status (`getJobsWithPipelineByCompanyId`, `getApplicationsByJob`, `countApplicationsByCompany`, etc.)
+- [ ] Update candidate-visible status mapping and labels
+- [ ] Add `getVisibleApplicationStatus()` helper and `applicationStatusCandidateLabelMap`
+
+### 4.2 Job Schema Changes
+
+- [ ] Migration: add `report_limit INTEGER NOT NULL DEFAULT 5` to `jobs` (max allowed: 15)
+- [ ] Update `jobFieldsSchema` and `JobFormData` to include `reportLimit`
+- [ ] Update `createJob` and `updateJob` server functions
+- [ ] Add report limit field to `JobForm` UI with copy: "How many candidates should RoundZero evaluate for this role? (Max 15)"
+- [ ] Enforce max 15 in Zod schema and server functions
+- [ ] Add `report_limit` to SQLC queries (`createJob`, `updateJob`, `getJobById`)
+
+### 4.3 Pre-Evaluations Table
+
+- [ ] Migration: create `pre_evaluations`
+  - `id`, `application_id` (unique), `score` (0–100), `missing_requirements` (JSONB), `confidence` (text), `next_step` (text), `created_at`
+- [ ] SQLC queries: `createPreEvaluation`, `getPreEvaluationByApplicationId`
+
+### 4.4 Interviews Table Update
+
+- [ ] Migration: add `type TEXT NOT NULL DEFAULT 'full'` and `metadata JSONB DEFAULT '{}'` to `interviews`
+  - `type`: `'full'` | `'quick_eval'`
+- [ ] SQLC queries updated accordingly
+
+### 4.5 Notifications Refactor
+
+- [ ] Remove `new_applicant` from `notificationTypeSchema` and `notificationPayloadSchemas`
+- [ ] Remove `new_applicant` notification creation from `applyToJobWorkflow`
+- [ ] Add `report_ready` to `notificationTypeSchema`
+- [ ] Add `report_ready` payload schema and presentation in `config.ts`
+- [ ] Add `interview_invited` notification type for candidates (optional v1)
+- [ ] Add `position_filled` notification type for candidates (sent when `report_limit` is reached)
+
+### 4.7 Cloudflare Workflows Setup
+
+- [ ] Install `cloudflare:workers` types (already available via wrangler)
+- [ ] Create `app/workflows/pre-evaluation.ts`
+  - Extends `WorkflowEntrypoint<Env, { applicationId: string }>`
+  - Defines durable steps for the pre-evaluation pipeline
+- [ ] Create `app/workflows/report-generation.ts`
+  - Extends `WorkflowEntrypoint<Env, { interviewId: string }>`
+  - Defines durable steps for the evaluation pipeline
+- [ ] Add `workflows` array to `wrangler.jsonc` with both workflow bindings
+- [ ] Export workflow classes alongside the default TanStack Start handler in the Worker entry
+- [ ] Trigger workflows from server functions via `env.PRE_EVALUATION.create()` and `env.REPORT_GENERATION.create()`
+
+### 4.6 Remove Mock-Only AI Data
+
+- [ ] Delete `app/mock/ai-evaluations.ts`
+- [ ] Remove `getMockAiEvaluation` usage from all routes and components
+- [ ] Keep UI components (`AiReportPanel`, `AiRankedApplicantsList`, etc.) but wire them to accept real data shapes
+
+### Exit Criteria
+
+- [ ] All migrations run cleanly
+- [ ] `bun run check` passes (lint + types)
+- [ ] Job creation/editing works with new `report_limit` field
+- [ ] Applying no longer sends `new_applicant` notifications
+- [ ] Old mock data is fully removed from production code paths
+
+---
+
+## Phase 5: Pre-Evaluation Funnel (Cloudflare Workflow)
+
+Build the lightweight pre-evaluation stage as a durable Cloudflare Workflow.
+
+### 5.1 Workflow Definition
+
+- [ ] Create `app/workflows/pre-evaluation.ts`
+  - Extends `WorkflowEntrypoint<Env, { applicationId: string }>`
+  - Steps execute sequentially with automatic retry on failure
+  - Each step's result is persisted; interrupted workflows resume from the last completed step
+
+**Workflow Steps:**
+
+1. **`read_application_data`**
+   - Query DB for application snapshot, job requirements, job description
+   - Return merged context object
+
+2. **`fetch_resume`**
+   - Fetch resume blob from R2 using `resume_key`
+   - Return raw PDF bytes
+
+3. **`extract_resume_text`**
+   - Extract raw text from PDF using local library (e.g., `pdf-parse`)
+   - Return unstructured text string
+
+4. **`merge_context`**
+   - Combine: job description + requirements + resume text + profile metadata
+   - Return merged prompt context
+
+5. **`run_ai_pre_evaluation`**
+   - Call LLM via AI binding with structured prompt
+   - Parse response into: score (0–100), missing_requirements, confidence, next_step
+   - Return parsed result
+
+6. **`write_pre_evaluation`**
+   - Write result to `pre_evaluations` table
+   - Update `applications.status` → `pre_screening`
+   - Return pre-evaluation record ID
+
+7. **`decide_next_step`**
+   - Check `jobs.report_limit` vs existing report count
+   - If high/medium fit + quota available → create `interviews` row (type = `full` or `quick_eval`), update status → `invited_roundzero`
+   - If low fit → stay in `pre_screening`
+   - If quota exhausted → send `position_filled` notification to remaining pending candidates
+
+### 5.2 Triggering the Workflow
+
+- [ ] Update `applyToJobWorkflow`:
+  - After creating application, set status = `applied`
+  - Immediately advance to `pre_screening`
+  - Trigger workflow via `env.PRE_EVALUATION.create({ params: { applicationId } })` — returns instantly
+- [ ] Candidate receives normal "Application Submitted" confirmation
+- [ ] No company notification is sent at this stage
+- [ ] Server function returns `{ workflowInstanceId }` for debugging/tracking
+
+### 5.4 Company Dashboard: Pending Tab
+
+- [ ] Update `/dashboard/job-applicants/$jobId` to show two sections:
+  - **Evaluated**: ranked by report score, actionable
+  - **Pending**: pre-evaluation or in-progress, read-only
+- [ ] Pre-eval candidates show: name, resume, apply date, "Evaluation in progress"
+- [ ] Update `getJobApplicants` query to return all applicants (not just evaluated)
+- [ ] Update `CompanyJobApplicantsList` to handle real pre/post-evaluation states
+
+### Exit Criteria
+
+- [ ] Applying creates application → triggers pre-evaluation async
+- [ ] Pre-evaluation result is stored in DB
+- [ ] High/medium fit candidates with quota get interview rows created
+- [ ] Low fit candidates stay in pending, no interview created
+- [ ] Companies see pending and evaluated sections on applicant list
+- [ ] No mock data is used
+
+---
+
+## Phase 6: Interview System
+
+Build the async chat interview surface and backend.
+
+### 6.1 Interview Data Model
+
+- [ ] SQLC queries for interviews: `createInterview`, `getInterviewById`, `getInterviewByApplicationId`, `updateInterviewStatus`, `completeInterview`
+- [ ] Server functions in `app/features/interviews/server/functions.ts`
+  - `createInterviewForApplication`
+  - `getMyInterview`
+  - `getInterviewChatHistory`
+  - `submitInterviewMessage`
+  - `completeInterview`
+
+### 6.2 Interview Agent Boundary
+
+- [ ] Create `app/agents/interview-agent.ts`
+  - Extends `AIChatAgent` from `@cloudflare/ai-chat` (Durable Object-based)
+  - System prompt construction from job requirements + resume snapshot
+  - Agent tools: `updateStage`, `flagInconsistency`, `completeInterview`
+  - For `quick_eval`: system prompt instructs 2–3 clarifying questions only
+  - For `full`: full interview script
+- [ ] Add agent class to `wrangler.jsonc` with Durable Object binding + `new_sqlite_classes` migration
+- [ ] Keep agent prompt/tool logic behind an explicit boundary so it can be tested independently of routes
+- [ ] Use `routeAgentRequest` from `agents` package to route WebSocket requests to the correct Durable Object instance
+
+### 6.3 Interview Chat UI
+
+- [ ] Route: `/interview/$interviewId`
+- [ ] `InterviewChat` component in `app/features/interviews/components/interview-chat.tsx`
+  - Async chat UI (text-based, no video)
+  - Shows transcript, current question, input field
+  - Handles resumable streams
+- [ ] Candidate interview status page (`/dashboard/application/$applicationId` updates):
+  - `invited_roundzero`: show interview invitation card with CTA to start
+  - `in_roundzero`: show "Interview in Progress" card
+  - `evaluated`: show "Under Review" messaging
 - [ ] Add candidate-facing empty/error states for expired, already-completed, or unavailable interviews
 
-### Interview System
+### 6.4 Interview Lifecycle
 
-- [ ] Switch runtime from Nitro to Cloudflare Workers (`@cloudflare/vite-plugin`)
-- [ ] `wrangler.jsonc` config (Durable Objects, AI binding, R2 bucket)
-- [ ] InterviewAgent (`app/agents/interview-agent.ts`, extends AIChatAgent)
-- [ ] System prompt construction (job requirements + resume context)
-- [ ] Agent tools: `updateStage`, `flagInconsistency`, `completeInterview`
-- [ ] Interview creation (row in DB + Durable Object instantiation)
-- [ ] Interview chat UI (`app/features/interviews/components/interview-chat.tsx`)
-- [ ] `useAgentChat` integration (WebSocket, resumable streams)
-- [ ] Interview status page (`app/routes/interview.$interviewId.tsx`)
-- [ ] Resume extraction and context injection into agent
+- [ ] When candidate starts interview → `status = in_roundzero`
+- [ ] When interview completes (agent calls `completeInterview`) → trigger evaluation pipeline (Phase 7)
+- [ ] Time/question limits enforcement (configurable per interview type)
 - [ ] Interview progress tracking (stage transitions, question count)
-- [ ] Time/question limits enforcement
 
-## Phase 5: Evaluation & Reports
+### Exit Criteria
 
-Build the report/recommendation UI against the real report shape as it lands. The goal is to make the company-facing AI layer legible before optimizing model quality.
+- [ ] Candidate can start a full or quick evaluation interview from their application detail page
+- [ ] Interview transcript and messages are persisted
+- [ ] Interview completion triggers the evaluation pipeline
+- [ ] Status transitions follow the funnel correctly
 
-### Company AI Review Surfaces
+---
 
-- [x] Add temporary mock data under `app/mock/` for report/ranking UI validation
-- [x] Add reusable AI score, recommendation, confidence, ranking, and report preview components
-- [x] Add mock company ranked applicant list to the job applicants page
-- [x] Add mock AI report panel to the company applicant detail page
-- [x] Add mock full AI report route with question/answer evidence timeline:
-  - route: `/dashboard/applicant-reports/$applicationId`
-  - includes question, answer, tested signal, dimension, score impact, evaluator note, and evidence tags
-- [x] Add mock pre-evaluation applicant states:
-  - not evaluated
-  - needs clarification
-  - evaluated
-  - shortlisted
-  - rejected
-- [x] Add mock report summary card on applicant detail pages
-- [x] Add reusable score components:
-  - score bar
-  - score badge
-  - recommendation badge
-  - confidence indicator
-- [ ] Replace mock AI data with real report records once the evaluation schema exists
-- [ ] Add real pre-evaluation applicant state on applicant detail pages:
-  - show candidate identity, submitted resume, apply date, and current status
-  - show "evaluation in progress" when no report exists
-  - keep report/actions disabled until evaluation exists
-- [ ] Add dedicated per-job ranked candidates page backed by real reports
-- [ ] Replace mock ranked candidate row/card states with real report-backed states:
-  - not evaluated yet
-  - needs clarification
-  - evaluated
-  - shortlisted
-  - rejected
-- [ ] Replace mock full candidate report view with real report data:
-  - overall score
-  - recommendation
-  - technical score
-  - communication score
-  - experience relevance score
-  - strengths
-  - concerns
-  - evidence quotes
+## Phase 7: Evaluation & Reports
+
+Build the report generation pipeline and company-facing report UI with real data.
+
+### 7.1 Report Generation Workflow
+
+- [ ] Create `app/workflows/report-generation.ts`
+  - Extends `WorkflowEntrypoint<Env, { interviewId: string }>`
+  - Triggered when interview completes (Durable Object calls `env.REPORT_GENERATION.create()`)
+
+**Workflow Steps:**
+
+1. **`read_interview_data`**
+   - Query DB for interview transcript, application snapshot, job context
+   - Return combined evaluation input
+
+2. **`technical_assessment`**
+   - Call LLM with technical scoring prompt
+   - Output: technical_score (0–100), reasoning
+
+3. **`communication_assessment`**
+   - Call LLM with communication scoring prompt
+   - Output: communication_score (0–100), reasoning
+
+4. **`experience_validation`**
+   - Call LLM to validate resume claims against interview answers
+   - Output: experience_relevance_score (0–100), verified claims, flags
+
+5. **`consistency_check`**
+   - Call LLM to detect contradictions between resume and interview
+   - Output: inconsistency_flags, risk_notes
+
+6. **`aggregate_scores`**
+   - Weight and combine dimension scores into final score
+   - Output: overall_score, recommendation (strong/moderate/weak)
+
+7. **`write_report`**
+   - Write full report to `reports` table
+   - Update `applications.status` → `evaluated`
+   - Return report ID
+
+8. **`send_report_ready_notification`**
+   - Create in-app notification for company owner
+   - Send Resend email (best-effort)
+   - No retry on email failure — notification record is the source of truth
+
+### 7.2 Report Data Model
+
+- [ ] SQLC queries: `createReport`, `getReportByApplicationId`, `getReportsByJobId`, `getReportById`
+- [ ] Report shape (from `reports` table + inferred types):
+  - overall score, recommendation, technical score, communication score, experience relevance score
+  - strengths, concerns, evidence quotes
   - question/answer timeline
-  - resume/transcript links
+  - summary
 
-### Evaluation System
+### 7.3 Report Delivery to Companies
 
-- [ ] EvaluationAgent (`app/agents/evaluation-agent.ts`, extends Agent)
-- [ ] Trigger evaluation when interview completes
-- [ ] Technical assessment pass (depth, correctness, reasoning)
-- [ ] Communication assessment pass (clarity, structure, articulation)
-- [ ] Experience validation pass (ownership vs. contribution, verified claims)
-- [ ] Consistency check pass (contradictions, resume-vs-interview mismatches)
-- [ ] Score aggregation (weighted final score)
-- [ ] Report generation and write to Postgres
-- [ ] SQLC queries for reports table
-- [ ] Report detail view (`app/routes/report.$reportId.tsx`)
-- [ ] Company dashboard: candidate list per job (`app/routes/dashboard.candidates.$candidateId.tsx`)
-- [ ] Ranked candidate list with scores + recommendations
+- [ ] After report is written, send `report_ready` notification to company owner:
+  - In-app notification
+  - Resend email (best-effort)
+- [ ] Notification payload: candidate name, job title, score, recommendation, link to report
+- [ ] Update `app/features/notifications/config.ts` with `report_ready` presentation
 
-## Phase 6: Polish & Extras
+### 7.4 Company Report UI (Real Data)
 
-- [ ] Candidate-facing interview status tracking
-- [ ] Email notifications (interview ready, report available)
-- [ ] Analytics (time-to-hire, funnel metrics)
-- [ ] Company-specific evaluation tuning (weight adjustments)
-- [ ] Full transcript view for companies (optional)
-- [ ] Error handling and edge cases (expired interviews, failed evaluations)
-- [ ] Loading states and optimistic UI
-- [ ] Mobile responsiveness pass
+- [ ] Update `/dashboard/job-applicants/$jobId`:
+  - Replace mock evaluation with real report data
+  - Rank evaluated candidates by report score
+  - Show recommendation badges, scores, summary snippets
+- [ ] Update `/dashboard/applicants/$applicationId`:
+  - Replace mock `AiReportPanel` with real report query
+  - Show full report if evaluated, "Evaluation in progress" if not
+  - Action buttons (shortlist / reject) only when `status = evaluated`
+- [ ] Update `/dashboard/applicant-reports/$applicationId`:
+  - Replace mock `AiFullReport` with real report data
+  - Show question/answer timeline, dimension scores, evidence
+- [ ] Add `app/features/reports/components/` for reusable report views
 
-## Phase 7 (Optional): Better Auth Migration
+### Exit Criteria
+
+- [ ] Interview completion triggers real report generation
+- [ ] Report is written to Postgres and readable by company
+- [ ] Company receives `report_ready` notification (in-app + email)
+- [ ] Applicant list and detail pages show real report data, no mocks
+- [ ] `bun run check` passes
+
+---
+
+## Phase 8: Candidate-Facing Interview & Status Tracking
+
+Polish the candidate experience for the AI-aware statuses.
+
+### 8.1 Application Progress UI
+
+- [ ] Update `/dashboard/applications` to show visible statuses:
+  - `applied` / `pre_screening` → "Application Received"
+  - `invited_roundzero` → "Interview Ready"
+  - `in_roundzero` → "Interview in Progress"
+  - `evaluated` → "Under Review"
+  - `shortlisted` → "Shortlisted"
+  - `rejected` → "Not Moving Forward"
+- [ ] Update `/dashboard/application/$applicationId`:
+  - Strong fit: "You've been invited to complete RoundZero for this role."
+  - Medium fit: "A few additional questions will help evaluate your fit."
+  - Low fit: "Application received and under review."
+  - Add interview completed state with submitted timestamp, question count, and clear "under review" messaging
+
+### 8.2 Interview Invitation Cards
+
+- [ ] Add `InterviewInvitationCard` for `invited_roundzero` status
+  - CTA: "Start RoundZero"
+  - Estimated time, question count, format info
+- [ ] Add `InterviewInProgressCard` for `in_roundzero` status
+  - Link back to active interview
+  - "You can resume any time"
+
+### Exit Criteria
+
+- [ ] Candidate dashboard accurately reflects AI-aware statuses
+- [ ] Interview invitation and in-progress cards are functional
+- [ ] Status copy matches PLATFORM.md §15.2 spec
+
+---
+
+## Phase 9: Polish & Edge Cases
+
+### 9.1 Error Handling
+
+- [ ] Expired interview handling (candidate tries to start after deadline)
+- [ ] Failed evaluation handling (agent error → retry or manual flag)
+- [ ] Already-completed interview guards
+
+### 9.2 Optimistic UI & Loading States
+
+- [ ] Route skeletons updated for new AI-aware layouts
+- [ ] Optimistic status transitions where appropriate
+- [ ] Loading states for report generation ("Evaluation in progress" spinners)
+
+### 9.3 Mobile Responsiveness Pass
+
+- [ ] Interview chat UI works on mobile
+- [ ] Report views are readable on small screens
+
+### 9.4 Analytics & Metrics (Optional)
+
+- [ ] Track funnel metrics: apply → pre-eval → interview → report
+- [ ] Time-to-evaluation per job
+
+### Exit Criteria
+
+- [ ] All edge cases handled gracefully
+- [ ] Mobile experience is usable
+- [ ] No production errors in core AI funnel
+
+---
+
+## Phase 10 (Optional): Better Auth Migration
 
 Replaces hand-rolled Google OAuth + encrypted cookie sessions. Unlocks magic links, email/password, 2FA.
 
@@ -214,7 +458,9 @@ Replaces hand-rolled Google OAuth + encrypted cookie sessions. Unlocks magic lin
 - [ ] Reset DB, update tests for new schema
 - [ ] (Optional) Add magic link, email/password, or 2FA plugins
 
-## Phase 8 (Optional): Web Interface Guidelines Compliance
+---
+
+## Phase 11 (Optional): Web Interface Guidelines Compliance
 
 ### Systemic
 
@@ -243,8 +489,29 @@ Replaces hand-rolled Google OAuth + encrypted cookie sessions. Unlocks magic lin
 - [ ] Add `tabular-nums` to numeric columns
 - [ ] Replace straight apostrophes with curly in `not-found.tsx`
 
-## Phase 9 (Post-Release): Landing Page Enhancements
+---
+
+## Phase 12 (Post-Release): Landing Page Enhancements
 
 - [ ] Add social proof section (logos, testimonials, or metrics once available)
 - [ ] Add candidate-side value prop (brief section addressing job seekers)
 - [ ] Add comparison section (traditional screening vs RoundZero side-by-side)
+
+---
+
+## Key Product Decisions (Confirmed)
+
+| # | Decision | Answer |
+|---|----------|--------|
+| 1 | Quota exhausted behavior | Stop creating new interviews. Send `position_filled` notification to remaining pending candidates. They stay in pipeline (`pre_screening`), not auto-rejected. |
+| 2 | Default `report_limit` | `5` per job (max allowed: `15`) |
+| 3 | Low-match outcome | Hold in `pre_screening`. Company can manually reject. No system auto-reject. |
+| 4 | Unevaluated visibility | Yes — separate "Pending" tab, read-only. Companies see all applicants; only evaluated ones get AI reports. |
+| 5 | Pre-evaluation timing | Async. Nothing in the AI flow is synchronous. All steps run as background jobs, queues, or workflows. |
+| 6 | Field name for limit | `report_limit` |
+
+---
+
+## One-Line Definition
+
+> RoundZero deeply evaluates the right candidates, not every candidate.

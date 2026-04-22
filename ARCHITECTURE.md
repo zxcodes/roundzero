@@ -2,18 +2,24 @@
 
 ## 0. Status
 
-This document reflects the app in its **current platform-first state**.
+This document reflects the app as it transitions from **platform-only** to **platform + AI layer**.
 
-Today, RoundZero is primarily:
+**Currently live:**
 
-- a TanStack Start application
-- a Postgres-backed hiring platform
+- TanStack Start application (Nitro runtime)
+- Postgres-backed hiring platform
 - role-based company/candidate workflows
 - public company and jobs browsing
 - one-click applications with profile snapshots
 - durable in-app notifications with Resend email delivery
 
-The AI interview, evaluation, report, and ranking layers are planned but not yet implemented in this codebase.
+**In planning / build:**
+
+- Cloudflare Workflows for pre-evaluation and report generation pipelines
+- Cloudflare Durable Objects for interview agents
+- AI-driven candidate evaluation and structured reports
+- `report_limit` quota system per job
+- 7-status application lifecycle with pre-screening funnel
 
 ---
 
@@ -22,8 +28,8 @@ The AI interview, evaluation, report, and ranking layers are planned but not yet
 | Layer | Technology |
 | --- | --- |
 | Framework | TanStack Start (React 19, Vite 7) |
-| Runtime (current) | TanStack Start server functions |
-| Runtime (target AI phase) | Cloudflare Workers + Wrangler |
+| Runtime (current) | TanStack Start + Nitro |
+| Runtime (target) | TanStack Start + Cloudflare Workers (single Worker with Durable Objects) |
 | Database | Postgres (Docker locally, Neon intended for prod) |
 | Typed queries | SQLC |
 | Migrations | dbmate |
@@ -32,7 +38,9 @@ The AI interview, evaluation, report, and ranking layers are planned but not yet
 | Validation | Zod |
 | Notifications | In-app inbox + Resend email delivery |
 | File storage | Cloudflare R2 for resumes and company logos |
-| AI layer (planned) | Cloudflare Agents SDK + Vercel AI SDK |
+| AI layer | Cloudflare Agents SDK + Vercel AI SDK |
+| AI pipelines | Cloudflare Workflows (durable multi-step) |
+| Interview runtime | Cloudflare Durable Objects (stateful chat) |
 | Linting | Biome |
 
 ---
@@ -54,18 +62,36 @@ The app currently runs as a standard TanStack Start app with server functions fo
 
 ### Target Runtime
 
-The AI layer is expected to move the app toward Cloudflare deployment with:
+The entire app deploys to **Cloudflare Workers** as a single Worker using the `@cloudflare/vite-plugin`. Within that same Worker:
 
-- TanStack Start on Workers
-- Durable Objects for interview/evaluation agents
-- R2 for resume storage
-- AI binding / model provider integration
+- TanStack Start handles SSR, routing, and server functions
+- Durable Objects (via Agents SDK) run interview/evaluation agents
+- R2 stores resumes and company logos
+- AI binding provides model inference (Workers AI or external providers)
 
-The codebase should therefore prefer boundaries that survive that migration cleanly:
+**Why one Worker, not separate services:**
+- TanStack Start + Cloudflare Vite plugin supports Durable Objects natively in the same Worker script
+- The Agents SDK (`@cloudflare/ai-chat`) runs agents as Durable Object classes within the Worker
+- Service bindings exist but add unnecessary complexity for a single-product app
+- One deployment = simpler ops, shared env/bindings, no cross-worker RPC overhead
+
+**Migration path from current Nitro runtime:**
+1. Install `@cloudflare/vite-plugin` + `wrangler`
+2. Swap `nitro()` for `cloudflare({ viteEnvironment: { name: "ssr" } })` in `vite.config.ts`
+3. Add `wrangler.jsonc` with:
+   - Durable Object bindings for interview agents
+   - Workflow bindings for pre-evaluation and report generation
+   - AI binding for model inference
+   - R2 binding for resume/logo storage
+4. Keep all server functions and DB code unchanged (Postgres via Hyperdrive or keep Neon)
+5. Add workflow classes + agent classes alongside existing code in the same Worker script
+
+The codebase should prefer boundaries that survive this migration cleanly:
 
 - explicit server functions
 - storage behind server contracts
 - database-centric source of truth
+- agent logic behind abstract boundaries (not coupled to routes)
 
 ---
 
@@ -144,12 +170,13 @@ app/features/
 
 ### What does not exist yet
 
-- `interviews/`
-- `reports/`
-- `ranking/`
-- `agents/`
+- `interviews/` (planned for Phase 6)
+- `reports/` (planned for Phase 7)
+- `pre-evaluations/` (planned for Phase 5)
+- `agents/` (interview agent, Phase 6)
+- `workflows/` (pre-evaluation + report generation workflows)
 
-Those modules were part of the original target architecture, but the codebase is not there yet.
+Those modules are part of the AI layer build plan in `PLAN.md`.
 
 ---
 
@@ -159,6 +186,8 @@ Those modules were part of the original target architecture, but the codebase is
 app/
 ├── routes/              # TanStack file-based routes
 ├── features/            # Product feature modules
+├── agents/              # Durable Object agent classes
+├── workflows/           # Cloudflare Workflow classes
 ├── components/          # Shared/global UI
 ├── shared/              # DB, middleware, form helpers, shared utilities
 ├── lib/                 # Small app utilities
@@ -222,7 +251,8 @@ Schema dump:
   - status
   - salary info
   - team/headcount
-  - `interview_questions` (JSONB, for future AI agent context)
+  - `report_limit` (default 5, max 15) — controls how many candidates get AI evaluation
+  - `interview_questions` (JSONB, for AI agent context)
   - `expires_at`
   - `archived_at`
 
@@ -232,22 +262,37 @@ Schema dump:
 - stores:
   - `resume_key` snapshot
   - `metadata` snapshot for non-resume candidate profile data
-  - status (`applied`, `interviewing`, `evaluated`, `rejected`)
+  - status: `applied`, `pre_screening`, `invited_roundzero`, `in_roundzero`, `evaluated`, `shortlisted`, `rejected`
 
 This is important architecturally:
 
 - `candidate_profiles` is the current source of truth
 - `applications` is the apply-time snapshot
 
+#### `pre_evaluations`
+
+- one per application
+- stores lightweight pre-evaluation output:
+  - `score` (0–100)
+  - `missing_requirements` (JSONB)
+  - `confidence` (high/medium/low)
+  - `next_step` (invite_roundzero / ask_followups / hold)
+
 #### `interviews`
 
-- planned future link between applications and AI interview sessions
-- table exists, but interview runtime is not built yet
+- link between applications and AI interview sessions
+- stores:
+  - `type`: `'full'` | `'quick_eval'`
+  - `metadata` (JSONB)
 
 #### `reports`
 
-- planned future evaluation output
-- table exists, but report generation and views are not built yet
+- evaluation output after interview completion
+- stores structured report data:
+  - overall score, recommendation
+  - dimension scores (technical, communication, experience relevance)
+  - strengths, concerns, evidence
+  - question/answer timeline
 
 ### Schema Decisions
 
@@ -394,9 +439,12 @@ Notifications are implemented as a durable in-app inbox with Resend-backed email
   - `email_provider_message_id`
   - `created_at`
 - supported event types today:
-  - `new_applicant`
   - `application_status_changed`
-- application statuses include `applied`, `interviewing`, `evaluated`, `rejected` (interviewing and evaluated are AI-ready placeholders)
+- AI-phase event types (planned):
+  - `report_ready`
+  - `interview_invited`
+  - `position_filled`
+- application statuses include all 7: `applied`, `pre_screening`, `invited_roundzero`, `in_roundzero`, `evaluated`, `shortlisted`, `rejected`
 - the app shell/dashboard header renders the inbox surface
 
 ### Current module layout
@@ -473,10 +521,10 @@ Jobs support:
 - hidden-by-default expired/closed jobs on public surfaces
 - `interview_questions` JSONB field for future AI agent context
 
-Remaining cleanup:
+AI integration:
 
-- expired-job-specific public error UI
-- dead code branches in `PublicJobCTA`
+- `report_limit` controls how many candidates get AI evaluation per job
+- `interview_questions` (JSONB) feeds into agent system prompts
 
 ---
 
@@ -506,55 +554,79 @@ Current coverage focus:
 - dashboard metrics
 - notifications queries
 
-Coverage still needed as the platform hardening phase continues:
+Coverage needed for AI layer:
 
-- candidate application tracking views
-- remaining public expired-job/error handling views
+- pre-evaluation workflow steps (with mocked LLM responses)
+- report generation workflow steps
+- interview agent state transitions
+- quota exhaustion logic
 
 ---
 
-## 14. Planned AI Architecture
+## 14. AI Architecture
 
-This is the intended future architecture, not the current app state.
+The AI layer runs entirely within the same Cloudflare Worker as the TanStack Start app.
 
-### Interview Layer
+### Pre-Evaluation Pipeline (Cloudflare Workflow)
 
-- async in-app chat
-- likely Durable Object per interview session
-- resume/job context injected into system prompt
-- adaptive questioning
+- Triggered when a candidate applies
+- Durable multi-step execution:
+  1. Read application + job from Postgres
+  2. Fetch resume from R2
+  3. Extract text from PDF (local library)
+  4. Merge profile metadata + resume text + job context
+  5. Call LLM for scoring
+  6. Write result to `pre_evaluations`
+  7. Decision layer: create interview or hold
+- Automatic retries per step
+- Resumes from last completed step if interrupted
 
-### Evaluation Layer
+### Interview Layer (Durable Object)
 
-- separate evaluation pipeline after interview completion
-- multi-pass scoring:
-  - technical
-  - communication
-  - experience validation
-  - consistency
+- One Durable Object per interview session
+- Extends `AIChatAgent` from `@cloudflare/ai-chat`
+- SQLite-backed message persistence
+- Resumable WebSocket streams
+- System prompt injected with job requirements + resume context
+- Agent tools: `updateStage`, `flagInconsistency`, `completeInterview`
+- Two modes:
+  - `full`: complete RoundZero interview
+  - `quick_eval`: 2–3 clarifying questions for medium-fit candidates
+
+### Report Generation Pipeline (Cloudflare Workflow)
+
+- Triggered when interview completes
+- Durable multi-step execution:
+  1. Read interview transcript + application snapshot
+  2. Technical assessment (LLM call)
+  3. Communication assessment (LLM call)
+  4. Experience validation (LLM call)
+  5. Consistency check (LLM call)
+  6. Score aggregation
+  7. Write report to `reports` table
+  8. Send `report_ready` notification
 
 ### Output Layer
 
-- report generation
-- candidate ranking per job
-- explainable recommendations for companies
+- Report reads from Postgres
+- Candidate ranking per job by report score
+- Company dashboard shows evaluated + pending tabs
 
-The important constraint:
+### Key Constraint
 
-- this AI layer should sit on top of a complete hiring platform, not replace unfinished platform basics
+- The AI layer sits on top of a complete hiring platform, not replacing unfinished basics
 
 ---
 
-## 15. Near-Term Priorities Before AI
+## 15. Near-Term Priorities
 
-See `PLAN.md` Phase 3.5 for the full pre-AI build list and product decisions. Key items:
+See `PLAN.md` for the full build plan. Current focus:
 
-1. candidate application empty states, guidance, and tests
-2. company pipeline summary cues (applicant counts per status per job)
-3. notification status copy (replace enum labels with product wording)
-4. public expired-job error UI + dead code cleanup
-5. legacy test fixture cleanup (resume_key values)
-6. product decisions: status lifecycle, candidate messaging, medium-fit format, company pre/post-AI view, pre-evaluation output validation
+1. **Phase 3.5 wrap-up**: tests for candidate application tracking views
+2. **Phase 4**: schema changes (status lifecycle, `report_limit`, `pre_evaluations`, workflow setup)
+3. **Phase 5**: pre-evaluation workflow (durable pipeline with LLM scoring)
+4. **Phase 6**: interview system (Durable Object agents + chat UI)
+5. **Phase 7**: report generation workflow + company-facing report UI
 
 ---
 
@@ -569,4 +641,6 @@ See `PLAN.md` Phase 3.5 for the full pre-AI build list and product decisions. Ke
 | Resume upload | Direct-to-R2 signed upload | Avoids proxying file bytes through app server |
 | Notifications | In-app notifications + Resend | Durable app record first, email as secondary delivery |
 | Auth | Google OAuth + cookie session | Good enough for current phase |
-| Future AI runtime | Cloudflare Durable Objects | Good fit for async conversational state |
+| AI pipelines | Cloudflare Workflows | Durable multi-step execution with retries |
+| Interview runtime | Cloudflare Durable Objects | Stateful chat with SQLite persistence |
+| Resume text extraction | Local library (pdf-parse) | LLM reads unstructured text; no external parser needed |

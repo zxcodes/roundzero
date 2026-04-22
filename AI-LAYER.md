@@ -18,14 +18,18 @@ Application → Pre-Evaluation → Selective Deep Evaluation → Company Review
 # Overall Flow
 
 1. Candidate applies to a job
-2. System runs lightweight pre-evaluation
-3. If candidate looks promising:
+2. System runs lightweight pre-evaluation **asynchronously**
+3. If candidate looks promising **and job report quota is available**:
    - invite to RoundZero interview
-4. If medium fit:
-   - ask a few extra questions
+4. If medium fit **and job report quota is available**:
+   - ask 2–3 clarifying questions first
 5. If low fit:
-   - keep under review / reject / talent pool
-6. Company receives evaluated candidates with reports
+   - keep under review (no interview)
+6. If job report quota is exhausted:
+   - remaining pending candidates stay in pipeline
+   - candidates receive "position filled" notification
+   - no new interviews are created
+7. Company receives evaluated candidates with reports
 
 ---
 
@@ -68,17 +72,25 @@ Decide whether a candidate deserves deeper evaluation.
 
 # Stage 2: Decision Layer
 
+## Quota Check First
+
+Each job has a `report_limit` (default: 5, max: 15). The system only creates interviews while existing report count < limit.
+
 ## High Match
 
-→ Invite to full AI interview
+→ Invite to full AI interview (if quota available)
 
 ## Medium Match
 
-→ Ask 2–3 clarifying questions first
+→ Ask 2–3 clarifying questions first (if quota available)
 
 ## Low Match
 
-→ Hold / reject / talent pool
+→ Hold in `pre_screening` (no interview)
+
+## Quota Exhausted
+
+→ Stop creating interviews. Remaining pending candidates stay in pipeline and receive a "position filled" notification. They are NOT auto-rejected.
 
 ---
 
@@ -104,18 +116,34 @@ Structured candidate report
 
 ---
 
+# Report Limits
+
+Companies set `report_limit` during job creation (default: 5, max: 15). This controls how many candidates RoundZero will deeply evaluate for that role.
+
+Why a limit:
+- Prevents noise for companies with only 1 opening
+- Keeps evaluation costs predictable
+- Forces selectivity in the funnel
+
+When the limit is reached, the pipeline closes for new evaluations but the job may remain open. Companies still see unevaluated applicants in a pending list and can manually review or reject them.
+
+---
+
 # Candidate Experience
 
 ## After Apply
 
 ### Strong Fit
-"You’ve been invited to complete RoundZero for this role."
+"You've been invited to complete RoundZero for this role."
 
 ### Medium Fit
 "A few additional questions will help evaluate your fit."
 
 ### Low Fit
 "Application received and under review."
+
+### Position Filled (Quota Reached)
+"This position has received enough evaluations. Your application is still on file and the company may review it directly."
 
 ---
 
@@ -158,6 +186,7 @@ Instead of raw applicants, companies see evaluated candidates.
 - Only companies can move `evaluated` → `shortlisted` or `rejected`
 - System auto-advances through `pre_screening` → `invited_roundzero` → `in_roundzero` → `evaluated`
 - Companies can manually reject at any pre-evaluation stage
+- When `report_limit` is reached, system stops advancing new candidates out of `pre_screening`
 
 ---
 
@@ -213,6 +242,7 @@ This reduces cost and improves UX.
 | 3 | Medium-Fit Follow-Up | ✅ Use synchronous chat UI (same as full interview) with 2–3 questions |
 | 4 | Company View Pre/Post AI | ✅ Show full pipeline, pre-eval candidates are read-only |
 | 5 | Pre-Evaluation Output Format | ⏳ Pending validation with 5–10 real applications |
+| 6 | Report Limits | ✅ `report_limit` per job (default: 5, max: 15). Quota exhausted → stop evaluations, notify candidates, no auto-reject. |
 
 ---
 
