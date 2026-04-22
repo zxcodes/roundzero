@@ -5,6 +5,9 @@ describe("jobFieldsSchema", () => {
   const validJob = {
     title: "Software Engineer",
     description: "Build things",
+    workplaceType: "remote",
+    employmentType: "full_time",
+    experienceLevel: "mid",
   };
 
   it("accepts minimal valid input with defaults", () => {
@@ -42,9 +45,6 @@ describe("jobFieldsSchema", () => {
     const result = jobFieldsSchema.parse({
       ...validJob,
       location: null,
-      workplaceType: null,
-      employmentType: null,
-      experienceLevel: null,
       salaryMin: null,
       salaryMax: null,
       teamSize: null,
@@ -52,8 +52,14 @@ describe("jobFieldsSchema", () => {
       interviewQuestions: [],
     });
     expect(result.location).toBeNull();
-    expect(result.workplaceType).toBeNull();
     expect(result.interviewQuestions).toEqual([]);
+  });
+
+  it("rejects missing required job detail fields", () => {
+    expect(() => jobFieldsSchema.parse({ title: "Test", description: "Test" })).toThrow();
+    expect(() =>
+      jobFieldsSchema.parse({ title: "Test", description: "Test", workplaceType: "remote" }),
+    ).toThrow();
   });
 
   // ─── Validation failures ─────────────────────────────────
@@ -134,11 +140,18 @@ describe("jobFieldsSchema", () => {
 });
 
 describe("updateJobSchema", () => {
+  const validUpdate = {
+    title: "Test",
+    description: "Test",
+    workplaceType: "remote",
+    employmentType: "full_time",
+    experienceLevel: "mid",
+  };
+
   it("requires a valid UUID id", () => {
     expect(() =>
       updateJobSchema.parse({
-        title: "Test",
-        description: "Test",
+        ...validUpdate,
         id: "not-a-uuid",
       }),
     ).toThrow();
@@ -146,8 +159,7 @@ describe("updateJobSchema", () => {
 
   it("accepts valid input with UUID", () => {
     const result = updateJobSchema.parse({
-      title: "Test",
-      description: "Test",
+      ...validUpdate,
       id: "550e8400-e29b-41d4-a716-446655440000",
     });
     expect(result.id).toBe("550e8400-e29b-41d4-a716-446655440000");

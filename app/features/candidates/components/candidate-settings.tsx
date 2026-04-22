@@ -1,16 +1,18 @@
 import { Add01Icon, Calendar03Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useStore } from "@tanstack/react-form";
+import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { format } from "date-fns";
 import { useId, useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -30,7 +32,6 @@ import {
   updateMyCandidateProfile,
 } from "@/features/candidates/server/functions";
 import type { User } from "@/router";
-import { useAppForm } from "@/shared/form";
 
 type CandidateProfile = NonNullable<Awaited<ReturnType<typeof getMyCandidateProfile>>>;
 
@@ -51,6 +52,47 @@ function formatMonthValue(value: string | null | undefined) {
   const date = parseMonthValue(value);
   return date ? format(date, "MMM yyyy") : "Pick month";
 }
+
+const urlOrEmpty = z
+  .string()
+  .trim()
+  .max(500)
+  .refine((val) => !val || z.string().url().safeParse(val).success, {
+    message: "Must be a valid URL",
+  });
+
+const formSchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(100),
+  headline: z.string().trim().min(1, "Headline is required").max(200),
+  resumeKey: z.string(),
+  bio: z.string().trim().max(5000, "Bio must be under 5,000 characters"),
+  linkedinUrl: urlOrEmpty,
+  githubUrl: urlOrEmpty,
+  portfolioUrl: urlOrEmpty,
+  skills: z.array(z.string().trim().min(1)),
+  workHistory: z.array(
+    z
+      .object({
+        company: z.string().trim().min(1, "Company is required").max(200),
+        title: z.string().trim().min(1, "Title is required").max(200),
+        startMonth: z.string(),
+        endMonth: z.string().nullable(),
+        currentlyWorkingHere: z.boolean(),
+        description: z.string().max(1000, "Description must be under 1,000 characters"),
+      })
+      .superRefine((entry, ctx) => {
+        if (entry.startMonth && entry.endMonth && entry.endMonth < entry.startMonth) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["endMonth"],
+            message: "End month must be after start month",
+          });
+        }
+      }),
+  ),
+});
+
+type FormValues = z.infer<typeof formSchema>;
 
 function WorkHistoryMonthPicker({
   label,
@@ -200,7 +242,7 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
       ? profile.links
       : { linkedin: "", github: "", portfolio: "" };
 
-  const form = useAppForm({
+  const form = useForm({
     defaultValues: {
       name: user.name ?? "",
       headline: profile.headline ?? "",
@@ -213,10 +255,15 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
       workHistory: Array.isArray(profile.workHistory)
         ? profile.workHistory.map((entry) => ({
             ...entry,
-            description: entry.description ?? undefined,
+            description: entry.description ?? "",
           }))
         : [],
+    } as FormValues,
+
+    validators: {
+      onSubmit: formSchema,
     },
+
     onSubmit: async ({ value }) => {
       if (value.name && value.name !== user.name) {
         await updateNameMutation.mutateAsync({
@@ -245,7 +292,7 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
   });
 
   const [skillInput, setSkillInput] = useState("");
-  const currentResumeKey = useStore(form.store, (state) => state.values.resumeKey);
+  const currentResumeKey = form.getFieldValue("resumeKey");
   const resumeDetails = profile.resumeUpdatedAt
     ? `Resume last updated ${format(new Date(profile.resumeUpdatedAt), "MMM d, yyyy 'at' h:mm a")}`
     : null;
@@ -263,6 +310,7 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
   const onSkillInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSkillInput(e.target.value);
   };
+
   return (
     <div className="animate-fade-in space-y-6 pb-28">
       <form.Subscribe
@@ -293,36 +341,84 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
             <CardDescription>Your name, headline, and professional summary.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <form.AppField
+            <form.Field
               name="name"
-              children={(field) => (
-                <field.TextField label="Name" placeholder="Your full name" maxLength={100} />
-              )}
-            />
+              validators={{
+                onBlur: z.string().trim().min(1, "Name is required").max(100),
+              }}
+            >
+              {(field) => {
+                const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                return (
+                  <Field data-invalid={isInvalid}>
+                    <FieldLabel htmlFor={field.name}>Name</FieldLabel>
+                    <Input
+                      id={field.name}
+                      placeholder="Your full name"
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      aria-invalid={isInvalid}
+                    />
+                    {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+                  </Field>
+                );
+              }}
+            </form.Field>
 
-            <form.AppField
+            <form.Field
               name="headline"
-              children={(field) => (
-                <field.TextField
-                  label="Headline"
-                  placeholder="Senior Frontend Engineer"
-                  maxLength={200}
-                  description="A short professional title that describes what you do"
-                />
-              )}
-            />
+              validators={{
+                onBlur: z.string().trim().min(1, "Headline is required").max(200),
+              }}
+            >
+              {(field) => {
+                const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                return (
+                  <Field data-invalid={isInvalid}>
+                    <FieldLabel htmlFor={field.name}>Headline</FieldLabel>
+                    <Input
+                      id={field.name}
+                      placeholder="Senior Frontend Engineer"
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      aria-invalid={isInvalid}
+                    />
+                    <p className="text-muted-foreground text-xs">
+                      A short professional title that describes what you do
+                    </p>
+                    {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+                  </Field>
+                );
+              }}
+            </form.Field>
 
-            <form.AppField
+            <form.Field
               name="bio"
-              children={(field) => (
-                <field.TextareaField
-                  label="Bio"
-                  placeholder="Tell companies about yourself. Your experience, interests, and what you're looking for."
-                  maxLength={5000}
-                  rows={4}
-                />
-              )}
-            />
+              validators={{
+                onBlur: z.string().trim().max(5000, "Bio must be under 5,000 characters"),
+              }}
+            >
+              {(field) => {
+                const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                return (
+                  <Field data-invalid={isInvalid}>
+                    <FieldLabel htmlFor={field.name}>Bio</FieldLabel>
+                    <Textarea
+                      id={field.name}
+                      placeholder="Tell companies about yourself. Your experience, interests, and what you're looking for."
+                      rows={4}
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      aria-invalid={isInvalid}
+                    />
+                    {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+                  </Field>
+                );
+              }}
+            </form.Field>
 
             <ResumeUploadField
               value={currentResumeKey}
@@ -367,8 +463,8 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
 
                 return (
                   <>
-                    <div className="space-y-2">
-                      <Label htmlFor={skillInputId}>Add skills</Label>
+                    <Field>
+                      <FieldLabel htmlFor={skillInputId}>Add skills</FieldLabel>
                       <Input
                         id={skillInputId}
                         placeholder="Type and press Enter (e.g. TypeScript, React)"
@@ -376,36 +472,31 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
                         onChange={onSkillInputChange}
                         onKeyDown={onSkillInputKeyDown}
                       />
-                    </div>
+                    </Field>
 
                     {skillsField.state.value.length > 0 ? (
                       <div className="flex flex-wrap gap-1.5">
-                        {skillsField.state.value.map((skill, index) =>
-                          (() => {
-                            const onRemoveSkillClick = () => {
-                              onRemoveSkill(index);
-                            };
-
-                            return (
-                              <Badge key={skill} variant="secondary" className="gap-1 pr-1">
-                                {skill}
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon-xs"
-                                  onClick={onRemoveSkillClick}
-                                  className="ml-0.5 size-4 hover:bg-muted-foreground/20"
-                                >
-                                  <HugeiconsIcon
-                                    icon={Cancel01Icon}
-                                    strokeWidth={2}
-                                    className="size-3"
-                                  />
-                                </Button>
-                              </Badge>
-                            );
-                          })(),
-                        )}
+                        {skillsField.state.value.map((skill, index) => {
+                          const onRemoveSkillClick = () => onRemoveSkill(index);
+                          return (
+                            <Badge key={skill} variant="secondary" className="gap-1 pr-1">
+                              {skill}
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-xs"
+                                onClick={onRemoveSkillClick}
+                                className="ml-0.5 size-4 hover:bg-muted-foreground/20"
+                              >
+                                <HugeiconsIcon
+                                  icon={Cancel01Icon}
+                                  strokeWidth={2}
+                                  className="size-3"
+                                />
+                              </Button>
+                            </Badge>
+                          );
+                        })}
                       </div>
                     ) : null}
                   </>
@@ -424,9 +515,6 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
           <CardContent className="space-y-4">
             <form.Field name="workHistory" mode="array">
               {(workHistoryField) => {
-                const onRemoveWorkEntry = (index: number) => {
-                  workHistoryField.removeValue(index);
-                };
                 const onAddWorkEntry = () => {
                   workHistoryField.pushValue({
                     company: "",
@@ -434,179 +522,196 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
                     startMonth: "",
                     endMonth: null,
                     currentlyWorkingHere: false,
-                    description: undefined,
+                    description: "",
                   });
                 };
 
                 return (
                   <>
-                    {workHistoryField.state.value.map((_entry, index) =>
-                      (() => {
-                        const onRemoveWorkEntryClick = () => {
-                          onRemoveWorkEntry(index);
-                        };
-                        const onCurrentChange = (checked: boolean | "indeterminate") => {
-                          const isChecked = checked === true;
-                          form.setFieldValue(
-                            `workHistory[${index}].currentlyWorkingHere`,
-                            isChecked,
-                          );
-                          if (isChecked) {
-                            form.setFieldValue(`workHistory[${index}].endMonth`, null);
-                          }
-                        };
+                    {workHistoryField.state.value.map((_entry, index) => {
+                      const onRemoveWorkEntryClick = () => {
+                        workHistoryField.removeValue(index);
+                      };
+                      const onCurrentChange = (checked: boolean | "indeterminate") => {
+                        const isChecked = checked === true;
+                        form.setFieldValue(`workHistory[${index}].currentlyWorkingHere`, isChecked);
+                        if (isChecked) {
+                          form.setFieldValue(`workHistory[${index}].endMonth`, null);
+                        }
+                      };
 
-                        return (
-                          <form.Field key={`work-${index}`} name={`workHistory[${index}]`}>
-                            {() => (
-                              <div className="space-y-3 rounded-2xl border border-border/50 bg-muted/30 p-4">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-sm font-medium text-muted-foreground">
-                                    Position {index + 1}
-                                  </span>
-                                  <div className="flex items-center gap-1">
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon-xs"
-                                      onClick={onRemoveWorkEntryClick}
-                                      className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                                    >
-                                      <HugeiconsIcon
-                                        icon={Cancel01Icon}
-                                        strokeWidth={2}
-                                        className="size-4"
-                                      />
-                                    </Button>
-                                  </div>
-                                </div>
+                      return (
+                        <div
+                          key={`work-${index}`}
+                          className="space-y-3 rounded-2xl border border-border/50 bg-muted/30 p-4"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-muted-foreground">
+                              Position {index + 1}
+                            </span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-xs"
+                              onClick={onRemoveWorkEntryClick}
+                              className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                            >
+                              <HugeiconsIcon
+                                icon={Cancel01Icon}
+                                strokeWidth={2}
+                                className="size-4"
+                              />
+                            </Button>
+                          </div>
 
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <form.Field
+                              name={`workHistory[${index}].company`}
+                              validators={{
+                                onBlur: z.string().trim().min(1, "Company is required").max(200),
+                              }}
+                            >
+                              {(field) => {
+                                const isInvalid =
+                                  field.state.meta.isTouched && !field.state.meta.isValid;
+                                return (
+                                  <Field data-invalid={isInvalid}>
+                                    <FieldLabel htmlFor={field.name}>Company</FieldLabel>
+                                    <Input
+                                      id={field.name}
+                                      placeholder="Company name"
+                                      value={field.state.value}
+                                      onBlur={field.handleBlur}
+                                      onChange={(e) => field.handleChange(e.target.value)}
+                                      aria-invalid={isInvalid}
+                                    />
+                                    {isInvalid ? (
+                                      <FieldError errors={field.state.meta.errors} />
+                                    ) : null}
+                                  </Field>
+                                );
+                              }}
+                            </form.Field>
+                            <form.Field
+                              name={`workHistory[${index}].title`}
+                              validators={{
+                                onBlur: z.string().trim().min(1, "Title is required").max(200),
+                              }}
+                            >
+                              {(field) => {
+                                const isInvalid =
+                                  field.state.meta.isTouched && !field.state.meta.isValid;
+                                return (
+                                  <Field data-invalid={isInvalid}>
+                                    <FieldLabel htmlFor={field.name}>Title</FieldLabel>
+                                    <Input
+                                      id={field.name}
+                                      placeholder="Job title"
+                                      value={field.state.value}
+                                      onBlur={field.handleBlur}
+                                      onChange={(e) => field.handleChange(e.target.value)}
+                                      aria-invalid={isInvalid}
+                                    />
+                                    {isInvalid ? (
+                                      <FieldError errors={field.state.meta.errors} />
+                                    ) : null}
+                                  </Field>
+                                );
+                              }}
+                            </form.Field>
+                          </div>
+
+                          <form.Field name={`workHistory[${index}].currentlyWorkingHere`}>
+                            {(currentField) => (
+                              <>
                                 <div className="grid gap-3 sm:grid-cols-2">
-                                  <form.Field name={`workHistory[${index}].company`}>
+                                  <form.Field name={`workHistory[${index}].startMonth`}>
                                     {(field) => {
-                                      const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-                                        field.handleChange(e.target.value);
+                                      const onSelect = (value: string | null) => {
+                                        field.handleChange(value ?? "");
                                       };
-
                                       return (
-                                        <div className="space-y-2">
-                                          <Label htmlFor={field.name}>Company</Label>
-                                          <Input
-                                            id={field.name}
-                                            placeholder="Company name"
-                                            value={field.state.value}
-                                            onBlur={field.handleBlur}
-                                            onChange={onChange}
-                                          />
-                                        </div>
+                                        <WorkHistoryMonthPicker
+                                          label="Start month"
+                                          value={field.state.value}
+                                          onSelect={onSelect}
+                                        />
                                       );
                                     }}
                                   </form.Field>
-                                  <form.Field name={`workHistory[${index}].title`}>
+                                  <form.Field name={`workHistory[${index}].endMonth`}>
                                     {(field) => {
-                                      const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-                                        field.handleChange(e.target.value);
+                                      const isInvalid =
+                                        field.state.meta.isTouched && !field.state.meta.isValid;
+                                      const onSelect = (value: string | null) => {
+                                        field.handleChange(value);
                                       };
-
                                       return (
-                                        <div className="space-y-2">
-                                          <Label htmlFor={field.name}>Title</Label>
-                                          <Input
-                                            id={field.name}
-                                            placeholder="Job title"
+                                        <Field data-invalid={isInvalid}>
+                                          <WorkHistoryMonthPicker
+                                            label="End month"
                                             value={field.state.value}
-                                            onBlur={field.handleBlur}
-                                            onChange={onChange}
+                                            disabled={currentField.state.value}
+                                            onSelect={onSelect}
                                           />
-                                        </div>
+                                          {isInvalid ? (
+                                            <FieldError errors={field.state.meta.errors} />
+                                          ) : null}
+                                        </Field>
                                       );
                                     }}
                                   </form.Field>
                                 </div>
 
-                                <form.Field name={`workHistory[${index}].currentlyWorkingHere`}>
-                                  {(currentField) => (
-                                    <>
-                                      <div className="grid gap-3 sm:grid-cols-2">
-                                        <form.Field name={`workHistory[${index}].startMonth`}>
-                                          {(field) => {
-                                            const onSelect = (value: string | null) => {
-                                              field.handleChange(value ?? "");
-                                            };
+                                <p className="text-xs text-muted-foreground">
+                                  Use month and year only. Current roles can leave end month empty.
+                                </p>
 
-                                            return (
-                                              <WorkHistoryMonthPicker
-                                                label="Start month"
-                                                value={field.state.value}
-                                                onSelect={onSelect}
-                                              />
-                                            );
-                                          }}
-                                        </form.Field>
-                                        <form.Field name={`workHistory[${index}].endMonth`}>
-                                          {(field) => {
-                                            const onSelect = (value: string | null) => {
-                                              field.handleChange(value);
-                                            };
-
-                                            return (
-                                              <WorkHistoryMonthPicker
-                                                label="End month"
-                                                value={field.state.value}
-                                                disabled={currentField.state.value}
-                                                onSelect={onSelect}
-                                              />
-                                            );
-                                          }}
-                                        </form.Field>
-                                      </div>
-
-                                      <p className="text-xs text-muted-foreground">
-                                        Use month and year only. Current roles can leave end month
-                                        empty.
-                                      </p>
-
-                                      <div className="flex items-center gap-2">
-                                        <Checkbox
-                                          checked={currentField.state.value}
-                                          onCheckedChange={onCurrentChange}
-                                        />
-                                        <Label>Currently working here</Label>
-                                      </div>
-                                    </>
-                                  )}
-                                </form.Field>
-
-                                <form.Field name={`workHistory[${index}].description`}>
-                                  {(field) => {
-                                    const onChange = (
-                                      e: React.ChangeEvent<HTMLTextAreaElement>,
-                                    ) => {
-                                      field.handleChange(e.target.value);
-                                    };
-
-                                    return (
-                                      <div className="space-y-2">
-                                        <Label htmlFor={field.name}>Description</Label>
-                                        <Textarea
-                                          id={field.name}
-                                          placeholder="Brief description of your role"
-                                          rows={4}
-                                          className="min-h-24 max-h-56 resize-y overflow-y-auto"
-                                          value={field.state.value ?? ""}
-                                          onBlur={field.handleBlur}
-                                          onChange={onChange}
-                                        />
-                                      </div>
-                                    );
-                                  }}
-                                </form.Field>
-                              </div>
+                                <div className="flex items-center gap-2">
+                                  <Checkbox
+                                    checked={currentField.state.value}
+                                    onCheckedChange={onCurrentChange}
+                                  />
+                                  <Label>Currently working here</Label>
+                                </div>
+                              </>
                             )}
                           </form.Field>
-                        );
-                      })(),
-                    )}
+
+                          <form.Field
+                            name={`workHistory[${index}].description`}
+                            validators={{
+                              onBlur: z
+                                .string()
+                                .max(1000, "Description must be under 1,000 characters"),
+                            }}
+                          >
+                            {(field) => {
+                              const isInvalid =
+                                field.state.meta.isTouched && !field.state.meta.isValid;
+                              return (
+                                <Field data-invalid={isInvalid}>
+                                  <FieldLabel htmlFor={field.name}>Description</FieldLabel>
+                                  <Textarea
+                                    id={field.name}
+                                    placeholder="Brief description of your role"
+                                    rows={4}
+                                    value={field.state.value}
+                                    onBlur={field.handleBlur}
+                                    onChange={(e) => field.handleChange(e.target.value)}
+                                    aria-invalid={isInvalid}
+                                    className="min-h-24 max-h-56 resize-y"
+                                  />
+                                  {isInvalid ? (
+                                    <FieldError errors={field.state.meta.errors} />
+                                  ) : null}
+                                </Field>
+                              );
+                            }}
+                          </form.Field>
+                        </div>
+                      );
+                    })}
 
                     <Button
                       type="button"
@@ -633,36 +738,66 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <form.AppField
-              name="linkedinUrl"
-              children={(field) => (
-                <field.TextField
-                  label="LinkedIn"
-                  placeholder="https://linkedin.com/in/yourprofile"
-                  type="url"
-                />
-              )}
-            />
-            <form.AppField
-              name="githubUrl"
-              children={(field) => (
-                <field.TextField
-                  label="GitHub"
-                  placeholder="https://github.com/yourusername"
-                  type="url"
-                />
-              )}
-            />
-            <form.AppField
-              name="portfolioUrl"
-              children={(field) => (
-                <field.TextField
-                  label="Portfolio"
-                  placeholder="https://yourportfolio.com"
-                  type="url"
-                />
-              )}
-            />
+            <form.Field name="linkedinUrl" validators={{ onBlur: urlOrEmpty }}>
+              {(field) => {
+                const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                return (
+                  <Field data-invalid={isInvalid}>
+                    <FieldLabel htmlFor={field.name}>LinkedIn</FieldLabel>
+                    <Input
+                      id={field.name}
+                      placeholder="https://linkedin.com/in/yourprofile"
+                      type="url"
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      aria-invalid={isInvalid}
+                    />
+                    {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+                  </Field>
+                );
+              }}
+            </form.Field>
+            <form.Field name="githubUrl" validators={{ onBlur: urlOrEmpty }}>
+              {(field) => {
+                const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                return (
+                  <Field data-invalid={isInvalid}>
+                    <FieldLabel htmlFor={field.name}>GitHub</FieldLabel>
+                    <Input
+                      id={field.name}
+                      placeholder="https://github.com/yourusername"
+                      type="url"
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      aria-invalid={isInvalid}
+                    />
+                    {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+                  </Field>
+                );
+              }}
+            </form.Field>
+            <form.Field name="portfolioUrl" validators={{ onBlur: urlOrEmpty }}>
+              {(field) => {
+                const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                return (
+                  <Field data-invalid={isInvalid}>
+                    <FieldLabel htmlFor={field.name}>Portfolio</FieldLabel>
+                    <Input
+                      id={field.name}
+                      placeholder="https://yourportfolio.com"
+                      type="url"
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      aria-invalid={isInvalid}
+                    />
+                    {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+                  </Field>
+                );
+              }}
+            </form.Field>
           </CardContent>
         </Card>
       </div>

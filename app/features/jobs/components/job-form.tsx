@@ -1,13 +1,22 @@
 import { Add01Icon, Calendar03Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { useForm } from "@tanstack/react-form";
 import { useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import {
   type EmploymentType,
   type ExperienceLevel,
@@ -20,7 +29,6 @@ import {
   type WorkplaceType,
   workplaceTypeLabels,
 } from "@/shared/enums";
-import { useAppForm } from "@/shared/form";
 
 export interface JobFormData {
   title: string;
@@ -29,9 +37,9 @@ export interface JobFormData {
   interviewQuestions: string[];
   status: JobStatus;
   location: string | null;
-  workplaceType: WorkplaceType | null;
-  employmentType: EmploymentType | null;
-  experienceLevel: ExperienceLevel | null;
+  workplaceType: WorkplaceType;
+  employmentType: EmploymentType;
+  experienceLevel: ExperienceLevel;
   salaryMin: number | null;
   salaryMax: number | null;
   salaryCurrency: string;
@@ -40,30 +48,49 @@ export interface JobFormData {
   expiresAt: Date | null;
 }
 
-const emptyToNull = <T,>(value: T | ""): T | null => (value === "" ? null : value);
+const requiredString = (max: number, message: string) => z.string().trim().min(1, message).max(max);
 
-const positiveIntBlur =
-  (label: string) =>
-  ({ value }: { value: string }) => {
-    if (!value) return undefined;
-    const num = Number(value);
-    if (Number.isNaN(num) || !Number.isInteger(num)) return `${label} must be a whole number`;
-    if (num <= 0) return `${label} must be positive`;
-    return undefined;
-  };
+const optionalPositiveInt = z
+  .string()
+  .refine((val) => !val || (Number.isInteger(Number(val)) && Number(val) > 0), {
+    message: "Must be a positive whole number",
+  });
 
-const workplaceOptions = Object.entries(workplaceTypeLabels).map(([value, label]) => ({
-  value,
-  label,
-}));
-const employmentOptions = Object.entries(employmentTypeLabels).map(([value, label]) => ({
-  value,
-  label,
-}));
-const experienceOptions = Object.entries(experienceLevelLabels).map(([value, label]) => ({
-  value,
-  label,
-}));
+const formSchema = z
+  .object({
+    title: requiredString(200, "Job title is required"),
+    description: requiredString(5000, "Job description is required"),
+    requirements: z.array(z.string()),
+    interviewQuestions: z.array(z.string()),
+    status: z.enum(["draft", "open"]),
+    location: z.string().max(200),
+    workplaceType: z.string().min(1, "Workplace type is required"),
+    employmentType: z.string().min(1, "Employment type is required"),
+    experienceLevel: z.string().min(1, "Experience level is required"),
+    salaryMin: optionalPositiveInt,
+    salaryMax: optionalPositiveInt,
+    salaryCurrency: z.string().min(1),
+    teamSize: optionalPositiveInt,
+    headcount: optionalPositiveInt,
+    expiresAt: z.string(),
+  })
+  .refine(
+    (data) => {
+      if (data.salaryMin && data.salaryMax) {
+        return Number(data.salaryMin) <= Number(data.salaryMax);
+      }
+      return true;
+    },
+    { message: "Minimum salary cannot exceed maximum salary", path: ["salaryMin"] },
+  );
+
+const toOptions = (labels: Record<string, string>) =>
+  Object.entries(labels).map(([value, label]) => ({ value, label }));
+
+const workplaceOptions = toOptions(workplaceTypeLabels);
+const employmentOptions = toOptions(employmentTypeLabels);
+const experienceOptions = toOptions(experienceLevelLabels);
+
 const statusOptions = [
   { value: "draft", label: "Draft" },
   { value: "open", label: "Open" },
@@ -104,7 +131,7 @@ export function JobForm({
   const [interviewQuestionInput, setInterviewQuestionInput] = useState("");
   const [deadlineOpen, setDeadlineOpen] = useState(false);
 
-  const form = useAppForm({
+  const form = useForm({
     defaultValues: {
       title: defaultValues?.title ?? "",
       description: defaultValues?.description ?? "",
@@ -123,20 +150,8 @@ export function JobForm({
       expiresAt: defaultValues?.expiresAt ? defaultValues.expiresAt.toISOString().slice(0, 10) : "",
     },
 
-    validators: {
-      onSubmit: ({ value }) => {
-        const min = value.salaryMin ? Number(value.salaryMin) : null;
-        const max = value.salaryMax ? Number(value.salaryMax) : null;
-        if (min != null && max != null && min > max) {
-          return {
-            fields: {
-              salaryMin: "Minimum salary cannot exceed maximum salary",
-            },
-          };
-        }
-        return undefined;
-      },
-    },
+    validators: { onSubmit: formSchema },
+    canSubmitWhenInvalid: true,
 
     onSubmit: ({ value }) => {
       const expiresAt = value.expiresAt?.trim()
@@ -150,9 +165,9 @@ export function JobForm({
         interviewQuestions: value.interviewQuestions,
         status: value.status as JobStatus,
         location: value.location || null,
-        workplaceType: emptyToNull(value.workplaceType) as WorkplaceType | null,
-        employmentType: emptyToNull(value.employmentType) as EmploymentType | null,
-        experienceLevel: emptyToNull(value.experienceLevel) as ExperienceLevel | null,
+        workplaceType: value.workplaceType as WorkplaceType,
+        employmentType: value.employmentType as EmploymentType,
+        experienceLevel: value.experienceLevel as ExperienceLevel,
         salaryMin: value.salaryMin ? Number(value.salaryMin) : null,
         salaryMax: value.salaryMax ? Number(value.salaryMax) : null,
         salaryCurrency: value.salaryCurrency,
@@ -162,6 +177,7 @@ export function JobForm({
       });
     },
   });
+
   const onFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     form.handleSubmit();
@@ -175,45 +191,68 @@ export function JobForm({
 
   return (
     <form onSubmit={onFormSubmit} className="space-y-6">
-      <div className="space-y-4">
-        <form.AppField
+      <FieldGroup>
+        <form.Field
           name="title"
           validators={{
-            onBlur: z
-              .string()
-              .trim()
-              .min(1, "Job title is required")
-              .max(200, "Job title must be under 200 characters"),
+            onBlur: requiredString(200, "Job title is required"),
+            onSubmit: requiredString(200, "Job title is required"),
           }}
-          children={(field) => (
-            <field.TextField
-              label="Job title"
-              placeholder="Senior Software Engineer"
-              required
-              maxLength={200}
-            />
-          )}
-        />
-        <form.AppField
+        >
+          {(field) => {
+            const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+            return (
+              <Field data-invalid={isInvalid}>
+                <FieldLabel htmlFor={field.name}>
+                  Job title <span className="text-destructive">*</span>
+                </FieldLabel>
+                <Input
+                  id={field.name}
+                  placeholder="Senior Software Engineer"
+                  required
+                  maxLength={200}
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  aria-invalid={isInvalid}
+                />
+                {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+              </Field>
+            );
+          }}
+        </form.Field>
+
+        <form.Field
           name="description"
           validators={{
-            onBlur: z
-              .string()
-              .trim()
-              .min(1, "Job description is required")
-              .max(5000, "Description must be under 5,000 characters"),
+            onBlur: requiredString(5000, "Job description is required"),
+            onSubmit: requiredString(5000, "Job description is required"),
           }}
-          children={(field) => (
-            <field.TextareaField
-              label="Description"
-              placeholder="Describe the role, responsibilities, and what makes this opportunity exciting..."
-              required
-              maxLength={5000}
-              rows={6}
-            />
-          )}
-        />
-      </div>
+        >
+          {(field) => {
+            const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+            return (
+              <Field data-invalid={isInvalid}>
+                <FieldLabel htmlFor={field.name}>
+                  Description <span className="text-destructive">*</span>
+                </FieldLabel>
+                <Textarea
+                  id={field.name}
+                  placeholder="Describe the role, responsibilities, and what makes this opportunity exciting..."
+                  required
+                  maxLength={5000}
+                  rows={6}
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  aria-invalid={isInvalid}
+                />
+                {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+              </Field>
+            );
+          }}
+        </form.Field>
+      </FieldGroup>
 
       <Separator />
 
@@ -309,42 +348,126 @@ export function JobForm({
       <div className="space-y-4">
         <p className="text-[11px] font-bold uppercase tracking-widest text-primary">Job details</p>
         <div className="grid gap-4 sm:grid-cols-2">
-          <form.AppField
+          <form.Field
             name="location"
-            children={(field) => (
-              <field.TextField label="Location" placeholder="San Francisco, CA" maxLength={200} />
-            )}
-          />
-          <form.AppField
+            validators={{ onBlur: z.string().max(200, "Location must be under 200 characters") }}
+          >
+            {(field) => {
+              const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <Field data-invalid={isInvalid}>
+                  <FieldLabel htmlFor={field.name}>Location</FieldLabel>
+                  <Input
+                    id={field.name}
+                    placeholder="San Francisco, CA"
+                    maxLength={200}
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    aria-invalid={isInvalid}
+                  />
+                  {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+                </Field>
+              );
+            }}
+          </form.Field>
+
+          <form.Field
             name="workplaceType"
-            children={(field) => (
-              <field.SelectField
-                label="Workplace"
-                placeholder="Select type"
-                options={workplaceOptions}
-              />
-            )}
-          />
-          <form.AppField
+            validators={{
+              onSubmit: z.string().min(1, "Workplace type is required"),
+            }}
+          >
+            {(field) => {
+              const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+              const onWorkplaceChange = (val: string) => field.handleChange(val);
+              return (
+                <Field data-invalid={isInvalid}>
+                  <FieldLabel htmlFor={field.name}>
+                    Workplace <span className="text-destructive">*</span>
+                  </FieldLabel>
+                  <Select value={field.state.value} onValueChange={onWorkplaceChange}>
+                    <SelectTrigger id={field.name} aria-invalid={isInvalid}>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {workplaceOptions.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+                </Field>
+              );
+            }}
+          </form.Field>
+
+          <form.Field
             name="employmentType"
-            children={(field) => (
-              <field.SelectField
-                label="Employment type"
-                placeholder="Select type"
-                options={employmentOptions}
-              />
-            )}
-          />
-          <form.AppField
+            validators={{
+              onSubmit: z.string().min(1, "Employment type is required"),
+            }}
+          >
+            {(field) => {
+              const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+              const onEmploymentChange = (val: string) => field.handleChange(val);
+              return (
+                <Field data-invalid={isInvalid}>
+                  <FieldLabel htmlFor={field.name}>
+                    Employment type <span className="text-destructive">*</span>
+                  </FieldLabel>
+                  <Select value={field.state.value} onValueChange={onEmploymentChange}>
+                    <SelectTrigger id={field.name} aria-invalid={isInvalid}>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {employmentOptions.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+                </Field>
+              );
+            }}
+          </form.Field>
+
+          <form.Field
             name="experienceLevel"
-            children={(field) => (
-              <field.SelectField
-                label="Experience level"
-                placeholder="Select level"
-                options={experienceOptions}
-              />
-            )}
-          />
+            validators={{
+              onSubmit: z.string().min(1, "Experience level is required"),
+            }}
+          >
+            {(field) => {
+              const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+              const onExperienceChange = (val: string) => field.handleChange(val);
+              return (
+                <Field data-invalid={isInvalid}>
+                  <FieldLabel htmlFor={field.name}>
+                    Experience level <span className="text-destructive">*</span>
+                  </FieldLabel>
+                  <Select value={field.state.value} onValueChange={onExperienceChange}>
+                    <SelectTrigger id={field.name} aria-invalid={isInvalid}>
+                      <SelectValue placeholder="Select level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {experienceOptions.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+                </Field>
+              );
+            }}
+          </form.Field>
+
           <form.Field name="expiresAt">
             {(field) => {
               const selectedDate = field.state.value
@@ -360,8 +483,8 @@ export function JobForm({
               };
 
               return (
-                <div className="space-y-2">
-                  <Label htmlFor={field.name}>Application deadline</Label>
+                <Field>
+                  <FieldLabel htmlFor={field.name}>Application deadline</FieldLabel>
                   <Popover open={deadlineOpen} onOpenChange={setDeadlineOpen}>
                     <PopoverTrigger asChild>
                       <Button
@@ -408,7 +531,7 @@ export function JobForm({
                   <p className="text-muted-foreground text-xs">
                     Optional. If set, this role will automatically close after that date.
                   </p>
-                </div>
+                </Field>
               );
             }}
           </form.Field>
@@ -426,34 +549,85 @@ export function JobForm({
             const locale = LOCALE_BY_CURRENCY[(currency || "USD") as SalaryCurrency] ?? "en-US";
             return (
               <div className="grid gap-4 sm:grid-cols-3">
-                <form.AppField
-                  name="salaryMin"
-                  validators={{ onBlur: positiveIntBlur("Minimum salary") }}
-                  children={(field) => (
-                    <field.FormattedNumberField
-                      label="Min salary"
-                      placeholder={placeholders.min}
-                      locale={locale}
-                    />
-                  )}
-                />
-                <form.AppField
-                  name="salaryMax"
-                  validators={{ onBlur: positiveIntBlur("Maximum salary") }}
-                  children={(field) => (
-                    <field.FormattedNumberField
-                      label="Max salary"
-                      placeholder={placeholders.max}
-                      locale={locale}
-                    />
-                  )}
-                />
-                <form.AppField
-                  name="salaryCurrency"
-                  children={(field) => (
-                    <field.SelectField label="Currency" options={currencyOptions} />
-                  )}
-                />
+                <form.Field name="salaryMin" validators={{ onBlur: optionalPositiveInt }}>
+                  {(field) => {
+                    const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                    const rawValue = field.state.value;
+                    const displayValue = rawValue
+                      ? new Intl.NumberFormat(locale).format(Number(rawValue))
+                      : "";
+                    const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+                      const digits = e.target.value.replace(/\D/g, "");
+                      field.handleChange(digits);
+                    };
+                    return (
+                      <Field data-invalid={isInvalid}>
+                        <FieldLabel htmlFor={field.name}>Min salary</FieldLabel>
+                        <Input
+                          id={field.name}
+                          inputMode="numeric"
+                          placeholder={placeholders.min}
+                          value={displayValue}
+                          onBlur={field.handleBlur}
+                          onChange={onChange}
+                          aria-invalid={isInvalid}
+                        />
+                        {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+                      </Field>
+                    );
+                  }}
+                </form.Field>
+
+                <form.Field name="salaryMax" validators={{ onBlur: optionalPositiveInt }}>
+                  {(field) => {
+                    const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                    const rawValue = field.state.value;
+                    const displayValue = rawValue
+                      ? new Intl.NumberFormat(locale).format(Number(rawValue))
+                      : "";
+                    const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+                      const digits = e.target.value.replace(/\D/g, "");
+                      field.handleChange(digits);
+                    };
+                    return (
+                      <Field data-invalid={isInvalid}>
+                        <FieldLabel htmlFor={field.name}>Max salary</FieldLabel>
+                        <Input
+                          id={field.name}
+                          inputMode="numeric"
+                          placeholder={placeholders.max}
+                          value={displayValue}
+                          onBlur={field.handleBlur}
+                          onChange={onChange}
+                          aria-invalid={isInvalid}
+                        />
+                        {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+                      </Field>
+                    );
+                  }}
+                </form.Field>
+
+                <form.Field name="salaryCurrency">
+                  {(field) => {
+                    return (
+                      <Field>
+                        <FieldLabel htmlFor={field.name}>Currency</FieldLabel>
+                        <Select value={field.state.value} onValueChange={field.handleChange}>
+                          <SelectTrigger id={field.name}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {currencyOptions.map((opt) => (
+                              <SelectItem key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </Field>
+                    );
+                  }}
+                </form.Field>
               </div>
             );
           }}
@@ -465,28 +639,49 @@ export function JobForm({
       <div className="space-y-4">
         <p className="text-[11px] font-bold uppercase tracking-widest text-primary">Team</p>
         <div className="grid gap-4 sm:grid-cols-2">
-          <form.AppField
-            name="teamSize"
-            validators={{ onBlur: positiveIntBlur("Team size") }}
-            children={(field) => (
-              <field.TextField
-                label="Team size"
-                placeholder="8"
-                description="Number of people on the team"
-              />
-            )}
-          />
-          <form.AppField
-            name="headcount"
-            validators={{ onBlur: positiveIntBlur("Headcount") }}
-            children={(field) => (
-              <field.TextField
-                label="Open positions"
-                placeholder="1"
-                description="How many hires for this role"
-              />
-            )}
-          />
+          <form.Field name="teamSize" validators={{ onBlur: optionalPositiveInt }}>
+            {(field) => {
+              const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <Field data-invalid={isInvalid}>
+                  <FieldLabel htmlFor={field.name}>Team size</FieldLabel>
+                  <Input
+                    id={field.name}
+                    inputMode="numeric"
+                    placeholder="8"
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value.replace(/\D/g, ""))}
+                    aria-invalid={isInvalid}
+                  />
+                  <p className="text-muted-foreground text-xs">Number of people on the team</p>
+                  {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+                </Field>
+              );
+            }}
+          </form.Field>
+
+          <form.Field name="headcount" validators={{ onBlur: optionalPositiveInt }}>
+            {(field) => {
+              const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <Field data-invalid={isInvalid}>
+                  <FieldLabel htmlFor={field.name}>Open positions</FieldLabel>
+                  <Input
+                    id={field.name}
+                    inputMode="numeric"
+                    placeholder="1"
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value.replace(/\D/g, ""))}
+                    aria-invalid={isInvalid}
+                  />
+                  <p className="text-muted-foreground text-xs">How many hires for this role</p>
+                  {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+                </Field>
+              );
+            }}
+          </form.Field>
         </div>
       </div>
 
@@ -515,8 +710,10 @@ export function JobForm({
             const onRemoveRequirement = (index: number) => reqField.removeValue(index);
 
             return (
-              <div className="space-y-2">
-                <Label>Requirements</Label>
+              <Field>
+                <FieldLabel>
+                  Requirements <span className="text-destructive">*</span>
+                </FieldLabel>
                 <div className="flex gap-2">
                   <Input
                     placeholder="e.g. 3+ years React experience"
@@ -560,7 +757,7 @@ export function JobForm({
                     })}
                   </ul>
                 ) : null}
-              </div>
+              </Field>
             );
           }}
         </form.Field>
@@ -569,19 +766,38 @@ export function JobForm({
       <Separator />
 
       <div className="space-y-4">
-        <form.AppField
-          name="status"
-          children={(field) => (
-            <field.SelectField
-              label="Status"
-              options={statusOptions}
-              description='Only "Open" jobs are visible to candidates.'
-            />
+        <form.Field name="status">
+          {(field) => {
+            return (
+              <Field>
+                <FieldLabel htmlFor={field.name}>Status</FieldLabel>
+                <Select value={field.state.value} onValueChange={field.handleChange}>
+                  <SelectTrigger id={field.name}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-muted-foreground text-xs">
+                  Only "Open" jobs are visible to candidates.
+                </p>
+              </Field>
+            );
+          }}
+        </form.Field>
+
+        <form.Subscribe selector={(state) => state.isSubmitting}>
+          {(isSubmitting) => (
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : submitLabel}
+            </Button>
           )}
-        />
-        <form.AppForm>
-          <form.SubmitButton label={submitLabel} submittingLabel="Saving..." />
-        </form.AppForm>
+        </form.Subscribe>
       </div>
     </form>
   );
