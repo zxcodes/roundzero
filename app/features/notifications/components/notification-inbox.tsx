@@ -65,7 +65,11 @@ const formatRelativeTime = (date: Date | string) => {
   return `${diffInDays}d ago`;
 };
 
-export function NotificationInbox({ feed }: { feed: NotificationFeed }) {
+export function NotificationInbox({
+  feed = { items: [], unreadCount: 0 },
+}: {
+  feed: NotificationFeed;
+}) {
   const { isMobile } = useSidebar();
   const [open, setOpen] = useState(false);
   const router = useRouter();
@@ -76,6 +80,7 @@ export function NotificationInbox({ feed }: { feed: NotificationFeed }) {
   const markReadMutation = useMutation({
     mutationFn: markReadFn,
   });
+
   const markAllMutation = useMutation({
     mutationFn: markAllFn,
     onSuccess: async () => {
