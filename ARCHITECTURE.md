@@ -573,9 +573,9 @@ The AI layer runs entirely within the same Cloudflare Worker as the TanStack Sta
 - Durable multi-step execution:
   1. Read application + job from Postgres
   2. Fetch resume from R2
-  3. Extract text from PDF (local library)
-  4. Merge profile metadata + resume text + job context
-  5. Call LLM for scoring
+  3. Extract text from resume based on file type (PDF / DOC / DOCX)
+   4. Merge profile metadata + resume text + job context
+   5. Call LLM for scoring
   6. Write result to `pre_evaluations`
   7. Decision layer: create interview or hold
 - Automatic retries per step
@@ -643,4 +643,4 @@ See `PLAN.md` for the full build plan. Current focus:
 | Auth | Google OAuth + cookie session | Good enough for current phase |
 | AI pipelines | Cloudflare Workflows | Durable multi-step execution with retries |
 | Interview runtime | Cloudflare Durable Objects | Stateful chat with SQLite persistence |
-| Resume text extraction | Local library (pdf-parse) | LLM reads unstructured text; no external parser needed |
+| Resume text extraction | Local libraries per file type (PDF / DOC / DOCX) | LLM reads unstructured text; no external parser needed |
