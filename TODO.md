@@ -2,7 +2,6 @@
 
 <!--- enforce resume types (pdf, doc, txt) so we have a deterministic parsing pipeline.-->
 - add a job creation shortcut using "N" also indicate it on the button.
-- fix the fucking forms. able to create a job with nothing wtf.
 - the work profile snapshot is duplicating markup. use single comp and also clean the entire thing up.
 - see shadcn dashboard block for inspiration on company dashboard. (bunx shadcn@latest add dashboard-01)
 - resend testing in dev. (candidates tested, need company reports testing, also add email preview instead of sending and checking emails (react-email))
@@ -23,8 +22,8 @@
 
 
 
+<!--- fix the fucking forms. able to create a job with nothing wtf.-->
 <!--- add a timeline indicator for applicants who applied which clearly represents what stage their application is in.-->
-
 <!--- add toast actions after mutations (view job, view application, etc)-->
 <!--- upload logo isn't good enough. two progress indicators, redundant.-->
 <!--- add command palette (cmd+k). and add keyboard shortcuts for example (showing search icon in the search field and keyboard shortcut (cmd + s))-->
