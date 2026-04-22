@@ -92,7 +92,7 @@ function Hero() {
           </div>
         </div>
 
-        {/* Right — mock report card */}
+        {/* Right - mock report card */}
         <div className="animate-fade-in-up stagger-2 lg:ml-auto lg:max-w-md">
           <div className="rounded-4xl border border-border/60 bg-card p-5 shadow-sm">
             <div className="flex items-center justify-between">
@@ -215,13 +215,13 @@ function HowItWorksSection() {
 }
 
 // ---------------------------------------------------------------------------
-// Section 1 — Interview
+// Section 1 - Interview
 // ---------------------------------------------------------------------------
 function InterviewSection() {
   return (
     <section className="border-t border-border/40">
       <div className="mx-auto grid max-w-6xl gap-12 px-6 py-20 lg:grid-cols-2 lg:items-center lg:gap-16 lg:px-8 lg:py-28">
-        {/* Left — mock chat */}
+        {/* Left - mock chat */}
         <div className="overflow-hidden rounded-4xl border border-border/60 bg-card shadow-sm">
           <div className="flex items-center gap-2 border-b border-border/40 px-5 py-3">
             <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={2} className="size-4 text-primary" />
@@ -246,7 +246,7 @@ function InterviewSection() {
           </div>
         </div>
 
-        {/* Right — text */}
+        {/* Right - text */}
         <div className="space-y-4">
           <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
             Beyond keyword matching
@@ -308,13 +308,13 @@ function ChatBubble({ sender, text }: { sender: "ai" | "candidate"; text: string
 }
 
 // ---------------------------------------------------------------------------
-// Section 2 — Report
+// Section 2 - Report
 // ---------------------------------------------------------------------------
 function ReportSection() {
   return (
     <section className="border-t border-border/40">
       <div className="mx-auto grid max-w-6xl gap-12 px-6 py-20 lg:grid-cols-2 lg:items-center lg:gap-16 lg:px-8 lg:py-28">
-        {/* Left — text */}
+        {/* Left - text */}
         <div className="space-y-4">
           <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
             Candidate reports
@@ -329,7 +329,7 @@ function ReportSection() {
           </p>
         </div>
 
-        {/* Right — mock report breakdown */}
+        {/* Right - mock report breakdown */}
         <div className="lg:ml-auto lg:max-w-md">
           <div className="rounded-4xl border border-border/60 bg-card shadow-sm">
             <div className="border-b border-border/40 px-5 py-3">
@@ -394,13 +394,13 @@ function ReportItem({ icon, text }: { icon: "check" | "flag"; text: string }) {
 }
 
 // ---------------------------------------------------------------------------
-// Section 3 — Ranking
+// Section 3 - Ranking
 // ---------------------------------------------------------------------------
 function RankingSection() {
   return (
     <section className="border-t border-border/40">
       <div className="mx-auto grid max-w-6xl gap-12 px-6 py-20 lg:grid-cols-2 lg:items-center lg:gap-16 lg:px-8 lg:py-28">
-        {/* Left — mock ranked list */}
+        {/* Left - mock ranked list */}
         <div className="overflow-hidden rounded-4xl border border-border/60 bg-card shadow-sm">
           <div className="flex items-center gap-2.5 border-b border-border/40 px-5 py-3">
             <HugeiconsIcon icon={RankingIcon} strokeWidth={2} className="size-4 text-primary" />
@@ -417,7 +417,7 @@ function RankingSection() {
           </div>
         </div>
 
-        {/* Right — text */}
+        {/* Right - text */}
         <div className="space-y-4">
           <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
             Ranked shortlists
@@ -633,12 +633,12 @@ const faqItems = [
   {
     question: "How does the AI interview work?",
     answer:
-      "Every applicant first goes through a lightweight pre-evaluation. If they look like a strong or medium fit, they're invited to complete an async chat-based interview — no scheduling, no video. The AI adapts its questions based on the role requirements and the candidate's responses, probing weak answers and validating resume claims. Interviews typically take 20–40 minutes and can be completed anytime.",
+      "Every applicant first goes through a lightweight pre-evaluation. If they look like a strong or medium fit, they're invited to complete an async chat-based interview: no scheduling, no video. The AI adapts its questions based on the role requirements and the candidate's responses, probing weak answers and validating resume claims. Interviews typically take 20-40 minutes and can be completed anytime.",
   },
   {
     question: "What do candidate reports include?",
     answer:
-      "Each report scores candidates across technical depth, communication quality, and experience credibility. It includes specific strengths, areas of concern, key insights from the interview, and a clear hire/consider/pass recommendation — all backed by evidence from the actual conversation.",
+      "Each report scores candidates across technical depth, communication quality, and experience credibility. It includes specific strengths, areas of concern, key insights from the interview, and a clear hire/consider/pass recommendation, all backed by evidence from the actual conversation.",
   },
   {
     question: "Can candidates cheat or use AI to answer?",
@@ -653,12 +653,12 @@ const faqItems = [
   {
     question: "Do candidates need to install anything?",
     answer:
-      "No. The entire experience runs in the browser — candidates apply, complete the interview, and track their application status from one place. No apps, plugins, or calendar links required.",
+      "No. The entire experience runs in the browser. Candidates apply, complete the interview, and track their application status from one place. No apps, plugins, or calendar links required.",
   },
   {
     question: "What happens to candidates who aren't a strong fit?",
     answer:
-      "Candidates who don't pass pre-evaluation remain in your applicant pipeline with their profile and resume visible for manual review. Partial matches may be asked 2–3 clarifying questions to fill gaps before a final evaluation. Everyone receives clear status updates throughout the process — no ghosting, no black holes.",
+      "Candidates who don't pass pre-evaluation remain in your applicant pipeline with their profile and resume visible for manual review. Partial matches may be asked 2-3 clarifying questions to fill gaps before a final evaluation. Everyone receives clear status updates throughout the process. No ghosting, no black holes.",
   },
   {
     question: "Can I customize what the AI evaluates?",

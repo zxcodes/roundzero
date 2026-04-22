@@ -64,7 +64,7 @@ const stageCopy = {
     badge: "Applied",
     tone: "bg-sky-500/10 text-sky-700 dark:text-sky-300",
     summary: "Your application is in the review queue.",
-    nextStep: "Keep your profile sharp — the next signal is typically a move to interview review.",
+    nextStep: "Keep your profile sharp - the next signal is typically a move to interview review.",
   },
   interviewing: {
     label: "Interviewing",
