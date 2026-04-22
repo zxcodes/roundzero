@@ -176,10 +176,13 @@ Build the lightweight pre-evaluation stage as a durable Cloudflare Workflow.
 
 2. **`fetch_resume`**
    - Fetch resume blob from R2 using `resume_key`
-   - Return raw PDF bytes
+   - Return raw file bytes + detected mime type
 
 3. **`extract_resume_text`**
-   - Extract raw text from PDF using local library (e.g., `pdf-parse`)
+   - Route to parser based on file type:
+     - `application/pdf` → PDF parser (local library)
+     - `application/msword` (DOC) → DOC parser (local library or external service)
+     - `application/vnd.openxmlformats-officedocument.wordprocessingml.document` (DOCX) → DOCX parser (local library)
    - Return unstructured text string
 
 4. **`merge_context`**
