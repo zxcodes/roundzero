@@ -92,7 +92,7 @@ Prepare the database, enums, and server boundaries before the AI funnel goes liv
 ### 4.1 Application Status Lifecycle
 
 - [ ] Migration: extend `applications.status` to 7 statuses
-  - `applied`, `pre_screening`, `invited_roundzero`, `in_roundzero`, `evaluated`, `shortlisted`, `rejected`
+  - `applied`, `pre_screening`, `interview_invited`, `interview_in_progress`, `evaluated`, `shortlisted`, `rejected`
 - [ ] Update `applicationStatusSchema` and `APPLICATION_STATUS_TRANSITIONS` in `app/shared/enums.ts`
 - [ ] Update all SQL queries that filter/group by status (`getJobsWithPipelineByCompanyId`, `getApplicationsByJob`, `countApplicationsByCompany`, etc.)
 - [ ] Update candidate-visible status mapping and labels
@@ -198,7 +198,7 @@ Build the lightweight pre-evaluation stage as a durable Cloudflare Workflow.
 
 7. **`decide_next_step`**
    - Check `jobs.report_limit` vs existing report count
-   - If high/medium fit + quota available → create `interviews` row (type = `full` or `quick_eval`), update status → `invited_roundzero`
+   - If high/medium fit + quota available → create `interviews` row (type = `full` or `quick_eval`), update status → `interview_invited`
    - If low fit → stay in `pre_screening`
    - If quota exhausted → send `position_filled` notification to remaining pending candidates
 
@@ -266,14 +266,14 @@ Build the async chat interview surface and backend.
   - Shows transcript, current question, input field
   - Handles resumable streams
 - [ ] Candidate interview status page (`/dashboard/application/$applicationId` updates):
-  - `invited_roundzero`: show interview invitation card with CTA to start
-  - `in_roundzero`: show "Interview in Progress" card
+  - `interview_invited`: show interview invitation card with CTA to start
+  - `interview_in_progress`: show "Interview in Progress" card
   - `evaluated`: show "Under Review" messaging
 - [ ] Add candidate-facing empty/error states for expired, already-completed, or unavailable interviews
 
 ### 6.4 Interview Lifecycle
 
-- [ ] When candidate starts interview → `status = in_roundzero`
+- [ ] When candidate starts interview → `status = interview_in_progress`
 - [ ] When interview completes (agent calls `completeInterview`) → trigger evaluation pipeline (Phase 7)
 - [ ] Time/question limits enforcement (configurable per interview type)
 - [ ] Interview progress tracking (stage transitions, question count)
@@ -383,8 +383,8 @@ Polish the candidate experience for the AI-aware statuses.
 
 - [ ] Update `/dashboard/applications` to show visible statuses:
   - `applied` / `pre_screening` → "Application Received"
-  - `invited_roundzero` → "Interview Ready"
-  - `in_roundzero` → "Interview in Progress"
+  - `interview_invited` → "Interview Ready"
+  - `interview_in_progress` → "Interview in Progress"
   - `evaluated` → "Under Review"
   - `shortlisted` → "Shortlisted"
   - `rejected` → "Not Moving Forward"
@@ -396,10 +396,10 @@ Polish the candidate experience for the AI-aware statuses.
 
 ### 8.2 Interview Invitation Cards
 
-- [ ] Add `InterviewInvitationCard` for `invited_roundzero` status
+- [ ] Add `InterviewInvitationCard` for `interview_invited` status
   - CTA: "Start RoundZero"
   - Estimated time, question count, format info
-- [ ] Add `InterviewInProgressCard` for `in_roundzero` status
+- [ ] Add `InterviewInProgressCard` for `interview_in_progress` status
   - Link back to active interview
   - "You can resume any time"
 

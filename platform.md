@@ -429,7 +429,7 @@ The following decisions are required **before Phase 4 (AI Interview)** begins. T
 
 **Current State:**
 - `applications.status` uses: `applied`, `interviewing`, `evaluated`, `rejected`
-- AI-LAYER.md suggests: `applied`, `pre_screening`, `invited_roundzero`, `in_roundzero`, `evaluated`, `shortlisted`, `rejected`
+- AI-LAYER.md suggests: `applied`, `pre_screening`, `interview_invited`, `interview_in_progress`, `evaluated`, `shortlisted`, `rejected`
 
 **Decision:** **Extend the existing `applications.status` enum to include all 7 statuses**
 
@@ -437,11 +437,11 @@ The following decisions are required **before Phase 4 (AI Interview)** begins. T
 - Simpler query patterns (single status column)
 - Clear audit trail of all state transitions
 - No schema duplication or hidden parallel state machines
-- Status transitions follow the funnel: `applied` → `pre_screening` → (`invited_roundzero` | other outcome) → `in_roundzero` → `evaluated` → (`shortlisted` | `rejected`)
+- Status transitions follow the funnel: `applied` → `pre_screening` → (`interview_invited` | other outcome) → `interview_in_progress` → `evaluated` → (`shortlisted` | `rejected`)
 
 **Transition Rules:**
 - Only companies can move `evaluated` → `shortlisted` or `rejected`
-- The system auto-advances through `pre_screening` → `invited_roundzero` → `in_roundzero` → `evaluated`
+- The system auto-advances through `pre_screening` → `interview_invited` → `interview_in_progress` → `evaluated`
 - A company can manually reject at any pre-evaluation stage
 - When a job's `report_limit` is reached, the system stops advancing new candidates out of `pre_screening`
 
@@ -460,15 +460,15 @@ The following decisions are required **before Phase 4 (AI Interview)** begins. T
 
 **Candidate-Visible Status Mapping:**
 - `applied` / `pre_screening` → "Application Received"
-- `invited_roundzero` → "Interview Ready"
-- `in_roundzero` → "Interview in Progress"
+- `interview_invited` → "Interview Ready"
+- `interview_in_progress` → "Interview in Progress"
 - `evaluated` → "Under Review"
 - `shortlisted` → "Shortlisted"
 - `rejected` → "Not Moving Forward"
 
 **Candidate Messages:**
-- Strong fit: "You've been invited to complete RoundZero for this role."
-- Medium fit: "A few additional questions will help evaluate your fit."
+- Strong fit: "Zero invited you to complete an interview for this role."
+- Medium fit: "Zero has a few additional questions to help evaluate your fit."
 - Low fit: "Application received and under review."
 
 **Implementation:**

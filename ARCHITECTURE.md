@@ -262,7 +262,7 @@ Schema dump:
 - stores:
   - `resume_key` snapshot
   - `metadata` snapshot for non-resume candidate profile data
-  - status: `applied`, `pre_screening`, `invited_roundzero`, `in_roundzero`, `evaluated`, `shortlisted`, `rejected`
+  - status: `applied`, `pre_screening`, `interview_invited`, `interview_in_progress`, `evaluated`, `shortlisted`, `rejected`
 
 This is important architecturally:
 
@@ -444,7 +444,7 @@ Notifications are implemented as a durable in-app inbox with Resend-backed email
   - `report_ready`
   - `interview_invited`
   - `position_filled`
-- application statuses include all 7: `applied`, `pre_screening`, `invited_roundzero`, `in_roundzero`, `evaluated`, `shortlisted`, `rejected`
+- application statuses include all 7: `applied`, `pre_screening`, `interview_invited`, `interview_in_progress`, `evaluated`, `shortlisted`, `rejected`
 - the app shell/dashboard header renders the inbox surface
 
 ### Current module layout
