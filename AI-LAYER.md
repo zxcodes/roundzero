@@ -94,7 +94,20 @@ Each job has a `report_limit` (default: 5, max: 15). The system only creates int
 
 ---
 
-# Stage 3: RoundZero Deep Evaluation
+# Agent Identity
+
+The AI interviewer is named **Zero**.
+
+Candidate-facing copy references Zero by name:
+- "Zero invited you to complete an interview for this role."
+- "Your interview with Zero is in progress."
+- "Zero has completed the evaluation."
+
+This is a product branding decision, not a model name. The underlying agent class can change; Zero is the user-facing identity.
+
+---
+
+# Stage 3: Deep Evaluation
 
 Only for selected candidates.
 
@@ -134,10 +147,10 @@ When the limit is reached, the pipeline closes for new evaluations but the job m
 ## After Apply
 
 ### Strong Fit
-"You've been invited to complete RoundZero for this role."
+"Zero invited you to complete an interview for this role."
 
 ### Medium Fit
-"A few additional questions will help evaluate your fit."
+"Zero has a few additional questions to help evaluate your fit."
 
 ### Low Fit
 "Application received and under review."
@@ -180,11 +193,11 @@ Instead of raw applicants, companies see evaluated candidates.
 **Decided:** Extend `applications.status` to include all 7 statuses in a single enum.
 
 **Status Funnel:**
-- `applied` → `pre_screening` → (`invited_roundzero` | other outcome) → `in_roundzero` → `evaluated` → (`shortlisted` | `rejected`)
+- `applied` → `pre_screening` → (`interview_invited` | other outcome) → `interview_in_progress` → `evaluated` → (`shortlisted` | `rejected`)
 
 **Transition Rules:**
 - Only companies can move `evaluated` → `shortlisted` or `rejected`
-- System auto-advances through `pre_screening` → `invited_roundzero` → `in_roundzero` → `evaluated`
+- System auto-advances through `pre_screening` → `interview_invited` → `interview_in_progress` → `evaluated`
 - Companies can manually reject at any pre-evaluation stage
 - When `report_limit` is reached, system stops advancing new candidates out of `pre_screening`
 

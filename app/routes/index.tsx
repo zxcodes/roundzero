@@ -633,7 +633,7 @@ const faqItems = [
   {
     question: "How does the AI interview work?",
     answer:
-      "Every applicant first goes through a lightweight pre-evaluation. If they look like a strong or medium fit, they're invited to complete an async chat-based interview: no scheduling, no video. The AI adapts its questions based on the role requirements and the candidate's responses, probing weak answers and validating resume claims. Interviews typically take 20-40 minutes and can be completed anytime.",
+      "Every applicant first goes through a lightweight pre-evaluation. If they look like a strong or medium fit, they're invited to complete an async chat-based interview with Zero, our AI interviewer. No scheduling, no video. Zero adapts questions based on the role requirements and the candidate's responses, probing weak answers and validating resume claims. Interviews typically take 20-40 minutes and can be completed anytime.",
   },
   {
     question: "What do candidate reports include?",
@@ -658,7 +658,7 @@ const faqItems = [
   {
     question: "What happens to candidates who aren't a strong fit?",
     answer:
-      "Candidates who don't pass pre-evaluation remain in your applicant pipeline with their profile and resume visible for manual review. Partial matches may be asked 2-3 clarifying questions to fill gaps before a final evaluation. Everyone receives clear status updates throughout the process. No ghosting, no black holes.",
+      "Candidates who don't pass pre-evaluation remain in your applicant pipeline with their profile and resume visible for manual review. Partial matches may be asked 2-3 clarifying questions by Zero to fill gaps before a final evaluation. Everyone receives clear status updates throughout the process. No ghosting, no black holes.",
   },
   {
     question: "Can I customize what the AI evaluates?",
