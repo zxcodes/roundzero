@@ -1,13 +1,5 @@
 ## TODO
 
-
-1. stop evaluating and send automatic notification to rest of the candidates that the position is filled.
-2. default limit 5. default 10 makes too much noise and harder to select if there's only one opening. but we'll make it max allowed 15.
-3. auto reject once we've selected number of candidates for the reports.
-4. yes, companies should still be able to see all the applicants and their profiles, but they won't have a ai report. we already have this flow.
-5. async. nothing in this ai flow should be sync. it's all either crons, queues, or workflows that happen in background.
-6. report_limit
-
 <!--- enforce resume types (pdf, doc, txt) so we have a deterministic parsing pipeline.-->
 - you just post a job and you will be notified with the reports. (major overhaul on company side.), also check how long should it take for reports to arrive, let companies choose how many reports they wanna see per job while creating it etc.
 - add a job creation shortcut using "N" also indicate it on the button.
