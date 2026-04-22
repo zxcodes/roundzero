@@ -78,8 +78,9 @@ function Hero() {
           </h1>
           <p className="max-w-lg text-base leading-relaxed text-muted-foreground lg:text-lg">
             AI-polished resumes and one-click applications have buried your inbox. RoundZero
-            interviews every candidate for you and delivers scored reports with evidence, so your
-            team only talks to people worth their time.
+            pre-evaluates every applicant and deeply interviews the most promising candidates,
+            delivering scored reports with evidence so your team only talks to people worth their
+            time.
           </p>
           <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center">
             <Button size="lg" asChild>
@@ -161,9 +162,9 @@ const steps = [
   {
     number: "02",
     icon: BubbleChatIcon,
-    title: "AI interviews every applicant",
+    title: "Selective AI interviews for the best-fit candidates",
     description:
-      "Each candidate completes an async, adaptive interview — probing their experience, validating claims, and testing role-relevant knowledge.",
+      "Every applicant gets a lightweight pre-evaluation. Promising candidates are invited to an async, adaptive interview that probes their experience, validates claims, and tests role-relevant knowledge.",
   },
   {
     number: "03",
@@ -404,7 +405,9 @@ function RankingSection() {
           <div className="flex items-center gap-2.5 border-b border-border/40 px-5 py-3">
             <HugeiconsIcon icon={RankingIcon} strokeWidth={2} className="size-4 text-primary" />
             <span className="text-sm font-medium">Senior Backend Engineer</span>
-            <span className="ml-auto font-mono text-xs text-muted-foreground">12 evaluated</span>
+            <span className="ml-auto font-mono text-xs text-muted-foreground">
+              5 evaluated, 87 pending
+            </span>
           </div>
           <div className="divide-y divide-border/40">
             <RankRow rank={1} name="Sarah Chen" score={8.4} rec="strong_hire" />
@@ -423,9 +426,9 @@ function RankingSection() {
             500 applicants. 5 worth talking to. Found in minutes.
           </h2>
           <p className="text-base leading-relaxed text-muted-foreground">
-            Every candidate is scored across technical depth, communication, and experience, then
-            ranked with clear hire/pass recommendations. No more scrolling through hundreds of
-            applications hoping to spot the right one.
+            Top candidates are deeply evaluated and scored across technical depth, communication,
+            and experience, then ranked with clear hire/pass recommendations. No more scrolling
+            through hundreds of applications hoping to spot the right one.
           </p>
         </div>
       </div>
@@ -495,7 +498,8 @@ const pricingTiers: PricingTier[] = [
     cta: "Get started free",
     features: [
       { text: "Up to 3 active job postings", included: true },
-      { text: "AI interviews for every applicant", included: true },
+      { text: "AI pre-evaluation for all applicants", included: true },
+      { text: "Up to 5 deep-evaluated reports per job", included: true },
       { text: "Scored candidate reports", included: true },
       { text: "Ranked shortlists", included: true },
       { text: "Email support", included: true },
@@ -513,7 +517,8 @@ const pricingTiers: PricingTier[] = [
     highlighted: true,
     features: [
       { text: "Unlimited active job postings", included: true },
-      { text: "AI interviews for every applicant", included: true },
+      { text: "AI pre-evaluation for all applicants", included: true },
+      { text: "Deep-evaluated reports for top candidates", included: true },
       { text: "Scored candidate reports", included: true },
       { text: "Ranked shortlists", included: true },
       { text: "Priority support", included: true },
@@ -530,7 +535,8 @@ const pricingTiers: PricingTier[] = [
     cta: "Talk to us",
     features: [
       { text: "Unlimited active job postings", included: true },
-      { text: "AI interviews for every applicant", included: true },
+      { text: "AI pre-evaluation for all applicants", included: true },
+      { text: "Deep-evaluated reports for top candidates", included: true },
       { text: "Scored candidate reports", included: true },
       { text: "Ranked shortlists", included: true },
       { text: "Dedicated account manager", included: true },
@@ -627,7 +633,7 @@ const faqItems = [
   {
     question: "How does the AI interview work?",
     answer:
-      "Candidates complete an async chat-based interview — no scheduling, no video. The AI adapts its questions based on the role requirements and the candidate's responses, probing weak answers and validating resume claims. Interviews typically take 20–40 minutes and can be completed anytime.",
+      "Every applicant first goes through a lightweight pre-evaluation. If they look like a strong or medium fit, they're invited to complete an async chat-based interview — no scheduling, no video. The AI adapts its questions based on the role requirements and the candidate's responses, probing weak answers and validating resume claims. Interviews typically take 20–40 minutes and can be completed anytime.",
   },
   {
     question: "What do candidate reports include?",
@@ -642,7 +648,7 @@ const faqItems = [
   {
     question: "How long before I see results?",
     answer:
-      "Candidates can complete interviews at their own pace, typically within a few days of applying. Reports are generated immediately after the interview ends. Your team gets scored, ranked candidates without waiting for manual screening rounds.",
+      "Pre-evaluation runs within minutes of applying. Interviews are completed by candidates on their own schedule, typically within a few days. Reports are generated immediately after the interview ends. Your team gets scored, ranked candidates without waiting for manual screening rounds.",
   },
   {
     question: "Do candidates need to install anything?",
@@ -652,7 +658,7 @@ const faqItems = [
   {
     question: "What happens to candidates who aren't a strong fit?",
     answer:
-      "Candidates who are a partial match may be asked 2–3 clarifying questions to fill gaps before a final evaluation. Everyone receives clear status updates throughout the process — no ghosting, no black holes.",
+      "Candidates who don't pass pre-evaluation remain in your applicant pipeline with their profile and resume visible for manual review. Partial matches may be asked 2–3 clarifying questions to fill gaps before a final evaluation. Everyone receives clear status updates throughout the process — no ghosting, no black holes.",
   },
   {
     question: "Can I customize what the AI evaluates?",

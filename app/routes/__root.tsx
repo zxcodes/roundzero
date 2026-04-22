@@ -25,7 +25,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       {
         name: "description",
         content:
-          "RoundZero replaces the first interview round with AI-powered interviews. Post jobs, run structured AI interviews, and get evidence-backed candidate reports.",
+          "RoundZero pre-evaluates every applicant and deeply interviews the most promising candidates. Post jobs, get scored reports with evidence, and only talk to people worth your time.",
       },
       {
         name: "keywords",
@@ -38,7 +38,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       {
         property: "og:description",
         content:
-          "Replace the first interview round with AI-powered interviews. Get scored candidate reports with evidence.",
+          "Pre-evaluate every applicant and deeply interview the best candidates. Get scored reports with evidence.",
       },
       {
         property: "og:type",
@@ -55,7 +55,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       {
         name: "twitter:description",
         content:
-          "Replace the first interview round with AI-powered interviews. Get scored candidate reports with evidence.",
+          "Pre-evaluate every applicant and deeply interview the best candidates. Get scored reports with evidence.",
       },
     ],
     links: [
