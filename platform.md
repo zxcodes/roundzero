@@ -443,6 +443,7 @@ The following decisions are required **before Phase 4 (AI Interview)** begins. T
 - Only companies can move `evaluated` → `shortlisted` or `rejected`
 - The system auto-advances through `pre_screening` → `invited_roundzero` → `in_roundzero` → `evaluated`
 - A company can manually reject at any pre-evaluation stage
+- When a job's `report_limit` is reached, the system stops advancing new candidates out of `pre_screening`
 
 **Implementation:**
 - Update `enums.ts`: extend `applicationStatusSchema` to include all 7 statuses
@@ -515,11 +516,17 @@ The following decisions are required **before Phase 4 (AI Interview)** begins. T
   - AI evaluation report (summary, scores, strengths, concerns)
   - Can change status or shortlist/reject
 
+**Quota-Exhausted State:**
+- Once `report_limit` candidates are evaluated, new applicants remain in pre-evaluation
+- Companies still see them in the pending list with full profile data
+- No new AI reports are generated until the company increases the limit (future feature)
+
 **Minimum Viable Company View:**
 | State | Shows | Actions |
 |---|---|---|
 | Pre-evaluation | Name, resume, date, status | None |
 | Post-evaluation | Above + AI score, summary, recommendations | Shortlist / Reject |
+| Quota exhausted | Same as pre-evaluation | Manual review / reject only |
 
 **Implementation:**
 - `getApplicationReviewById` returns profile + evaluation report (if it exists)
@@ -553,6 +560,33 @@ The following decisions are required **before Phase 4 (AI Interview)** begins. T
 - Pre-evaluation only decides "invite to full interview" vs. "not yet"
 - It does NOT rank candidates or make final hiring decisions
 - If confidence is low, default to "ask follow-ups" rather than reject
+
+---
+
+### 15.6 Decision 6: Report Limits
+
+**Question:** How many candidates should RoundZero evaluate per job, and what happens when that limit is reached?
+
+**Decision:** Each job has a `report_limit` (default: 5, max: 15). The system only creates AI interviews and generates reports while the count of existing reports for that job is below the limit.
+
+**Rationale:**
+- Prevents evaluation noise for roles with only 1–2 openings
+- Keeps costs predictable for companies
+- Forces selectivity in the funnel
+- Default of 5 is small enough to review quickly but large enough to find strong matches
+
+**When Quota Is Reached:**
+- The system stops creating new interviews for that job
+- Remaining pending candidates stay in `pre_screening` (NOT auto-rejected)
+- Candidates receive a `position_filled` notification: "This position has received enough evaluations. Your application is still on file and the company may review it directly."
+- Companies still see unevaluated applicants in a read-only pending list and can manually reject them
+
+**Implementation:**
+- Add `report_limit INTEGER NOT NULL DEFAULT 5` to `jobs` table (max: 15)
+- Add field to job creation/edit form with copy: "How many candidates should RoundZero evaluate for this role? (Max 15)"
+- Enforce max 15 in Zod schema and server functions
+- Pre-evaluation service checks `report_limit` before creating interviews
+- Background workflow sends `position_filled` notifications when limit is hit
 
 ---
 
