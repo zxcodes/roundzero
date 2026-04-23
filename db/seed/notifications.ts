@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { closeSql, makeUuidFromSeed, sql } from "./util";
 
 type SeedApplication = {

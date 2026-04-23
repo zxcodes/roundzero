@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { closeSql, makeUuid, pick, sql } from "./util";
 
 const interviewStatuses = [

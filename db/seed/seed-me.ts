@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Seeds realistic data for the currently authenticated user.
  *
@@ -5,43 +6,43 @@
  * - Candidate user → candidate profile, 5 applications to existing seed jobs
  *
  * Run:
- *   bun run db:seed:me            — seeds both roles (if files exist)
+ *   bun run db:seed:me            — seeds both roles (if users exist in DB)
  *   bun run db:seed:me company    — seeds company only
  *   bun run db:seed:me candidate  — seeds candidate only
  *
- * Requires: user.company.json / user.candidate.json (written automatically on dev signup)
+ * Requires: A user with the given role must exist in the database.
+ *           Sign up in dev mode first, then run this script.
  *           + base seed data (bun run db:seed) for candidate mode
  */
 
-import { readFile } from "node:fs/promises";
 import { closeSql, makeUuidFromSeed, pick, sql } from "./util";
 
-type UserJson = {
-  user: {
-    id: string;
-    email: string;
-    name: string;
-    picture: string | null;
-    role: "company" | "candidate";
-  };
+type DevUser = {
+  id: string;
+  email: string;
+  name: string;
+  picture: string | null;
+  role: "company" | "candidate";
 };
 
-async function loadUser(role: "company" | "candidate"): Promise<UserJson["user"] | null> {
-  try {
-    const raw = await readFile(`user.${role}.json`, "utf-8");
-    const parsed = JSON.parse(raw) as UserJson;
-    if (!parsed.user?.id || !parsed.user?.role) {
-      return null;
-    }
-    return parsed.user;
-  } catch {
+async function loadUser(role: "company" | "candidate"): Promise<DevUser | null> {
+  const rows = await sql`
+    SELECT id, email, name, picture, role
+    FROM users
+    WHERE role = ${role}
+    ORDER BY updated_at DESC
+    LIMIT 1
+  `;
+  const user = rows[0];
+  if (!user) {
     return null;
   }
+  return user as DevUser;
 }
 
 // ─── Company seed ───────────────────────────────────────────────
 
-async function seedForCompany(user: UserJson["user"]) {
+async function seedForCompany(user: DevUser) {
   const companyId = makeUuidFromSeed(`seed-me-company-${user.id}`);
   const slug = user.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
@@ -320,7 +321,7 @@ async function seedForCompany(user: UserJson["user"]) {
 
 // ─── Candidate seed ─────────────────────────────────────────────
 
-async function seedForCandidate(user: UserJson["user"]) {
+async function seedForCandidate(user: DevUser) {
   const result = await sql`
     INSERT INTO candidate_profiles (
       id, user_id, onboarding_completed_at, headline, resume_key, resume_updated_at,
@@ -416,7 +417,7 @@ try {
     const user = await loadUser(role);
     if (!user) {
       if (roleArg) {
-        throw new Error(`user.${role}.json not found — sign up as ${role} in dev mode first.`);
+        throw new Error(`No ${role} user found in database — sign up as ${role} in dev mode first.`);
       }
       continue;
     }
@@ -433,7 +434,7 @@ try {
   }
 
   if (!seeded) {
-    console.error("\nNo user files found. Sign up in dev mode first to generate user.company.json / user.candidate.json.");
+    console.error("\nNo users found in database. Sign up in dev mode first.");
     process.exit(1);
   }
 

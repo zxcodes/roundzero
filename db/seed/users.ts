@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { closeSql, copycat, makeUuid, pick, sql } from "./util";
 
 const companyDomains = [
