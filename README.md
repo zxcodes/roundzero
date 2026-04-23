@@ -21,9 +21,10 @@ bun install
 # Set up local Postgres (requires Docker)
 bash setup-db.sh setup_pg
 
-# Copy env template
-cp .env.example .env
-# Fill in DATABASE_URL, EDGE_WORKER_URL, EDGE_WORKER_SECRET, and other values
+# Copy env templates
+cp .env.sample .env
+cp edge/.env.sample edge/.env
+# Fill in DATABASE_URL, EDGE_WORKER_URL, EDGE_WORKER_SECRET, and other values in both files
 
 # Run both dev servers (main app + edge Worker)
 bun run dev
