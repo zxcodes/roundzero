@@ -14,13 +14,16 @@
     "ignoreUnknown": false,
     "includes": [
       "**/app/**/*",
+      "**/edge/src/**/*",
       "**/*.json",
       "**/vite.config.ts",
       "**/vitest.config.ts",
       "!**/app/routeTree.gen.ts",
       "!**/app/**/*_sql.ts",
       "!**/app/components/ui",
-      "!db/seed/**/*.ts"
+      "!db/seed/**/*.ts",
+      "!edge/src/**/*.d.ts",
+      "!edge/src/queries/**/*.ts"
     ]
   },
   "formatter": {
