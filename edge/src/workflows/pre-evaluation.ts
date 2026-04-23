@@ -1,0 +1,268 @@
+import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers";
+import mammoth from "mammoth";
+import { extractText, getDocumentProxy } from "unpdf";
+import { getApplicationById, updateApplicationStatus } from "../queries/applications/queries_sql";
+import { getUserById } from "../queries/auth/queries_sql";
+import { countInterviewSlotsUsedByJob, createInterview } from "../queries/interviews/queries_sql";
+import { getJobById } from "../queries/jobs/queries_sql";
+import { createNotification } from "../queries/notifications/queries_sql";
+import { createPreEvaluation } from "../queries/pre-evaluations/queries_sql";
+import { getDb } from "../shared/db";
+import { notificationPayloadSchemas } from "../shared/notifications-config";
+
+interface Env {
+  AI: Ai;
+  RESUMES: R2Bucket;
+  PRE_EVALUATION: Workflow;
+  REPORT_GENERATION: Workflow;
+  DATABASE_URL: string;
+}
+
+type PreEvaluationPayload = {
+  applicationId: string;
+};
+
+type PreEvaluationResult = {
+  score: number;
+  missingRequirements: string[];
+  confidence: "low" | "medium" | "high";
+  nextStep: "interview_invited" | "ask_followups" | "hold";
+};
+
+async function extractResumeText(bytes: Uint8Array, contentType: string): Promise<string> {
+  if (contentType === "application/pdf") {
+    const pdf = await getDocumentProxy(bytes);
+    const { text } = await extractText(pdf, { mergePages: true });
+    return text;
+  }
+
+  if (contentType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+    const result = await mammoth.extractRawText({ arrayBuffer: bytes.buffer as ArrayBuffer });
+    return result.value;
+  }
+
+  throw new Error(`Unsupported resume format: ${contentType}`);
+}
+
+function buildPreEvaluationPrompt(
+  job: {
+    title: string;
+    description: string;
+    requirements: string[];
+  },
+  resumeText: string,
+  candidateMeta: Record<string, unknown>,
+): string {
+  const requirementsList = Array.isArray(job.requirements)
+    ? job.requirements.map((r) => `- ${r}`).join("\n")
+    : "No specific requirements listed.";
+
+  const skills = Array.isArray(candidateMeta.skills)
+    ? candidateMeta.skills.join(", ")
+    : "Not provided";
+
+  return `You are an expert technical recruiter. Evaluate how well the candidate fits the job based on their resume and profile.
+
+Respond ONLY with a JSON object in this exact format:
+{
+  "score": <number 0-100>,
+  "missingRequirements": [<string array>],
+  "confidence": "low" | "medium" | "high",
+  "nextStep": "interview_invited" | "ask_followups" | "hold"
+}
+
+Rules:
+- score 70+ and high confidence -> "interview_invited"
+- score 50-69 or medium confidence -> "ask_followups"
+- score below 50 or low confidence -> "hold"
+- missingRequirements: list specific job requirements the resume does not clearly demonstrate
+
+Job Title: ${job.title}
+Job Description: ${job.description}
+Requirements:
+${requirementsList}
+
+Candidate Skills: ${skills}
+Candidate Resume:
+${resumeText.slice(0, 12000)}
+`;
+}
+
+function parsePreEvaluationResponse(text: string): PreEvaluationResult {
+  try {
+    const cleaned = text
+      .replace(/^```json\s*/, "")
+      .replace(/```\s*$/, "")
+      .trim();
+    const parsed = JSON.parse(cleaned);
+
+    const score =
+      typeof parsed.score === "number" ? Math.max(0, Math.min(100, Math.round(parsed.score))) : 0;
+    const missingRequirements = Array.isArray(parsed.missingRequirements)
+      ? parsed.missingRequirements.filter((r: unknown) => typeof r === "string")
+      : [];
+    const confidence = ["low", "medium", "high"].includes(parsed.confidence)
+      ? parsed.confidence
+      : "low";
+    const nextStep = ["interview_invited", "ask_followups", "hold"].includes(parsed.nextStep)
+      ? parsed.nextStep
+      : "hold";
+
+    return { score, missingRequirements, confidence, nextStep };
+  } catch {
+    return { score: 0, missingRequirements: [], confidence: "low", nextStep: "hold" };
+  }
+}
+
+export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluationPayload> {
+  async run(event: WorkflowEvent<PreEvaluationPayload>, step: WorkflowStep) {
+    const { applicationId } = event.payload;
+
+    // Step 1: Read application + job data from Postgres
+    const applicationData = await step.do("read_application_data", async () => {
+      const db = getDb(this.env.DATABASE_URL);
+      const application = await getApplicationById(db, { id: applicationId });
+      if (!application) {
+        throw new Error(`Application not found: ${applicationId}`);
+      }
+      if (!application.resumeKey) {
+        throw new Error(`Application has no resume: ${applicationId}`);
+      }
+
+      const job = await getJobById(db, { id: application.jobId });
+      if (!job) {
+        throw new Error(`Job not found: ${application.jobId}`);
+      }
+
+      return { application, job };
+    });
+
+    // Step 2: Fetch resume from R2
+    const resumeBytes = await step.do("fetch_resume", async () => {
+      const object = await this.env.RESUMES.get(applicationData.application.resumeKey!);
+      if (!object) {
+        throw new Error(`Resume not found in R2: ${applicationData.application.resumeKey}`);
+      }
+      const arrayBuffer = await object.arrayBuffer();
+      return new Uint8Array(arrayBuffer);
+    });
+
+    // Step 3: Extract text from resume based on file type
+    const resumeText = await step.do("extract_resume_text", async () => {
+      const resumeKey = applicationData.application.resumeKey!;
+      const contentType = resumeKey.endsWith(".pdf")
+        ? "application/pdf"
+        : resumeKey.endsWith(".docx")
+          ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          : "application/pdf";
+      return extractResumeText(resumeBytes, contentType);
+    });
+
+    // Step 4: Run AI pre-evaluation
+    const aiResult = await step.do("run_ai_pre_evaluation", async () => {
+      const prompt = buildPreEvaluationPrompt(
+        {
+          title: applicationData.job.title,
+          description: applicationData.job.description,
+          requirements: applicationData.job.requirements,
+        },
+        resumeText,
+        applicationData.application.metadata ?? {},
+      );
+
+      const response = await this.env.AI.run("@cf/meta/llama-3.1-8b-instruct", {
+        messages: [{ role: "user", content: prompt }],
+      });
+
+      const rawText =
+        typeof response === "object" && response !== null && "response" in response
+          ? String(response.response)
+          : JSON.stringify(response);
+
+      return parsePreEvaluationResponse(rawText);
+    });
+
+    // Step 5: Write result to pre_evaluations table and update status
+    await step.do("write_pre_evaluation", async () => {
+      const db = getDb(this.env.DATABASE_URL);
+      await createPreEvaluation(db, {
+        applicationId,
+        score: aiResult.score,
+        missingRequirements: aiResult.missingRequirements,
+        confidence: aiResult.confidence,
+        nextStep: aiResult.nextStep,
+      });
+      await updateApplicationStatus(db, {
+        id: applicationId,
+        status: "pre_screening",
+      });
+    });
+
+    // Step 6: Decision layer - check quota and create interview or hold
+    await step.do("decide_next_step", async () => {
+      if (aiResult.nextStep === "hold") {
+        return { action: "hold" as const };
+      }
+
+      const db = getDb(this.env.DATABASE_URL);
+      const job = applicationData.job;
+      const slotsUsed = await countInterviewSlotsUsedByJob(db, { jobId: job.id });
+      const usedCount = slotsUsed?.count ?? 0;
+
+      if (usedCount >= job.reportLimit) {
+        // Quota exhausted: send position_filled notification
+        const candidate = await getUserById(db, { id: applicationData.application.candidateId });
+        if (candidate) {
+          const payload = notificationPayloadSchemas.position_filled.parse({
+            applicationId,
+            jobId: job.id,
+            jobTitle: job.title,
+          });
+          await createNotification(db, {
+            userId: candidate.id,
+            type: "position_filled",
+            payload,
+          });
+        }
+        return { action: "quota_exhausted" as const };
+      }
+
+      // Create interview
+      const interviewType = aiResult.nextStep === "interview_invited" ? "full" : "quick_eval";
+      await createInterview(db, {
+        applicationId,
+        agentId: null,
+        type: interviewType,
+        metadata: { preEvaluationScore: aiResult.score },
+        status: "pending",
+        startedAt: null,
+        completedAt: null,
+      });
+
+      await updateApplicationStatus(db, {
+        id: applicationId,
+        status: "interview_invited",
+      });
+
+      // Send interview_invited notification
+      const candidate = await getUserById(db, { id: applicationData.application.candidateId });
+      if (candidate) {
+        const payload = notificationPayloadSchemas.interview_invited.parse({
+          applicationId,
+          jobId: job.id,
+          jobTitle: job.title,
+          interviewType,
+        });
+        await createNotification(db, {
+          userId: candidate.id,
+          type: "interview_invited",
+          payload,
+        });
+      }
+
+      return { action: "interview_created" as const, interviewType };
+    });
+
+    return { applicationId, result: aiResult };
+  }
+}
