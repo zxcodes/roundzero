@@ -91,42 +91,42 @@ Prepare the database, enums, and server boundaries before the AI funnel goes liv
 
 ### 4.1 Application Status Lifecycle
 
-- [ ] Migration: extend `applications.status` to 7 statuses
-  - `applied`, `pre_screening`, `interview_invited`, `interview_in_progress`, `evaluated`, `shortlisted`, `rejected`
-- [ ] Update `applicationStatusSchema` and `APPLICATION_STATUS_TRANSITIONS` in `app/shared/enums.ts`
-- [ ] Update all SQL queries that filter/group by status (`getJobsWithPipelineByCompanyId`, `getApplicationsByJob`, `countApplicationsByCompany`, etc.)
-- [ ] Update candidate-visible status mapping and labels
-- [ ] Add `getVisibleApplicationStatus()` helper and `applicationStatusCandidateLabelMap`
+- [x] Migration: extend `applications.status` to 8 statuses
+  - `applied`, `pre_screening`, `interview_invited`, `interview_in_progress`, `evaluated`, `shortlisted`, `rejected`, `withdrawn`
+- [x] Update `applicationStatusSchema` and `APPLICATION_STATUS_TRANSITIONS` in `app/shared/enums.ts`
+- [x] Update all SQL queries that filter/group by status
+- [x] Update candidate-visible status mapping and labels
+- [x] Add `getVisibleApplicationStatus()` helper and `applicationStatusCandidateLabelMap`
 
 ### 4.2 Job Schema Changes
 
-- [ ] Migration: add `report_limit INTEGER NOT NULL DEFAULT 5` to `jobs` (max allowed: 15)
-- [ ] Update `jobFieldsSchema` and `JobFormData` to include `reportLimit`
-- [ ] Update `createJob` and `updateJob` server functions
+- [x] Migration: add `report_limit INTEGER NOT NULL DEFAULT 5` to `jobs` (max allowed: 15)
+- [x] Update `jobFieldsSchema` and `JobFormData` to include `reportLimit`
+- [x] Update `createJob` and `updateJob` server functions
 - [ ] Add report limit field to `JobForm` UI with copy: "How many candidates should RoundZero evaluate for this role? (Max 15)"
-- [ ] Enforce max 15 in Zod schema and server functions
-- [ ] Add `report_limit` to SQLC queries (`createJob`, `updateJob`, `getJobById`)
+- [x] Enforce max 15 in Zod schema and server functions
+- [x] Add `report_limit` to SQLC queries (`createJob`, `updateJob`, `getJobById`)
 
 ### 4.3 Pre-Evaluations Table
 
-- [ ] Migration: create `pre_evaluations`
+- [x] Migration: create `pre_evaluations`
   - `id`, `application_id` (unique), `score` (0–100), `missing_requirements` (JSONB), `confidence` (text), `next_step` (text), `created_at`
-- [ ] SQLC queries: `createPreEvaluation`, `getPreEvaluationByApplicationId`
+- [x] SQLC queries: `createPreEvaluation`, `getPreEvaluationByApplicationId`
 
 ### 4.4 Interviews Table Update
 
-- [ ] Migration: add `type TEXT NOT NULL DEFAULT 'full'` and `metadata JSONB DEFAULT '{}'` to `interviews`
+- [x] Migration: add `type TEXT NOT NULL DEFAULT 'full'` and `metadata JSONB DEFAULT '{}'` to `interviews`
   - `type`: `'full'` | `'quick_eval'`
-- [ ] SQLC queries updated accordingly
+- [x] SQLC queries updated accordingly
 
 ### 4.5 Notifications Refactor
 
-- [ ] Remove `new_applicant` from `notificationTypeSchema` and `notificationPayloadSchemas`
-- [ ] Remove `new_applicant` notification creation from `applyToJobWorkflow`
-- [ ] Add `report_ready` to `notificationTypeSchema`
-- [ ] Add `report_ready` payload schema and presentation in `config.ts`
-- [ ] Add `interview_invited` notification type for candidates (optional v1)
-- [ ] Add `position_filled` notification type for candidates (sent when `report_limit` is reached)
+- [x] Remove `new_applicant` from `notificationTypeSchema` and `notificationPayloadSchemas`
+- [x] Remove `new_applicant` notification creation from `applyToJobWorkflow`
+- [x] Add `report_ready` to `notificationTypeSchema`
+- [x] Add `report_ready` payload schema and presentation in `config.ts`
+- [x] Add `interview_invited` notification type for candidates
+- [x] Add `position_filled` notification type for candidates (sent when `report_limit` is reached)
 
 ### 4.7 Cloudflare Workflows Setup
 
@@ -148,10 +148,10 @@ Prepare the database, enums, and server boundaries before the AI funnel goes liv
 
 ### Exit Criteria
 
-- [ ] All migrations run cleanly
-- [ ] `bun run check` passes (lint + types)
-- [ ] Job creation/editing works with new `report_limit` field
-- [ ] Applying no longer sends `new_applicant` notifications
+- [x] All migrations run cleanly
+- [x] `bun run check` passes (lint + types)
+- [x] Job creation/editing works with new `report_limit` field
+- [x] Applying no longer sends `new_applicant` notifications
 - [ ] Old mock data is fully removed from production code paths
 
 ---
@@ -224,10 +224,10 @@ Build the lightweight pre-evaluation stage as a durable Cloudflare Workflow.
 
 ### Exit Criteria
 
-- [ ] Applying creates application → triggers pre-evaluation async
-- [ ] Pre-evaluation result is stored in DB
-- [ ] High/medium fit candidates with quota get interview rows created
-- [ ] Low fit candidates stay in pending, no interview created
+- [x] Applying creates application → triggers pre-evaluation async
+- [x] Pre-evaluation result is stored in DB
+- [x] High/medium fit candidates with quota get interview rows created
+- [x] Low fit candidates stay in pending, no interview created
 - [ ] Companies see pending and evaluated sections on applicant list
 - [ ] No mock data is used
 
