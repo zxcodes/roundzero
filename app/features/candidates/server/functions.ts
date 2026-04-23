@@ -2,7 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
-import { getUserById } from "@/features/auth/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { authMiddleware } from "@/shared/middleware";
 import { createR2ResumeDownloadUrl, createR2UploadUrl, r2ObjectExists } from "@/shared/r2.server";
@@ -294,9 +293,7 @@ export const createResumeUploadTarget = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(zodValidatorWithFormattedErrors(resumeUploadTargetSchema))
   .handler(async ({ data, context }) => {
-    const db = getDb();
-    const user = await getUserById(db, { id: context.userId });
-    if (!user || user.role !== "candidate") {
+    if (context.user.role !== "candidate") {
       throw new Error("Only candidates can upload resumes");
     }
     const resumeKey = buildResumeKey(context.userId, data.fileName, data.contentType);
@@ -315,9 +312,7 @@ export const finalizeResumeUpload = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(zodValidator(finalizeResumeUploadSchema))
   .handler(async ({ data, context }) => {
-    const db = getDb();
-    const user = await getUserById(db, { id: context.userId });
-    if (!user || user.role !== "candidate") {
+    if (context.user.role !== "candidate") {
       throw new Error("Only candidates can finalize resume uploads");
     }
     assertResumeKeyBelongsToUser(data.resumeKey, context.userId);

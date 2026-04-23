@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { softDeleteUser } from "@/features/auth/queries/queries_sql";
 import { archiveJob, createJob } from "@/features/jobs/queries/queries_sql";
 import { getTestDb, makeTestResumeKey, seedCompany, seedUser } from "@/shared/__tests__/test-utils";
 import {
@@ -160,6 +161,7 @@ describe("getApplicationById", () => {
     expect(found!.jobTitle).toBe("Frontend Dev");
     expect(found!.companyName).toBe("Great Co");
     expect(found!.jobStatus).toBe("open");
+    expect(found!.companyOwnerDeleted).toBe(false);
   });
 
   it("returns null for non-existent id", async () => {
@@ -167,6 +169,24 @@ describe("getApplicationById", () => {
       id: "00000000-0000-0000-0000-000000000000",
     });
     expect(found).toBeNull();
+  });
+
+  it("sets companyOwnerDeleted when the company owner was soft-deleted", async () => {
+    const { company, owner } = await seedCompany({ name: "Deleted Co" });
+    const candidate = await seedUser({ role: "candidate" });
+    const job = await makeOpenJob(company.id);
+    const created = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: {},
+      status: "applied",
+    });
+    await softDeleteUser(sql, { id: owner.id });
+
+    const found = await getApplicationById(sql, { id: created!.id });
+    expect(found).not.toBeNull();
+    expect(found!.companyOwnerDeleted).toBe(true);
   });
 });
 
@@ -195,6 +215,23 @@ describe("getApplicationReviewById", () => {
     expect(found!.companySlug).toBe("review-co");
     expect(found!.jobTitle).toBe("Platform Engineer");
   });
+
+  it("returns null when the candidate was soft-deleted", async () => {
+    const { company } = await seedCompany();
+    const candidate = await seedUser({ name: "Ghost", role: "candidate" });
+    const job = await makeOpenJob(company.id);
+    const created = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: {},
+      status: "applied",
+    });
+    await softDeleteUser(sql, { id: candidate.id });
+
+    const found = await getApplicationReviewById(sql, { id: created!.id });
+    expect(found).toBeNull();
+  });
 });
 
 describe("getApplicationsByJob", () => {
@@ -222,6 +259,33 @@ describe("getApplicationsByJob", () => {
     const apps = await getApplicationsByJob(sql, { jobId: job.id });
     expect(apps).toHaveLength(2);
     expect(apps.map((a) => a.candidateName).sort()).toEqual(["Alice", "Bob"]);
+  });
+
+  it("excludes applications from soft-deleted candidates", async () => {
+    const { company } = await seedCompany();
+    const active = await seedUser({ name: "Active", role: "candidate" });
+    const deleted = await seedUser({ name: "Deleted", role: "candidate" });
+    const job = await makeOpenJob(company.id);
+
+    await createApplication(sql, {
+      jobId: job.id,
+      candidateId: active.id,
+      resumeKey: makeTestResumeKey(active.id),
+      metadata: {},
+      status: "applied",
+    });
+    await createApplication(sql, {
+      jobId: job.id,
+      candidateId: deleted.id,
+      resumeKey: makeTestResumeKey(deleted.id),
+      metadata: {},
+      status: "applied",
+    });
+    await softDeleteUser(sql, { id: deleted.id });
+
+    const apps = await getApplicationsByJob(sql, { jobId: job.id });
+    expect(apps).toHaveLength(1);
+    expect(apps[0].candidateName).toBe("Active");
   });
 });
 
@@ -255,6 +319,25 @@ describe("getApplicationsByCandidate", () => {
     expect(apps).toHaveLength(1);
     expect(apps[0].jobTitle).toBe("Active Job");
     expect(apps[0].companyName).toBe("Visible Co");
+    expect(apps[0].companyOwnerDeleted).toBe(false);
+  });
+
+  it("sets companyOwnerDeleted when the company owner was soft-deleted", async () => {
+    const { company, owner } = await seedCompany({ name: "Deleted Co" });
+    const candidate = await seedUser({ role: "candidate" });
+    const job = await makeOpenJob(company.id);
+    await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: {},
+      status: "applied",
+    });
+    await softDeleteUser(sql, { id: owner.id });
+
+    const apps = await getApplicationsByCandidate(sql, { candidateId: candidate.id });
+    expect(apps).toHaveLength(1);
+    expect(apps[0].companyOwnerDeleted).toBe(true);
   });
 });
 

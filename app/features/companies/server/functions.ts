@@ -2,7 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
-import { getUserById } from "@/features/auth/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { companySizeSchema, industrySchema, MAX_COMPANY_DESCRIPTION_LENGTH } from "@/shared/enums";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
@@ -219,9 +218,7 @@ export const createCompanyLogoUploadTarget = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(zodValidatorWithFormattedErrors(logoUploadTargetSchema))
   .handler(async ({ data, context }) => {
-    const db = getDb();
-    const user = await getUserById(db, { id: context.userId });
-    if (!user || user.role !== "company") {
+    if (context.user.role !== "company") {
       throw new Error("Only company users can upload logos");
     }
 
@@ -241,9 +238,7 @@ export const finalizeCompanyLogoUpload = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(zodValidator(finalizeLogoUploadSchema))
   .handler(async ({ data, context }) => {
-    const db = getDb();
-    const user = await getUserById(db, { id: context.userId });
-    if (!user || user.role !== "company") {
+    if (context.user.role !== "company") {
       throw new Error("Only company users can finalize logo uploads");
     }
 

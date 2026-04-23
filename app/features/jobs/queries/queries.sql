@@ -34,6 +34,7 @@ SELECT j.*,
        c.slug AS company_slug
 FROM jobs j
 JOIN companies c ON c.id = j.company_id
+JOIN users u ON u.id = c.owner_id AND u.deleted_at IS NULL
 WHERE j.id = $1;
 
 -- name: updateJob :one
@@ -83,6 +84,7 @@ SELECT j.*,
        c.slug AS company_slug
 FROM jobs j
 JOIN companies c ON c.id = j.company_id
+JOIN users u ON u.id = c.owner_id AND u.deleted_at IS NULL
 WHERE j.status = 'open'
   AND j.archived_at IS NULL
   AND (j.expires_at IS NULL OR j.expires_at > now())
@@ -110,6 +112,7 @@ SELECT j.*,
        c.slug AS company_slug
 FROM jobs j
 JOIN companies c ON c.id = j.company_id
+JOIN users u ON u.id = c.owner_id AND u.deleted_at IS NULL
 WHERE j.company_id = $1
   AND j.status = 'open'
   AND j.archived_at IS NULL
@@ -122,6 +125,7 @@ SELECT j.*,
        c.slug AS company_slug
 FROM jobs j
 JOIN companies c ON c.id = j.company_id
+JOIN users u ON u.id = c.owner_id AND u.deleted_at IS NULL
 WHERE j.status = 'open'
   AND j.archived_at IS NULL
   AND (j.expires_at IS NULL OR j.expires_at > now())
@@ -138,6 +142,7 @@ LIMIT sqlc.arg('limit')::int OFFSET sqlc.arg('offset')::int;
 SELECT count(*)::int AS total
 FROM jobs j
 JOIN companies c ON c.id = j.company_id
+JOIN users u ON u.id = c.owner_id AND u.deleted_at IS NULL
 WHERE j.status = 'open'
   AND j.archived_at IS NULL
   AND (j.expires_at IS NULL OR j.expires_at > now())

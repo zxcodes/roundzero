@@ -13,7 +13,9 @@ import { type SessionData, sessionConfig } from "@/shared/session";
 import { requiredTrimmedString } from "@/shared/validation";
 import {
   getUserById,
+  restoreUser,
   setUserRole as setUserRoleQuery,
+  softDeleteUser,
   updateUserName as updateUserNameQuery,
   upsertUserByGoogleId,
 } from "../queries/queries_sql";
@@ -53,6 +55,13 @@ export const loginWithGoogle = createServerFn({ method: "POST" })
       throw new Error("Failed to create or update user");
     }
 
+    // Restore soft-deleted user signing back in
+    let restored = false;
+    if (user.deletedAt) {
+      await restoreUser(db, { id: user.id });
+      restored = true;
+    }
+
     // Auto-assign role if provided and user doesn't have one yet
     let activeUser = user;
     if (data.role && !user.role) {
@@ -85,7 +94,7 @@ export const loginWithGoogle = createServerFn({ method: "POST" })
       onboardingComplete = Boolean(profile?.onboardingCompletedAt);
     }
 
-    return { user: activeUser, onboardingComplete };
+    return { user: activeUser, onboardingComplete, restored };
   });
 
 export const logout = createServerFn({ method: "POST" }).handler(async () => {
@@ -104,6 +113,15 @@ export const getCurrentUser = createServerFn({ method: "GET" }).handler(async ()
   const user = await getUserById(db, { id: session.data.userId });
   return user;
 });
+
+export const deleteAccount = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }) => {
+    const db = getDb();
+    await softDeleteUser(db, { id: context.userId });
+    await clearSession(sessionConfig);
+    return {};
+  });
 
 const updateNameSchema = z.object({
   name: requiredTrimmedString(100, "Name is required"),

@@ -87,17 +87,26 @@ const getStatusMeta = (status: string) => {
   return stageCopy[stage];
 };
 
-const getJobStateLabel = (jobStatus: Application["jobStatus"]) => {
-  if (jobStatus === "closed") {
+const getJobStateLabel = (application: Application) => {
+  if (application.companyOwnerDeleted) {
+    return "Account deleted";
+  }
+
+  if (application.jobStatus === "closed") {
     return "Role closed";
   }
 
-  if (jobStatus === "draft") {
+  if (application.jobStatus === "draft") {
     return "Role paused";
   }
 
   return "Role open";
 };
+
+const isApplicationActive = (application: Application) =>
+  application.status !== "rejected" &&
+  application.status !== "withdrawn" &&
+  !application.companyOwnerDeleted;
 
 const buildMetrics = (applications: Applications) => {
   return [
@@ -109,18 +118,17 @@ const buildMetrics = (applications: Applications) => {
     },
     {
       label: "Still active",
-      value: String(
-        applications.filter(
-          (application) => application.status !== "rejected" && application.status !== "withdrawn",
-        ).length,
-      ),
+      value: String(applications.filter(isApplicationActive).length),
       description: "Applications still moving through review.",
       icon: Rocket01Icon,
     },
     {
       label: "Interview stage",
       value: String(
-        applications.filter((application) => application.status === "interviewing").length,
+        applications.filter(
+          (application) =>
+            application.status === "interviewing" && !application.companyOwnerDeleted,
+        ).length,
       ),
       description: "The strongest sign of real traction.",
       icon: Clock01Icon,
@@ -226,14 +234,18 @@ function ApplicationListCard({
                 {application.companyName}
               </p>
               <Badge variant="outline" className="font-mono text-[11px]">
-                {getJobStateLabel(application.jobStatus)}
+                {getJobStateLabel(application)}
               </Badge>
               <Badge className={statusMeta.tone}>{statusMeta.badge}</Badge>
             </div>
 
             <div className="space-y-1">
               <CardTitle className="text-lg">{application.jobTitle}</CardTitle>
-              <CardDescription>{statusMeta.blurb}</CardDescription>
+              <CardDescription>
+                {application.companyOwnerDeleted
+                  ? "The company account has been deleted — this application is no longer active"
+                  : statusMeta.blurb}
+              </CardDescription>
             </div>
 
             <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">

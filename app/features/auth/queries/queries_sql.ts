@@ -8,7 +8,7 @@ ON CONFLICT (google_id) DO UPDATE
       name = EXCLUDED.name,
       picture = EXCLUDED.picture,
       updated_at = now()
-RETURNING id, email, name, picture, role, google_id, created_at, updated_at`;
+RETURNING id, email, name, picture, role, google_id, deleted_at, created_at, updated_at`;
 
 export interface upsertUserByGoogleIdArgs {
     email: string;
@@ -24,6 +24,7 @@ export interface upsertUserByGoogleIdRow {
     picture: string | null;
     role: string | null;
     googleId: string | null;
+    deletedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -41,15 +42,16 @@ export async function upsertUserByGoogleId(sql: Sql, args: upsertUserByGoogleIdA
         picture: row[3],
         role: row[4],
         googleId: row[5],
-        createdAt: row[6],
-        updatedAt: row[7]
+        deletedAt: row[6],
+        createdAt: row[7],
+        updatedAt: row[8]
     };
 }
 
 export const getUserByIdQuery = `-- name: getUserById :one
-SELECT id, email, name, picture, role, google_id, created_at, updated_at
+SELECT id, email, name, picture, role, google_id, deleted_at, created_at, updated_at
 FROM users
-WHERE id = $1`;
+WHERE id = $1 AND deleted_at IS NULL`;
 
 export interface getUserByIdArgs {
     id: string;
@@ -62,6 +64,7 @@ export interface getUserByIdRow {
     picture: string | null;
     role: string | null;
     googleId: string | null;
+    deletedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -79,8 +82,9 @@ export async function getUserById(sql: Sql, args: getUserByIdArgs): Promise<getU
         picture: row[3],
         role: row[4],
         googleId: row[5],
-        createdAt: row[6],
-        updatedAt: row[7]
+        deletedAt: row[6],
+        createdAt: row[7],
+        updatedAt: row[8]
     };
 }
 
@@ -90,7 +94,7 @@ SET role = $1,
     updated_at = now()
 WHERE id = $2
   AND role IS NULL
-RETURNING id, email, name, picture, role, google_id, created_at, updated_at`;
+RETURNING id, email, name, picture, role, google_id, deleted_at, created_at, updated_at`;
 
 export interface setUserRoleArgs {
     role: string | null;
@@ -104,6 +108,7 @@ export interface setUserRoleRow {
     picture: string | null;
     role: string | null;
     googleId: string | null;
+    deletedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -121,8 +126,9 @@ export async function setUserRole(sql: Sql, args: setUserRoleArgs): Promise<setU
         picture: row[3],
         role: row[4],
         googleId: row[5],
-        createdAt: row[6],
-        updatedAt: row[7]
+        deletedAt: row[6],
+        createdAt: row[7],
+        updatedAt: row[8]
     };
 }
 
@@ -131,7 +137,7 @@ UPDATE users
 SET name = $1,
     updated_at = now()
 WHERE id = $2
-RETURNING id, email, name, picture, role, google_id, created_at, updated_at`;
+RETURNING id, email, name, picture, role, google_id, deleted_at, created_at, updated_at`;
 
 export interface updateUserNameArgs {
     name: string;
@@ -145,6 +151,7 @@ export interface updateUserNameRow {
     picture: string | null;
     role: string | null;
     googleId: string | null;
+    deletedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -162,8 +169,37 @@ export async function updateUserName(sql: Sql, args: updateUserNameArgs): Promis
         picture: row[3],
         role: row[4],
         googleId: row[5],
-        createdAt: row[6],
-        updatedAt: row[7]
+        deletedAt: row[6],
+        createdAt: row[7],
+        updatedAt: row[8]
     };
+}
+
+export const softDeleteUserQuery = `-- name: softDeleteUser :exec
+UPDATE users
+SET deleted_at = now(),
+    updated_at = now()
+WHERE id = $1 AND deleted_at IS NULL`;
+
+export interface softDeleteUserArgs {
+    id: string;
+}
+
+export async function softDeleteUser(sql: Sql, args: softDeleteUserArgs): Promise<void> {
+    await sql.unsafe(softDeleteUserQuery, [args.id]);
+}
+
+export const restoreUserQuery = `-- name: restoreUser :exec
+UPDATE users
+SET deleted_at = NULL,
+    updated_at = now()
+WHERE id = $1 AND deleted_at IS NOT NULL`;
+
+export interface restoreUserArgs {
+    id: string;
+}
+
+export async function restoreUser(sql: Sql, args: restoreUserArgs): Promise<void> {
+    await sql.unsafe(restoreUserQuery, [args.id]);
 }
 

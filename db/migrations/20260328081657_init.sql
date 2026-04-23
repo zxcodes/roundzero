@@ -8,6 +8,7 @@ CREATE TABLE users (
   picture     TEXT,
   role        TEXT,
   google_id   TEXT UNIQUE,
+  deleted_at  TIMESTAMPTZ,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );

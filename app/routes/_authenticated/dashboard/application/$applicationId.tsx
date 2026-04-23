@@ -162,12 +162,16 @@ const getLinks = (value: unknown) => {
     .filter((entry): entry is { label: string; href: string } => entry.href !== null);
 };
 
-const getJobStateLabel = (jobStatus: Application["jobStatus"]) => {
-  if (jobStatus === "closed") {
+const getJobStateLabel = (application: Application) => {
+  if (application.companyOwnerDeleted) {
+    return "Account deleted";
+  }
+
+  if (application.jobStatus === "closed") {
     return "Role closed";
   }
 
-  if (jobStatus === "draft") {
+  if (application.jobStatus === "draft") {
     return "Role paused";
   }
 
@@ -217,8 +221,10 @@ function CandidateApplicationDetailPage() {
   const links = getLinks(metadata.links);
   const headline = getStringValue(metadata.headline);
   const bio = getStringValue(metadata.bio);
-  const jobStateLabel = getJobStateLabel(application.jobStatus);
-  const canWithdraw = application.status === "applied" || application.status === "interviewing";
+  const jobStateLabel = getJobStateLabel(application);
+  const canWithdraw =
+    (application.status === "applied" || application.status === "interviewing") &&
+    !application.companyOwnerDeleted;
 
   const onResumeView = async () => {
     await resumeDownloadMutation.mutateAsync({
@@ -260,6 +266,20 @@ function CandidateApplicationDetailPage() {
         ) : null}
       </div>
 
+      {application.companyOwnerDeleted ? (
+        <Card size="sm" className="border-destructive/30 bg-destructive/5">
+          <CardContent className="space-y-1 py-0">
+            <p className="text-sm font-medium text-destructive">
+              This company account has been deleted
+            </p>
+            <p className="text-xs text-muted-foreground">
+              The company that posted this role is no longer active on RoundZero. This application
+              is no longer moving forward.
+            </p>
+          </CardContent>
+        </Card>
+      ) : null}
+
       <div className="space-y-3">
         <div className="flex gap-8">
           {HAPPY_PATH_STAGES.map((stage) => {
@@ -299,8 +319,14 @@ function CandidateApplicationDetailPage() {
 
         <Card size="sm">
           <CardContent className="space-y-1 py-0">
-            <p className="text-sm text-foreground">{meta.summary}</p>
-            <p className="text-xs text-muted-foreground">{meta.nextStep}</p>
+            <p className="text-sm text-foreground">
+              {application.companyOwnerDeleted ? "This application is closed." : meta.summary}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {application.companyOwnerDeleted
+                ? "The company account has been deleted. You can still view your submitted profile snapshot below."
+                : meta.nextStep}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -319,11 +345,13 @@ function CandidateApplicationDetailPage() {
             View submitted resume
           </Button>
         ) : null}
-        <Button variant="outline" size="sm" asChild>
-          <Link to="/dashboard/jobs/$jobId" params={{ jobId: application.jobId }}>
-            View job listing
-          </Link>
-        </Button>
+        {application.companyOwnerDeleted ? null : (
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/dashboard/jobs/$jobId" params={{ jobId: application.jobId }}>
+              View job listing
+            </Link>
+          </Button>
+        )}
         {canWithdraw ? (
           <AlertDialog>
             <AlertDialogTrigger asChild>

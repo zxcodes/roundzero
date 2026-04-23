@@ -188,7 +188,7 @@ SELECT c.id, c.owner_id, c.name, c.slug, c.onboarding_completed_at, c.descriptio
        u.name AS owner_name,
        u.picture AS owner_picture
 FROM companies c
-JOIN users u ON u.id = c.owner_id
+JOIN users u ON u.id = c.owner_id AND u.deleted_at IS NULL
 WHERE c.slug = $1`;
 
 export interface getCompanyBySlugArgs {
@@ -390,6 +390,7 @@ export const getAllCompaniesQuery = `-- name: getAllCompanies :many
 SELECT c.id, c.owner_id, c.name, c.slug, c.onboarding_completed_at, c.description, c.logo_key, c.website, c.industry, c.company_size, c.founded_year, c.location, c.tech_stack, c.culture, c.social_links, c.created_at, c.updated_at,
        (SELECT count(*)::int FROM jobs j WHERE j.company_id = c.id AND j.status = 'open' AND j.archived_at IS NULL) AS open_job_count
 FROM companies c
+JOIN users u ON u.id = c.owner_id AND u.deleted_at IS NULL
 ORDER BY c.created_at DESC`;
 
 export interface getAllCompaniesRow {
@@ -440,6 +441,7 @@ export const getAllCompaniesPaginatedQuery = `-- name: getAllCompaniesPaginated 
 SELECT c.id, c.owner_id, c.name, c.slug, c.onboarding_completed_at, c.description, c.logo_key, c.website, c.industry, c.company_size, c.founded_year, c.location, c.tech_stack, c.culture, c.social_links, c.created_at, c.updated_at,
        (SELECT count(*)::int FROM jobs j WHERE j.company_id = c.id AND j.status = 'open' AND j.archived_at IS NULL) AS open_job_count
 FROM companies c
+JOIN users u ON u.id = c.owner_id AND u.deleted_at IS NULL
 WHERE ($1::text = '' OR c.name ILIKE '%' || $1 || '%' OR c.description ILIKE '%' || $1 || '%')
   AND ($2::text = 'all' OR c.industry = $2)
   AND ($3::text = 'all' OR c.company_size = $3)
@@ -501,6 +503,7 @@ export async function getAllCompaniesPaginated(sql: Sql, args: getAllCompaniesPa
 export const countCompaniesFilteredQuery = `-- name: countCompaniesFiltered :one
 SELECT count(*)::int AS total
 FROM companies c
+JOIN users u ON u.id = c.owner_id AND u.deleted_at IS NULL
 WHERE ($1::text = '' OR c.name ILIKE '%' || $1 || '%' OR c.description ILIKE '%' || $1 || '%')
   AND ($2::text = 'all' OR c.industry = $2)
   AND ($3::text = 'all' OR c.company_size = $3)`;

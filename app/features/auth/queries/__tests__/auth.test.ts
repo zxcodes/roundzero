@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getTestDb } from "@/shared/__tests__/test-utils";
-import { getUserById, setUserRole, upsertUserByGoogleId } from "../queries_sql";
+import { getUserById, setUserRole, softDeleteUser, upsertUserByGoogleId } from "../queries_sql";
 
 const sql = getTestDb();
 
@@ -80,6 +80,20 @@ describe("getUserById", () => {
 
   it("returns null for non-existent id", async () => {
     const user = await getUserById(sql, { id: "00000000-0000-0000-0000-000000000000" });
+    expect(user).toBeNull();
+  });
+
+  it("returns null for soft-deleted users", async () => {
+    const created = await upsertUserByGoogleId(sql, {
+      email: "deleted@example.com",
+      name: "Deleted User",
+      picture: null,
+      googleId: "google-deleted",
+    });
+
+    await softDeleteUser(sql, { id: created!.id });
+
+    const user = await getUserById(sql, { id: created!.id });
     expect(user).toBeNull();
   });
 });

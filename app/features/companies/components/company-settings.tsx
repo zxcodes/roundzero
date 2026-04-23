@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { UnsavedChangesBar } from "@/components/unsaved-changes-bar";
+import { DeleteAccountSection } from "@/features/auth/components/delete-account-section";
 import { CompanyLogoUploadField } from "@/features/companies/components/company-logo-upload-field";
 import { type getMyCompany, updateCompanyProfile } from "@/features/companies/server/functions";
 import { type CompanySize, companySizeLabels, type Industry, industryLabels } from "@/shared/enums";
@@ -513,6 +514,8 @@ export function CompanySettings({ company }: { company: Company }) {
             </form.Field>
           </CardContent>
         </Card>
+
+        <DeleteAccountSection />
       </div>
     </div>
   );
