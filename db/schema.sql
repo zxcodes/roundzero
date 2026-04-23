@@ -106,6 +106,8 @@ CREATE TABLE public.interviews (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     application_id uuid NOT NULL,
     agent_id text,
+    type text DEFAULT 'full'::text NOT NULL,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
     status text DEFAULT 'pending'::text NOT NULL,
     started_at timestamp with time zone,
     completed_at timestamp with time zone,
@@ -135,6 +137,7 @@ CREATE TABLE public.jobs (
     salary_currency text DEFAULT 'USD'::text NOT NULL,
     team_size integer,
     headcount integer DEFAULT 1,
+    report_limit integer DEFAULT 5 NOT NULL,
     expires_at timestamp with time zone,
     archived_at timestamp with time zone,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -158,6 +161,22 @@ CREATE TABLE public.notifications (
     email_delivery_sent_at timestamp with time zone,
     email_provider_message_id text,
     created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: pre_evaluations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.pre_evaluations (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    application_id uuid NOT NULL,
+    score integer NOT NULL,
+    missing_requirements jsonb DEFAULT '[]'::jsonb NOT NULL,
+    confidence text NOT NULL,
+    next_step text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT pre_evaluations_score_check CHECK (((score >= 0) AND (score <= 100)))
 );
 
 
@@ -287,6 +306,22 @@ ALTER TABLE ONLY public.notifications
 
 
 --
+-- Name: pre_evaluations pre_evaluations_application_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.pre_evaluations
+    ADD CONSTRAINT pre_evaluations_application_id_key UNIQUE (application_id);
+
+
+--
+-- Name: pre_evaluations pre_evaluations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.pre_evaluations
+    ADD CONSTRAINT pre_evaluations_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: reports reports_interview_id_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -404,6 +439,13 @@ CREATE INDEX idx_notifications_user_created ON public.notifications USING btree 
 
 
 --
+-- Name: idx_pre_evaluations_application; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_pre_evaluations_application ON public.pre_evaluations USING btree (application_id);
+
+
+--
 -- Name: idx_reports_application; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -479,6 +521,14 @@ ALTER TABLE ONLY public.jobs
 
 ALTER TABLE ONLY public.notifications
     ADD CONSTRAINT notifications_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE RESTRICT;
+
+
+--
+-- Name: pre_evaluations pre_evaluations_application_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.pre_evaluations
+    ADD CONSTRAINT pre_evaluations_application_id_fkey FOREIGN KEY (application_id) REFERENCES public.applications(id) ON DELETE RESTRICT;
 
 
 --

@@ -90,6 +90,7 @@ CREATE TABLE jobs (
   salary_currency  TEXT NOT NULL DEFAULT 'USD',
   team_size        INTEGER,
   headcount        INTEGER DEFAULT 1,
+  report_limit     INTEGER NOT NULL DEFAULT 5,
   expires_at       TIMESTAMPTZ,
   archived_at      TIMESTAMPTZ,
   created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -143,6 +144,8 @@ CREATE TABLE interviews (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   application_id  UUID NOT NULL REFERENCES applications(id) ON DELETE RESTRICT,
   agent_id        TEXT,
+  type            TEXT NOT NULL DEFAULT 'full',
+  metadata        JSONB NOT NULL DEFAULT '{}',
   status          TEXT NOT NULL DEFAULT 'pending',
   started_at      TIMESTAMPTZ,
   completed_at    TIMESTAMPTZ,
@@ -151,6 +154,19 @@ CREATE TABLE interviews (
 );
 
 CREATE INDEX idx_interviews_application ON interviews(application_id);
+
+-- Pre-evaluations: lightweight AI pre-screening results
+CREATE TABLE pre_evaluations (
+  id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  application_id        UUID NOT NULL REFERENCES applications(id) ON DELETE RESTRICT UNIQUE,
+  score                 INTEGER NOT NULL CHECK (score >= 0 AND score <= 100),
+  missing_requirements  JSONB NOT NULL DEFAULT '[]',
+  confidence            TEXT NOT NULL,
+  next_step             TEXT NOT NULL,
+  created_at            TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_pre_evaluations_application ON pre_evaluations(application_id);
 
 -- Reports: final output of the evaluation pipeline
 CREATE TABLE reports (

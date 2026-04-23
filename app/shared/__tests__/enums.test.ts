@@ -45,7 +45,16 @@ describe("jobStatusSchema", () => {
 
 describe("applicationStatusSchema", () => {
   it("accepts all valid statuses", () => {
-    for (const status of ["applied", "interviewing", "evaluated", "rejected", "withdrawn"]) {
+    for (const status of [
+      "applied",
+      "pre_screening",
+      "interview_invited",
+      "interview_in_progress",
+      "evaluated",
+      "shortlisted",
+      "rejected",
+      "withdrawn",
+    ]) {
       expect(applicationStatusSchema.parse(status)).toBe(status);
     }
   });
@@ -103,16 +112,16 @@ describe("APPLICATION_STATUS_TRANSITIONS", () => {
 
 describe("isValidTransition", () => {
   it("allows valid forward transitions", () => {
-    expect(isValidTransition("applied", "interviewing")).toBe(true);
+    expect(isValidTransition("applied", "pre_screening")).toBe(true);
     expect(isValidTransition("applied", "rejected")).toBe(true);
-    expect(isValidTransition("interviewing", "evaluated")).toBe(true);
-    expect(isValidTransition("interviewing", "rejected")).toBe(true);
+    expect(isValidTransition("pre_screening", "interview_invited")).toBe(true);
+    expect(isValidTransition("interview_invited", "rejected")).toBe(true);
     expect(isValidTransition("evaluated", "rejected")).toBe(true);
   });
 
   it("rejects backward transitions", () => {
-    expect(isValidTransition("interviewing", "applied")).toBe(false);
-    expect(isValidTransition("evaluated", "interviewing")).toBe(false);
+    expect(isValidTransition("interview_invited", "applied")).toBe(false);
+    expect(isValidTransition("evaluated", "interview_invited")).toBe(false);
     expect(isValidTransition("rejected", "applied")).toBe(false);
   });
 
@@ -128,7 +137,7 @@ describe("isValidTransition", () => {
   it("rejected is terminal — no transitions out", () => {
     for (const status of [
       "applied",
-      "interviewing",
+      "interview_invited",
       "evaluated",
       "rejected",
       "withdrawn",
@@ -139,7 +148,7 @@ describe("isValidTransition", () => {
 
   it("allows withdrawal from applied and interviewing", () => {
     expect(isValidTransition("applied", "withdrawn")).toBe(true);
-    expect(isValidTransition("interviewing", "withdrawn")).toBe(true);
+    expect(isValidTransition("interview_invited", "withdrawn")).toBe(true);
   });
 
   it("rejects withdrawal from evaluated and rejected", () => {
@@ -150,7 +159,7 @@ describe("isValidTransition", () => {
   it("withdrawn is terminal — no transitions out", () => {
     for (const status of [
       "applied",
-      "interviewing",
+      "interview_invited",
       "evaluated",
       "rejected",
       "withdrawn",

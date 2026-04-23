@@ -9,18 +9,31 @@ const applicationStatusChangedPayloadSchema = z.object({
   status: applicationStatusSchema,
 });
 
-const newApplicantPayloadSchema = z.object({
+const applicationWithdrawnPayloadSchema = z.object({
   applicationId: z.string().uuid(),
   jobId: z.string().uuid(),
   jobTitle: z.string().min(1),
   candidateName: z.string().min(1),
 });
 
-const applicationWithdrawnPayloadSchema = z.object({
+const reportReadyPayloadSchema = z.object({
   applicationId: z.string().uuid(),
   jobId: z.string().uuid(),
   jobTitle: z.string().min(1),
   candidateName: z.string().min(1),
+  score: z.number().optional(),
+});
+
+const interviewInvitedPayloadSchema = z.object({
+  applicationId: z.string().uuid(),
+  jobId: z.string().uuid(),
+  jobTitle: z.string().min(1),
+  companyName: z.string().min(1),
+});
+
+const positionFilledPayloadSchema = z.object({
+  jobId: z.string().uuid(),
+  jobTitle: z.string().min(1),
 });
 
 const jobLifecyclePayloadSchema = z.object({
@@ -32,7 +45,9 @@ const jobLifecyclePayloadSchema = z.object({
 export const notificationPayloadSchemas = {
   application_status_changed: applicationStatusChangedPayloadSchema,
   application_withdrawn: applicationWithdrawnPayloadSchema,
-  new_applicant: newApplicantPayloadSchema,
+  report_ready: reportReadyPayloadSchema,
+  interview_invited: interviewInvitedPayloadSchema,
+  position_filled: positionFilledPayloadSchema,
   job_published: jobLifecyclePayloadSchema,
   job_archived: jobLifecyclePayloadSchema,
   job_closed: jobLifecyclePayloadSchema,
@@ -41,7 +56,9 @@ export const notificationPayloadSchemas = {
 const notificationTone = {
   application_status_changed: "bg-sky-500/10 text-sky-700 dark:text-sky-300",
   application_withdrawn: "bg-rose-500/10 text-rose-700 dark:text-rose-300",
-  new_applicant: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  report_ready: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  interview_invited: "bg-violet-500/10 text-violet-700 dark:text-violet-300",
+  position_filled: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
   job_published: "bg-violet-500/10 text-violet-700 dark:text-violet-300",
   job_archived: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
   job_closed: "bg-red-500/10 text-red-700 dark:text-red-300",
@@ -51,10 +68,16 @@ const formatApplicationStatusLabel = (status: z.infer<typeof applicationStatusSc
   switch (status) {
     case "applied":
       return "Applied";
-    case "interviewing":
-      return "Interviewing";
+    case "pre_screening":
+      return "Pre-screening";
+    case "interview_invited":
+      return "Interview invited";
+    case "interview_in_progress":
+      return "Interview in progress";
     case "evaluated":
       return "Evaluated";
+    case "shortlisted":
+      return "Shortlisted";
     case "rejected":
       return "Rejected";
     case "withdrawn":
@@ -96,8 +119,8 @@ export const getNotificationPresentation = (notification: { type: string; payloa
     };
   }
 
-  if (type === "new_applicant") {
-    const payload = notificationPayloadSchemas.new_applicant.safeParse(
+  if (type === "report_ready") {
+    const payload = notificationPayloadSchemas.report_ready.safeParse(
       toRecord(notification.payload),
     );
     if (!payload.success) {
@@ -107,10 +130,46 @@ export const getNotificationPresentation = (notification: { type: string; payloa
     return {
       type,
       tone: notificationTone[type],
-      title: `New applicant for ${payload.data.jobTitle}`,
-      body: `${payload.data.candidateName} has applied for ${payload.data.jobTitle}. Review their application and resume.`,
+      title: `Evaluation ready for ${payload.data.candidateName}`,
+      body: `The AI evaluation for ${payload.data.candidateName} on ${payload.data.jobTitle} is ready.`,
       to: "/dashboard/applicants/$applicationId" as const,
       params: { applicationId: payload.data.applicationId },
+    };
+  }
+
+  if (type === "interview_invited") {
+    const payload = notificationPayloadSchemas.interview_invited.safeParse(
+      toRecord(notification.payload),
+    );
+    if (!payload.success) {
+      return null;
+    }
+
+    return {
+      type,
+      tone: notificationTone[type],
+      title: `Interview invitation from ${payload.data.companyName}`,
+      body: `You have been invited to complete an interview for ${payload.data.jobTitle}.`,
+      to: "/dashboard/application/$applicationId" as const,
+      params: { applicationId: payload.data.applicationId },
+    };
+  }
+
+  if (type === "position_filled") {
+    const payload = notificationPayloadSchemas.position_filled.safeParse(
+      toRecord(notification.payload),
+    );
+    if (!payload.success) {
+      return null;
+    }
+
+    return {
+      type,
+      tone: notificationTone[type],
+      title: `${payload.data.jobTitle} has received enough evaluations`,
+      body: `This position has received enough evaluations. Your application is still on file and the company may review it directly.`,
+      to: "/dashboard/application/$applicationId" as const,
+      params: { applicationId: payload.data.jobId },
     };
   }
 

@@ -34,6 +34,7 @@ const makeOpenJob = async (companyId: string, title = "Open Job") => {
     teamSize: null,
     headcount: null,
     expiresAt: null,
+    reportLimit: 5,
   });
   return job!;
 };
@@ -56,6 +57,7 @@ const makeDraftJob = async (companyId: string, title = "Draft Job") => {
     teamSize: null,
     headcount: null,
     expiresAt: null,
+    reportLimit: 5,
   });
   return job!;
 };
@@ -147,7 +149,7 @@ describe("candidate dashboard metrics", () => {
     const counts = await countApplicationsByCandidate(sql, { candidateId: candidate.id });
     expect(counts?.totalCount ?? 0).toBe(0);
     expect(counts?.activeCount ?? 0).toBe(0);
-    expect(counts?.interviewingCount ?? 0).toBe(0);
+    expect(counts?.interviewInvitedCount ?? 0).toBe(0);
     expect(counts?.evaluatedCount ?? 0).toBe(0);
   });
 
@@ -189,8 +191,8 @@ describe("candidate dashboard metrics", () => {
       status: "applied",
     });
 
-    await updateApplicationStatus(sql, { id: a1!.id, status: "interviewing" });
-    await updateApplicationStatus(sql, { id: a2!.id, status: "interviewing" });
+    await updateApplicationStatus(sql, { id: a1!.id, status: "interview_invited" });
+    await updateApplicationStatus(sql, { id: a2!.id, status: "interview_invited" });
     await updateApplicationStatus(sql, { id: a2!.id, status: "evaluated" });
     await updateApplicationStatus(sql, { id: a3!.id, status: "rejected" });
 
@@ -198,7 +200,7 @@ describe("candidate dashboard metrics", () => {
     expect(counts?.totalCount).toBe(4);
     // active = applied + interviewing + evaluated (not rejected)
     expect(counts?.activeCount).toBe(3);
-    expect(counts?.interviewingCount).toBe(1);
+    expect(counts?.interviewInvitedCount).toBe(1);
     expect(counts?.evaluatedCount).toBe(1);
   });
 

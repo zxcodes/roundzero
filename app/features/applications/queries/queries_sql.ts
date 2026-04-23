@@ -379,7 +379,8 @@ export const countApplicationsByCandidateQuery = `-- name: countApplicationsByCa
 SELECT
   count(*)::int AS total_count,
   count(*) FILTER (WHERE a.status NOT IN ('rejected', 'withdrawn'))::int AS active_count,
-  count(*) FILTER (WHERE a.status = 'interviewing')::int AS interviewing_count,
+  count(*) FILTER (WHERE a.status = 'interview_invited')::int AS interview_invited_count,
+  count(*) FILTER (WHERE a.status = 'interview_in_progress')::int AS interview_in_progress_count,
   count(*) FILTER (WHERE a.status = 'evaluated')::int AS evaluated_count
 FROM applications a
 JOIN jobs j ON j.id = a.job_id
@@ -393,7 +394,8 @@ export interface countApplicationsByCandidateArgs {
 export interface countApplicationsByCandidateRow {
     totalCount: number;
     activeCount: number;
-    interviewingCount: number;
+    interviewInvitedCount: number;
+    interviewInProgressCount: number;
     evaluatedCount: number;
 }
 
@@ -406,8 +408,9 @@ export async function countApplicationsByCandidate(sql: Sql, args: countApplicat
     return {
         totalCount: row[0],
         activeCount: row[1],
-        interviewingCount: row[2],
-        evaluatedCount: row[3]
+        interviewInvitedCount: row[2],
+        interviewInProgressCount: row[3],
+        evaluatedCount: row[4]
     };
 }
 

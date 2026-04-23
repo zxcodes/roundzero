@@ -4,10 +4,10 @@ export const createJobQuery = `-- name: createJob :one
 INSERT INTO jobs (
   company_id, title, description, requirements, interview_questions, status,
   location, workplace_type, employment_type, experience_level,
-  salary_min, salary_max, salary_currency, team_size, headcount, expires_at
+  salary_min, salary_max, salary_currency, team_size, headcount, report_limit, expires_at
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
-RETURNING id, company_id, title, description, requirements, interview_questions, status, location, workplace_type, employment_type, experience_level, salary_min, salary_max, salary_currency, team_size, headcount, expires_at, archived_at, created_at, updated_at`;
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+RETURNING id, company_id, title, description, requirements, interview_questions, status, location, workplace_type, employment_type, experience_level, salary_min, salary_max, salary_currency, team_size, headcount, report_limit, expires_at, archived_at, created_at, updated_at`;
 
 export interface createJobArgs {
     companyId: string;
@@ -25,6 +25,7 @@ export interface createJobArgs {
     salaryCurrency: string;
     teamSize: number | null;
     headcount: number | null;
+    reportLimit: number;
     expiresAt: Date | null;
 }
 
@@ -45,6 +46,7 @@ export interface createJobRow {
     salaryCurrency: string;
     teamSize: number | null;
     headcount: number | null;
+    reportLimit: number;
     expiresAt: Date | null;
     archivedAt: Date | null;
     createdAt: Date;
@@ -52,7 +54,7 @@ export interface createJobRow {
 }
 
 export async function createJob(sql: Sql, args: createJobArgs): Promise<createJobRow | null> {
-    const rows = await sql.unsafe(createJobQuery, [args.companyId, args.title, args.description, args.requirements, args.interviewQuestions, args.status, args.location, args.workplaceType, args.employmentType, args.experienceLevel, args.salaryMin, args.salaryMax, args.salaryCurrency, args.teamSize, args.headcount, args.expiresAt]).values();
+    const rows = await sql.unsafe(createJobQuery, [args.companyId, args.title, args.description, args.requirements, args.interviewQuestions, args.status, args.location, args.workplaceType, args.employmentType, args.experienceLevel, args.salaryMin, args.salaryMax, args.salaryCurrency, args.teamSize, args.headcount, args.reportLimit, args.expiresAt]).values();
     if (rows.length !== 1) {
         return null;
     }
@@ -74,15 +76,16 @@ export async function createJob(sql: Sql, args: createJobArgs): Promise<createJo
         salaryCurrency: row[13],
         teamSize: row[14],
         headcount: row[15],
-        expiresAt: row[16],
-        archivedAt: row[17],
-        createdAt: row[18],
-        updatedAt: row[19]
+        reportLimit: row[16],
+        expiresAt: row[17],
+        archivedAt: row[18],
+        createdAt: row[19],
+        updatedAt: row[20]
     };
 }
 
 export const getJobsByCompanyIdQuery = `-- name: getJobsByCompanyId :many
-SELECT id, company_id, title, description, requirements, interview_questions, status, location, workplace_type, employment_type, experience_level, salary_min, salary_max, salary_currency, team_size, headcount, expires_at, archived_at, created_at, updated_at
+SELECT id, company_id, title, description, requirements, interview_questions, status, location, workplace_type, employment_type, experience_level, salary_min, salary_max, salary_currency, team_size, headcount, report_limit, expires_at, archived_at, created_at, updated_at
 FROM jobs
 WHERE company_id = $1
   AND archived_at IS NULL
@@ -109,6 +112,7 @@ export interface getJobsByCompanyIdRow {
     salaryCurrency: string;
     teamSize: number | null;
     headcount: number | null;
+    reportLimit: number;
     expiresAt: Date | null;
     archivedAt: Date | null;
     createdAt: Date;
@@ -133,19 +137,23 @@ export async function getJobsByCompanyId(sql: Sql, args: getJobsByCompanyIdArgs)
         salaryCurrency: row[13],
         teamSize: row[14],
         headcount: row[15],
-        expiresAt: row[16],
-        archivedAt: row[17],
-        createdAt: row[18],
-        updatedAt: row[19]
+        reportLimit: row[16],
+        expiresAt: row[17],
+        archivedAt: row[18],
+        createdAt: row[19],
+        updatedAt: row[20]
     }));
 }
 
 export const getJobsWithPipelineByCompanyIdQuery = `-- name: getJobsWithPipelineByCompanyId :many
-SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.interview_questions, j.status, j.location, j.workplace_type, j.employment_type, j.experience_level, j.salary_min, j.salary_max, j.salary_currency, j.team_size, j.headcount, j.expires_at, j.archived_at, j.created_at, j.updated_at,
+SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.interview_questions, j.status, j.location, j.workplace_type, j.employment_type, j.experience_level, j.salary_min, j.salary_max, j.salary_currency, j.team_size, j.headcount, j.report_limit, j.expires_at, j.archived_at, j.created_at, j.updated_at,
        count(a.id)::int AS total_applicants,
        count(a.id) FILTER (WHERE a.status = 'applied')::int AS applied_count,
-       count(a.id) FILTER (WHERE a.status = 'interviewing')::int AS interviewing_count,
+       count(a.id) FILTER (WHERE a.status = 'pre_screening')::int AS pre_screening_count,
+       count(a.id) FILTER (WHERE a.status = 'interview_invited')::int AS interview_invited_count,
+       count(a.id) FILTER (WHERE a.status = 'interview_in_progress')::int AS interview_in_progress_count,
        count(a.id) FILTER (WHERE a.status = 'evaluated')::int AS evaluated_count,
+       count(a.id) FILTER (WHERE a.status = 'shortlisted')::int AS shortlisted_count,
        count(a.id) FILTER (WHERE a.status = 'rejected')::int AS rejected_count
 FROM jobs j
 LEFT JOIN applications a ON a.job_id = j.id
@@ -175,14 +183,18 @@ export interface getJobsWithPipelineByCompanyIdRow {
     salaryCurrency: string;
     teamSize: number | null;
     headcount: number | null;
+    reportLimit: number;
     expiresAt: Date | null;
     archivedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
     totalApplicants: number;
     appliedCount: number;
-    interviewingCount: number;
+    preScreeningCount: number;
+    interviewInvitedCount: number;
+    interviewInProgressCount: number;
     evaluatedCount: number;
+    shortlistedCount: number;
     rejectedCount: number;
 }
 
@@ -204,20 +216,24 @@ export async function getJobsWithPipelineByCompanyId(sql: Sql, args: getJobsWith
         salaryCurrency: row[13],
         teamSize: row[14],
         headcount: row[15],
-        expiresAt: row[16],
-        archivedAt: row[17],
-        createdAt: row[18],
-        updatedAt: row[19],
-        totalApplicants: row[20],
-        appliedCount: row[21],
-        interviewingCount: row[22],
-        evaluatedCount: row[23],
-        rejectedCount: row[24]
+        reportLimit: row[16],
+        expiresAt: row[17],
+        archivedAt: row[18],
+        createdAt: row[19],
+        updatedAt: row[20],
+        totalApplicants: row[21],
+        appliedCount: row[22],
+        preScreeningCount: row[23],
+        interviewInvitedCount: row[24],
+        interviewInProgressCount: row[25],
+        evaluatedCount: row[26],
+        shortlistedCount: row[27],
+        rejectedCount: row[28]
     }));
 }
 
 export const getJobByIdQuery = `-- name: getJobById :one
-SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.interview_questions, j.status, j.location, j.workplace_type, j.employment_type, j.experience_level, j.salary_min, j.salary_max, j.salary_currency, j.team_size, j.headcount, j.expires_at, j.archived_at, j.created_at, j.updated_at,
+SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.interview_questions, j.status, j.location, j.workplace_type, j.employment_type, j.experience_level, j.salary_min, j.salary_max, j.salary_currency, j.team_size, j.headcount, j.report_limit, j.expires_at, j.archived_at, j.created_at, j.updated_at,
        c.name AS company_name,
        c.slug AS company_slug
 FROM jobs j
@@ -246,6 +262,7 @@ export interface getJobByIdRow {
     salaryCurrency: string;
     teamSize: number | null;
     headcount: number | null;
+    reportLimit: number;
     expiresAt: Date | null;
     archivedAt: Date | null;
     createdAt: Date;
@@ -277,12 +294,13 @@ export async function getJobById(sql: Sql, args: getJobByIdArgs): Promise<getJob
         salaryCurrency: row[13],
         teamSize: row[14],
         headcount: row[15],
-        expiresAt: row[16],
-        archivedAt: row[17],
-        createdAt: row[18],
-        updatedAt: row[19],
-        companyName: row[20],
-        companySlug: row[21]
+        reportLimit: row[16],
+        expiresAt: row[17],
+        archivedAt: row[18],
+        createdAt: row[19],
+        updatedAt: row[20],
+        companyName: row[21],
+        companySlug: row[22]
     };
 }
 
@@ -302,11 +320,12 @@ SET title = $1,
     salary_currency = $12,
     team_size = $13,
     headcount = $14,
-    expires_at = $15,
+    report_limit = $15,
+    expires_at = $16,
     updated_at = now()
-WHERE id = $16
-  AND company_id = $17
-RETURNING id, company_id, title, description, requirements, interview_questions, status, location, workplace_type, employment_type, experience_level, salary_min, salary_max, salary_currency, team_size, headcount, expires_at, archived_at, created_at, updated_at`;
+WHERE id = $17
+  AND company_id = $18
+RETURNING id, company_id, title, description, requirements, interview_questions, status, location, workplace_type, employment_type, experience_level, salary_min, salary_max, salary_currency, team_size, headcount, report_limit, expires_at, archived_at, created_at, updated_at`;
 
 export interface updateJobArgs {
     title: string;
@@ -323,6 +342,7 @@ export interface updateJobArgs {
     salaryCurrency: string;
     teamSize: number | null;
     headcount: number | null;
+    reportLimit: number;
     expiresAt: Date | null;
     id: string;
     companyId: string;
@@ -345,6 +365,7 @@ export interface updateJobRow {
     salaryCurrency: string;
     teamSize: number | null;
     headcount: number | null;
+    reportLimit: number;
     expiresAt: Date | null;
     archivedAt: Date | null;
     createdAt: Date;
@@ -352,7 +373,7 @@ export interface updateJobRow {
 }
 
 export async function updateJob(sql: Sql, args: updateJobArgs): Promise<updateJobRow | null> {
-    const rows = await sql.unsafe(updateJobQuery, [args.title, args.description, args.requirements, args.interviewQuestions, args.status, args.location, args.workplaceType, args.employmentType, args.experienceLevel, args.salaryMin, args.salaryMax, args.salaryCurrency, args.teamSize, args.headcount, args.expiresAt, args.id, args.companyId]).values();
+    const rows = await sql.unsafe(updateJobQuery, [args.title, args.description, args.requirements, args.interviewQuestions, args.status, args.location, args.workplaceType, args.employmentType, args.experienceLevel, args.salaryMin, args.salaryMax, args.salaryCurrency, args.teamSize, args.headcount, args.reportLimit, args.expiresAt, args.id, args.companyId]).values();
     if (rows.length !== 1) {
         return null;
     }
@@ -374,10 +395,11 @@ export async function updateJob(sql: Sql, args: updateJobArgs): Promise<updateJo
         salaryCurrency: row[13],
         teamSize: row[14],
         headcount: row[15],
-        expiresAt: row[16],
-        archivedAt: row[17],
-        createdAt: row[18],
-        updatedAt: row[19]
+        reportLimit: row[16],
+        expiresAt: row[17],
+        archivedAt: row[18],
+        createdAt: row[19],
+        updatedAt: row[20]
     };
 }
 
@@ -398,7 +420,7 @@ SET archived_at = now(),
 WHERE id = $1
   AND company_id = $2
   AND archived_at IS NULL
-RETURNING id, company_id, title, description, requirements, interview_questions, status, location, workplace_type, employment_type, experience_level, salary_min, salary_max, salary_currency, team_size, headcount, expires_at, archived_at, created_at, updated_at`;
+RETURNING id, company_id, title, description, requirements, interview_questions, status, location, workplace_type, employment_type, experience_level, salary_min, salary_max, salary_currency, team_size, headcount, report_limit, expires_at, archived_at, created_at, updated_at`;
 
 export interface archiveJobArgs {
     id: string;
@@ -422,6 +444,7 @@ export interface archiveJobRow {
     salaryCurrency: string;
     teamSize: number | null;
     headcount: number | null;
+    reportLimit: number;
     expiresAt: Date | null;
     archivedAt: Date | null;
     createdAt: Date;
@@ -451,15 +474,16 @@ export async function archiveJob(sql: Sql, args: archiveJobArgs): Promise<archiv
         salaryCurrency: row[13],
         teamSize: row[14],
         headcount: row[15],
-        expiresAt: row[16],
-        archivedAt: row[17],
-        createdAt: row[18],
-        updatedAt: row[19]
+        reportLimit: row[16],
+        expiresAt: row[17],
+        archivedAt: row[18],
+        createdAt: row[19],
+        updatedAt: row[20]
     };
 }
 
 export const getOpenJobsQuery = `-- name: getOpenJobs :many
-SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.interview_questions, j.status, j.location, j.workplace_type, j.employment_type, j.experience_level, j.salary_min, j.salary_max, j.salary_currency, j.team_size, j.headcount, j.expires_at, j.archived_at, j.created_at, j.updated_at,
+SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.interview_questions, j.status, j.location, j.workplace_type, j.employment_type, j.experience_level, j.salary_min, j.salary_max, j.salary_currency, j.team_size, j.headcount, j.report_limit, j.expires_at, j.archived_at, j.created_at, j.updated_at,
        c.name AS company_name,
        c.slug AS company_slug
 FROM jobs j
@@ -487,6 +511,7 @@ export interface getOpenJobsRow {
     salaryCurrency: string;
     teamSize: number | null;
     headcount: number | null;
+    reportLimit: number;
     expiresAt: Date | null;
     archivedAt: Date | null;
     createdAt: Date;
@@ -513,12 +538,13 @@ export async function getOpenJobs(sql: Sql): Promise<getOpenJobsRow[]> {
         salaryCurrency: row[13],
         teamSize: row[14],
         headcount: row[15],
-        expiresAt: row[16],
-        archivedAt: row[17],
-        createdAt: row[18],
-        updatedAt: row[19],
-        companyName: row[20],
-        companySlug: row[21]
+        reportLimit: row[16],
+        expiresAt: row[17],
+        archivedAt: row[18],
+        createdAt: row[19],
+        updatedAt: row[20],
+        companyName: row[21],
+        companySlug: row[22]
     }));
 }
 
@@ -555,7 +581,7 @@ export async function countJobsByCompanyAndStatus(sql: Sql, args: countJobsByCom
 }
 
 export const getArchivedJobsByCompanyIdQuery = `-- name: getArchivedJobsByCompanyId :many
-SELECT id, company_id, title, description, requirements, interview_questions, status, location, workplace_type, employment_type, experience_level, salary_min, salary_max, salary_currency, team_size, headcount, expires_at, archived_at, created_at, updated_at
+SELECT id, company_id, title, description, requirements, interview_questions, status, location, workplace_type, employment_type, experience_level, salary_min, salary_max, salary_currency, team_size, headcount, report_limit, expires_at, archived_at, created_at, updated_at
 FROM jobs
 WHERE company_id = $1
   AND archived_at IS NOT NULL
@@ -582,6 +608,7 @@ export interface getArchivedJobsByCompanyIdRow {
     salaryCurrency: string;
     teamSize: number | null;
     headcount: number | null;
+    reportLimit: number;
     expiresAt: Date | null;
     archivedAt: Date | null;
     createdAt: Date;
@@ -606,15 +633,16 @@ export async function getArchivedJobsByCompanyId(sql: Sql, args: getArchivedJobs
         salaryCurrency: row[13],
         teamSize: row[14],
         headcount: row[15],
-        expiresAt: row[16],
-        archivedAt: row[17],
-        createdAt: row[18],
-        updatedAt: row[19]
+        reportLimit: row[16],
+        expiresAt: row[17],
+        archivedAt: row[18],
+        createdAt: row[19],
+        updatedAt: row[20]
     }));
 }
 
 export const getOpenJobsByCompanyIdQuery = `-- name: getOpenJobsByCompanyId :many
-SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.interview_questions, j.status, j.location, j.workplace_type, j.employment_type, j.experience_level, j.salary_min, j.salary_max, j.salary_currency, j.team_size, j.headcount, j.expires_at, j.archived_at, j.created_at, j.updated_at,
+SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.interview_questions, j.status, j.location, j.workplace_type, j.employment_type, j.experience_level, j.salary_min, j.salary_max, j.salary_currency, j.team_size, j.headcount, j.report_limit, j.expires_at, j.archived_at, j.created_at, j.updated_at,
        c.name AS company_name,
        c.slug AS company_slug
 FROM jobs j
@@ -647,6 +675,7 @@ export interface getOpenJobsByCompanyIdRow {
     salaryCurrency: string;
     teamSize: number | null;
     headcount: number | null;
+    reportLimit: number;
     expiresAt: Date | null;
     archivedAt: Date | null;
     createdAt: Date;
@@ -673,17 +702,18 @@ export async function getOpenJobsByCompanyId(sql: Sql, args: getOpenJobsByCompan
         salaryCurrency: row[13],
         teamSize: row[14],
         headcount: row[15],
-        expiresAt: row[16],
-        archivedAt: row[17],
-        createdAt: row[18],
-        updatedAt: row[19],
-        companyName: row[20],
-        companySlug: row[21]
+        reportLimit: row[16],
+        expiresAt: row[17],
+        archivedAt: row[18],
+        createdAt: row[19],
+        updatedAt: row[20],
+        companyName: row[21],
+        companySlug: row[22]
     }));
 }
 
 export const getOpenJobsPaginatedQuery = `-- name: getOpenJobsPaginated :many
-SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.interview_questions, j.status, j.location, j.workplace_type, j.employment_type, j.experience_level, j.salary_min, j.salary_max, j.salary_currency, j.team_size, j.headcount, j.expires_at, j.archived_at, j.created_at, j.updated_at,
+SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.interview_questions, j.status, j.location, j.workplace_type, j.employment_type, j.experience_level, j.salary_min, j.salary_max, j.salary_currency, j.team_size, j.headcount, j.report_limit, j.expires_at, j.archived_at, j.created_at, j.updated_at,
        c.name AS company_name,
        c.slug AS company_slug
 FROM jobs j
@@ -729,6 +759,7 @@ export interface getOpenJobsPaginatedRow {
     salaryCurrency: string;
     teamSize: number | null;
     headcount: number | null;
+    reportLimit: number;
     expiresAt: Date | null;
     archivedAt: Date | null;
     createdAt: Date;
@@ -755,12 +786,13 @@ export async function getOpenJobsPaginated(sql: Sql, args: getOpenJobsPaginatedA
         salaryCurrency: row[13],
         teamSize: row[14],
         headcount: row[15],
-        expiresAt: row[16],
-        archivedAt: row[17],
-        createdAt: row[18],
-        updatedAt: row[19],
-        companyName: row[20],
-        companySlug: row[21]
+        reportLimit: row[16],
+        expiresAt: row[17],
+        archivedAt: row[18],
+        createdAt: row[19],
+        updatedAt: row[20],
+        companyName: row[21],
+        companySlug: row[22]
     }));
 }
 

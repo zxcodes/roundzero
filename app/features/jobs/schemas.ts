@@ -59,6 +59,12 @@ export const jobFieldsSchema = z
       .positive("Headcount must be positive")
       .nullable()
       .optional(),
+    reportLimit: z
+      .number({ error: "Report limit must be a valid number" })
+      .int("Report limit must be a whole number")
+      .min(1, "Report limit must be at least 1")
+      .max(15, "Report limit cannot exceed 15")
+      .default(5),
     expiresAt: z.coerce.date().nullable().optional(),
   })
   .refine(
