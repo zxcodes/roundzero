@@ -27,8 +27,9 @@ export const applyToJobWorkflow = async (
     userId: string;
     jobId: string;
   },
-  _options?: {
+  options?: {
     sendNotificationEmail?: NotificationEmailSender;
+    triggerPreEvaluation?: (applicationId: string) => Promise<void>;
   },
 ) => {
   await db.unsafe(closeExpiredJobsQuery);
@@ -94,6 +95,10 @@ export const applyToJobWorkflow = async (
   // Note: companies no longer receive "new_applicant" notifications.
   // Pre-evaluation runs asynchronously and companies are notified via
   // "report_ready" when the AI evaluation completes.
+
+  if (options?.triggerPreEvaluation) {
+    await options.triggerPreEvaluation(application.id);
+  }
 
   return { application };
 };
