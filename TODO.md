@@ -1,7 +1,5 @@
 ## TODO
 
-<!--- Resume parsing: we accept PDF, DOC, DOCX. Need parsers for each type. Text extraction is local, then fed to LLM.-->
-- add job creation preview.
 - think more about the duration from first report to last report generation bc it will depend on the candidate. think if we need to add an expiry or something and pass it to the next candidate?
 - you just post a job and you will be notified with the reports. (major overhaul on company side.), also check how long should it take for reports to arrive, let companies choose how many reports they wanna see per job while creating it etc.
 - add a job creation shortcut using "N" also indicate it on the button.
@@ -23,6 +21,8 @@
 
 
 
+<!--- Resume parsing: we accept PDF, DOC, DOCX. Need parsers for each type. Text extraction is local, then fed to LLM.-->
+<!--- add job creation preview.-->
 <!--- the work profile snapshot is duplicating markup. use single comp and also clean the entire thing up.-->
 <!--- add better error and form handling. rn we throw generic errors instead of actual ones.-->
 <!--- fix the fucking forms. able to create a job with nothing wtf.-->

@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { JobPreviewDialog } from "@/features/jobs/components/job-preview-dialog";
 import {
   type EmploymentType,
   type ExperienceLevel,
@@ -122,10 +123,12 @@ export function JobForm({
   defaultValues,
   onSubmit,
   submitLabel,
+  companyName,
 }: {
   defaultValues?: Partial<JobFormData>;
   onSubmit: (data: JobFormData) => void;
   submitLabel: string;
+  companyName?: string;
 }) {
   const [requirementInput, setRequirementInput] = useState("");
   const [interviewQuestionInput, setInterviewQuestionInput] = useState("");
@@ -791,11 +794,34 @@ export function JobForm({
           }}
         </form.Field>
 
-        <form.Subscribe selector={(state) => state.isSubmitting}>
-          {(isSubmitting) => (
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : submitLabel}
-            </Button>
+        <form.Subscribe
+          selector={(state) => ({ isSubmitting: state.isSubmitting, values: state.values })}
+        >
+          {({ isSubmitting, values }) => (
+            <div className="flex items-center gap-2">
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Saving..." : submitLabel}
+              </Button>
+              {companyName ? (
+                <JobPreviewDialog
+                  data={{
+                    title: values.title,
+                    description: values.description,
+                    requirements: values.requirements,
+                    companyName,
+                    location: values.location || null,
+                    workplaceType: values.workplaceType || null,
+                    employmentType: values.employmentType || null,
+                    experienceLevel: values.experienceLevel || null,
+                    salaryMin: values.salaryMin ? Number(values.salaryMin) : null,
+                    salaryMax: values.salaryMax ? Number(values.salaryMax) : null,
+                    salaryCurrency: values.salaryCurrency,
+                    teamSize: values.teamSize ? Number(values.teamSize) : null,
+                    headcount: values.headcount ? Number(values.headcount) : null,
+                  }}
+                />
+              ) : null}
+            </div>
           )}
         </form.Subscribe>
       </div>

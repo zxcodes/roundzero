@@ -20,6 +20,8 @@ export const Route = createFileRoute("/_authenticated/dashboard/jobs/new")({
 
 function NewJobPage() {
   const router = useRouter();
+  const context = Route.useRouteContext();
+  const companyName = "company" in context ? (context.company?.name ?? "") : "";
 
   const createJobFn = useServerFn(createJob);
   const createJobMutation = useMutation({
@@ -65,7 +67,7 @@ function NewJobPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <JobForm onSubmit={onSubmit} submitLabel="Create job" />
+          <JobForm onSubmit={onSubmit} submitLabel="Create job" companyName={companyName} />
         </CardContent>
       </Card>
     </div>
