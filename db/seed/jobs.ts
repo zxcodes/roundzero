@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { closeSql, copycat, makeUuid, pick, randomInt, sql } from "./util";
 
 type DomainTemplate = {

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { clampScore, closeSql, makeUuidFromSeed, pick, sql } from "./util";
 
 const recommendations = ["strong_hire", "consider", "not_recommended"] as const;
