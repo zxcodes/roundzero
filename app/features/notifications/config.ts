@@ -28,10 +28,11 @@ const interviewInvitedPayloadSchema = z.object({
   applicationId: z.string().uuid(),
   jobId: z.string().uuid(),
   jobTitle: z.string().min(1),
-  companyName: z.string().min(1),
+  interviewType: z.string().min(1),
 });
 
 const positionFilledPayloadSchema = z.object({
+  applicationId: z.string().uuid(),
   jobId: z.string().uuid(),
   jobTitle: z.string().min(1),
 });
@@ -148,8 +149,8 @@ export const getNotificationPresentation = (notification: { type: string; payloa
     return {
       type,
       tone: notificationTone[type],
-      title: `Interview invitation from ${payload.data.companyName}`,
-      body: `You have been invited to complete an interview for ${payload.data.jobTitle}.`,
+      title: `Zero invited you to an interview`,
+      body: `You have been invited to complete a ${payload.data.interviewType === "quick_eval" ? "quick evaluation" : "full interview"} for ${payload.data.jobTitle}.`,
       to: "/dashboard/application/$applicationId" as const,
       params: { applicationId: payload.data.applicationId },
     };
@@ -169,7 +170,7 @@ export const getNotificationPresentation = (notification: { type: string; payloa
       title: `${payload.data.jobTitle} has received enough evaluations`,
       body: `This position has received enough evaluations. Your application is still on file and the company may review it directly.`,
       to: "/dashboard/application/$applicationId" as const,
-      params: { applicationId: payload.data.jobId },
+      params: { applicationId: payload.data.applicationId },
     };
   }
 
