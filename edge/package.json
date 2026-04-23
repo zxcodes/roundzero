@@ -8,14 +8,14 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
-    "hono": "^4.7.0",
+    "hono": "^4.12.14",
     "mammoth": "^1.12.0",
     "postgres": "^3.4.9",
     "unpdf": "^1.6.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250423.0",
+    "@cloudflare/workers-types": "^4.20260423.1",
     "typescript": "^6.0.3",
     "wrangler": "^4.84.1"
   }
