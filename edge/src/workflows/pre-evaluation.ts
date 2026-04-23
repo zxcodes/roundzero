@@ -120,7 +120,7 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
 
     // Step 1: Read application + job data from Postgres
     const applicationData = await step.do("read_application_data", async () => {
-      const db = getDb(this.env.DATABASE_URL);
+      const db = getDb();
       const application = await getApplicationById(db, { id: applicationId });
       if (!application) {
         throw new Error(`Application not found: ${applicationId}`);
@@ -170,7 +170,7 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
         applicationData.application.metadata ?? {},
       );
 
-      const response = await this.env.AI.run("@cf/meta/llama-3.1-8b-instruct", {
+      const response = await this.env.AI.run("@cf/meta/llama-3.1-8b-instruct-fp8", {
         messages: [{ role: "user", content: prompt }],
       });
 
@@ -184,7 +184,7 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
 
     // Step 5: Write result to pre_evaluations table and update status
     await step.do("write_pre_evaluation", async () => {
-      const db = getDb(this.env.DATABASE_URL);
+      const db = getDb();
       await createPreEvaluation(db, {
         applicationId,
         score: aiResult.score,
@@ -204,7 +204,7 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
         return { action: "hold" as const };
       }
 
-      const db = getDb(this.env.DATABASE_URL);
+      const db = getDb();
       const job = applicationData.job;
       const slotsUsed = await countInterviewSlotsUsedByJob(db, { jobId: job.id });
       const usedCount = slotsUsed?.count ?? 0;
