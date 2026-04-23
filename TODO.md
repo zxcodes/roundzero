@@ -1,5 +1,6 @@
 ## TODO
 
+- show number of applicants on each job detail.
 - check react query integration, queries don't seem to refetch on tab focus, etc.
 - use tanstack ai libraries for everything ai.
 - think more about the duration from first report to last report generation bc it will depend on the candidate. think if we need to add an expiry or something and pass it to the next candidate?
