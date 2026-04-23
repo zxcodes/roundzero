@@ -41,6 +41,7 @@ import { CandidateApplySection } from "@/features/applications/components/candid
 import { getJobApplicants, hasApplied } from "@/features/applications/server/functions";
 import { getMyCandidateProfile } from "@/features/candidates/server/functions";
 import { JobForm, type JobFormData } from "@/features/jobs/components/job-form";
+import { JobPreviewDialog } from "@/features/jobs/components/job-preview-dialog";
 import { archiveJob, getJob, publishJob, updateJob } from "@/features/jobs/server/functions";
 import {
   type EmploymentType,
@@ -465,6 +466,7 @@ function CompanyActions({ job, requirements }: { job: JobDetail; requirements: s
             }}
             onSubmit={onUpdate}
             submitLabel="Save changes"
+            companyName={job.companyName ?? ""}
           />
           <Button variant="ghost" className="mt-3 w-full" onClick={onCancelEdit}>
             Cancel
@@ -511,6 +513,23 @@ function CompanyActions({ job, requirements }: { job: JobDetail; requirements: s
           {publishJobMutation.isPending ? "Publishing..." : "Publish"}
         </Button>
       ) : null}
+      <JobPreviewDialog
+        data={{
+          title: job.title,
+          description: job.description,
+          requirements,
+          companyName: job.companyName ?? "",
+          location: job.location,
+          workplaceType: job.workplaceType,
+          employmentType: job.employmentType,
+          experienceLevel: job.experienceLevel,
+          salaryMin: job.salaryMin,
+          salaryMax: job.salaryMax,
+          salaryCurrency: job.salaryCurrency,
+          teamSize: job.teamSize,
+          headcount: job.headcount,
+        }}
+      />
       <Button variant="outline" size="sm" onClick={onStartEdit}>
         <HugeiconsIcon icon={Edit02Icon} strokeWidth={2} className="size-3.5" />
         Edit
