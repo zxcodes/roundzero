@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { softDeleteUser } from "@/features/auth/queries/queries_sql";
 import { getTestDb, seedUser } from "@/shared/__tests__/test-utils";
 import {
   createCompany,
@@ -159,6 +160,23 @@ describe("getCompanyBySlug", () => {
     const found = await getCompanyBySlug(sql, { slug: "does-not-exist" });
     expect(found).toBeNull();
   });
+
+  it("returns null when the owner was soft-deleted", async () => {
+    const owner = await seedUser({ role: "company" });
+    await createCompany(sql, {
+      ownerId: owner.id,
+      name: "Deleted Corp",
+      slug: "deleted-corp",
+      description: null,
+      logoKey: null,
+      industry: null,
+      companySize: null,
+    });
+    await softDeleteUser(sql, { id: owner.id });
+
+    const found = await getCompanyBySlug(sql, { slug: "deleted-corp" });
+    expect(found).toBeNull();
+  });
 });
 
 describe("updateCompanyProfile", () => {
@@ -290,5 +308,22 @@ describe("getAllCompanies", () => {
     const found = all.find((c) => c.id === company!.id);
     expect(found).toBeDefined();
     expect(found!.openJobCount).toBe(1);
+  });
+
+  it("excludes companies whose owner was soft-deleted", async () => {
+    const owner = await seedUser({ role: "company" });
+    const company = await createCompany(sql, {
+      ownerId: owner.id,
+      name: "Ghost Corp",
+      slug: "ghost-corp",
+      description: null,
+      logoKey: null,
+      industry: null,
+      companySize: null,
+    });
+    await softDeleteUser(sql, { id: owner.id });
+
+    const all = await getAllCompanies(sql);
+    expect(all.find((c) => c.id === company!.id)).toBeUndefined();
   });
 });

@@ -27,7 +27,7 @@ SELECT c.*,
        u.name AS owner_name,
        u.picture AS owner_picture
 FROM companies c
-JOIN users u ON u.id = c.owner_id
+JOIN users u ON u.id = c.owner_id AND u.deleted_at IS NULL
 WHERE c.slug = $1;
 
 -- name: updateCompanyProfile :one
@@ -59,12 +59,14 @@ RETURNING *;
 SELECT c.*,
        (SELECT count(*)::int FROM jobs j WHERE j.company_id = c.id AND j.status = 'open' AND j.archived_at IS NULL) AS open_job_count
 FROM companies c
+JOIN users u ON u.id = c.owner_id AND u.deleted_at IS NULL
 ORDER BY c.created_at DESC;
 
 -- name: getAllCompaniesPaginated :many
 SELECT c.*,
        (SELECT count(*)::int FROM jobs j WHERE j.company_id = c.id AND j.status = 'open' AND j.archived_at IS NULL) AS open_job_count
 FROM companies c
+JOIN users u ON u.id = c.owner_id AND u.deleted_at IS NULL
 WHERE (sqlc.arg('search')::text = '' OR c.name ILIKE '%' || sqlc.arg('search') || '%' OR c.description ILIKE '%' || sqlc.arg('search') || '%')
   AND (sqlc.arg('industry')::text = 'all' OR c.industry = sqlc.arg('industry'))
   AND (sqlc.arg('company_size')::text = 'all' OR c.company_size = sqlc.arg('company_size'))
@@ -74,6 +76,7 @@ LIMIT sqlc.arg('limit')::int OFFSET sqlc.arg('offset')::int;
 -- name: countCompaniesFiltered :one
 SELECT count(*)::int AS total
 FROM companies c
+JOIN users u ON u.id = c.owner_id AND u.deleted_at IS NULL
 WHERE (sqlc.arg('search')::text = '' OR c.name ILIKE '%' || sqlc.arg('search') || '%' OR c.description ILIKE '%' || sqlc.arg('search') || '%')
   AND (sqlc.arg('industry')::text = 'all' OR c.industry = sqlc.arg('industry'))
   AND (sqlc.arg('company_size')::text = 'all' OR c.company_size = sqlc.arg('company_size'));

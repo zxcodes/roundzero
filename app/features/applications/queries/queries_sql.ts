@@ -84,10 +84,12 @@ export async function getApplicationByJobAndCandidate(sql: Sql, args: getApplica
 export const getApplicationsByCandidateQuery = `-- name: getApplicationsByCandidate :many
 SELECT a.id, a.job_id, a.candidate_id, a.resume_key, a.metadata, a.status, a.created_at, a.updated_at,
        j.title AS job_title, j.status AS job_status,
-       c.name AS company_name
+       c.name AS company_name,
+       u.deleted_at IS NOT NULL AS company_owner_deleted
 FROM applications a
 JOIN jobs j ON j.id = a.job_id
 JOIN companies c ON c.id = j.company_id
+JOIN users u ON u.id = c.owner_id
 WHERE a.candidate_id = $1
   AND j.archived_at IS NULL
 ORDER BY a.created_at DESC`;
@@ -108,6 +110,7 @@ export interface getApplicationsByCandidateRow {
     jobTitle: string;
     jobStatus: string;
     companyName: string;
+    companyOwnerDeleted: string | null;
 }
 
 export async function getApplicationsByCandidate(sql: Sql, args: getApplicationsByCandidateArgs): Promise<getApplicationsByCandidateRow[]> {
@@ -122,7 +125,8 @@ export async function getApplicationsByCandidate(sql: Sql, args: getApplications
         updatedAt: row[7],
         jobTitle: row[8],
         jobStatus: row[9],
-        companyName: row[10]
+        companyName: row[10],
+        companyOwnerDeleted: row[11]
     }));
 }
 
@@ -130,7 +134,7 @@ export const getApplicationsByJobQuery = `-- name: getApplicationsByJob :many
 SELECT a.id, a.job_id, a.candidate_id, a.resume_key, a.metadata, a.status, a.created_at, a.updated_at,
        u.name AS candidate_name, u.email AS candidate_email, u.picture AS candidate_picture
 FROM applications a
-JOIN users u ON u.id = a.candidate_id
+JOIN users u ON u.id = a.candidate_id AND u.deleted_at IS NULL
 WHERE a.job_id = $1
 ORDER BY a.created_at DESC`;
 
@@ -171,10 +175,12 @@ export async function getApplicationsByJob(sql: Sql, args: getApplicationsByJobA
 export const getApplicationByIdQuery = `-- name: getApplicationById :one
 SELECT a.id, a.job_id, a.candidate_id, a.resume_key, a.metadata, a.status, a.created_at, a.updated_at,
        j.title AS job_title, j.status AS job_status,
-       c.name AS company_name
+       c.name AS company_name,
+       u.deleted_at IS NOT NULL AS company_owner_deleted
 FROM applications a
 JOIN jobs j ON j.id = a.job_id
 JOIN companies c ON c.id = j.company_id
+JOIN users u ON u.id = c.owner_id
 WHERE a.id = $1`;
 
 export interface getApplicationByIdArgs {
@@ -193,6 +199,7 @@ export interface getApplicationByIdRow {
     jobTitle: string;
     jobStatus: string;
     companyName: string;
+    companyOwnerDeleted: string | null;
 }
 
 export async function getApplicationById(sql: Sql, args: getApplicationByIdArgs): Promise<getApplicationByIdRow | null> {
@@ -212,7 +219,8 @@ export async function getApplicationById(sql: Sql, args: getApplicationByIdArgs)
         updatedAt: row[7],
         jobTitle: row[8],
         jobStatus: row[9],
-        companyName: row[10]
+        companyName: row[10],
+        companyOwnerDeleted: row[11]
     };
 }
 
@@ -224,7 +232,7 @@ SELECT a.id, a.job_id, a.candidate_id, a.resume_key, a.metadata, a.status, a.cre
 FROM applications a
 JOIN jobs j ON j.id = a.job_id
 JOIN companies c ON c.id = j.company_id
-JOIN users u ON u.id = a.candidate_id
+JOIN users u ON u.id = a.candidate_id AND u.deleted_at IS NULL
 WHERE a.id = $1`;
 
 export interface getApplicationReviewByIdArgs {

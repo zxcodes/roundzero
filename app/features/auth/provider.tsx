@@ -30,6 +30,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         pendingRoleRef.current = undefined;
         pendingRedirectRef.current = undefined;
 
+        if (result.restored) {
+          toast.success("Welcome back! Your account deletion has been cancelled.");
+        }
+
         if (!result.user.role) {
           await router.invalidate();
           return;

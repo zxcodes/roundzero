@@ -222,6 +222,7 @@ SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.interview_q
        c.slug AS company_slug
 FROM jobs j
 JOIN companies c ON c.id = j.company_id
+JOIN users u ON u.id = c.owner_id AND u.deleted_at IS NULL
 WHERE j.id = $1`;
 
 export interface getJobByIdArgs {
@@ -463,6 +464,7 @@ SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.interview_q
        c.slug AS company_slug
 FROM jobs j
 JOIN companies c ON c.id = j.company_id
+JOIN users u ON u.id = c.owner_id AND u.deleted_at IS NULL
 WHERE j.status = 'open'
   AND j.archived_at IS NULL
   AND (j.expires_at IS NULL OR j.expires_at > now())
@@ -617,6 +619,7 @@ SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.interview_q
        c.slug AS company_slug
 FROM jobs j
 JOIN companies c ON c.id = j.company_id
+JOIN users u ON u.id = c.owner_id AND u.deleted_at IS NULL
 WHERE j.company_id = $1
   AND j.status = 'open'
   AND j.archived_at IS NULL
@@ -685,6 +688,7 @@ SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.interview_q
        c.slug AS company_slug
 FROM jobs j
 JOIN companies c ON c.id = j.company_id
+JOIN users u ON u.id = c.owner_id AND u.deleted_at IS NULL
 WHERE j.status = 'open'
   AND j.archived_at IS NULL
   AND (j.expires_at IS NULL OR j.expires_at > now())
@@ -764,6 +768,7 @@ export const countOpenJobsFilteredQuery = `-- name: countOpenJobsFiltered :one
 SELECT count(*)::int AS total
 FROM jobs j
 JOIN companies c ON c.id = j.company_id
+JOIN users u ON u.id = c.owner_id AND u.deleted_at IS NULL
 WHERE j.status = 'open'
   AND j.archived_at IS NULL
   AND (j.expires_at IS NULL OR j.expires_at > now())

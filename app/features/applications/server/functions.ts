@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
-import { getUserById } from "@/features/auth/queries/queries_sql";
 import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
 import { getJobById } from "@/features/jobs/queries/queries_sql";
 import { getDb } from "@/shared/db";
@@ -54,8 +53,7 @@ export const getMyApplications = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const db = getDb();
 
-    const user = await getUserById(db, { id: context.userId });
-    if (!user || user.role !== "candidate") {
+    if (context.user.role !== "candidate") {
       throw new Error("Only candidates can view applications");
     }
 
@@ -71,8 +69,7 @@ export const getMyApplicationDetail = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const db = getDb();
 
-    const user = await getUserById(db, { id: context.userId });
-    if (!user || user.role !== "candidate") {
+    if (context.user.role !== "candidate") {
       throw new Error("Only candidates can view applications");
     }
 
@@ -138,8 +135,7 @@ export const hasApplied = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const db = getDb();
 
-    const user = await getUserById(db, { id: context.userId });
-    if (!user || user.role !== "candidate") {
+    if (context.user.role !== "candidate") {
       return false;
     }
 
@@ -161,18 +157,13 @@ export const getApplicationResumeDownloadUrl = createServerFn({ method: "POST" }
       throw new Error("Resume not found");
     }
 
-    const user = await getUserById(db, { id: context.userId });
-    if (!user) {
-      throw new Error("Not authorized");
-    }
-
-    if (user.role === "candidate" && application.candidateId === context.userId) {
+    if (context.user.role === "candidate" && application.candidateId === context.userId) {
       return {
         url: await createR2ResumeDownloadUrl({ data: { resumeKey: application.resumeKey } }),
       };
     }
 
-    if (user.role === "company") {
+    if (context.user.role === "company") {
       const company = await getCompanyByOwnerId(db, { ownerId: context.userId });
       if (!company) {
         throw new Error("Not authorized");

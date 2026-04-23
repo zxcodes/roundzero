@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { UnsavedChangesBar } from "@/components/unsaved-changes-bar";
+import { DeleteAccountSection } from "@/features/auth/components/delete-account-section";
 import { updateUserName } from "@/features/auth/server/functions";
 import { ResumeUploadField } from "@/features/candidates/components/resume-upload-field";
 import {
@@ -800,6 +801,8 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
             </form.Field>
           </CardContent>
         </Card>
+
+        <DeleteAccountSection />
       </div>
     </div>
   );

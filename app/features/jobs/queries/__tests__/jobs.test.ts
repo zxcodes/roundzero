@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { softDeleteUser } from "@/features/auth/queries/queries_sql";
 import { getTestDb, seedCompany } from "@/shared/__tests__/test-utils";
 import {
   archiveJob,
@@ -290,6 +291,26 @@ describe("getOpenJobs", () => {
     expect(titles).toContain("Future Job");
     expect(titles).toContain("No Expiry Job");
     expect(titles).not.toContain("Expired Job");
+  });
+
+  it("excludes jobs from companies whose owner was soft-deleted", async () => {
+    const { company, owner } = await seedCompany({ name: "Deleted Owner Corp" });
+    await createJob(sql, makeJobArgs(company.id, { title: "Ghost Job", status: "open" }));
+    await softDeleteUser(sql, { id: owner.id });
+
+    const open = await getOpenJobs(sql);
+    expect(open.map((j) => j.title)).not.toContain("Ghost Job");
+  });
+});
+
+describe("getJobById soft-deletion", () => {
+  it("returns null when the company's owner was soft-deleted", async () => {
+    const { company, owner } = await seedCompany();
+    const created = await createJob(sql, makeJobArgs(company.id, { status: "open" }));
+    await softDeleteUser(sql, { id: owner.id });
+
+    const job = await getJobById(sql, { id: created!.id });
+    expect(job).toBeNull();
   });
 });
 

@@ -3,7 +3,6 @@ import {
   countApplicationsByCandidate,
   countApplicationsByCompany,
 } from "@/features/applications/queries/queries_sql";
-import { getUserById } from "@/features/auth/queries/queries_sql";
 import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
 import { countJobsByCompanyAndStatus } from "@/features/jobs/queries/queries_sql";
 import { getDb } from "@/shared/db";
@@ -14,12 +13,11 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const db = getDb();
 
-    const user = await getUserById(db, { id: context.userId });
-    if (!user?.role) {
+    if (!context.user.role) {
       throw new Error("User not found or role not set");
     }
 
-    if (user.role === "company") {
+    if (context.user.role === "company") {
       const company = await getCompanyByOwnerId(db, { ownerId: context.userId });
       if (!company) {
         return { type: "company", openRoles: 0, draftJobs: 0, totalJobs: 0, totalApplicants: 0 };
