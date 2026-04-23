@@ -1,0 +1,45 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "roundzero-edge",
+  "compatibility_date": "2026-04-23",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "src/index.ts",
+  "observability": {
+    "enabled": true
+  },
+  "ai": {
+    "binding": "AI"
+  },
+  "r2_buckets": [
+    {
+      "binding": "RESUMES",
+      "bucket_name": "roundzero-resumes"
+    }
+  ],
+  "workflows": [
+    {
+      "name": "pre-evaluation",
+      "binding": "PRE_EVALUATION",
+      "class_name": "PreEvaluationWorkflow"
+    },
+    {
+      "name": "report-generation",
+      "binding": "REPORT_GENERATION",
+      "class_name": "ReportGenerationWorkflow"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "INTERVIEW_AGENT",
+        "class_name": "InterviewAgent"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["InterviewAgent"]
+    }
+  ]
+}
