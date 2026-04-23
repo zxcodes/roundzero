@@ -233,6 +233,42 @@ Build the lightweight pre-evaluation stage as a durable Cloudflare Workflow.
 
 ---
 
+## Phase 5.5: Pre-Evaluation Testing (Required before Phase 6)
+
+Do not proceed to Phase 6 until every item below is verified in local dev.
+
+### End-to-End Verification
+
+- [ ] Run both dev servers: `bun run dev` (starts app + edge Worker)
+- [ ] Sign up as candidate, upload a resume, apply to a job
+- [ ] Verify main app calls edge Worker `/pre-evaluate` (check network tab / server logs)
+- [ ] Verify workflow instance is created: `wrangler workflows instances list pre-evaluation --local`
+- [ ] Verify workflow steps execute: `wrangler workflows instances describe pre-evaluation <id> --local`
+- [ ] Verify `pre_evaluations` row is written to DB with score, confidence, next_step
+- [ ] Verify `applications.status` updated to `pre_screening`
+- [ ] Verify high/medium fit creates `interviews` row (type = `full` or `quick_eval`)
+- [ ] Verify `applications.status` updated to `interview_invited` for high/medium fit
+- [ ] Verify low fit stays in `pre_screening` with no interview row
+- [ ] Verify quota exhaustion sends `position_filled` notification
+- [ ] Verify resume text extraction works for PDF and DOCX
+- [ ] Check Workers AI neuron usage stays within free tier (10K/day)
+
+### Mock Data Cleanup (blocking)
+
+- [ ] Delete `app/mock/ai-evaluations.ts`
+- [ ] Remove `getMockAiEvaluation` usage from all routes and components
+- [ ] Update `AiReportPanel`, `AiRankedApplicantsList` to accept real data shapes
+- [ ] Verify no compilation errors after mock removal
+
+### Fix Issues
+
+- [ ] File any bugs found during testing as sub-items here
+- [ ] Re-run verification after fixes
+
+**Do not start Phase 6 until this section is 100% complete.**
+
+---
+
 ## Phase 6: Interview System
 
 Build the async chat interview surface and backend.
