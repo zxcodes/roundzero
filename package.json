@@ -14,7 +14,7 @@
     "db:seed:me": "bun ./db/seed/seed-me.ts",
     "db:migrate": "dbmate migrate up --url $DATABASE_URL",
     "check": "biome check . --write && bun typecheck",
-    "typecheck": "tsgo --noEmit",
+    "typecheck": "tsgo --noEmit && cd edge && tsgo --noEmit",
     "knip": "knip",
     "setup": "bun run setup.ts",
     "prepare": "husky"
