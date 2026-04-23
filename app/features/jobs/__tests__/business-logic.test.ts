@@ -27,6 +27,7 @@ const makeJobArgs = (companyId: string, overrides?: Record<string, unknown>) => 
   teamSize: null,
   headcount: null,
   expiresAt: null,
+  reportLimit: 5,
   ...overrides,
 });
 

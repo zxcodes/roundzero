@@ -31,6 +31,7 @@ const makeOpenJob = async (companyId: string, title = "Open Job") => {
     teamSize: null,
     headcount: null,
     expiresAt: null,
+    reportLimit: 5,
   });
   return job!;
 };
@@ -98,7 +99,7 @@ describe("apply to job — guard logic", () => {
 // ─── Status transition logic ────────────────────────────────────
 
 describe("application status transitions", () => {
-  it("applied → interviewing (valid)", async () => {
+  it("applied → pre_screening (valid)", async () => {
     const { company } = await seedCompany();
     const candidate = await seedUser({ role: "candidate" });
     const job = await makeOpenJob(company.id);
@@ -110,21 +111,21 @@ describe("application status transitions", () => {
       status: "applied",
     });
 
-    expect(isValidTransition("applied", "interviewing")).toBe(true);
+    expect(isValidTransition("applied", "pre_screening")).toBe(true);
 
     const updated = await updateApplicationStatus(sql, {
       id: app!.id,
-      status: "interviewing",
+      status: "pre_screening",
     });
     expect(updated).not.toBeNull();
-    expect(updated!.status).toBe("interviewing");
+    expect(updated!.status).toBe("pre_screening");
   });
 
   it("applied → evaluated (invalid — skips step)", async () => {
     expect(isValidTransition("applied", "evaluated")).toBe(false);
   });
 
-  it("interviewing → evaluated (valid)", async () => {
+  it("pre_screening → interview_invited (valid)", async () => {
     const { company } = await seedCompany();
     const candidate = await seedUser({ role: "candidate" });
     const job = await makeOpenJob(company.id);
@@ -135,16 +136,16 @@ describe("application status transitions", () => {
       metadata: {},
       status: "applied",
     });
-    await updateApplicationStatus(sql, { id: app!.id, status: "interviewing" });
+    await updateApplicationStatus(sql, { id: app!.id, status: "pre_screening" });
 
-    expect(isValidTransition("interviewing", "evaluated")).toBe(true);
+    expect(isValidTransition("pre_screening", "interview_invited")).toBe(true);
 
     const updated = await updateApplicationStatus(sql, {
       id: app!.id,
-      status: "evaluated",
+      status: "interview_invited",
     });
     expect(updated).not.toBeNull();
-    expect(updated!.status).toBe("evaluated");
+    expect(updated!.status).toBe("interview_invited");
   });
 
   it("rejected is terminal — DB still allows update but business logic blocks it", async () => {
@@ -162,12 +163,12 @@ describe("application status transitions", () => {
 
     // Business logic prevents any transition from rejected
     expect(isValidTransition("rejected", "applied")).toBe(false);
-    expect(isValidTransition("rejected", "interviewing")).toBe(false);
+    expect(isValidTransition("rejected", "interview_invited")).toBe(false);
     expect(isValidTransition("rejected", "evaluated")).toBe(false);
     expect(isValidTransition("rejected", "rejected")).toBe(false);
   });
 
-  it("full lifecycle: applied → interviewing → evaluated → rejected", async () => {
+  it("full lifecycle: applied → pre_screening → interview_invited → interview_in_progress → evaluated → rejected", async () => {
     const { company } = await seedCompany();
     const candidate = await seedUser({ role: "candidate" });
     const job = await makeOpenJob(company.id);
@@ -179,14 +180,23 @@ describe("application status transitions", () => {
       status: "applied",
     });
 
-    const step1 = await updateApplicationStatus(sql, { id: app!.id, status: "interviewing" });
-    expect(step1!.status).toBe("interviewing");
+    const step1 = await updateApplicationStatus(sql, { id: app!.id, status: "pre_screening" });
+    expect(step1!.status).toBe("pre_screening");
 
-    const step2 = await updateApplicationStatus(sql, { id: app!.id, status: "evaluated" });
-    expect(step2!.status).toBe("evaluated");
+    const step2 = await updateApplicationStatus(sql, { id: app!.id, status: "interview_invited" });
+    expect(step2!.status).toBe("interview_invited");
 
-    const step3 = await updateApplicationStatus(sql, { id: app!.id, status: "rejected" });
-    expect(step3!.status).toBe("rejected");
+    const step3 = await updateApplicationStatus(sql, {
+      id: app!.id,
+      status: "interview_in_progress",
+    });
+    expect(step3!.status).toBe("interview_in_progress");
+
+    const step4 = await updateApplicationStatus(sql, { id: app!.id, status: "evaluated" });
+    expect(step4!.status).toBe("evaluated");
+
+    const step5 = await updateApplicationStatus(sql, { id: app!.id, status: "rejected" });
+    expect(step5!.status).toBe("rejected");
   });
 });
 
@@ -299,7 +309,7 @@ describe("application withdrawal", () => {
     expect(updated!.status).toBe("withdrawn");
   });
 
-  it("interviewing → withdrawn (valid)", async () => {
+  it("interview_invited → withdrawn (valid)", async () => {
     const { company } = await seedCompany();
     const candidate = await seedUser({ role: "candidate" });
     const job = await makeOpenJob(company.id);
@@ -310,9 +320,9 @@ describe("application withdrawal", () => {
       metadata: {},
       status: "applied",
     });
-    await updateApplicationStatus(sql, { id: app!.id, status: "interviewing" });
+    await updateApplicationStatus(sql, { id: app!.id, status: "interview_invited" });
 
-    expect(isValidTransition("interviewing", "withdrawn")).toBe(true);
+    expect(isValidTransition("interview_invited", "withdrawn")).toBe(true);
 
     const updated = await updateApplicationStatus(sql, {
       id: app!.id,
@@ -328,7 +338,7 @@ describe("application withdrawal", () => {
 
   it("withdrawn is terminal", () => {
     expect(isValidTransition("withdrawn", "applied")).toBe(false);
-    expect(isValidTransition("withdrawn", "interviewing")).toBe(false);
+    expect(isValidTransition("withdrawn", "interview_invited")).toBe(false);
   });
 });
 

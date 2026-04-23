@@ -68,12 +68,23 @@ export const Route = createFileRoute("/_authenticated/dashboard/applicants/$appl
   component: ApplicantReviewPage,
 });
 
-const APPLICATION_STAGES = ["applied", "interviewing", "evaluated", "rejected"] as const;
+const APPLICATION_STAGES = [
+  "applied",
+  "pre_screening",
+  "interview_invited",
+  "interview_in_progress",
+  "evaluated",
+  "shortlisted",
+  "rejected",
+] as const;
 
 const STATUS_OPTIONS: { value: ApplicationStatus; label: string }[] = [
   { value: "applied", label: "Applied" },
-  { value: "interviewing", label: "Interviewing" },
+  { value: "pre_screening", label: "Pre-screening" },
+  { value: "interview_invited", label: "Interview invited" },
+  { value: "interview_in_progress", label: "Interview in progress" },
   { value: "evaluated", label: "Evaluated" },
+  { value: "shortlisted", label: "Shortlisted" },
   { value: "rejected", label: "Rejected" },
 ];
 
@@ -83,8 +94,18 @@ const stageCopy = {
     tone: "bg-sky-500/10 text-sky-700 dark:text-sky-300",
     dot: "bg-sky-500",
   },
-  interviewing: {
-    badge: "Interviewing",
+  pre_screening: {
+    badge: "Pre-screening",
+    tone: "bg-slate-500/10 text-slate-700 dark:text-slate-300",
+    dot: "bg-slate-500",
+  },
+  interview_invited: {
+    badge: "Interview invited",
+    tone: "bg-violet-500/10 text-violet-700 dark:text-violet-300",
+    dot: "bg-violet-500",
+  },
+  interview_in_progress: {
+    badge: "Interview in progress",
     tone: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
     dot: "bg-amber-500",
   },
@@ -92,6 +113,11 @@ const stageCopy = {
     badge: "Evaluated",
     tone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
     dot: "bg-emerald-500",
+  },
+  shortlisted: {
+    badge: "Shortlisted",
+    tone: "bg-teal-500/10 text-teal-700 dark:text-teal-300",
+    dot: "bg-teal-500",
   },
   rejected: {
     badge: "Rejected",

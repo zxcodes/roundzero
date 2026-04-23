@@ -1,5 +1,6 @@
 ## TODO
 
+- mouse back gesture doesn't work. might be something to do with the tanstack router.
 - show number of applicants on each job detail.
 - check react query integration, queries don't seem to refetch on tab focus, etc.
 - use tanstack ai libraries for everything ai.

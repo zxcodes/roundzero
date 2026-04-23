@@ -96,7 +96,7 @@ export async function deliverNotificationEmail(
   const appUrl = serverEnv.APP_URL;
   let pathname = String(presentation.to);
   for (const [key, value] of Object.entries(presentation.params)) {
-    pathname = pathname.replace(`$${key}`, value);
+    pathname = pathname.replace(`$${key}`, String(value));
   }
   const link = appUrl ? new URL(pathname, appUrl).toString() : null;
 

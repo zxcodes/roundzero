@@ -74,7 +74,8 @@ WHERE j.company_id = $1
 SELECT
   count(*)::int AS total_count,
   count(*) FILTER (WHERE a.status NOT IN ('rejected', 'withdrawn'))::int AS active_count,
-  count(*) FILTER (WHERE a.status = 'interviewing')::int AS interviewing_count,
+  count(*) FILTER (WHERE a.status = 'interview_invited')::int AS interview_invited_count,
+  count(*) FILTER (WHERE a.status = 'interview_in_progress')::int AS interview_in_progress_count,
   count(*) FILTER (WHERE a.status = 'evaluated')::int AS evaluated_count
 FROM applications a
 JOIN jobs j ON j.id = a.job_id

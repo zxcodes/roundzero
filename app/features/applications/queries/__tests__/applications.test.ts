@@ -36,6 +36,7 @@ const makeOpenJob = async (companyId: string, title = "Open Job") => {
     teamSize: null,
     headcount: null,
     expiresAt: null,
+    reportLimit: 5,
   });
   return job!;
 };
@@ -356,11 +357,11 @@ describe("updateApplicationStatus", () => {
 
     const updated = await updateApplicationStatus(sql, {
       id: created!.id,
-      status: "interviewing",
+      status: "interview_invited",
     });
 
     expect(updated).not.toBeNull();
-    expect(updated!.status).toBe("interviewing");
+    expect(updated!.status).toBe("interview_invited");
     expect(updated!.updatedAt.getTime()).toBeGreaterThanOrEqual(created!.createdAt.getTime());
   });
 
@@ -475,7 +476,7 @@ describe("countApplicationsByCandidate", () => {
     });
 
     // Set statuses
-    await updateApplicationStatus(sql, { id: a1!.id, status: "interviewing" });
+    await updateApplicationStatus(sql, { id: a1!.id, status: "interview_invited" });
     await updateApplicationStatus(sql, { id: a2!.id, status: "rejected" });
 
     // Archive job3
@@ -485,7 +486,7 @@ describe("countApplicationsByCandidate", () => {
     expect(counts).not.toBeNull();
     expect(counts!.totalCount).toBe(2); // archived excluded
     expect(counts!.activeCount).toBe(1); // interviewing (not rejected)
-    expect(counts!.interviewingCount).toBe(1);
+    expect(counts!.interviewInvitedCount).toBe(1);
     expect(counts!.evaluatedCount).toBe(0);
   });
 });
