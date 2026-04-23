@@ -130,16 +130,15 @@ Prepare the database, enums, and server boundaries before the AI funnel goes liv
 
 ### 4.7 Cloudflare Workflows Setup
 
-- [ ] Install `cloudflare:workers` types (already available via wrangler)
-- [ ] Create `app/workflows/pre-evaluation.ts`
+- [x] Create `edge/src/workflows/pre-evaluation.ts`
   - Extends `WorkflowEntrypoint<Env, { applicationId: string }>`
   - Defines durable steps for the pre-evaluation pipeline
-- [ ] Create `app/workflows/report-generation.ts`
+- [x] Create `edge/src/workflows/report-generation.ts`
   - Extends `WorkflowEntrypoint<Env, { interviewId: string }>`
   - Defines durable steps for the evaluation pipeline
-- [ ] Add `workflows` array to `wrangler.jsonc` with both workflow bindings
-- [ ] Export workflow classes alongside the default TanStack Start handler in the Worker entry
-- [ ] Trigger workflows from server functions via `env.PRE_EVALUATION.create()` and `env.REPORT_GENERATION.create()`
+- [x] Add `workflows` array to `edge/wrangler.jsonc` with both workflow bindings
+- [x] Export workflow classes from `edge/src/index.ts`
+- [x] Main app triggers workflows via authenticated HTTP `fetch()` to edge Worker
 
 ### 4.6 Remove Mock-Only AI Data
 
@@ -163,7 +162,7 @@ Build the lightweight pre-evaluation stage as a durable Cloudflare Workflow.
 
 ### 5.1 Workflow Definition
 
-- [ ] Create `app/workflows/pre-evaluation.ts`
+- [x] Create `edge/src/workflows/pre-evaluation.ts`
   - Extends `WorkflowEntrypoint<Env, { applicationId: string }>`
   - Steps execute sequentially with automatic retry on failure
   - Each step's result is persisted; interrupted workflows resume from the last completed step
@@ -180,9 +179,8 @@ Build the lightweight pre-evaluation stage as a durable Cloudflare Workflow.
 
 3. **`extract_resume_text`**
    - Route to parser based on file type:
-     - `application/pdf` → PDF parser (local library)
-     - `application/msword` (DOC) → DOC parser (local library or external service)
-     - `application/vnd.openxmlformats-officedocument.wordprocessingml.document` (DOCX) → DOCX parser (local library)
+     - `application/pdf` → `unpdf` (local library)
+     - `application/vnd.openxmlformats-officedocument.wordprocessingml.document` (DOCX) → `mammoth` (local library)
    - Return unstructured text string
 
 4. **`merge_context`**
@@ -207,10 +205,10 @@ Build the lightweight pre-evaluation stage as a durable Cloudflare Workflow.
 
 ### 5.2 Triggering the Workflow
 
-- [ ] Update `applyToJobWorkflow`:
+- [x] Update `applyToJobWorkflow`:
   - After creating application, set status = `applied`
   - Immediately advance to `pre_screening`
-  - Trigger workflow via `env.PRE_EVALUATION.create({ params: { applicationId } })` — returns instantly
+  - Trigger workflow via authenticated HTTP `fetch()` to edge Worker `/pre-evaluate`
 - [ ] Candidate receives normal "Application Submitted" confirmation
 - [ ] No company notification is sent at this stage
 - [ ] Server function returns `{ workflowInstanceId }` for debugging/tracking
@@ -251,15 +249,13 @@ Build the async chat interview surface and backend.
 
 ### 6.2 Interview Agent Boundary
 
-- [ ] Create `app/agents/interview-agent.ts`
-  - Extends `AIChatAgent` from `@cloudflare/ai-chat` (Durable Object-based)
+- [ ] Create `edge/src/agents/interview-agent.ts`
+  - Durable Object class for interview sessions
   - System prompt construction from job requirements + resume snapshot
-  - Agent tools: `updateStage`, `flagInconsistency`, `completeInterview`
   - For `quick_eval`: system prompt instructs 2–3 clarifying questions only
   - For `full`: full interview script
-- [ ] Add agent class to `wrangler.jsonc` with Durable Object binding + `new_sqlite_classes` migration
+- [ ] Add agent class to `edge/wrangler.jsonc` with Durable Object binding + `new_sqlite_classes` migration
 - [ ] Keep agent prompt/tool logic behind an explicit boundary so it can be tested independently of routes
-- [ ] Use `routeAgentRequest` from `agents` package to route WebSocket requests to the correct Durable Object instance
 
 ### 6.3 Interview Chat UI
 
@@ -296,9 +292,9 @@ Build the report generation pipeline and company-facing report UI with real data
 
 ### 7.1 Report Generation Workflow
 
-- [ ] Create `app/workflows/report-generation.ts`
+- [x] Create `edge/src/workflows/report-generation.ts`
   - Extends `WorkflowEntrypoint<Env, { interviewId: string }>`
-  - Triggered when interview completes (Durable Object calls `env.REPORT_GENERATION.create()`)
+  - Triggered when interview completes
 
 **Workflow Steps:**
 
