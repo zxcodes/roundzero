@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "bun run --parallel dev:app dev:edge",
     "dev:app": "vite dev",
-    "dev:edge": "cd edge && wrangler dev",
+    "dev:edge": "cd edge && wrangler dev --local",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
@@ -15,6 +15,7 @@
     "db:migrate": "dbmate migrate up --url $DATABASE_URL",
     "check": "biome check . --write && bun typecheck",
     "typecheck": "tsgo --noEmit && cd edge && tsgo --noEmit",
+    "typegen": "cd edge && wrangler types",
     "knip": "knip",
     "setup": "bun run setup.ts",
     "prepare": "husky"
