@@ -27,10 +27,11 @@ export const Route = createFileRoute("/_authenticated/dashboard/settings")({
 function SettingsPage() {
   const data = Route.useLoaderData();
   const { user } = Route.useRouteContext();
+  if (!user) return null;
 
   if (data.type === "company") {
     return <CompanySettings company={data.company} />;
   }
 
-  return <CandidateSettings profile={data.profile} user={user!} />;
+  return <CandidateSettings profile={data.profile} user={user} />;
 }
