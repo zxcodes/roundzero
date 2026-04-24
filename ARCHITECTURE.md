@@ -653,7 +653,19 @@ See `PLAN.md` for the full build plan. Current focus:
 
 ---
 
-## 16. Key Decisions
+## 16. Post-Release Hardening (Edge / AI Layer)
+
+| Item | Why | Approach |
+| --- | --- | --- |
+| Recovery sweep for stuck applications | Fire-and-forget trigger has no retry — if edge is down, applications stay in `applied` with no pre-evaluation forever | Add a cron (CF Cron Trigger or main app scheduled task) that finds `applied` rows with no `pre_evaluations` row and re-triggers them |
+| Quota race condition | Two concurrent workflows for the same job can both pass the quota check and exceed `report_limit` | Use `SELECT ... FOR UPDATE` or atomic `INSERT ... WHERE (SELECT count...) < limit` in `decide_next_step` |
+| LLM model adequacy | Llama 3.1 8B may be too weak for nuanced resume scoring (career trajectory, transferable skills) | Evaluate during Phase 5.5 testing; upgrade to `llama-3.3-70b-instruct-fp8-fast` if scores feel random |
+| Workflow failure orphans | If workflow errors after `write_pre_evaluation` but before `decide_next_step`, application is stuck in `pre_screening` | Recovery sweep covers this too — detect `pre_screening` rows older than N minutes with no interview |
+| Edge Worker secret rotation | Shared secret is a single static value | Use a proper random secret in prod; consider HMAC request signing or CF Access Service Tokens for zero-trust |
+
+---
+
+## 17. Key Decisions
 
 | Decision | Choice | Rationale |
 | --- | --- | --- |

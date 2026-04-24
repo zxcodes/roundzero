@@ -99,8 +99,10 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
       return { application, job };
     });
 
-    // Step 2: Fetch resume from R2
-    const resumeBytes = await step.do("fetch_resume", async () => {
+    // Step 2: Fetch resume from R2 and extract text
+    // Combined into one step because Uint8Array is not JSON-serializable
+    // across workflow step boundaries (step results are persisted as JSON).
+    const resumeText = await step.do("fetch_and_extract_resume", async () => {
       const resumeKey = applicationData.application.resumeKey;
       if (!resumeKey) {
         throw new Error(`Application has no resume: ${applicationId}`);
@@ -110,21 +112,13 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
         throw new Error(`Resume not found in R2: ${resumeKey}`);
       }
       const arrayBuffer = await object.arrayBuffer();
-      return new Uint8Array(arrayBuffer);
-    });
-
-    // Step 3: Extract text from resume based on file type
-    const resumeText = await step.do("extract_resume_text", async () => {
-      const resumeKey = applicationData.application.resumeKey;
-      if (!resumeKey) {
-        throw new Error(`Application has no resume: ${applicationId}`);
-      }
+      const bytes = new Uint8Array(arrayBuffer);
       const contentType = resumeKey.endsWith(".pdf")
         ? "application/pdf"
         : resumeKey.endsWith(".docx")
           ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
           : "application/pdf";
-      return extractResumeText(resumeBytes, contentType);
+      return extractResumeText(bytes, contentType);
     });
 
     // Step 4: Run AI pre-evaluation
@@ -143,20 +137,18 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
         messages: [{ role: "user", content: prompt }],
         response_format: {
           type: "json_schema",
-          json_schema: {
-            name: "pre_evaluation",
-            schema: preEvaluationSchema,
-          },
+          json_schema: preEvaluationSchema,
         },
       });
 
-      // With response_format, the model returns the parsed object directly
-      const result = response as {
+      // Workers AI returns { response: <parsed object> } with json_schema format
+      const parsed = (response as { response: unknown }).response as {
         score: number;
         missingRequirements: string[];
         confidence: string;
         nextStep: string;
       };
+      const result = parsed;
 
       return {
         score: Math.max(0, Math.min(100, Math.round(result.score))),

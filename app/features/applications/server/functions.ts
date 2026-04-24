@@ -51,14 +51,18 @@ export const applyToJob = createServerFn({ method: "POST" })
       },
       {
         triggerPreEvaluation: async (applicationId: string) => {
-          await fetch(`${serverEnv.EDGE_WORKER_URL}/pre-evaluate`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${serverEnv.EDGE_WORKER_SECRET}`,
-            },
-            body: JSON.stringify({ applicationId }),
-          });
+          try {
+            await fetch(`${serverEnv.EDGE_WORKER_URL}/pre-evaluate`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${serverEnv.EDGE_WORKER_SECRET}`,
+              },
+              body: JSON.stringify({ applicationId }),
+            });
+          } catch {
+            console.error(`Failed to trigger pre-evaluation for ${applicationId}`);
+          }
         },
       },
     );
