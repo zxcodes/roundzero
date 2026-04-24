@@ -1,5 +1,7 @@
 ## TODO
 
+- pre-evaluation: make system prompt more detail. instead of just looking at resume text, also consider what the candidate has done in terms of dx, tech debt, that should add up to the score.
+- pre-evaluation: detect ai filled slop resumes, compare two snapshots (profile and resume, find out differences), every little thing should add up to the score. and maybe save entire pre-eval timeline? to show the company's full report? or what we have is already enough? think.
 - mouse back gesture doesn't work. might be something to do with the tanstack router.
 - show number of applicants on each job detail.
 - use tanstack ai libraries for everything ai.
