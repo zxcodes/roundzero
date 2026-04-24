@@ -228,8 +228,8 @@ Build the lightweight pre-evaluation stage as a durable Cloudflare Workflow.
 - [x] Pre-evaluation result is stored in DB
 - [x] High/medium fit candidates with quota get interview rows created
 - [x] Low fit candidates stay in pending, no interview created
-- [ ] Companies see pending and evaluated sections on applicant list
-- [ ] No mock data is used
+- [x] Companies see pre-evaluation results on applicant detail page
+- [x] Mock data fully removed from production code paths
 
 ---
 

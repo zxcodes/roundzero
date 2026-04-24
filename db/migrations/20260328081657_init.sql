@@ -163,6 +163,8 @@ CREATE TABLE pre_evaluations (
   missing_requirements  JSONB NOT NULL DEFAULT '[]',
   confidence            TEXT NOT NULL,
   next_step             TEXT NOT NULL,
+  consistency_score     INTEGER CHECK (consistency_score >= 0 AND consistency_score <= 100),
+  raw_response          JSONB,
   created_at            TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

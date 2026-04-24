@@ -1,4 +1,4 @@
-import { Alert02Icon, CheckmarkCircle02Icon } from "@hugeicons/core-free-icons";
+import { Alert02Icon, CheckmarkCircle02Icon, ShieldAlert } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,6 +8,7 @@ type PreEvaluation = {
   confidence: string;
   missingRequirements: string[];
   nextStep: string;
+  consistencyScore: number | null;
 };
 
 const confidenceLabel: Record<string, string> = {
@@ -28,6 +29,38 @@ const nextStepLabel: Record<string, { label: string; tone: string }> = {
   hold: { label: "On hold", tone: "bg-amber-500/10 text-amber-700 dark:text-amber-300" },
 };
 
+function ConsistencyBadge({ score }: { score: number | null }) {
+  if (score === null) return null;
+  if (score >= 80) {
+    return (
+      <Badge variant="outline" className="gap-1 text-[11px]">
+        <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-3" />
+        Consistent ({score}/100)
+      </Badge>
+    );
+  }
+  if (score >= 50) {
+    return (
+      <Badge
+        variant="outline"
+        className="gap-1 border-amber-500/20 bg-amber-500/10 text-amber-700 text-[11px] dark:text-amber-300"
+      >
+        <HugeiconsIcon icon={ShieldAlert} strokeWidth={2} className="size-3" />
+        Some gaps ({score}/100)
+      </Badge>
+    );
+  }
+  return (
+    <Badge
+      variant="outline"
+      className="gap-1 border-rose-500/20 bg-rose-500/10 text-rose-700 text-[11px] dark:text-rose-300"
+    >
+      <HugeiconsIcon icon={Alert02Icon} strokeWidth={2} className="size-3" />
+      Low consistency ({score}/100)
+    </Badge>
+  );
+}
+
 export function PreEvaluationCard({ evaluation }: { evaluation: PreEvaluation }) {
   const nextStep = nextStepLabel[evaluation.nextStep] ?? nextStepLabel.hold;
 
@@ -43,7 +76,7 @@ export function PreEvaluationCard({ evaluation }: { evaluation: PreEvaluation })
               Profile score: {evaluation.score}/100
             </h3>
             <p className="text-sm leading-6 text-muted-foreground">
-              Zero analyzed your resume against the job requirements.
+              Zero analyzed the resume against the job requirements.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -51,6 +84,7 @@ export function PreEvaluationCard({ evaluation }: { evaluation: PreEvaluation })
             <Badge variant="outline">
               {confidenceLabel[evaluation.confidence] ?? evaluation.confidence}
             </Badge>
+            <ConsistencyBadge score={evaluation.consistencyScore} />
           </div>
         </div>
 
