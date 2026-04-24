@@ -121,9 +121,3 @@
   - Can create profile (logo, details, tech stack, head count, etc).
   - Can post a job (draft, open, archived etc)
   - Can add questions while posting a job.
-
-
-
-
-
-
