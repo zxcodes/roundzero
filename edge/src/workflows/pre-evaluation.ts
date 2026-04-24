@@ -1,6 +1,14 @@
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers";
 import mammoth from "mammoth";
 import { extractText, getDocumentProxy } from "unpdf";
+import { CLASSIFY_JOB_SYSTEM_PROMPT, JOB_TYPE_SCHEMA } from "../prompts/classify-job";
+import { CREATIVE_EVAL_SYSTEM_PROMPT } from "../prompts/evaluate/creative";
+import { CUSTOMER_FACING_EVAL_SYSTEM_PROMPT } from "../prompts/evaluate/customer-facing";
+import { GENERAL_EVAL_SYSTEM_PROMPT } from "../prompts/evaluate/general";
+import { LEADERSHIP_EVAL_SYSTEM_PROMPT } from "../prompts/evaluate/leadership";
+import { OPERATIONS_EVAL_SYSTEM_PROMPT } from "../prompts/evaluate/operations";
+import { TECHNICAL_EVAL_SYSTEM_PROMPT } from "../prompts/evaluate/technical";
+import { SLOP_DETECTION_SYSTEM_PROMPT } from "../prompts/slop-detection";
 import { getApplicationById, updateApplicationStatus } from "../queries/applications/queries_sql";
 import { getUserById } from "../queries/auth/queries_sql";
 import { countInterviewSlotsUsedByJob, createInterview } from "../queries/interviews/queries_sql";
@@ -11,14 +19,64 @@ import { getDb } from "../shared/db";
 import { createWorkflowLogger } from "../shared/logger";
 import { notificationPayloadSchemas } from "../shared/notifications-config";
 
+// Model: the only 8B model empirically verified to support json_schema in this environment.
+// The "fast" and "fp8" variants are on the docs list but throw "5025: This model doesn't support JSON Schema" at runtime.
+// Stick with this until Cloudflare fixes the discrepancy.
+const MODEL = "@cf/meta/llama-3.1-8b-instruct"; // ~8K ctx, verified working
+
 function getResponsePayload(response: unknown): { response: unknown } {
   if (typeof response !== "object" || response === null) {
-    throw new Error("AI response is not an object");
+    throw new Error(`AI response is not an object: ${typeof response}`);
   }
-  if (!("response" in response)) {
-    throw new Error("AI response missing 'response' field");
+  if ("response" in response) {
+    return response as { response: unknown };
   }
-  return response as { response: unknown };
+  return { response };
+}
+
+function parseJsonPayload(payload: unknown): Record<string, unknown> {
+  if (typeof payload === "object" && payload !== null) {
+    return payload as Record<string, unknown>;
+  }
+  if (typeof payload === "string") {
+    const trimmed = payload.trim();
+
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (typeof parsed === "object" && parsed !== null) {
+        return parsed as Record<string, unknown>;
+      }
+    } catch {
+      // continue with extraction fallbacks
+    }
+
+    const fenceMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+    if (fenceMatch?.[1]) {
+      try {
+        const parsed = JSON.parse(fenceMatch[1]);
+        if (typeof parsed === "object" && parsed !== null) {
+          return parsed as Record<string, unknown>;
+        }
+      } catch {
+        // continue with extraction fallbacks
+      }
+    }
+
+    const firstBrace = trimmed.indexOf("{");
+    const lastBrace = trimmed.lastIndexOf("}");
+    if (firstBrace !== -1 && lastBrace > firstBrace) {
+      const candidate = trimmed.slice(firstBrace, lastBrace + 1);
+      try {
+        const parsed = JSON.parse(candidate);
+        if (typeof parsed === "object" && parsed !== null) {
+          return parsed as Record<string, unknown>;
+        }
+      } catch {
+        // fall through to throw
+      }
+    }
+  }
+  throw new Error(`AI response payload is not a JSON object: ${typeof payload}`);
 }
 
 type PreEvaluationPayload = {
@@ -68,48 +126,22 @@ async function extractResumeText(bytes: Uint8Array, contentType: string): Promis
   throw new Error(`Unsupported resume format: ${contentType}`);
 }
 
-const SYSTEM_PROMPT = `You are Zero, a pre-screening evaluator for a hiring platform. Your job is to decide whether a candidate deserves a deeper AI interview based on their resume and profile.
-
-You are NOT making a hiring decision. You are answering one question: "Is this candidate worth interviewing for this role?"
-
-## Scoring Rubric (0-100)
-
-Evaluate across these dimensions and average them:
-
-1. **Skills Match (0-30)**: How many required skills does the resume explicitly demonstrate? Count only skills clearly shown through experience or projects, not just listed.
-2. **Experience Relevance (0-30)**: Does the candidate's work history align with the role's domain, seniority, and responsibilities? Years alone don't count -- relevance matters.
-3. **Seniority Fit (0-20)**: Does the candidate's career level match what the job expects? A junior applying for a principal role scores low here, even with matching skills.
-4. **Ownership & Impact (0-10)**: Does the resume show ownership signals like "I led", "I designed", "I owned" with concrete outcomes? Generic team contributions score lower.
-5. **Tech Debt & Tradeoffs (0-10)**: Does the candidate demonstrate awareness of technical tradeoffs, migrations, refactoring, or system evolution? Look for phrases about rewriting, deprecating, scaling challenges, or architectural decisions.
-
-## Confidence
-
-- **high**: Resume clearly addresses the role's core requirements -- you can make a confident judgment.
-- **medium**: Resume is ambiguous -- some signals match but key areas are unclear or missing context.
-- **low**: Resume is too vague, too short, too generic (AI-generated slop), or too unrelated to assess meaningfully.
-
-## Decision Rules
-
-- score >= 70 AND confidence is high -> nextStep: "interview_invited"
-- score 50-69 OR confidence is medium -> nextStep: "ask_followups"
-- score < 50 OR confidence is low -> nextStep: "hold"
-
-## Rules
-
-- Only credit skills and experience the resume explicitly demonstrates. Do not infer or assume.
-- If the resume is very short, generic, or full of buzzwords without specifics, set confidence to "low" and nextStep to "hold".
-- missingRequirements must list specific job requirements the resume does not clearly cover. Be concrete (e.g., "No AWS experience mentioned") not vague (e.g., "Lacks cloud skills").
-- Penalize resumes that read like AI-generated slop: generic phrasing, no specific numbers or outcomes, buzzword-heavy without substance.`;
-
-const SLOP_DETECTION_PROMPT = `You are a resume authenticity checker. Compare the candidate's profile metadata with their resume text to detect inconsistencies, exaggerations, or signs of AI-generated/fabricated content.
-
-Look for:
-1. Skills in profile but never mentioned in resume
-2. Job titles in profile that don't match resume
-3. Resume uses generic AI phrasing ("passionate about leveraging cutting-edge solutions")
-4. Claims in resume that profile contradicts
-5. Resume is suspiciously polished while profile is sparse
-6. Specific metrics in resume that seem fabricated (round numbers, unrealistic scale)`;
+function getPromptForRoleType(roleType: string): string {
+  switch (roleType) {
+    case "technical":
+      return TECHNICAL_EVAL_SYSTEM_PROMPT;
+    case "customer_facing":
+      return CUSTOMER_FACING_EVAL_SYSTEM_PROMPT;
+    case "creative":
+      return CREATIVE_EVAL_SYSTEM_PROMPT;
+    case "operations":
+      return OPERATIONS_EVAL_SYSTEM_PROMPT;
+    case "leadership":
+      return LEADERSHIP_EVAL_SYSTEM_PROMPT;
+    default:
+      return GENERAL_EVAL_SYSTEM_PROMPT;
+  }
+}
 
 function buildPreEvaluationPrompt(
   job: {
@@ -242,7 +274,40 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
       return text;
     });
 
-    // Step 3: Slop detection (profile vs resume consistency)
+    // Step 3: Classify job type
+    const jobClassification = await step.do("classify_job_type", async () => {
+      log.step("classify", "Classifying job type for role-specific evaluation");
+      const prompt = `Job Title: ${applicationData.job.title}\n\nJob Description: ${applicationData.job.description}`;
+
+      const startTime = Date.now();
+      const response = await this.env.AI.run(MODEL, {
+        messages: [
+          { role: "system", content: CLASSIFY_JOB_SYSTEM_PROMPT },
+          { role: "user", content: prompt },
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: JOB_TYPE_SCHEMA,
+        },
+      });
+      const latency = Date.now() - startTime;
+
+      const payload = getResponsePayload(response).response;
+      const raw = parseJsonPayload(payload);
+      const result = {
+        roleType: typeof raw.roleType === "string" ? raw.roleType : "general",
+        reasoning: typeof raw.reasoning === "string" ? raw.reasoning : "",
+      };
+
+      log.ai(prompt.length, 0, latency);
+      log.result("classify", {
+        roleType: result.roleType,
+        reasoning: result.reasoning.slice(0, 80),
+      });
+      return result;
+    });
+
+    // Step 4: Slop detection
     const slopCheck = await step.do("detect_slop", async () => {
       log.step("slop", "Running consistency check: profile vs resume");
       const prompt = buildSlopDetectionPrompt(
@@ -251,9 +316,9 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
       );
 
       const startTime = Date.now();
-      const response = await this.env.AI.run("@cf/meta/llama-3.1-8b-instruct", {
+      const response = await this.env.AI.run(MODEL, {
         messages: [
-          { role: "system", content: SLOP_DETECTION_PROMPT },
+          { role: "system", content: SLOP_DETECTION_SYSTEM_PROMPT },
           { role: "user", content: prompt },
         ],
         response_format: {
@@ -264,16 +329,34 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
       const latency = Date.now() - startTime;
 
       const payload = getResponsePayload(response).response;
-      if (typeof payload !== "object" || payload === null) {
-        throw new Error("Slop detection AI response payload is not an object");
+      let raw: Record<string, unknown>;
+      try {
+        raw = parseJsonPayload(payload);
+      } catch {
+        const payloadPreview =
+          typeof payload === "string"
+            ? payload.slice(0, 300)
+            : JSON.stringify(payload).slice(0, 300);
+        log.warn(`Slop detection returned non-JSON payload: ${payloadPreview}`);
+        const fallback = {
+          consistencyScore: 50,
+          redFlags: [],
+          explanation: "Could not parse AI response",
+        };
+        log.ai(prompt.length, 0, latency);
+        log.result("slop", {
+          consistencyScore: fallback.consistencyScore,
+          redFlags: fallback.redFlags.length,
+          explanation: fallback.explanation,
+        });
+        return fallback;
       }
 
-      const raw = payload as Record<string, unknown>;
       const result = {
         consistencyScore:
           typeof raw.consistencyScore === "number"
             ? Math.max(0, Math.min(100, Math.round(raw.consistencyScore)))
-            : 0,
+            : 50,
         redFlags: Array.isArray(raw.redFlags)
           ? raw.redFlags.filter((r: unknown): r is string => typeof r === "string")
           : [],
@@ -289,11 +372,12 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
       return result;
     });
 
-    // Step 4: Run AI pre-evaluation
+    // Step 5: Run AI pre-evaluation
     const aiResult = await step.do(
       "run_ai_pre_evaluation",
       async (): Promise<{ result: PreEvaluationResult; rawResponse: string }> => {
         log.step("ai", "Calling Workers AI for pre-evaluation");
+        const systemPrompt = getPromptForRoleType(jobClassification.roleType);
         const userPrompt = buildPreEvaluationPrompt(
           {
             title: applicationData.job.title,
@@ -305,9 +389,9 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
         );
 
         const startTime = Date.now();
-        const response = await this.env.AI.run("@cf/meta/llama-3.1-8b-instruct", {
+        const response = await this.env.AI.run(MODEL, {
           messages: [
-            { role: "system", content: SYSTEM_PROMPT },
+            { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },
           ],
           response_format: {
@@ -318,11 +402,7 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
         const latency = Date.now() - startTime;
 
         const payload = getResponsePayload(response).response;
-        if (typeof payload !== "object" || payload === null) {
-          throw new Error("Pre-evaluation AI response payload is not an object");
-        }
-
-        const raw = payload as Record<string, unknown>;
+        const raw = parseJsonPayload(payload);
         const score =
           typeof raw.score === "number" ? Math.max(0, Math.min(100, Math.round(raw.score))) : 0;
         const missingRequirements = Array.isArray(raw.missingRequirements)
@@ -351,7 +431,7 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
       },
     );
 
-    // Step 5: Write result to DB
+    // Step 6: Write result to DB
     await step.do("write_pre_evaluation", async () => {
       log.step("write", "Saving pre-evaluation to DB");
       const db = getDb();
@@ -374,7 +454,7 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
       });
     });
 
-    // Step 6: Decision layer
+    // Step 7: Decision layer
     const decision = await step.do("decide_next_step", async () => {
       log.step("decide", "Checking quota and making decision");
       if (aiResult.result.nextStep === "hold") {
