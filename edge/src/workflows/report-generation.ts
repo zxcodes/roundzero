@@ -1,9 +1,5 @@
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers";
 
-interface Env {
-  AI: Ai;
-}
-
 type ReportGenerationPayload = {
   interviewId: string;
 };

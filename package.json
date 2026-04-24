@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "bun run --parallel dev:app dev:edge",
     "dev:app": "vite dev",
-    "dev:edge": "cd edge && wrangler dev --local",
+    "dev:edge": "cd edge && wrangler dev",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
