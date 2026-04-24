@@ -207,7 +207,7 @@ export function NotificationInbox({
                     >
                       <HugeiconsIcon
                         icon={
-                          presentation.type === "new_applicant" ? Rocket01Icon : Notification02Icon
+                          presentation.type === "report_ready" ? Rocket01Icon : Notification02Icon
                         }
                         strokeWidth={2}
                         className="size-4"

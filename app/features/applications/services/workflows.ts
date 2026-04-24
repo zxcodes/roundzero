@@ -29,6 +29,7 @@ export const applyToJobWorkflow = async (
   },
   options?: {
     sendNotificationEmail?: NotificationEmailSender;
+    triggerPreEvaluation?: (applicationId: string) => Promise<void>;
   },
 ) => {
   await db.unsafe(closeExpiredJobsQuery);
@@ -91,29 +92,12 @@ export const applyToJobWorkflow = async (
     throw new Error("Failed to submit application");
   }
 
-  const company = await getCompanyById(db, { id: job.companyId });
-  if (company) {
-    const payload = notificationPayloadSchemas.new_applicant.parse({
-      applicationId: application.id,
-      jobId: job.id,
-      jobTitle: job.title,
-      candidateName: user.name,
-    });
+  // Note: companies no longer receive "new_applicant" notifications.
+  // Pre-evaluation runs asynchronously and companies are notified via
+  // "report_ready" when the AI evaluation completes.
 
-    const notification = await createNotification(db, {
-      userId: company.ownerId,
-      type: "new_applicant",
-      payload,
-    });
-
-    if (notification) {
-      const owner = await getUserById(db, { id: company.ownerId });
-      await deliverNotificationEmail(db, {
-        notification,
-        recipient: owner ? { email: owner.email } : null,
-        sendEmail: options?.sendNotificationEmail ?? sendNotificationEmailViaResend,
-      });
-    }
+  if (options?.triggerPreEvaluation) {
+    await options.triggerPreEvaluation(application.id);
   }
 
   return { application };

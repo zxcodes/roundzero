@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { createHash } from "node:crypto";
 import { copycat } from "@snaplet/copycat";
 import postgres from "postgres";

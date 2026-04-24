@@ -5,10 +5,9 @@ AI-powered hiring platform that replaces the first round of hiring with structur
 ## Stack
 
 - **Framework:** TanStack Start (React 19 with React Compiler, Vite 7)
-- **Server:** Cloudflare Workers
-- **Database:** Postgres (Neon prod, Docker local) + SQLC
-- **AI Agents:** Cloudflare Agents SDK (Durable Objects)
-- **AI Models:** Vercel AI SDK (OpenAI, Anthropic, Workers AI)
+- **Server:** TanStack Start + Nitro (main app), Cloudflare Workers (AI edge)
+- **AI:** Cloudflare Workflows + Durable Objects + Workers AI (in `edge/`)
+- **Models:** Workers AI (@cf/meta/llama-3.1-8b-instruct)
 - **UI:** shadcn/ui, Tailwind CSS v4, Huge Icons
 - **Linting & Formatting:** Biome
 - **Finding Unused Code & Dependencies:** Knip
@@ -22,11 +21,12 @@ bun install
 # Set up local Postgres (requires Docker)
 bash setup-db.sh setup_pg
 
-# Copy env template
-cp .env.example .env
-# Fill in DATABASE_URL and other values
+# Copy env templates
+cp .env.sample .env
+cp edge/.env.sample edge/.env
+# Fill in DATABASE_URL, EDGE_WORKER_URL, EDGE_WORKER_SECRET, and other values in both files
 
-# Run dev server
+# Run both dev servers (main app + edge Worker)
 bun run dev
 ```
 
@@ -34,7 +34,9 @@ bun run dev
 
 | Command              | Description                            |
 | -------------------- | -------------------------------------- |
-| `bun run dev`        | Start dev server on port 3000          |
+| `bun run dev`        | Start main app (port 3000) + edge Worker (port 8787) |
+| `bun run dev:app`    | Start main app only on port 3000       |
+| `bun run dev:edge`   | Start edge Worker only on port 8787    |
 | `bun run build`      | Production build                       |
 | `bun run check`      | Lint (Biome) + typecheck               |
 | `bun run typecheck`  | TypeScript check only                  |
@@ -46,11 +48,17 @@ bun run dev
 ```
 app/
 ├── routes/          # TanStack file-based routes
-├── features/        # Feature modules (auth, jobs, interviews, reports, etc.)
-├── agents/          # Cloudflare Agents (InterviewAgent, EvaluationAgent)
+├── features/        # Feature modules (auth, jobs, applications, etc.)
 ├── shared/          # Cross-cutting utilities (db, auth, middleware)
 ├── components/      # Global UI components + shadcn/ui
 └── lib/             # Helpers (utils, theme)
+
+edge/
+├── src/
+│   ├── index.ts     # Worker entrypoint (Hono HTTP server)
+│   ├── workflows/   # Cloudflare Workflow classes
+│   ├── agents/      # Durable Object agent classes
+│   └── queries/     # SQLC-generated query files
 ```
 
 ## Documentation

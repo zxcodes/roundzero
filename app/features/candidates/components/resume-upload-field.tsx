@@ -72,7 +72,6 @@ export function ResumeUploadField({
           fileSize: file.size,
           contentType: file.type as
             | "application/pdf"
-            | "application/msword"
             | "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         },
       });
@@ -142,7 +141,7 @@ export function ResumeUploadField({
       <input
         id={inputId}
         type="file"
-        accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         className="sr-only"
         onChange={onFileChange}
       />
@@ -156,7 +155,7 @@ export function ResumeUploadField({
           </div>
           <div>
             <p className="text-sm font-medium">{value ? "Replace resume" : "Choose resume file"}</p>
-            <p className="text-xs text-muted-foreground">PDF, DOC, or DOCX</p>
+            <p className="text-xs text-muted-foreground">PDF or DOCX</p>
           </div>
         </div>
         <span className="rounded-md border bg-background px-2.5 py-1 text-xs font-medium">

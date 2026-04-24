@@ -14,13 +14,16 @@
     "ignoreUnknown": false,
     "includes": [
       "**/app/**/*",
+      "**/edge/src/**/*",
       "**/*.json",
       "**/vite.config.ts",
       "**/vitest.config.ts",
       "!**/app/routeTree.gen.ts",
       "!**/app/**/*_sql.ts",
       "!**/app/components/ui",
-      "!db/seed/**/*.ts"
+      "!db/seed/**/*.ts",
+      "!edge/src/**/*.d.ts",
+      "!edge/src/queries/**/*.ts"
     ]
   },
   "formatter": {
@@ -53,13 +56,14 @@
         "noStaticElementInteractions": "off"
       },
       "style": {
-        "noNonNullAssertion": "off",
+        "noNonNullAssertion": "error",
         "useNodejsImportProtocol": "off",
         "noParameterAssign": "off",
         "noUselessElse": "warn",
         "noDefaultExport": "warn"
       },
       "suspicious": {
+        "noNonNullAssertedOptionalChain": "error",
         "noExplicitAny": "warn",
         "noAssignInExpressions": "off",
         "noUnknownAtRules": "off",
@@ -100,5 +104,28 @@
     "formatter": {
       "quoteStyle": "double"
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["**/*.test.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": { "noNonNullAssertedOptionalChain": "error" },
+          "style": {
+            "noNonNullAssertion": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["edge/src/**/*.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off"
+          }
+        }
+      }
+    }
+  ]
 }

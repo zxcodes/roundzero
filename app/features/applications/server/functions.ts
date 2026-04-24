@@ -5,6 +5,7 @@ import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
 import { getJobById } from "@/features/jobs/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { applicationStatusSchema } from "@/shared/enums";
+import { serverEnv } from "@/shared/env.server";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
 import { createR2ResumeDownloadUrl } from "@/shared/r2.server";
 import {
@@ -42,10 +43,29 @@ export const applyToJob = createServerFn({ method: "POST" })
   .inputValidator(zodValidator(applySchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
-    return await applyToJobWorkflow(db, {
-      userId: context.userId,
-      jobId: data.jobId,
-    });
+    return await applyToJobWorkflow(
+      db,
+      {
+        userId: context.userId,
+        jobId: data.jobId,
+      },
+      {
+        triggerPreEvaluation: async (applicationId: string) => {
+          try {
+            await fetch(`${serverEnv.EDGE_WORKER_URL}/pre-evaluate`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${serverEnv.EDGE_WORKER_SECRET}`,
+              },
+              body: JSON.stringify({ applicationId }),
+            });
+          } catch {
+            console.error(`Failed to trigger pre-evaluation for ${applicationId}`);
+          }
+        },
+      },
+    );
   });
 
 export const getMyApplications = createServerFn({ method: "GET" })
