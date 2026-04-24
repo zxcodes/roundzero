@@ -46,6 +46,7 @@ export interface JobFormData {
   salaryCurrency: string;
   teamSize: number | null;
   headcount: number | null;
+  reportLimit: number;
   expiresAt: Date | null;
 }
 
@@ -73,6 +74,11 @@ const formSchema = z
     salaryCurrency: z.string().min(1),
     teamSize: optionalPositiveInt,
     headcount: optionalPositiveInt,
+    reportLimit: z
+      .string()
+      .refine((val) => Number.isInteger(Number(val)) && Number(val) >= 1 && Number(val) <= 10, {
+        message: "Report limit must be between 1 and 10",
+      }),
     expiresAt: z.string(),
   })
   .refine(
@@ -150,6 +156,7 @@ export function JobForm({
       salaryCurrency: defaultValues?.salaryCurrency ?? "USD",
       teamSize: defaultValues?.teamSize != null ? String(defaultValues.teamSize) : "",
       headcount: defaultValues?.headcount != null ? String(defaultValues.headcount) : "",
+      reportLimit: defaultValues?.reportLimit != null ? String(defaultValues.reportLimit) : "5",
       expiresAt: defaultValues?.expiresAt ? defaultValues.expiresAt.toISOString().slice(0, 10) : "",
     },
 
@@ -176,6 +183,7 @@ export function JobForm({
         salaryCurrency: value.salaryCurrency,
         teamSize: value.teamSize ? Number(value.teamSize) : null,
         headcount: value.headcount ? Number(value.headcount) : null,
+        reportLimit: Number(value.reportLimit),
         expiresAt,
       });
     },
@@ -641,7 +649,7 @@ export function JobForm({
 
       <div className="space-y-4">
         <p className="text-[11px] font-bold uppercase tracking-widest text-primary">Team</p>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-3">
           <form.Field name="teamSize" validators={{ onBlur: optionalPositiveInt }}>
             {(field) => {
               const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
@@ -680,6 +688,42 @@ export function JobForm({
                     aria-invalid={isInvalid}
                   />
                   <p className="text-muted-foreground text-xs">How many hires for this role</p>
+                  {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+                </Field>
+              );
+            }}
+          </form.Field>
+
+          <form.Field
+            name="reportLimit"
+            validators={{
+              onBlur: z
+                .string()
+                .refine(
+                  (val) => Number.isInteger(Number(val)) && Number(val) >= 1 && Number(val) <= 10,
+                  {
+                    message: "Report limit must be between 1 and 10",
+                  },
+                ),
+            }}
+          >
+            {(field) => {
+              const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <Field data-invalid={isInvalid}>
+                  <FieldLabel htmlFor={field.name}>Candidate-agent report limit</FieldLabel>
+                  <Input
+                    id={field.name}
+                    inputMode="numeric"
+                    placeholder="5"
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value.replace(/\D/g, ""))}
+                    aria-invalid={isInvalid}
+                  />
+                  <p className="text-muted-foreground text-xs">
+                    Maximum candidate-agent reports to generate for this job (1-10)
+                  </p>
                   {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
                 </Field>
               );
