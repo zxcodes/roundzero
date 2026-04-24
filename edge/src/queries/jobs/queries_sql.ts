@@ -1,4 +1,4 @@
-import type { Sql } from "postgres";
+import { Sql } from "postgres";
 
 export const createJobQuery = `-- name: createJob :one
 INSERT INTO jobs (
@@ -10,98 +10,78 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $
 RETURNING id, company_id, title, description, requirements, interview_questions, status, location, workplace_type, employment_type, experience_level, salary_min, salary_max, salary_currency, team_size, headcount, report_limit, expires_at, archived_at, created_at, updated_at`;
 
 export interface createJobArgs {
-  companyId: string;
-  title: string;
-  description: string;
-  requirements: any;
-  interviewQuestions: any;
-  status: string;
-  location: string | null;
-  workplaceType: string | null;
-  employmentType: string | null;
-  experienceLevel: string | null;
-  salaryMin: number | null;
-  salaryMax: number | null;
-  salaryCurrency: string;
-  teamSize: number | null;
-  headcount: number | null;
-  reportLimit: number;
-  expiresAt: Date | null;
+    companyId: string;
+    title: string;
+    description: string;
+    requirements: any;
+    interviewQuestions: any;
+    status: string;
+    location: string | null;
+    workplaceType: string | null;
+    employmentType: string | null;
+    experienceLevel: string | null;
+    salaryMin: number | null;
+    salaryMax: number | null;
+    salaryCurrency: string;
+    teamSize: number | null;
+    headcount: number | null;
+    reportLimit: number;
+    expiresAt: Date | null;
 }
 
 export interface createJobRow {
-  id: string;
-  companyId: string;
-  title: string;
-  description: string;
-  requirements: any;
-  interviewQuestions: any;
-  status: string;
-  location: string | null;
-  workplaceType: string | null;
-  employmentType: string | null;
-  experienceLevel: string | null;
-  salaryMin: number | null;
-  salaryMax: number | null;
-  salaryCurrency: string;
-  teamSize: number | null;
-  headcount: number | null;
-  reportLimit: number;
-  expiresAt: Date | null;
-  archivedAt: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
+    id: string;
+    companyId: string;
+    title: string;
+    description: string;
+    requirements: any;
+    interviewQuestions: any;
+    status: string;
+    location: string | null;
+    workplaceType: string | null;
+    employmentType: string | null;
+    experienceLevel: string | null;
+    salaryMin: number | null;
+    salaryMax: number | null;
+    salaryCurrency: string;
+    teamSize: number | null;
+    headcount: number | null;
+    reportLimit: number;
+    expiresAt: Date | null;
+    archivedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 export async function createJob(sql: Sql, args: createJobArgs): Promise<createJobRow | null> {
-  const rows = await sql
-    .unsafe(createJobQuery, [
-      args.companyId,
-      args.title,
-      args.description,
-      args.requirements,
-      args.interviewQuestions,
-      args.status,
-      args.location,
-      args.workplaceType,
-      args.employmentType,
-      args.experienceLevel,
-      args.salaryMin,
-      args.salaryMax,
-      args.salaryCurrency,
-      args.teamSize,
-      args.headcount,
-      args.reportLimit,
-      args.expiresAt,
-    ])
-    .values();
-  if (rows.length !== 1) {
-    return null;
-  }
-  const row = rows[0];
-  return {
-    id: row[0],
-    companyId: row[1],
-    title: row[2],
-    description: row[3],
-    requirements: row[4],
-    interviewQuestions: row[5],
-    status: row[6],
-    location: row[7],
-    workplaceType: row[8],
-    employmentType: row[9],
-    experienceLevel: row[10],
-    salaryMin: row[11],
-    salaryMax: row[12],
-    salaryCurrency: row[13],
-    teamSize: row[14],
-    headcount: row[15],
-    reportLimit: row[16],
-    expiresAt: row[17],
-    archivedAt: row[18],
-    createdAt: row[19],
-    updatedAt: row[20],
-  };
+    const rows = await sql.unsafe(createJobQuery, [args.companyId, args.title, args.description, args.requirements, args.interviewQuestions, args.status, args.location, args.workplaceType, args.employmentType, args.experienceLevel, args.salaryMin, args.salaryMax, args.salaryCurrency, args.teamSize, args.headcount, args.reportLimit, args.expiresAt]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        companyId: row[1],
+        title: row[2],
+        description: row[3],
+        requirements: row[4],
+        interviewQuestions: row[5],
+        status: row[6],
+        location: row[7],
+        workplaceType: row[8],
+        employmentType: row[9],
+        experienceLevel: row[10],
+        salaryMin: row[11],
+        salaryMax: row[12],
+        salaryCurrency: row[13],
+        teamSize: row[14],
+        headcount: row[15],
+        reportLimit: row[16],
+        expiresAt: row[17],
+        archivedAt: row[18],
+        createdAt: row[19],
+        updatedAt: row[20]
+    };
 }
 
 export const getJobsByCompanyIdQuery = `-- name: getJobsByCompanyId :many
@@ -112,60 +92,57 @@ WHERE company_id = $1
 ORDER BY created_at DESC`;
 
 export interface getJobsByCompanyIdArgs {
-  companyId: string;
+    companyId: string;
 }
 
 export interface getJobsByCompanyIdRow {
-  id: string;
-  companyId: string;
-  title: string;
-  description: string;
-  requirements: any;
-  interviewQuestions: any;
-  status: string;
-  location: string | null;
-  workplaceType: string | null;
-  employmentType: string | null;
-  experienceLevel: string | null;
-  salaryMin: number | null;
-  salaryMax: number | null;
-  salaryCurrency: string;
-  teamSize: number | null;
-  headcount: number | null;
-  reportLimit: number;
-  expiresAt: Date | null;
-  archivedAt: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
+    id: string;
+    companyId: string;
+    title: string;
+    description: string;
+    requirements: any;
+    interviewQuestions: any;
+    status: string;
+    location: string | null;
+    workplaceType: string | null;
+    employmentType: string | null;
+    experienceLevel: string | null;
+    salaryMin: number | null;
+    salaryMax: number | null;
+    salaryCurrency: string;
+    teamSize: number | null;
+    headcount: number | null;
+    reportLimit: number;
+    expiresAt: Date | null;
+    archivedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
-export async function getJobsByCompanyId(
-  sql: Sql,
-  args: getJobsByCompanyIdArgs,
-): Promise<getJobsByCompanyIdRow[]> {
-  return (await sql.unsafe(getJobsByCompanyIdQuery, [args.companyId]).values()).map((row) => ({
-    id: row[0],
-    companyId: row[1],
-    title: row[2],
-    description: row[3],
-    requirements: row[4],
-    interviewQuestions: row[5],
-    status: row[6],
-    location: row[7],
-    workplaceType: row[8],
-    employmentType: row[9],
-    experienceLevel: row[10],
-    salaryMin: row[11],
-    salaryMax: row[12],
-    salaryCurrency: row[13],
-    teamSize: row[14],
-    headcount: row[15],
-    reportLimit: row[16],
-    expiresAt: row[17],
-    archivedAt: row[18],
-    createdAt: row[19],
-    updatedAt: row[20],
-  }));
+export async function getJobsByCompanyId(sql: Sql, args: getJobsByCompanyIdArgs): Promise<getJobsByCompanyIdRow[]> {
+    return (await sql.unsafe(getJobsByCompanyIdQuery, [args.companyId]).values()).map(row => ({
+        id: row[0],
+        companyId: row[1],
+        title: row[2],
+        description: row[3],
+        requirements: row[4],
+        interviewQuestions: row[5],
+        status: row[6],
+        location: row[7],
+        workplaceType: row[8],
+        employmentType: row[9],
+        experienceLevel: row[10],
+        salaryMin: row[11],
+        salaryMax: row[12],
+        salaryCurrency: row[13],
+        teamSize: row[14],
+        headcount: row[15],
+        reportLimit: row[16],
+        expiresAt: row[17],
+        archivedAt: row[18],
+        createdAt: row[19],
+        updatedAt: row[20]
+    }));
 }
 
 export const getJobsWithPipelineByCompanyIdQuery = `-- name: getJobsWithPipelineByCompanyId :many
@@ -186,78 +163,73 @@ GROUP BY j.id
 ORDER BY j.created_at DESC`;
 
 export interface getJobsWithPipelineByCompanyIdArgs {
-  companyId: string;
+    companyId: string;
 }
 
 export interface getJobsWithPipelineByCompanyIdRow {
-  id: string;
-  companyId: string;
-  title: string;
-  description: string;
-  requirements: any;
-  interviewQuestions: any;
-  status: string;
-  location: string | null;
-  workplaceType: string | null;
-  employmentType: string | null;
-  experienceLevel: string | null;
-  salaryMin: number | null;
-  salaryMax: number | null;
-  salaryCurrency: string;
-  teamSize: number | null;
-  headcount: number | null;
-  reportLimit: number;
-  expiresAt: Date | null;
-  archivedAt: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-  totalApplicants: number;
-  appliedCount: number;
-  preScreeningCount: number;
-  interviewInvitedCount: number;
-  interviewInProgressCount: number;
-  evaluatedCount: number;
-  shortlistedCount: number;
-  rejectedCount: number;
+    id: string;
+    companyId: string;
+    title: string;
+    description: string;
+    requirements: any;
+    interviewQuestions: any;
+    status: string;
+    location: string | null;
+    workplaceType: string | null;
+    employmentType: string | null;
+    experienceLevel: string | null;
+    salaryMin: number | null;
+    salaryMax: number | null;
+    salaryCurrency: string;
+    teamSize: number | null;
+    headcount: number | null;
+    reportLimit: number;
+    expiresAt: Date | null;
+    archivedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+    totalApplicants: number;
+    appliedCount: number;
+    preScreeningCount: number;
+    interviewInvitedCount: number;
+    interviewInProgressCount: number;
+    evaluatedCount: number;
+    shortlistedCount: number;
+    rejectedCount: number;
 }
 
-export async function getJobsWithPipelineByCompanyId(
-  sql: Sql,
-  args: getJobsWithPipelineByCompanyIdArgs,
-): Promise<getJobsWithPipelineByCompanyIdRow[]> {
-  return (await sql.unsafe(getJobsWithPipelineByCompanyIdQuery, [args.companyId]).values()).map(
-    (row) => ({
-      id: row[0],
-      companyId: row[1],
-      title: row[2],
-      description: row[3],
-      requirements: row[4],
-      interviewQuestions: row[5],
-      status: row[6],
-      location: row[7],
-      workplaceType: row[8],
-      employmentType: row[9],
-      experienceLevel: row[10],
-      salaryMin: row[11],
-      salaryMax: row[12],
-      salaryCurrency: row[13],
-      teamSize: row[14],
-      headcount: row[15],
-      reportLimit: row[16],
-      expiresAt: row[17],
-      archivedAt: row[18],
-      createdAt: row[19],
-      updatedAt: row[20],
-      totalApplicants: row[21],
-      appliedCount: row[22],
-      preScreeningCount: row[23],
-      interviewInvitedCount: row[24],
-      interviewInProgressCount: row[25],
-      evaluatedCount: row[26],
-      shortlistedCount: row[27],
-      rejectedCount: row[28],
-    }),
-  );
+export async function getJobsWithPipelineByCompanyId(sql: Sql, args: getJobsWithPipelineByCompanyIdArgs): Promise<getJobsWithPipelineByCompanyIdRow[]> {
+    return (await sql.unsafe(getJobsWithPipelineByCompanyIdQuery, [args.companyId]).values()).map(row => ({
+        id: row[0],
+        companyId: row[1],
+        title: row[2],
+        description: row[3],
+        requirements: row[4],
+        interviewQuestions: row[5],
+        status: row[6],
+        location: row[7],
+        workplaceType: row[8],
+        employmentType: row[9],
+        experienceLevel: row[10],
+        salaryMin: row[11],
+        salaryMax: row[12],
+        salaryCurrency: row[13],
+        teamSize: row[14],
+        headcount: row[15],
+        reportLimit: row[16],
+        expiresAt: row[17],
+        archivedAt: row[18],
+        createdAt: row[19],
+        updatedAt: row[20],
+        totalApplicants: row[21],
+        appliedCount: row[22],
+        preScreeningCount: row[23],
+        interviewInvitedCount: row[24],
+        interviewInProgressCount: row[25],
+        evaluatedCount: row[26],
+        shortlistedCount: row[27],
+        rejectedCount: row[28]
+    }));
 }
 
 export const getJobByIdQuery = `-- name: getJobById :one
@@ -270,66 +242,66 @@ JOIN users u ON u.id = c.owner_id AND u.deleted_at IS NULL
 WHERE j.id = $1`;
 
 export interface getJobByIdArgs {
-  id: string;
+    id: string;
 }
 
 export interface getJobByIdRow {
-  id: string;
-  companyId: string;
-  title: string;
-  description: string;
-  requirements: any;
-  interviewQuestions: any;
-  status: string;
-  location: string | null;
-  workplaceType: string | null;
-  employmentType: string | null;
-  experienceLevel: string | null;
-  salaryMin: number | null;
-  salaryMax: number | null;
-  salaryCurrency: string;
-  teamSize: number | null;
-  headcount: number | null;
-  reportLimit: number;
-  expiresAt: Date | null;
-  archivedAt: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-  companyName: string;
-  companySlug: string;
+    id: string;
+    companyId: string;
+    title: string;
+    description: string;
+    requirements: any;
+    interviewQuestions: any;
+    status: string;
+    location: string | null;
+    workplaceType: string | null;
+    employmentType: string | null;
+    experienceLevel: string | null;
+    salaryMin: number | null;
+    salaryMax: number | null;
+    salaryCurrency: string;
+    teamSize: number | null;
+    headcount: number | null;
+    reportLimit: number;
+    expiresAt: Date | null;
+    archivedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+    companyName: string;
+    companySlug: string;
 }
 
 export async function getJobById(sql: Sql, args: getJobByIdArgs): Promise<getJobByIdRow | null> {
-  const rows = await sql.unsafe(getJobByIdQuery, [args.id]).values();
-  if (rows.length !== 1) {
-    return null;
-  }
-  const row = rows[0];
-  return {
-    id: row[0],
-    companyId: row[1],
-    title: row[2],
-    description: row[3],
-    requirements: row[4],
-    interviewQuestions: row[5],
-    status: row[6],
-    location: row[7],
-    workplaceType: row[8],
-    employmentType: row[9],
-    experienceLevel: row[10],
-    salaryMin: row[11],
-    salaryMax: row[12],
-    salaryCurrency: row[13],
-    teamSize: row[14],
-    headcount: row[15],
-    reportLimit: row[16],
-    expiresAt: row[17],
-    archivedAt: row[18],
-    createdAt: row[19],
-    updatedAt: row[20],
-    companyName: row[21],
-    companySlug: row[22],
-  };
+    const rows = await sql.unsafe(getJobByIdQuery, [args.id]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        companyId: row[1],
+        title: row[2],
+        description: row[3],
+        requirements: row[4],
+        interviewQuestions: row[5],
+        status: row[6],
+        location: row[7],
+        workplaceType: row[8],
+        employmentType: row[9],
+        experienceLevel: row[10],
+        salaryMin: row[11],
+        salaryMax: row[12],
+        salaryCurrency: row[13],
+        teamSize: row[14],
+        headcount: row[15],
+        reportLimit: row[16],
+        expiresAt: row[17],
+        archivedAt: row[18],
+        createdAt: row[19],
+        updatedAt: row[20],
+        companyName: row[21],
+        companySlug: row[22]
+    };
 }
 
 export const updateJobQuery = `-- name: updateJob :one
@@ -356,100 +328,79 @@ WHERE id = $17
 RETURNING id, company_id, title, description, requirements, interview_questions, status, location, workplace_type, employment_type, experience_level, salary_min, salary_max, salary_currency, team_size, headcount, report_limit, expires_at, archived_at, created_at, updated_at`;
 
 export interface updateJobArgs {
-  title: string;
-  description: string;
-  requirements: any;
-  interviewQuestions: any;
-  status: string;
-  location: string | null;
-  workplaceType: string | null;
-  employmentType: string | null;
-  experienceLevel: string | null;
-  salaryMin: number | null;
-  salaryMax: number | null;
-  salaryCurrency: string;
-  teamSize: number | null;
-  headcount: number | null;
-  reportLimit: number;
-  expiresAt: Date | null;
-  id: string;
-  companyId: string;
+    title: string;
+    description: string;
+    requirements: any;
+    interviewQuestions: any;
+    status: string;
+    location: string | null;
+    workplaceType: string | null;
+    employmentType: string | null;
+    experienceLevel: string | null;
+    salaryMin: number | null;
+    salaryMax: number | null;
+    salaryCurrency: string;
+    teamSize: number | null;
+    headcount: number | null;
+    reportLimit: number;
+    expiresAt: Date | null;
+    id: string;
+    companyId: string;
 }
 
 export interface updateJobRow {
-  id: string;
-  companyId: string;
-  title: string;
-  description: string;
-  requirements: any;
-  interviewQuestions: any;
-  status: string;
-  location: string | null;
-  workplaceType: string | null;
-  employmentType: string | null;
-  experienceLevel: string | null;
-  salaryMin: number | null;
-  salaryMax: number | null;
-  salaryCurrency: string;
-  teamSize: number | null;
-  headcount: number | null;
-  reportLimit: number;
-  expiresAt: Date | null;
-  archivedAt: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
+    id: string;
+    companyId: string;
+    title: string;
+    description: string;
+    requirements: any;
+    interviewQuestions: any;
+    status: string;
+    location: string | null;
+    workplaceType: string | null;
+    employmentType: string | null;
+    experienceLevel: string | null;
+    salaryMin: number | null;
+    salaryMax: number | null;
+    salaryCurrency: string;
+    teamSize: number | null;
+    headcount: number | null;
+    reportLimit: number;
+    expiresAt: Date | null;
+    archivedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 export async function updateJob(sql: Sql, args: updateJobArgs): Promise<updateJobRow | null> {
-  const rows = await sql
-    .unsafe(updateJobQuery, [
-      args.title,
-      args.description,
-      args.requirements,
-      args.interviewQuestions,
-      args.status,
-      args.location,
-      args.workplaceType,
-      args.employmentType,
-      args.experienceLevel,
-      args.salaryMin,
-      args.salaryMax,
-      args.salaryCurrency,
-      args.teamSize,
-      args.headcount,
-      args.reportLimit,
-      args.expiresAt,
-      args.id,
-      args.companyId,
-    ])
-    .values();
-  if (rows.length !== 1) {
-    return null;
-  }
-  const row = rows[0];
-  return {
-    id: row[0],
-    companyId: row[1],
-    title: row[2],
-    description: row[3],
-    requirements: row[4],
-    interviewQuestions: row[5],
-    status: row[6],
-    location: row[7],
-    workplaceType: row[8],
-    employmentType: row[9],
-    experienceLevel: row[10],
-    salaryMin: row[11],
-    salaryMax: row[12],
-    salaryCurrency: row[13],
-    teamSize: row[14],
-    headcount: row[15],
-    reportLimit: row[16],
-    expiresAt: row[17],
-    archivedAt: row[18],
-    createdAt: row[19],
-    updatedAt: row[20],
-  };
+    const rows = await sql.unsafe(updateJobQuery, [args.title, args.description, args.requirements, args.interviewQuestions, args.status, args.location, args.workplaceType, args.employmentType, args.experienceLevel, args.salaryMin, args.salaryMax, args.salaryCurrency, args.teamSize, args.headcount, args.reportLimit, args.expiresAt, args.id, args.companyId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        companyId: row[1],
+        title: row[2],
+        description: row[3],
+        requirements: row[4],
+        interviewQuestions: row[5],
+        status: row[6],
+        location: row[7],
+        workplaceType: row[8],
+        employmentType: row[9],
+        experienceLevel: row[10],
+        salaryMin: row[11],
+        salaryMax: row[12],
+        salaryCurrency: row[13],
+        teamSize: row[14],
+        headcount: row[15],
+        reportLimit: row[16],
+        expiresAt: row[17],
+        archivedAt: row[18],
+        createdAt: row[19],
+        updatedAt: row[20]
+    };
 }
 
 export const closeExpiredJobsQuery = `-- name: closeExpiredJobs :execrows
@@ -472,63 +423,63 @@ WHERE id = $1
 RETURNING id, company_id, title, description, requirements, interview_questions, status, location, workplace_type, employment_type, experience_level, salary_min, salary_max, salary_currency, team_size, headcount, report_limit, expires_at, archived_at, created_at, updated_at`;
 
 export interface archiveJobArgs {
-  id: string;
-  companyId: string;
+    id: string;
+    companyId: string;
 }
 
 export interface archiveJobRow {
-  id: string;
-  companyId: string;
-  title: string;
-  description: string;
-  requirements: any;
-  interviewQuestions: any;
-  status: string;
-  location: string | null;
-  workplaceType: string | null;
-  employmentType: string | null;
-  experienceLevel: string | null;
-  salaryMin: number | null;
-  salaryMax: number | null;
-  salaryCurrency: string;
-  teamSize: number | null;
-  headcount: number | null;
-  reportLimit: number;
-  expiresAt: Date | null;
-  archivedAt: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
+    id: string;
+    companyId: string;
+    title: string;
+    description: string;
+    requirements: any;
+    interviewQuestions: any;
+    status: string;
+    location: string | null;
+    workplaceType: string | null;
+    employmentType: string | null;
+    experienceLevel: string | null;
+    salaryMin: number | null;
+    salaryMax: number | null;
+    salaryCurrency: string;
+    teamSize: number | null;
+    headcount: number | null;
+    reportLimit: number;
+    expiresAt: Date | null;
+    archivedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 export async function archiveJob(sql: Sql, args: archiveJobArgs): Promise<archiveJobRow | null> {
-  const rows = await sql.unsafe(archiveJobQuery, [args.id, args.companyId]).values();
-  if (rows.length !== 1) {
-    return null;
-  }
-  const row = rows[0];
-  return {
-    id: row[0],
-    companyId: row[1],
-    title: row[2],
-    description: row[3],
-    requirements: row[4],
-    interviewQuestions: row[5],
-    status: row[6],
-    location: row[7],
-    workplaceType: row[8],
-    employmentType: row[9],
-    experienceLevel: row[10],
-    salaryMin: row[11],
-    salaryMax: row[12],
-    salaryCurrency: row[13],
-    teamSize: row[14],
-    headcount: row[15],
-    reportLimit: row[16],
-    expiresAt: row[17],
-    archivedAt: row[18],
-    createdAt: row[19],
-    updatedAt: row[20],
-  };
+    const rows = await sql.unsafe(archiveJobQuery, [args.id, args.companyId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        companyId: row[1],
+        title: row[2],
+        description: row[3],
+        requirements: row[4],
+        interviewQuestions: row[5],
+        status: row[6],
+        location: row[7],
+        workplaceType: row[8],
+        employmentType: row[9],
+        experienceLevel: row[10],
+        salaryMin: row[11],
+        salaryMax: row[12],
+        salaryCurrency: row[13],
+        teamSize: row[14],
+        headcount: row[15],
+        reportLimit: row[16],
+        expiresAt: row[17],
+        archivedAt: row[18],
+        createdAt: row[19],
+        updatedAt: row[20]
+    };
 }
 
 export const getOpenJobsQuery = `-- name: getOpenJobs :many
@@ -544,57 +495,57 @@ WHERE j.status = 'open'
 ORDER BY j.created_at DESC`;
 
 export interface getOpenJobsRow {
-  id: string;
-  companyId: string;
-  title: string;
-  description: string;
-  requirements: any;
-  interviewQuestions: any;
-  status: string;
-  location: string | null;
-  workplaceType: string | null;
-  employmentType: string | null;
-  experienceLevel: string | null;
-  salaryMin: number | null;
-  salaryMax: number | null;
-  salaryCurrency: string;
-  teamSize: number | null;
-  headcount: number | null;
-  reportLimit: number;
-  expiresAt: Date | null;
-  archivedAt: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-  companyName: string;
-  companySlug: string;
+    id: string;
+    companyId: string;
+    title: string;
+    description: string;
+    requirements: any;
+    interviewQuestions: any;
+    status: string;
+    location: string | null;
+    workplaceType: string | null;
+    employmentType: string | null;
+    experienceLevel: string | null;
+    salaryMin: number | null;
+    salaryMax: number | null;
+    salaryCurrency: string;
+    teamSize: number | null;
+    headcount: number | null;
+    reportLimit: number;
+    expiresAt: Date | null;
+    archivedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+    companyName: string;
+    companySlug: string;
 }
 
 export async function getOpenJobs(sql: Sql): Promise<getOpenJobsRow[]> {
-  return (await sql.unsafe(getOpenJobsQuery, []).values()).map((row) => ({
-    id: row[0],
-    companyId: row[1],
-    title: row[2],
-    description: row[3],
-    requirements: row[4],
-    interviewQuestions: row[5],
-    status: row[6],
-    location: row[7],
-    workplaceType: row[8],
-    employmentType: row[9],
-    experienceLevel: row[10],
-    salaryMin: row[11],
-    salaryMax: row[12],
-    salaryCurrency: row[13],
-    teamSize: row[14],
-    headcount: row[15],
-    reportLimit: row[16],
-    expiresAt: row[17],
-    archivedAt: row[18],
-    createdAt: row[19],
-    updatedAt: row[20],
-    companyName: row[21],
-    companySlug: row[22],
-  }));
+    return (await sql.unsafe(getOpenJobsQuery, []).values()).map(row => ({
+        id: row[0],
+        companyId: row[1],
+        title: row[2],
+        description: row[3],
+        requirements: row[4],
+        interviewQuestions: row[5],
+        status: row[6],
+        location: row[7],
+        workplaceType: row[8],
+        employmentType: row[9],
+        experienceLevel: row[10],
+        salaryMin: row[11],
+        salaryMax: row[12],
+        salaryCurrency: row[13],
+        teamSize: row[14],
+        headcount: row[15],
+        reportLimit: row[16],
+        expiresAt: row[17],
+        archivedAt: row[18],
+        createdAt: row[19],
+        updatedAt: row[20],
+        companyName: row[21],
+        companySlug: row[22]
+    }));
 }
 
 export const countJobsByCompanyAndStatusQuery = `-- name: countJobsByCompanyAndStatus :one
@@ -607,29 +558,26 @@ WHERE company_id = $1
   AND archived_at IS NULL`;
 
 export interface countJobsByCompanyAndStatusArgs {
-  companyId: string;
+    companyId: string;
 }
 
 export interface countJobsByCompanyAndStatusRow {
-  openCount: number;
-  draftCount: number;
-  totalCount: number;
+    openCount: number;
+    draftCount: number;
+    totalCount: number;
 }
 
-export async function countJobsByCompanyAndStatus(
-  sql: Sql,
-  args: countJobsByCompanyAndStatusArgs,
-): Promise<countJobsByCompanyAndStatusRow | null> {
-  const rows = await sql.unsafe(countJobsByCompanyAndStatusQuery, [args.companyId]).values();
-  if (rows.length !== 1) {
-    return null;
-  }
-  const row = rows[0];
-  return {
-    openCount: row[0],
-    draftCount: row[1],
-    totalCount: row[2],
-  };
+export async function countJobsByCompanyAndStatus(sql: Sql, args: countJobsByCompanyAndStatusArgs): Promise<countJobsByCompanyAndStatusRow | null> {
+    const rows = await sql.unsafe(countJobsByCompanyAndStatusQuery, [args.companyId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        openCount: row[0],
+        draftCount: row[1],
+        totalCount: row[2]
+    };
 }
 
 export const getArchivedJobsByCompanyIdQuery = `-- name: getArchivedJobsByCompanyId :many
@@ -640,62 +588,57 @@ WHERE company_id = $1
 ORDER BY archived_at DESC`;
 
 export interface getArchivedJobsByCompanyIdArgs {
-  companyId: string;
+    companyId: string;
 }
 
 export interface getArchivedJobsByCompanyIdRow {
-  id: string;
-  companyId: string;
-  title: string;
-  description: string;
-  requirements: any;
-  interviewQuestions: any;
-  status: string;
-  location: string | null;
-  workplaceType: string | null;
-  employmentType: string | null;
-  experienceLevel: string | null;
-  salaryMin: number | null;
-  salaryMax: number | null;
-  salaryCurrency: string;
-  teamSize: number | null;
-  headcount: number | null;
-  reportLimit: number;
-  expiresAt: Date | null;
-  archivedAt: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
+    id: string;
+    companyId: string;
+    title: string;
+    description: string;
+    requirements: any;
+    interviewQuestions: any;
+    status: string;
+    location: string | null;
+    workplaceType: string | null;
+    employmentType: string | null;
+    experienceLevel: string | null;
+    salaryMin: number | null;
+    salaryMax: number | null;
+    salaryCurrency: string;
+    teamSize: number | null;
+    headcount: number | null;
+    reportLimit: number;
+    expiresAt: Date | null;
+    archivedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
-export async function getArchivedJobsByCompanyId(
-  sql: Sql,
-  args: getArchivedJobsByCompanyIdArgs,
-): Promise<getArchivedJobsByCompanyIdRow[]> {
-  return (await sql.unsafe(getArchivedJobsByCompanyIdQuery, [args.companyId]).values()).map(
-    (row) => ({
-      id: row[0],
-      companyId: row[1],
-      title: row[2],
-      description: row[3],
-      requirements: row[4],
-      interviewQuestions: row[5],
-      status: row[6],
-      location: row[7],
-      workplaceType: row[8],
-      employmentType: row[9],
-      experienceLevel: row[10],
-      salaryMin: row[11],
-      salaryMax: row[12],
-      salaryCurrency: row[13],
-      teamSize: row[14],
-      headcount: row[15],
-      reportLimit: row[16],
-      expiresAt: row[17],
-      archivedAt: row[18],
-      createdAt: row[19],
-      updatedAt: row[20],
-    }),
-  );
+export async function getArchivedJobsByCompanyId(sql: Sql, args: getArchivedJobsByCompanyIdArgs): Promise<getArchivedJobsByCompanyIdRow[]> {
+    return (await sql.unsafe(getArchivedJobsByCompanyIdQuery, [args.companyId]).values()).map(row => ({
+        id: row[0],
+        companyId: row[1],
+        title: row[2],
+        description: row[3],
+        requirements: row[4],
+        interviewQuestions: row[5],
+        status: row[6],
+        location: row[7],
+        workplaceType: row[8],
+        employmentType: row[9],
+        experienceLevel: row[10],
+        salaryMin: row[11],
+        salaryMax: row[12],
+        salaryCurrency: row[13],
+        teamSize: row[14],
+        headcount: row[15],
+        reportLimit: row[16],
+        expiresAt: row[17],
+        archivedAt: row[18],
+        createdAt: row[19],
+        updatedAt: row[20]
+    }));
 }
 
 export const getOpenJobsByCompanyIdQuery = `-- name: getOpenJobsByCompanyId :many
@@ -712,64 +655,61 @@ WHERE j.company_id = $1
 ORDER BY j.created_at DESC`;
 
 export interface getOpenJobsByCompanyIdArgs {
-  companyId: string;
+    companyId: string;
 }
 
 export interface getOpenJobsByCompanyIdRow {
-  id: string;
-  companyId: string;
-  title: string;
-  description: string;
-  requirements: any;
-  interviewQuestions: any;
-  status: string;
-  location: string | null;
-  workplaceType: string | null;
-  employmentType: string | null;
-  experienceLevel: string | null;
-  salaryMin: number | null;
-  salaryMax: number | null;
-  salaryCurrency: string;
-  teamSize: number | null;
-  headcount: number | null;
-  reportLimit: number;
-  expiresAt: Date | null;
-  archivedAt: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-  companyName: string;
-  companySlug: string;
+    id: string;
+    companyId: string;
+    title: string;
+    description: string;
+    requirements: any;
+    interviewQuestions: any;
+    status: string;
+    location: string | null;
+    workplaceType: string | null;
+    employmentType: string | null;
+    experienceLevel: string | null;
+    salaryMin: number | null;
+    salaryMax: number | null;
+    salaryCurrency: string;
+    teamSize: number | null;
+    headcount: number | null;
+    reportLimit: number;
+    expiresAt: Date | null;
+    archivedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+    companyName: string;
+    companySlug: string;
 }
 
-export async function getOpenJobsByCompanyId(
-  sql: Sql,
-  args: getOpenJobsByCompanyIdArgs,
-): Promise<getOpenJobsByCompanyIdRow[]> {
-  return (await sql.unsafe(getOpenJobsByCompanyIdQuery, [args.companyId]).values()).map((row) => ({
-    id: row[0],
-    companyId: row[1],
-    title: row[2],
-    description: row[3],
-    requirements: row[4],
-    interviewQuestions: row[5],
-    status: row[6],
-    location: row[7],
-    workplaceType: row[8],
-    employmentType: row[9],
-    experienceLevel: row[10],
-    salaryMin: row[11],
-    salaryMax: row[12],
-    salaryCurrency: row[13],
-    teamSize: row[14],
-    headcount: row[15],
-    reportLimit: row[16],
-    expiresAt: row[17],
-    archivedAt: row[18],
-    createdAt: row[19],
-    updatedAt: row[20],
-    companyName: row[21],
-    companySlug: row[22],
-  }));
+export async function getOpenJobsByCompanyId(sql: Sql, args: getOpenJobsByCompanyIdArgs): Promise<getOpenJobsByCompanyIdRow[]> {
+    return (await sql.unsafe(getOpenJobsByCompanyIdQuery, [args.companyId]).values()).map(row => ({
+        id: row[0],
+        companyId: row[1],
+        title: row[2],
+        description: row[3],
+        requirements: row[4],
+        interviewQuestions: row[5],
+        status: row[6],
+        location: row[7],
+        workplaceType: row[8],
+        employmentType: row[9],
+        experienceLevel: row[10],
+        salaryMin: row[11],
+        salaryMax: row[12],
+        salaryCurrency: row[13],
+        teamSize: row[14],
+        headcount: row[15],
+        reportLimit: row[16],
+        expiresAt: row[17],
+        archivedAt: row[18],
+        createdAt: row[19],
+        updatedAt: row[20],
+        companyName: row[21],
+        companySlug: row[22]
+    }));
 }
 
 export const getOpenJobsPaginatedQuery = `-- name: getOpenJobsPaginated :many
@@ -792,84 +732,68 @@ ORDER BY j.created_at DESC
 LIMIT $8::int OFFSET $7::int`;
 
 export interface getOpenJobsPaginatedArgs {
-  search: string;
-  employmentType: string;
-  experienceLevel: string;
-  workplaceType: string;
-  salaryCurrency: string;
-  salaryMin: number;
-  offset: number;
-  limit: number;
+    search: string;
+    employmentType: string;
+    experienceLevel: string;
+    workplaceType: string;
+    salaryCurrency: string;
+    salaryMin: number;
+    offset: number;
+    limit: number;
 }
 
 export interface getOpenJobsPaginatedRow {
-  id: string;
-  companyId: string;
-  title: string;
-  description: string;
-  requirements: any;
-  interviewQuestions: any;
-  status: string;
-  location: string | null;
-  workplaceType: string | null;
-  employmentType: string | null;
-  experienceLevel: string | null;
-  salaryMin: number | null;
-  salaryMax: number | null;
-  salaryCurrency: string;
-  teamSize: number | null;
-  headcount: number | null;
-  reportLimit: number;
-  expiresAt: Date | null;
-  archivedAt: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-  companyName: string;
-  companySlug: string;
+    id: string;
+    companyId: string;
+    title: string;
+    description: string;
+    requirements: any;
+    interviewQuestions: any;
+    status: string;
+    location: string | null;
+    workplaceType: string | null;
+    employmentType: string | null;
+    experienceLevel: string | null;
+    salaryMin: number | null;
+    salaryMax: number | null;
+    salaryCurrency: string;
+    teamSize: number | null;
+    headcount: number | null;
+    reportLimit: number;
+    expiresAt: Date | null;
+    archivedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+    companyName: string;
+    companySlug: string;
 }
 
-export async function getOpenJobsPaginated(
-  sql: Sql,
-  args: getOpenJobsPaginatedArgs,
-): Promise<getOpenJobsPaginatedRow[]> {
-  return (
-    await sql
-      .unsafe(getOpenJobsPaginatedQuery, [
-        args.search,
-        args.employmentType,
-        args.experienceLevel,
-        args.workplaceType,
-        args.salaryCurrency,
-        args.salaryMin,
-        args.offset,
-        args.limit,
-      ])
-      .values()
-  ).map((row) => ({
-    id: row[0],
-    companyId: row[1],
-    title: row[2],
-    description: row[3],
-    requirements: row[4],
-    interviewQuestions: row[5],
-    status: row[6],
-    location: row[7],
-    workplaceType: row[8],
-    employmentType: row[9],
-    experienceLevel: row[10],
-    salaryMin: row[11],
-    salaryMax: row[12],
-    salaryCurrency: row[13],
-    teamSize: row[14],
-    headcount: row[15],
-    reportLimit: row[16],
-    expiresAt: row[17],
-    archivedAt: row[18],
-    createdAt: row[19],
-    updatedAt: row[20],
-    companyName: row[21],
-    companySlug: row[22],
-  }));
+export async function getOpenJobsPaginated(sql: Sql, args: getOpenJobsPaginatedArgs): Promise<getOpenJobsPaginatedRow[]> {
+    return (await sql.unsafe(getOpenJobsPaginatedQuery, [args.search, args.employmentType, args.experienceLevel, args.workplaceType, args.salaryCurrency, args.salaryMin, args.offset, args.limit]).values()).map(row => ({
+        id: row[0],
+        companyId: row[1],
+        title: row[2],
+        description: row[3],
+        requirements: row[4],
+        interviewQuestions: row[5],
+        status: row[6],
+        location: row[7],
+        workplaceType: row[8],
+        employmentType: row[9],
+        experienceLevel: row[10],
+        salaryMin: row[11],
+        salaryMax: row[12],
+        salaryCurrency: row[13],
+        teamSize: row[14],
+        headcount: row[15],
+        reportLimit: row[16],
+        expiresAt: row[17],
+        archivedAt: row[18],
+        createdAt: row[19],
+        updatedAt: row[20],
+        companyName: row[21],
+        companySlug: row[22]
+    }));
 }
 
 export const countOpenJobsFilteredQuery = `-- name: countOpenJobsFiltered :one
@@ -888,37 +812,26 @@ WHERE j.status = 'open'
   AND ($6::int = 0 OR j.salary_max IS NULL OR j.salary_max >= $6::int)`;
 
 export interface countOpenJobsFilteredArgs {
-  search: string;
-  employmentType: string;
-  experienceLevel: string;
-  workplaceType: string;
-  salaryCurrency: string;
-  salaryMin: number;
+    search: string;
+    employmentType: string;
+    experienceLevel: string;
+    workplaceType: string;
+    salaryCurrency: string;
+    salaryMin: number;
 }
 
 export interface countOpenJobsFilteredRow {
-  total: number;
+    total: number;
 }
 
-export async function countOpenJobsFiltered(
-  sql: Sql,
-  args: countOpenJobsFilteredArgs,
-): Promise<countOpenJobsFilteredRow | null> {
-  const rows = await sql
-    .unsafe(countOpenJobsFilteredQuery, [
-      args.search,
-      args.employmentType,
-      args.experienceLevel,
-      args.workplaceType,
-      args.salaryCurrency,
-      args.salaryMin,
-    ])
-    .values();
-  if (rows.length !== 1) {
-    return null;
-  }
-  const row = rows[0];
-  return {
-    total: row[0],
-  };
+export async function countOpenJobsFiltered(sql: Sql, args: countOpenJobsFilteredArgs): Promise<countOpenJobsFilteredRow | null> {
+    const rows = await sql.unsafe(countOpenJobsFilteredQuery, [args.search, args.employmentType, args.experienceLevel, args.workplaceType, args.salaryCurrency, args.salaryMin]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        total: row[0]
+    };
 }
+
