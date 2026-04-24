@@ -6,12 +6,13 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { DashboardApplicantReviewSkeleton } from "@/components/route-skeletons";
 import { Button } from "@/components/ui/button";
-import { AiFullReport } from "@/features/ai/components/evaluation-cards";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   getApplicationResumeDownloadUrl,
   getCompanyApplicantReview,
 } from "@/features/applications/server/functions";
-import { getMockAiEvaluation } from "@/mock/ai-evaluations";
+import { PreEvaluationCard } from "@/features/pre-evaluations/components/pre-evaluation-card";
+import { getPreEvaluationForApplication } from "@/features/pre-evaluations/server/functions";
 import { validateUuidParams } from "@/shared/validation";
 
 export const Route = createFileRoute("/_authenticated/dashboard/applicant-reports/$applicationId")({
@@ -28,16 +29,18 @@ export const Route = createFileRoute("/_authenticated/dashboard/applicant-report
     if (!data) {
       throw notFound();
     }
-    return data;
+    const preEvaluation = await getPreEvaluationForApplication({
+      data: { applicationId: params.applicationId },
+    });
+    return { ...data, preEvaluation };
   },
   pendingComponent: DashboardApplicantReviewSkeleton,
   component: ApplicantAiReportPage,
 });
 
 function ApplicantAiReportPage() {
-  const { application } = Route.useLoaderData();
+  const { application, preEvaluation } = Route.useLoaderData();
   const getResumeUrlFn = useServerFn(getApplicationResumeDownloadUrl);
-  const evaluation = getMockAiEvaluation(application.id);
 
   const resumeDownloadMutation = useMutation({
     mutationFn: getResumeUrlFn,
@@ -80,17 +83,15 @@ function ApplicantAiReportPage() {
         ) : null}
       </div>
 
-      <AiFullReport
-        application={{
-          candidateName: application.candidateName,
-          candidateEmail: application.candidateEmail,
-          candidatePicture: application.candidatePicture,
-          jobTitle: application.jobTitle,
-          companyName: application.companyName,
-          createdAt: application.createdAt,
-        }}
-        evaluation={evaluation}
-      />
+      {preEvaluation ? (
+        <PreEvaluationCard evaluation={preEvaluation} />
+      ) : (
+        <Card className="border border-dashed border-border/70">
+          <CardContent className="py-6 text-center text-sm text-muted-foreground">
+            Pre-evaluation is in progress. Results will appear here once Zero finishes screening.
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

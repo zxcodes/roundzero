@@ -255,10 +255,10 @@ Do not proceed to Phase 6 until every item below is verified in local dev.
 
 ### Mock Data Cleanup (blocking)
 
-- [ ] Delete `app/mock/ai-evaluations.ts`
-- [ ] Remove `getMockAiEvaluation` usage from all routes and components
-- [ ] Update `AiReportPanel`, `AiRankedApplicantsList` to accept real data shapes
-- [ ] Verify no compilation errors after mock removal
+- [x] Delete `app/mock/ai-evaluations.ts`
+- [x] Remove `getMockAiEvaluation` usage from all routes and components
+- [x] Update `AiReportPanel`, `AiRankedApplicantsList` to accept real data shapes
+- [x] Verify no compilation errors after mock removal
 
 ### Fix Issues
 

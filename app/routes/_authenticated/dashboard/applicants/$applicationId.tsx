@@ -33,14 +33,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AiEvaluationStateBadge, AiReportPanel } from "@/features/ai/components/evaluation-cards";
 import { SubmittedProfileSnapshot } from "@/features/applications/components/submitted-profile-snapshot";
 import {
   getApplicationResumeDownloadUrl,
   getCompanyApplicantReview,
   updateApplicationStatus,
 } from "@/features/applications/server/functions";
-import { getMockAiEvaluation } from "@/mock/ai-evaluations";
+import { PreEvaluationCard } from "@/features/pre-evaluations/components/pre-evaluation-card";
+import { getPreEvaluationForApplication } from "@/features/pre-evaluations/server/functions";
 import {
   APPLICATION_STATUS_TRANSITIONS,
   type ApplicationStatus,
@@ -62,7 +62,10 @@ export const Route = createFileRoute("/_authenticated/dashboard/applicants/$appl
     if (!data) {
       throw notFound();
     }
-    return data;
+    const preEvaluation = await getPreEvaluationForApplication({
+      data: { applicationId: params.applicationId },
+    });
+    return { ...data, preEvaluation };
   },
   pendingComponent: DashboardApplicantReviewSkeleton,
   component: ApplicantReviewPage,
@@ -225,7 +228,7 @@ const getInitials = (name: string) => {
 };
 
 function ApplicantReviewPage() {
-  const { application, previousApplicant, nextApplicant } = Route.useLoaderData();
+  const { application, previousApplicant, nextApplicant, preEvaluation } = Route.useLoaderData();
   const router = useRouter();
   const [pendingStatus, setPendingStatus] = useState<ApplicationStatus | null>(null);
 
@@ -259,7 +262,6 @@ function ApplicantReviewPage() {
   const workHistory = getSnapshotWorkHistory(metadata.workHistory);
   const headline = getStringValue(metadata.headline);
   const bio = getStringValue(metadata.bio);
-  const aiEvaluation = getMockAiEvaluation(application.id);
   const currentStatus = applicationStatusSchema.parse(application.status);
   const currentStageIndex = APPLICATION_STAGES.indexOf(
     currentStatus as (typeof APPLICATION_STAGES)[number],
@@ -392,20 +394,15 @@ function ApplicantReviewPage() {
         </CardContent>
       </Card>
 
-      <AiReportPanel
-        evaluation={aiEvaluation}
-        action={
-          <Button variant="outline" asChild>
-            <Link
-              to="/dashboard/applicant-reports/$applicationId"
-              params={{ applicationId: application.id }}
-            >
-              View full report
-              <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-4" />
-            </Link>
-          </Button>
-        }
-      />
+      {preEvaluation ? (
+        <PreEvaluationCard evaluation={preEvaluation} />
+      ) : (
+        <Card className="border border-dashed border-border/70">
+          <CardContent className="py-6 text-center text-sm text-muted-foreground">
+            Pre-evaluation is in progress. Results will appear here once Zero finishes screening.
+          </CardContent>
+        </Card>
+      )}
 
       <div className="flex flex-wrap gap-2">
         {allowedStatuses.length > 1 ? (
@@ -466,7 +463,13 @@ function ApplicantReviewPage() {
         links={links}
         workHistory={workHistory}
         hasResume={Boolean(application.resumeKey)}
-        headerExtra={<AiEvaluationStateBadge state={aiEvaluation.state} />}
+        headerExtra={
+          preEvaluation ? (
+            <Badge variant="outline" className="font-mono text-[11px]">
+              Score: {preEvaluation.score}/100
+            </Badge>
+          ) : null
+        }
         formatMonthRange={formatMonthRange}
       />
 
