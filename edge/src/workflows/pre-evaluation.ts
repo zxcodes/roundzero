@@ -40,6 +40,37 @@ async function extractResumeText(bytes: Uint8Array, contentType: string): Promis
   throw new Error(`Unsupported resume format: ${contentType}`);
 }
 
+const SYSTEM_PROMPT = `You are Zero, a pre-screening evaluator for a hiring platform. Your job is to decide whether a candidate deserves a deeper AI interview based on their resume and profile.
+
+You are NOT making a hiring decision. You are answering one question: "Is this candidate worth interviewing for this role?"
+
+## Scoring Rubric (0–100)
+
+Evaluate across these dimensions and average them:
+
+1. **Skills Match (0–30)**: How many required skills does the resume explicitly demonstrate? Count only skills clearly shown through experience or projects, not just listed.
+2. **Experience Relevance (0–30)**: Does the candidate's work history align with the role's domain, seniority, and responsibilities? Years alone don't count — relevance matters.
+3. **Seniority Fit (0–20)**: Does the candidate's career level match what the job expects? A junior applying for a principal role scores low here, even with matching skills.
+4. **Overall Alignment (0–20)**: Does the candidate's background tell a coherent story for this role? Consider career trajectory, industry relevance, and any custom focus areas the company specified.
+
+## Confidence
+
+- **high**: Resume clearly addresses the role's core requirements — you can make a confident judgment.
+- **medium**: Resume is ambiguous — some signals match but key areas are unclear or missing context.
+- **low**: Resume is too vague, too short, or too unrelated to assess meaningfully.
+
+## Decision Rules
+
+- score >= 70 AND confidence is high → nextStep: "interview_invited"
+- score 50–69 OR confidence is medium → nextStep: "ask_followups"
+- score < 50 OR confidence is low → nextStep: "hold"
+
+## Rules
+
+- Only credit skills and experience the resume explicitly demonstrates. Do not infer or assume.
+- If the resume is very short or generic, set confidence to "low" and nextStep to "hold".
+- missingRequirements must list specific job requirements the resume does not clearly cover. Be concrete (e.g., "No AWS experience mentioned") not vague (e.g., "Lacks cloud skills").`;
+
 function buildPreEvaluationPrompt(
   job: {
     title: string;
@@ -51,36 +82,50 @@ function buildPreEvaluationPrompt(
 ): string {
   const requirementsList = Array.isArray(job.requirements)
     ? job.requirements.map((r) => `- ${r}`).join("\n")
-    : "No specific requirements listed.";
+    : "None listed.";
 
   const skills = Array.isArray(candidateMeta.skills)
-    ? candidateMeta.skills.join(", ")
+    ? (candidateMeta.skills as string[]).join(", ")
     : "Not provided";
 
-  return `You are an expert technical recruiter. Evaluate how well the candidate fits the job based on their resume and profile.
+  const workHistory = Array.isArray(candidateMeta.workHistory)
+    ? (
+        candidateMeta.workHistory as {
+          company: string;
+          title: string;
+          description: string | null;
+        }[]
+      )
+        .map((w) => `- ${w.title} at ${w.company}${w.description ? `: ${w.description}` : ""}`)
+        .join("\n")
+    : "Not provided";
 
-Rules:
-- score 70+ and high confidence -> "interview_invited"
-- score 50-69 or medium confidence -> "ask_followups"
-- score below 50 or low confidence -> "hold"
-- missingRequirements: list specific job requirements the resume does not clearly demonstrate
+  let prompt = `## Job
 
-Job Title: ${job.title}
-Job Description: ${job.description}
+Title: ${job.title}
+Description: ${job.description}
+
 Requirements:
-${requirementsList}
+${requirementsList}`;
 
-Candidate Skills: ${skills}
-Candidate Resume:
-${resumeText.slice(0, 12000)}
-`;
+  prompt += `\n\n## Candidate
+
+Skills: ${skills}
+
+Work History:
+${workHistory}
+
+Resume:
+${resumeText.slice(0, 12000)}`;
+
+  return prompt;
 }
 
 export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluationPayload> {
   async run(event: WorkflowEvent<PreEvaluationPayload>, step: WorkflowStep) {
     const { applicationId } = event.payload;
+    console.log(`[pre-eval] Starting workflow for application ${applicationId}`);
 
-    // Step 1: Read application + job data from Postgres
     const applicationData = await step.do("read_application_data", async () => {
       const db = getDb();
       const application = await getApplicationById(db, { id: applicationId });
@@ -96,17 +141,18 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
         throw new Error(`Job not found: ${application.jobId}`);
       }
 
+      console.log(
+        `[pre-eval] Loaded application for job "${job.title}" (${job.id}), resume: ${application.resumeKey}`,
+      );
       return { application, job };
     });
 
-    // Step 2: Fetch resume from R2 and extract text
-    // Combined into one step because Uint8Array is not JSON-serializable
-    // across workflow step boundaries (step results are persisted as JSON).
     const resumeText = await step.do("fetch_and_extract_resume", async () => {
       const resumeKey = applicationData.application.resumeKey;
       if (!resumeKey) {
         throw new Error(`Application has no resume: ${applicationId}`);
       }
+      console.log(`[pre-eval] Fetching resume from R2: ${resumeKey}`);
       const object = await this.env.RESUMES.get(resumeKey);
       if (!object) {
         throw new Error(`Resume not found in R2: ${resumeKey}`);
@@ -118,12 +164,14 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
         : resumeKey.endsWith(".docx")
           ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
           : "application/pdf";
-      return extractResumeText(bytes, contentType);
+      console.log(`[pre-eval] Extracting text from resume (${contentType}, ${bytes.length} bytes)`);
+      const text = await extractResumeText(bytes, contentType);
+      console.log(`[pre-eval] Extracted ${text.length} chars from resume`);
+      return text;
     });
 
-    // Step 4: Run AI pre-evaluation
     const aiResult = await step.do("run_ai_pre_evaluation", async () => {
-      const prompt = buildPreEvaluationPrompt(
+      const userPrompt = buildPreEvaluationPrompt(
         {
           title: applicationData.job.title,
           description: applicationData.job.description,
@@ -133,15 +181,22 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
         applicationData.application.metadata ?? {},
       );
 
-      const response = await this.env.AI.run("@cf/meta/llama-3.1-8b-instruct-fp8", {
-        messages: [{ role: "user", content: prompt }],
+      console.log(
+        `[pre-eval] Calling Workers AI (llama-3.1-8b-instruct), prompt length: ${userPrompt.length} chars`,
+      );
+      const response = await this.env.AI.run("@cf/meta/llama-3.1-8b-instruct", {
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: userPrompt },
+        ],
         response_format: {
           type: "json_schema",
           json_schema: preEvaluationSchema,
         },
       });
 
-      // Workers AI returns { response: <parsed object> } with json_schema format
+      console.log(`[pre-eval] Raw AI response:`, JSON.stringify(response));
+
       const parsed = (response as { response: unknown }).response as {
         score: number;
         missingRequirements: string[];
@@ -150,7 +205,7 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
       };
       const result = parsed;
 
-      return {
+      const normalized = {
         score: Math.max(0, Math.min(100, Math.round(result.score))),
         missingRequirements: Array.isArray(result.missingRequirements)
           ? result.missingRequirements.filter((r: unknown) => typeof r === "string")
@@ -162,9 +217,13 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
           ? (result.nextStep as "interview_invited" | "ask_followups" | "hold")
           : "hold",
       };
+
+      console.log(
+        `[pre-eval] AI result: score=${normalized.score}, confidence=${normalized.confidence}, nextStep=${normalized.nextStep}, missing=${normalized.missingRequirements.length} items`,
+      );
+      return normalized;
     });
 
-    // Step 5: Write result to pre_evaluations table and update status
     await step.do("write_pre_evaluation", async () => {
       const db = getDb();
       await createPreEvaluation(db, {
@@ -178,11 +237,12 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
         id: applicationId,
         status: "pre_screening",
       });
+      console.log(`[pre-eval] Wrote pre-evaluation to DB, status -> pre_screening`);
     });
 
-    // Step 6: Decision layer - check quota and create interview or hold
     await step.do("decide_next_step", async () => {
       if (aiResult.nextStep === "hold") {
+        console.log(`[pre-eval] Decision: HOLD (low fit, no interview)`);
         return { action: "hold" as const };
       }
 
@@ -190,9 +250,9 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
       const job = applicationData.job;
       const slotsUsed = await countInterviewSlotsUsedByJob(db, { jobId: job.id });
       const usedCount = slotsUsed?.count ?? 0;
+      console.log(`[pre-eval] Quota check: ${usedCount}/${job.reportLimit} slots used`);
 
       if (usedCount >= job.reportLimit) {
-        // Quota exhausted: send position_filled notification
         const candidate = await getUserById(db, { id: applicationData.application.candidateId });
         if (candidate) {
           const payload = notificationPayloadSchemas.position_filled.parse({
@@ -206,10 +266,10 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
             payload,
           });
         }
+        console.log(`[pre-eval] Decision: QUOTA EXHAUSTED (${usedCount}/${job.reportLimit})`);
         return { action: "quota_exhausted" as const };
       }
 
-      // Create interview
       const interviewType = aiResult.nextStep === "interview_invited" ? "full" : "quick_eval";
       await createInterview(db, {
         applicationId,
@@ -226,7 +286,6 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
         status: "interview_invited",
       });
 
-      // Send interview_invited notification
       const candidate = await getUserById(db, { id: applicationData.application.candidateId });
       if (candidate) {
         const payload = notificationPayloadSchemas.interview_invited.parse({
@@ -242,9 +301,15 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
         });
       }
 
+      console.log(
+        `[pre-eval] Decision: INTERVIEW CREATED (type=${interviewType}), status -> interview_invited`,
+      );
       return { action: "interview_created" as const, interviewType };
     });
 
+    console.log(
+      `[pre-eval] Workflow complete for ${applicationId}: score=${aiResult.score}, nextStep=${aiResult.nextStep}`,
+    );
     return { applicationId, result: aiResult };
   }
 }

@@ -116,6 +116,16 @@
           }
         }
       }
+    },
+    {
+      "includes": ["edge/src/**/*.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off"
+          }
+        }
+      }
     }
   ]
 }

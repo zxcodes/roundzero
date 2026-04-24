@@ -25,10 +25,12 @@ app.post("/pre-evaluate", async (c) => {
   }
 
   const body = await c.req.json<{ applicationId: string }>();
+  console.log(`[worker] Triggering pre-evaluation for application ${body.applicationId}`);
   const instance = await c.env.PRE_EVALUATION.create({
     params: { applicationId: body.applicationId },
   });
 
+  console.log(`[worker] Workflow instance created: ${instance.id}`);
   return c.json({ instanceId: instance.id });
 });
 
