@@ -1,5 +1,6 @@
 ## TODO
 
+- add a default expiry time for agent interviews. bc we can't make companies wait based on candidate's avaiability. think about it briefly. 
 - mouse back gesture doesn't work. might be something to do with the tanstack router.
 - show number of applicants on each job detail.
 - use tanstack ai libraries for everything ai.
