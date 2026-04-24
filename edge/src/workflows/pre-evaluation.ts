@@ -10,14 +10,6 @@ import { createPreEvaluation } from "../queries/pre-evaluations/queries_sql";
 import { getDb } from "../shared/db";
 import { notificationPayloadSchemas } from "../shared/notifications-config";
 
-interface Env {
-  AI: Ai;
-  RESUMES: R2Bucket;
-  PRE_EVALUATION: Workflow;
-  REPORT_GENERATION: Workflow;
-  DATABASE_URL: string;
-}
-
 type PreEvaluationPayload = {
   applicationId: string;
 };
