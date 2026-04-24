@@ -1,5 +1,6 @@
 ## TODO
 
+- think about showing pre eval report to companies bc the whole point is showing them tailored reports in the end. so instead of immediately showing them, show it only when the full reports are actually generated? think. fine for locla dev bc we need to check the scores etc etc. 
 - add a default expiry time for agent interviews. bc we can't make companies wait based on candidate's avaiability. think about it briefly. 
 - mouse back gesture doesn't work. might be something to do with the tanstack router.
 - show number of applicants on each job detail.
