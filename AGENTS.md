@@ -104,6 +104,14 @@ Always consult both before making design decisions or implementing features.
 - **After every change, run `bun run check` to verify linter and typechecking pass.**
 - `bash setup-db.sh setup_pg` — create dev+test DBs | `bash setup-db.sh reset_pg` — reset both | `bash setup-db.sh rm_pg` — remove
 
+## Cloudflare Platform Rules
+
+- **Always use the Cloudflare documentation MCP** (`cloudflare_search_cloudflare_documentation`) for any question about Workers, Workflows, Durable Objects, R2, AI, or bindings. Do not rely on pre-trained knowledge — the platform changes frequently.
+- **Always use structured outputs (`response_format: { type: "json_schema" }`)** when calling `env.AI.run()`. Never prompt the model to "respond with JSON" — the schema constraint guarantees valid output. Do not add JSON instructions in the system prompt when using `response_format`.
+- **Never guess about runtime behavior.** If unsure whether a binding works in local dev, whether a type signature is correct, or how an API responds, search the docs or test it. Do not assume.
+- **Keep Workers runtime constraints in mind:** no filesystem access (except `/tmp` with `nodejs_compat`), no `process.env` (use bindings), serialized step returns only. All I/O must happen inside `step.do()`.
+- **Workers AI free tier:** 10K neurons/day. Every `env.AI.run()` call consumes neurons even in local dev. Monitor usage.
+
 ## Testing
 
 - Two Postgres containers: dev (`rz_pg_dev:6311`) and test (`rz_pg_test:6312`). Tests never touch dev.

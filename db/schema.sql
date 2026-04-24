@@ -175,7 +175,10 @@ CREATE TABLE public.pre_evaluations (
     missing_requirements jsonb DEFAULT '[]'::jsonb NOT NULL,
     confidence text NOT NULL,
     next_step text NOT NULL,
+    consistency_score integer,
+    raw_response jsonb,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT pre_evaluations_consistency_score_check CHECK (((consistency_score >= 0) AND (consistency_score <= 100))),
     CONSTRAINT pre_evaluations_score_check CHECK (((score >= 0) AND (score <= 100)))
 );
 
