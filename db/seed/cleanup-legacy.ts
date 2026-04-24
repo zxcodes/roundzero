@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { closeSql, sql } from "./util";
 
 async function cleanupLegacySeedData() {

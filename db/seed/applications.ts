@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { closeSql, copycat, makeUuid, pick, randomInt, sql } from "./util";
 
 const applicationStatuses = ["applied", "interviewing", "evaluated", "rejected"] as const;

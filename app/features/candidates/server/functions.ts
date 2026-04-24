@@ -98,7 +98,6 @@ const updateCandidateProfileSchema = z.object({
 
 const allowedResumeTypes = {
   "application/pdf": "pdf",
-  "application/msword": "doc",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
 } as const;
 
@@ -112,7 +111,7 @@ const resumeUploadTargetSchema = z.object({
       keyof typeof allowedResumeTypes,
       ...Array<keyof typeof allowedResumeTypes>,
     ],
-    "Unsupported file format. Use PDF, DOC, or DOCX",
+    "Unsupported file format. Use PDF or DOCX",
   ),
 });
 

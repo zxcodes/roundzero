@@ -14,6 +14,11 @@ sql:
         options:
           runtime: node
           driver: postgres
+      - out: edge/src/queries/auth
+        plugin: ts
+        options:
+          runtime: node
+          driver: postgres
   - schema: "db/migrations"
     queries: "app/features/companies/queries/queries.sql"
     engine: postgresql
@@ -32,11 +37,21 @@ sql:
         options:
           runtime: node
           driver: postgres
+      - out: edge/src/queries/jobs
+        plugin: ts
+        options:
+          runtime: node
+          driver: postgres
   - schema: "db/migrations"
     queries: "app/features/applications/queries/queries.sql"
     engine: postgresql
     codegen:
       - out: app/features/applications/queries
+        plugin: ts
+        options:
+          runtime: node
+          driver: postgres
+      - out: edge/src/queries/applications
         plugin: ts
         options:
           runtime: node
@@ -55,6 +70,39 @@ sql:
     engine: postgresql
     codegen:
       - out: app/features/notifications/queries
+        plugin: ts
+        options:
+          runtime: node
+          driver: postgres
+      - out: edge/src/queries/notifications
+        plugin: ts
+        options:
+          runtime: node
+          driver: postgres
+  - schema: "db/migrations"
+    queries: "app/features/pre-evaluations/queries/queries.sql"
+    engine: postgresql
+    codegen:
+      - out: app/features/pre-evaluations/queries
+        plugin: ts
+        options:
+          runtime: node
+          driver: postgres
+      - out: edge/src/queries/pre-evaluations
+        plugin: ts
+        options:
+          runtime: node
+          driver: postgres
+  - schema: "db/migrations"
+    queries: "app/features/interviews/queries/queries.sql"
+    engine: postgresql
+    codegen:
+      - out: app/features/interviews/queries
+        plugin: ts
+        options:
+          runtime: node
+          driver: postgres
+      - out: edge/src/queries/interviews
         plugin: ts
         options:
           runtime: node

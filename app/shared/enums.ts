@@ -24,8 +24,11 @@ export type ExperienceLevel = z.infer<typeof experienceLevelSchema>;
 
 export const applicationStatusSchema = z.enum([
   "applied",
-  "interviewing",
+  "pre_screening",
+  "interview_invited",
+  "interview_in_progress",
   "evaluated",
+  "shortlisted",
   "rejected",
   "withdrawn",
 ]);
@@ -34,20 +37,48 @@ export type ApplicationStatus = z.infer<typeof applicationStatusSchema>;
 export const notificationTypeSchema = z.enum([
   "application_status_changed",
   "application_withdrawn",
-  "new_applicant",
+  "report_ready",
+  "interview_invited",
+  "position_filled",
   "job_published",
   "job_archived",
   "job_closed",
 ]);
 
-/** Valid status transitions for applications. */
+/** Valid status transitions for applications.
+ *
+ * System auto-advances: applied -> pre_screening -> interview_invited -> interview_in_progress -> evaluated
+ * Companies can reject at any pre-evaluation stage and can move evaluated -> shortlisted | rejected
+ * Candidates can withdraw from any non-terminal state.
+ */
 export const APPLICATION_STATUS_TRANSITIONS: Record<ApplicationStatus, ApplicationStatus[]> = {
-  applied: ["interviewing", "rejected", "withdrawn"],
-  interviewing: ["evaluated", "rejected", "withdrawn"],
-  evaluated: ["rejected"],
+  applied: ["pre_screening", "rejected", "withdrawn"],
+  pre_screening: ["interview_invited", "rejected", "withdrawn"],
+  interview_invited: ["interview_in_progress", "rejected", "withdrawn"],
+  interview_in_progress: ["evaluated", "rejected", "withdrawn"],
+  evaluated: ["shortlisted", "rejected"],
+  shortlisted: ["rejected"],
   rejected: [],
   withdrawn: [],
 };
+
+/** Candidate-visible status labels. Internal pre-evaluation stages are hidden. */
+export const applicationStatusCandidateLabelMap: Record<ApplicationStatus, string> = {
+  applied: "Application Received",
+  pre_screening: "Application Received",
+  interview_invited: "Interview Ready",
+  interview_in_progress: "Interview in Progress",
+  evaluated: "Under Review",
+  shortlisted: "Shortlisted",
+  rejected: "Not Moving Forward",
+  withdrawn: "Withdrawn",
+};
+
+/** Map internal status to the candidate-visible status. */
+export function getVisibleApplicationStatus(status: ApplicationStatus): ApplicationStatus {
+  if (status === "pre_screening") return "applied";
+  return status;
+}
 
 /** Returns true if the transition from `current` to `next` is valid. */
 export const isValidTransition = (current: ApplicationStatus, next: ApplicationStatus): boolean =>

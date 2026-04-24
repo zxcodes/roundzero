@@ -41,7 +41,8 @@ export const formatSalary = (
   const fmt = (n: number) => `${sym}${compactNumber(n, currency)}`;
   if (min && max) return `${fmt(min)}–${fmt(max)}`;
   if (min) return `From ${fmt(min)}`;
-  return `Up to ${fmt(max!)}`;
+  if (max) return `Up to ${fmt(max)}`;
+  return null;
 };
 
 export const formatSalaryFull = (
@@ -59,7 +60,8 @@ export const formatSalaryFull = (
     }).format(n);
   if (min && max) return `${fmt(min)} – ${fmt(max)}`;
   if (min) return `From ${fmt(min)}`;
-  return `Up to ${fmt(max!)}`;
+  if (max) return `Up to ${fmt(max)}`;
+  return null;
 };
 
 export const SALARY_BRACKETS: Record<SalaryCurrency, { value: string; label: string }[]> = {

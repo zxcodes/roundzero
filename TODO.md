@@ -1,7 +1,9 @@
 ## TODO
 
+- pre-evaluation: make system prompt more detail. instead of just looking at resume text, also consider what the candidate has done in terms of dx, tech debt, that should add up to the score.
+- pre-evaluation: detect ai filled slop resumes, compare two snapshots (profile and resume, find out differences), every little thing should add up to the score. and maybe save entire pre-eval timeline? to show the company's full report? or what we have is already enough? think.
+- mouse back gesture doesn't work. might be something to do with the tanstack router.
 - show number of applicants on each job detail.
-- check react query integration, queries don't seem to refetch on tab focus, etc.
 - use tanstack ai libraries for everything ai.
 - think more about the duration from first report to last report generation bc it will depend on the candidate. think if we need to add an expiry or something and pass it to the next candidate?
 - you just post a job and you will be notified with the reports. (major overhaul on company side.), also check how long should it take for reports to arrive, let companies choose how many reports they wanna see per job while creating it etc.
@@ -24,6 +26,7 @@
 
 
 
+<!--- check react query integration, queries don't seem to refetch on tab focus, etc.-->
 <!--- Resume parsing: we accept PDF, DOC, DOCX. Need parsers for each type. Text extraction is local, then fed to LLM.-->
 <!--- add job creation preview.-->
 <!--- the work profile snapshot is duplicating markup. use single comp and also clean the entire thing up.-->
@@ -120,9 +123,3 @@
   - Can create profile (logo, details, tech stack, head count, etc).
   - Can post a job (draft, open, archived etc)
   - Can add questions while posting a job.
-
-
-
-
-
-

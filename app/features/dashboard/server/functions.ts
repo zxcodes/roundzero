@@ -44,7 +44,7 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
       type: "candidate",
       applicationsSent: counts?.totalCount ?? 0,
       activeApplications: counts?.activeCount ?? 0,
-      interviewInvites: counts?.interviewingCount ?? 0,
+      interviewInvites: counts?.interviewInvitedCount ?? 0,
       evaluationsReceived: counts?.evaluatedCount ?? 0,
     };
   });

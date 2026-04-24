@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { getNotificationsByUser } from "@/features/notifications/queries/queries_sql";
-import type { NotificationEmailSender } from "@/features/notifications/services/email";
 import {
   getTestDb,
   makeTestResumeKey,
@@ -15,7 +14,7 @@ import { applyToJobWorkflow, updateApplicationStatusWorkflow } from "../services
 const sql = getTestDb();
 
 describe("application notification workflows", () => {
-  it("creates a new applicant notification and records delivered email state", async () => {
+  it("does not create new_applicant notification — pre-evaluation runs async instead", async () => {
     const { company, owner } = await seedCompany({
       name: "Northstar",
     });
@@ -33,44 +32,18 @@ describe("application notification workflows", () => {
       resumeKey: makeTestResumeKey(candidate.id, "ava-malik.pdf"),
     });
 
-    const onSendNotificationEmail: NotificationEmailSender = async (message) => {
-      expect(message.to).toBe(owner.email);
-      expect(message.subject).toBe("New applicant for Platform Engineer");
-      expect(message.react).toBeTruthy();
-
-      return {
-        providerMessageId: "re_new_applicant_123",
-      };
-    };
-
-    const { application } = await applyToJobWorkflow(
-      sql,
-      {
-        userId: candidate.id,
-        jobId: job.id,
-      },
-      {
-        sendNotificationEmail: onSendNotificationEmail,
-      },
-    );
+    const { application } = await applyToJobWorkflow(sql, {
+      userId: candidate.id,
+      jobId: job.id,
+    });
 
     const notifications = await getNotificationsByUser(sql, {
       userId: owner.id,
       limit: "10",
     });
 
-    expect(notifications).toHaveLength(1);
-    expect(notifications[0].type).toBe("new_applicant");
-    expect(notifications[0].readAt).toBeNull();
-    expect(notifications[0].payload).toEqual({
-      applicationId: application.id,
-      jobId: job.id,
-      jobTitle: "Platform Engineer",
-      candidateName: "Ava Malik",
-    });
-    expect(notifications[0].emailDeliveryStatus).toBe("sent");
-    expect(notifications[0].emailDeliverySentAt).toBeInstanceOf(Date);
-    expect(notifications[0].emailProviderMessageId).toBe("re_new_applicant_123");
+    expect(notifications).toHaveLength(0);
+    expect(application.status).toBe("applied");
   });
 
   it("keeps the status workflow successful even if email delivery fails", async () => {
@@ -102,7 +75,7 @@ describe("application notification workflows", () => {
       {
         userId: owner.id,
         applicationId: application.id,
-        status: "interviewing",
+        status: "pre_screening",
       },
       {
         sendNotificationEmail: async () => {
@@ -124,7 +97,7 @@ describe("application notification workflows", () => {
       jobId: job.id,
       jobTitle: "Frontend Engineer",
       companyName: "Orbit",
-      status: "interviewing",
+      status: "pre_screening",
     });
     expect(notifications[0].emailDeliveryStatus).toBe("failed");
     expect(notifications[0].emailDeliveryAttemptedAt).toBeInstanceOf(Date);

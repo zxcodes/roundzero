@@ -2,9 +2,9 @@
 INSERT INTO jobs (
   company_id, title, description, requirements, interview_questions, status,
   location, workplace_type, employment_type, experience_level,
-  salary_min, salary_max, salary_currency, team_size, headcount, expires_at
+  salary_min, salary_max, salary_currency, team_size, headcount, report_limit, expires_at
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
 RETURNING *;
 
 -- name: getJobsByCompanyId :many
@@ -18,8 +18,11 @@ ORDER BY created_at DESC;
 SELECT j.*,
        count(a.id)::int AS total_applicants,
        count(a.id) FILTER (WHERE a.status = 'applied')::int AS applied_count,
-       count(a.id) FILTER (WHERE a.status = 'interviewing')::int AS interviewing_count,
+       count(a.id) FILTER (WHERE a.status = 'pre_screening')::int AS pre_screening_count,
+       count(a.id) FILTER (WHERE a.status = 'interview_invited')::int AS interview_invited_count,
+       count(a.id) FILTER (WHERE a.status = 'interview_in_progress')::int AS interview_in_progress_count,
        count(a.id) FILTER (WHERE a.status = 'evaluated')::int AS evaluated_count,
+       count(a.id) FILTER (WHERE a.status = 'shortlisted')::int AS shortlisted_count,
        count(a.id) FILTER (WHERE a.status = 'rejected')::int AS rejected_count
 FROM jobs j
 LEFT JOIN applications a ON a.job_id = j.id
@@ -53,10 +56,11 @@ SET title = $1,
     salary_currency = $12,
     team_size = $13,
     headcount = $14,
-    expires_at = $15,
+    report_limit = $15,
+    expires_at = $16,
     updated_at = now()
-WHERE id = $16
-  AND company_id = $17
+WHERE id = $17
+  AND company_id = $18
 RETURNING *;
 
 -- name: closeExpiredJobs :execrows

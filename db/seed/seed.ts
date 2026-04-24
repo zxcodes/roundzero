@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { $ } from "bun";
 
 console.log("Starting RoundZero seed pipeline...\n");

@@ -23,6 +23,10 @@ const envSchema = z.object({
   // Stripe Keys
   STRIPE_PUBLISHABLE_KEY: z.string(),
   STRIPE_SECRET_KEY: z.string(),
+
+  // Edge Worker
+  EDGE_WORKER_URL: z.string().url().default("http://localhost:8787"),
+  EDGE_WORKER_SECRET: z.string().default("dev-secret"),
 });
 
 export const serverEnv = envSchema.parse(process.env);
