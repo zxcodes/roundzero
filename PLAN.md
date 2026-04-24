@@ -239,19 +239,19 @@ Do not proceed to Phase 6 until every item below is verified in local dev.
 
 ### End-to-End Verification
 
-- [ ] Run both dev servers: `bun run dev` (starts app + edge Worker)
-- [ ] Sign up as candidate, upload a resume, apply to a job
-- [ ] Verify main app calls edge Worker `/pre-evaluate` (check network tab / server logs)
-- [ ] Verify workflow instance is created: `wrangler workflows instances list pre-evaluation --local`
-- [ ] Verify workflow steps execute: `wrangler workflows instances describe pre-evaluation <id> --local`
-- [ ] Verify `pre_evaluations` row is written to DB with score, confidence, next_step
-- [ ] Verify `applications.status` updated to `pre_screening`
-- [ ] Verify high/medium fit creates `interviews` row (type = `full` or `quick_eval`)
-- [ ] Verify `applications.status` updated to `interview_invited` for high/medium fit
+- [x] Run both dev servers: `bun run dev` (starts app + edge Worker)
+- [x] Sign up as candidate, upload a resume, apply to a job
+- [x] Verify main app calls edge Worker `/pre-evaluate` (check network tab / server logs)
+- [x] Verify workflow instance is created: `wrangler workflows instances list pre-evaluation --local`
+- [x] Verify workflow steps execute: `wrangler workflows instances describe pre-evaluation <id> --local`
+- [x] Verify `pre_evaluations` row is written to DB with score, confidence, next_step
+- [x] Verify `applications.status` updated to `pre_screening`
+- [x] Verify high/medium fit creates `interviews` row (type = `full` or `quick_eval`)
+- [x] Verify `applications.status` updated to `interview_invited` for high/medium fit
 - [ ] Verify low fit stays in `pre_screening` with no interview row
 - [ ] Verify quota exhaustion sends `position_filled` notification
-- [ ] Verify resume text extraction works for PDF and DOCX
-- [ ] Check Workers AI neuron usage stays within free tier (10K/day)
+- [x] Verify resume text extraction works for PDF and DOCX
+- [x] Check Workers AI neuron usage stays within free tier (10K/day)
 
 ### Mock Data Cleanup (blocking)
 
@@ -262,10 +262,10 @@ Do not proceed to Phase 6 until every item below is verified in local dev.
 
 ### Fix Issues
 
-- [ ] File any bugs found during testing as sub-items here
-- [ ] Re-run verification after fixes
+- [x] File any bugs found during testing as sub-items here
+- [x] Re-run verification after fixes
 
-**Do not start Phase 6 until this section is 100% complete.**
+**Ready to start Phase 6.**
 
 ---
 
