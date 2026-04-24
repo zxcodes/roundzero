@@ -14,12 +14,16 @@ type PreEvaluationPayload = {
   applicationId: string;
 };
 
-type PreEvaluationResult = {
-  score: number;
-  missingRequirements: string[];
-  confidence: "low" | "medium" | "high";
-  nextStep: "interview_invited" | "ask_followups" | "hold";
-};
+const preEvaluationSchema = {
+  type: "object",
+  properties: {
+    score: { type: "number", minimum: 0, maximum: 100 },
+    missingRequirements: { type: "array", items: { type: "string" } },
+    confidence: { type: "string", enum: ["low", "medium", "high"] },
+    nextStep: { type: "string", enum: ["interview_invited", "ask_followups", "hold"] },
+  },
+  required: ["score", "missingRequirements", "confidence", "nextStep"],
+} as const;
 
 async function extractResumeText(bytes: Uint8Array, contentType: string): Promise<string> {
   if (contentType === "application/pdf") {
@@ -55,14 +59,6 @@ function buildPreEvaluationPrompt(
 
   return `You are an expert technical recruiter. Evaluate how well the candidate fits the job based on their resume and profile.
 
-Respond ONLY with a JSON object in this exact format:
-{
-  "score": <number 0-100>,
-  "missingRequirements": [<string array>],
-  "confidence": "low" | "medium" | "high",
-  "nextStep": "interview_invited" | "ask_followups" | "hold"
-}
-
 Rules:
 - score 70+ and high confidence -> "interview_invited"
 - score 50-69 or medium confidence -> "ask_followups"
@@ -78,32 +74,6 @@ Candidate Skills: ${skills}
 Candidate Resume:
 ${resumeText.slice(0, 12000)}
 `;
-}
-
-function parsePreEvaluationResponse(text: string): PreEvaluationResult {
-  try {
-    const cleaned = text
-      .replace(/^```json\s*/, "")
-      .replace(/```\s*$/, "")
-      .trim();
-    const parsed = JSON.parse(cleaned);
-
-    const score =
-      typeof parsed.score === "number" ? Math.max(0, Math.min(100, Math.round(parsed.score))) : 0;
-    const missingRequirements = Array.isArray(parsed.missingRequirements)
-      ? parsed.missingRequirements.filter((r: unknown) => typeof r === "string")
-      : [];
-    const confidence = ["low", "medium", "high"].includes(parsed.confidence)
-      ? parsed.confidence
-      : "low";
-    const nextStep = ["interview_invited", "ask_followups", "hold"].includes(parsed.nextStep)
-      ? parsed.nextStep
-      : "hold";
-
-    return { score, missingRequirements, confidence, nextStep };
-  } catch {
-    return { score: 0, missingRequirements: [], confidence: "low", nextStep: "hold" };
-  }
 }
 
 export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluationPayload> {
@@ -171,14 +141,35 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
 
       const response = await this.env.AI.run("@cf/meta/llama-3.1-8b-instruct-fp8", {
         messages: [{ role: "user", content: prompt }],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "pre_evaluation",
+            schema: preEvaluationSchema,
+          },
+        },
       });
 
-      const rawText =
-        typeof response === "object" && response !== null && "response" in response
-          ? String(response.response)
-          : JSON.stringify(response);
+      // With response_format, the model returns the parsed object directly
+      const result = response as {
+        score: number;
+        missingRequirements: string[];
+        confidence: string;
+        nextStep: string;
+      };
 
-      return parsePreEvaluationResponse(rawText);
+      return {
+        score: Math.max(0, Math.min(100, Math.round(result.score))),
+        missingRequirements: Array.isArray(result.missingRequirements)
+          ? result.missingRequirements.filter((r: unknown) => typeof r === "string")
+          : [],
+        confidence: ["low", "medium", "high"].includes(result.confidence)
+          ? (result.confidence as "low" | "medium" | "high")
+          : "low",
+        nextStep: ["interview_invited", "ask_followups", "hold"].includes(result.nextStep)
+          ? (result.nextStep as "interview_invited" | "ask_followups" | "hold")
+          : "hold",
+      };
     });
 
     // Step 5: Write result to pre_evaluations table and update status
