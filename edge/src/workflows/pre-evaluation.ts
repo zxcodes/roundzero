@@ -131,9 +131,13 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
 
     // Step 2: Fetch resume from R2
     const resumeBytes = await step.do("fetch_resume", async () => {
-      const object = await this.env.RESUMES.get(applicationData.application.resumeKey!);
+      const resumeKey = applicationData.application.resumeKey;
+      if (!resumeKey) {
+        throw new Error(`Application has no resume: ${applicationId}`);
+      }
+      const object = await this.env.RESUMES.get(resumeKey);
       if (!object) {
-        throw new Error(`Resume not found in R2: ${applicationData.application.resumeKey}`);
+        throw new Error(`Resume not found in R2: ${resumeKey}`);
       }
       const arrayBuffer = await object.arrayBuffer();
       return new Uint8Array(arrayBuffer);
@@ -141,7 +145,10 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
 
     // Step 3: Extract text from resume based on file type
     const resumeText = await step.do("extract_resume_text", async () => {
-      const resumeKey = applicationData.application.resumeKey!;
+      const resumeKey = applicationData.application.resumeKey;
+      if (!resumeKey) {
+        throw new Error(`Application has no resume: ${applicationId}`);
+      }
       const contentType = resumeKey.endsWith(".pdf")
         ? "application/pdf"
         : resumeKey.endsWith(".docx")
