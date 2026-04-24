@@ -56,13 +56,14 @@
         "noStaticElementInteractions": "off"
       },
       "style": {
-        "noNonNullAssertion": "off",
+        "noNonNullAssertion": "error",
         "useNodejsImportProtocol": "off",
         "noParameterAssign": "off",
         "noUselessElse": "warn",
         "noDefaultExport": "warn"
       },
       "suspicious": {
+        "noNonNullAssertedOptionalChain": "error",
         "noExplicitAny": "warn",
         "noAssignInExpressions": "off",
         "noUnknownAtRules": "off",
@@ -103,5 +104,18 @@
     "formatter": {
       "quoteStyle": "double"
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["**/*.test.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": { "noNonNullAssertedOptionalChain": "error" },
+          "style": {
+            "noNonNullAssertion": "off"
+          }
+        }
+      }
+    }
+  ]
 }

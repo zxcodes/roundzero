@@ -50,6 +50,8 @@ function DashboardLayout() {
     setCommandOpen(true);
   };
 
+  if (!user) return null;
+
   return (
     <TooltipProvider>
       <SidebarProvider
@@ -59,7 +61,7 @@ function DashboardLayout() {
           } as { [key: string]: string }
         }
       >
-        <AppSidebar user={user!} isCompany={isCompany} variant="inset" />
+        <AppSidebar user={user} isCompany={isCompany} variant="inset" />
         <CommandPalette isCompany={isCompany} open={commandOpen} onOpenChange={setCommandOpen} />
         <SidebarInset>
           <SiteHeader
