@@ -63,7 +63,7 @@ export const jobFieldsSchema = z
       .number({ error: "Report limit must be a valid number" })
       .int("Report limit must be a whole number")
       .min(1, "Report limit must be at least 1")
-      .max(15, "Report limit cannot exceed 15")
+      .max(10, "Report limit cannot exceed 10")
       .default(5),
     expiresAt: z.coerce.date().nullable().optional(),
   })
