@@ -100,12 +100,12 @@ Prepare the database, enums, and server boundaries before the AI funnel goes liv
 
 ### 4.2 Job Schema Changes
 
-- [x] Migration: add `report_limit INTEGER NOT NULL DEFAULT 5` to `jobs` (max allowed: 15)
+- [x] Migration: add `final_report_target INTEGER NOT NULL DEFAULT 5` to `jobs` (max allowed: 15)
 - [x] Update `jobFieldsSchema` and `JobFormData` to include `reportLimit`
 - [x] Update `createJob` and `updateJob` server functions
-- [ ] Add report limit field to `JobForm` UI with copy: "How many candidates should RoundZero evaluate for this role? (Max 15)"
+- [ ] Add final report target field to `JobForm` UI with copy: "How many final candidate reports should RoundZero deliver for this role? (Max 15)"
 - [x] Enforce max 15 in Zod schema and server functions
-- [x] Add `report_limit` to SQLC queries (`createJob`, `updateJob`, `getJobById`)
+- [x] Add `final_report_target` to SQLC queries (`createJob`, `updateJob`, `getJobById`)
 
 ### 4.3 Pre-Evaluations Table
 
@@ -126,7 +126,7 @@ Prepare the database, enums, and server boundaries before the AI funnel goes liv
 - [x] Add `report_ready` to `notificationTypeSchema`
 - [x] Add `report_ready` payload schema and presentation in `config.ts`
 - [x] Add `interview_invited` notification type for candidates
-- [x] Add `position_filled` notification type for candidates (sent when `report_limit` is reached)
+- [x] Add `position_filled` notification type for candidates (sent when `final_report_target` is reached)
 
 ### 4.7 Cloudflare Workflows Setup
 
@@ -150,7 +150,7 @@ Prepare the database, enums, and server boundaries before the AI funnel goes liv
 
 - [x] All migrations run cleanly
 - [x] `bun run check` passes (lint + types)
-- [x] Job creation/editing works with new `report_limit` field
+- [x] Job creation/editing works with new `final_report_target` field
 - [x] Applying no longer sends `new_applicant` notifications
 - [ ] Old mock data is fully removed from production code paths
 
@@ -198,10 +198,12 @@ Build the lightweight pre-evaluation stage as a durable Cloudflare Workflow.
    - Return pre-evaluation record ID
 
 7. **`decide_next_step`**
-   - Check `jobs.report_limit` vs existing report count
-   - If high/medium fit + quota available → create `interviews` row (type = `full` or `quick_eval`), update status → `interview_invited`
+   - Compute capacity with:
+     - `remainingReports = final_report_target - completedReports`
+     - `availableInviteSlots = remainingReports - activeInterviews(status IN pending|in_progress)`
+   - If high/medium fit + invite slot available → create `interviews` row (type = `full` or `quick_eval`) with `expires_at = invited_at + 48 hours`, update status → `interview_invited`
    - If low fit → stay in `pre_screening`
-   - If quota exhausted → send `position_filled` notification to remaining pending candidates
+   - If target reached (`completedReports >= final_report_target`) → send `position_filled` notification to remaining pending candidates
 
 ### 5.2 Triggering the Workflow
 
@@ -276,12 +278,14 @@ Build the async chat interview surface and backend.
 ### 6.1 Interview Data Model
 
 - [ ] SQLC queries for interviews: `createInterview`, `getInterviewById`, `getInterviewByApplicationId`, `updateInterviewStatus`, `completeInterview`
+- [ ] Add interview lifecycle fields and queries: `invited_at`, `expires_at`, `expired_at`, `cancelled_at`, `cancellation_reason`
 - [ ] Server functions in `app/features/interviews/server/functions.ts`
   - `createInterviewForApplication`
   - `getMyInterview`
   - `getInterviewChatHistory`
   - `submitInterviewMessage`
   - `completeInterview`
+  - `cancelInterview`
 
 ### 6.2 Interview Agent Boundary
 
@@ -310,6 +314,9 @@ Build the async chat interview surface and backend.
 
 - [ ] When candidate starts interview → `status = interview_in_progress`
 - [ ] When interview completes (agent calls `completeInterview`) → trigger evaluation pipeline (Phase 7)
+- [ ] Add 48-hour interview expiry policy (`expires_at`) for invited interviews
+- [ ] Add candidate cancel flow: set interview status to `cancelled`, set application status to `withdrawn`, then backfill next best candidate
+- [ ] Add automatic backfill: when interview expires/cancels, promote next best eligible candidate until `final_report_target` reports are completed or pool is exhausted
 - [ ] Time/question limits enforcement (configurable per interview type)
 - [ ] Interview progress tracking (stage transitions, question count)
 
@@ -384,6 +391,10 @@ Build the report generation pipeline and company-facing report UI with real data
   - Resend email (best-effort)
 - [ ] Notification payload: candidate name, job title, score, recommendation, link to report
 - [ ] Update `app/features/notifications/config.ts` with `report_ready` presentation
+- [ ] Refresh interview-related notification email templates and payloads:
+  - include direct CTA to `/interview/$interviewId`
+  - include deadline copy (`expires_at`)
+  - include `interview_expired` notification
 
 ### 7.4 Company Report UI (Real Data)
 
@@ -549,12 +560,12 @@ Replaces hand-rolled Google OAuth + encrypted cookie sessions. Unlocks magic lin
 
 | # | Decision | Answer |
 |---|----------|--------|
-| 1 | Quota exhausted behavior | Stop creating new interviews. Send `position_filled` notification to remaining pending candidates. They stay in pipeline (`pre_screening`), not auto-rejected. |
-| 2 | Default `report_limit` | `5` per job (max allowed: `15`) |
+| 1 | Quota exhausted behavior | Stop creating new interviews when `completedReports >= final_report_target`. Send `position_filled` to remaining pending candidates. They stay in pipeline (`pre_screening`), not auto-rejected. |
+| 2 | Default `final_report_target` | `5` per job (max allowed: `15`) |
 | 3 | Low-match outcome | Hold in `pre_screening`. Company can manually reject. No system auto-reject. |
 | 4 | Unevaluated visibility | Yes — separate "Pending" tab, read-only. Companies see all applicants; only evaluated ones get AI reports. |
 | 5 | Pre-evaluation timing | Async. Nothing in the AI flow is synchronous. All steps run as background jobs, queues, or workflows. |
-| 6 | Field name for limit | `report_limit` |
+| 6 | Field name for limit | `final_report_target` |
 
 ---
 

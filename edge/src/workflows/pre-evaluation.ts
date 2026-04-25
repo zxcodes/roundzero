@@ -493,15 +493,19 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
 
       const interviewType =
         aiResult.result.nextStep === "interview_invited" ? "full" : "quick_eval";
-      await createInterview(db, {
+      const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+      const interview = await createInterview(db, {
         applicationId,
         agentId: null,
         type: interviewType,
-        metadata: { preEvaluationScore: aiResult.result.score },
+        metadata: { preEvaluationScore: aiResult.result.score, expiresAt },
         status: "pending",
         startedAt: null,
         completedAt: null,
       });
+      if (!interview) {
+        throw new Error(`Failed to create interview for application: ${applicationId}`);
+      }
 
       await updateApplicationStatus(db, {
         id: applicationId,
@@ -512,9 +516,11 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
       if (candidate) {
         const payload = notificationPayloadSchemas.interview_invited.parse({
           applicationId,
+          interviewId: interview.id,
           jobId: job.id,
           jobTitle: job.title,
           interviewType,
+          expiresAt,
         });
         await createNotification(db, {
           userId: candidate.id,
