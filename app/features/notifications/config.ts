@@ -162,7 +162,7 @@ export const getNotificationPresentation = (notification: { type: string; payloa
       tone: notificationTone[type],
       title: `Zero invited you to an interview`,
       body: `You have been invited to complete a ${payload.data.interviewType === "quick_eval" ? "quick evaluation" : "full interview"} for ${payload.data.jobTitle}. Complete it before the deadline to keep your evaluation slot.`,
-      to: "/interview/$interviewId" as const,
+      to: "/dashboard/interview/$interviewId" as const,
       params: { interviewId: payload.data.interviewId },
       meta: {
         ctaLabel: "Start Interview",

@@ -25,6 +25,18 @@ JOIN companies c ON c.id = j.company_id
 WHERE i.id = $1
   AND a.candidate_id = $2;
 
+-- name: getInterviewsByCandidate :many
+SELECT i.id, i.application_id, i.agent_id, i.type, i.metadata, i.status, i.started_at, i.completed_at,
+       i.created_at, i.updated_at,
+       a.candidate_id, a.status AS application_status,
+       a.job_id, j.title AS job_title, c.name AS company_name
+FROM interviews i
+JOIN applications a ON a.id = i.application_id
+JOIN jobs j ON j.id = a.job_id
+JOIN companies c ON c.id = j.company_id
+WHERE a.candidate_id = $1
+ORDER BY i.updated_at DESC;
+
 -- name: updateInterviewStatus :one
 UPDATE interviews
 SET status = $1,

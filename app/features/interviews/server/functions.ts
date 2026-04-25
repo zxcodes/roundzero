@@ -9,6 +9,7 @@ import {
   completeInterview,
   getInterviewByApplicationId,
   getInterviewForCandidateById,
+  getInterviewsByCandidate,
   updateInterviewStatus,
 } from "@/features/interviews/queries/queries_sql";
 import { getDb } from "@/shared/db";
@@ -107,6 +108,20 @@ export const getMyInterview = createServerFn({ method: "GET" })
     });
 
     return interview;
+  });
+
+export const getMyInterviews = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }) => {
+    const db = getDb();
+
+    if (context.user.role !== "candidate") {
+      throw new Error("Only candidates can view interviews");
+    }
+
+    return await getInterviewsByCandidate(db, {
+      candidateId: context.userId,
+    });
   });
 
 export const getMyInterviewState = createServerFn({ method: "GET" })

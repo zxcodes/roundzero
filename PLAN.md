@@ -299,8 +299,8 @@ Build the async chat interview surface and backend.
 
 ### 6.3 Interview Chat UI
 
-- [ ] Route: `/interview/$interviewId`
-- [ ] `InterviewChat` component in `app/features/interviews/components/interview-chat.tsx`
+- [x] Route: `/dashboard/interview/$interviewId` (moved under authenticated dashboard workspace)
+- [x] Interview chat surface implemented with reusable transcript + composer components
   - Async chat UI (text-based, no video)
   - Shows transcript, current question, input field
   - Handles resumable streams
@@ -309,6 +309,15 @@ Build the async chat interview surface and backend.
   - `interview_in_progress`: show "Interview in Progress" card
   - `evaluated`: show "Under Review" messaging
 - [ ] Add candidate-facing empty/error states for expired, already-completed, or unavailable interviews
+
+Current implementation status:
+
+- [x] Interview workspace layout is live: app sidebar + interview session pane + full-width chat pane
+- [x] Candidate interviews index route exists (`/dashboard/interviews`) and redirects to most recent session when available
+- [x] Transcript scroll is contained in chat panel (no page growth)
+- [x] Composer preserves focus after send and supports fast back-to-back answers
+- [x] Interview notifications deep-link to `/dashboard/interview/$interviewId`
+- [ ] Final visual polish pass for terminal states and mobile layout edge cases
 
 ### 6.4 Interview Lifecycle
 
@@ -428,6 +437,46 @@ Current implementation status:
   - Replace mock `AiFullReport` with real report data
   - Show question/answer timeline, dimension scores, evidence
 - [ ] Add `app/features/reports/components/` for reusable report views
+
+### 7.5 Flow Completion Gap List (Current Next Phase)
+
+This is the immediate implementation phase required to make the end-to-end interview -> report flow fully complete in product terms.
+
+#### Report Retrieval + Data Plumbing
+
+- [ ] Add/verify SQLC queries for post-eval report retrieval by `application_id`, `job_id`, and report id
+- [ ] Add report server functions for company-facing loaders (typed return shapes, `null` on not-found)
+- [ ] Ensure loader branches use `notFound()` only for missing resources and preserve auth errors as real errors
+
+#### Company Report Surfaces
+
+- [ ] Wire `/dashboard/applicant-reports/$applicationId` to persisted post-evaluation report data
+- [ ] Render full sections: summary, recommendation, overall score, dimension scores, strengths, weaknesses, insights, evidence
+- [ ] Wire `/dashboard/applicants/$applicationId` to show post-eval summary card when evaluated and pending state otherwise
+- [ ] Keep pre-eval information explicitly secondary to post-eval report once interview is completed
+
+#### Score Presentation + Consistency
+
+- [ ] Decide and document UI score scale policy (`/100` display vs UI conversion to `1-10`)
+- [ ] Apply the chosen score format consistently across applicant list, detail, report page, and notification copy
+
+#### Notification + Delivery Completeness
+
+- [ ] Confirm `report_ready` payload includes all fields used by UI/email templates (candidate, job, score, recommendation, deep link)
+- [ ] Implement/verify best-effort email delivery path for workflow-created `report_ready` notifications
+- [ ] Validate notification deep links land on fully populated report pages
+
+#### Reliability + Reconciliation
+
+- [ ] Add deterministic fallback observability for post-eval generation (clear logs/metrics when AI response is invalid)
+- [ ] Add a lightweight reconciliation path to detect interviews completed without visible company report data
+- [ ] Verify idempotency/duplicate protection for repeated post-eval triggers
+
+#### End-to-End Validation
+
+- [ ] Run full local smoke flow: apply -> pre-eval -> invite -> interview -> complete -> post-eval -> report_ready -> company report view
+- [ ] Verify candidate-facing status progression stays correct after interview completion (`interview_in_progress` -> `evaluated` -> downstream decisions)
+- [ ] Capture one golden-path test case fixture for regression checks
 
 ### Exit Criteria
 

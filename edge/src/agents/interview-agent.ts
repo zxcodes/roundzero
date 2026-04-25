@@ -46,6 +46,10 @@ const createFirstQuestion = (session: InterviewSession) => {
   return `Hi, I am Zero. We will run a focused interview for ${session.jobTitle}. First question: walk me through your most relevant project and your specific ownership.`;
 };
 
+const createGreeting = (session: InterviewSession) => {
+  return `Hi, I am Zero. Thanks for joining this interview for ${session.jobTitle} at ${session.companyName}. I will ask focused questions and keep this concise.`;
+};
+
 const createFollowUpQuestion = (session: InterviewSession, answeredCount: number) => {
   const questionNumber = answeredCount + 1;
   if (session.type === "quick_eval") {
@@ -378,6 +382,12 @@ export class InterviewAgent extends DurableObject<Env> {
 
     const messages = await this.getMessages();
     if (messages.length === 0) {
+      messages.push({
+        role: "assistant",
+        content: createGreeting(session),
+        createdAt: toNow(),
+      });
+
       const question = await this.nextQuestion(session, messages);
       messages.push({
         role: "assistant",
