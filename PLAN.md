@@ -470,6 +470,17 @@ Polish the candidate experience for the AI-aware statuses.
 - [ ] Track funnel metrics: apply → pre-eval → interview → report
 - [ ] Time-to-evaluation per job
 
+### 9.5 Pre-Evaluation Visibility (Deferred)
+
+Pre-evaluation scores are currently shown to companies for local dev debugging. Decide before launch:
+
+- [ ] **Hide pre-eval scores from companies in production** - pre-eval is an internal funnel signal ("does this candidate deserve an interview?"), not a hiring evaluation. Showing a resume-only score undermines the value of the actual RoundZero interview.
+- [ ] **Company view should have two tabs**:
+  - **Pending**: candidates who applied but have not completed RoundZero (read-only: name, resume, apply date, status)
+  - **Evaluated**: candidates who completed the full interview with a real report (score, summary, recommendation, action buttons)
+- [ ] **Remove or dev-gate `PreEvaluationCard`** on company applicant detail pages
+- [ ] **Pre-eval scores remain accessible** for internal funnel debugging and model iteration
+
 ### Exit Criteria
 
 - [ ] All edge cases handled gracefully
