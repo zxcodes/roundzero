@@ -18,7 +18,7 @@ This document reflects the app as it transitions from **platform-only** to **pla
 - Cloudflare Workflows for pre-evaluation and report generation pipelines
 - Cloudflare Durable Objects for interview agents
 - AI-driven candidate evaluation and structured reports
-- `report_limit` quota system per job
+- `final_report_target` quota system per job
 - 7-status application lifecycle with pre-screening funnel
 
 ---
@@ -276,7 +276,7 @@ Schema dump:
   - status
   - salary info
   - team/headcount
-  - `report_limit` (default 5, max 15) — controls how many candidates get AI evaluation
+  - `final_report_target` (default 5, max 15) — controls how many final reports companies receive
   - `interview_questions` (JSONB, for AI agent context)
   - `expires_at`
   - `archived_at`
@@ -308,6 +308,12 @@ This is important architecturally:
 - link between applications and AI interview sessions
 - stores:
   - `type`: `'full'` | `'quick_eval'`
+  - `status`: `'pending'` | `'in_progress'` | `'completed'` | `'expired'` | `'cancelled'`
+  - `invited_at`
+  - `expires_at` (48-hour interview window)
+  - `expired_at`
+  - `cancelled_at`
+  - `cancellation_reason`
   - `metadata` (JSONB)
 
 #### `reports`
@@ -318,6 +324,14 @@ This is important architecturally:
   - dimension scores (technical, communication, experience relevance)
   - strengths, concerns, evidence
   - question/answer timeline
+
+Quota semantics:
+
+- `final_report_target` is consumed by completed reports, not interview invites
+- invite capacity per job is computed as:
+  - `remainingReports = final_report_target - completedReports`
+  - `availableInviteSlots = remainingReports - activeInterviews(status IN pending|in_progress)`
+- if an interview expires or is cancelled, that slot is recycled and the next best candidate is invited
 
 ### Schema Decisions
 
@@ -548,7 +562,7 @@ Jobs support:
 
 AI integration:
 
-- `report_limit` controls how many candidates get AI evaluation per job
+- `final_report_target` controls how many final reports companies receive per job
 - `interview_questions` (JSONB) feeds into agent system prompts
 
 ---
@@ -615,6 +629,17 @@ The AI layer runs in a separate `edge/` Cloudflare Worker, triggered by authenti
 - Two modes:
   - `full`: complete RoundZero interview
   - `quick_eval`: 2–3 clarifying questions for medium-fit candidates
+- Candidate can cancel an interview; cancel transitions release the slot for backfill
+- Interview invites expire after 48 hours if not completed
+
+### Interview Lifecycle Manager (Cron Trigger)
+
+- A Worker `scheduled()` handler runs periodically to:
+  - expire overdue interviews (`expires_at < now()` and `status IN pending|in_progress`)
+  - send `interview_expired` notifications
+  - promote next best eligible candidates to refill available invite slots
+- Cron configuration is managed in `wrangler.jsonc` via `triggers.crons`
+- This follows Cloudflare docs for Cron Triggers and keeps job-level queue orchestration outside per-session Durable Object alarms
 
 ### Report Generation Pipeline (Cloudflare Workflow)
 
@@ -658,7 +683,7 @@ See `PLAN.md` for the full build plan. Current focus:
 | Item | Why | Approach |
 | --- | --- | --- |
 | Recovery sweep for stuck applications | Fire-and-forget trigger has no retry — if edge is down, applications stay in `applied` with no pre-evaluation forever | Add a cron (CF Cron Trigger or main app scheduled task) that finds `applied` rows with no `pre_evaluations` row and re-triggers them |
-| Quota race condition | Two concurrent workflows for the same job can both pass the quota check and exceed `report_limit` | Use `SELECT ... FOR UPDATE` or atomic `INSERT ... WHERE (SELECT count...) < limit` in `decide_next_step` |
+| Quota race condition | Two concurrent workflows can over-invite for a job if capacity checks are non-atomic | Use transactional locking (`SELECT ... FOR UPDATE`) on job-level capacity checks when creating interviews |
 | LLM model adequacy | Llama 3.1 8B may be too weak for nuanced resume scoring (career trajectory, transferable skills) | Evaluate during Phase 5.5 testing; upgrade to `llama-3.3-70b-instruct-fp8-fast` if scores feel random |
 | Workflow failure orphans | If workflow errors after `write_pre_evaluation` but before `decide_next_step`, application is stuck in `pre_screening` | Recovery sweep covers this too — detect `pre_screening` rows older than N minutes with no interview |
 | Edge Worker secret rotation | Shared secret is a single static value | Use a proper random secret in prod; consider HMAC request signing or CF Access Service Tokens for zero-trust |

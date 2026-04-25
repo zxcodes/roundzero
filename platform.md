@@ -443,7 +443,7 @@ The following decisions are required **before Phase 4 (AI Interview)** begins. T
 - Only companies can move `evaluated` → `shortlisted` or `rejected`
 - The system auto-advances through `pre_screening` → `interview_invited` → `interview_in_progress` → `evaluated`
 - A company can manually reject at any pre-evaluation stage
-- When a job's `report_limit` is reached, the system stops advancing new candidates out of `pre_screening`
+- When a job's `final_report_target` is reached, the system stops advancing new candidates out of `pre_screening`
 
 **Implementation:**
 - Update `enums.ts`: extend `applicationStatusSchema` to include all 7 statuses
@@ -517,7 +517,7 @@ The following decisions are required **before Phase 4 (AI Interview)** begins. T
   - Can change status or shortlist/reject
 
 **Quota-Exhausted State:**
-- Once `report_limit` candidates are evaluated, new applicants remain in pre-evaluation
+- Once `final_report_target` reports are generated, new applicants remain in pre-evaluation
 - Companies still see them in the pending list with full profile data
 - No new AI reports are generated until the company increases the limit (future feature)
 
@@ -563,11 +563,13 @@ The following decisions are required **before Phase 4 (AI Interview)** begins. T
 
 ---
 
-### 15.6 Decision 6: Report Limits
+### 15.6 Decision 6: Final Report Target
 
-**Question:** How many candidates should RoundZero evaluate per job, and what happens when that limit is reached?
+**Question:** How many final reports should RoundZero deliver per job, and what happens when that target is reached?
 
-**Decision:** Each job has a `report_limit` (default: 5, max: 15). The system only creates AI interviews and generates reports while the count of existing reports for that job is below the limit.
+**Decision:** Each job has a `final_report_target` (default: 5, max: 15). The system should deliver that many final reports whenever enough eligible candidates exist.
+
+This target is based on completed reports, not interview invites.
 
 **Rationale:**
 - Prevents evaluation noise for roles with only 1–2 openings
@@ -575,18 +577,27 @@ The following decisions are required **before Phase 4 (AI Interview)** begins. T
 - Forces selectivity in the funnel
 - Default of 5 is small enough to review quickly but large enough to find strong matches
 
-**When Quota Is Reached:**
+**When Target Is Reached:**
 - The system stops creating new interviews for that job
 - Remaining pending candidates stay in `pre_screening` (NOT auto-rejected)
 - Candidates receive a `position_filled` notification: "This position has received enough evaluations. Your application is still on file and the company may review it directly."
 - Companies still see unevaluated applicants in a read-only pending list and can manually reject them
 
+**Interview Slot Policy:**
+- Every invite has a 48-hour expiry window
+- If a candidate does not complete in time, interview status becomes `expired`
+- Candidates can cancel interviews voluntarily; status becomes `cancelled`
+- Expired/cancelled slots are recycled to the next best eligible candidate
+- Capacity is computed as:
+  - `remainingReports = final_report_target - completedReports`
+  - `availableInviteSlots = remainingReports - activeInterviews(status IN pending|in_progress)`
+
 **Implementation:**
-- Add `report_limit INTEGER NOT NULL DEFAULT 5` to `jobs` table (max: 15)
-- Add field to job creation/edit form with copy: "How many candidates should RoundZero evaluate for this role? (Max 15)"
+- Add `final_report_target INTEGER NOT NULL DEFAULT 5` to `jobs` table (max: 15)
+- Add field to job creation/edit form with copy: "How many final candidate reports should RoundZero deliver for this role? (Max 15)"
 - Enforce max 15 in Zod schema and server functions
-- Pre-evaluation service checks `report_limit` before creating interviews
-- Background workflow sends `position_filled` notifications when limit is hit
+- Pre-evaluation + lifecycle manager computes invite capacity from report completion and active interviews
+- Background workflow and cron lifecycle manager send `position_filled` when target is reached
 
 ---
 

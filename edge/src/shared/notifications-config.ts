@@ -26,9 +26,18 @@ const reportReadyPayloadSchema = z.object({
 
 const interviewInvitedPayloadSchema = z.object({
   applicationId: z.string().uuid(),
+  interviewId: z.string().uuid(),
   jobId: z.string().uuid(),
   jobTitle: z.string().min(1),
   interviewType: z.string().min(1),
+  expiresAt: z.string().datetime(),
+});
+
+const interviewExpiredPayloadSchema = z.object({
+  applicationId: z.string().uuid(),
+  interviewId: z.string().uuid(),
+  jobId: z.string().uuid(),
+  jobTitle: z.string().min(1),
 });
 
 const positionFilledPayloadSchema = z.object({
@@ -48,6 +57,7 @@ export const notificationPayloadSchemas = {
   application_withdrawn: applicationWithdrawnPayloadSchema,
   report_ready: reportReadyPayloadSchema,
   interview_invited: interviewInvitedPayloadSchema,
+  interview_expired: interviewExpiredPayloadSchema,
   position_filled: positionFilledPayloadSchema,
   job_published: jobLifecyclePayloadSchema,
   job_archived: jobLifecyclePayloadSchema,

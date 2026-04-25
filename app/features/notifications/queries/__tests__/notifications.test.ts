@@ -43,22 +43,26 @@ describe("getNotificationsByUser", () => {
 
     await createNotification(sql, {
       userId: firstUser.id,
-      type: "new_applicant",
+      type: "interview_invited",
       payload: {
         applicationId: crypto.randomUUID(),
+        interviewId: crypto.randomUUID(),
         jobId: crypto.randomUUID(),
         jobTitle: "Platform Engineer",
-        candidateName: "Ava Malik",
+        interviewType: "full",
+        expiresAt: new Date().toISOString(),
       },
     });
     await createNotification(sql, {
       userId: secondUser.id,
-      type: "new_applicant",
+      type: "interview_invited",
       payload: {
         applicationId: crypto.randomUUID(),
+        interviewId: crypto.randomUUID(),
         jobId: crypto.randomUUID(),
         jobTitle: "Designer",
-        candidateName: "Second User",
+        interviewType: "quick_eval",
+        expiresAt: new Date().toISOString(),
       },
     });
     const latest = await createNotification(sql, {
@@ -118,22 +122,26 @@ describe("notification read state", () => {
 
     await createNotification(sql, {
       userId: user.id,
-      type: "new_applicant",
+      type: "interview_invited",
       payload: {
         applicationId: crypto.randomUUID(),
+        interviewId: crypto.randomUUID(),
         jobId: crypto.randomUUID(),
         jobTitle: "Staff Engineer",
-        candidateName: "Imran Shah",
+        interviewType: "full",
+        expiresAt: new Date().toISOString(),
       },
     });
     await createNotification(sql, {
       userId: user.id,
-      type: "new_applicant",
+      type: "interview_invited",
       payload: {
         applicationId: crypto.randomUUID(),
+        interviewId: crypto.randomUUID(),
         jobId: crypto.randomUUID(),
         jobTitle: "Staff Engineer",
-        candidateName: "Aisha Noor",
+        interviewType: "quick_eval",
+        expiresAt: new Date().toISOString(),
       },
     });
 
@@ -176,22 +184,26 @@ describe("notification email delivery state", () => {
     const user = await seedUser({ role: "company" });
     const failed = await createNotification(sql, {
       userId: user.id,
-      type: "new_applicant",
+      type: "interview_invited",
       payload: {
         applicationId: crypto.randomUUID(),
+        interviewId: crypto.randomUUID(),
         jobId: crypto.randomUUID(),
         jobTitle: "Designer",
-        candidateName: "Nadia Khan",
+        interviewType: "full",
+        expiresAt: new Date().toISOString(),
       },
     });
     const skipped = await createNotification(sql, {
       userId: user.id,
-      type: "new_applicant",
+      type: "interview_invited",
       payload: {
         applicationId: crypto.randomUUID(),
+        interviewId: crypto.randomUUID(),
         jobId: crypto.randomUUID(),
         jobTitle: "Designer",
-        candidateName: "Hana Ali",
+        interviewType: "quick_eval",
+        expiresAt: new Date().toISOString(),
       },
     });
 
