@@ -11,7 +11,7 @@ That wastes:
 
 Use a funnel:
 
-Application → Pre-Evaluation → Selective Deep Evaluation → Company Review
+Application → Pre-Evaluation → Selective Deep Evaluation → Report → Company Review
 
 ---
 
@@ -260,11 +260,11 @@ This reduces cost and improves UX.
 
 | # | Decision | Status |
 |---|----------|--------|
-| 1 | Application Status Lifecycle | ✅ Extend single `applications.status` enum to all 7 statuses |
+| 1 | Application Status Lifecycle | ✅ Extend single `applications.status` enum to all 8 statuses |
 | 2 | Candidate-Facing Messaging | ✅ Hide pre-evaluation stages; show only 6 candidate-visible statuses |
 | 3 | Medium-Fit Follow-Up | ✅ Use synchronous chat UI (same as full interview) with 2–3 questions |
-| 4 | Company View Pre/Post AI | ✅ Show full pipeline, pre-eval candidates are read-only |
-| 5 | Pre-Evaluation Output Format | ⏳ Pending validation with 5–10 real applications |
+| 4 | Company View Pre/Post AI | ✅ Show full pipeline; pre-eval candidates are read-only, post-eval show real scores |
+| 5 | Pre-Evaluation Output Format | ✅ Pipeline live; real-world validation with hiring managers deferred to post-MVP |
 | 6 | Final Report Target | ✅ `final_report_target` per job (default: 5, max: 15). Target reached → stop new evaluations, notify candidates, no auto-reject. |
 
 ---

@@ -12,14 +12,13 @@ This document reflects the app as it transitions from **platform-only** to **pla
 - public company and jobs browsing
 - one-click applications with profile snapshots
 - durable in-app notifications with Resend email delivery
-
-**In planning / build:**
-
-- Cloudflare Workflows for pre-evaluation and report generation pipelines
+- Cloudflare Workflows for pre-evaluation and post-evaluation pipelines
 - Cloudflare Durable Objects for interview agents
 - AI-driven candidate evaluation and structured reports
 - `final_report_target` quota system per job
-- 7-status application lifecycle with pre-screening funnel
+- 8-status application lifecycle with pre-screening funnel
+- real-time interview chat UI with transcript and composer
+- company-facing report views with scoring and timeline
 
 ---
 
@@ -121,9 +120,12 @@ app/routes/
 ├── _authenticated.tsx
 ├── _authenticated/dashboard.tsx
 ├── _authenticated/dashboard/applicants/$applicationId.tsx
+├── _authenticated/dashboard/applicant-reports/$applicationId.tsx
 ├── _authenticated/dashboard/application/$applicationId.tsx
 ├── _authenticated/dashboard/applications.tsx
 ├── _authenticated/dashboard/index.tsx
+├── _authenticated/dashboard/interview/$interviewId.tsx
+├── _authenticated/dashboard/interviews.tsx
 ├── _authenticated/dashboard/job-applicants/$jobId.tsx
 ├── _authenticated/dashboard/jobs/new.tsx
 ├── _authenticated/dashboard/jobs/index.tsx
@@ -168,8 +170,11 @@ app/features/
 ├── candidates/
 ├── companies/
 ├── dashboard/
+├── interviews/
+├── jobs/
 ├── notifications/
-└── jobs/
+├── pre-evaluations/
+└── reports/
 ```
 
 ### What exists
@@ -180,20 +185,17 @@ app/features/
 - `jobs`: job CRUD, filtering, pagination, status/archive/expiry behavior, interview questions
 - `applications`: one-click apply, applicant lists, application status, notification workflows
 - `dashboard`: role-specific metrics
+- `interviews`: interview lifecycle, chat UI components, transcript/composer, server functions
 - `notifications`: per-user in-app notification inbox, Resend email delivery, workflow event records
-
-### What does not exist yet (in main app)
-
-- `interviews/` (planned for Phase 6)
-- `reports/` (planned for Phase 7)
+- `pre-evaluations`: pre-screening result queries and compact card components
+- `reports`: post-evaluation report queries, server functions, and reusable report view components
 
 ### AI layer (in `edge/`)
 
-- `edge/src/workflows/pre-evaluation.ts` (Phase 5)
-- `edge/src/workflows/post-evaluation.ts` (Phase 7)
-- `edge/src/agents/interview-agent.ts` (Phase 6)
-
-These are part of the AI layer build plan in `PLAN.md`.
+- `edge/src/workflows/pre-evaluation.ts`
+- `edge/src/workflows/post-evaluation.ts`
+- `edge/src/agents/interview-agent.ts`
+- `edge/src/shared/email.ts` (Resend helper for workflow email delivery)
 
 ---
 
@@ -309,12 +311,8 @@ This is important architecturally:
 - stores:
   - `type`: `'full'` | `'quick_eval'`
   - `status`: `'pending'` | `'in_progress'` | `'completed'` | `'expired'` | `'cancelled'`
-  - `invited_at`
-  - `expires_at` (48-hour interview window)
-  - `expired_at`
-  - `cancelled_at`
-  - `cancellation_reason`
-  - `metadata` (JSONB)
+  - `metadata` (JSONB) — includes `expiresAt`, `expiredAt`, `cancelledAt`, `cancellationReason`
+  - `started_at`, `completed_at`
 
 #### `reports`
 
@@ -477,13 +475,15 @@ Notifications are implemented as a durable in-app inbox with Resend-backed email
   - `email_delivery_sent_at`
   - `email_provider_message_id`
   - `created_at`
-- supported event types today:
+- supported event types:
   - `application_status_changed`
-- AI-phase event types (planned):
   - `report_ready`
   - `interview_invited`
+  - `interview_expired`
   - `position_filled`
-- application statuses include all 7: `applied`, `pre_screening`, `interview_invited`, `interview_in_progress`, `evaluated`, `shortlisted`, `rejected`
+  - `job_published`, `job_archived`, `job_closed`
+  - `application_withdrawn`
+- application statuses include all 8: `applied`, `pre_screening`, `interview_invited`, `interview_in_progress`, `evaluated`, `shortlisted`, `rejected`, `withdrawn`
 - the app shell/dashboard header renders the inbox surface
 
 ### Current module layout
@@ -510,12 +510,13 @@ Provider:
 Current email-backed use cases:
 
 - candidate application status updates
-- company-side new applicant activity alerts
+- company-side report ready notifications
+- interview expiry notifications
 
 Future email-backed use cases:
 
 - interview ready / interview reminder
-- report ready notifications
+- position filled notifications
 
 Recommended architecture:
 
@@ -624,13 +625,12 @@ The AI layer runs in a separate `edge/` Cloudflare Worker, triggered by authenti
 
 - One Durable Object per interview session
 - SQLite-backed message persistence
-- Resumable WebSocket streams
+- HTTP-based communication (main app POSTs to edge Worker, which forwards to Durable Object)
 - System prompt injected with job requirements + resume context
 - Two modes:
   - `full`: complete RoundZero interview
   - `quick_eval`: 2–3 clarifying questions for medium-fit candidates
-- Candidate can cancel an interview; cancel transitions release the slot for backfill
-- Interview invites expire after 48 hours if not completed
+- Interview invites expire after 48 hours if not completed (stored in `metadata.expiresAt`)
 
 ### Interview Lifecycle Manager (Cron Trigger)
 
@@ -643,16 +643,15 @@ The AI layer runs in a separate `edge/` Cloudflare Worker, triggered by authenti
 
 ### Report Generation Pipeline (Cloudflare Workflow)
 
-- Triggered when interview completes
+- Triggered when interview completes (main app POSTs to `/post-evaluate`)
 - Durable multi-step execution:
-  1. Read interview transcript + application snapshot
-  2. Technical assessment (LLM call)
-  3. Communication assessment (LLM call)
-  4. Experience validation (LLM call)
-  5. Consistency check (LLM call)
-  6. Score aggregation
-  7. Write report to `reports` table
-  8. Send `report_ready` notification
+  1. Idempotency check (skip if report already exists)
+  2. Read interview context + transcript from Durable Object state
+  3. Generate report via single LLM call with structured JSON schema output
+     - Fallback deterministic report when LLM returns non-JSON or invalid shape
+  4. Persist report to `reports` table; update application status → `evaluated`
+  5. Create in-app `report_ready` notification for company owner
+  6. Send best-effort Resend email to company owner
 
 ### Output Layer
 
@@ -670,11 +669,10 @@ The AI layer runs in a separate `edge/` Cloudflare Worker, triggered by authenti
 
 See `PLAN.md` for the full build plan. Current focus:
 
-1. **Phase 3.5 wrap-up**: tests for candidate application tracking views
-2. **Phase 4**: schema changes (status lifecycle, `final_report_target`, `pre_evaluations`, edge Worker setup)
-3. **Phase 5**: pre-evaluation workflow in edge Worker (durable pipeline with LLM scoring)
-4. **Phase 6**: interview system (Durable Object agents in edge + chat UI in main app)
-5. **Phase 7**: report generation workflow in edge + company-facing report UI
+1. **Phase 8 wrap-up**: candidate applications list visible status labels, dedicated interview invitation cards
+2. **Phase 9 polish**: expired interview error states, mobile responsive pass, pending/evaluated tabs on job applicants
+3. **Testing**: end-to-end smoke test of full apply → pre-eval → invite → interview → complete → report flow
+4. **Optional**: Better Auth migration (Phase 10), Web Interface Guidelines compliance (Phase 11)
 
 ---
 
