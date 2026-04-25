@@ -1,6 +1,12 @@
-import { ArrowLeft01Icon, Briefcase01Icon, UserGroupIcon } from "@hugeicons/core-free-icons";
+import {
+  ArrowLeft01Icon,
+  Briefcase01Icon,
+  RankingIcon,
+  UserGroupIcon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link, notFound, redirect } from "@tanstack/react-router";
+import { useState } from "react";
 import { DashboardJobApplicantsSkeleton } from "@/components/route-skeletons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,6 +40,10 @@ export const Route = createFileRoute("/_authenticated/dashboard/job-applicants/$
 
 function JobApplicantsPage() {
   const { job, applicants } = Route.useLoaderData();
+  const [activeTab, setActiveTab] = useState<"evaluated" | "pending">("evaluated");
+
+  const evaluated = applicants.filter((a) => a.reportId !== null);
+  const pending = applicants.filter((a) => a.reportId === null);
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -63,7 +73,44 @@ function JobApplicantsPage() {
         </p>
       </div>
 
-      <CompanyJobApplicantsList applicants={applicants} />
+      <div className="flex gap-2 border-b border-border/50">
+        <button
+          type="button"
+          onClick={() => setActiveTab("evaluated")}
+          className={`flex items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
+            activeTab === "evaluated"
+              ? "border-primary text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <HugeiconsIcon icon={RankingIcon} strokeWidth={2} className="size-4" />
+          Evaluated
+          <Badge variant="secondary" className="font-mono text-[10px]">
+            {evaluated.length}
+          </Badge>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("pending")}
+          className={`flex items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
+            activeTab === "pending"
+              ? "border-primary text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} className="size-4" />
+          Pending
+          <Badge variant="secondary" className="font-mono text-[10px]">
+            {pending.length}
+          </Badge>
+        </button>
+      </div>
+
+      {activeTab === "evaluated" ? (
+        <CompanyJobApplicantsList applicants={evaluated} />
+      ) : (
+        <CompanyJobApplicantsList applicants={pending} />
+      )}
     </div>
   );
 }

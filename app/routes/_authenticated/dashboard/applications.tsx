@@ -36,19 +36,29 @@ type Application = Applications[number];
 
 const stageCopy = {
   applied: {
-    badge: "Applied",
+    badge: "Application Received",
     tone: "bg-sky-500/10 text-sky-700 dark:text-sky-300",
     blurb: "Waiting on first review",
   },
-  interviewing: {
-    badge: "Interviewing",
+  interview_ready: {
+    badge: "Interview Ready",
     tone: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
-    blurb: "Moved into the interview stage",
+    blurb: "You have been invited to a RoundZero interview",
+  },
+  interview_in_progress: {
+    badge: "Interview in Progress",
+    tone: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
+    blurb: "Your RoundZero interview is in progress",
   },
   evaluated: {
-    badge: "Evaluated",
+    badge: "Under Review",
     tone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-    blurb: "Reviewed by the hiring team",
+    blurb: "The company is reviewing your evaluation",
+  },
+  shortlisted: {
+    badge: "Shortlisted",
+    tone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+    blurb: "You have been shortlisted for this role",
   },
   rejected: {
     badge: "Closed",
@@ -70,13 +80,20 @@ const formatDate = (date: Date | string) => {
   });
 };
 
-const toApplicationStage = (status: string) => {
+const toApplicationStage = (status: string): keyof typeof stageCopy => {
   switch (status) {
-    case "interviewing":
+    case "interview_invited":
+      return "interview_ready";
+    case "interview_in_progress":
+      return "interview_in_progress";
     case "evaluated":
+      return "evaluated";
+    case "shortlisted":
+      return "shortlisted";
     case "rejected":
+      return "rejected";
     case "withdrawn":
-      return status;
+      return "withdrawn";
     default:
       return "applied";
   }
@@ -108,6 +125,10 @@ const isApplicationActive = (application: Application) =>
   application.status !== "withdrawn" &&
   !application.companyOwnerDeleted;
 
+const isInInterviewStage = (application: Application) =>
+  (application.status === "interview_invited" || application.status === "interview_in_progress") &&
+  !application.companyOwnerDeleted;
+
 const buildMetrics = (applications: Applications) => {
   return [
     {
@@ -124,12 +145,7 @@ const buildMetrics = (applications: Applications) => {
     },
     {
       label: "Interview stage",
-      value: String(
-        applications.filter(
-          (application) =>
-            application.status === "interviewing" && !application.companyOwnerDeleted,
-        ).length,
-      ),
+      value: String(applications.filter(isInInterviewStage).length),
       description: "The strongest sign of real traction.",
       icon: Clock01Icon,
     },

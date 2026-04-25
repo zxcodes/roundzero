@@ -3,6 +3,7 @@ import {
   BubbleChatIcon,
   Cancel01Icon,
   CheckmarkCircle02Icon,
+  Menu01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
@@ -28,6 +29,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { InterviewComposer } from "@/features/interviews/components/interview-composer";
 import {
   type InterviewAgentMessage,
@@ -104,6 +106,7 @@ function getSessionLabel(value: string) {
 function InterviewRoutePage() {
   const { interview, interviews, state } = Route.useLoaderData();
   const router = useRouter();
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const loaderMessages = state?.messages ?? [];
   const [localMessages, setLocalMessages] = useState<InterviewAgentMessage[] | null>(null);
@@ -244,6 +247,56 @@ function InterviewRoutePage() {
                   Interviews
                 </Link>
               </Button>
+              <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon-sm" className="lg:hidden">
+                    <HugeiconsIcon icon={Menu01Icon} strokeWidth={2} className="size-4" />
+                    <span className="sr-only">Open interview list</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[300px] p-0">
+                  <SheetTitle className="sr-only">Interview sessions</SheetTitle>
+                  <div className="flex items-center gap-2 border-b px-4 py-3">
+                    <HugeiconsIcon
+                      icon={BubbleChatIcon}
+                      strokeWidth={2}
+                      className="size-4 text-primary"
+                    />
+                    <h2 className="text-sm font-semibold">Interviews</h2>
+                  </div>
+                  <ScrollArea className="h-[calc(100vh-60px)]">
+                    <ul className="space-y-1 p-2">
+                      {interviews.map((session) => {
+                        const active = session.id === interview.id;
+
+                        return (
+                          <li key={session.id}>
+                            <Link
+                              to="/dashboard/interview/$interviewId"
+                              params={{ interviewId: session.id }}
+                              onClick={() => setSheetOpen(false)}
+                              className={cn(
+                                "block rounded-xl border px-4 py-3 transition-colors",
+                                active
+                                  ? "border-border/70 bg-muted"
+                                  : "border-transparent hover:bg-muted/50",
+                              )}
+                            >
+                              <p className="truncate text-sm font-medium">{session.jobTitle}</p>
+                              <p className="truncate text-xs text-muted-foreground">
+                                {session.companyName}
+                              </p>
+                              <p className="mt-1 text-[11px] text-muted-foreground">
+                                {getSessionLabel(session.status)}
+                              </p>
+                            </Link>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </ScrollArea>
+                </SheetContent>
+              </Sheet>
               <h1 className="truncate text-base font-semibold md:text-lg">{interview.jobTitle}</h1>
               <Badge variant={status.variant} className="font-mono text-[11px]">
                 {status.label}
@@ -310,8 +363,8 @@ function InterviewRoutePage() {
                 {isCompleted
                   ? "Interview submitted. Zero is compiling your evaluation report."
                   : isCancelled
-                    ? "Interview cancelled."
-                    : "Interview expired."}
+                    ? "Interview cancelled. Your application has been withdrawn."
+                    : "This interview window has expired. You can still view your submitted transcript below."}
               </AlertDescription>
             </Alert>
           ) : null}
