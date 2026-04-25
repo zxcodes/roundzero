@@ -426,6 +426,239 @@ Current implementation status:
 
 ---
 
+## Phase 7.5: Interview Agent Migration to Cloudflare Agents SDK
+
+Replace the raw Durable Object + `env.AI.run()` interview implementation with the Cloudflare Agents SDK (`agents`, `@cloudflare/ai-chat`, `workers-ai-provider`). This unlocks streaming, proper conversational memory, tools, and the AI SDK v5 ecosystem.
+
+### Why Migrate
+
+| Current (Raw DO) | Agents SDK |
+|---|---|
+| Manual message persistence in SQLite via `ctx.storage.put()` | Built-in message history via `AIChatAgent` |
+| Rigid JSON schema forcing robot output (`{"question": "string"}`) | Free-form streaming text via `streamText()` |
+| No streaming — candidate waits for full response | Real-time token streaming over WebSocket |
+| Static fallback questions (hardcoded strings) | Dynamic generation with full conversation context |
+| No tool use — agent cannot evaluate answers or look up context | Native tool calling for answer evaluation, resume gap detection |
+| Flat transcript string passed to LLM | Structured `UIMessage[]` history via `convertToModelMessages()` |
+| HTTP polling for state on every message | WebSocket push — agent pushes updates, client receives instantly |
+| Manual session lifecycle management | `onChatMessage`, `onStart`, `onClose` lifecycle hooks |
+
+### 7.5.1 Backend: Edge Worker Agent
+
+**Install dependencies:**
+```bash
+cd edge && npm install agents @cloudflare/ai-chat workers-ai-provider ai
+```
+
+**New file: `edge/src/agents/interview-agent.ts`**
+
+- Extend `AIChatAgent<Env>` instead of raw `DurableObject`
+- Override `onChatMessage(onFinish)` — called on every candidate message
+- Use `streamText({ model: workersai("@cf/meta/llama-3.1-8b-instruct-fp8"), messages, system })` from `ai` package
+- Inject interview context (job, candidate, pre-eval) into the `system` prompt
+- Define tools the agent can call:
+  - `evaluate_answer` — score the candidate's last answer on relevance, depth, clarity
+  - `check_resume_gap` — verify claims against resume/candidate summary
+  - `end_interview` — signal completion when enough signal is gathered
+- Use `this.setState()` for interview metadata (status, scores, startedAt)
+- Messages are persisted automatically by `AIChatAgent` — no manual `ctx.storage.put()`
+
+**System prompt design:**
+- Agent identity: "You are Zero, a skilled interviewer at RoundZero."
+- Goal: "Evaluate this candidate for [role] at [company]."
+- Style: "Be conversational. Acknowledge what the candidate says. Ask follow-ups based on their specific answers. Reference their resume and job requirements. Probe vague answers. If they say something interesting, dig deeper."
+- Constraints: "Never ask generic questions — every question should be tailored to this specific candidate and role."
+- Context injection: job description, requirements, candidate summary, pre-eval score/gaps
+
+**Interview lifecycle:**
+- `pending` → candidate hits "Start" → agent `onStart()` sets status to `in_progress`
+- `in_progress` → candidate sends messages → `onChatMessage()` streams response
+- Agent decides when enough signal is gathered (via tool call or turn count)
+- `completed` → agent triggers post-evaluation workflow via RPC or HTTP
+
+**Remove old files:**
+- `edge/src/agents/interview-agent.ts` (raw DO version) → replaced
+- Keep `edge/src/shared/interview-agent-client.ts` temporarily for backward compat during migration
+
+### 7.5.2 Frontend: TanStack + Agents SDK Client
+
+**Install dependencies:**
+```bash
+cd app && npm install agents @cloudflare/ai-chat/react ai
+```
+
+**New file: `app/features/interviews/hooks/use-interview-chat.ts`**
+
+- Uses `useAgent({ agent: "InterviewAgent", name: interviewId })` from `agents/react`
+- Uses `useAgentChat({ agent })` from `@cloudflare/ai-chat/react`
+- Returns: `messages`, `sendMessage`, `status`, `isStreaming`, `isServerStreaming`
+- `status` values: `"submitted" | "streaming" | "ready" | "error"`
+- Auto-reconnection with exponential backoff built-in
+
+**New file: `app/features/interviews/components/interview-chat.tsx`**
+
+- Replaces `InterviewTranscript` + `InterviewComposer` combo
+- Uses `UIMessage` type from `ai` package
+- Renders messages with `msg.parts` (text parts, tool-call parts)
+- Streaming indicator: `isStreaming` shows "Zero is typing..."
+- Tool call visibility: show when Zero is evaluating or checking resume gaps
+- No more manual `localMessages` + `loaderMessages` merge — `useAgentChat` handles optimistic updates + server sync
+
+**Route update: `app/routes/_authenticated/dashboard/interview/$interviewId.tsx`**
+
+- Remove `getMyInterviewState` server function call
+- Remove manual `useState` for local message buffering
+- Remove `useMutation` for `submitInterviewMessage`
+- Replace with `useInterviewChat` hook
+- Remove interview list sidebar — `useAgent` can sync state, or keep a separate query
+- Add streaming-aware UI: progressive message reveal, typing indicator
+
+### 7.5.2a Frontend: Interview Layout Rewrite
+
+The interview experience gets a dedicated layout separate from the main dashboard chrome. This is a full rewrite of the interview frontend.
+
+**New layout: `app/routes/_authenticated/interview.tsx`**
+
+- Separate layout route outside `/dashboard` — lives at `/interview/$interviewId`
+- No main app sidebar, no dashboard header, no max-width container
+- Clean two-pane workspace:
+  - **Left pane**: shadcn `<Sidebar>` with interview session list
+  - **Right pane**: full-bleed chat surface
+- Dark-first design: deep background, high-contrast chat bubbles
+
+**Sidebar (`app/features/interviews/components/interview-sidebar.tsx`)**
+
+- Built on shadcn `<Sidebar>` + `<SidebarContent>` + `<SidebarMenu>`
+- Collapsible on desktop (icon-only mode), swipeable drawer on mobile
+- Lists all candidate interviews with:
+  - Job title + company name
+  - Status badge (Ready, In progress, Completed, Expired)
+  - Timestamp
+  - Active state highlight
+- "New interview" indicator for unread/pending
+- Footer with candidate profile mini-card
+
+**Chat surface (`app/features/interviews/components/interview-chat.tsx`)**
+
+- Full remaining width, no max-width constraints
+- Header bar: job title, company, status badge, actions (cancel, submit)
+- Message area: streaming text render with `UIMessage` parts
+- Typing indicator: animated "Zero is typing..." when `isStreaming`
+- Composer: fixed bottom, full-width input, send button
+- No scroll jank: message area uses native scroll with contained overflow
+
+**Navigation changes**
+
+- Main app sidebar "Interviews" link navigates to `/interview` (redirects to most recent session)
+- Interview notifications deep-link to `/interview/$interviewId`
+- Back button from interview layout returns to `/dashboard/applications` or `/dashboard` depending on context
+- URL structure: `/interview` (index/redirect), `/interview/$interviewId` (active session)
+
+**Files to delete/replace**
+
+- `app/routes/_authenticated/dashboard/interview/$interviewId.tsx` → replaced by new layout + route
+- `app/routes/_authenticated/dashboard/interviews.tsx` → redirect logic moves to `/interview` index
+- `app/features/interviews/components/interview-transcript.tsx` → merged into `InterviewChat`
+- `app/features/interviews/components/interview-composer.tsx` → merged into `InterviewChat`
+
+**Design principles**
+
+- Zero chrome: no cards, no borders, no shadows unless necessary
+- Content-first: the conversation is the UI
+- Dark ambient: near-black background, subtle surface elevations
+- Fluid: sidebar collapses smoothly, chat adapts to full width
+- Fast: WebSocket streaming, no polling spinners
+
+### 7.5.3 Worker Route Handlers
+
+**Update `edge/src/worker.ts`**
+
+- Add Agents SDK Hono middleware: `app.use("/agents/*", agentsMiddleware())`
+- Register `InterviewAgent` class via `app.agents("InterviewAgent", InterviewAgent)`
+- Remove manual `/interviews/:interviewId/start`, `/message`, `/state`, `/complete` endpoints
+- Keep `/post-evaluate` endpoint — triggered by agent on completion
+- Keep `/internal/interviews/:interviewId/state` for company report timeline (read-only transcript)
+
+### 7.5.4 Context Injection
+
+**Problem:** The agent needs job + candidate context at init time.
+
+**Solution:** `onStart()` or `onConnect()` fetches context from Postgres:
+```ts
+async onStart() {
+  const db = getDb();
+  const context = await getInterviewContextById(db, { id: this.name });
+  this.setState({
+    jobTitle: context.jobTitle,
+    jobDescription: context.jobDescription,
+    candidateSummary: context.candidateSummary,
+    preEvaluation: context.preEvaluation,
+  });
+}
+```
+
+This context is then injected into the `system` prompt on every `streamText()` call.
+
+### 7.5.5 Migration Checklist
+
+**Backend:**
+- [ ] Install `agents`, `@cloudflare/ai-chat`, `workers-ai-provider`, `ai` in edge
+- [ ] Create new `InterviewAgent` class extending `AIChatAgent`
+- [ ] Implement `onChatMessage` with `streamText` + system prompt + tools
+- [ ] Implement `onStart` for context injection
+- [ ] Update `worker.ts` to register agent and remove manual endpoints
+- [ ] Update `wrangler.jsonc` with Agents SDK bindings if needed
+
+**Frontend:**
+- [ ] Install `agents`, `@cloudflare/ai-chat/react`, `ai` in app
+- [ ] Create `app/routes/_authenticated/interview.tsx` layout (shadcn Sidebar + chat pane)
+- [ ] Create `app/routes/_authenticated/interview/$interviewId.tsx` route
+- [ ] Create `app/routes/_authenticated/interview/index.tsx` (redirect to most recent session)
+- [ ] Create `InterviewSidebar` component (shadcn Sidebar with session list)
+- [ ] Create `InterviewChat` component (streaming chat surface)
+- [ ] Create `useInterviewChat` hook wrapping `useAgent` + `useAgentChat`
+- [ ] Update main app sidebar "Interviews" link to point to `/interview`
+- [ ] Update interview notification deep links to `/interview/$interviewId`
+- [ ] Delete old dashboard interview routes and components
+- [ ] Ensure `bun run check` passes
+- [ ] Test: full interview flow with streaming, tool calls, completion
+
+### 7.5.6 Conversational UX Requirements
+
+The agent must feel like a real interviewer, not a survey bot:
+
+- **Greeting:** Warm, contextual. "Hey [Name], I'm Zero. I've reviewed your profile and I'm excited to learn more about your work on [specific project from resume]. Ready when you are."
+- **Acknowledgment:** Every candidate answer gets a brief acknowledgment before the next question. "That's a solid approach — I like how you prioritized user feedback. Let me dig a bit deeper..."
+- **Follow-ups:** Dynamic based on answer content. If candidate mentions "user testing," follow up with "How do you recruit participants for those tests?" If vague, probe: "Can you give me a specific example?"
+- **Resume-aware:** Reference specific skills, companies, or projects from the candidate summary. "You mentioned leading a team at [Company] — how big was that team?"
+- **Job-aware:** Tie questions to specific requirements. "This role needs someone who can balance speed with quality — how do you handle that tension?"
+- **Closing:** Natural wrap-up, not abrupt. "This has been great — I have a clear picture of your approach. We'll compile this and get it to the team. Good luck!"
+
+### Exit Criteria
+
+**Agent behavior:**
+- [ ] Interview agent streams responses token-by-token
+- [ ] Candidate sees "Zero is typing..." while response generates
+- [ ] Agent asks contextual follow-ups based on previous answers
+- [ ] Agent references resume and job details naturally in conversation
+- [ ] Agent uses tools to evaluate answers and decide when to end
+- [ ] Interview completion triggers post-evaluation workflow
+
+**Frontend layout:**
+- [ ] Interview has dedicated layout at `/interview/$interviewId` (not nested in dashboard)
+- [ ] shadcn Sidebar shows interview session list with status badges
+- [ ] Chat surface is full-bleed, dark ambient, content-first
+- [ ] Streaming messages render progressively without jank
+- [ ] Mobile: sidebar collapses to icon rail or swipeable drawer
+- [ ] Main app sidebar "Interviews" link navigates to `/interview`
+
+**Cleanup:**
+- [ ] Old raw DO interview endpoints are removed
+- [ ] Old dashboard interview routes and components are deleted
+- [ ] `bun run check` passes
+
+---
+
 ## Phase 8: Candidate-Facing Interview & Status Tracking (Partial)
 
 Polish the candidate experience for the AI-aware statuses.

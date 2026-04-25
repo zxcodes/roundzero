@@ -39,7 +39,8 @@ This document reflects the app as it transitions from **platform-only** to **pla
 | File storage | Cloudflare R2 for resumes and company logos |
 | AI layer | Cloudflare Workers AI + edge Worker |
 | AI pipelines | Cloudflare Workflows (durable multi-step) in edge Worker |
-| Interview runtime | Cloudflare Durable Objects (stateful chat) in edge Worker |
+| Interview runtime | Cloudflare Agents SDK (`AIChatAgent`) + `workers-ai-provider` |
+| Chat transport | WebSocket via Agents SDK (streaming) |
 | Linting | Biome |
 
 ---
@@ -124,13 +125,14 @@ app/routes/
 ├── _authenticated/dashboard/application/$applicationId.tsx
 ├── _authenticated/dashboard/applications.tsx
 ├── _authenticated/dashboard/index.tsx
-├── _authenticated/dashboard/interview/$interviewId.tsx
-├── _authenticated/dashboard/interviews.tsx
 ├── _authenticated/dashboard/job-applicants/$jobId.tsx
 ├── _authenticated/dashboard/jobs/new.tsx
 ├── _authenticated/dashboard/jobs/index.tsx
 ├── _authenticated/dashboard/jobs/$jobId.tsx
 ├── _authenticated/dashboard/settings.tsx
+├── _authenticated/interview.tsx           # interview layout (shadcn Sidebar + chat pane)
+├── _authenticated/interview/index.tsx     # redirects to most recent session
+├── _authenticated/interview/$interviewId.tsx
 ├── _authenticated/onboarding.tsx
 ├── _authenticated/onboarding/candidate.tsx
 ├── _authenticated/onboarding/company.tsx
@@ -669,10 +671,11 @@ The AI layer runs in a separate `edge/` Cloudflare Worker, triggered by authenti
 
 See `PLAN.md` for the full build plan. Current focus:
 
-1. **Phase 8 wrap-up**: candidate applications list visible status labels, dedicated interview invitation cards
-2. **Phase 9 polish**: expired interview error states, mobile responsive pass, pending/evaluated tabs on job applicants
-3. **Testing**: end-to-end smoke test of full apply → pre-eval → invite → interview → complete → report flow
-4. **Optional**: Better Auth migration (Phase 10), Web Interface Guidelines compliance (Phase 11)
+1. **Phase 7.5**: Migrate interview agent to Cloudflare Agents SDK — replace raw Durable Object with `AIChatAgent`, add streaming, tools, and conversational UX
+2. **Phase 8 wrap-up**: candidate applications list visible status labels, dedicated interview invitation cards
+3. **Phase 9 polish**: mobile responsive pass, pending/evaluated tabs on job applicants
+4. **Testing**: end-to-end smoke test of full apply → pre-eval → invite → interview → complete → report flow
+5. **Optional**: Better Auth migration (Phase 10), Web Interface Guidelines compliance (Phase 11)
 
 ---
 
