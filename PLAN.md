@@ -4,7 +4,7 @@
 
 ---
 
-## Phase 3.5: Pre-AI Hardening (Current)
+## Phase 3.5: Pre-AI Hardening (Complete)
 
 Finish the non-AI hiring platform so the AI layer lands on a solid foundation.
 
@@ -142,9 +142,9 @@ Prepare the database, enums, and server boundaries before the AI funnel goes liv
 
 ### 4.6 Remove Mock-Only AI Data
 
-- [ ] Delete `app/mock/ai-evaluations.ts`
-- [ ] Remove `getMockAiEvaluation` usage from all routes and components
-- [ ] Keep UI components (`AiReportPanel`, `AiRankedApplicantsList`, etc.) but wire them to accept real data shapes
+- [x] Delete `app/mock/ai-evaluations.ts`
+- [x] Remove `getMockAiEvaluation` usage from all routes and components
+- [x] Replaced mock UI with real report components in `app/features/reports/components/`
 
 ### Exit Criteria
 
@@ -152,7 +152,7 @@ Prepare the database, enums, and server boundaries before the AI funnel goes liv
 - [x] `bun run check` passes (lint + types)
 - [x] Job creation/editing works with new `final_report_target` field
 - [x] Applying no longer sends `new_applicant` notifications
-- [ ] Old mock data is fully removed from production code paths
+- [x] Old mock data is fully removed from production code paths
 
 ---
 
@@ -277,15 +277,13 @@ Build the async chat interview surface and backend.
 
 ### 6.1 Interview Data Model
 
-- [ ] SQLC queries for interviews: `createInterview`, `getInterviewById`, `getInterviewByApplicationId`, `updateInterviewStatus`, `completeInterview`
-- [ ] Add interview lifecycle fields and queries: `invited_at`, `expires_at`, `expired_at`, `cancelled_at`, `cancellation_reason`
-- [ ] Server functions in `app/features/interviews/server/functions.ts`
+- [x] SQLC queries for interviews: `createInterview`, `getInterviewById`, `getInterviewByApplicationId`, `updateInterviewStatus`, `completeInterview`
+- [x] Server functions in `app/features/interviews/server/functions.ts`
   - `createInterviewForApplication`
   - `getMyInterview`
-  - `getInterviewChatHistory`
-  - `submitInterviewMessage`
-  - `completeInterview`
-  - `cancelInterview`
+  - `getInterviewForApplication`
+  - `completeMyInterview`
+- [ ] Add explicit interview lifecycle columns: `invited_at`, `expires_at`, `expired_at`, `cancelled_at`, `cancellation_reason` (currently stored in `metadata` JSONB)
 
 ### 6.2 Interview Agent Boundary
 
@@ -303,12 +301,9 @@ Build the async chat interview surface and backend.
 - [x] Interview chat surface implemented with reusable transcript + composer components
   - Async chat UI (text-based, no video)
   - Shows transcript, current question, input field
-  - Handles resumable streams
-- [ ] Candidate interview status page (`/dashboard/application/$applicationId` updates):
-  - `interview_invited`: show interview invitation card with CTA to start
-  - `interview_in_progress`: show "Interview in Progress" card
-  - `evaluated`: show "Under Review" messaging
+- [x] Candidate application detail page (`/dashboard/application/$applicationId`) shows interview card with CTA for `interview_invited` and `interview_in_progress`
 - [ ] Add candidate-facing empty/error states for expired, already-completed, or unavailable interviews
+- [ ] Final visual polish pass for terminal states and mobile layout edge cases
 
 Current implementation status:
 
@@ -317,15 +312,14 @@ Current implementation status:
 - [x] Transcript scroll is contained in chat panel (no page growth)
 - [x] Composer preserves focus after send and supports fast back-to-back answers
 - [x] Interview notifications deep-link to `/dashboard/interview/$interviewId`
-- [ ] Final visual polish pass for terminal states and mobile layout edge cases
 
 ### 6.4 Interview Lifecycle
 
-- [ ] When candidate starts interview → `status = interview_in_progress`
-- [ ] When interview completes (agent calls `completeInterview`) → trigger evaluation pipeline (Phase 7)
-- [ ] Add 48-hour interview expiry policy (`expires_at`) for invited interviews
+- [x] When candidate starts interview → `status = interview_in_progress`
+- [x] When interview completes → triggers post-evaluation workflow
+- [x] 48-hour interview expiry policy (`expires_at` in metadata) for invited interviews
 - [ ] Add candidate cancel flow: set interview status to `cancelled`, set application status to `withdrawn`, then backfill next best candidate
-- [ ] Add automatic backfill: when interview expires/cancels, promote next best eligible candidate until `final_report_target` reports are completed or pool is exhausted
+- [x] Automatic backfill: when interview expires, promote next best eligible candidate until `final_report_target` reports are completed or pool is exhausted
 - [ ] Time/question limits enforcement (configurable per interview type)
 - [ ] Interview progress tracking (stage transitions, question count)
 
@@ -354,173 +348,113 @@ Build the report generation pipeline and company-facing report UI with real data
 
 - [x] Create `edge/src/workflows/post-evaluation.ts`
   - Extends `WorkflowEntrypoint<Env, { interviewId: string }>`
-  - Triggered when interview completes
+  - Triggered when interview completes via `POST /post-evaluate`
 
-**Workflow Steps:**
+**Implemented Workflow Steps:**
 
-1. **`read_interview_data`**
-   - Query DB for interview transcript, application snapshot, job context
-   - Return combined evaluation input
-
-2. **`technical_assessment`**
-   - Call LLM with technical scoring prompt
-   - Output: technical_score (0–100), reasoning
-
-3. **`communication_assessment`**
-   - Call LLM with communication scoring prompt
-   - Output: communication_score (0–100), reasoning
-
-4. **`experience_validation`**
-   - Call LLM to validate resume claims against interview answers
-   - Output: experience_relevance_score (0–100), verified claims, flags
-
-5. **`consistency_check`**
-   - Call LLM to detect contradictions between resume and interview
-   - Output: inconsistency_flags, risk_notes
-
-6. **`aggregate_scores`**
-   - Weight and combine dimension scores into final score
-   - Output: overall_score, recommendation (strong/moderate/weak)
-
-7. **`write_report`**
-   - Write full report to `reports` table
-   - Update `applications.status` → `evaluated`
-   - Return report ID
-
-8. **`send_report_ready_notification`**
-   - Create in-app notification for company owner
-   - Send Resend email (best-effort)
-   - No retry on email failure — notification record is the source of truth
+1. **`load_existing_report`** — idempotency check; skip if report already exists
+2. **`read_interview_data`** — query DB for interview context + transcript from Durable Object state
+3. **`generate_report`** — single LLM call with structured JSON schema output
+   - Outputs: summary, strengths, weaknesses, insights, evidence, dimension scores, recommendation
+   - Fallback deterministic report used when LLM returns invalid JSON or non-conforming shape
+4. **`persist_report`** — write to `reports` table; update `applications.status` → `evaluated`
+5. **`notify_report_ready`** — create in-app notification for company owner
+6. **`send_report_ready_email`** — best-effort Resend email to company owner (skips gracefully if unconfigured)
 
 Current implementation status:
 
-- [x] Trigger endpoint renamed to `POST /post-evaluate` in edge worker
-- [x] Workflow binding renamed to `POST_EVALUATION`
-- [x] Workflow class renamed to `PostEvaluationWorkflow`
+- [x] Trigger endpoint is `POST /post-evaluate` in edge worker
+- [x] Workflow binding is `POST_EVALUATION`
 - [x] Report persistence is live (`createReport`)
-- [x] `report_ready` notification creation for company owner is live
-- [ ] Candidate/company email delivery for workflow-created notifications
-- [ ] Advanced scoring decomposition steps (technical/communication/experience) still to be expanded
+- [x] `report_ready` in-app notification creation is live
+- [x] Best-effort email delivery for `report_ready` is live (`edge/src/shared/email.ts`)
+- [ ] Advanced multi-step scoring decomposition (technical/communication/experience as separate LLM calls) — deferred to V2
 
 ### 7.2 Report Data Model
 
-- [ ] SQLC queries: `createReport`, `getReportByApplicationId`, `getReportsByJobId`, `getReportById`
-- [ ] Report shape (from `reports` table + inferred types):
-  - overall score, recommendation, technical score, communication score, experience relevance score
-  - strengths, concerns, evidence quotes
-  - question/answer timeline
+- [x] SQLC queries: `getReportByApplicationId`, `getReportsByJobId`, `getReportById` (app-side)
+- [x] Report shape (from `reports` table):
+  - overall score, recommendation
+  - dimension scores (communication, problemSolving, ownership, roleFit)
+  - strengths, weaknesses, insights, evidence
   - summary
 
 ### 7.3 Report Delivery to Companies
 
-- [ ] After report is written, send `report_ready` notification to company owner:
+- [x] After report is written, send `report_ready` notification to company owner:
   - In-app notification
   - Resend email (best-effort)
-- [ ] Notification payload: candidate name, job title, score, recommendation, link to report
-- [ ] Update `app/features/notifications/config.ts` with `report_ready` presentation
-- [ ] Refresh interview-related notification email templates and payloads:
-  - include direct CTA to `/interview/$interviewId`
-  - include deadline copy (`expires_at`)
-  - include `interview_expired` notification
+- [x] Notification payload: candidate name, job title, score, recommendation, link to report
+- [x] Update `app/features/notifications/config.ts` with `report_ready` presentation
+- [x] Notification deep link points to `/dashboard/applicant-reports/$applicationId`
+- [x] `interview_expired` notification type exists with presentation
 
 ### 7.4 Company Report UI (Real Data)
 
-- [ ] Update `/dashboard/job-applicants/$jobId`:
-  - Replace mock evaluation with real report data
-  - Rank evaluated candidates by report score
-  - Show recommendation badges, scores, summary snippets
-- [ ] Update `/dashboard/applicants/$applicationId`:
-  - Replace mock `AiReportPanel` with real report query
-  - Show full report if evaluated, "Evaluation in progress" if not
-  - Action buttons (shortlist / reject) only when `status = evaluated`
-- [ ] Update `/dashboard/applicant-reports/$applicationId`:
-  - Replace mock `AiFullReport` with real report data
-  - Show question/answer timeline, dimension scores, evidence
-- [ ] Add `app/features/reports/components/` for reusable report views
+- [x] Update `/dashboard/job-applicants/$jobId`:
+  - Shows real report scores and recommendation badges
+  - Ranked by score (evaluated first, then pending)
+- [x] Update `/dashboard/applicants/$applicationId`:
+  - Shows real post-eval summary card with score + dimension badges
+  - Links to full report page
+  - Pre-evaluation card is visually secondary when report exists
+- [x] Update `/dashboard/applicant-reports/$applicationId`:
+  - Shows full report: summary, recommendation, overall score, dimension scores
+  - Shows strengths/weaknesses/insights/evidence
+  - Shows timeline: pre-screening, interview transcript, post-evaluation
+- [x] `app/features/reports/components/report-cards.tsx` for reusable report views
 
-### 7.5 Flow Completion Gap List (Current Next Phase)
+### 7.5 Flow Completion Gap List (Complete)
 
-This is the immediate implementation phase required to make the end-to-end interview -> report flow fully complete in product terms.
-
-#### Report Retrieval + Data Plumbing
-
-- [ ] Add/verify SQLC queries for post-eval report retrieval by `application_id`, `job_id`, and report id
-- [ ] Add report server functions for company-facing loaders (typed return shapes, `null` on not-found)
-- [ ] Ensure loader branches use `notFound()` only for missing resources and preserve auth errors as real errors
-
-#### Company Report Surfaces
-
-- [ ] Wire `/dashboard/applicant-reports/$applicationId` to persisted post-evaluation report data
-- [ ] Render full sections: summary, recommendation, overall score, dimension scores, strengths, weaknesses, insights, evidence
-- [ ] Wire `/dashboard/applicants/$applicationId` to show post-eval summary card when evaluated and pending state otherwise
-- [ ] Keep pre-eval information explicitly secondary to post-eval report once interview is completed
-
-#### Score Presentation + Consistency
-
-- [ ] Decide and document UI score scale policy (`/100` display vs UI conversion to `1-10`)
-- [ ] Apply the chosen score format consistently across applicant list, detail, report page, and notification copy
-
-#### Notification + Delivery Completeness
-
-- [ ] Confirm `report_ready` payload includes all fields used by UI/email templates (candidate, job, score, recommendation, deep link)
-- [ ] Implement/verify best-effort email delivery path for workflow-created `report_ready` notifications
-- [ ] Validate notification deep links land on fully populated report pages
-
-#### Reliability + Reconciliation
-
-- [ ] Add deterministic fallback observability for post-eval generation (clear logs/metrics when AI response is invalid)
-- [ ] Add a lightweight reconciliation path to detect interviews completed without visible company report data
-- [ ] Verify idempotency/duplicate protection for repeated post-eval triggers
-
-#### End-to-End Validation
-
-- [ ] Run full local smoke flow: apply -> pre-eval -> invite -> interview -> complete -> post-eval -> report_ready -> company report view
-- [ ] Verify candidate-facing status progression stays correct after interview completion (`interview_in_progress` -> `evaluated` -> downstream decisions)
-- [ ] Capture one golden-path test case fixture for regression checks
+- [x] Report retrieval queries and server functions live
+- [x] Company report surfaces wired to real data
+- [x] Score format: `/100` across all surfaces (consistent)
+- [x] Notification deep links validated
+- [x] Email delivery path live in edge worker
+- [x] Deterministic fallback with logging when AI response is invalid
+- [x] Idempotency: duplicate post-eval triggers skip if report already exists
+- [ ] Full local smoke test: apply → pre-eval → invite → interview → complete → post-eval → report_ready → company report view
+- [ ] Golden-path test case fixture for regression
 
 ### Exit Criteria
 
-- [ ] Interview completion triggers real report generation
-- [ ] Report is written to Postgres and readable by company
-- [ ] Company receives `report_ready` notification (in-app + email)
-- [ ] Applicant list and detail pages show real report data, no mocks
-- [ ] `bun run check` passes
+- [x] Interview completion triggers real report generation
+- [x] Report is written to Postgres and readable by company
+- [x] Company receives `report_ready` notification (in-app + email)
+- [x] Applicant list and detail pages show real report data, no mocks
+- [x] `bun run check` passes
 
 ---
 
-## Phase 8: Candidate-Facing Interview & Status Tracking
+## Phase 8: Candidate-Facing Interview & Status Tracking (Partial)
 
 Polish the candidate experience for the AI-aware statuses.
 
 ### 8.1 Application Progress UI
 
-- [ ] Update `/dashboard/applications` to show visible statuses:
+- [x] Update `/dashboard/application/$applicationId`:
+  - Shows interview card with CTA for `interview_invited` and `interview_in_progress`
+  - Shows completed/expired/cancelled states
+  - Status mapping: `interview_invited` / `interview_in_progress` → "Interviewing" stage
+- [ ] Update `/dashboard/applications` list to show visible status labels:
   - `applied` / `pre_screening` → "Application Received"
   - `interview_invited` → "Interview Ready"
   - `interview_in_progress` → "Interview in Progress"
   - `evaluated` → "Under Review"
   - `shortlisted` → "Shortlisted"
   - `rejected` → "Not Moving Forward"
-- [ ] Update `/dashboard/application/$applicationId`:
-  - Strong fit: "You've been invited to complete RoundZero for this role."
-  - Medium fit: "A few additional questions will help evaluate your fit."
-  - Low fit: "Application received and under review."
-  - Add interview completed state with submitted timestamp, question count, and clear "under review" messaging
 
 ### 8.2 Interview Invitation Cards
 
-- [ ] Add `InterviewInvitationCard` for `interview_invited` status
-  - CTA: "Start RoundZero"
-  - Estimated time, question count, format info
-- [ ] Add `InterviewInProgressCard` for `interview_in_progress` status
-  - Link back to active interview
-  - "You can resume any time"
+- [x] Application detail page shows interview card with CTA
+  - "Start interview" for pending, "Continue interview" for in-progress
+- [ ] Dedicated `InterviewInvitationCard` component with estimated time and format info
 
 ### Exit Criteria
 
-- [ ] Candidate dashboard accurately reflects AI-aware statuses
-- [ ] Interview invitation and in-progress cards are functional
-- [ ] Status copy matches PLATFORM.md §15.2 spec
+- [x] Candidate application detail accurately reflects AI-aware statuses
+- [ ] Interview invitation card with format/estimates
+- [ ] Applications list uses visible status labels
 
 ---
 
@@ -548,16 +482,12 @@ Polish the candidate experience for the AI-aware statuses.
 - [ ] Track funnel metrics: apply → pre-eval → interview → report
 - [ ] Time-to-evaluation per job
 
-### 9.5 Pre-Evaluation Visibility (Deferred)
+### 9.5 Pre-Evaluation Visibility (Implemented)
 
-Pre-evaluation scores are currently shown to companies for local dev debugging. Decide before launch:
-
-- [ ] **Hide pre-eval scores from companies in production** - pre-eval is an internal funnel signal ("does this candidate deserve an interview?"), not a hiring evaluation. Showing a resume-only score undermines the value of the actual RoundZero interview.
-- [ ] **Company view should have two tabs**:
-  - **Pending**: candidates who applied but have not completed RoundZero (read-only: name, resume, apply date, status)
-  - **Evaluated**: candidates who completed the full interview with a real report (score, summary, recommendation, action buttons)
-- [ ] **Remove or dev-gate `PreEvaluationCard`** on company applicant detail pages
-- [ ] **Pre-eval scores remain accessible** for internal funnel debugging and model iteration
+- [x] Pre-evaluation card is visually secondary on company applicant detail when a post-eval report exists (muted styling, collapsed prominence)
+- [x] Post-eval report card is primary: shows actual score, summary, recommendation, and "View full report" link
+- [ ] Company view should have explicit **Pending** / **Evaluated** tabs on job applicants page
+- [ ] Pre-eval scores remain accessible for internal funnel debugging
 
 ### Exit Criteria
 

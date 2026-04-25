@@ -55,7 +55,7 @@ Today, the app is primarily the **core platform layer**:
 - applicant review pages and status tracking
 - in-app workflow notifications
 
-The AI interview, evaluation, report, and ranking systems are still future layers.
+The AI interview, evaluation, report, and ranking systems are now live.
 
 ---
 
@@ -170,73 +170,63 @@ This matters because RoundZero is both:
 
 ---
 
-## 5. Core Product Gaps Before AI
+## 5. Core Product Gaps (Resolved)
 
-The following are the remaining platform-hardening priorities before the AI layer becomes the main focus:
+The platform-hardening priorities listed below were completed before the AI layer went live:
 
 ### 5.1 Candidate Post-Apply Polish
 
-- better empty states and guidance on application tracking surfaces
-- clearer next-step communication after status changes
-- optional decision on withdraw vs explicit deferral
+- [x] Empty states and guidance on application tracking surfaces
+- [x] Clear next-step communication after status changes
+- [x] Interview card on application detail with CTA and status
 
 ### 5.2 Company Workflow Quality
 
-- clearer pipeline summary cues
-- better signals for which jobs are active, stale, or attracting applicants
-- stronger management UX beyond raw counts
+- [x] Pipeline summary cues (applicant count, evaluated count)
+- [x] Real report scores and recommendation badges on applicant list
+- [x] Full report timeline on applicant detail
 
 ### 5.3 Notifications Delivery Layer
 
-- keep in-app notifications as the canonical workflow record
-- add secondary email delivery for selected events
-- track delivery attempts/results separately from the inbox
+- [x] In-app notifications as canonical record
+- [x] Resend email delivery for `report_ready` and `interview_expired`
+- [x] Delivery tracking on notification rows
 
 ### 5.4 Public Route Cleanup
 
-- expired-job-specific public error UI
-- final cleanup of dead CTA branches on public job detail
+- [x] Expired-job-specific public error UI
+- [x] Dead CTA branches removed from public job detail
 
 ---
 
-## 6. Future AI Layer
+## 6. AI Layer (Live)
 
-Once the platform layer is solid, RoundZero adds the AI hiring layer.
+RoundZero now includes the AI hiring layer on top of the solid platform.
 
 ### 6.1 AI Interview Mode
 
-Recommended mode:
-
-- in-app async chat
-- not email
-- not live video
-
-Why:
-
-- preserves context
-- supports adaptive follow-ups
-- works across time zones
-- removes scheduling friction
+- in-app async chat (text-based, no video)
+- preserves context and supports adaptive follow-ups
+- works across time zones without scheduling friction
 
 ### 6.2 AI Interview Goals
 
-The AI interview should:
+The AI interview:
 
-- validate resume claims
-- probe role-relevant knowledge
-- evaluate communication quality
-- detect inconsistency or vagueness
-- gather evidence for structured evaluation
+- validates resume claims
+- probes role-relevant knowledge
+- evaluates communication quality
+- detects inconsistency or vagueness
+- gathers evidence for structured evaluation
 
 ### 6.3 Evaluation Goals
 
-The evaluation layer should:
+The evaluation layer:
 
-- score technical depth
-- score communication
-- assess experience credibility
-- flag contradictions
-- generate a report that a company can act on directly
+- scores communication, problem solving, ownership, and role fit
+- generates an explainable report with strengths, weaknesses, insights, and evidence
+- produces a recommendation (strong yes / yes / lean no / no)
+- flags contradictions via deterministic fallback when LLM output is invalid
 
 ---
 
@@ -320,23 +310,25 @@ Job should contain:
 
 ---
 
-## 10. AI Report Structure (Future)
+## 10. AI Report Structure (Live)
 
 The candidate report is the main AI output artifact.
 
-Expected sections:
+Live sections:
 
-- candidate header
-- role applied
+- candidate header (name, job, apply date)
 - summary
+- recommendation badge (strong yes / yes / lean no / no)
+- overall score (0–100)
+- dimension scores (communication, problem solving, ownership, role fit)
 - strengths
 - weaknesses
-- dimension scores
-- key insights
+- insights
 - evidence
-- final recommendation
+- pre-screening to interview to post-evaluation timeline
+- interview transcript (substantive messages only)
 
-The report must be readable by a hiring manager without requiring trust in a hidden scoring system.
+The report is readable by a hiring manager without requiring trust in a hidden scoring system.
 
 ---
 
@@ -349,11 +341,12 @@ Before AI:
 - pipeline status is understandable
 - resume/profile data is accessible
 
-After AI:
+After AI (live):
 
-- companies can review structured reports instead of raw first-round resumes
-- candidate ranking is explainable
+- companies review structured reports instead of raw first-round resumes
+- candidate ranking is explainable and scored
 - teams can move faster without losing trust
+- evaluated candidates are ranked by overall score on the job applicants page
 
 ---
 
@@ -556,10 +549,12 @@ The following decisions are required **before Phase 4 (AI Interview)** begins. T
 3. Adjust output based on feedback
 4. Document final schema in `AI-LAYER.md`
 
-**Current Assumption:**
+**Validation Status:**
+- Pre-evaluation pipeline is live and producing scores
 - Pre-evaluation only decides "invite to full interview" vs. "not yet"
 - It does NOT rank candidates or make final hiring decisions
 - If confidence is low, default to "ask follow-ups" rather than reject
+- Real-world validation with hiring managers remains pending (deferred to post-MVP)
 
 ---
 
