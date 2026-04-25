@@ -107,3 +107,21 @@ sql:
         options:
           runtime: node
           driver: postgres
+  - schema: "db/migrations"
+    queries: "edge/src/queries/reports/queries.sql"
+    engine: postgresql
+    codegen:
+      - out: edge/src/queries/reports
+        plugin: ts
+        options:
+          runtime: node
+          driver: postgres
+  - schema: "db/migrations"
+    queries: "edge/src/queries/reports-by-job/queries.sql"
+    engine: postgresql
+    codegen:
+      - out: edge/src/queries/reports-by-job
+        plugin: ts
+        options:
+          runtime: node
+          driver: postgres

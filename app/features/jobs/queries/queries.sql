@@ -2,7 +2,7 @@
 INSERT INTO jobs (
   company_id, title, description, requirements, interview_questions, status,
   location, workplace_type, employment_type, experience_level,
-  salary_min, salary_max, salary_currency, team_size, headcount, report_limit, expires_at
+  salary_min, salary_max, salary_currency, team_size, headcount, final_report_target, expires_at
 )
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
 RETURNING *;
@@ -56,7 +56,7 @@ SET title = $1,
     salary_currency = $12,
     team_size = $13,
     headcount = $14,
-    report_limit = $15,
+    final_report_target = $15,
     expires_at = $16,
     updated_at = now()
 WHERE id = $17

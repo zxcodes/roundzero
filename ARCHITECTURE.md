@@ -671,7 +671,7 @@ The AI layer runs in a separate `edge/` Cloudflare Worker, triggered by authenti
 See `PLAN.md` for the full build plan. Current focus:
 
 1. **Phase 3.5 wrap-up**: tests for candidate application tracking views
-2. **Phase 4**: schema changes (status lifecycle, `report_limit`, `pre_evaluations`, edge Worker setup)
+2. **Phase 4**: schema changes (status lifecycle, `final_report_target`, `pre_evaluations`, edge Worker setup)
 3. **Phase 5**: pre-evaluation workflow in edge Worker (durable pipeline with LLM scoring)
 4. **Phase 6**: interview system (Durable Object agents in edge + chat UI in main app)
 5. **Phase 7**: report generation workflow in edge + company-facing report UI

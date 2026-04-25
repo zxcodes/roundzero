@@ -36,7 +36,7 @@ const makeOpenJob = async (companyId: string, title = "Open Job") => {
     teamSize: null,
     headcount: null,
     expiresAt: null,
-    reportLimit: 5,
+    finalReportTarget: 5,
   });
   return job!;
 };

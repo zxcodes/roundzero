@@ -463,7 +463,7 @@ function CompanyActions({ job, requirements }: { job: JobDetail; requirements: s
               salaryCurrency: job.salaryCurrency,
               teamSize: job.teamSize,
               headcount: job.headcount,
-              reportLimit: job.reportLimit,
+              finalReportTarget: job.finalReportTarget,
             }}
             onSubmit={onUpdate}
             submitLabel="Save changes"
