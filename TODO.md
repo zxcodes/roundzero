@@ -94,6 +94,8 @@
 - gatekeep ai features using paywall.
 - auto find and apply to multiple jobs based on the profile (paid feature).
 - think about compacting existing user-agent chats and reusing them for similar roles to save time and compute.
+- **pre-eval: switch slop + eval steps to OpenRouter (Claude 3.5 Haiku / Llama 3.3 70B)** for reliable structured outputs and deterministic scoring. Keep Workers AI for classify step only. See `pre-evaluation.ts` comments for context. Do this before scaling eval volume. And add temperature: 0 and explicit max_tokens — eliminates score variance.
+- pre-eval: Delete parseJsonPayload entirely — OpenRouter + Claude actually respects response_format. You’ll get clean objects every time.
 
 ## PROD THINGS
 - add sentry.
