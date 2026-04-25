@@ -203,7 +203,7 @@ function InterviewRoutePage() {
 
   return (
     <div className="flex min-h-0 flex-1 border-t bg-background">
-      <aside className="hidden w-[340px] shrink-0 border-r lg:flex lg:min-h-0 lg:flex-col">
+      <aside className="hidden w-85 shrink-0 border-r lg:flex lg:min-h-0 lg:flex-col">
         <div className="flex items-center gap-2 px-4 py-3">
           <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={2} className="size-4 text-primary" />
           <h2 className="text-sm font-semibold">Interviews</h2>
@@ -254,7 +254,7 @@ function InterviewRoutePage() {
                     <span className="sr-only">Open interview list</span>
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-[300px] p-0">
+                <SheetContent side="left" className="w-75 p-0">
                   <SheetTitle className="sr-only">Interview sessions</SheetTitle>
                   <div className="flex items-center gap-2 border-b px-4 py-3">
                     <HugeiconsIcon
