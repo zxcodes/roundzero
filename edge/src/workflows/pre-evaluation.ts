@@ -16,6 +16,7 @@ import { getJobById } from "../queries/jobs/queries_sql";
 import { createNotification } from "../queries/notifications/queries_sql";
 import { createPreEvaluation } from "../queries/pre-evaluations/queries_sql";
 import { getDb } from "../shared/db";
+import { initializeInterviewAgent } from "../shared/interview-agent-client";
 import { createWorkflowLogger } from "../shared/logger";
 import { notificationPayloadSchemas } from "../shared/notifications-config";
 
@@ -467,9 +468,11 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
       const slotsUsed = await countInterviewSlotsUsedByJob(db, { jobId: job.id });
       const usedCount = slotsUsed?.count ?? 0;
 
-      log.info(`Quota: ${usedCount}/${job.reportLimit} slots used`);
+      const finalReportTarget =
+        typeof job.finalReportTarget === "number" ? job.finalReportTarget : 5;
+      log.info(`Quota: ${usedCount}/${finalReportTarget} slots used`);
 
-      if (usedCount >= job.reportLimit) {
+      if (usedCount >= finalReportTarget) {
         const candidate = await getUserById(db, { id: applicationData.application.candidateId });
         if (candidate) {
           const payload = notificationPayloadSchemas.position_filled.parse({
@@ -486,7 +489,7 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
         log.result("decide", {
           action: "quota_exhausted",
           used: usedCount,
-          limit: job.reportLimit,
+          limit: finalReportTarget,
         });
         return { action: "quota_exhausted" as const };
       }
@@ -506,6 +509,14 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
       if (!interview) {
         throw new Error(`Failed to create interview for application: ${applicationId}`);
       }
+
+      await initializeInterviewAgent(this.env, {
+        interviewId: interview.id,
+        applicationId,
+        interviewType: interviewType,
+        jobTitle: job.title,
+        companyName: job.companyName,
+      });
 
       await updateApplicationStatus(db, {
         id: applicationId,

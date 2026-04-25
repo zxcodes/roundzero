@@ -101,7 +101,7 @@ Prepare the database, enums, and server boundaries before the AI funnel goes liv
 ### 4.2 Job Schema Changes
 
 - [x] Migration: add `final_report_target INTEGER NOT NULL DEFAULT 5` to `jobs` (max allowed: 15)
-- [x] Update `jobFieldsSchema` and `JobFormData` to include `reportLimit`
+- [x] Update `jobFieldsSchema` and `JobFormData` to include `finalReportTarget`
 - [x] Update `createJob` and `updateJob` server functions
 - [ ] Add final report target field to `JobForm` UI with copy: "How many final candidate reports should RoundZero deliver for this role? (Max 15)"
 - [x] Enforce max 15 in Zod schema and server functions

@@ -32,7 +32,7 @@ const makeJobArgs = (companyId: string, overrides?: Record<string, unknown>) => 
   teamSize: 5,
   headcount: 2,
   expiresAt: null as Date | null,
-  reportLimit: 5,
+  finalReportTarget: 5,
   ...overrides,
 });
 
@@ -169,7 +169,7 @@ describe("updateJob", () => {
       teamSize: 10,
       headcount: 3,
       expiresAt: null,
-      reportLimit: 5,
+      finalReportTarget: 5,
     });
 
     expect(updated).not.toBeNull();
