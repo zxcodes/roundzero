@@ -18,7 +18,7 @@ type ReportScores = {
   overall: number;
 };
 
-export type ReportData = {
+type ReportData = {
   summary: string;
   strengths: string[];
   weaknesses: string[];
@@ -28,7 +28,7 @@ export type ReportData = {
   scores: ReportScores;
 };
 
-export type TranscriptMessage = {
+type TranscriptMessage = {
   role: "assistant" | "candidate";
   content: string;
   createdAt: string;
