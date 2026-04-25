@@ -117,6 +117,21 @@ This is a product branding decision, not a model name. The underlying agent clas
 
 ---
 
+# Interview Agent Implementation
+
+The interview agent is implemented using the **Cloudflare Agents SDK** (`agents`, `@cloudflare/ai-chat`, `workers-ai-provider`):
+
+- `AIChatAgent` class handles message history, streaming, and WebSocket transport
+- `streamText()` from the AI SDK v5 streams tokens in real-time to the candidate
+- `convertToModelMessages()` converts agent message history into LLM-ready format
+- Tools allow the agent to evaluate answers, check resume gaps, and decide when to end
+- System prompt is injected with job description, candidate summary, and pre-eval context
+- Session state (status, scores, metadata) persisted via `this.setState()` / `this.state`
+
+This replaces the previous raw Durable Object + `env.AI.run()` approach that lacked streaming, tools, and conversational memory.
+
+---
+
 # Stage 3: Deep Evaluation
 
 Only for selected candidates.

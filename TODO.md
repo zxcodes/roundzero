@@ -1,5 +1,6 @@
 ## TODO
 
+
 - the agent interview feels very off. the entire interview should be based on the actual candidate's profile, dynamic followups etc like a full fledged conv.
 - think about context compaction to save on costs.
 - in pre eval report what we are showing is not clear. missing requirements don't read good enough. the messaging needs to be clear.
