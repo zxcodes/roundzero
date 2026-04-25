@@ -130,6 +130,63 @@ The interview agent is implemented using the **Cloudflare Agents SDK** (`agents`
 
 This replaces the previous raw Durable Object + `env.AI.run()` approach that lacked streaming, tools, and conversational memory.
 
+## Agent Tools
+
+The agent has three server-side tools it can call during the conversation:
+
+### `evaluate_answer`
+- **Input:** `{ relevance: number, depth: number, clarity: number }`
+- **Action:** Stores running evaluation scores in agent state
+- **When called:** After each candidate answer, the LLM self-evaluates
+
+### `check_resume_gap`
+- **Input:** `{ claim: string }`
+- **Action:** Queries the candidate summary to verify a specific claim
+- **When called:** When the candidate mentions a project, skill, or company the agent wants to verify
+
+### `end_interview`
+- **Input:** `{ reason: string }`
+- **Action:** Sets status to `completed`, triggers post-evaluation workflow
+- **When called:** When the LLM decides sufficient signal has been gathered (no hardcoded limit)
+
+## Agent Lifecycle
+
+### `onStart()`
+- Fetches interview context from Postgres (job, candidate, pre-eval)
+- Injects context into Session memory
+- Schedules 48-hour expiry alarm: `this.schedule(48h, "expireInterview")`
+
+### `onChatMessage()`
+- Streams response via `streamText()` with full message history
+- LLM can call tools mid-conversation
+- State syncs to client via WebSocket automatically
+
+### `expireInterview()`
+- Called by scheduled alarm after 48 hours
+- Sets status to `expired` if not completed
+- Triggers expiry notification workflow
+
+### `triggerPostEvaluation()`
+- Called by `end_interview` tool
+- Triggers post-evaluation workflow: `this.runWorkflow("post-evaluation", { interviewId })`
+
+## Session Memory
+
+Uses the Session API for structured context:
+
+```ts
+session = Session.create(this)
+  .withContext("soul", { provider: { get: async () => systemPrompt } })
+  .withContext("job", { provider: { get: async () => jobDescription } })
+  .withContext("candidate", { provider: { get: async () => candidateSummary } })
+  .withContext("evaluation_notes", {
+    description: "Running evaluation scores and observations",
+    maxTokens: 2000
+  });
+```
+
+The LLM can read/write evaluation notes via auto-generated `set_context` tool.
+
 ---
 
 # Stage 3: Deep Evaluation
