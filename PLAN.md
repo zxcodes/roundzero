@@ -133,7 +133,7 @@ Prepare the database, enums, and server boundaries before the AI funnel goes liv
 - [x] Create `edge/src/workflows/pre-evaluation.ts`
   - Extends `WorkflowEntrypoint<Env, { applicationId: string }>`
   - Defines durable steps for the pre-evaluation pipeline
-- [x] Create `edge/src/workflows/report-generation.ts`
+- [x] Create `edge/src/workflows/post-evaluation.ts`
   - Extends `WorkflowEntrypoint<Env, { interviewId: string }>`
   - Defines durable steps for the evaluation pipeline
 - [x] Add `workflows` array to `edge/wrangler.jsonc` with both workflow bindings
@@ -320,6 +320,14 @@ Build the async chat interview surface and backend.
 - [ ] Time/question limits enforcement (configurable per interview type)
 - [ ] Interview progress tracking (stage transitions, question count)
 
+Current implementation status:
+
+- [x] 48-hour expiry cron (`*/5 * * * *`) expires overdue interviews
+- [x] Expiry notifications (`interview_expired`) are created
+- [x] Backfill currently runs after expiry and invites next best candidates
+- [x] Interview agent context guard blocks start/message until required context exists
+- [x] Context refresh path is implemented before start/message and is migration-safe for older DO sessions
+
 ### Exit Criteria
 
 - [ ] Candidate can start a full or quick evaluation interview from their application detail page
@@ -333,9 +341,9 @@ Build the async chat interview surface and backend.
 
 Build the report generation pipeline and company-facing report UI with real data.
 
-### 7.1 Report Generation Workflow
+### 7.1 Post-Evaluation Workflow
 
-- [x] Create `edge/src/workflows/report-generation.ts`
+- [x] Create `edge/src/workflows/post-evaluation.ts`
   - Extends `WorkflowEntrypoint<Env, { interviewId: string }>`
   - Triggered when interview completes
 
@@ -374,6 +382,16 @@ Build the report generation pipeline and company-facing report UI with real data
    - Create in-app notification for company owner
    - Send Resend email (best-effort)
    - No retry on email failure — notification record is the source of truth
+
+Current implementation status:
+
+- [x] Trigger endpoint renamed to `POST /post-evaluate` in edge worker
+- [x] Workflow binding renamed to `POST_EVALUATION`
+- [x] Workflow class renamed to `PostEvaluationWorkflow`
+- [x] Report persistence is live (`createReport`)
+- [x] `report_ready` notification creation for company owner is live
+- [ ] Candidate/company email delivery for workflow-created notifications
+- [ ] Advanced scoring decomposition steps (technical/communication/experience) still to be expanded
 
 ### 7.2 Report Data Model
 

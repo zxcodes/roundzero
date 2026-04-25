@@ -288,6 +288,7 @@ SELECT i.id, i.application_id, i.agent_id, i.type, i.metadata, i.status, i.start
        a.candidate_id, a.status AS application_status,
        j.id AS job_id, j.title AS job_title,
        c.name AS company_name,
+       c.owner_id AS company_owner_id,
        u.name AS candidate_name
 FROM interviews i
 JOIN applications a ON a.id = i.application_id
@@ -316,6 +317,7 @@ export interface getInterviewContextByIdRow {
     jobId: string;
     jobTitle: string;
     companyName: string;
+    companyOwnerId: string;
     candidateName: string;
 }
 
@@ -341,7 +343,8 @@ export async function getInterviewContextById(sql: Sql, args: getInterviewContex
         jobId: row[12],
         jobTitle: row[13],
         companyName: row[14],
-        candidateName: row[15]
+        companyOwnerId: row[15],
+        candidateName: row[16]
     };
 }
 
