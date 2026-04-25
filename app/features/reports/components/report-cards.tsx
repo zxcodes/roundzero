@@ -64,12 +64,32 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function parseJsonb<T>(value: unknown): T | null {
+  if (isRecord(value) || Array.isArray(value)) {
+    return value as T;
+  }
+
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      if (isRecord(parsed) || Array.isArray(parsed)) {
+        return parsed as T;
+      }
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
+}
+
 function toStringArray(value: unknown): string[] {
-  if (!Array.isArray(value)) {
+  const parsed = parseJsonb<unknown[]>(value);
+  if (!Array.isArray(parsed)) {
     return [];
   }
 
-  return value.filter((item): item is string => typeof item === "string" && item.length > 0);
+  return parsed.filter((item): item is string => typeof item === "string" && item.length > 0);
 }
 
 function toFiniteScore(value: unknown): number {
@@ -93,7 +113,8 @@ export function parseReportData(report: {
   recommendation: string;
   scores: unknown;
 }): ReportData {
-  const scores = isRecord(report.scores) ? report.scores : {};
+  const scoresRecord = parseJsonb<Record<string, unknown>>(report.scores);
+  const scores = scoresRecord ?? {};
 
   return {
     summary: report.summary,
@@ -187,6 +208,21 @@ export function ReportInsightsCard({ report }: { report: ReportData }) {
   );
 }
 
+const isGreetingOrFarewell = (content: string) => {
+  const lower = content.toLowerCase().trim();
+  const greetings = [
+    "hi, i am zero",
+    "hi, i'm zero",
+    "thanks for joining",
+    "your interview responses are captured",
+    "zero is compiling your evaluation",
+    "i will ask focused questions",
+    "we will run a focused interview",
+    "in 2-3 questions, i will quickly evaluate",
+  ];
+  return greetings.some((phrase) => lower.includes(phrase));
+};
+
 export function ReportTimelineCard({
   preEvaluation,
   interview,
@@ -209,6 +245,8 @@ export function ReportTimelineCard({
   messages: TranscriptMessage[];
   reportCreatedAt: Date;
 }) {
+  const substantiveMessages = messages.filter((m) => !isGreetingOrFarewell(m.content));
+
   return (
     <Card>
       <CardContent className="space-y-6">
@@ -245,11 +283,13 @@ export function ReportTimelineCard({
           <CardContent className="space-y-3">
             <div className="flex items-center gap-2">
               <HugeiconsIcon icon={Message01Icon} strokeWidth={2} className="size-4 text-primary" />
-              <p className="text-sm font-medium">Interview messages ({messages.length})</p>
+              <p className="text-sm font-medium">
+                Interview messages ({substantiveMessages.length})
+              </p>
             </div>
             <div className="max-h-72 space-y-2 overflow-y-auto rounded-xl border border-border/70 bg-muted/20 p-3">
-              {messages.length > 0 ? (
-                messages.map((message, index) => (
+              {substantiveMessages.length > 0 ? (
+                substantiveMessages.map((message, index) => (
                   <div
                     key={`${message.createdAt}-${index}`}
                     className="rounded-lg border border-border/60 bg-background p-2.5"

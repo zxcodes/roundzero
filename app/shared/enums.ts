@@ -63,24 +63,6 @@ export const APPLICATION_STATUS_TRANSITIONS: Record<ApplicationStatus, Applicati
   withdrawn: [],
 };
 
-/** Candidate-visible status labels. Internal pre-evaluation stages are hidden. */
-export const applicationStatusCandidateLabelMap: Record<ApplicationStatus, string> = {
-  applied: "Application Received",
-  pre_screening: "Application Received",
-  interview_invited: "Interview Ready",
-  interview_in_progress: "Interview in Progress",
-  evaluated: "Under Review",
-  shortlisted: "Shortlisted",
-  rejected: "Not Moving Forward",
-  withdrawn: "Withdrawn",
-};
-
-/** Map internal status to the candidate-visible status. */
-export function getVisibleApplicationStatus(status: ApplicationStatus): ApplicationStatus {
-  if (status === "pre_screening") return "applied";
-  return status;
-}
-
 /** Returns true if the transition from `current` to `next` is valid. */
 export const isValidTransition = (current: ApplicationStatus, next: ApplicationStatus): boolean =>
   (APPLICATION_STATUS_TRANSITIONS[current] ?? []).includes(next);

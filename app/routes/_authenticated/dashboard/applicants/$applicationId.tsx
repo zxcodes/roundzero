@@ -39,7 +39,6 @@ import {
   getCompanyApplicantReview,
   updateApplicationStatus,
 } from "@/features/applications/server/functions";
-import { PreEvaluationCard } from "@/features/pre-evaluations/components/pre-evaluation-card";
 import { getPreEvaluationForApplication } from "@/features/pre-evaluations/server/functions";
 import { parseReportData } from "@/features/reports/components/report-cards";
 import { getCompanyApplicantReportTimeline } from "@/features/reports/server/functions";
@@ -401,16 +400,6 @@ function ApplicantReviewPage() {
         </CardContent>
       </Card>
 
-      {preEvaluation ? (
-        <PreEvaluationCard evaluation={preEvaluation} />
-      ) : (
-        <Card className="border border-dashed border-border/70">
-          <CardContent className="py-6 text-center text-sm text-muted-foreground">
-            Pre-evaluation is in progress. Results will appear here once Zero finishes screening.
-          </CardContent>
-        </Card>
-      )}
-
       {report ? (
         <Card className="border border-primary/10 bg-[radial-gradient(circle_at_top_right,var(--color-primary)/10,transparent_34%),var(--color-card)] shadow-lg shadow-primary/5">
           <CardContent className="space-y-4">
@@ -453,6 +442,46 @@ function ApplicantReviewPage() {
           </CardContent>
         </Card>
       ) : null}
+
+      {preEvaluation ? (
+        <Card
+          className={
+            report
+              ? "border-border/40 bg-muted/20"
+              : "border border-primary/10 bg-[radial-gradient(circle_at_top_left,var(--color-primary)/10,transparent_32%),var(--color-card)] shadow-lg shadow-primary/5"
+          }
+        >
+          <CardContent className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-muted-foreground">
+                  Pre-screening
+                </p>
+                <h3 className="mt-1 text-base font-semibold tracking-tight">
+                  Profile score: {preEvaluation.score}/100
+                </h3>
+              </div>
+              <Badge variant="outline" className="text-[11px]">
+                {preEvaluation.confidence}
+              </Badge>
+            </div>
+            {preEvaluation.missingRequirements.length > 0 ? (
+              <p className="text-sm text-muted-foreground">
+                {preEvaluation.missingRequirements.length} gap
+                {preEvaluation.missingRequirements.length === 1 ? "" : "s"} detected
+              </p>
+            ) : (
+              <p className="text-sm text-emerald-600">All key requirements matched</p>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="border border-dashed border-border/70">
+          <CardContent className="py-6 text-center text-sm text-muted-foreground">
+            Pre-evaluation is in progress. Results will appear here once Zero finishes screening.
+          </CardContent>
+        </Card>
+      )}
 
       <div className="flex flex-wrap gap-2">
         {allowedStatuses.length > 1 ? (

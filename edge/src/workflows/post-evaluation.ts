@@ -1,8 +1,15 @@
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers";
+import { getUserById } from "../queries/auth/queries_sql";
 import { getInterviewContextById } from "../queries/interviews/queries_sql";
-import { createNotification } from "../queries/notifications/queries_sql";
+import {
+  createNotification,
+  markNotificationEmailDelivered,
+  markNotificationEmailFailed,
+  markNotificationEmailSkipped,
+} from "../queries/notifications/queries_sql";
 import { createReport, getReportByInterviewId } from "../queries/reports/queries_sql";
 import { getDb } from "../shared/db";
+import { sendEmailViaResend } from "../shared/email";
 import { getInterviewAgentState } from "../shared/interview-agent-client";
 import { createWorkflowLogger } from "../shared/logger";
 import { notificationPayloadSchemas } from "../shared/notifications-config";
@@ -415,7 +422,7 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
       return created;
     });
 
-    await step.do("notify_report_ready", async () => {
+    const notification = await step.do("notify_report_ready", async () => {
       log.info("Creating report_ready notification for company");
 
       const payload = notificationPayloadSchemas.report_ready.parse({
@@ -426,11 +433,70 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
         score: reportDraft.scores.overall,
       });
 
-      await createNotification(db, {
+      const created = await createNotification(db, {
         userId: interviewData.interview.companyOwnerId,
         type: "report_ready",
         payload,
       });
+
+      return created;
+    });
+
+    await step.do("send_report_ready_email", async () => {
+      if (!notification) {
+        log.warn("No notification created, skipping email");
+        return;
+      }
+
+      const resendApiKey = this.env.RESEND_API_KEY;
+      const resendFromEmail = this.env.RESEND_FROM_EMAIL;
+
+      if (!resendApiKey || !resendFromEmail) {
+        log.info("Resend not configured, skipping email delivery");
+        await markNotificationEmailSkipped(db, {
+          id: notification.id,
+          reason: "Email delivery is not configured",
+        });
+        return;
+      }
+
+      const owner = await getUserById(db, { id: interviewData.interview.companyOwnerId });
+      if (!owner?.email) {
+        log.warn("Company owner email not found, skipping email");
+        await markNotificationEmailSkipped(db, {
+          id: notification.id,
+          reason: "Recipient email unavailable",
+        });
+        return;
+      }
+
+      try {
+        const delivery = await sendEmailViaResend(resendApiKey, resendFromEmail, {
+          to: owner.email,
+          subject: `Evaluation ready for ${interviewData.interview.candidateName}`,
+          text: [
+            `The AI evaluation for ${interviewData.interview.candidateName} on ${interviewData.interview.jobTitle} is ready.`,
+            ``,
+            `Overall score: ${Math.round(reportDraft.scores.overall)}/100`,
+            `Recommendation: ${reportDraft.recommendation}`,
+            ``,
+            `View the full report in RoundZero.`,
+          ].join("\n"),
+        });
+
+        await markNotificationEmailDelivered(db, {
+          id: notification.id,
+          providerMessageId: delivery.providerMessageId,
+        });
+        log.info(`Report ready email sent to ${owner.email}`);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unknown email delivery failure";
+        log.error(`Failed to send report ready email: ${message}`);
+        await markNotificationEmailFailed(db, {
+          id: notification.id,
+          errorMessage: message,
+        });
+      }
     });
 
     log.info(`Post-evaluation complete: ${report.id}`);

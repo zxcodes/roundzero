@@ -144,7 +144,7 @@ export const getNotificationPresentation = (notification: { type: string; payloa
       tone: notificationTone[type],
       title: `Evaluation ready for ${payload.data.candidateName}`,
       body: `The AI evaluation for ${payload.data.candidateName} on ${payload.data.jobTitle} is ready.`,
-      to: "/dashboard/applicants/$applicationId" as const,
+      to: "/dashboard/applicant-reports/$applicationId" as const,
       params: { applicationId: payload.data.applicationId },
     };
   }

@@ -5,6 +5,7 @@ import {
   Edit02Icon,
   Location01Icon,
   MoneyBag02Icon,
+  RankingIcon,
   Rocket01Icon,
   UserGroupIcon,
 } from "@hugeicons/core-free-icons";
@@ -179,7 +180,15 @@ function JobDetailPage() {
           ) : null}
 
           {isCompany ? (
-            <ApplicantsSummaryCard jobId={job.id} applicantsCount={data.applicants.length} />
+            <ApplicantsSummaryCard
+              jobId={job.id}
+              applicantsCount={data.applicants.length}
+              evaluatedCount={
+                data.type === "company"
+                  ? data.applicants.filter((a) => a.reportId !== null).length
+                  : 0
+              }
+            />
           ) : null}
         </div>
 
@@ -313,9 +322,11 @@ function JobDetailPage() {
 function ApplicantsSummaryCard({
   jobId,
   applicantsCount,
+  evaluatedCount,
 }: {
   jobId: string;
   applicantsCount: number;
+  evaluatedCount: number;
 }) {
   return (
     <Card className="animate-fade-in stagger-3 border-border/70">
@@ -342,12 +353,18 @@ function ApplicantsSummaryCard({
       <CardContent>
         {applicantsCount > 0 ? (
           <Card className="bg-muted/20 border-border/70">
-            <CardContent className="p-4">
+            <CardContent className="space-y-2 p-4">
               <p className="text-sm font-medium">
                 {applicantsCount} {applicantsCount === 1 ? "candidate has" : "candidates have"}{" "}
                 applied
               </p>
-              <p className="mt-1 text-xs text-muted-foreground">
+              {evaluatedCount > 0 ? (
+                <Badge variant="outline" className="gap-1 text-[11px]">
+                  <HugeiconsIcon icon={RankingIcon} strokeWidth={2} className="size-3" />
+                  {evaluatedCount} evaluated
+                </Badge>
+              ) : null}
+              <p className="text-xs text-muted-foreground">
                 Open the applicants page to move through each submission with direct access to
                 resume, profile snapshot, and status controls.
               </p>
