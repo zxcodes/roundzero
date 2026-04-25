@@ -66,6 +66,25 @@ app.post("/post-evaluate", async (c) => {
   return c.json({ instanceId: instance.id });
 });
 
+app.get("/internal/interviews/:interviewId/state", async (c) => {
+  const auth = c.req.header("Authorization");
+  const env = validateEnv(c.env);
+
+  if (!auth || auth !== `Bearer ${env.EDGE_WORKER_SECRET}`) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  const interviewId = c.req.param("interviewId");
+  const db = getDb();
+  const context = await getInterviewContextById(db, { id: interviewId });
+  if (!context) {
+    return c.json({ error: "Interview not found" }, 404);
+  }
+
+  const state = await getInterviewAgentState(c.env, interviewId);
+  return c.json(state);
+});
+
 app.post("/interviews/:interviewId/state", async (c) => {
   const auth = c.req.header("Authorization");
   const env = validateEnv(c.env);

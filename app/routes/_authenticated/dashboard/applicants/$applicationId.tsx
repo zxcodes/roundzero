@@ -41,6 +41,8 @@ import {
 } from "@/features/applications/server/functions";
 import { PreEvaluationCard } from "@/features/pre-evaluations/components/pre-evaluation-card";
 import { getPreEvaluationForApplication } from "@/features/pre-evaluations/server/functions";
+import { parseReportData } from "@/features/reports/components/report-cards";
+import { getCompanyApplicantReportTimeline } from "@/features/reports/server/functions";
 import {
   APPLICATION_STATUS_TRANSITIONS,
   type ApplicationStatus,
@@ -65,7 +67,10 @@ export const Route = createFileRoute("/_authenticated/dashboard/applicants/$appl
     const preEvaluation = await getPreEvaluationForApplication({
       data: { applicationId: params.applicationId },
     });
-    return { ...data, preEvaluation };
+    const reportTimeline = await getCompanyApplicantReportTimeline({
+      data: { applicationId: params.applicationId },
+    });
+    return { ...data, preEvaluation, reportTimeline };
   },
   pendingComponent: DashboardApplicantReviewSkeleton,
   component: ApplicantReviewPage,
@@ -228,7 +233,8 @@ const getInitials = (name: string) => {
 };
 
 function ApplicantReviewPage() {
-  const { application, previousApplicant, nextApplicant, preEvaluation } = Route.useLoaderData();
+  const { application, previousApplicant, nextApplicant, preEvaluation, reportTimeline } =
+    Route.useLoaderData();
   const router = useRouter();
   const [pendingStatus, setPendingStatus] = useState<ApplicationStatus | null>(null);
 
@@ -267,6 +273,7 @@ function ApplicantReviewPage() {
     currentStatus as (typeof APPLICATION_STAGES)[number],
   );
   const meta = stageCopy[currentStatus as keyof typeof stageCopy] ?? stageCopy.applied;
+  const report = reportTimeline?.report ? parseReportData(reportTimeline.report) : null;
 
   const onStatusValueChange = async (value: string) => {
     const nextStatus = applicationStatusSchema.parse(value);
@@ -404,6 +411,49 @@ function ApplicantReviewPage() {
         </Card>
       )}
 
+      {report ? (
+        <Card className="border border-primary/10 bg-[radial-gradient(circle_at_top_right,var(--color-primary)/10,transparent_34%),var(--color-card)] shadow-lg shadow-primary/5">
+          <CardContent className="space-y-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="space-y-1.5">
+                <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-primary">
+                  Post-interview report
+                </p>
+                <h3 className="text-lg font-semibold tracking-tight">Actual evaluation score</h3>
+                <p className="text-sm text-muted-foreground">{report.summary}</p>
+              </div>
+              <Badge variant="outline" className="font-mono text-[12px]">
+                {Math.round(report.scores.overall)}/100
+              </Badge>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="secondary" className="text-xs">
+                Communication {Math.round(report.scores.communication)}/100
+              </Badge>
+              <Badge variant="secondary" className="text-xs">
+                Problem solving {Math.round(report.scores.problemSolving)}/100
+              </Badge>
+              <Badge variant="secondary" className="text-xs">
+                Ownership {Math.round(report.scores.ownership)}/100
+              </Badge>
+              <Badge variant="secondary" className="text-xs">
+                Role fit {Math.round(report.scores.roleFit)}/100
+              </Badge>
+            </div>
+
+            <Button variant="outline" asChild>
+              <Link
+                to="/dashboard/applicant-reports/$applicationId"
+                params={{ applicationId: application.id }}
+              >
+                View full report
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
+
       <div className="flex flex-wrap gap-2">
         {allowedStatuses.length > 1 ? (
           <div className="space-y-2">
@@ -451,8 +501,8 @@ function ApplicantReviewPage() {
 
       <Empty className="border">
         <EmptyDescription>
-          This page shows the candidate snapshot attached at apply time. The AI report above is a
-          mock preview until the evaluation pipeline is wired.
+          This page shows the candidate snapshot attached at apply time and any available evaluation
+          output.
         </EmptyDescription>
       </Empty>
 
