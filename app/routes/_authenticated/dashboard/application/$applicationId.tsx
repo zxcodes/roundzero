@@ -297,22 +297,33 @@ function CandidateApplicationDetailPage() {
             const isCompleted = stageIndex < currentIndex;
             const isCurrent = stage === currentStage;
 
+            const barClass =
+              stage === "applied"
+                ? isCompleted || isCurrent
+                  ? "bg-sky-300"
+                  : "bg-muted"
+                : stage === "interviewing"
+                  ? isCompleted || isCurrent
+                    ? "bg-amber-300"
+                    : "bg-muted"
+                  : isCompleted || isCurrent
+                    ? "bg-emerald-300"
+                    : "bg-muted";
+
+            const labelClass = isCurrent
+              ? stage === "applied"
+                ? "text-sky-300"
+                : stage === "interviewing"
+                  ? "text-amber-300"
+                  : "text-emerald-300"
+              : isCompleted
+                ? "text-muted-foreground"
+                : "text-muted-foreground/40";
+
             return (
               <div key={stage} className="flex-1 space-y-1.5">
-                <div
-                  className={`h-1.5 rounded-full ${
-                    isCompleted ? "bg-primary" : isCurrent ? "bg-primary/40" : "bg-muted"
-                  }`}
-                />
-                <p
-                  className={`text-[11px] font-medium uppercase tracking-widest ${
-                    isCurrent
-                      ? "text-foreground"
-                      : isCompleted
-                        ? "text-muted-foreground"
-                        : "text-muted-foreground/40"
-                  }`}
-                >
+                <div className={`h-1.5 rounded-full ${barClass}`} />
+                <p className={`text-[11px] font-medium uppercase tracking-widest ${labelClass}`}>
                   {stageCopy[stage].label}
                 </p>
               </div>
