@@ -46,7 +46,7 @@ export interface JobFormData {
   salaryCurrency: string;
   teamSize: number | null;
   headcount: number | null;
-  reportLimit: number;
+  finalReportTarget: number;
   expiresAt: Date | null;
 }
 
@@ -74,10 +74,10 @@ const formSchema = z
     salaryCurrency: z.string().min(1),
     teamSize: optionalPositiveInt,
     headcount: optionalPositiveInt,
-    reportLimit: z
+    finalReportTarget: z
       .string()
-      .refine((val) => Number.isInteger(Number(val)) && Number(val) >= 1 && Number(val) <= 10, {
-        message: "Report limit must be between 1 and 10",
+      .refine((val) => Number.isInteger(Number(val)) && Number(val) >= 1 && Number(val) <= 15, {
+        message: "Final report target must be between 1 and 15",
       }),
     expiresAt: z.string(),
   })
@@ -156,7 +156,8 @@ export function JobForm({
       salaryCurrency: defaultValues?.salaryCurrency ?? "USD",
       teamSize: defaultValues?.teamSize != null ? String(defaultValues.teamSize) : "",
       headcount: defaultValues?.headcount != null ? String(defaultValues.headcount) : "",
-      reportLimit: defaultValues?.reportLimit != null ? String(defaultValues.reportLimit) : "5",
+      finalReportTarget:
+        defaultValues?.finalReportTarget != null ? String(defaultValues.finalReportTarget) : "5",
       expiresAt: defaultValues?.expiresAt ? defaultValues.expiresAt.toISOString().slice(0, 10) : "",
     },
 
@@ -183,7 +184,7 @@ export function JobForm({
         salaryCurrency: value.salaryCurrency,
         teamSize: value.teamSize ? Number(value.teamSize) : null,
         headcount: value.headcount ? Number(value.headcount) : null,
-        reportLimit: Number(value.reportLimit),
+        finalReportTarget: Number(value.finalReportTarget),
         expiresAt,
       });
     },
@@ -695,14 +696,14 @@ export function JobForm({
           </form.Field>
 
           <form.Field
-            name="reportLimit"
+            name="finalReportTarget"
             validators={{
               onBlur: z
                 .string()
                 .refine(
-                  (val) => Number.isInteger(Number(val)) && Number(val) >= 1 && Number(val) <= 10,
+                  (val) => Number.isInteger(Number(val)) && Number(val) >= 1 && Number(val) <= 15,
                   {
-                    message: "Report limit must be between 1 and 10",
+                    message: "Final report target must be between 1 and 15",
                   },
                 ),
             }}
@@ -711,7 +712,7 @@ export function JobForm({
               const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
               return (
                 <Field data-invalid={isInvalid}>
-                  <FieldLabel htmlFor={field.name}>Candidate-agent report limit</FieldLabel>
+                  <FieldLabel htmlFor={field.name}>Final report target</FieldLabel>
                   <Input
                     id={field.name}
                     inputMode="numeric"
@@ -722,7 +723,7 @@ export function JobForm({
                     aria-invalid={isInvalid}
                   />
                   <p className="text-muted-foreground text-xs">
-                    Maximum candidate-agent reports to generate for this job (1-10)
+                    Maximum final candidate reports to deliver for this job (1-15)
                   </p>
                   {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
                 </Field>

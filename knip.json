@@ -1,8 +1,13 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "entry": ["app/router.tsx", "app/routeTree.gen.ts", "app/routes/**/*.{ts,tsx}"],
-  "project": ["app/**/*.{ts,tsx}"],
-  "ignore": ["app/**/*_sql.ts", "app/components/ui/**"],
+  "entry": [
+    "app/router.tsx",
+    "app/routeTree.gen.ts",
+    "app/routes/**/*.{ts,tsx}",
+    "edge/src/worker.ts"
+  ],
+  "project": ["app/**/*.{ts,tsx}", "edge/src/**/*.{ts,tsx}"],
+  "ignore": ["app/**/*_sql.ts", "app/components/ui/**", "edge/src/**/*_sql.ts"],
   "ignoreBinaries": ["sqlc"],
   "ignoreDependencies": [
     "@tanstack/react-devtools",

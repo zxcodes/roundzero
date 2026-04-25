@@ -161,5 +161,4 @@ function SubmittedProfileSnapshot({
   );
 }
 
-export type { SnapshotLink, WorkHistoryEntry };
 export { SubmittedProfileSnapshot };

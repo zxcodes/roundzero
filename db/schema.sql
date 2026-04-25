@@ -137,7 +137,7 @@ CREATE TABLE public.jobs (
     salary_currency text DEFAULT 'USD'::text NOT NULL,
     team_size integer,
     headcount integer DEFAULT 1,
-    report_limit integer DEFAULT 5 NOT NULL,
+    final_report_target integer DEFAULT 5 NOT NULL,
     expires_at timestamp with time zone,
     archived_at timestamp with time zone,
     created_at timestamp with time zone DEFAULT now() NOT NULL,

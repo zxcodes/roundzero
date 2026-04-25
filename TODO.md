@@ -1,5 +1,9 @@
 ## TODO
 
+- the agent interview feels very off. the entire interview should be based on the actual candidate's profile, dynamic followups etc like a full fledged conv.
+- think about context compaction to save on costs.
+- in pre eval report what we are showing is not clear. missing requirements don't read good enough. the messaging needs to be clear.
+- think about how previous evaluations and candidate profiles affect future score. helps with fabrication since we will have the candidate's work history and helps us maintain a consistent score when they apply to diff jobs.
 - think about showing pre eval report to companies bc the whole point is showing them tailored reports in the end. so instead of immediately showing them, show it only when the full reports are actually generated? think. fine for locla dev bc we need to check the scores etc etc. 
 - add a default expiry time for agent interviews. bc we can't make companies wait based on candidate's avaiability. think about it briefly. 
 - mouse back gesture doesn't work. might be something to do with the tanstack router.
@@ -94,6 +98,8 @@
 - gatekeep ai features using paywall.
 - auto find and apply to multiple jobs based on the profile (paid feature).
 - think about compacting existing user-agent chats and reusing them for similar roles to save time and compute.
+- **pre-eval: switch slop + eval steps to OpenRouter (Claude 3.5 Haiku / Llama 3.3 70B)** for reliable structured outputs and deterministic scoring. Keep Workers AI for classify step only. See `pre-evaluation.ts` comments for context. Do this before scaling eval volume. And add temperature: 0 and explicit max_tokens — eliminates score variance.
+- pre-eval: Delete parseJsonPayload entirely — OpenRouter + Claude actually respects response_format. You’ll get clean objects every time.
 
 ## PROD THINGS
 - add sentry.

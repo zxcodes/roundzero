@@ -7,12 +7,15 @@ import { toast } from "sonner";
 import { DashboardApplicantReviewSkeleton } from "@/components/route-skeletons";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
+import { getApplicationResumeDownloadUrl } from "@/features/applications/server/functions";
 import {
-  getApplicationResumeDownloadUrl,
-  getCompanyApplicantReview,
-} from "@/features/applications/server/functions";
-import { PreEvaluationCard } from "@/features/pre-evaluations/components/pre-evaluation-card";
-import { getPreEvaluationForApplication } from "@/features/pre-evaluations/server/functions";
+  parseReportData,
+  ReportInsightsCard,
+  ReportSummaryCard,
+  ReportTimelineCard,
+} from "@/features/reports/components/report-cards";
+import { getCompanyApplicantReportTimeline } from "@/features/reports/server/functions";
 import { validateUuidParams } from "@/shared/validation";
 
 export const Route = createFileRoute("/_authenticated/dashboard/applicant-reports/$applicationId")({
@@ -23,23 +26,20 @@ export const Route = createFileRoute("/_authenticated/dashboard/applicant-report
     validateUuidParams({ applicationId: params.applicationId });
   },
   loader: async ({ params }) => {
-    const data = await getCompanyApplicantReview({
+    const data = await getCompanyApplicantReportTimeline({
       data: { applicationId: params.applicationId },
     });
     if (!data) {
       throw notFound();
     }
-    const preEvaluation = await getPreEvaluationForApplication({
-      data: { applicationId: params.applicationId },
-    });
-    return { ...data, preEvaluation };
+    return data;
   },
   pendingComponent: DashboardApplicantReviewSkeleton,
   component: ApplicantAiReportPage,
 });
 
 function ApplicantAiReportPage() {
-  const { application, preEvaluation } = Route.useLoaderData();
+  const { application, preEvaluation, interview, interviewState, report } = Route.useLoaderData();
   const getResumeUrlFn = useServerFn(getApplicationResumeDownloadUrl);
 
   const resumeDownloadMutation = useMutation({
@@ -57,6 +57,36 @@ function ApplicantAiReportPage() {
       data: { applicationId: application.id },
     });
   };
+
+  if (!report) {
+    return (
+      <div className="animate-fade-in space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Button variant="ghost" size="sm" asChild className="-ml-2">
+            <Link
+              to="/dashboard/applicants/$applicationId"
+              params={{ applicationId: application.id }}
+            >
+              <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
+              Applicant detail
+            </Link>
+          </Button>
+        </div>
+
+        <Empty className="border">
+          <EmptyHeader>
+            <EmptyTitle>No post-interview report yet</EmptyTitle>
+            <EmptyDescription>
+              This applicant does not have a generated post-evaluation report yet.
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      </div>
+    );
+  }
+
+  const parsedReport = parseReportData(report);
+  const messages = interviewState?.messages ?? [];
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -83,15 +113,21 @@ function ApplicantAiReportPage() {
         ) : null}
       </div>
 
-      {preEvaluation ? (
-        <PreEvaluationCard evaluation={preEvaluation} />
-      ) : (
-        <Card className="border border-dashed border-border/70">
-          <CardContent className="py-6 text-center text-sm text-muted-foreground">
-            Pre-evaluation is in progress. Results will appear here once Zero finishes screening.
-          </CardContent>
-        </Card>
-      )}
+      <ReportSummaryCard report={parsedReport} />
+      <ReportInsightsCard report={parsedReport} />
+      <ReportTimelineCard
+        preEvaluation={preEvaluation}
+        interview={interview}
+        messages={messages}
+        reportCreatedAt={report.createdAt}
+      />
+
+      <Card className="border border-dashed border-border/70">
+        <CardContent className="py-4 text-sm text-muted-foreground">
+          Scoring shown here is the persisted post-evaluation output from the completed interview
+          report.
+        </CardContent>
+      </Card>
     </div>
   );
 }

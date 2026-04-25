@@ -41,7 +41,7 @@ export const createJob = createServerFn({ method: "POST" })
       salaryCurrency: data.salaryCurrency,
       teamSize: data.teamSize ?? null,
       headcount: data.headcount ?? null,
-      reportLimit: data.reportLimit,
+      finalReportTarget: data.finalReportTarget,
       expiresAt: data.expiresAt ?? null,
     });
 
@@ -121,7 +121,7 @@ export const updateJob = createServerFn({ method: "POST" })
       salaryCurrency: data.salaryCurrency,
       teamSize: data.teamSize ?? null,
       headcount: data.headcount ?? null,
-      reportLimit: data.reportLimit,
+      finalReportTarget: data.finalReportTarget,
       expiresAt: data.expiresAt ?? null,
     });
 
@@ -193,7 +193,7 @@ export const publishJob = createServerFn({ method: "POST" })
       salaryCurrency: job.salaryCurrency,
       teamSize: job.teamSize,
       headcount: job.headcount,
-      reportLimit: job.reportLimit,
+      finalReportTarget: job.finalReportTarget,
       expiresAt: job.expiresAt,
     });
 

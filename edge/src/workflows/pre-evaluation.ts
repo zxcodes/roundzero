@@ -11,11 +11,16 @@ import { TECHNICAL_EVAL_SYSTEM_PROMPT } from "../prompts/evaluate/technical";
 import { SLOP_DETECTION_SYSTEM_PROMPT } from "../prompts/slop-detection";
 import { getApplicationById, updateApplicationStatus } from "../queries/applications/queries_sql";
 import { getUserById } from "../queries/auth/queries_sql";
-import { countInterviewSlotsUsedByJob, createInterview } from "../queries/interviews/queries_sql";
+import {
+  countInterviewSlotsUsedByJob,
+  createInterview,
+  getInterviewByApplicationId,
+} from "../queries/interviews/queries_sql";
 import { getJobById } from "../queries/jobs/queries_sql";
 import { createNotification } from "../queries/notifications/queries_sql";
 import { createPreEvaluation } from "../queries/pre-evaluations/queries_sql";
 import { getDb } from "../shared/db";
+import { initializeInterviewAgent } from "../shared/interview-agent-client";
 import { createWorkflowLogger } from "../shared/logger";
 import { notificationPayloadSchemas } from "../shared/notifications-config";
 
@@ -464,12 +469,25 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
 
       const db = getDb();
       const job = applicationData.job;
+      const existingInterview = await getInterviewByApplicationId(db, {
+        applicationId,
+      });
+      if (existingInterview) {
+        log.result("decide", {
+          action: "already_invited",
+          interviewId: existingInterview.id,
+        });
+        return { action: "interview_created" as const, interviewType: existingInterview.type };
+      }
+
       const slotsUsed = await countInterviewSlotsUsedByJob(db, { jobId: job.id });
       const usedCount = slotsUsed?.count ?? 0;
 
-      log.info(`Quota: ${usedCount}/${job.reportLimit} slots used`);
+      const finalReportTarget =
+        typeof job.finalReportTarget === "number" ? job.finalReportTarget : 5;
+      log.info(`Quota: ${usedCount}/${finalReportTarget} slots used`);
 
-      if (usedCount >= job.reportLimit) {
+      if (usedCount >= finalReportTarget) {
         const candidate = await getUserById(db, { id: applicationData.application.candidateId });
         if (candidate) {
           const payload = notificationPayloadSchemas.position_filled.parse({
@@ -486,21 +504,52 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
         log.result("decide", {
           action: "quota_exhausted",
           used: usedCount,
-          limit: job.reportLimit,
+          limit: finalReportTarget,
         });
         return { action: "quota_exhausted" as const };
       }
 
       const interviewType =
         aiResult.result.nextStep === "interview_invited" ? "full" : "quick_eval";
-      await createInterview(db, {
+      const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+      const interview = await createInterview(db, {
         applicationId,
         agentId: null,
         type: interviewType,
-        metadata: { preEvaluationScore: aiResult.result.score },
+        metadata: { preEvaluationScore: aiResult.result.score, expiresAt },
         status: "pending",
         startedAt: null,
         completedAt: null,
+      });
+      if (!interview) {
+        throw new Error(`Failed to create interview for application: ${applicationId}`);
+      }
+
+      await initializeInterviewAgent(this.env, {
+        interviewId: interview.id,
+        applicationId,
+        interviewType: interviewType,
+        jobTitle: job.title,
+        companyName: job.companyName,
+        jobDescription: job.description,
+        jobRequirements: Array.isArray(job.requirements)
+          ? (job.requirements as unknown[])
+              .filter((requirement): requirement is string => typeof requirement === "string")
+              .map((requirement) => requirement.trim())
+              .filter((requirement) => requirement.length > 0)
+          : [],
+        candidateSummary: resumeText.slice(0, 2000),
+        customQuestions: Array.isArray(job.interviewQuestions)
+          ? (job.interviewQuestions as unknown[])
+              .filter((question): question is string => typeof question === "string")
+              .map((question) => question.trim())
+              .filter((question) => question.length > 0)
+          : [],
+        preEvaluation: {
+          score: aiResult.result.score,
+          missingRequirements: aiResult.result.missingRequirements,
+          consistencyScore: slopCheck.consistencyScore,
+        },
       });
 
       await updateApplicationStatus(db, {
@@ -512,9 +561,11 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
       if (candidate) {
         const payload = notificationPayloadSchemas.interview_invited.parse({
           applicationId,
+          interviewId: interview.id,
           jobId: job.id,
           jobTitle: job.title,
           interviewType,
+          expiresAt,
         });
         await createNotification(db, {
           userId: candidate.id,

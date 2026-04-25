@@ -14,6 +14,8 @@ type NotificationEmailTemplateProps = {
   previewText: string;
   body: string;
   ctaHref: string | null;
+  ctaLabel?: string;
+  deadlineText?: string | null;
 };
 
 export function NotificationEmailTemplate(props: NotificationEmailTemplateProps) {
@@ -28,9 +30,10 @@ export function NotificationEmailTemplate(props: NotificationEmailTemplateProps)
           </Section>
           <Section style={contentStyle}>
             <Text style={bodyTextStyle}>{props.body}</Text>
+            {props.deadlineText ? <Text style={deadlineStyle}>{props.deadlineText}</Text> : null}
             {props.ctaHref ? (
               <Link href={props.ctaHref} style={ctaStyle}>
-                Open in RoundZero
+                {props.ctaLabel ?? "Open in RoundZero"}
               </Link>
             ) : null}
           </Section>
@@ -54,6 +57,8 @@ NotificationEmailTemplate.PreviewProps = {
   previewText: "Acme Corp updated your application",
   body: "Your application for Senior Frontend Engineer at Acme Corp is now interviewing.",
   ctaHref: "https://roundzero.app/dashboard/application/123",
+  ctaLabel: "View Application",
+  deadlineText: null,
 } satisfies NotificationEmailTemplateProps;
 
 const bodyStyle: React.CSSProperties = {
@@ -107,6 +112,13 @@ const ctaStyle: React.CSSProperties = {
   marginTop: "24px",
   padding: "12px 18px",
   textDecoration: "none",
+};
+
+const deadlineStyle: React.CSSProperties = {
+  color: "#f0f2f5",
+  fontSize: "14px",
+  lineHeight: "1.6",
+  margin: "16px 0 0",
 };
 
 const dividerStyle: React.CSSProperties = {

@@ -3,6 +3,7 @@ import {
   Calendar01Icon,
   Cancel01Icon,
   File02Icon,
+  Message01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
@@ -30,6 +31,7 @@ import {
   getMyApplicationDetail,
   withdrawApplication,
 } from "@/features/applications/server/functions";
+import { getInterviewForApplication } from "@/features/interviews/server/functions";
 import { validateUuidParams } from "@/shared/validation";
 
 export const Route = createFileRoute("/_authenticated/dashboard/application/$applicationId")({
@@ -46,7 +48,10 @@ export const Route = createFileRoute("/_authenticated/dashboard/application/$app
     if (!application) {
       throw notFound();
     }
-    return application;
+    const interview = await getInterviewForApplication({
+      data: { applicationId: params.applicationId },
+    });
+    return { application, interview };
   },
   pendingComponent: DashboardApplicationDetailSkeleton,
   component: CandidateApplicationDetailPage,
@@ -68,9 +73,8 @@ const stageCopy = {
     label: "Interviewing",
     badge: "Interviewing",
     tone: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
-    summary: "The company has advanced this role into the interview stage.",
-    nextStep:
-      "Watch this application closely. This is the strongest signal that a live next step is coming.",
+    summary: "You have been invited to a RoundZero interview for this role.",
+    nextStep: "Complete the interview before the deadline to keep your evaluation slot.",
   },
   evaluated: {
     label: "Evaluated",
@@ -112,7 +116,9 @@ const formatDateShort = (date: Date | string) => {
 
 const toApplicationStage = (status: string): keyof typeof stageCopy => {
   switch (status) {
-    case "interviewing":
+    case "interview_invited":
+    case "interview_in_progress":
+      return "interviewing";
     case "evaluated":
     case "rejected":
     case "withdrawn":
@@ -177,7 +183,7 @@ const getJobStateLabel = (application: Application) => {
 };
 
 function CandidateApplicationDetailPage() {
-  const application = Route.useLoaderData();
+  const { application, interview } = Route.useLoaderData();
   const getResumeUrlFn = useServerFn(getApplicationResumeDownloadUrl);
   const router = useRouter();
 
@@ -220,8 +226,12 @@ function CandidateApplicationDetailPage() {
   const bio = getStringValue(metadata.bio);
   const jobStateLabel = getJobStateLabel(application);
   const canWithdraw =
-    (application.status === "applied" || application.status === "interviewing") &&
+    (application.status === "applied" ||
+      application.status === "interview_invited" ||
+      application.status === "interview_in_progress") &&
     !application.companyOwnerDeleted;
+
+  const hasInterview = interview !== null;
 
   const onResumeView = async () => {
     await resumeDownloadMutation.mutateAsync({
@@ -287,22 +297,33 @@ function CandidateApplicationDetailPage() {
             const isCompleted = stageIndex < currentIndex;
             const isCurrent = stage === currentStage;
 
+            const barClass =
+              stage === "applied"
+                ? isCompleted || isCurrent
+                  ? "bg-sky-300"
+                  : "bg-muted"
+                : stage === "interviewing"
+                  ? isCompleted || isCurrent
+                    ? "bg-amber-300"
+                    : "bg-muted"
+                  : isCompleted || isCurrent
+                    ? "bg-emerald-300"
+                    : "bg-muted";
+
+            const labelClass = isCurrent
+              ? stage === "applied"
+                ? "text-sky-300"
+                : stage === "interviewing"
+                  ? "text-amber-300"
+                  : "text-emerald-300"
+              : isCompleted
+                ? "text-muted-foreground"
+                : "text-muted-foreground/40";
+
             return (
               <div key={stage} className="flex-1 space-y-1.5">
-                <div
-                  className={`h-1.5 rounded-full ${
-                    isCompleted ? "bg-primary" : isCurrent ? "bg-primary/40" : "bg-muted"
-                  }`}
-                />
-                <p
-                  className={`text-[11px] font-medium uppercase tracking-widest ${
-                    isCurrent
-                      ? "text-foreground"
-                      : isCompleted
-                        ? "text-muted-foreground"
-                        : "text-muted-foreground/40"
-                  }`}
-                >
+                <div className={`h-1.5 rounded-full ${barClass}`} />
+                <p className={`text-[11px] font-medium uppercase tracking-widest ${labelClass}`}>
                   {stageCopy[stage].label}
                 </p>
               </div>
@@ -327,6 +348,36 @@ function CandidateApplicationDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      {hasInterview && !application.companyOwnerDeleted ? (
+        <Card className="border border-primary/10 bg-[radial-gradient(circle_at_top_left,var(--color-primary)/10,transparent_32%),var(--color-card)] shadow-lg shadow-primary/5">
+          <CardContent className="space-y-3">
+            <div className="flex items-center gap-2">
+              <HugeiconsIcon icon={Message01Icon} strokeWidth={2} className="size-5 text-primary" />
+              <p className="text-sm font-medium">RoundZero interview</p>
+              <Badge variant="outline" className="text-[11px]">
+                {interview.status}
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {interview.status === "completed"
+                ? "Your interview is complete. The company will review your evaluation."
+                : interview.status === "expired"
+                  ? "This interview window has expired."
+                  : interview.status === "cancelled"
+                    ? "This interview has been cancelled."
+                    : "Complete your RoundZero interview to advance your application."}
+            </p>
+            {interview.status === "pending" || interview.status === "in_progress" ? (
+              <Button size="sm" asChild>
+                <Link to="/dashboard/interview/$interviewId" params={{ interviewId: interview.id }}>
+                  {interview.status === "in_progress" ? "Continue interview" : "Start interview"}
+                </Link>
+              </Button>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
 
       <div className="flex flex-wrap gap-2">
         {application.resumeKey ? (

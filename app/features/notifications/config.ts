@@ -26,9 +26,18 @@ const reportReadyPayloadSchema = z.object({
 
 const interviewInvitedPayloadSchema = z.object({
   applicationId: z.string().uuid(),
+  interviewId: z.string().uuid(),
   jobId: z.string().uuid(),
   jobTitle: z.string().min(1),
   interviewType: z.string().min(1),
+  expiresAt: z.string().datetime(),
+});
+
+const interviewExpiredPayloadSchema = z.object({
+  applicationId: z.string().uuid(),
+  interviewId: z.string().uuid(),
+  jobId: z.string().uuid(),
+  jobTitle: z.string().min(1),
 });
 
 const positionFilledPayloadSchema = z.object({
@@ -48,6 +57,7 @@ export const notificationPayloadSchemas = {
   application_withdrawn: applicationWithdrawnPayloadSchema,
   report_ready: reportReadyPayloadSchema,
   interview_invited: interviewInvitedPayloadSchema,
+  interview_expired: interviewExpiredPayloadSchema,
   position_filled: positionFilledPayloadSchema,
   job_published: jobLifecyclePayloadSchema,
   job_archived: jobLifecyclePayloadSchema,
@@ -59,6 +69,7 @@ const notificationTone = {
   application_withdrawn: "bg-rose-500/10 text-rose-700 dark:text-rose-300",
   report_ready: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
   interview_invited: "bg-violet-500/10 text-violet-700 dark:text-violet-300",
+  interview_expired: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
   position_filled: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
   job_published: "bg-violet-500/10 text-violet-700 dark:text-violet-300",
   job_archived: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
@@ -133,7 +144,7 @@ export const getNotificationPresentation = (notification: { type: string; payloa
       tone: notificationTone[type],
       title: `Evaluation ready for ${payload.data.candidateName}`,
       body: `The AI evaluation for ${payload.data.candidateName} on ${payload.data.jobTitle} is ready.`,
-      to: "/dashboard/applicants/$applicationId" as const,
+      to: "/dashboard/applicant-reports/$applicationId" as const,
       params: { applicationId: payload.data.applicationId },
     };
   }
@@ -150,7 +161,29 @@ export const getNotificationPresentation = (notification: { type: string; payloa
       type,
       tone: notificationTone[type],
       title: `Zero invited you to an interview`,
-      body: `You have been invited to complete a ${payload.data.interviewType === "quick_eval" ? "quick evaluation" : "full interview"} for ${payload.data.jobTitle}.`,
+      body: `You have been invited to complete a ${payload.data.interviewType === "quick_eval" ? "quick evaluation" : "full interview"} for ${payload.data.jobTitle}. Complete it before the deadline to keep your evaluation slot.`,
+      to: "/dashboard/interview/$interviewId" as const,
+      params: { interviewId: payload.data.interviewId },
+      meta: {
+        ctaLabel: "Start Interview",
+        deadline: payload.data.expiresAt,
+      },
+    };
+  }
+
+  if (type === "interview_expired") {
+    const payload = notificationPayloadSchemas.interview_expired.safeParse(
+      toRecord(notification.payload),
+    );
+    if (!payload.success) {
+      return null;
+    }
+
+    return {
+      type,
+      tone: notificationTone[type],
+      title: `Interview window closed for ${payload.data.jobTitle}`,
+      body: `The interview deadline has passed for ${payload.data.jobTitle}. If capacity allows, Zero may invite additional candidates from the pipeline.`,
       to: "/dashboard/application/$applicationId" as const,
       params: { applicationId: payload.data.applicationId },
     };
@@ -168,7 +201,7 @@ export const getNotificationPresentation = (notification: { type: string; payloa
       type,
       tone: notificationTone[type],
       title: `${payload.data.jobTitle} has received enough evaluations`,
-      body: `This position has received enough evaluations. Your application is still on file and the company may review it directly.`,
+      body: `This position has reached its final report target. Your application is still on file and the company may review it directly.`,
       to: "/dashboard/application/$applicationId" as const,
       params: { applicationId: payload.data.applicationId },
     };
