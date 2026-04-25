@@ -11,7 +11,7 @@ That wastes:
 
 Use a funnel:
 
-Application → Pre-Evaluation → Selective Deep Evaluation → Company Review
+Application → Pre-Evaluation → Selective Deep Evaluation → Report → Company Review
 
 ---
 
@@ -74,7 +74,11 @@ Decide whether a candidate deserves deeper evaluation.
 
 ## Quota Check First
 
-Each job has a `report_limit` (default: 5, max: 15). The system only creates interviews while existing report count < limit.
+Each job has a `final_report_target` (default: 5, max: 15). The system should deliver that many final reports when enough eligible candidates exist.
+
+Capacity is computed from completed reports and active interviews:
+- `remainingReports = final_report_target - completedReports`
+- `availableInviteSlots = remainingReports - activeInterviews(status IN pending|in_progress)`
 
 ## High Match
 
@@ -88,9 +92,15 @@ Each job has a `report_limit` (default: 5, max: 15). The system only creates int
 
 → Hold in `pre_screening` (no interview)
 
-## Quota Exhausted
+## Target Reached
 
 → Stop creating interviews. Remaining pending candidates stay in pipeline and receive a "position filled" notification. They are NOT auto-rejected.
+
+## Interview Expiry + Cancel
+
+- Interview invites expire after 48 hours
+- Candidates can cancel interviews if they no longer want to participate
+- Expired or cancelled interview slots are recycled to the next best eligible candidate
 
 ---
 
@@ -131,14 +141,14 @@ Structured candidate report
 
 # Report Limits
 
-Companies set `report_limit` during job creation (default: 5, max: 15). This controls how many candidates RoundZero will deeply evaluate for that role.
+Companies set `final_report_target` during job creation (default: 5, max: 15). This controls how many final candidate reports RoundZero will deliver for that role.
 
 Why a limit:
 - Prevents noise for companies with only 1 opening
 - Keeps evaluation costs predictable
 - Forces selectivity in the funnel
 
-When the limit is reached, the pipeline closes for new evaluations but the job may remain open. Companies still see unevaluated applicants in a pending list and can manually review or reject them.
+When the target is reached, the pipeline closes for new evaluations but the job may remain open. Companies still see unevaluated applicants in a pending list and can manually review or reject them.
 
 ---
 
@@ -199,7 +209,7 @@ Instead of raw applicants, companies see evaluated candidates.
 - Only companies can move `evaluated` → `shortlisted` or `rejected`
 - System auto-advances through `pre_screening` → `interview_invited` → `interview_in_progress` → `evaluated`
 - Companies can manually reject at any pre-evaluation stage
-- When `report_limit` is reached, system stops advancing new candidates out of `pre_screening`
+- When `final_report_target` is reached, system stops advancing new candidates out of `pre_screening`
 
 ---
 
@@ -250,12 +260,12 @@ This reduces cost and improves UX.
 
 | # | Decision | Status |
 |---|----------|--------|
-| 1 | Application Status Lifecycle | ✅ Extend single `applications.status` enum to all 7 statuses |
+| 1 | Application Status Lifecycle | ✅ Extend single `applications.status` enum to all 8 statuses |
 | 2 | Candidate-Facing Messaging | ✅ Hide pre-evaluation stages; show only 6 candidate-visible statuses |
 | 3 | Medium-Fit Follow-Up | ✅ Use synchronous chat UI (same as full interview) with 2–3 questions |
-| 4 | Company View Pre/Post AI | ✅ Show full pipeline, pre-eval candidates are read-only |
-| 5 | Pre-Evaluation Output Format | ⏳ Pending validation with 5–10 real applications |
-| 6 | Report Limits | ✅ `report_limit` per job (default: 5, max: 15). Quota exhausted → stop evaluations, notify candidates, no auto-reject. |
+| 4 | Company View Pre/Post AI | ✅ Show full pipeline; pre-eval candidates are read-only, post-eval show real scores |
+| 5 | Pre-Evaluation Output Format | ✅ Pipeline live; real-world validation with hiring managers deferred to post-MVP |
+| 6 | Final Report Target | ✅ `final_report_target` per job (default: 5, max: 15). Target reached → stop new evaluations, notify candidates, no auto-reject. |
 
 ---
 

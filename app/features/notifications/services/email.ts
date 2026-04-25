@@ -42,13 +42,52 @@ function getNotificationFromName(type: string): string {
     case "job_archived":
     case "job_closed":
       return "RoundZero Update";
-    case "new_applicant":
+    case "interview_invited":
+    case "interview_expired":
     case "application_withdrawn":
       return "RoundZero Alert";
     default:
       return "RoundZero";
   }
 }
+
+const formatDeadline = (value: unknown) => {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return `Complete by ${date.toLocaleString("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZoneName: "short",
+  })}.`;
+};
+
+const getEmailPresentationMeta = (presentation: ReturnType<typeof getNotificationPresentation>) => {
+  if (!presentation || !("meta" in presentation)) {
+    return {
+      ctaLabel: undefined,
+      deadlineText: null as string | null,
+    };
+  }
+
+  const meta = presentation.meta;
+  if (typeof meta !== "object" || !meta) {
+    return {
+      ctaLabel: undefined,
+      deadlineText: null as string | null,
+    };
+  }
+
+  const ctaLabel = typeof meta.ctaLabel === "string" ? meta.ctaLabel : undefined;
+  const deadlineText = formatDeadline((meta as { deadline?: unknown }).deadline);
+  return { ctaLabel, deadlineText };
+};
 
 export const sendNotificationEmailViaResend: NotificationEmailSender = async (message) => {
   const resend = new Resend(serverEnv.RESEND_API_KEY);
@@ -95,6 +134,7 @@ export async function deliverNotificationEmail(
 
   const appUrl = serverEnv.APP_URL;
   let pathname = String(presentation.to);
+  const meta = getEmailPresentationMeta(presentation);
   for (const [key, value] of Object.entries(presentation.params)) {
     pathname = pathname.replace(`$${key}`, String(value));
   }
@@ -122,6 +162,8 @@ export async function deliverNotificationEmail(
         previewText: presentation.title,
         body: presentation.body,
         ctaHref: link,
+        ctaLabel: meta.ctaLabel,
+        deadlineText: meta.deadlineText,
       }),
     });
 

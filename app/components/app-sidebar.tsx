@@ -1,6 +1,7 @@
 import {
   AddCircleIcon,
   Briefcase01Icon,
+  BubbleChatIcon,
   House01Icon,
   Search01Icon,
   Setting06Icon,
@@ -55,6 +56,11 @@ const candidateMain = [
     title: "My Applications",
     url: "/dashboard/applications",
     icon: <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} className="size-4" />,
+  },
+  {
+    title: "Interviews",
+    url: "/dashboard/interviews",
+    icon: <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={2} className="size-4" />,
   },
   {
     title: "Settings",

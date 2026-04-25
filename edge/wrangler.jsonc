@@ -25,9 +25,9 @@
       "class_name": "PreEvaluationWorkflow"
     },
     {
-      "name": "report-generation",
-      "binding": "REPORT_GENERATION",
-      "class_name": "ReportGenerationWorkflow"
+      "name": "post-evaluation",
+      "binding": "POST_EVALUATION",
+      "class_name": "PostEvaluationWorkflow"
     }
   ],
   "durable_objects": {
@@ -43,5 +43,8 @@
       "tag": "v1",
       "new_sqlite_classes": ["InterviewAgent"]
     }
-  ]
+  ],
+  "triggers": {
+    "crons": ["*/5 * * * *"]
+  }
 }

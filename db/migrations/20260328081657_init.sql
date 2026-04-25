@@ -90,7 +90,7 @@ CREATE TABLE jobs (
   salary_currency  TEXT NOT NULL DEFAULT 'USD',
   team_size        INTEGER,
   headcount        INTEGER DEFAULT 1,
-  report_limit     INTEGER NOT NULL DEFAULT 5,
+  final_report_target INTEGER NOT NULL DEFAULT 5,
   expires_at       TIMESTAMPTZ,
   archived_at      TIMESTAMPTZ,
   created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
