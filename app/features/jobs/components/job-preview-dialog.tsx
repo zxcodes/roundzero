@@ -23,7 +23,7 @@ import type { EmploymentType, ExperienceLevel, WorkplaceType } from "@/shared/en
 import { employmentTypeLabels, experienceLevelLabels, workplaceTypeLabels } from "@/shared/enums";
 import { formatSalaryFull } from "@/shared/format";
 
-export interface JobPreviewData {
+interface JobPreviewData {
   title: string;
   description: string;
   requirements: string[];
