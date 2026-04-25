@@ -192,6 +192,60 @@ export async function getInterviewForCandidateById(sql: Sql, args: getInterviewF
     };
 }
 
+export const getInterviewsByCandidateQuery = `-- name: getInterviewsByCandidate :many
+SELECT i.id, i.application_id, i.agent_id, i.type, i.metadata, i.status, i.started_at, i.completed_at,
+       i.created_at, i.updated_at,
+       a.candidate_id, a.status AS application_status,
+       a.job_id, j.title AS job_title, c.name AS company_name
+FROM interviews i
+JOIN applications a ON a.id = i.application_id
+JOIN jobs j ON j.id = a.job_id
+JOIN companies c ON c.id = j.company_id
+WHERE a.candidate_id = $1
+ORDER BY i.updated_at DESC`;
+
+export interface getInterviewsByCandidateArgs {
+    candidateId: string;
+}
+
+export interface getInterviewsByCandidateRow {
+    id: string;
+    applicationId: string;
+    agentId: string | null;
+    type: string;
+    metadata: any;
+    status: string;
+    startedAt: Date | null;
+    completedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+    candidateId: string;
+    applicationStatus: string;
+    jobId: string;
+    jobTitle: string;
+    companyName: string;
+}
+
+export async function getInterviewsByCandidate(sql: Sql, args: getInterviewsByCandidateArgs): Promise<getInterviewsByCandidateRow[]> {
+    return (await sql.unsafe(getInterviewsByCandidateQuery, [args.candidateId]).values()).map(row => ({
+        id: row[0],
+        applicationId: row[1],
+        agentId: row[2],
+        type: row[3],
+        metadata: row[4],
+        status: row[5],
+        startedAt: row[6],
+        completedAt: row[7],
+        createdAt: row[8],
+        updatedAt: row[9],
+        candidateId: row[10],
+        applicationStatus: row[11],
+        jobId: row[12],
+        jobTitle: row[13],
+        companyName: row[14]
+    }));
+}
+
 export const updateInterviewStatusQuery = `-- name: updateInterviewStatus :one
 UPDATE interviews
 SET status = $1,
