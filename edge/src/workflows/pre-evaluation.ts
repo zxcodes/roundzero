@@ -11,7 +11,11 @@ import { TECHNICAL_EVAL_SYSTEM_PROMPT } from "../prompts/evaluate/technical";
 import { SLOP_DETECTION_SYSTEM_PROMPT } from "../prompts/slop-detection";
 import { getApplicationById, updateApplicationStatus } from "../queries/applications/queries_sql";
 import { getUserById } from "../queries/auth/queries_sql";
-import { countInterviewSlotsUsedByJob, createInterview } from "../queries/interviews/queries_sql";
+import {
+  countInterviewSlotsUsedByJob,
+  createInterview,
+  getInterviewByApplicationId,
+} from "../queries/interviews/queries_sql";
 import { getJobById } from "../queries/jobs/queries_sql";
 import { createNotification } from "../queries/notifications/queries_sql";
 import { createPreEvaluation } from "../queries/pre-evaluations/queries_sql";
@@ -465,6 +469,17 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
 
       const db = getDb();
       const job = applicationData.job;
+      const existingInterview = await getInterviewByApplicationId(db, {
+        applicationId,
+      });
+      if (existingInterview) {
+        log.result("decide", {
+          action: "already_invited",
+          interviewId: existingInterview.id,
+        });
+        return { action: "interview_created" as const, interviewType: existingInterview.type };
+      }
+
       const slotsUsed = await countInterviewSlotsUsedByJob(db, { jobId: job.id });
       const usedCount = slotsUsed?.count ?? 0;
 
@@ -516,6 +531,25 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
         interviewType: interviewType,
         jobTitle: job.title,
         companyName: job.companyName,
+        jobDescription: job.description,
+        jobRequirements: Array.isArray(job.requirements)
+          ? (job.requirements as unknown[])
+              .filter((requirement): requirement is string => typeof requirement === "string")
+              .map((requirement) => requirement.trim())
+              .filter((requirement) => requirement.length > 0)
+          : [],
+        candidateSummary: resumeText.slice(0, 2000),
+        customQuestions: Array.isArray(job.interviewQuestions)
+          ? (job.interviewQuestions as unknown[])
+              .filter((question): question is string => typeof question === "string")
+              .map((question) => question.trim())
+              .filter((question) => question.length > 0)
+          : [],
+        preEvaluation: {
+          score: aiResult.result.score,
+          missingRequirements: aiResult.result.missingRequirements,
+          consistencyScore: slopCheck.consistencyScore,
+        },
       });
 
       await updateApplicationStatus(db, {

@@ -72,6 +72,25 @@ const postInterviewAgent = async <TBody extends object>(
   return (await response.json()) as InterviewAgentState;
 };
 
+const ensureInterviewAgentContext = async (interviewId: string, candidateId: string) => {
+  const response = await fetch(
+    `${serverEnv.EDGE_WORKER_URL}/interviews/${interviewId}/refresh-context`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${serverEnv.EDGE_WORKER_SECRET}`,
+      },
+      body: JSON.stringify({ candidateId }),
+    },
+  );
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Interview context refresh failed (${response.status}): ${text}`);
+  }
+};
+
 export const getMyInterview = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .inputValidator(zodValidator(interviewIdSchema))
@@ -129,6 +148,8 @@ export const startMyInterview = createServerFn({ method: "POST" })
       return null;
     }
 
+    await ensureInterviewAgentContext(data.interviewId, context.userId);
+
     if (interview.status === "completed") {
       return interview;
     }
@@ -178,6 +199,8 @@ export const submitInterviewMessage = createServerFn({ method: "POST" })
     }
 
     if (interview.status === "pending") {
+      await ensureInterviewAgentContext(data.interviewId, context.userId);
+
       await updateInterviewStatus(db, {
         id: data.interviewId,
         status: "in_progress",
@@ -284,7 +307,7 @@ export const completeMyInterview = createServerFn({ method: "POST" })
     }
 
     try {
-      const response = await fetch(`${serverEnv.EDGE_WORKER_URL}/generate-report`, {
+      const response = await fetch(`${serverEnv.EDGE_WORKER_URL}/post-evaluate`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

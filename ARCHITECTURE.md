@@ -190,7 +190,7 @@ app/features/
 ### AI layer (in `edge/`)
 
 - `edge/src/workflows/pre-evaluation.ts` (Phase 5)
-- `edge/src/workflows/report-generation.ts` (Phase 7)
+- `edge/src/workflows/post-evaluation.ts` (Phase 7)
 - `edge/src/agents/interview-agent.ts` (Phase 6)
 
 These are part of the AI layer build plan in `PLAN.md`.

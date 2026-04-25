@@ -3,11 +3,13 @@ import {
   countActiveInterviewSlotsByJob,
   createInterview,
   getBestBackfillCandidateByJob,
+  getInterviewByApplicationId,
   getInterviewsPastDeadline,
   updateInterviewStatus,
 } from "../queries/interviews/queries_sql";
 import { getJobById } from "../queries/jobs/queries_sql";
 import { createNotification } from "../queries/notifications/queries_sql";
+import { getPreEvaluationByApplicationId } from "../queries/pre-evaluations/queries_sql";
 import { countReportsByJob } from "../queries/reports-by-job/queries_sql";
 import { getDb } from "./db";
 import { cancelInterviewAgentSession, initializeInterviewAgent } from "./interview-agent-client";
@@ -51,6 +53,16 @@ async function fillInterviewSlotsForJob(env: Env, jobId: string) {
 
     const interviewType = candidate.nextStep === "interview_invited" ? "full" : "quick_eval";
     const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+    const existingInterview = await getInterviewByApplicationId(db, {
+      applicationId: candidate.applicationId,
+    });
+    if (existingInterview) {
+      continue;
+    }
+
+    const preEvaluation = await getPreEvaluationByApplicationId(db, {
+      applicationId: candidate.applicationId,
+    });
 
     const interview = await createInterview(db, {
       applicationId: candidate.applicationId,
@@ -76,6 +88,30 @@ async function fillInterviewSlotsForJob(env: Env, jobId: string) {
       interviewType,
       jobTitle: job.title,
       companyName: job.companyName,
+      jobDescription: job.description,
+      jobRequirements: Array.isArray(job.requirements)
+        ? (job.requirements as unknown[])
+            .filter((requirement): requirement is string => typeof requirement === "string")
+            .map((requirement) => requirement.trim())
+            .filter((requirement) => requirement.length > 0)
+        : [],
+      candidateSummary: "Candidate profile snapshot will be loaded on first message.",
+      customQuestions: Array.isArray(job.interviewQuestions)
+        ? (job.interviewQuestions as unknown[])
+            .filter((question): question is string => typeof question === "string")
+            .map((question) => question.trim())
+            .filter((question) => question.length > 0)
+        : [],
+      preEvaluation: {
+        score: preEvaluation?.score ?? null,
+        missingRequirements: Array.isArray(preEvaluation?.missingRequirements)
+          ? (preEvaluation.missingRequirements as unknown[])
+              .filter((requirement): requirement is string => typeof requirement === "string")
+              .map((requirement) => requirement.trim())
+              .filter((requirement) => requirement.length > 0)
+          : [],
+        consistencyScore: preEvaluation?.consistencyScore ?? null,
+      },
     });
 
     await updateApplicationStatus(db, {

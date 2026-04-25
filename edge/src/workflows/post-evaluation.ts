@@ -1,11 +1,13 @@
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers";
 import { getInterviewContextById } from "../queries/interviews/queries_sql";
+import { createNotification } from "../queries/notifications/queries_sql";
 import { createReport, getReportByInterviewId } from "../queries/reports/queries_sql";
 import { getDb } from "../shared/db";
 import { getInterviewAgentState } from "../shared/interview-agent-client";
 import { createWorkflowLogger } from "../shared/logger";
+import { notificationPayloadSchemas } from "../shared/notifications-config";
 
-type ReportGenerationPayload = {
+type PostEvaluationPayload = {
   interviewId: string;
 };
 
@@ -25,6 +27,33 @@ type ReportModelResponse = {
   recommendation: "strong_yes" | "yes" | "lean_no" | "no";
 };
 
+function isReportModelResponse(value: unknown): value is ReportModelResponse {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+
+  if (
+    typeof record.summary !== "string" ||
+    !Array.isArray(record.strengths) ||
+    !Array.isArray(record.weaknesses) ||
+    !Array.isArray(record.insights) ||
+    !Array.isArray(record.evidence) ||
+    typeof record.scores !== "object" ||
+    record.scores === null ||
+    !["strong_yes", "yes", "lean_no", "no"].includes(String(record.recommendation))
+  ) {
+    return false;
+  }
+
+  const scores = record.scores as Record<string, unknown>;
+
+  return ["communication", "problemSolving", "ownership", "roleFit", "overall"].every(
+    (key) => typeof scores[key] === "number",
+  );
+}
+
 type InterviewAgentMessage = {
   role: "assistant" | "candidate";
   content: string;
@@ -36,6 +65,18 @@ type InterviewAgentState = {
     interviewId: string;
   };
   messages: InterviewAgentMessage[];
+};
+
+type InterviewContextState = {
+  jobDescription: string;
+  jobRequirements: string[];
+  candidateSummary: string;
+  customQuestions: string[];
+  preEvaluation: {
+    score: number | null;
+    missingRequirements: string[];
+    consistencyScore: number | null;
+  };
 };
 
 const MODEL = "@cf/meta/llama-3.1-8b-instruct";
@@ -124,10 +165,56 @@ function isInterviewAgentState(value: unknown): value is InterviewAgentState {
   });
 }
 
-export class ReportGenerationWorkflow extends WorkflowEntrypoint<Env, ReportGenerationPayload> {
-  async run(event: WorkflowEvent<ReportGenerationPayload>, step: WorkflowStep) {
+function parseInterviewContextState(metadata: unknown): InterviewContextState {
+  if (typeof metadata !== "object" || metadata === null) {
+    return {
+      jobDescription: "",
+      jobRequirements: [],
+      candidateSummary: "",
+      customQuestions: [],
+      preEvaluation: { score: null, missingRequirements: [], consistencyScore: null },
+    };
+  }
+
+  const record = metadata as Record<string, unknown>;
+
+  const jobDescription = typeof record.jobDescription === "string" ? record.jobDescription : "";
+  const jobRequirements = Array.isArray(record.jobRequirements)
+    ? record.jobRequirements.filter(
+        (requirement): requirement is string => typeof requirement === "string",
+      )
+    : [];
+  const candidateSummary =
+    typeof record.candidateSummary === "string" ? record.candidateSummary : "";
+  const customQuestions = Array.isArray(record.customQuestions)
+    ? record.customQuestions.filter((question): question is string => typeof question === "string")
+    : [];
+
+  const preEvaluationRaw =
+    typeof record.preEvaluation === "object" && record.preEvaluation !== null
+      ? (record.preEvaluation as Record<string, unknown>)
+      : {};
+
+  const preEvaluation = {
+    score: typeof preEvaluationRaw.score === "number" ? preEvaluationRaw.score : null,
+    missingRequirements: Array.isArray(preEvaluationRaw.missingRequirements)
+      ? preEvaluationRaw.missingRequirements.filter(
+          (requirement): requirement is string => typeof requirement === "string",
+        )
+      : [],
+    consistencyScore:
+      typeof preEvaluationRaw.consistencyScore === "number"
+        ? preEvaluationRaw.consistencyScore
+        : null,
+  };
+
+  return { jobDescription, jobRequirements, candidateSummary, customQuestions, preEvaluation };
+}
+
+export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluationPayload> {
+  async run(event: WorkflowEvent<PostEvaluationPayload>, step: WorkflowStep) {
     const { interviewId } = event.payload;
-    const log = createWorkflowLogger("report-generation", interviewId);
+    const log = createWorkflowLogger("post-evaluation", interviewId);
 
     const db = getDb();
 
@@ -148,6 +235,8 @@ export class ReportGenerationWorkflow extends WorkflowEntrypoint<Env, ReportGene
       if (!interview) {
         throw new Error(`Interview not found: ${interviewId}`);
       }
+
+      const contextState = parseInterviewContextState(interview.metadata);
 
       const stateCandidate = await getInterviewAgentState(this.env, interviewId);
       if (!isInterviewAgentState(stateCandidate)) {
@@ -171,6 +260,7 @@ export class ReportGenerationWorkflow extends WorkflowEntrypoint<Env, ReportGene
       return {
         interview,
         transcript,
+        contextState,
       };
     });
 
@@ -190,6 +280,13 @@ export class ReportGenerationWorkflow extends WorkflowEntrypoint<Env, ReportGene
               `Job title: ${interviewData.interview.jobTitle}`,
               `Company: ${interviewData.interview.companyName}`,
               `Candidate: ${interviewData.interview.candidateName}`,
+              `Job description: ${interviewData.contextState.jobDescription || "Not provided"}`,
+              `Job requirements: ${interviewData.contextState.jobRequirements.join(" | ") || "None"}`,
+              `Candidate summary: ${interviewData.contextState.candidateSummary || "Not provided"}`,
+              `Custom questions: ${interviewData.contextState.customQuestions.join(" | ") || "None"}`,
+              `Pre-eval score: ${interviewData.contextState.preEvaluation.score ?? "unknown"}`,
+              `Pre-eval missing requirements: ${interviewData.contextState.preEvaluation.missingRequirements.join(" | ") || "None"}`,
+              `Pre-eval consistency score: ${interviewData.contextState.preEvaluation.consistencyScore ?? "unknown"}`,
               "Interview transcript:",
               interviewData.transcript,
             ].join("\n\n"),
@@ -207,7 +304,11 @@ export class ReportGenerationWorkflow extends WorkflowEntrypoint<Env, ReportGene
       const payload = getResponsePayload(aiResponse);
       const parsed = parseJsonPayload(payload.response);
 
-      return parsed as unknown as ReportModelResponse;
+      if (!isReportModelResponse(parsed)) {
+        throw new Error(`Workers AI returned invalid report shape for interview ${interviewId}`);
+      }
+
+      return parsed;
     });
 
     const report = await step.do("persist_report", async () => {
@@ -232,7 +333,25 @@ export class ReportGenerationWorkflow extends WorkflowEntrypoint<Env, ReportGene
       return created;
     });
 
-    log.info(`Report generation complete: ${report.id}`);
+    await step.do("notify_report_ready", async () => {
+      log.info("Creating report_ready notification for company");
+
+      const payload = notificationPayloadSchemas.report_ready.parse({
+        applicationId: interviewData.interview.applicationId,
+        jobId: interviewData.interview.jobId,
+        jobTitle: interviewData.interview.jobTitle,
+        candidateName: interviewData.interview.candidateName,
+        score: reportDraft.scores.overall,
+      });
+
+      await createNotification(db, {
+        userId: interviewData.interview.companyOwnerId,
+        type: "report_ready",
+        payload,
+      });
+    });
+
+    log.info(`Post-evaluation complete: ${report.id}`);
 
     return { interviewId, reportId: report.id, status: "created" as const };
   }
