@@ -1,6 +1,8 @@
 ## TODO
 
 
+- when an interview starts or ends, the ui actions don't update. need to refresh page to see if an interview was ended. the entire chat ui should update in real time.
+- in post eval, refine the scores using the actual agent conv and add it to the final report.
 - update seed to include much more data for better agent evaluation with multiple jobs having company questions (relocation, visa, etc etc)
 - the agent interview feels very off. the entire interview should be based on the actual candidate's profile, dynamic followups etc like a full fledged conv.
 - think about context compaction to save on costs.
