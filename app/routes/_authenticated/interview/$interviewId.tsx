@@ -1,7 +1,7 @@
-import { ArrowLeft01Icon, Cancel01Icon, CheckmarkCircle02Icon } from "@hugeicons/core-free-icons";
+import { Cancel01Icon, CheckmarkCircle02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
-import { createFileRoute, Link, notFound, redirect, useRouter } from "@tanstack/react-router";
+import { createFileRoute, notFound, redirect, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect } from "react";
 import { toast } from "sonner";
@@ -148,16 +148,10 @@ function InterviewWorkspacePage() {
       <SidebarInset>
         <div className="flex h-full min-h-0 w-full bg-background p-2 text-foreground">
           <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
-            <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border/60 bg-card px-5 py-4 md:px-6">
+            <header className="flex shrink-0 items-start justify-between gap-3 border-b border-border/60 bg-card px-4 py-3.5 md:items-center md:px-6 md:py-4">
               <div className="min-w-0">
                 <div className="mb-1 flex items-center gap-2">
                   <SidebarTrigger className="-ml-1.5" />
-                  <Button variant="ghost" size="sm" asChild className="-ml-2 lg:hidden">
-                    <Link to="/dashboard/applications">
-                      <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
-                      Applications
-                    </Link>
-                  </Button>
                   <p className="truncate text-base font-semibold md:text-lg">
                     {interview.jobTitle}
                   </p>
