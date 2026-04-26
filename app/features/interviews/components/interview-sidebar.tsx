@@ -1,6 +1,7 @@
 import { ArrowLeft01Icon, BubbleChatIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
+import { Badge } from "@/components/ui/badge";
 import {
   Sidebar,
   SidebarContent,
@@ -31,6 +32,15 @@ const getSessionLabel = (value: string) => {
   if (value === "cancelled") return "Cancelled";
   if (value === "expired") return "Expired";
   return value;
+};
+
+const getSessionTone = (value: string) => {
+  if (value === "in_progress") return "bg-primary/10 text-primary";
+  if (value === "pending") return "bg-amber-500/10 text-amber-700 dark:text-amber-300";
+  if (value === "completed") return "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
+  if (value === "cancelled") return "bg-muted text-muted-foreground";
+  if (value === "expired") return "bg-rose-500/10 text-rose-700 dark:text-rose-300";
+  return "bg-muted text-muted-foreground";
 };
 
 export function InterviewSidebar({
@@ -81,16 +91,15 @@ export function InterviewSidebar({
                         >
                           {item.companyName}
                         </p>
-                        <p
+                        <Badge
                           className={cn(
-                            "mt-1 w-full text-[11px]",
-                            isActive
-                              ? "text-sidebar-accent-foreground/75"
-                              : "text-muted-foreground",
+                            "mt-1 text-[11px]",
+                            getSessionTone(item.status),
+                            isActive ? "ring-1 ring-sidebar-accent-foreground/25" : "",
                           )}
                         >
                           {getSessionLabel(item.status)}
-                        </p>
+                        </Badge>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

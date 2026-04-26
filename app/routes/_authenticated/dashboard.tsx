@@ -1,11 +1,12 @@
 import { createFileRoute, Outlet, useMatches } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { CommandPalette } from "@/components/command-palette";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { getMyNotificationsFeed } from "@/features/notifications/server/functions";
+import { useCommandPaletteShortcut } from "@/hooks/use-command-palette-shortcut";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   loader: async () => {
@@ -34,16 +35,9 @@ function DashboardLayout() {
   const title = routeTitles[lastMatch?.routeId ?? ""] ?? "Dashboard";
   const [commandOpen, setCommandOpen] = useState(false);
 
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        setCommandOpen((prev) => !prev);
-      }
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, []);
+  useCommandPaletteShortcut(() => {
+    setCommandOpen((prev) => !prev);
+  });
 
   const onOpenCommandPalette = () => {
     setCommandOpen(true);

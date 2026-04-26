@@ -3,9 +3,11 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, notFound, redirect, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { CommandPalette } from "@/components/command-palette";
 import { InterviewWorkspaceSkeleton } from "@/components/route-skeletons";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { InterviewChat } from "@/features/interviews/components/interview-chat";
@@ -18,14 +20,18 @@ import {
   getMyInterviews,
   startMyInterview,
 } from "@/features/interviews/server/functions";
+import { useCommandPaletteShortcut } from "@/hooks/use-command-palette-shortcut";
 import { validateUuidParams } from "@/shared/validation";
 
-const statusConfig: Record<string, { label: string }> = {
-  pending: { label: "Ready" },
-  in_progress: { label: "In progress" },
-  completed: { label: "Completed" },
-  cancelled: { label: "Cancelled" },
-  expired: { label: "Expired" },
+const statusConfig: Record<string, { label: string; tone: string }> = {
+  pending: { label: "Ready", tone: "bg-amber-500/10 text-amber-700 dark:text-amber-300" },
+  in_progress: { label: "In progress", tone: "bg-primary/10 text-primary" },
+  completed: {
+    label: "Completed",
+    tone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  },
+  cancelled: { label: "Cancelled", tone: "bg-muted text-muted-foreground" },
+  expired: { label: "Expired", tone: "bg-rose-500/10 text-rose-700 dark:text-rose-300" },
 };
 
 const getErrorMessage = (error: unknown, fallback: string): string => {
@@ -60,8 +66,10 @@ export const Route = createFileRoute("/_authenticated/interview/$interviewId")({
 
 function InterviewWorkspacePage() {
   const { interview, interviews } = Route.useLoaderData();
+  const { isCompany } = Route.useRouteContext();
   const router = useRouter();
   const chat = useInterviewChat(interview.id);
+  const [commandOpen, setCommandOpen] = useState(false);
 
   const isPending = interview.status === "pending";
   const isInProgress = interview.status === "in_progress";
@@ -103,7 +111,10 @@ function InterviewWorkspacePage() {
     },
   });
 
-  const status = statusConfig[interview.status] ?? { label: interview.status };
+  const status = statusConfig[interview.status] ?? {
+    label: interview.status,
+    tone: "bg-muted text-muted-foreground",
+  };
 
   const canSend = interview.status === "in_progress";
   const isEnded = interview.status === "completed" || interview.status === "cancelled";
@@ -139,6 +150,10 @@ function InterviewWorkspacePage() {
     void chat.kickoff();
   }, [chat.messages.length, chat.kickoff, interview.status]);
 
+  useCommandPaletteShortcut(() => {
+    setCommandOpen((prev) => !prev);
+  });
+
   return (
     <SidebarProvider
       style={
@@ -147,27 +162,26 @@ function InterviewWorkspacePage() {
         } as { [key: string]: string }
       }
     >
+      <CommandPalette isCompany={isCompany} open={commandOpen} onOpenChange={setCommandOpen} />
       <InterviewSidebar interviewId={interview.id} interviews={interviews} />
       <SidebarInset>
         <div className="flex h-full min-h-0 w-full bg-background p-2 text-foreground">
           <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
-            <header className="flex shrink-0 items-start justify-between gap-3 border-b border-border/60 bg-card px-4 py-3.5 md:items-center md:px-6 md:py-4">
+            <header className="flex shrink-0 flex-col gap-3 border-b border-border/60 bg-card px-4 py-3.5 md:flex-row md:items-center md:justify-between md:px-6 md:py-4">
               <div className="min-w-0">
                 <div className="mb-1 flex items-center gap-2">
                   <SidebarTrigger className="-ml-1.5" />
                   <p className="truncate text-base font-semibold md:text-lg">
                     {interview.jobTitle}
                   </p>
-                  <span className="rounded-full border px-2 py-0.5 text-[11px] text-muted-foreground">
-                    {status.label}
-                  </span>
+                  <Badge className={`text-[11px] ${status.tone}`}>{status.label}</Badge>
                 </div>
                 <p className="truncate text-xs text-muted-foreground md:text-sm">
                   {interview.companyName}
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex w-full flex-wrap justify-end gap-2 md:w-auto">
                 {canSend ? (
                   <Button
                     variant="outline"
