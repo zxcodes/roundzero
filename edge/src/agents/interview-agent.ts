@@ -219,6 +219,7 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
       "# Output rules (CRITICAL — break these and the interview fails)",
       "- Speak ONLY in plain natural English prose.",
       "- NEVER output JSON, code blocks, XML, markdown headers, bullet lists, or tool-call syntax in your visible reply.",
+      "- Avoid using em dashes; prefer commas or periods. Maintain clear, grammatically correct sentences.",
       "- NEVER say 'tool', 'function', 'evaluate_answer', 'check_resume_gap', or 'end_interview' in the visible reply. Tools are silent — the user must never see them.",
       "- One question per turn. Acknowledge the candidate's previous answer in 1 sentence, then ask the next question.",
       "- Keep each turn under ~80 words. Conversational, not formal.",
