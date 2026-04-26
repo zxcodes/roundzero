@@ -1,6 +1,7 @@
 import {
   AddCircleIcon,
   Briefcase01Icon,
+  BubbleChatIcon,
   House01Icon,
   Logout03Icon,
   Moon02Icon,
@@ -68,6 +69,11 @@ const candidateNavItems = [
     title: "My Applications",
     url: "/dashboard/applications",
     icon: Briefcase01Icon,
+  },
+  {
+    title: "Interviews",
+    url: "/interview",
+    icon: BubbleChatIcon,
   },
   {
     title: "Settings",
