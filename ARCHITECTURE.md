@@ -13,11 +13,11 @@ This document reflects the app as it transitions from **platform-only** to **pla
 - one-click applications with profile snapshots
 - durable in-app notifications with Resend email delivery
 - Cloudflare Workflows for pre-evaluation and post-evaluation pipelines
-- Cloudflare Durable Objects for interview agents
+- Cloudflare Agents SDK interview runtime (`AIChatAgent`)
 - AI-driven candidate evaluation and structured reports
 - `final_report_target` quota system per job
 - 8-status application lifecycle with pre-screening funnel
-- real-time interview chat UI with transcript and composer
+- dedicated candidate interview workspace at `/interview/$interviewId`
 - company-facing report views with scoring and timeline
 
 ---
@@ -64,9 +64,9 @@ The app runs as a standard TanStack Start app with server functions for:
 
 The AI layer lives in a separate `edge/` directory as a standalone Cloudflare Worker:
 
-- Hono HTTP server with `/pre-evaluate` endpoint
+- Hono HTTP server with `/pre-evaluate`, `/post-evaluate`, and internal report endpoints
 - Cloudflare Workflows run pre-evaluation and report generation pipelines
-- Durable Objects run interview agents
+- Agents SDK routes interview agents over WebSocket/HTTP
 - R2 stores resumes
 - Workers AI binding provides model inference
 
@@ -91,7 +91,7 @@ roundzero/              # Main app - TanStack Start + Nitro
 
 edge/                   # AI Worker - Cloudflare Workers
 ├── src/
-│   ├── index.ts        # Hono fetch handler
+│   ├── worker.ts       # Hono + Agents fetch handler
 │   ├── workflows/      # Cloudflare Workflow classes
 │   ├── agents/         # Durable Object agent classes
 │   ├── queries/        # SQLC-generated query files
@@ -158,8 +158,7 @@ What this means in practice:
 
 Missing route surface today:
 
-- interview UI
-- evaluation/report UI
+- none for core MVP interview/report flows
 
 ---
 
@@ -187,7 +186,7 @@ app/features/
 - `jobs`: job CRUD, filtering, pagination, status/archive/expiry behavior, interview questions
 - `applications`: one-click apply, applicant lists, application status, notification workflows
 - `dashboard`: role-specific metrics
-- `interviews`: interview lifecycle, chat UI components, transcript/composer, server functions
+- `interviews`: interview lifecycle, dedicated workspace routes, agent chat hooks/components, server functions
 - `notifications`: per-user in-app notification inbox, Resend email delivery, workflow event records
 - `pre-evaluations`: pre-screening result queries and compact card components
 - `reports`: post-evaluation report queries, server functions, and reusable report view components
@@ -623,25 +622,42 @@ The AI layer runs in a separate `edge/` Cloudflare Worker, triggered by authenti
 - Automatic retries per step
 - Resumes from last completed step if interrupted
 
-### Interview Layer (Durable Object)
+### Interview Layer (Cloudflare Agents SDK)
 
-- One Durable Object per interview session
-- SQLite-backed message persistence
-- HTTP-based communication (main app POSTs to edge Worker, which forwards to Durable Object)
-- System prompt injected with job requirements + resume context
+- One `AIChatAgent` instance per interview session (extends Durable Object)
+- Built-in message persistence via `AIChatAgent` SQLite storage
+- WebSocket streaming transport (token-by-token responses)
+- System prompt injected with job requirements + resume context via Session API
 - Two modes:
   - `full`: complete RoundZero interview
   - `quick_eval`: 2–3 clarifying questions for medium-fit candidates
-- Interview invites expire after 48 hours if not completed (stored in `metadata.expiresAt`)
+- Interview invites expire after 48 hours via `this.schedule()` (per-interview alarm, no global cron)
 
-### Interview Lifecycle Manager (Cron Trigger)
+**Agents SDK capabilities used:**
 
-- A Worker `scheduled()` handler runs periodically to:
-  - expire overdue interviews (`expires_at < now()` and `status IN pending|in_progress`)
-  - send `interview_expired` notifications
-  - promote next best eligible candidates to refill available invite slots
-- Cron configuration is managed in `wrangler.jsonc` via `triggers.crons`
-- This follows Cloudflare docs for Cron Triggers and keeps job-level queue orchestration outside per-session Durable Object alarms
+| Feature | How we use it | What it replaces |
+|---|---|---|
+| `AIChatAgent` | Interview agent class with `onChatMessage()` | Raw Durable Object + manual storage |
+| `streamText()` | Token streaming to candidate | Full-response waiting |
+| Tools (`tool()`) | `evaluate_answer`, `check_resume_gap`, `end_interview` | Hardcoded question limits |
+| Session API | Structured context memory (job, candidate, evaluation notes) | Flat string concat |
+| `this.schedule()` | Per-interview expiry alarm | Global cron polling |
+| `this.runWorkflow()` | Trigger post-evaluation from agent | HTTP POST to endpoint |
+| State sync | Real-time status/scores to client | Frontend polling |
+| `this.queue()` | Background context refresh | Inline blocking fetch |
+
+**Agent decision making:**
+- The LLM decides when to end the interview via `end_interview` tool (no hardcoded 5-question limit)
+- The agent evaluates each answer via `evaluate_answer` tool and stores running scores
+- The agent checks claims against resume via `check_resume_gap` tool
+- The agent triggers post-evaluation workflow directly when sufficient signal is gathered
+
+### Interview Lifecycle Manager (Agent Scheduling)
+
+- Each interview schedules its own expiry via `this.schedule(48h, "expireInterview")`
+- On expiry: agent updates status, sends notification, triggers backfill workflow
+- No global cron needed — each interview manages its own lifecycle
+- Agent schedules are persisted in SQLite and survive restarts
 
 ### Report Generation Pipeline (Cloudflare Workflow)
 
@@ -703,5 +719,5 @@ See `PLAN.md` for the full build plan. Current focus:
 | Notifications | In-app notifications + Resend | Durable app record first, email as secondary delivery |
 | Auth | Google OAuth + cookie session | Good enough for current phase |
 | AI pipelines | Cloudflare Workflows in edge Worker | Durable multi-step execution with retries |
-| Interview runtime | Cloudflare Durable Objects in edge Worker | Stateful chat with SQLite persistence |
+| Interview runtime | Cloudflare Agents SDK (`AIChatAgent`) in edge Worker | Stateful streaming chat with built-in message persistence |
 | Resume text extraction | Local libraries per file type (PDF / DOCX) | LLM reads unstructured text; no external parser needed |

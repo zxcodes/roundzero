@@ -130,6 +130,58 @@ The interview agent is implemented using the **Cloudflare Agents SDK** (`agents`
 
 This replaces the previous raw Durable Object + `env.AI.run()` approach that lacked streaming, tools, and conversational memory.
 
+## Agent Tools
+
+The agent has three server-side tools it can call during the conversation:
+
+### `evaluate_answer`
+- **Input:** `{ relevance: number, depth: number, clarity: number }`
+- **Action:** Stores running evaluation scores in agent state
+- **When called:** After each candidate answer, the LLM self-evaluates
+
+### `check_resume_gap`
+- **Input:** `{ claim: string }`
+- **Action:** Queries the candidate summary to verify a specific claim
+- **When called:** When the candidate mentions a project, skill, or company the agent wants to verify
+
+### `end_interview`
+- **Input:** `{ reason: string }`
+- **Action:** Sets status to `completed`, triggers post-evaluation workflow
+- **When called:** When the LLM decides sufficient signal has been gathered (no hardcoded limit)
+
+## Agent Lifecycle
+
+### `onStart()`
+- Ensures expiry scheduling for active sessions
+- Schedules 48-hour expiry alarm: `this.schedule(48h, "expireInterview", undefined, { idempotent: true })`
+
+### `onChatMessage()`
+- Streams response via `streamText()` with full message history
+- LLM can call tools mid-conversation
+- State syncs to client via WebSocket automatically
+- Uses `stepCountIs(...)` stop control for bounded tool-call loops
+
+### `expireInterview()`
+- Called by scheduled alarm after 48 hours
+- Sets status to `expired` if not completed/cancelled
+- Persists interview status update to Postgres
+
+### `triggerPostEvaluation()`
+- Called by `end_interview` tool
+- Triggers post-evaluation workflow with `this.runWorkflow("POST_EVALUATION", { interviewId })`
+
+## Session State
+
+Current implementation persists interview session metadata in agent state via `this.setState()`:
+
+- status (`pending`, `in_progress`, `completed`, `cancelled`, `expired`)
+- question counters (`askedQuestions`, `maxQuestions`)
+- running evaluation aggregates
+- timestamps (`startedAt`, `completedAt`, `cancelledAt`, `updatedAt`)
+- normalized interview context (job/candidate/pre-eval)
+
+Conversation messages are persisted by `AIChatAgent` automatically.
+
 ---
 
 # Stage 3: Deep Evaluation

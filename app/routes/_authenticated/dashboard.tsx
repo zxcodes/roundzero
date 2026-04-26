@@ -22,7 +22,6 @@ const routeTitles: Record<string, string> = {
   "/_authenticated/dashboard/jobs/new": "Post a Job",
   "/_authenticated/dashboard/jobs/$jobId": "Job Details",
   "/_authenticated/dashboard/applications": "My Applications",
-  "/_authenticated/dashboard/interviews": "Interviews",
   "/_authenticated/dashboard/application/$applicationId": "Application Details",
   "/_authenticated/dashboard/settings": "Settings",
 };
@@ -33,9 +32,6 @@ function DashboardLayout() {
   const matches = useMatches();
   const lastMatch = matches[matches.length - 1];
   const title = routeTitles[lastMatch?.routeId ?? ""] ?? "Dashboard";
-  const isInterviewWorkspace =
-    lastMatch?.routeId === "/_authenticated/dashboard/interview/$interviewId";
-
   const [commandOpen, setCommandOpen] = useState(false);
 
   useEffect(() => {
@@ -73,13 +69,7 @@ function DashboardLayout() {
             onOpenCommandPalette={onOpenCommandPalette}
           />
           <div className="flex min-h-0 flex-1 flex-col">
-            <div
-              className={
-                isInterviewWorkspace
-                  ? "flex min-h-0 w-full flex-1"
-                  : "mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6"
-              }
-            >
+            <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
               <Outlet />
             </div>
           </div>
