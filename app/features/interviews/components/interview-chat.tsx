@@ -1,5 +1,6 @@
 import { ArrowUp01Icon, BubbleChatIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -106,7 +107,7 @@ export function InterviewChat({
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-muted/20">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-muted/30">
       <ScrollArea ref={transcriptRef} className="min-h-0 flex-1">
         {messages.length > 0 ? (
           <div className="space-y-7 px-5 py-6 md:px-7 md:py-7">
@@ -118,15 +119,15 @@ export function InterviewChat({
                   key={message.id}
                   className={isCandidate ? "flex justify-end" : "flex justify-start"}
                 >
-                  <div className="max-w-[88%] md:max-w-[68%]">
-                    <p className="mb-1 px-1 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                  <div className="max-w-[86%] md:max-w-[66%]">
+                    <p className="mb-1 px-1 text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground/90">
                       {isCandidate ? "You" : "Zero"}
                     </p>
                     <div
                       className={
                         isCandidate
-                          ? "rounded-2xl bg-primary px-4 py-3 text-sm text-primary-foreground shadow-sm"
-                          : "rounded-2xl border border-border/60 bg-card px-4 py-3 text-sm text-foreground shadow-sm"
+                          ? "whitespace-pre-wrap wrap-break-word rounded-2xl border border-primary/35 bg-primary px-4 py-3 text-sm leading-6 text-primary-foreground shadow-sm ring-1 ring-primary/20"
+                          : "whitespace-pre-wrap wrap-break-word rounded-2xl border border-border/70 bg-background/95 px-4 py-3 text-sm leading-6 text-foreground shadow-sm ring-1 ring-border/35"
                       }
                     >
                       {message.content}
@@ -157,8 +158,13 @@ export function InterviewChat({
       </ScrollArea>
 
       {isEnded ? (
-        <div className="shrink-0 border-t border-border/50 bg-card px-5 py-4 text-sm text-muted-foreground md:px-6">
-          This interview has ended.
+        <div className="shrink-0 border-t border-border/50 bg-card px-5 py-4 md:px-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-muted-foreground">This interview has ended.</p>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/dashboard/applications">Back to applications</Link>
+            </Button>
+          </div>
         </div>
       ) : (
         <div className="shrink-0 bg-card px-4 pb-4 pt-3 md:px-6 md:pb-5">

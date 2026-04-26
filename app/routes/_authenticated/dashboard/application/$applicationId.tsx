@@ -99,6 +99,13 @@ const stageCopy = {
   },
 } as const;
 
+const underReviewMeta = {
+  badge: "Under Review",
+  tone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  summary: "Your interview is complete and the company is now reviewing your evaluation.",
+  nextStep: "You are waiting on a decision after review.",
+} as const;
+
 const formatDate = (date: Date | string) => {
   return new Date(date).toLocaleDateString("en-US", {
     month: "long",
@@ -126,6 +133,28 @@ const toApplicationStage = (status: string): keyof typeof stageCopy => {
     default:
       return "applied";
   }
+};
+
+const getDisplayMeta = ({
+  status,
+  interviewStatus,
+}: {
+  status: string;
+  interviewStatus: string | null;
+}) => {
+  if (status === "interview_in_progress" && interviewStatus === "completed") {
+    return underReviewMeta;
+  }
+
+  return stageCopy[toApplicationStage(status)];
+};
+
+const formatInterviewStatusLabel = (status: string) => {
+  if (status === "in_progress") {
+    return "In Progress";
+  }
+
+  return status.charAt(0).toUpperCase() + status.slice(1);
 };
 
 const isTerminalStage = (stage: string): stage is "rejected" | "withdrawn" => {
@@ -219,7 +248,10 @@ function CandidateApplicationDetailPage() {
 
   const metadata = toRecord(application.metadata);
   const currentStage = toApplicationStage(application.status);
-  const meta = stageCopy[currentStage];
+  const meta = getDisplayMeta({
+    status: application.status,
+    interviewStatus: interview?.status ?? null,
+  });
   const skills = getStringArray(metadata.skills);
   const links = getLinks(metadata.links);
   const headline = getStringValue(metadata.headline);
@@ -297,25 +329,10 @@ function CandidateApplicationDetailPage() {
             const isCompleted = stageIndex < currentIndex;
             const isCurrent = stage === currentStage;
 
-            const barClass =
-              stage === "applied"
-                ? isCompleted || isCurrent
-                  ? "bg-sky-300"
-                  : "bg-muted"
-                : stage === "interviewing"
-                  ? isCompleted || isCurrent
-                    ? "bg-amber-300"
-                    : "bg-muted"
-                  : isCompleted || isCurrent
-                    ? "bg-emerald-300"
-                    : "bg-muted";
+            const barClass = isCurrent ? "bg-primary" : isCompleted ? "bg-primary/35" : "bg-muted";
 
             const labelClass = isCurrent
-              ? stage === "applied"
-                ? "text-sky-300"
-                : stage === "interviewing"
-                  ? "text-amber-300"
-                  : "text-emerald-300"
+              ? "text-foreground"
               : isCompleted
                 ? "text-muted-foreground"
                 : "text-muted-foreground/40";
@@ -356,7 +373,7 @@ function CandidateApplicationDetailPage() {
               <HugeiconsIcon icon={Message01Icon} strokeWidth={2} className="size-5 text-primary" />
               <p className="text-sm font-medium">RoundZero interview</p>
               <Badge variant="outline" className="text-[11px]">
-                {interview.status}
+                {formatInterviewStatusLabel(interview.status)}
               </Badge>
             </div>
             <p className="text-sm text-muted-foreground">

@@ -50,10 +50,15 @@ const stageCopy = {
     tone: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
     blurb: "Your RoundZero interview is in progress",
   },
-  evaluated: {
+  under_review: {
     badge: "Under Review",
     tone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-    blurb: "The company is reviewing your evaluation",
+    blurb: "Interview completed. The company is reviewing your evaluation",
+  },
+  evaluated: {
+    badge: "Evaluated",
+    tone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+    blurb: "The company has completed an evaluation pass",
   },
   shortlisted: {
     badge: "Shortlisted",
@@ -99,8 +104,15 @@ const toApplicationStage = (status: string): keyof typeof stageCopy => {
   }
 };
 
-const getStatusMeta = (status: string) => {
-  const stage = toApplicationStage(status);
+const getStatusMeta = (application: Application) => {
+  if (
+    application.status === "interview_in_progress" &&
+    application.interviewStatus === "completed"
+  ) {
+    return stageCopy.under_review;
+  }
+
+  const stage = toApplicationStage(application.status);
   return stageCopy[stage];
 };
 
@@ -238,7 +250,7 @@ function ApplicationListCard({
   application: Application;
   className?: string;
 }) {
-  const statusMeta = getStatusMeta(application.status);
+  const statusMeta = getStatusMeta(application);
 
   return (
     <Card size="sm" className={className}>
