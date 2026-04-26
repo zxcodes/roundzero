@@ -40,34 +40,34 @@ Finish the non-AI hiring platform so the AI layer lands on a solid foundation.
 
 ### Product Decisions
 
-These must be answered and documented in `PLATFORM.md` and `AI-LAYER.md` before building Phase 4.
+These must be answered and documented in `platform.md` and `AI-LAYER.md` before building Phase 4.
 
 #### Decision 1: Application Status Lifecycle
 
-- [x] Extend existing `applications.status` enum to include all 7 statuses
+- [x] Extend existing `applications.status` enum to include all 8 statuses
 - [x] Define transition rules and who can trigger each
-- [x] Document decided lifecycle in `PLATFORM.md` (§ 15.1)
+- [x] Document decided lifecycle in `platform.md` (§ 15.1)
 
 #### Decision 2: Candidate-Facing Messaging After Apply
 
 - [x] Write candidate-facing copy for each internal status
 - [x] Hide pre-evaluation stages; show only 6 candidate-visible statuses
 - [x] Define candidate messages for strong / medium / low fit tiers
-- [x] Document decided messaging spec in `PLATFORM.md` (§ 15.2)
+- [x] Document decided messaging spec in `platform.md` (§ 15.2)
 
 #### Decision 3: Medium-Fit Follow-Up Medium
 
 - [x] Decide: use synchronous chat UI (same as full interview)
 - [x] Questions adapt based on pre-evaluation gaps
 - [x] Reuse `interviews` table with metadata flag
-- [x] Document decided format in `PLATFORM.md` (§ 15.3)
+- [x] Document decided format in `platform.md` (§ 15.3)
 
 #### Decision 4: Company View With and Without AI Reports
 
 - [x] Companies see full pipeline; pre-eval candidates are read-only
 - [x] Pre-eval candidates show name, resume, date, status only
 - [x] Post-eval candidates show + AI score, summary, recommendations
-- [x] Document decided company experience spec in `PLATFORM.md` (§ 15.4)
+- [x] Document decided company experience spec in `platform.md` (§ 15.4)
 
 #### Decision 5: Validate Pre-Evaluation Output Format
 
@@ -80,7 +80,7 @@ These must be answered and documented in `PLATFORM.md` and `AI-LAYER.md` before 
 
 - [x] Candidate can browse, upload a resume, apply from any surface, and track applications with guidance
 - [x] Company can create/manage jobs, review applicants, and see pipeline signals
-- [x] All 5 product decisions documented in `PLATFORM.md` (§ 15.1–15.5) and `AI-LAYER.md`
+- [x] All 5 product decisions documented in `platform.md` (§ 15.1–15.5) and `AI-LAYER.md`
 - [ ] Pre-evaluation output format validated with real companies (Decision 5 pending external validation)
 
 ---
@@ -287,13 +287,13 @@ Build the async chat interview surface and backend.
 
 ### 6.2 Interview Agent Boundary
 
-- [ ] Create `edge/src/agents/interview-agent.ts`
+- [x] Create `edge/src/agents/interview-agent.ts`
   - Durable Object class for interview sessions
   - System prompt construction from job requirements + resume snapshot
   - For `quick_eval`: system prompt instructs 2–3 clarifying questions only
   - For `full`: full interview script
-- [ ] Add agent class to `edge/wrangler.jsonc` with Durable Object binding + `new_sqlite_classes` migration
-- [ ] Keep agent prompt/tool logic behind an explicit boundary so it can be tested independently of routes
+- [x] Add agent class to `edge/wrangler.jsonc` with Durable Object binding + `new_sqlite_classes` migration
+- [x] Keep agent prompt/tool logic behind an explicit boundary so it can be tested independently of routes
 
 ### 6.3 Interview Chat UI
 
@@ -404,7 +404,7 @@ Current implementation status:
   - Shows timeline: pre-screening, interview transcript, post-evaluation
 - [x] `app/features/reports/components/report-cards.tsx` for reusable report views
 
-### 7.5 Flow Completion Gap List (Complete)
+### 7.5 Flow Completion Gap List (Mostly Complete)
 
 - [x] Report retrieval queries and server functions live
 - [x] Company report surfaces wired to real data
@@ -426,7 +426,7 @@ Current implementation status:
 
 ---
 
-## Phase 7.5: Interview Agent Migration to Cloudflare Agents SDK
+## Phase 7.5: Interview Agent Migration to Cloudflare Agents SDK (Complete)
 
 Replace the raw Durable Object + `env.AI.run()` interview implementation with the Cloudflare Agents SDK (`agents`, `@cloudflare/ai-chat`, `workers-ai-provider`). This unlocks streaming, proper conversational memory, tools, and the AI SDK v5 ecosystem.
 
@@ -454,7 +454,7 @@ cd edge && npm install agents @cloudflare/ai-chat workers-ai-provider ai
 
 - Extend `AIChatAgent<Env>` instead of raw `DurableObject`
 - Override `onChatMessage(onFinish)` — called on every candidate message
-- Use `streamText({ model: workersai("@cf/meta/llama-3.1-8b-instruct-fp8"), messages, system })` from `ai` package
+- Use `streamText({ model: workersai("@cf/zai-org/glm-4.7-flash"), messages, system })` from `ai` package
 - Inject interview context (job, candidate, pre-eval) into the `system` prompt
 - Define tools the agent can call:
   - `evaluate_answer` — score the candidate's last answer on relevance, depth, clarity

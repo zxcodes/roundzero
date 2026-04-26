@@ -265,9 +265,9 @@ Instead of raw applicants, companies see evaluated candidates.
 
 # Application Status Lifecycle (Decided)
 
-> See **PLATFORM.md § 15.1** for the full decision.
+> See **platform.md § 15.1** for the full decision.
 
-**Decided:** Extend `applications.status` to include all 7 statuses in a single enum.
+**Decided:** Extend `applications.status` to include all 8 statuses in a single enum.
 
 **Status Funnel:**
 - `applied` → `pre_screening` → (`interview_invited` | other outcome) → `interview_in_progress` → `evaluated` → (`shortlisted` | `rejected`)
@@ -321,7 +321,7 @@ This reduces cost and improves UX.
 
 # Product Decisions (Phase 3.5 Exit Criteria)
 
-> All 5 product decisions are documented in **PLATFORM.md § 15**. Refer there for full context.
+> All 5 product decisions are documented in **platform.md § 15**. Refer there for full context.
 
 ## Decided Decisions
 
