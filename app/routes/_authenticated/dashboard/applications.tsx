@@ -51,14 +51,14 @@ const stageCopy = {
     blurb: "Your RoundZero interview is in progress",
   },
   under_review: {
-    badge: "Under Review",
+    badge: "Awaiting company decision",
     tone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-    blurb: "Interview completed. The company is reviewing your evaluation",
+    blurb: "Interview completed. Awaiting company decision",
   },
   evaluated: {
-    badge: "Evaluated",
+    badge: "Awaiting company decision",
     tone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-    blurb: "The company has completed an evaluation pass",
+    blurb: "Evaluation complete. Awaiting company decision",
   },
   shortlisted: {
     badge: "Shortlisted",
