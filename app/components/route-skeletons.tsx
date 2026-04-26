@@ -635,39 +635,6 @@ export function DashboardIndexSkeleton() {
 }
 
 /**
- * Skeleton for /dashboard/interview/$interviewId - candidate interview session page.
- * Matches: back link + card header (icon + badge + title + description) + action buttons.
- */
-export function InterviewSessionSkeleton() {
-  return (
-    <div className="animate-fade-in space-y-6">
-      {/* Back link */}
-      <Skeleton className="h-8 w-28 rounded-md" />
-
-      {/* Session card */}
-      <Card>
-        <CardHeader className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Skeleton className="size-8 rounded-xl" />
-            <Skeleton className="h-5 w-24 rounded-full" />
-          </div>
-          <Skeleton className="h-6 w-64" />
-          <Skeleton className="h-4 w-96 max-w-full" />
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Skeleton className="h-4 w-72" />
-          <div className="flex gap-2">
-            <Skeleton className="h-9 w-36 rounded-md" />
-            <Skeleton className="h-9 w-36 rounded-md" />
-            <Skeleton className="h-9 w-32 rounded-md" />
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-/**
  * Skeleton for /dashboard/settings — settings form with card sections.
  */
 export function DashboardSettingsSkeleton() {

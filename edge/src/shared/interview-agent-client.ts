@@ -1,5 +1,7 @@
-const createAgentStub = (env: Env, interviewId: string) => {
-  return env.INTERVIEW_AGENT.getByName(interviewId);
+import { getAgentByName } from "agents";
+
+const createAgentStub = async (env: Env, interviewId: string) => {
+  return await getAgentByName(env.INTERVIEW_AGENT, interviewId);
 };
 
 export const initializeInterviewAgent = async (
@@ -21,31 +23,16 @@ export const initializeInterviewAgent = async (
     };
   },
 ) => {
-  const stub = createAgentStub(env, input.interviewId);
-  return await stub.init(input);
-};
-
-export const startInterviewAgentSession = async (env: Env, interviewId: string) => {
-  const stub = createAgentStub(env, interviewId);
-  return await stub.start();
-};
-
-export const addInterviewAgentMessage = async (env: Env, interviewId: string, content: string) => {
-  const stub = createAgentStub(env, interviewId);
-  return await stub.message({ content });
-};
-
-export const completeInterviewAgentSession = async (env: Env, interviewId: string) => {
-  const stub = createAgentStub(env, interviewId);
-  return await stub.complete();
+  const stub = await createAgentStub(env, input.interviewId);
+  return await stub.initializeContext(input);
 };
 
 export const cancelInterviewAgentSession = async (env: Env, interviewId: string) => {
-  const stub = createAgentStub(env, interviewId);
-  return await stub.cancel();
+  const stub = await createAgentStub(env, interviewId);
+  return await stub.cancelInterview();
 };
 
 export const getInterviewAgentState = async (env: Env, interviewId: string) => {
-  const stub = createAgentStub(env, interviewId);
-  return await stub.state();
+  const stub = await createAgentStub(env, interviewId);
+  return await stub.getInterviewState();
 };

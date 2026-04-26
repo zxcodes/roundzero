@@ -59,7 +59,7 @@ const candidateMain = [
   },
   {
     title: "Interviews",
-    url: "/dashboard/interviews",
+    url: "/interview",
     icon: <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={2} className="size-4" />,
   },
   {

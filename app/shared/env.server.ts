@@ -27,6 +27,9 @@ const envSchema = z.object({
   // Edge Worker
   EDGE_WORKER_URL: z.string().url().default("http://localhost:8787"),
   EDGE_WORKER_SECRET: z.string().default("dev-secret"),
+
+  // Edge Worker URL for client websocket chat
+  VITE_EDGE_WORKER_URL: z.string().url().default("http://localhost:8787"),
 });
 
 export const serverEnv = envSchema.parse(process.env);

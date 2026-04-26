@@ -74,6 +74,30 @@ const getInterviewStateForCompany = async (interviewId: string) => {
   }
 };
 
+const getInterviewFallbackTimeline = (
+  interview: NonNullable<Awaited<ReturnType<typeof getInterviewByApplicationId>>>,
+) => {
+  const metadataRecord =
+    typeof interview.metadata === "object" && interview.metadata !== null
+      ? (interview.metadata as Record<string, unknown>)
+      : {};
+
+  const summary =
+    typeof metadataRecord.candidateSummary === "string"
+      ? metadataRecord.candidateSummary
+      : "Interview completed in agents workspace.";
+
+  return {
+    messages: [
+      {
+        role: "assistant" as const,
+        content: summary,
+        createdAt: interview.updatedAt.toISOString(),
+      },
+    ],
+  };
+};
+
 export const getCompanyApplicantReportTimeline = createServerFn({ method: "GET" })
   .middleware([companyMiddleware])
   .inputValidator(zodValidator(applicationIdSchema))
@@ -98,7 +122,10 @@ export const getCompanyApplicantReportTimeline = createServerFn({ method: "GET" 
     const report = await getReportByApplicationId(db, {
       applicationId: data.applicationId,
     });
-    const interviewState = interview ? await getInterviewStateForCompany(interview.id) : null;
+    const interviewState = interview
+      ? ((await getInterviewStateForCompany(interview.id)) ??
+        getInterviewFallbackTimeline(interview))
+      : null;
 
     return {
       application,

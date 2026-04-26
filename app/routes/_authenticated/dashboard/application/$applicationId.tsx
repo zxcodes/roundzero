@@ -370,7 +370,7 @@ function CandidateApplicationDetailPage() {
             </p>
             {interview.status === "pending" || interview.status === "in_progress" ? (
               <Button size="sm" asChild>
-                <Link to="/dashboard/interview/$interviewId" params={{ interviewId: interview.id }}>
+                <Link to="/interview/$interviewId" params={{ interviewId: interview.id }}>
                   {interview.status === "in_progress" ? "Continue interview" : "Start interview"}
                 </Link>
               </Button>
