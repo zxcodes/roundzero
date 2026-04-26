@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_authenticated/interview")({
 function InterviewWorkspaceLayout() {
   return (
     <div className="h-[100dvh] min-h-0 bg-background animate-fade-in">
-      <div className="h-full min-h-0">
+      <div className="flex h-full w-full min-h-0 flex-col p-2">
         <Outlet />
       </div>
     </div>

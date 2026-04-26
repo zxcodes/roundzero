@@ -7,7 +7,6 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { InterviewWorkspaceSkeleton } from "@/components/route-skeletons";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { InterviewChat } from "@/features/interviews/components/interview-chat";
 import { InterviewSidebar } from "@/features/interviews/components/interview-sidebar";
@@ -144,15 +143,15 @@ function InterviewWorkspacePage() {
     setSheetOpen(true);
   };
 
-  const onCloseSessions = () => {
-    setSheetOpen(false);
-  };
-
   return (
-    <div className="flex h-full min-h-0 w-full overflow-hidden border-t bg-background text-foreground">
-      <InterviewSidebar interviewId={interview.id} interviews={interviews} />
+    <div className="flex h-full min-h-0 w-full gap-2 bg-background text-foreground">
+      <InterviewSidebar
+        interviewId={interview.id}
+        interviews={interviews}
+        className="hidden lg:flex"
+      />
 
-      <section className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border bg-background">
         <header className="flex shrink-0 items-center justify-between gap-3 border-b bg-background px-4 py-3 md:px-5">
           <div className="min-w-0">
             <div className="mb-1 flex items-center gap-2">
@@ -167,19 +166,13 @@ function InterviewWorkspacePage() {
                     Sessions
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-80 p-0">
+                <SheetContent side="left" className="w-80 p-2">
                   <SheetTitle className="sr-only">Interview sessions</SheetTitle>
-                  <ScrollArea className="h-[calc(100vh-1px)]">
-                    <InterviewSidebar interviewId={interview.id} interviews={interviews} mobile />
-                  </ScrollArea>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="m-3 border"
-                    onClick={onCloseSessions}
-                  >
-                    Close
-                  </Button>
+                  <InterviewSidebar
+                    interviewId={interview.id}
+                    interviews={interviews}
+                    className="h-full"
+                  />
                 </SheetContent>
               </Sheet>
               <Button variant="ghost" size="sm" asChild className="-ml-2 lg:hidden">
