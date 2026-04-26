@@ -12,6 +12,7 @@ import {
   getInterviewsByCandidate,
   updateInterviewStatus,
 } from "@/features/interviews/queries/queries_sql";
+import { getReportByApplicationId } from "@/features/reports/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { serverEnv } from "@/shared/env.server";
 import { authMiddleware } from "@/shared/middleware";
@@ -189,6 +190,34 @@ export const completeMyInterview = createServerFn({ method: "POST" })
       id: interview.applicationId,
       status: "evaluated",
     });
+
+    const existingReport = await getReportByApplicationId(db, {
+      applicationId: interview.applicationId,
+    });
+
+    if (!existingReport) {
+      try {
+        const response = await fetch(`${serverEnv.EDGE_WORKER_URL}/post-evaluate`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${serverEnv.EDGE_WORKER_SECRET}`,
+          },
+          body: JSON.stringify({ interviewId: data.interviewId }),
+        });
+
+        if (!response.ok) {
+          console.error(
+            `[completeMyInterview] Post-evaluation trigger failed for ${data.interviewId} with status ${response.status}`,
+          );
+        }
+      } catch (error) {
+        console.error(
+          `[completeMyInterview] Failed to trigger post-evaluation for ${data.interviewId}`,
+          error,
+        );
+      }
+    }
 
     return updated;
   });
