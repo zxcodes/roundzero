@@ -138,15 +138,20 @@ export function InterviewChat({
             <div ref={transcriptEndRef} className="h-1" />
           </div>
         ) : (
-          <div className="flex h-full min-h-[18rem] flex-col items-center justify-center gap-3 p-10 text-center text-muted-foreground">
-            <div className="flex size-12 items-center justify-center rounded-2xl border bg-muted">
-              <HugeiconsIcon
-                icon={BubbleChatIcon}
-                strokeWidth={2}
-                className="size-5 text-primary"
-              />
+          <div className="flex h-full min-h-[18rem] items-center justify-center px-6 py-10">
+            <div className="mx-auto flex max-w-md flex-col items-center gap-3 text-center text-muted-foreground">
+              <div className="flex size-12 items-center justify-center rounded-full border border-border/70 bg-card shadow-sm">
+                <HugeiconsIcon
+                  icon={BubbleChatIcon}
+                  strokeWidth={2}
+                  className="size-5 text-primary"
+                />
+              </div>
+              <p className="text-sm leading-relaxed">Your interview with Zero starts here.</p>
+              <p className="text-xs text-muted-foreground/80">
+                {canSend ? "Say hi to begin." : "Press Start when you are ready."}
+              </p>
             </div>
-            <p className="text-sm">Your interview with Zero starts here.</p>
           </div>
         )}
       </ScrollArea>
@@ -157,7 +162,7 @@ export function InterviewChat({
         </div>
       ) : (
         <div className="shrink-0 bg-card px-4 pb-4 pt-3 md:px-6 md:pb-5">
-          <div className="flex items-end gap-2 rounded-2xl border border-border/70 bg-background p-2.5 shadow-sm">
+          <div className="flex items-center gap-2 rounded-full border border-border/70 bg-background px-4 py-1.5 shadow-sm">
             <Textarea
               ref={composerRef}
               value={content}
@@ -165,13 +170,13 @@ export function InterviewChat({
               onKeyDown={onComposerKeyDown}
               placeholder={canSend ? "Write your answer..." : "Start the interview to answer"}
               disabled={!canSend}
-              className="min-h-10 flex-1 resize-none border-0 bg-transparent p-2 text-foreground placeholder:text-muted-foreground focus-visible:border-transparent focus-visible:ring-0"
+              className="h-10 min-h-0 flex-1 resize-none border-0 bg-transparent px-0 py-2 text-foreground leading-5 placeholder:text-muted-foreground focus-visible:border-transparent focus-visible:ring-0"
               rows={1}
             />
             <Button
               type="button"
               size="icon"
-              className="shrink-0 rounded-xl"
+              className="size-9 shrink-0 self-center rounded-full"
               onMouseDown={onSendMouseDown}
               onClick={onSubmit}
               disabled={!canSend || isStreaming || content.trim().length === 0}

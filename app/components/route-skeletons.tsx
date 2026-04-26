@@ -919,9 +919,9 @@ export function InterviewWorkspaceSkeleton() {
           </div>
 
           <div className="shrink-0 bg-card px-4 pb-4 pt-3 md:px-6 md:pb-5">
-            <div className="flex items-end gap-2 rounded-2xl border border-border/70 bg-card p-2.5 shadow-sm">
-              <Skeleton className="h-10 flex-1" />
-              <Skeleton className="size-10 rounded-xl" />
+            <div className="flex items-center gap-2 rounded-full border border-border/70 bg-background px-4 py-1.5 shadow-sm">
+              <Skeleton className="h-10 flex-1 rounded-full" />
+              <Skeleton className="size-9 rounded-full" />
             </div>
           </div>
         </div>
