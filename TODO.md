@@ -1,11 +1,10 @@
 ## TODO
 
-
+- the agent interview feels off. the entire interview should be based on the actual candidate's profile, dynamic followups etc like a full fledged conv. also check if the agent is asking company's questions (mandatory and all things I expected from the agent.)
 - full report needs a lot of work including overall ux, ui, representation, accuracy, for ex (even if an interview goes bad, the report seems to show good points. prob in llm layer)
 - when an interview starts or ends, the ui actions don't update. need to refresh page to see if an interview was ended. the entire chat ui should update in real time.
 - in post eval, refine the scores using the actual agent conv and add it to the final report.
 - update seed to include much more data for better agent evaluation with multiple jobs having company questions (relocation, visa, etc etc)
-- the agent interview feels very off. the entire interview should be based on the actual candidate's profile, dynamic followups etc like a full fledged conv.
 - think about context compaction to save on costs.
 - in pre eval report what we are showing is not clear. missing requirements don't read good enough. the messaging needs to be clear.
 - think about how previous evaluations and candidate profiles affect future score. helps with fabrication since we will have the candidate's work history and helps us maintain a consistent score when they apply to diff jobs.
