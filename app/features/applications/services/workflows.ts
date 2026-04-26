@@ -5,6 +5,10 @@ import {
   getCandidateWorkHistoryByProfileId,
 } from "@/features/candidates/queries/queries_sql";
 import { getCompanyById, getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
+import {
+  createInterview,
+  getInterviewByApplicationId,
+} from "@/features/interviews/queries/queries_sql";
 import { closeExpiredJobsQuery, getJobById } from "@/features/jobs/queries/queries_sql";
 import { notificationPayloadSchemas } from "@/features/notifications/config";
 import { createNotification } from "@/features/notifications/queries/queries_sql";
@@ -13,6 +17,7 @@ import {
   type NotificationEmailSender,
   sendNotificationEmailViaResend,
 } from "@/features/notifications/services/email";
+import { getPreEvaluationByApplicationId } from "@/features/pre-evaluations/queries/queries_sql";
 import { type ApplicationStatus, applicationStatusSchema, isValidTransition } from "@/shared/enums";
 import {
   createApplication as createApplicationQuery,
@@ -143,6 +148,67 @@ export const updateApplicationStatusWorkflow = async (
 
   if (!updated) {
     throw new Error("Failed to update application status");
+  }
+
+  if (currentStatus !== input.status && input.status === "interview_invited") {
+    const existingInterview = await getInterviewByApplicationId(db, {
+      applicationId: application.id,
+    });
+
+    const latestPreEvaluation = await getPreEvaluationByApplicationId(db, {
+      applicationId: application.id,
+    });
+
+    const interviewType =
+      latestPreEvaluation?.nextStep === "interview_invited" ? "full" : "quick_eval";
+    const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+
+    const interview =
+      existingInterview ??
+      (await createInterview(db, {
+        applicationId: application.id,
+        agentId: null,
+        type: interviewType,
+        metadata: { preEvaluationScore: latestPreEvaluation?.score ?? null, expiresAt },
+        status: "pending",
+        startedAt: null,
+        completedAt: null,
+      }));
+
+    if (!interview) {
+      throw new Error("Failed to create interview invite");
+    }
+
+    const metadata =
+      typeof interview.metadata === "object" && interview.metadata !== null
+        ? (interview.metadata as Record<string, unknown>)
+        : {};
+
+    const payload = notificationPayloadSchemas.interview_invited.parse({
+      applicationId: application.id,
+      interviewId: interview.id,
+      jobId: application.jobId,
+      jobTitle: application.jobTitle,
+      interviewType: interview.type,
+      expiresAt: typeof metadata.expiresAt === "string" ? metadata.expiresAt : expiresAt,
+    });
+
+    const notification = await createNotification(db, {
+      userId: application.candidateId,
+      type: "interview_invited",
+      payload,
+    });
+
+    if (notification) {
+      const candidate = await getUserById(db, { id: application.candidateId });
+      await deliverNotificationEmail(db, {
+        notification,
+        recipient: candidate ? { email: candidate.email } : null,
+        sendEmail: options?.sendNotificationEmail ?? sendNotificationEmailViaResend,
+      });
+    }
+
+    return { application: updated };
   }
 
   if (currentStatus !== input.status) {
