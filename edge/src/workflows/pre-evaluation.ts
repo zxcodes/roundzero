@@ -473,6 +473,34 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
         applicationId,
       });
       if (existingInterview) {
+        const candidate = await getUserById(db, { id: applicationData.application.candidateId });
+        if (candidate) {
+          const existingPayloadMetadata =
+            typeof existingInterview.metadata === "object" && existingInterview.metadata !== null
+              ? (existingInterview.metadata as Record<string, unknown>)
+              : {};
+
+          const expiresAt =
+            typeof existingPayloadMetadata.expiresAt === "string"
+              ? existingPayloadMetadata.expiresAt
+              : new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+
+          const payload = notificationPayloadSchemas.interview_invited.parse({
+            applicationId,
+            interviewId: existingInterview.id,
+            jobId: job.id,
+            jobTitle: job.title,
+            interviewType: existingInterview.type,
+            expiresAt,
+          });
+
+          await createNotification(db, {
+            userId: candidate.id,
+            type: "interview_invited",
+            payload,
+          });
+        }
+
         log.result("decide", {
           action: "already_invited",
           interviewId: existingInterview.id,

@@ -43,8 +43,5 @@
       "tag": "v1",
       "new_sqlite_classes": ["InterviewAgent"]
     }
-  ],
-  "triggers": {
-    "crons": ["*/5 * * * *"]
-  }
+  ]
 }

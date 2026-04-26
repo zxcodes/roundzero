@@ -635,39 +635,6 @@ export function DashboardIndexSkeleton() {
 }
 
 /**
- * Skeleton for /dashboard/interview/$interviewId - candidate interview session page.
- * Matches: back link + card header (icon + badge + title + description) + action buttons.
- */
-export function InterviewSessionSkeleton() {
-  return (
-    <div className="animate-fade-in space-y-6">
-      {/* Back link */}
-      <Skeleton className="h-8 w-28 rounded-md" />
-
-      {/* Session card */}
-      <Card>
-        <CardHeader className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Skeleton className="size-8 rounded-xl" />
-            <Skeleton className="h-5 w-24 rounded-full" />
-          </div>
-          <Skeleton className="h-6 w-64" />
-          <Skeleton className="h-4 w-96 max-w-full" />
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Skeleton className="h-4 w-72" />
-          <div className="flex gap-2">
-            <Skeleton className="h-9 w-36 rounded-md" />
-            <Skeleton className="h-9 w-36 rounded-md" />
-            <Skeleton className="h-9 w-32 rounded-md" />
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-/**
  * Skeleton for /dashboard/settings — settings form with card sections.
  */
 export function DashboardSettingsSkeleton() {
@@ -896,6 +863,65 @@ export function DashboardApplicantReviewSkeleton() {
           </Card>
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Skeleton for /interview and /interview/$interviewId — interview workspace.
+ * Matches: left sessions sidebar + top header + chat transcript + pinned composer.
+ */
+export function InterviewWorkspaceSkeleton() {
+  return (
+    <div className="flex h-full min-h-0 w-full overflow-hidden border-t bg-background text-foreground animate-fade-in">
+      <aside className="hidden w-80 shrink-0 border-r bg-sidebar text-sidebar-foreground lg:flex lg:min-h-0 lg:flex-col">
+        <div className="border-b border-sidebar-border px-4 py-3">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="mt-1.5 h-3 w-36" />
+        </div>
+        <div className="space-y-2 p-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="rounded-xl border border-sidebar-border p-3">
+              <Skeleton className="h-4 w-40" />
+              <Skeleton className="mt-1.5 h-3 w-24" />
+              <Skeleton className="mt-2 h-3 w-16" />
+            </div>
+          ))}
+        </div>
+      </aside>
+
+      <section className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <header className="flex shrink-0 items-center justify-between gap-3 border-b bg-background px-4 py-3 md:px-5">
+          <div className="min-w-0">
+            <Skeleton className="h-6 w-52" />
+            <Skeleton className="mt-1.5 h-4 w-24" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-8 w-20 rounded-md" />
+            <Skeleton className="h-8 w-20 rounded-md" />
+          </div>
+        </header>
+
+        <div className="flex min-h-0 flex-1 flex-col bg-background">
+          <div className="min-h-0 flex-1 space-y-5 px-4 py-5 md:px-6">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className={i % 2 === 0 ? "flex justify-start" : "flex justify-end"}>
+                <div className="w-full max-w-[88%] md:max-w-[72%]">
+                  <Skeleton className="mb-1 h-3 w-12" />
+                  <Skeleton className="h-12 w-full rounded-2xl" />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="shrink-0 border-t bg-background px-3 py-3 md:px-4">
+            <div className="flex items-end gap-2 rounded-xl border bg-background p-2">
+              <Skeleton className="h-10 flex-1" />
+              <Skeleton className="size-10 rounded-xl" />
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
