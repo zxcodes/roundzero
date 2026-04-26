@@ -1,5 +1,6 @@
 ## TODO
 
+- the agent doesnt greet by default even after starting the interview. it mush greet with relevant info about the candidate.
 - the agent interview feels off. the entire interview should be based on the actual candidate's profile, dynamic followups etc like a full fledged conv. also check if the agent is asking company's questions (mandatory and all things I expected from the agent.)
 - full report needs a lot of work including overall ux, ui, representation, accuracy, for ex (even if an interview goes bad, the report seems to show good points. prob in llm layer)
 - when an interview starts or ends, the ui actions don't update. need to refresh page to see if an interview was ended. the entire chat ui should update in real time.
