@@ -1,4 +1,4 @@
-import { BubbleChatIcon, SentIcon } from "@hugeicons/core-free-icons";
+import { ArrowUp01Icon, BubbleChatIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -138,7 +138,7 @@ export function InterviewChat({
             <div ref={transcriptEndRef} className="h-1" />
           </div>
         ) : (
-          <div className="flex h-full min-h-[18rem] items-center justify-center px-6 py-10">
+          <div className="flex h-full min-h-72 items-center justify-center px-6 py-10">
             <div className="mx-auto flex max-w-md flex-col items-center gap-3 text-center text-muted-foreground">
               <div className="flex size-12 items-center justify-center rounded-full border border-border/70 bg-card shadow-sm">
                 <HugeiconsIcon
@@ -162,7 +162,7 @@ export function InterviewChat({
         </div>
       ) : (
         <div className="shrink-0 bg-card px-4 pb-4 pt-3 md:px-6 md:pb-5">
-          <div className="flex items-center gap-2 rounded-full border border-border/70 bg-background px-4 py-1.5 shadow-sm">
+          <div className="flex items-end gap-2 rounded-2xl border border-border/70 bg-background px-3 py-2 shadow-sm ring-1 ring-transparent transition-[border-color,box-shadow] focus-within:border-primary/40 focus-within:shadow-md focus-within:ring-primary/20">
             <Textarea
               ref={composerRef}
               value={content}
@@ -170,18 +170,18 @@ export function InterviewChat({
               onKeyDown={onComposerKeyDown}
               placeholder={canSend ? "Write your answer..." : "Start the interview to answer"}
               disabled={!canSend}
-              className="h-10 min-h-0 flex-1 resize-none border-0 bg-transparent px-0 py-2 text-foreground leading-5 placeholder:text-muted-foreground focus-visible:border-transparent focus-visible:ring-0"
+              className="field-sizing-content max-h-44 min-h-10 flex-1 resize-none overflow-y-auto border-0 bg-transparent px-1 py-2 text-sm leading-6 text-foreground placeholder:text-muted-foreground focus-visible:border-transparent focus-visible:ring-0"
               rows={1}
             />
             <Button
               type="button"
               size="icon"
-              className="size-9 shrink-0 self-center rounded-full"
+              className="mb-0.5 size-9 shrink-0 rounded-full bg-primary text-primary-foreground shadow-sm transition-transform hover:scale-[1.02] hover:bg-primary/90 active:scale-[0.98] disabled:scale-100 disabled:bg-muted disabled:text-muted-foreground"
               onMouseDown={onSendMouseDown}
               onClick={onSubmit}
               disabled={!canSend || isStreaming || content.trim().length === 0}
             >
-              <HugeiconsIcon icon={SentIcon} strokeWidth={2} className="size-4" />
+              <HugeiconsIcon icon={ArrowUp01Icon} strokeWidth={2.2} className="size-4" />
               <span className="sr-only">Send message</span>
             </Button>
           </div>
