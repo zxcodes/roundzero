@@ -2,6 +2,11 @@ import { useAgentChat } from "@cloudflare/ai-chat/react";
 import { useAgent } from "agents/react";
 import type { UIMessage } from "ai";
 
+type InterviewAgentClient = {
+  get state(): unknown;
+  kickoff: () => Promise<{ greeted: boolean }>;
+};
+
 const getEdgeHost = () => {
   const fallback = "http://localhost:8787";
 
@@ -34,17 +39,13 @@ const readMessageText = (message: UIMessage) => {
     .trim();
 };
 
-type InterviewAgentRpc = {
-  kickoff: () => Promise<{ greeted: boolean }>;
-};
-
 export function useInterviewChat(interviewId: string) {
   // useAgent connects via WebSocket to the InterviewAgent Durable Object
   // identified by the interview UUID. AIChatAgent persists messages in its
   // own SQLite, so do NOT pass `getInitialMessages: null` — the default
   // behaviour fetches the persisted history on connect, which is exactly
   // how refresh-resume is supposed to work.
-  const agent = useAgent({
+  const agent = useAgent<InterviewAgentClient, unknown>({
     agent: "InterviewAgent",
     name: interviewId,
     host: getEdgeHost(),
@@ -70,12 +71,6 @@ export function useInterviewChat(interviewId: string) {
     }
 
     const role = message.role === "assistant" ? ("assistant" as const) : ("candidate" as const);
-    const previous = messages[messages.length - 1];
-    if (role === "assistant" && previous?.role === "assistant") {
-      if (previous.content.trim() === content.trim()) {
-        continue;
-      }
-    }
 
     messages.push({
       id: message.id,
@@ -85,8 +80,7 @@ export function useInterviewChat(interviewId: string) {
   }
 
   const kickoff = async () => {
-    const rpc = agent.stub as unknown as InterviewAgentRpc;
-    return await rpc.kickoff();
+    return await agent.stub.kickoff();
   };
 
   return {
