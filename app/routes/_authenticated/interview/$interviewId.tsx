@@ -63,6 +63,9 @@ function InterviewWorkspacePage() {
   const router = useRouter();
   const chat = useInterviewChat(interview.id);
 
+  const isPending = interview.status === "pending";
+  const isInProgress = interview.status === "in_progress";
+
   const startInterviewFn = useServerFn(startMyInterview);
   const cancelInterviewFn = useServerFn(cancelMyInterview);
   const completeInterviewFn = useServerFn(completeMyInterview);
@@ -177,10 +180,10 @@ function InterviewWorkspacePage() {
                   </Button>
                 ) : null}
 
-                {interview.status === "pending" || interview.status === "in_progress" ? (
+                {isPending || isInProgress ? (
                   <Button
                     size="sm"
-                    onClick={interview.status === "pending" ? onStart : onComplete}
+                    onClick={isPending ? onStart : onComplete}
                     disabled={startMutation.isPending || completeMutation.isPending}
                   >
                     <HugeiconsIcon
@@ -188,7 +191,7 @@ function InterviewWorkspacePage() {
                       strokeWidth={2}
                       className="size-4"
                     />
-                    {interview.status === "pending" ? "Start" : "Submit"}
+                    {isPending ? "Start" : "Submit"}
                   </Button>
                 ) : null}
               </div>
