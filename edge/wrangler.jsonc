@@ -3,10 +3,18 @@
   "name": "roundzero-edge",
   "preview_urls": true,
   "compatibility_date": "2026-04-23",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "main": "src/worker.ts",
   "observability": {
-    "enabled": true
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+    },
+    "traces": {
+      "enabled": true,
+    }
   },
   "ai": {
     "binding": "AI"
@@ -41,7 +49,9 @@
   "migrations": [
     {
       "tag": "v1",
-      "new_sqlite_classes": ["InterviewAgent"]
+      "new_sqlite_classes": [
+        "InterviewAgent"
+      ]
     }
   ]
 }
