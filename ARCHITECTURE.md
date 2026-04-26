@@ -13,11 +13,11 @@ This document reflects the app as it transitions from **platform-only** to **pla
 - one-click applications with profile snapshots
 - durable in-app notifications with Resend email delivery
 - Cloudflare Workflows for pre-evaluation and post-evaluation pipelines
-- Cloudflare Durable Objects for interview agents
+- Cloudflare Agents SDK interview runtime (`AIChatAgent`)
 - AI-driven candidate evaluation and structured reports
 - `final_report_target` quota system per job
 - 8-status application lifecycle with pre-screening funnel
-- real-time interview chat UI with transcript and composer
+- dedicated candidate interview workspace at `/interview/$interviewId`
 - company-facing report views with scoring and timeline
 
 ---
@@ -64,9 +64,9 @@ The app runs as a standard TanStack Start app with server functions for:
 
 The AI layer lives in a separate `edge/` directory as a standalone Cloudflare Worker:
 
-- Hono HTTP server with `/pre-evaluate` endpoint
+- Hono HTTP server with `/pre-evaluate`, `/post-evaluate`, and internal report endpoints
 - Cloudflare Workflows run pre-evaluation and report generation pipelines
-- Durable Objects run interview agents
+- Agents SDK routes interview agents over WebSocket/HTTP
 - R2 stores resumes
 - Workers AI binding provides model inference
 
@@ -91,7 +91,7 @@ roundzero/              # Main app - TanStack Start + Nitro
 
 edge/                   # AI Worker - Cloudflare Workers
 ├── src/
-│   ├── index.ts        # Hono fetch handler
+│   ├── worker.ts       # Hono + Agents fetch handler
 │   ├── workflows/      # Cloudflare Workflow classes
 │   ├── agents/         # Durable Object agent classes
 │   ├── queries/        # SQLC-generated query files
@@ -158,8 +158,7 @@ What this means in practice:
 
 Missing route surface today:
 
-- interview UI
-- evaluation/report UI
+- none for core MVP interview/report flows
 
 ---
 
@@ -187,7 +186,7 @@ app/features/
 - `jobs`: job CRUD, filtering, pagination, status/archive/expiry behavior, interview questions
 - `applications`: one-click apply, applicant lists, application status, notification workflows
 - `dashboard`: role-specific metrics
-- `interviews`: interview lifecycle, chat UI components, transcript/composer, server functions
+- `interviews`: interview lifecycle, dedicated workspace routes, agent chat hooks/components, server functions
 - `notifications`: per-user in-app notification inbox, Resend email delivery, workflow event records
 - `pre-evaluations`: pre-screening result queries and compact card components
 - `reports`: post-evaluation report queries, server functions, and reusable report view components
@@ -720,5 +719,5 @@ See `PLAN.md` for the full build plan. Current focus:
 | Notifications | In-app notifications + Resend | Durable app record first, email as secondary delivery |
 | Auth | Google OAuth + cookie session | Good enough for current phase |
 | AI pipelines | Cloudflare Workflows in edge Worker | Durable multi-step execution with retries |
-| Interview runtime | Cloudflare Durable Objects in edge Worker | Stateful chat with SQLite persistence |
+| Interview runtime | Cloudflare Agents SDK (`AIChatAgent`) in edge Worker | Stateful streaming chat with built-in message persistence |
 | Resume text extraction | Local libraries per file type (PDF / DOCX) | LLM reads unstructured text; no external parser needed |

@@ -602,25 +602,24 @@ This context is then injected into the `system` prompt on every `streamText()` c
 ### 7.5.5 Migration Checklist
 
 **Backend:**
-- [ ] Install `agents`, `@cloudflare/ai-chat`, `workers-ai-provider`, `ai` in edge
-- [ ] Create new `InterviewAgent` class extending `AIChatAgent`
-- [ ] Implement `onChatMessage` with `streamText` + system prompt + tools
-- [ ] Implement `onStart` for context injection
-- [ ] Update `worker.ts` to register agent and remove manual endpoints
-- [ ] Update `wrangler.jsonc` with Agents SDK bindings if needed
+- [x] Install `agents`, `@cloudflare/ai-chat`, `workers-ai-provider`, `ai` in edge
+- [x] Create new `InterviewAgent` class extending `AIChatAgent`
+- [x] Implement `onChatMessage` with `streamText` + system prompt + tools
+- [x] Implement `onStart` for context injection
+- [x] Update `worker.ts` to register agent routing and remove manual interview chat endpoints
+- [x] Update `wrangler.jsonc` to remove legacy interview expiry cron trigger
 
 **Frontend:**
-- [ ] Install `agents`, `@cloudflare/ai-chat/react`, `ai` in app
-- [ ] Create `app/routes/_authenticated/interview.tsx` layout (shadcn Sidebar + chat pane)
-- [ ] Create `app/routes/_authenticated/interview/$interviewId.tsx` route
-- [ ] Create `app/routes/_authenticated/interview/index.tsx` (redirect to most recent session)
-- [ ] Create `InterviewSidebar` component (shadcn Sidebar with session list)
-- [ ] Create `InterviewChat` component (streaming chat surface)
-- [ ] Create `useInterviewChat` hook wrapping `useAgent` + `useAgentChat`
-- [ ] Update main app sidebar "Interviews" link to point to `/interview`
-- [ ] Update interview notification deep links to `/interview/$interviewId`
-- [ ] Delete old dashboard interview routes and components
-- [ ] Ensure `bun run check` passes
+- [x] Install `agents`, `@cloudflare/ai-chat/react`, `ai` in app
+- [x] Create `app/routes/_authenticated/interview.tsx` layout (dedicated workspace shell)
+- [x] Create `app/routes/_authenticated/interview/$interviewId.tsx` route
+- [x] Create `app/routes/_authenticated/interview/index.tsx` (redirect to most recent session)
+- [x] Create `InterviewSidebar` component with session list
+- [x] Create `InterviewChat` component (streaming chat surface)
+- [x] Create `useInterviewChat` hook wrapping `useAgent` + `useAgentChat`
+- [x] Update navigation/deep links to `/interview/$interviewId`
+- [x] Delete old dashboard interview routes and old transcript/composer components
+- [x] Ensure `bun run check` passes
 - [ ] Test: full interview flow with streaming, tool calls, completion
 
 ### 7.5.6 Conversational UX Requirements
@@ -637,25 +636,25 @@ The agent must feel like a real interviewer, not a survey bot:
 ### Exit Criteria
 
 **Agent behavior:**
-- [ ] Interview agent streams responses token-by-token
-- [ ] Candidate sees "Zero is typing..." while response generates
-- [ ] Agent asks contextual follow-ups based on previous answers
-- [ ] Agent references resume and job details naturally in conversation
-- [ ] Agent uses tools to evaluate answers and decide when to end
-- [ ] Interview completion triggers post-evaluation workflow
+- [x] Interview agent streams responses token-by-token
+- [x] Candidate sees streaming state while response generates
+- [x] Agent receives contextual system prompt with job/candidate/pre-eval context
+- [x] Agent uses tools to evaluate answers and decide when to end
+- [x] Interview completion path triggers post-evaluation workflow
+- [ ] Validate full conversational quality (manual UX review pass)
 
 **Frontend layout:**
-- [ ] Interview has dedicated layout at `/interview/$interviewId` (not nested in dashboard)
-- [ ] shadcn Sidebar shows interview session list with status badges
-- [ ] Chat surface is full-bleed, dark ambient, content-first
-- [ ] Streaming messages render progressively without jank
-- [ ] Mobile: sidebar collapses to icon rail or swipeable drawer
-- [ ] Main app sidebar "Interviews" link navigates to `/interview`
+- [x] Interview has dedicated layout at `/interview/$interviewId` (not nested in dashboard)
+- [x] Sidebar shows interview session list with status labels
+- [x] Chat surface is full-bleed, dark ambient, content-first
+- [x] Streaming messages render progressively
+- [x] Mobile: session list available via sheet drawer
+- [x] Navigation/deep links point to `/interview/$interviewId`
 
 **Cleanup:**
-- [ ] Old raw DO interview endpoints are removed
-- [ ] Old dashboard interview routes and components are deleted
-- [ ] `bun run check` passes
+- [x] Old manual interview chat endpoints are removed
+- [x] Old dashboard interview routes/components are deleted
+- [x] `bun run check` passes
 
 ---
 

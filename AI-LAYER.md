@@ -152,40 +152,35 @@ The agent has three server-side tools it can call during the conversation:
 ## Agent Lifecycle
 
 ### `onStart()`
-- Fetches interview context from Postgres (job, candidate, pre-eval)
-- Injects context into Session memory
-- Schedules 48-hour expiry alarm: `this.schedule(48h, "expireInterview")`
+- Ensures expiry scheduling for active sessions
+- Schedules 48-hour expiry alarm: `this.schedule(48h, "expireInterview", undefined, { idempotent: true })`
 
 ### `onChatMessage()`
 - Streams response via `streamText()` with full message history
 - LLM can call tools mid-conversation
 - State syncs to client via WebSocket automatically
+- Uses `stepCountIs(...)` stop control for bounded tool-call loops
 
 ### `expireInterview()`
 - Called by scheduled alarm after 48 hours
-- Sets status to `expired` if not completed
-- Triggers expiry notification workflow
+- Sets status to `expired` if not completed/cancelled
+- Persists interview status update to Postgres
 
 ### `triggerPostEvaluation()`
 - Called by `end_interview` tool
-- Triggers post-evaluation workflow: `this.runWorkflow("post-evaluation", { interviewId })`
+- Triggers post-evaluation workflow with `this.runWorkflow("POST_EVALUATION", { interviewId })`
 
-## Session Memory
+## Session State
 
-Uses the Session API for structured context:
+Current implementation persists interview session metadata in agent state via `this.setState()`:
 
-```ts
-session = Session.create(this)
-  .withContext("soul", { provider: { get: async () => systemPrompt } })
-  .withContext("job", { provider: { get: async () => jobDescription } })
-  .withContext("candidate", { provider: { get: async () => candidateSummary } })
-  .withContext("evaluation_notes", {
-    description: "Running evaluation scores and observations",
-    maxTokens: 2000
-  });
-```
+- status (`pending`, `in_progress`, `completed`, `cancelled`, `expired`)
+- question counters (`askedQuestions`, `maxQuestions`)
+- running evaluation aggregates
+- timestamps (`startedAt`, `completedAt`, `cancelledAt`, `updatedAt`)
+- normalized interview context (job/candidate/pre-eval)
 
-The LLM can read/write evaluation notes via auto-generated `set_context` tool.
+Conversation messages are persisted by `AIChatAgent` automatically.
 
 ---
 
