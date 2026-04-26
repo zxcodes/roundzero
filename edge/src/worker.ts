@@ -5,7 +5,7 @@ import { InterviewAgent } from "./agents/interview-agent";
 import { getInterviewContextById } from "./queries/interviews/queries_sql";
 import { getDb } from "./shared/db";
 import { validateEnv } from "./shared/env";
-import { getInterviewAgentState } from "./shared/interview-agent-client";
+import { getInterviewAgentState, markInterviewAgentStarted } from "./shared/interview-agent-client";
 import { PostEvaluationWorkflow } from "./workflows/post-evaluation";
 import { PreEvaluationWorkflow } from "./workflows/pre-evaluation";
 
@@ -73,6 +73,25 @@ app.get("/internal/interviews/:interviewId/state", async (c) => {
 
   const state = await getInterviewAgentState(c.env, interviewId);
   return c.json(state);
+});
+
+app.post("/internal/interviews/:interviewId/start", async (c) => {
+  const auth = c.req.header("Authorization");
+  const env = validateEnv(c.env);
+
+  if (!auth || auth !== `Bearer ${env.EDGE_WORKER_SECRET}`) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  const interviewId = c.req.param("interviewId");
+  const db = getDb();
+  const context = await getInterviewContextById(db, { id: interviewId });
+  if (!context) {
+    return c.json({ error: "Interview not found" }, 404);
+  }
+
+  const result = await markInterviewAgentStarted(c.env, interviewId);
+  return c.json(result);
 });
 
 app.get("/health", (c) => c.json({ ok: true }));

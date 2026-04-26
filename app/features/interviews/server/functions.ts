@@ -13,6 +13,7 @@ import {
   updateInterviewStatus,
 } from "@/features/interviews/queries/queries_sql";
 import { getDb } from "@/shared/db";
+import { serverEnv } from "@/shared/env.server";
 import { authMiddleware } from "@/shared/middleware";
 
 const interviewIdSchema = z.object({
@@ -89,6 +90,21 @@ export const startMyInterview = createServerFn({ method: "POST" })
       id: interview.applicationId,
       status: "interview_in_progress",
     });
+
+    try {
+      await fetch(`${serverEnv.EDGE_WORKER_URL}/internal/interviews/${data.interviewId}/start`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${serverEnv.EDGE_WORKER_SECRET}`,
+        },
+      });
+    } catch (error) {
+      console.error(
+        `[startMyInterview] Failed to sync agent start state for ${data.interviewId}`,
+        error,
+      );
+    }
 
     return updated;
   });
