@@ -129,14 +129,14 @@
     min-height: 100%;
     margin: 0;
     background: var(--sidebar);
-    overscroll-behavior: none;
+    overscroll-behavior-y: none;
   }
 
   * {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply overscroll-none antialiased bg-background text-foreground;
+    @apply overscroll-y-none antialiased bg-background text-foreground;
   }
   html {
     @apply font-sans;
