@@ -77,10 +77,10 @@ const stageCopy = {
     nextStep: "Complete the interview before the deadline to keep your evaluation slot.",
   },
   evaluated: {
-    label: "Evaluated",
-    badge: "Evaluated",
+    label: "Awaiting company decision",
+    badge: "Awaiting company decision",
     tone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-    summary: "The company has finished an evaluation pass on this application.",
+    summary: "Your evaluation is complete and is now with the company for a decision.",
     nextStep: "Expect either a final decision or a follow-up step from the company.",
   },
   rejected: {
@@ -100,7 +100,7 @@ const stageCopy = {
 } as const;
 
 const underReviewMeta = {
-  badge: "Under Review",
+  badge: "Awaiting company decision",
   tone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
   summary: "Your interview is complete and the company is now reviewing your evaluation.",
   nextStep: "You are waiting on a decision after review.",

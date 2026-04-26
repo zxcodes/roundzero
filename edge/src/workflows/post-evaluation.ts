@@ -1,4 +1,5 @@
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers";
+import { updateApplicationStatus } from "../queries/applications/queries_sql";
 import { getUserById } from "../queries/auth/queries_sql";
 import { getInterviewContextById } from "../queries/interviews/queries_sql";
 import {
@@ -299,6 +300,18 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
     });
 
     if (existingReport) {
+      await step.do("mark_application_evaluated_existing_report", async () => {
+        const interview = await getInterviewContextById(db, { id: interviewId });
+        if (!interview) {
+          throw new Error(`Interview not found while reconciling status: ${interviewId}`);
+        }
+
+        await updateApplicationStatus(db, {
+          id: interview.applicationId,
+          status: "evaluated",
+        });
+      });
+
       log.info(`Report already exists, skipping: ${existingReport.id}`);
       return { interviewId, reportId: existingReport.id, status: "already_exists" as const };
     }
@@ -420,6 +433,13 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
       }
 
       return created;
+    });
+
+    await step.do("mark_application_evaluated", async () => {
+      await updateApplicationStatus(db, {
+        id: interviewData.interview.applicationId,
+        status: "evaluated",
+      });
     });
 
     const notification = await step.do("notify_report_ready", async () => {

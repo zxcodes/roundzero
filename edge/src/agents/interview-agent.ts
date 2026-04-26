@@ -53,6 +53,7 @@ type InterviewAgentState = {
   updatedAt: string;
   context: InterviewContextState;
   postEvaluationTriggered: boolean;
+  kickoffGeneratedAt: string | null;
 };
 
 type LegacyInterviewMessage = {
@@ -110,6 +111,7 @@ const emptyState = (): InterviewAgentState => ({
   updatedAt: toNow(),
   context: emptyContext(),
   postEvaluationTriggered: false,
+  kickoffGeneratedAt: null,
 });
 
 const readUiMessageText = (message: UIMessage) => {
@@ -430,9 +432,29 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
       return { greeted: false };
     }
 
-    if (this.messages.some((message) => message.role === "assistant")) {
+    if (this.state.kickoffGeneratedAt) {
       return { greeted: false };
     }
+
+    if (this.messages.some((message) => message.role === "assistant")) {
+      this.setState({
+        ...this.state,
+        kickoffGeneratedAt: this.state.kickoffGeneratedAt ?? toNow(),
+        updatedAt: toNow(),
+      });
+      return { greeted: false };
+    }
+
+    const stable = await this.waitUntilStable({ timeout: 10_000 });
+    if (!stable) {
+      return { greeted: false };
+    }
+
+    this.setState({
+      ...this.state,
+      kickoffGeneratedAt: toNow(),
+      updatedAt: toNow(),
+    });
 
     const workersai = createWorkersAI({ binding: this.env.AI });
     const result = await generateText({
@@ -448,6 +470,11 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
 
     const greeting = result.text.trim();
     if (!greeting) {
+      this.setState({
+        ...this.state,
+        kickoffGeneratedAt: null,
+        updatedAt: toNow(),
+      });
       return { greeted: false };
     }
 

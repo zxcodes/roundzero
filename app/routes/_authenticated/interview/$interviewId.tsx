@@ -1,9 +1,9 @@
-import { Cancel01Icon, CheckmarkCircle02Icon } from "@hugeicons/core-free-icons";
+import { Cancel01Icon, CheckmarkCircle02Icon, Loading03Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, notFound, redirect, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { CommandPalette } from "@/components/command-palette";
 import { InterviewWorkspaceSkeleton } from "@/components/route-skeletons";
@@ -118,6 +118,8 @@ function InterviewWorkspacePage() {
 
   const canSend = interview.status === "in_progress";
   const isEnded = interview.status === "completed" || interview.status === "cancelled";
+  const isStarting = isPending && startMutation.isPending;
+  const isSubmitting = isInProgress && completeMutation.isPending;
 
   const onStart = () => {
     startMutation.mutate({ data: { interviewId: interview.id } });
@@ -137,18 +139,6 @@ function InterviewWorkspacePage() {
       parts: [{ type: "text", text: content }],
     });
   };
-
-  useEffect(() => {
-    if (chat.messages.length > 0) {
-      return;
-    }
-
-    if (interview.status !== "in_progress") {
-      return;
-    }
-
-    void chat.kickoff();
-  }, [chat.messages.length, chat.kickoff, interview.status]);
 
   useCommandPaletteShortcut(() => {
     setCommandOpen((prev) => !prev);
@@ -200,16 +190,39 @@ function InterviewWorkspacePage() {
                     onClick={isPending ? onStart : onComplete}
                     disabled={startMutation.isPending || completeMutation.isPending}
                   >
-                    <HugeiconsIcon
-                      icon={CheckmarkCircle02Icon}
-                      strokeWidth={2}
-                      className="size-4"
-                    />
+                    {isStarting || isSubmitting ? (
+                      <HugeiconsIcon
+                        icon={Loading03Icon}
+                        strokeWidth={2}
+                        className="size-4 animate-spin"
+                      />
+                    ) : (
+                      <HugeiconsIcon
+                        icon={CheckmarkCircle02Icon}
+                        strokeWidth={2}
+                        className="size-4"
+                      />
+                    )}
                     {isPending ? "Start" : "Submit"}
                   </Button>
                 ) : null}
               </div>
             </header>
+
+            {isStarting || isSubmitting ? (
+              <div className="flex shrink-0 items-center gap-2 border-b border-border/60 bg-muted/40 px-4 py-2 text-sm text-muted-foreground md:px-6">
+                <HugeiconsIcon
+                  icon={Loading03Icon}
+                  strokeWidth={2}
+                  className="size-4 animate-spin"
+                />
+                <span>
+                  {isStarting
+                    ? "Starting interview and preparing your first question..."
+                    : "Submitting interview and generating your report..."}
+                </span>
+              </div>
+            ) : null}
 
             <div className="min-h-0 flex-1">
               <InterviewChat
