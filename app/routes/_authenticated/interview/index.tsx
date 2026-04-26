@@ -1,6 +1,7 @@
 import { BubbleChatIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { InterviewWorkspaceSkeleton } from "@/components/route-skeletons";
 import {
   Empty,
   EmptyContent,
@@ -24,6 +25,7 @@ export const Route = createFileRoute("/_authenticated/interview/")({
 
     return { interviews };
   },
+  pendingComponent: InterviewWorkspaceSkeleton,
   component: InterviewIndexPage,
 });
 
