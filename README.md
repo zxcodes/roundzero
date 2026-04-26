@@ -7,7 +7,7 @@ AI-powered hiring platform that replaces the first round of hiring with structur
 - **Framework:** TanStack Start (React 19 with React Compiler, Vite 7)
 - **Server:** TanStack Start + Nitro (main app), Cloudflare Workers (AI edge)
 - **AI:** Cloudflare Workflows + Durable Objects + Workers AI (in `edge/`)
-- **Models:** Workers AI (@cf/meta/llama-3.1-8b-instruct)
+- **Models:** Workers AI (`@cf/zai-org/glm-4.7-flash` for interview chat)
 - **UI:** shadcn/ui, Tailwind CSS v4, Huge Icons
 - **Linting & Formatting:** Biome
 - **Finding Unused Code & Dependencies:** Knip
@@ -63,7 +63,6 @@ edge/
 
 ## Documentation
 
-- **[PLATFORM.md](PLATFORM.md)** — Product specification
+- **[platform.md](platform.md)** — Product specification
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** — Technical architecture
 - **[AGENTS.md](AGENTS.md)** — Agent/AI coding conventions
-

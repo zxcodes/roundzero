@@ -240,7 +240,7 @@ Candidate uploads resume → Candidate applies → Company reviews applicant →
 Company updates status
 ```
 
-### 7.2 Future AI-Enabled Flow
+### 7.2 AI-Enabled Flow
 
 ```
 Company posts job → Candidate applies → AI interview →
@@ -424,7 +424,7 @@ The following decisions are required **before Phase 4 (AI Interview)** begins. T
 - `applications.status` uses: `applied`, `interviewing`, `evaluated`, `rejected`
 - AI-LAYER.md suggests: `applied`, `pre_screening`, `interview_invited`, `interview_in_progress`, `evaluated`, `shortlisted`, `rejected`
 
-**Decision:** **Extend the existing `applications.status` enum to include all 7 statuses**
+**Decision:** **Extend the existing `applications.status` enum to include all 8 statuses**
 
 **Rationale:**
 - Simpler query patterns (single status column)
@@ -439,7 +439,7 @@ The following decisions are required **before Phase 4 (AI Interview)** begins. T
 - When a job's `final_report_target` is reached, the system stops advancing new candidates out of `pre_screening`
 
 **Implementation:**
-- Update `enums.ts`: extend `applicationStatusSchema` to include all 7 statuses
+- Update `enums.ts`: extend `applicationStatusSchema` to include all 8 statuses
 - Update `APPLICATION_STATUS_TRANSITIONS` to enforce the funnel order
 - Update all client-facing status labels to distinguish internal (pre-evaluation) vs. external (candidate-visible) states
 

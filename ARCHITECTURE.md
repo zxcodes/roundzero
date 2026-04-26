@@ -687,7 +687,7 @@ The AI layer runs in a separate `edge/` Cloudflare Worker, triggered by authenti
 
 See `PLAN.md` for the full build plan. Current focus:
 
-1. **Phase 7.5**: Migrate interview agent to Cloudflare Agents SDK — replace raw Durable Object with `AIChatAgent`, add streaming, tools, and conversational UX
+1. **Interview UX polish**: finish chat auto-scroll parity, duplicate-assistant safeguards, and terminal state UI polish
 2. **Phase 8 wrap-up**: candidate applications list visible status labels, dedicated interview invitation cards
 3. **Phase 9 polish**: mobile responsive pass, pending/evaluated tabs on job applicants
 4. **Testing**: end-to-end smoke test of full apply → pre-eval → invite → interview → complete → report flow
@@ -701,7 +701,7 @@ See `PLAN.md` for the full build plan. Current focus:
 | --- | --- | --- |
 | Recovery sweep for stuck applications | Fire-and-forget trigger has no retry — if edge is down, applications stay in `applied` with no pre-evaluation forever | Add a cron (CF Cron Trigger or main app scheduled task) that finds `applied` rows with no `pre_evaluations` row and re-triggers them |
 | Quota race condition | Two concurrent workflows can over-invite for a job if capacity checks are non-atomic | Use transactional locking (`SELECT ... FOR UPDATE`) on job-level capacity checks when creating interviews |
-| LLM model adequacy | Llama 3.1 8B may be too weak for nuanced resume scoring (career trajectory, transferable skills) | Evaluate during Phase 5.5 testing; upgrade to `llama-3.3-70b-instruct-fp8-fast` if scores feel random |
+| LLM model adequacy | Interview chat currently uses `@cf/zai-org/glm-4.7-flash`; pre-eval/report quality can still drift by role complexity | Keep periodic score-quality checks and re-evaluate model mix if report consistency drops |
 | Workflow failure orphans | If workflow errors after `write_pre_evaluation` but before `decide_next_step`, application is stuck in `pre_screening` | Recovery sweep covers this too — detect `pre_screening` rows older than N minutes with no interview |
 | Edge Worker secret rotation | Shared secret is a single static value | Use a proper random secret in prod; consider HMAC request signing or CF Access Service Tokens for zero-trust |
 

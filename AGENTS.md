@@ -2,7 +2,7 @@
 
 ## Key References
 
-- **`PLATFORM.md`** — Product spec (what RoundZero does, user types, flow, agents, interviews, reports, MVP scope).
+- **`platform.md`** — Product spec (what RoundZero does, user types, flow, agents, interviews, reports, MVP scope).
 - **`ARCHITECTURE.md`** — Tech architecture (stack, deployment, directory structure, DB schema, AI models, auth, storage, build phases).
 - **`AI-LAYER.md`** — AI Layer high level reference. This must be checked before starting AI implementation.
 
