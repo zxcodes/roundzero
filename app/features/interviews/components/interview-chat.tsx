@@ -98,7 +98,7 @@ export function InterviewChat({ messages, canSend, isStreaming, onSend }: Interv
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-background">
+    <div className="flex h-full min-h-0 flex-col rounded-b-2xl bg-background">
       <div ref={transcriptRef} className="min-h-0 flex-1 overflow-y-auto">
         {messages.length > 0 ? (
           <div className="space-y-5 px-4 py-5 md:px-6">

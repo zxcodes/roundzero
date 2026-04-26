@@ -873,24 +873,28 @@ export function DashboardApplicantReviewSkeleton() {
  */
 export function InterviewWorkspaceSkeleton() {
   return (
-    <div className="flex h-full min-h-0 w-full overflow-hidden border-t bg-background text-foreground animate-fade-in">
-      <aside className="hidden w-80 shrink-0 border-r bg-sidebar text-sidebar-foreground lg:flex lg:min-h-0 lg:flex-col">
-        <div className="border-b border-sidebar-border px-4 py-3">
+    <div className="flex h-full min-h-0 w-full gap-2 bg-background text-foreground animate-fade-in">
+      <aside className="hidden h-full w-72 shrink-0 rounded-2xl bg-sidebar text-sidebar-foreground shadow-sm ring-1 ring-sidebar-border lg:flex lg:min-h-0 lg:flex-col">
+        <div className="p-2">
           <Skeleton className="h-4 w-24" />
           <Skeleton className="mt-1.5 h-3 w-36" />
         </div>
         <div className="space-y-2 p-2">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="rounded-xl border border-sidebar-border p-3">
+            <div key={i} className="rounded-xl bg-sidebar-accent p-3">
               <Skeleton className="h-4 w-40" />
               <Skeleton className="mt-1.5 h-3 w-24" />
               <Skeleton className="mt-2 h-3 w-16" />
             </div>
           ))}
         </div>
+
+        <div className="p-2">
+          <Skeleton className="h-9 w-full rounded-xl" />
+        </div>
       </aside>
 
-      <section className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border bg-background">
         <header className="flex shrink-0 items-center justify-between gap-3 border-b bg-background px-4 py-3 md:px-5">
           <div className="min-w-0">
             <Skeleton className="h-6 w-52" />
