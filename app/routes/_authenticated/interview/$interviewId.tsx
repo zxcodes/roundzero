@@ -5,6 +5,7 @@ import { createFileRoute, Link, notFound, redirect, useRouter } from "@tanstack/
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { InterviewWorkspaceSkeleton } from "@/components/route-skeletons";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -54,6 +55,7 @@ export const Route = createFileRoute("/_authenticated/interview/$interviewId")({
 
     return { interview, interviews };
   },
+  pendingComponent: InterviewWorkspaceSkeleton,
   component: InterviewWorkspacePage,
 });
 
