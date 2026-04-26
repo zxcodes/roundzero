@@ -79,9 +79,7 @@ type InterviewStateResponse = {
   messages: LegacyInterviewMessage[];
 };
 
-// Llama 3.3 70B fp8-fast has reliable native tool calling on Workers AI.
-// Llama 3.1 8B emits tool calls as plain text and breaks the chat UI.
-const MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+const MODEL = "@cf/zai-org/glm-4.7-flash";
 
 const toNow = () => new Date().toISOString();
 
@@ -128,6 +126,33 @@ const readUiMessageText = (message: UIMessage) => {
     })
     .join("\n")
     .trim();
+};
+
+const stripToolLeakText = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed.startsWith("{")) {
+    return value;
+  }
+
+  try {
+    const parsed = JSON.parse(trimmed) as {
+      type?: unknown;
+      name?: unknown;
+      parameters?: unknown;
+    };
+
+    if (
+      parsed.type === "function" &&
+      typeof parsed.name === "string" &&
+      Object.hasOwn(parsed, "parameters")
+    ) {
+      return "";
+    }
+  } catch {
+    return value;
+  }
+
+  return value;
 };
 
 const toLegacyTranscript = (messages: UIMessage[]): LegacyInterviewMessage[] => {
@@ -376,25 +401,12 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
       return { greeted: false };
     }
 
-    if (
-      this.state.status === "completed" ||
-      this.state.status === "cancelled" ||
-      this.state.status === "expired"
-    ) {
+    if (this.state.status !== "in_progress") {
       return { greeted: false };
     }
 
     if (this.messages.some((message) => message.role === "assistant")) {
       return { greeted: false };
-    }
-
-    if (this.state.status === "pending") {
-      this.setState({
-        ...this.state,
-        status: "in_progress",
-        startedAt: this.state.startedAt ?? toNow(),
-        updatedAt: toNow(),
-      });
     }
 
     const workersai = createWorkersAI({ binding: this.env.AI });
@@ -414,6 +426,7 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
       return { greeted: false };
     }
 
+    await this.waitUntilStable();
     await this.persistMessages([
       ...this.messages,
       {
@@ -480,21 +493,16 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
       return new Response("Interview session not initialized", { status: 400 });
     }
 
+    if (this.state.status === "pending") {
+      return new Response("Interview has not been started", { status: 400 });
+    }
+
     if (this.state.status === "cancelled" || this.state.status === "expired") {
       return new Response("Interview is no longer available", { status: 400 });
     }
 
     if (this.state.status === "completed") {
       return new Response("Interview already completed", { status: 400 });
-    }
-
-    if (this.state.status === "pending") {
-      this.setState({
-        ...this.state,
-        status: "in_progress",
-        startedAt: this.state.startedAt ?? toNow(),
-        updatedAt: toNow(),
-      });
     }
 
     const workersai = createWorkersAI({ binding: this.env.AI });
@@ -588,6 +596,35 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
     });
 
     return result.toUIMessageStreamResponse();
+  }
+
+  protected override sanitizeMessageForPersistence(message: UIMessage): UIMessage {
+    const sanitized = super.sanitizeMessageForPersistence(message);
+    if (!Array.isArray(sanitized.parts)) {
+      return sanitized;
+    }
+
+    return {
+      ...sanitized,
+      parts: sanitized.parts
+        .map((part) => {
+          if (part.type === "text" && typeof part.text === "string") {
+            return {
+              ...part,
+              text: stripToolLeakText(part.text),
+            };
+          }
+
+          return part;
+        })
+        .filter((part) => {
+          if (part.type === "text") {
+            return part.text.trim().length > 0;
+          }
+
+          return true;
+        }),
+    };
   }
 }
 

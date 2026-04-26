@@ -2,7 +2,6 @@ import { BubbleChatIcon, SentIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 
 type InterviewChatProps = {
@@ -19,15 +18,28 @@ export function InterviewChat({ messages, canSend, isStreaming, onSend }: Interv
   const [content, setContent] = useState("");
   const transcriptRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
+  const wasStreamingRef = useRef(false);
 
   useEffect(() => {
-    const viewport = transcriptRef.current?.querySelector("[data-radix-scroll-area-viewport]");
+    const viewport = transcriptRef.current;
     if (!viewport) {
       return;
     }
 
     viewport.scrollTop = viewport.scrollHeight;
   }, [messages.length]);
+
+  useEffect(() => {
+    if (!wasStreamingRef.current && isStreaming) {
+      wasStreamingRef.current = true;
+      return;
+    }
+
+    if (wasStreamingRef.current && !isStreaming && canSend) {
+      composerRef.current?.focus();
+      wasStreamingRef.current = false;
+    }
+  }, [isStreaming, canSend]);
 
   const onSubmit = () => {
     const trimmed = content.trim();
@@ -55,11 +67,15 @@ export function InterviewChat({ messages, canSend, isStreaming, onSend }: Interv
     setContent(event.target.value);
   };
 
+  const onSendMouseDown = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+  };
+
   return (
-    <div className="grid h-full min-h-0 grid-rows-[1fr_auto] overflow-hidden rounded-2xl border bg-card">
-      <ScrollArea ref={transcriptRef} className="h-full">
+    <div className="flex h-full min-h-0 flex-col bg-background">
+      <div ref={transcriptRef} className="min-h-0 flex-1 overflow-y-auto">
         {messages.length > 0 ? (
-          <div className="space-y-5 p-4 md:p-6">
+          <div className="space-y-5 px-4 py-5 md:px-6">
             {messages.map((message, index) => {
               const isCandidate = message.role === "candidate";
 
@@ -87,7 +103,7 @@ export function InterviewChat({ messages, canSend, isStreaming, onSend }: Interv
             })}
           </div>
         ) : (
-          <div className="flex h-full flex-col items-center justify-center gap-3 p-10 text-center text-muted-foreground">
+          <div className="flex h-full min-h-[18rem] flex-col items-center justify-center gap-3 p-10 text-center text-muted-foreground">
             <div className="flex size-12 items-center justify-center rounded-2xl border bg-muted">
               <HugeiconsIcon
                 icon={BubbleChatIcon}
@@ -98,9 +114,9 @@ export function InterviewChat({ messages, canSend, isStreaming, onSend }: Interv
             <p className="text-sm">Your interview with Zero starts here.</p>
           </div>
         )}
-      </ScrollArea>
+      </div>
 
-      <div className="border-t bg-background p-3 md:p-4">
+      <div className="shrink-0 border-t bg-background px-3 py-3 md:px-4">
         <div className="flex items-end gap-2 rounded-xl border bg-background p-2">
           <Textarea
             ref={composerRef}
@@ -108,7 +124,7 @@ export function InterviewChat({ messages, canSend, isStreaming, onSend }: Interv
             onChange={onComposerChange}
             onKeyDown={onComposerKeyDown}
             placeholder={canSend ? "Write your answer..." : "Interview is not active"}
-            disabled={!canSend || isStreaming}
+            disabled={!canSend}
             className="min-h-10 flex-1 resize-none border-0 bg-transparent p-2 text-foreground placeholder:text-muted-foreground focus-visible:border-transparent focus-visible:ring-0"
             rows={1}
           />
@@ -116,6 +132,7 @@ export function InterviewChat({ messages, canSend, isStreaming, onSend }: Interv
             type="button"
             size="icon"
             className="shrink-0 rounded-xl"
+            onMouseDown={onSendMouseDown}
             onClick={onSubmit}
             disabled={!canSend || isStreaming || content.trim().length === 0}
           >
