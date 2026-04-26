@@ -49,7 +49,9 @@ export async function createPreEvaluation(sql: Sql, args: createPreEvaluationArg
 export const getPreEvaluationByApplicationIdQuery = `-- name: getPreEvaluationByApplicationId :one
 SELECT id, application_id, score, missing_requirements, confidence, next_step, consistency_score, raw_response, created_at
 FROM pre_evaluations
-WHERE application_id = $1`;
+WHERE application_id = $1
+ORDER BY created_at DESC
+LIMIT 1`;
 
 export interface getPreEvaluationByApplicationIdArgs {
     applicationId: string;

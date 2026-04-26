@@ -31,6 +31,7 @@ import { Route as AuthenticatedDashboardJobsIndexRouteImport } from './routes/_a
 import { Route as AuthenticatedDashboardJobsNewRouteImport } from './routes/_authenticated/dashboard/jobs/new'
 import { Route as AuthenticatedDashboardJobsJobIdRouteImport } from './routes/_authenticated/dashboard/jobs/$jobId'
 import { Route as AuthenticatedDashboardJobApplicantsJobIdRouteImport } from './routes/_authenticated/dashboard/job-applicants/$jobId'
+import { Route as AuthenticatedDashboardFollowupApplicationIdRouteImport } from './routes/_authenticated/dashboard/followup/$applicationId'
 import { Route as AuthenticatedDashboardApplicationApplicationIdRouteImport } from './routes/_authenticated/dashboard/application/$applicationId'
 import { Route as AuthenticatedDashboardApplicantsApplicationIdRouteImport } from './routes/_authenticated/dashboard/applicants/$applicationId'
 import { Route as AuthenticatedDashboardApplicantReportsApplicationIdRouteImport } from './routes/_authenticated/dashboard/applicant-reports/$applicationId'
@@ -155,6 +156,12 @@ const AuthenticatedDashboardJobApplicantsJobIdRoute =
     path: '/job-applicants/$jobId',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
+const AuthenticatedDashboardFollowupApplicationIdRoute =
+  AuthenticatedDashboardFollowupApplicationIdRouteImport.update({
+    id: '/followup/$applicationId',
+    path: '/followup/$applicationId',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
 const AuthenticatedDashboardApplicationApplicationIdRoute =
   AuthenticatedDashboardApplicationApplicationIdRouteImport.update({
     id: '/application/$applicationId',
@@ -195,6 +202,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/applicant-reports/$applicationId': typeof AuthenticatedDashboardApplicantReportsApplicationIdRoute
   '/dashboard/applicants/$applicationId': typeof AuthenticatedDashboardApplicantsApplicationIdRoute
   '/dashboard/application/$applicationId': typeof AuthenticatedDashboardApplicationApplicationIdRoute
+  '/dashboard/followup/$applicationId': typeof AuthenticatedDashboardFollowupApplicationIdRoute
   '/dashboard/job-applicants/$jobId': typeof AuthenticatedDashboardJobApplicantsJobIdRoute
   '/dashboard/jobs/$jobId': typeof AuthenticatedDashboardJobsJobIdRoute
   '/dashboard/jobs/new': typeof AuthenticatedDashboardJobsNewRoute
@@ -219,6 +227,7 @@ export interface FileRoutesByTo {
   '/dashboard/applicant-reports/$applicationId': typeof AuthenticatedDashboardApplicantReportsApplicationIdRoute
   '/dashboard/applicants/$applicationId': typeof AuthenticatedDashboardApplicantsApplicationIdRoute
   '/dashboard/application/$applicationId': typeof AuthenticatedDashboardApplicationApplicationIdRoute
+  '/dashboard/followup/$applicationId': typeof AuthenticatedDashboardFollowupApplicationIdRoute
   '/dashboard/job-applicants/$jobId': typeof AuthenticatedDashboardJobApplicantsJobIdRoute
   '/dashboard/jobs/$jobId': typeof AuthenticatedDashboardJobsJobIdRoute
   '/dashboard/jobs/new': typeof AuthenticatedDashboardJobsNewRoute
@@ -247,6 +256,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard/applicant-reports/$applicationId': typeof AuthenticatedDashboardApplicantReportsApplicationIdRoute
   '/_authenticated/dashboard/applicants/$applicationId': typeof AuthenticatedDashboardApplicantsApplicationIdRoute
   '/_authenticated/dashboard/application/$applicationId': typeof AuthenticatedDashboardApplicationApplicationIdRoute
+  '/_authenticated/dashboard/followup/$applicationId': typeof AuthenticatedDashboardFollowupApplicationIdRoute
   '/_authenticated/dashboard/job-applicants/$jobId': typeof AuthenticatedDashboardJobApplicantsJobIdRoute
   '/_authenticated/dashboard/jobs/$jobId': typeof AuthenticatedDashboardJobsJobIdRoute
   '/_authenticated/dashboard/jobs/new': typeof AuthenticatedDashboardJobsNewRoute
@@ -275,6 +285,7 @@ export interface FileRouteTypes {
     | '/dashboard/applicant-reports/$applicationId'
     | '/dashboard/applicants/$applicationId'
     | '/dashboard/application/$applicationId'
+    | '/dashboard/followup/$applicationId'
     | '/dashboard/job-applicants/$jobId'
     | '/dashboard/jobs/$jobId'
     | '/dashboard/jobs/new'
@@ -299,6 +310,7 @@ export interface FileRouteTypes {
     | '/dashboard/applicant-reports/$applicationId'
     | '/dashboard/applicants/$applicationId'
     | '/dashboard/application/$applicationId'
+    | '/dashboard/followup/$applicationId'
     | '/dashboard/job-applicants/$jobId'
     | '/dashboard/jobs/$jobId'
     | '/dashboard/jobs/new'
@@ -326,6 +338,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard/applicant-reports/$applicationId'
     | '/_authenticated/dashboard/applicants/$applicationId'
     | '/_authenticated/dashboard/application/$applicationId'
+    | '/_authenticated/dashboard/followup/$applicationId'
     | '/_authenticated/dashboard/job-applicants/$jobId'
     | '/_authenticated/dashboard/jobs/$jobId'
     | '/_authenticated/dashboard/jobs/new'
@@ -499,6 +512,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardJobApplicantsJobIdRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
+    '/_authenticated/dashboard/followup/$applicationId': {
+      id: '/_authenticated/dashboard/followup/$applicationId'
+      path: '/followup/$applicationId'
+      fullPath: '/dashboard/followup/$applicationId'
+      preLoaderRoute: typeof AuthenticatedDashboardFollowupApplicationIdRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
     '/_authenticated/dashboard/application/$applicationId': {
       id: '/_authenticated/dashboard/application/$applicationId'
       path: '/application/$applicationId'
@@ -530,6 +550,7 @@ interface AuthenticatedDashboardRouteChildren {
   AuthenticatedDashboardApplicantReportsApplicationIdRoute: typeof AuthenticatedDashboardApplicantReportsApplicationIdRoute
   AuthenticatedDashboardApplicantsApplicationIdRoute: typeof AuthenticatedDashboardApplicantsApplicationIdRoute
   AuthenticatedDashboardApplicationApplicationIdRoute: typeof AuthenticatedDashboardApplicationApplicationIdRoute
+  AuthenticatedDashboardFollowupApplicationIdRoute: typeof AuthenticatedDashboardFollowupApplicationIdRoute
   AuthenticatedDashboardJobApplicantsJobIdRoute: typeof AuthenticatedDashboardJobApplicantsJobIdRoute
   AuthenticatedDashboardJobsJobIdRoute: typeof AuthenticatedDashboardJobsJobIdRoute
   AuthenticatedDashboardJobsNewRoute: typeof AuthenticatedDashboardJobsNewRoute
@@ -548,6 +569,8 @@ const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
       AuthenticatedDashboardApplicantsApplicationIdRoute,
     AuthenticatedDashboardApplicationApplicationIdRoute:
       AuthenticatedDashboardApplicationApplicationIdRoute,
+    AuthenticatedDashboardFollowupApplicationIdRoute:
+      AuthenticatedDashboardFollowupApplicationIdRoute,
     AuthenticatedDashboardJobApplicantsJobIdRoute:
       AuthenticatedDashboardJobApplicantsJobIdRoute,
     AuthenticatedDashboardJobsJobIdRoute: AuthenticatedDashboardJobsJobIdRoute,

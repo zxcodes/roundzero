@@ -5,6 +5,7 @@ export const jobStatusSchema = z.enum(["draft", "open", "closed"]);
 export const applicationStatusSchema = z.enum([
   "applied",
   "pre_screening",
+  "followups_requested",
   "interview_invited",
   "interview_in_progress",
   "evaluated",
@@ -16,6 +17,7 @@ export const applicationStatusSchema = z.enum([
 export const notificationTypeSchema = z.enum([
   "application_status_changed",
   "application_withdrawn",
+  "followups_requested",
   "report_ready",
   "interview_invited",
   "interview_expired",

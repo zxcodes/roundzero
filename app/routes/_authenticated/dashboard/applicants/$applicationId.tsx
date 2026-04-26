@@ -78,6 +78,7 @@ export const Route = createFileRoute("/_authenticated/dashboard/applicants/$appl
 const APPLICATION_STAGES = [
   "applied",
   "pre_screening",
+  "followups_requested",
   "interview_invited",
   "interview_in_progress",
   "evaluated",
@@ -88,6 +89,7 @@ const APPLICATION_STAGES = [
 const STATUS_OPTIONS: { value: ApplicationStatus; label: string }[] = [
   { value: "applied", label: "Applied" },
   { value: "pre_screening", label: "Pre-screening" },
+  { value: "followups_requested", label: "Follow-up requested" },
   { value: "interview_invited", label: "Interview invited" },
   { value: "interview_in_progress", label: "Interview in progress" },
   { value: "evaluated", label: "Evaluated" },
@@ -105,6 +107,11 @@ const stageCopy = {
     badge: "Pre-screening",
     tone: "bg-slate-500/10 text-slate-700 dark:text-slate-300",
     dot: "bg-slate-500",
+  },
+  followups_requested: {
+    badge: "Follow-up requested",
+    tone: "bg-blue-500/10 text-blue-700 dark:text-blue-300",
+    dot: "bg-blue-500",
   },
   interview_invited: {
     badge: "Interview invited",

@@ -31,6 +31,18 @@ const recommendationMeta: Record<string, { label: string; className: string }> =
   },
 };
 
+const statusLabel: Record<string, string> = {
+  applied: "Applied",
+  pre_screening: "Pre-screening",
+  followups_requested: "Follow-up requested",
+  interview_invited: "Interview invited",
+  interview_in_progress: "Interview in progress",
+  evaluated: "Evaluated",
+  shortlisted: "Shortlisted",
+  rejected: "Rejected",
+  withdrawn: "Withdrawn",
+};
+
 function getOverallScore(reportScores: unknown): number | null {
   if (typeof reportScores === "string") {
     try {
@@ -135,7 +147,7 @@ export function CompanyJobApplicantsList({
                     {applicant.candidateName}
                   </span>
                   <Badge variant="outline" className="text-[11px]">
-                    {applicant.status}
+                    {statusLabel[applicant.status] ?? applicant.status}
                   </Badge>
                   {isEvaluated && recMeta ? (
                     <Badge variant="outline" className={recMeta.className}>

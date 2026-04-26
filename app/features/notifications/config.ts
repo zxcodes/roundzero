@@ -40,6 +40,14 @@ const interviewExpiredPayloadSchema = z.object({
   jobTitle: z.string().min(1),
 });
 
+const followupsRequestedPayloadSchema = z.object({
+  applicationId: z.string().uuid(),
+  jobId: z.string().uuid(),
+  jobTitle: z.string().min(1),
+  dueAt: z.string().datetime(),
+  questionCount: z.number().int().min(1),
+});
+
 const positionFilledPayloadSchema = z.object({
   applicationId: z.string().uuid(),
   jobId: z.string().uuid(),
@@ -58,6 +66,7 @@ export const notificationPayloadSchemas = {
   report_ready: reportReadyPayloadSchema,
   interview_invited: interviewInvitedPayloadSchema,
   interview_expired: interviewExpiredPayloadSchema,
+  followups_requested: followupsRequestedPayloadSchema,
   position_filled: positionFilledPayloadSchema,
   job_published: jobLifecyclePayloadSchema,
   job_archived: jobLifecyclePayloadSchema,
@@ -70,6 +79,7 @@ const notificationTone = {
   report_ready: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
   interview_invited: "bg-violet-500/10 text-violet-700 dark:text-violet-300",
   interview_expired: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  followups_requested: "bg-blue-500/10 text-blue-700 dark:text-blue-300",
   position_filled: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
   job_published: "bg-violet-500/10 text-violet-700 dark:text-violet-300",
   job_archived: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
@@ -82,6 +92,8 @@ const formatApplicationStatusLabel = (status: z.infer<typeof applicationStatusSc
       return "Applied";
     case "pre_screening":
       return "Pre-screening";
+    case "followups_requested":
+      return "Follow-up requested";
     case "interview_invited":
       return "Interview invited";
     case "interview_in_progress":
@@ -186,6 +198,28 @@ export const getNotificationPresentation = (notification: { type: string; payloa
       body: `The interview deadline has passed for ${payload.data.jobTitle}. If capacity allows, Zero may invite additional candidates from the pipeline.`,
       to: "/dashboard/application/$applicationId" as const,
       params: { applicationId: payload.data.applicationId },
+    };
+  }
+
+  if (type === "followups_requested") {
+    const payload = notificationPayloadSchemas.followups_requested.safeParse(
+      toRecord(notification.payload),
+    );
+    if (!payload.success) {
+      return null;
+    }
+
+    return {
+      type,
+      tone: notificationTone[type],
+      title: `More information requested for ${payload.data.jobTitle}`,
+      body: `Complete ${payload.data.questionCount} follow-up ${payload.data.questionCount === 1 ? "question" : "questions"} to continue your application.`,
+      to: "/dashboard/followup/$applicationId" as const,
+      params: { applicationId: payload.data.applicationId },
+      meta: {
+        ctaLabel: "Answer Follow-ups",
+        deadline: payload.data.dueAt,
+      },
     };
   }
 

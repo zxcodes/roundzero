@@ -50,6 +50,11 @@ const stageCopy = {
     tone: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
     blurb: "Your RoundZero interview is in progress",
   },
+  followups_requested: {
+    badge: "Follow-up requested",
+    tone: "bg-blue-500/10 text-blue-700 dark:text-blue-300",
+    blurb: "More information needed before interview decision",
+  },
   under_review: {
     badge: "Awaiting company decision",
     tone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
@@ -87,6 +92,8 @@ const formatDate = (date: Date | string) => {
 
 const toApplicationStage = (status: string): keyof typeof stageCopy => {
   switch (status) {
+    case "followups_requested":
+      return "followups_requested";
     case "interview_invited":
       return "interview_ready";
     case "interview_in_progress":

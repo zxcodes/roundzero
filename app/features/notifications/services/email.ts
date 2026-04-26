@@ -44,6 +44,7 @@ function getNotificationFromName(type: string): string {
       return "RoundZero Update";
     case "interview_invited":
     case "interview_expired":
+    case "followups_requested":
     case "application_withdrawn":
       return "RoundZero Alert";
     default:
@@ -61,11 +62,18 @@ const formatDeadline = (value: unknown) => {
     return null;
   }
 
-  return `Complete by ${date.toLocaleString("en-US", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZoneName: "short",
-  })}.`;
+  try {
+    return `Complete by ${date.toLocaleString("en-US", {
+      dateStyle: "medium",
+      timeStyle: "short",
+      timeZoneName: "short",
+    })}.`;
+  } catch {
+    return `Complete by ${date.toLocaleString("en-US", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    })}.`;
+  }
 };
 
 const getEmailPresentationMeta = (presentation: ReturnType<typeof getNotificationPresentation>) => {

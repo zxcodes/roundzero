@@ -6,4 +6,6 @@ RETURNING *;
 -- name: getPreEvaluationByApplicationId :one
 SELECT *
 FROM pre_evaluations
-WHERE application_id = $1;
+WHERE application_id = $1
+ORDER BY created_at DESC
+LIMIT 1;

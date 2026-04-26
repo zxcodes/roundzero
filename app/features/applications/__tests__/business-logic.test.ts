@@ -148,6 +148,60 @@ describe("application status transitions", () => {
     expect(updated!.status).toBe("interview_invited");
   });
 
+  it("pre_screening → followups_requested → pre_screening (valid)", async () => {
+    const { company } = await seedCompany();
+    const candidate = await seedUser({ role: "candidate" });
+    const job = await makeOpenJob(company.id);
+    const app = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: {},
+      status: "applied",
+    });
+    await updateApplicationStatus(sql, { id: app!.id, status: "pre_screening" });
+
+    expect(isValidTransition("pre_screening", "followups_requested")).toBe(true);
+    const followupRequested = await updateApplicationStatus(sql, {
+      id: app!.id,
+      status: "followups_requested",
+    });
+    expect(followupRequested).not.toBeNull();
+    expect(followupRequested!.status).toBe("followups_requested");
+
+    expect(isValidTransition("followups_requested", "pre_screening")).toBe(true);
+    const backToScreening = await updateApplicationStatus(sql, {
+      id: app!.id,
+      status: "pre_screening",
+    });
+    expect(backToScreening).not.toBeNull();
+    expect(backToScreening!.status).toBe("pre_screening");
+  });
+
+  it("followups_requested → withdrawn (valid)", async () => {
+    const { company } = await seedCompany();
+    const candidate = await seedUser({ role: "candidate" });
+    const job = await makeOpenJob(company.id);
+    const app = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: {},
+      status: "applied",
+    });
+    await updateApplicationStatus(sql, { id: app!.id, status: "pre_screening" });
+    await updateApplicationStatus(sql, { id: app!.id, status: "followups_requested" });
+
+    expect(isValidTransition("followups_requested", "withdrawn")).toBe(true);
+    const withdrawn = await updateApplicationStatus(sql, {
+      id: app!.id,
+      status: "withdrawn",
+    });
+
+    expect(withdrawn).not.toBeNull();
+    expect(withdrawn!.status).toBe("withdrawn");
+  });
+
   it("rejected is terminal — DB still allows update but business logic blocks it", async () => {
     const { company } = await seedCompany();
     const candidate = await seedUser({ role: "candidate" });

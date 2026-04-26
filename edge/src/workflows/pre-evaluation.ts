@@ -12,14 +12,24 @@ import { SLOP_DETECTION_SYSTEM_PROMPT } from "../prompts/slop-detection";
 import { getApplicationById, updateApplicationStatus } from "../queries/applications/queries_sql";
 import { getUserById } from "../queries/auth/queries_sql";
 import {
+  getApplicationFollowupByApplicationId,
+  upsertApplicationFollowup,
+} from "../queries/followups/queries_sql";
+import {
   countInterviewSlotsUsedByJob,
   createInterview,
   getInterviewByApplicationId,
 } from "../queries/interviews/queries_sql";
 import { getJobById } from "../queries/jobs/queries_sql";
-import { createNotification } from "../queries/notifications/queries_sql";
+import {
+  createNotification,
+  markNotificationEmailDelivered,
+  markNotificationEmailFailed,
+  markNotificationEmailSkipped,
+} from "../queries/notifications/queries_sql";
 import { createPreEvaluation } from "../queries/pre-evaluations/queries_sql";
 import { getDb } from "../shared/db";
+import { sendEmailViaResend } from "../shared/email";
 import { initializeInterviewAgent } from "../shared/interview-agent-client";
 import { createWorkflowLogger } from "../shared/logger";
 import { notificationPayloadSchemas } from "../shared/notifications-config";
@@ -156,6 +166,7 @@ function buildPreEvaluationPrompt(
   },
   resumeText: string,
   candidateMeta: Record<string, unknown>,
+  followupContext: string,
 ): string {
   const requirementsList = Array.isArray(job.requirements)
     ? job.requirements.map((r) => `- ${r}`).join("\n")
@@ -194,7 +205,59 @@ ${workHistory}
 
 ## Resume
 
-${resumeText.slice(0, 12000)}`;
+${resumeText.slice(0, 12000)}
+
+## Follow-up Answers
+
+${followupContext}`;
+}
+
+function buildFollowupContext(questionsRaw: unknown, answersRaw: unknown): string {
+  if (!Array.isArray(answersRaw) || answersRaw.length === 0) {
+    return "No submitted follow-up answers.";
+  }
+
+  const promptByQuestionId = new Map<string, string>();
+  if (Array.isArray(questionsRaw)) {
+    for (const question of questionsRaw) {
+      if (typeof question !== "object" || question === null) {
+        continue;
+      }
+
+      const id = "id" in question ? question.id : undefined;
+      const prompt = "prompt" in question ? question.prompt : undefined;
+      if (typeof id === "string" && typeof prompt === "string") {
+        promptByQuestionId.set(id, prompt);
+      }
+    }
+  }
+
+  const entries: string[] = [];
+  for (const answer of answersRaw) {
+    if (typeof answer !== "object" || answer === null) {
+      continue;
+    }
+
+    const questionId = "questionId" in answer ? answer.questionId : undefined;
+    const value = "value" in answer ? answer.value : undefined;
+    if (typeof questionId !== "string" || typeof value !== "string") {
+      continue;
+    }
+
+    const trimmed = value.trim();
+    if (!trimmed) {
+      continue;
+    }
+
+    const prompt = promptByQuestionId.get(questionId) ?? questionId;
+    entries.push(`- ${prompt}\n  Answer: ${trimmed}`);
+  }
+
+  if (entries.length === 0) {
+    return "No submitted follow-up answers.";
+  }
+
+  return entries.join("\n");
 }
 
 function buildSlopDetectionPrompt(
@@ -218,6 +281,144 @@ Skills: ${skills}
 ## Resume Text
 
 ${resumeText.slice(0, 8000)}`;
+}
+
+type FollowupQuestion = {
+  id: string;
+  prompt: string;
+  type: "single_choice" | "short_text" | "long_text";
+  required: boolean;
+  helpText?: string;
+  placeholder?: string;
+  options?: string[];
+  maxLength?: number;
+};
+
+function buildFollowupQuestions(input: {
+  jobTitle: string;
+  missingRequirements: string[];
+}): FollowupQuestion[] {
+  const questions: FollowupQuestion[] = [];
+
+  const missing = input.missingRequirements
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0)
+    .slice(0, 3);
+
+  for (let index = 0; index < missing.length; index += 1) {
+    const requirement = missing[index];
+    questions.push({
+      id: `gap_${index + 1}`,
+      prompt: `We could not find clear evidence for this requirement: ${requirement}. Can you share a concrete example from your work?`,
+      type: "long_text",
+      required: true,
+      helpText: "Describe what you did, your scope, and the outcome.",
+      placeholder: "Project context, your contribution, measurable result...",
+      maxLength: 1200,
+    });
+  }
+
+  if (questions.length < 2) {
+    questions.push({
+      id: "role_relevance",
+      prompt: `What makes you a strong fit for ${input.jobTitle}?`,
+      type: "long_text",
+      required: true,
+      helpText: "Reference role-relevant experience, not general motivation.",
+      placeholder: "Share specific examples tied to this role.",
+      maxLength: 1000,
+    });
+  }
+
+  questions.push({
+    id: "seniority_scope",
+    prompt: "How often have you owned decisions end-to-end in your recent work?",
+    type: "single_choice",
+    required: true,
+    options: [
+      "Frequently - I led projects and owned outcomes",
+      "Sometimes - I contributed to key decisions",
+      "Rarely - mostly execution support",
+      "Not yet in prior roles",
+    ],
+  });
+
+  questions.push({
+    id: "supporting_links",
+    prompt: "Add 1-3 links that support your examples (GitHub, portfolio, case study, docs).",
+    type: "short_text",
+    required: false,
+    helpText: "Optional, but helps us verify your examples quickly.",
+    placeholder: "https://...",
+    maxLength: 500,
+  });
+
+  return questions.slice(0, 5);
+}
+
+function formatDeadlineForEmail(value: Date): string {
+  try {
+    return value.toLocaleString("en-US", {
+      dateStyle: "medium",
+      timeStyle: "short",
+      timeZoneName: "short",
+    });
+  } catch {
+    return value.toLocaleString("en-US", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+  }
+}
+
+async function deliverNotificationEmailIfPossible(input: {
+  env: Env;
+  db: ReturnType<typeof getDb>;
+  notificationId: string;
+  recipientEmail: string | null;
+  subject: string;
+  body: string;
+  log: ReturnType<typeof createWorkflowLogger>;
+}) {
+  if (!input.recipientEmail) {
+    await markNotificationEmailSkipped(input.db, {
+      id: input.notificationId,
+      reason: "Recipient email unavailable",
+    });
+    return;
+  }
+
+  if (!input.env.RESEND_API_KEY || !input.env.RESEND_FROM_EMAIL) {
+    await markNotificationEmailSkipped(input.db, {
+      id: input.notificationId,
+      reason: "Email delivery is not configured",
+    });
+    return;
+  }
+
+  try {
+    const delivery = await sendEmailViaResend(
+      input.env.RESEND_API_KEY,
+      input.env.RESEND_FROM_EMAIL,
+      {
+        to: input.recipientEmail,
+        subject: input.subject,
+        text: input.body,
+      },
+    );
+
+    await markNotificationEmailDelivered(input.db, {
+      id: input.notificationId,
+      providerMessageId: delivery.providerMessageId,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown email delivery failure";
+    input.log.error(`Failed to send follow-up email: ${message}`);
+    await markNotificationEmailFailed(input.db, {
+      id: input.notificationId,
+      errorMessage: message,
+    });
+  }
 }
 
 export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluationPayload> {
@@ -382,6 +583,14 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
       "run_ai_pre_evaluation",
       async (): Promise<{ result: PreEvaluationResult; rawResponse: string }> => {
         log.step("ai", "Calling Workers AI for pre-evaluation");
+        const db = getDb();
+        const followup = await getApplicationFollowupByApplicationId(db, {
+          applicationId,
+        });
+        const followupContext = followup
+          ? buildFollowupContext(followup.questions, followup.answers)
+          : "No submitted follow-up answers.";
+
         const systemPrompt = getPromptForRoleType(jobClassification.roleType);
         const userPrompt = buildPreEvaluationPrompt(
           {
@@ -391,6 +600,7 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
           },
           resumeText,
           applicationData.application.metadata ?? {},
+          followupContext,
         );
 
         const startTime = Date.now();
@@ -467,6 +677,88 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
         return { action: "hold" as const };
       }
 
+      if (aiResult.result.nextStep === "ask_followups") {
+        const db = getDb();
+        const existingFollowup = await getApplicationFollowupByApplicationId(db, {
+          applicationId,
+        });
+
+        if (existingFollowup?.status === "submitted") {
+          log.result("decide", {
+            action: "hold",
+            reason: "followup_already_submitted",
+          });
+          return { action: "hold" as const };
+        }
+
+        const dueAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
+        const questions = buildFollowupQuestions({
+          jobTitle: applicationData.job.title,
+          missingRequirements: aiResult.result.missingRequirements,
+        });
+
+        const followup = await upsertApplicationFollowup(db, {
+          applicationId,
+          questions,
+          answers: [],
+          status: "pending",
+          dueAt,
+          submittedAt: null,
+        });
+
+        if (!followup) {
+          throw new Error(
+            `Failed to create follow-up questionnaire for application: ${applicationId}`,
+          );
+        }
+
+        await updateApplicationStatus(db, {
+          id: applicationId,
+          status: "followups_requested",
+        });
+
+        const candidate = await getUserById(db, { id: applicationData.application.candidateId });
+        if (candidate) {
+          const payload = notificationPayloadSchemas.followups_requested.parse({
+            applicationId,
+            jobId: applicationData.job.id,
+            jobTitle: applicationData.job.title,
+            dueAt: dueAt.toISOString(),
+            questionCount: questions.length,
+          });
+
+          const notification = await createNotification(db, {
+            userId: candidate.id,
+            type: "followups_requested",
+            payload,
+          });
+
+          if (notification) {
+            await deliverNotificationEmailIfPossible({
+              env: this.env,
+              db,
+              notificationId: notification.id,
+              recipientEmail: candidate.email,
+              subject: `More information requested for ${applicationData.job.title}`,
+              body: [
+                `We need a few more details to continue your application for ${applicationData.job.title}.`,
+                "",
+                `Please complete ${questions.length} follow-up questions in RoundZero.`,
+                `Deadline: ${formatDeadlineForEmail(dueAt)}`,
+              ].join("\n"),
+              log,
+            });
+          }
+        }
+
+        log.result("decide", {
+          action: "followups_requested",
+          questionCount: questions.length,
+          dueAt: dueAt.toISOString(),
+        });
+        return { action: "followups_requested" as const };
+      }
+
       const db = getDb();
       const job = applicationData.job;
       const existingInterview = await getInterviewByApplicationId(db, {
@@ -537,8 +829,7 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
         return { action: "quota_exhausted" as const };
       }
 
-      const interviewType =
-        aiResult.result.nextStep === "interview_invited" ? "full" : "quick_eval";
+      const interviewType = "full";
       const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
       const interview = await createInterview(db, {
         applicationId,

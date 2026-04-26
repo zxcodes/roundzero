@@ -59,7 +59,7 @@ export const Route = createFileRoute("/_authenticated/dashboard/application/$app
 
 type Application = NonNullable<Awaited<ReturnType<typeof getMyApplicationDetail>>>;
 
-const HAPPY_PATH_STAGES = ["applied", "interviewing", "evaluated"] as const;
+const HAPPY_PATH_STAGES = ["applied", "followups_requested", "interviewing", "evaluated"] as const;
 
 const stageCopy = {
   applied: {
@@ -75,6 +75,13 @@ const stageCopy = {
     tone: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
     summary: "You have been invited to a RoundZero interview for this role.",
     nextStep: "Complete the interview before the deadline to keep your evaluation slot.",
+  },
+  followups_requested: {
+    label: "Follow-up requested",
+    badge: "Follow-up requested",
+    tone: "bg-blue-500/10 text-blue-700 dark:text-blue-300",
+    summary: "We need a few more details to continue evaluating your application.",
+    nextStep: "Complete the follow-up questionnaire before the deadline.",
   },
   evaluated: {
     label: "Awaiting company decision",
@@ -123,6 +130,8 @@ const formatDateShort = (date: Date | string) => {
 
 const toApplicationStage = (status: string): keyof typeof stageCopy => {
   switch (status) {
+    case "followups_requested":
+      return "followups_requested";
     case "interview_invited":
     case "interview_in_progress":
       return "interviewing";
@@ -259,6 +268,7 @@ function CandidateApplicationDetailPage() {
   const jobStateLabel = getJobStateLabel(application);
   const canWithdraw =
     (application.status === "applied" ||
+      application.status === "followups_requested" ||
       application.status === "interview_invited" ||
       application.status === "interview_in_progress") &&
     !application.companyOwnerDeleted;
@@ -415,6 +425,16 @@ function CandidateApplicationDetailPage() {
             </Link>
           </Button>
         )}
+        {application.status === "followups_requested" && !application.companyOwnerDeleted ? (
+          <Button size="sm" asChild>
+            <Link
+              to="/dashboard/followup/$applicationId"
+              params={{ applicationId: application.id }}
+            >
+              Answer follow-up questions
+            </Link>
+          </Button>
+        ) : null}
         {canWithdraw ? (
           <AlertDialog>
             <AlertDialogTrigger asChild>

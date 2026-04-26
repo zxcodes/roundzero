@@ -459,11 +459,17 @@ SELECT a.id AS application_id,
        pe.next_step,
        pe.score
 FROM applications a
-JOIN pre_evaluations pe ON pe.application_id = a.id
+JOIN LATERAL (
+  SELECT p.next_step, p.score, p.created_at
+  FROM pre_evaluations p
+  WHERE p.application_id = a.id
+  ORDER BY p.created_at DESC
+  LIMIT 1
+) pe ON TRUE
 JOIN users u ON u.id = a.candidate_id AND u.deleted_at IS NULL
 WHERE a.job_id = $1
   AND a.status = 'pre_screening'
-  AND pe.next_step IN ('interview_invited', 'ask_followups')
+  AND pe.next_step = 'interview_invited'
   AND NOT EXISTS (
     SELECT 1
     FROM interviews i

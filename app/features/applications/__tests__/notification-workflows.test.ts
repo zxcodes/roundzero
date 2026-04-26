@@ -104,4 +104,64 @@ describe("application notification workflows", () => {
     expect(notifications[0].emailDeliverySentAt).toBeNull();
     expect(notifications[0].emailDeliveryError).toContain("Resend rejected request");
   });
+
+  it("sends followups_requested notification with questionnaire metadata", async () => {
+    const { company, owner } = await seedCompany({
+      name: "Flow Co",
+    });
+    const candidate = await seedUser({
+      role: "candidate",
+      name: "Sam Carter",
+    });
+    const { job } = await seedJob({
+      companyId: company.id,
+      title: "Operations Manager",
+      status: "open",
+    });
+
+    const application = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id, "ops-resume.pdf"),
+      metadata: {},
+      status: "pre_screening",
+    });
+    expect(application).not.toBeNull();
+    if (!application) {
+      return;
+    }
+
+    await updateApplicationStatusWorkflow(
+      sql,
+      {
+        userId: owner.id,
+        applicationId: application.id,
+        status: "followups_requested",
+      },
+      {
+        sendNotificationEmail: async () => {
+          throw new Error("Resend rejected request");
+        },
+      },
+    );
+
+    const notifications = await getNotificationsByUser(sql, {
+      userId: candidate.id,
+      limit: "10",
+    });
+
+    expect(notifications).toHaveLength(1);
+    expect(notifications[0].type).toBe("followups_requested");
+    expect(notifications[0].readAt).toBeNull();
+    expect(notifications[0].payload).toEqual({
+      applicationId: application.id,
+      jobId: job.id,
+      jobTitle: "Operations Manager",
+      dueAt: expect.any(String),
+      questionCount: 3,
+    });
+    const payload = notifications[0].payload as { dueAt: string };
+    expect(Number.isNaN(new Date(payload.dueAt).getTime())).toBe(false);
+    expect(notifications[0].emailDeliveryStatus).toBe("failed");
+  });
 });

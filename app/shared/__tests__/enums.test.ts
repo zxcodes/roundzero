@@ -48,6 +48,7 @@ describe("applicationStatusSchema", () => {
     for (const status of [
       "applied",
       "pre_screening",
+      "followups_requested",
       "interview_invited",
       "interview_in_progress",
       "evaluated",
@@ -114,6 +115,8 @@ describe("isValidTransition", () => {
   it("allows valid forward transitions", () => {
     expect(isValidTransition("applied", "pre_screening")).toBe(true);
     expect(isValidTransition("applied", "rejected")).toBe(true);
+    expect(isValidTransition("pre_screening", "followups_requested")).toBe(true);
+    expect(isValidTransition("followups_requested", "pre_screening")).toBe(true);
     expect(isValidTransition("pre_screening", "interview_invited")).toBe(true);
     expect(isValidTransition("interview_invited", "rejected")).toBe(true);
     expect(isValidTransition("evaluated", "rejected")).toBe(true);
@@ -127,6 +130,7 @@ describe("isValidTransition", () => {
 
   it("rejects skipping steps", () => {
     expect(isValidTransition("applied", "evaluated")).toBe(false);
+    expect(isValidTransition("followups_requested", "evaluated")).toBe(false);
   });
 
   it("rejects same-status transitions", () => {
@@ -148,6 +152,7 @@ describe("isValidTransition", () => {
 
   it("allows withdrawal from applied and interviewing", () => {
     expect(isValidTransition("applied", "withdrawn")).toBe(true);
+    expect(isValidTransition("followups_requested", "withdrawn")).toBe(true);
     expect(isValidTransition("interview_invited", "withdrawn")).toBe(true);
   });
 

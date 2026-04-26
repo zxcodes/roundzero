@@ -6,6 +6,10 @@ import {
 } from "@/features/candidates/queries/queries_sql";
 import { getCompanyById, getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
 import {
+  getApplicationFollowupByApplicationId,
+  upsertApplicationFollowup,
+} from "@/features/followups/queries/queries_sql";
+import {
   createInterview,
   getInterviewByApplicationId,
 } from "@/features/interviews/queries/queries_sql";
@@ -25,6 +29,84 @@ import {
   getApplicationByJobAndCandidate,
   updateApplicationStatus as updateApplicationStatusQuery,
 } from "../queries/queries_sql";
+
+type ManualFollowupQuestion = {
+  id: string;
+  prompt: string;
+  type: "single_choice" | "short_text" | "long_text";
+  required: boolean;
+  helpText?: string;
+  placeholder?: string;
+  options?: string[];
+  maxLength?: number;
+};
+
+const toRequirementList = (value: unknown): string[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
+};
+
+const buildManualFollowupQuestions = (input: {
+  jobTitle: string;
+  jobRequirements: unknown;
+  missingRequirements: string[];
+}): ManualFollowupQuestion[] => {
+  const targetedRequirements =
+    input.missingRequirements.length > 0
+      ? input.missingRequirements
+      : toRequirementList(input.jobRequirements).slice(0, 2);
+
+  const questions: ManualFollowupQuestion[] = targetedRequirements
+    .slice(0, 3)
+    .map((requirement, index) => ({
+      id: `gap_${index + 1}`,
+      prompt: `Share one concrete example showing your experience with: ${requirement}.`,
+      type: "long_text",
+      required: true,
+      helpText: "Include your exact contribution, scope, and measurable outcomes.",
+      placeholder: "Context, what you owned, and the impact...",
+      maxLength: 1200,
+    }));
+
+  if (questions.length < 2) {
+    questions.push({
+      id: "role_fit",
+      prompt: `What makes you a strong fit for ${input.jobTitle}?`,
+      type: "long_text",
+      required: true,
+      helpText: "Tie your answer to the responsibilities and requirements.",
+      placeholder: "Use specific examples from recent work.",
+      maxLength: 1000,
+    });
+  }
+
+  questions.push({
+    id: "ownership_scope",
+    prompt: "How often do you lead workstreams or decisions end-to-end?",
+    type: "single_choice",
+    required: true,
+    options: [
+      "Frequently - I own goals, execution, and outcomes",
+      "Sometimes - I co-own key decisions",
+      "Rarely - mostly execution support",
+      "Not yet in prior roles",
+    ],
+  });
+
+  questions.push({
+    id: "proof_links",
+    prompt: "Optional: share links that validate your examples (portfolio, docs, case studies).",
+    type: "short_text",
+    required: false,
+    placeholder: "https://...",
+    maxLength: 500,
+  });
+
+  return questions.slice(0, 5);
+};
 
 export const applyToJobWorkflow = async (
   db: Sql,
@@ -196,6 +278,76 @@ export const updateApplicationStatusWorkflow = async (
     const notification = await createNotification(db, {
       userId: application.candidateId,
       type: "interview_invited",
+      payload,
+    });
+
+    if (notification) {
+      const candidate = await getUserById(db, { id: application.candidateId });
+      await deliverNotificationEmail(db, {
+        notification,
+        recipient: candidate ? { email: candidate.email } : null,
+        sendEmail: options?.sendNotificationEmail ?? sendNotificationEmailViaResend,
+      });
+    }
+
+    return { application: updated };
+  }
+
+  if (currentStatus !== input.status && input.status === "followups_requested") {
+    const latestPreEvaluation = await getPreEvaluationByApplicationId(db, {
+      applicationId: application.id,
+    });
+    const questions = buildManualFollowupQuestions({
+      jobTitle: application.jobTitle,
+      jobRequirements: job.requirements,
+      missingRequirements: latestPreEvaluation?.missingRequirements ?? [],
+    });
+    const dueAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
+
+    const existingFollowup = await getApplicationFollowupByApplicationId(db, {
+      applicationId: application.id,
+    });
+    const followup =
+      existingFollowup ??
+      (await upsertApplicationFollowup(db, {
+        applicationId: application.id,
+        questions,
+        answers: [],
+        status: "pending",
+        dueAt,
+        submittedAt: null,
+      }));
+
+    if (!followup) {
+      throw new Error("Failed to prepare follow-up questionnaire");
+    }
+
+    if (existingFollowup) {
+      const refreshed = await upsertApplicationFollowup(db, {
+        applicationId: application.id,
+        questions,
+        answers: existingFollowup.status === "submitted" ? [] : existingFollowup.answers,
+        status: "pending",
+        dueAt,
+        submittedAt: null,
+      });
+
+      if (!refreshed) {
+        throw new Error("Failed to refresh follow-up questionnaire");
+      }
+    }
+
+    const payload = notificationPayloadSchemas.followups_requested.parse({
+      applicationId: application.id,
+      jobId: application.jobId,
+      jobTitle: application.jobTitle,
+      dueAt: dueAt.toISOString(),
+      questionCount: questions.length,
+    });
+
+    const notification = await createNotification(db, {
+      userId: application.candidateId,
+      type: "followups_requested",
       payload,
     });
 

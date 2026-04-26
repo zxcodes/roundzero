@@ -139,6 +139,25 @@ CREATE INDEX idx_notifications_unread
   ON notifications(user_id, read_at)
   WHERE read_at IS NULL;
 
+-- Follow-up questionnaires requested after pre-evaluation
+CREATE TABLE application_followups (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  application_id UUID NOT NULL UNIQUE REFERENCES applications(id) ON DELETE RESTRICT,
+  questions     JSONB NOT NULL DEFAULT '[]',
+  answers       JSONB NOT NULL DEFAULT '[]',
+  status        TEXT NOT NULL DEFAULT 'pending',
+  due_at        TIMESTAMPTZ NOT NULL,
+  submitted_at  TIMESTAMPTZ,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_application_followups_application
+  ON application_followups(application_id);
+
+CREATE INDEX idx_application_followups_status
+  ON application_followups(status);
+
 -- Interviews: each maps to a Durable Object instance
 CREATE TABLE interviews (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -158,7 +177,7 @@ CREATE INDEX idx_interviews_application ON interviews(application_id);
 -- Pre-evaluations: lightweight AI pre-screening results
 CREATE TABLE pre_evaluations (
   id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  application_id        UUID NOT NULL REFERENCES applications(id) ON DELETE RESTRICT UNIQUE,
+  application_id        UUID NOT NULL REFERENCES applications(id) ON DELETE RESTRICT,
   score                 INTEGER NOT NULL CHECK (score >= 0 AND score <= 100),
   missing_requirements  JSONB NOT NULL DEFAULT '[]',
   confidence            TEXT NOT NULL,

@@ -20,6 +20,23 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
+-- Name: application_followups; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.application_followups (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    application_id uuid NOT NULL,
+    questions jsonb DEFAULT '[]'::jsonb NOT NULL,
+    answers jsonb DEFAULT '[]'::jsonb NOT NULL,
+    status text DEFAULT 'pending'::text NOT NULL,
+    due_at timestamp with time zone NOT NULL,
+    submitted_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: applications; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -229,6 +246,22 @@ CREATE TABLE public.users (
 
 
 --
+-- Name: application_followups application_followups_application_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.application_followups
+    ADD CONSTRAINT application_followups_application_id_key UNIQUE (application_id);
+
+
+--
+-- Name: application_followups application_followups_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.application_followups
+    ADD CONSTRAINT application_followups_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: applications applications_job_id_candidate_id_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -309,14 +342,6 @@ ALTER TABLE ONLY public.notifications
 
 
 --
--- Name: pre_evaluations pre_evaluations_application_id_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.pre_evaluations
-    ADD CONSTRAINT pre_evaluations_application_id_key UNIQUE (application_id);
-
-
---
 -- Name: pre_evaluations pre_evaluations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -362,6 +387,20 @@ ALTER TABLE ONLY public.users
 
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: idx_application_followups_application; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_application_followups_application ON public.application_followups USING btree (application_id);
+
+
+--
+-- Name: idx_application_followups_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_application_followups_status ON public.application_followups USING btree (status);
 
 
 --
@@ -460,6 +499,14 @@ CREATE INDEX idx_reports_application ON public.reports USING btree (application_
 --
 
 CREATE UNIQUE INDEX idx_users_email ON public.users USING btree (lower(email));
+
+
+--
+-- Name: application_followups application_followups_application_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.application_followups
+    ADD CONSTRAINT application_followups_application_id_fkey FOREIGN KEY (application_id) REFERENCES public.applications(id) ON DELETE RESTRICT;
 
 
 --
