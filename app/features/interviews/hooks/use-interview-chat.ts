@@ -3,13 +3,14 @@ import { useAgent } from "agents/react";
 import type { UIMessage } from "ai";
 
 const getEdgeHost = () => {
-  if (typeof window === "undefined") {
-    const value = process.env.VITE_EDGE_WORKER_URL ?? process.env.EDGE_WORKER_URL;
-    return value && value.length > 0 ? value : "http://localhost:8787";
-  }
+  const fallback = "http://localhost:8787";
 
-  const value = import.meta.env.VITE_EDGE_WORKER_URL;
-  return value && value.length > 0 ? value : "http://localhost:8787";
+  const envValue =
+    typeof window === "undefined"
+      ? (process.env.VITE_EDGE_WORKER_URL ?? process.env.EDGE_WORKER_URL)
+      : import.meta.env.VITE_EDGE_WORKER_URL;
+
+  return envValue?.length ? envValue : fallback;
 };
 
 const readMessageText = (message: UIMessage) => {
