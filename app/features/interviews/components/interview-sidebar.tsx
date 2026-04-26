@@ -47,8 +47,9 @@ export function InterviewSidebar({
           <p className="text-sm font-semibold tracking-wide">Interviews</p>
         </div>
         <p className="px-1 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-          Live interview sessions
+          All sessions
         </p>
+   
       </SidebarHeader>
 
       <SidebarContent>
