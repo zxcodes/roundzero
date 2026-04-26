@@ -392,6 +392,30 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
   }
 
   @callable()
+  async markStarted(): Promise<{ started: boolean }> {
+    if (!this.state.interviewId && this.name) {
+      await this.hydrateContextFromDb(this.name);
+    }
+
+    if (!this.state.interviewId) {
+      return { started: false };
+    }
+
+    if (this.state.status !== "pending") {
+      return { started: this.state.status === "in_progress" || this.state.status === "completed" };
+    }
+
+    this.setState({
+      ...this.state,
+      status: "in_progress",
+      startedAt: this.state.startedAt ?? toNow(),
+      updatedAt: toNow(),
+    });
+
+    return { started: true };
+  }
+
+  @callable()
   async kickoff(): Promise<{ greeted: boolean }> {
     if (!this.state.interviewId && this.name) {
       await this.hydrateContextFromDb(this.name);
@@ -485,7 +509,7 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
   }
 
   async onChatMessage(onFinish: StreamTextOnFinishCallback<ToolSet>) {
-    if (!this.state.interviewId && this.name) {
+    if (this.name) {
       await this.hydrateContextFromDb(this.name);
     }
 

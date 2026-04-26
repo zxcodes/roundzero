@@ -47,19 +47,41 @@ export function useInterviewChat(interviewId: string) {
     agent: "InterviewAgent",
     name: interviewId,
     host: getEdgeHost(),
+    onIdentityChange: () => {
+      // Expected in dev during HMR/reconnect churn; identity is derived by server-side routing.
+    },
   });
 
   const chat = useAgentChat({
     agent,
   });
 
-  const messages = chat.messages
-    .filter((message) => message.role === "assistant" || message.role === "user")
-    .map((message) => ({
-      role: message.role === "assistant" ? ("assistant" as const) : ("candidate" as const),
-      content: readMessageText(message),
-    }))
-    .filter((message) => message.content.length > 0);
+  const messages: Array<{ id: string; role: "assistant" | "candidate"; content: string }> = [];
+
+  for (const message of chat.messages) {
+    if (message.role !== "assistant" && message.role !== "user") {
+      continue;
+    }
+
+    const content = readMessageText(message);
+    if (content.length === 0) {
+      continue;
+    }
+
+    const role = message.role === "assistant" ? ("assistant" as const) : ("candidate" as const);
+    const previous = messages[messages.length - 1];
+    if (role === "assistant" && previous?.role === "assistant") {
+      if (previous.content.trim() === content.trim()) {
+        continue;
+      }
+    }
+
+    messages.push({
+      id: message.id,
+      role,
+      content,
+    });
+  }
 
   const kickoff = async () => {
     const rpc = agent.stub as unknown as InterviewAgentRpc;

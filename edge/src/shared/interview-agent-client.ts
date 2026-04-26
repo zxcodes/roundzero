@@ -32,6 +32,11 @@ export const cancelInterviewAgentSession = async (env: Env, interviewId: string)
   return await stub.cancelInterview();
 };
 
+export const markInterviewAgentStarted = async (env: Env, interviewId: string) => {
+  const stub = await createAgentStub(env, interviewId);
+  return await stub.markStarted();
+};
+
 export const getInterviewAgentState = async (env: Env, interviewId: string) => {
   const stub = await createAgentStub(env, interviewId);
   return await stub.getInterviewState();

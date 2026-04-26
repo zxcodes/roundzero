@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 type InterviewChatProps = {
   messages: Array<{
+    id: string;
     role: "assistant" | "candidate";
     content: string;
   }>;
@@ -16,18 +17,43 @@ type InterviewChatProps = {
 
 export function InterviewChat({ messages, canSend, isStreaming, onSend }: InterviewChatProps) {
   const [content, setContent] = useState("");
-  const transcriptRef = useRef<HTMLDivElement>(null);
+  const transcriptRef = useRef<HTMLDivElement | null>(null);
+  const transcriptEndRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const wasStreamingRef = useRef(false);
+  const lastMessageContent = messages[messages.length - 1]?.content ?? "";
+
+  const scrollChatToBottom = () => {
+    transcriptEndRef.current?.scrollIntoView({ block: "end" });
+  };
 
   useEffect(() => {
-    const viewport = transcriptRef.current;
-    if (!viewport) {
+    const frame = requestAnimationFrame(() => {
+      scrollChatToBottom();
+    });
+
+    return () => {
+      cancelAnimationFrame(frame);
+    };
+  }, [messages.length, lastMessageContent]);
+
+  useEffect(() => {
+    if (!isStreaming) {
       return;
     }
 
-    viewport.scrollTop = viewport.scrollHeight;
-  }, [messages.length]);
+    let frame = 0;
+    const syncWhileStreaming = () => {
+      scrollChatToBottom();
+      frame = requestAnimationFrame(syncWhileStreaming);
+    };
+
+    frame = requestAnimationFrame(syncWhileStreaming);
+
+    return () => {
+      cancelAnimationFrame(frame);
+    };
+  }, [isStreaming]);
 
   useEffect(() => {
     if (!wasStreamingRef.current && isStreaming) {
@@ -76,12 +102,12 @@ export function InterviewChat({ messages, canSend, isStreaming, onSend }: Interv
       <div ref={transcriptRef} className="min-h-0 flex-1 overflow-y-auto">
         {messages.length > 0 ? (
           <div className="space-y-5 px-4 py-5 md:px-6">
-            {messages.map((message, index) => {
+            {messages.map((message) => {
               const isCandidate = message.role === "candidate";
 
               return (
                 <div
-                  key={`${message.role}-${index}`}
+                  key={message.id}
                   className={isCandidate ? "flex justify-end" : "flex justify-start"}
                 >
                   <div className="max-w-[88%] md:max-w-[72%]">
@@ -101,6 +127,7 @@ export function InterviewChat({ messages, canSend, isStreaming, onSend }: Interv
                 </div>
               );
             })}
+            <div ref={transcriptEndRef} />
           </div>
         ) : (
           <div className="flex h-full min-h-[18rem] flex-col items-center justify-center gap-3 p-10 text-center text-muted-foreground">
