@@ -1,4 +1,5 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { InterviewWorkspaceSkeleton } from "@/components/route-skeletons";
 import { getMyInterviews } from "@/features/interviews/server/functions";
 
 export const Route = createFileRoute("/_authenticated/interview")({
@@ -11,13 +12,14 @@ export const Route = createFileRoute("/_authenticated/interview")({
     const interviews = await getMyInterviews();
     return { interviews };
   },
+  pendingComponent: InterviewWorkspaceSkeleton,
   component: InterviewWorkspaceLayout,
 });
 
 function InterviewWorkspaceLayout() {
   return (
-    <div className="min-h-[calc(100vh-1rem)] overflow-hidden rounded-3xl border bg-background shadow-sm animate-fade-in">
-      <div className="h-full min-h-[calc(100vh-1rem)]">
+    <div className="h-[100dvh] min-h-0 bg-background animate-fade-in">
+      <div className="h-full min-h-0">
         <Outlet />
       </div>
     </div>

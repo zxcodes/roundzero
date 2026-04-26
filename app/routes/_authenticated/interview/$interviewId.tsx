@@ -102,7 +102,7 @@ function InterviewWorkspacePage() {
 
   const status = statusConfig[interview.status] ?? { label: interview.status };
 
-  const canSend = interview.status === "pending" || interview.status === "in_progress";
+  const canSend = interview.status === "in_progress";
 
   const onStart = () => {
     startMutation.mutate({ data: { interviewId: interview.id } });
@@ -128,7 +128,7 @@ function InterviewWorkspacePage() {
       return;
     }
 
-    if (interview.status !== "in_progress" && interview.status !== "pending") {
+    if (interview.status !== "in_progress") {
       return;
     }
 
@@ -147,7 +147,7 @@ function InterviewWorkspacePage() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-2.5rem)] min-h-0 w-full overflow-hidden border-t bg-background text-foreground">
+    <div className="flex h-full min-h-0 w-full overflow-hidden border-t bg-background text-foreground">
       <InterviewSidebar interviewId={interview.id} interviews={interviews} />
 
       <section className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -222,7 +222,7 @@ function InterviewWorkspacePage() {
           </div>
         </header>
 
-        <div className="min-h-0 flex-1 p-3 md:p-5">
+        <div className="min-h-0 flex-1">
           <InterviewChat
             messages={chat.messages}
             canSend={canSend}

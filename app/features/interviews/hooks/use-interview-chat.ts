@@ -17,18 +17,6 @@ const readMessageText = (message: UIMessage) => {
     return "";
   }
 
-  const isToolLeakText = (value: string) => {
-    const compact = value.replace(/\s+/g, " ").trim();
-    if (!compact.startsWith("{") || !compact.endsWith("}")) {
-      return false;
-    }
-
-    const hasFunctionType = /"type"\s*:\s*"function"/i.test(compact);
-    const hasFunctionName = /"name"\s*:\s*"[a-z0-9_-]+"/i.test(compact);
-    const hasParameters = /"parameters"\s*:/i.test(compact);
-    return hasFunctionType && hasFunctionName && hasParameters;
-  };
-
   return message.parts
     .map((part) => {
       // Hide every tool-* part (tool-call, tool-input-streaming, tool-output, etc.)
@@ -37,9 +25,6 @@ const readMessageText = (message: UIMessage) => {
         return "";
       }
       if (part.type === "text" && typeof part.text === "string") {
-        if (isToolLeakText(part.text)) {
-          return "";
-        }
         return part.text;
       }
       return "";
