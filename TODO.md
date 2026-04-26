@@ -13,7 +13,6 @@
 - add a default expiry time for agent interviews. bc we can't make companies wait based on candidate's avaiability. think about it briefly. 
 - mouse back gesture doesn't work. might be something to do with the tanstack router.
 - show number of applicants on each job detail.
-- use tanstack ai libraries for everything ai.
 - think more about the duration from first report to last report generation bc it will depend on the candidate. think if we need to add an expiry or something and pass it to the next candidate?
 - you just post a job and you will be notified with the reports. (major overhaul on company side.), also check how long should it take for reports to arrive, let companies choose how many reports they wanna see per job while creating it etc.
 - add a job creation shortcut using "N" also indicate it on the button.
@@ -27,9 +26,7 @@
 - for company full report, they should also see what they did in the chat, detecting ai responses, pasting, etc.
 - add a feedback option for people or requesting features etc.
 - add score breakdown. 
-- let people connect their github so we can fetch their contribution graph. (adds to the overall result and we can also show it in detailed report view)
 - add a really good resume and candidate test suite to pass thru the ai.
-- start with mock ui for ai layer. add it now. (for both candidate, and companies)
 - Basic analytics, company interest (like, dislike(why)? stretch)
 
 
@@ -117,22 +114,9 @@
 
 ## Future Stuff (Not included in initial release)
 
+- let people connect their github so we can fetch their contribution graph. (adds to the overall result and we can also show it in detailed report view)
 - add save job feature for candidates. 
 - companies might need api access to list jobs? iframes? too much for now? think about it.
 - think more about company questions (gender, race etc the other platforms ask.) (AGENT-OFFLOAD)
 - improve work experience fields, add skills, site location etc etc. (AGENT-OFFLOAD)
 - add applying limits (x number of jobs in a day or week) (Unnecessary)
-
-## Checklist (STALE)
-
-- Candidate Flow:
-  - Can signup, 
-  - can browse, and apply to jobs (90% done).
-  - Can review their applied applications (with apply time snapshot)
-  - Can get notified about their applications (not sure about the notification navigation & email delivery is still untested)
-  
-- Company Flow:
-  - Can signup.
-  - Can create profile (logo, details, tech stack, head count, etc).
-  - Can post a job (draft, open, archived etc)
-  - Can add questions while posting a job.
