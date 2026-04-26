@@ -1,9 +1,7 @@
 ## TODO
 
-- the agent doesnt greet by default even after starting the interview. it mush greet with relevant info about the candidate.
 - the agent interview feels off. the entire interview should be based on the actual candidate's profile, dynamic followups etc like a full fledged conv. also check if the agent is asking company's questions (mandatory and all things I expected from the agent.)
 - full report needs a lot of work including overall ux, ui, representation, accuracy, for ex (even if an interview goes bad, the report seems to show good points. prob in llm layer)
-- when an interview starts or ends, the ui actions don't update. need to refresh page to see if an interview was ended. the entire chat ui should update in real time.
 - in post eval, refine the scores using the actual agent conv and add it to the final report.
 - update seed to include much more data for better agent evaluation with multiple jobs having company questions (relocation, visa, etc etc)
 - think about context compaction to save on costs.
@@ -31,6 +29,8 @@
 
 
 
+<!--- when an interview starts or ends, the ui actions don't update. need to refresh page to see if an interview was ended. the entire chat ui should update in real time.-->
+<!--- the agent doesnt greet by default even after starting the interview. it mush greet with relevant info about the candidate.-->
 <!--- pre-evaluation: make system prompt more detail. instead of just looking at resume text, also consider what the candidate has done in terms of dx, tech debt, that should add up to the score.
 - pre-evaluation: detect ai filled slop resumes, compare two snapshots (profile and resume, find out differences), every little thing should add up to the score. and maybe save entire pre-eval timeline? to show the company's full report? or what we have is already enough? think.-->
 <!--- check react query integration, queries don't seem to refetch on tab focus, etc.-->
