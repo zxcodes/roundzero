@@ -3,6 +3,7 @@ import { callable } from "agents";
 import {
   convertToModelMessages,
   generateText,
+  hasToolCall,
   type StreamTextOnFinishCallback,
   stepCountIs,
   streamText,
@@ -564,7 +565,7 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
       system: this.buildSystemPrompt(),
       messages: await convertToModelMessages(this.messages),
       onFinish,
-      stopWhen: stepCountIs(6),
+      stopWhen: [stepCountIs(6), hasToolCall("end_interview")],
       tools: {
         evaluate_answer: tool({
           description:
