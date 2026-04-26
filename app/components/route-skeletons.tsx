@@ -873,15 +873,15 @@ export function DashboardApplicantReviewSkeleton() {
  */
 export function InterviewWorkspaceSkeleton() {
   return (
-    <div className="flex h-full min-h-0 w-full gap-2 bg-background text-foreground animate-fade-in">
+    <div className="flex h-full min-h-0 w-full gap-2 bg-background p-2 text-foreground animate-fade-in">
       <aside className="hidden h-full w-72 shrink-0 rounded-2xl bg-sidebar text-sidebar-foreground shadow-sm ring-1 ring-sidebar-border lg:flex lg:min-h-0 lg:flex-col">
         <div className="p-2">
           <Skeleton className="h-4 w-24" />
           <Skeleton className="mt-1.5 h-3 w-36" />
         </div>
-        <div className="space-y-2 p-2">
+        <div className="space-y-2.5 p-2">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="rounded-xl bg-sidebar-accent p-3">
+            <div key={i} className="rounded-xl bg-sidebar-accent p-3.5">
               <Skeleton className="h-4 w-40" />
               <Skeleton className="mt-1.5 h-3 w-24" />
               <Skeleton className="mt-2 h-3 w-16" />
@@ -894,8 +894,8 @@ export function InterviewWorkspaceSkeleton() {
         </div>
       </aside>
 
-      <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border bg-background">
-        <header className="flex shrink-0 items-center justify-between gap-3 border-b bg-background px-4 py-3 md:px-5">
+      <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
+        <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border/60 bg-card px-5 py-4 md:px-6">
           <div className="min-w-0">
             <Skeleton className="h-6 w-52" />
             <Skeleton className="mt-1.5 h-4 w-24" />
@@ -906,11 +906,11 @@ export function InterviewWorkspaceSkeleton() {
           </div>
         </header>
 
-        <div className="flex min-h-0 flex-1 flex-col bg-background">
-          <div className="min-h-0 flex-1 space-y-5 px-4 py-5 md:px-6">
+        <div className="flex min-h-0 flex-1 flex-col bg-muted/20">
+          <div className="min-h-0 flex-1 space-y-7 px-5 py-6 md:px-7 md:py-7">
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className={i % 2 === 0 ? "flex justify-start" : "flex justify-end"}>
-                <div className="w-full max-w-[88%] md:max-w-[72%]">
+                <div className="w-full max-w-[88%] md:max-w-[68%]">
                   <Skeleton className="mb-1 h-3 w-12" />
                   <Skeleton className="h-12 w-full rounded-2xl" />
                 </div>
@@ -918,8 +918,8 @@ export function InterviewWorkspaceSkeleton() {
             ))}
           </div>
 
-          <div className="shrink-0 border-t bg-background px-3 py-3 md:px-4">
-            <div className="flex items-end gap-2 rounded-xl border bg-background p-2">
+          <div className="shrink-0 bg-card px-4 pb-4 pt-3 md:px-6 md:pb-5">
+            <div className="flex items-end gap-2 rounded-2xl border border-border/70 bg-card p-2.5 shadow-sm">
               <Skeleton className="h-10 flex-1" />
               <Skeleton className="size-10 rounded-xl" />
             </div>

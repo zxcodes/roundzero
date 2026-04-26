@@ -2,6 +2,7 @@ import { BubbleChatIcon, SentIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 
 type InterviewChatProps = {
@@ -11,11 +12,18 @@ type InterviewChatProps = {
     content: string;
   }>;
   canSend: boolean;
+  isEnded: boolean;
   isStreaming: boolean;
   onSend: (content: string) => void;
 };
 
-export function InterviewChat({ messages, canSend, isStreaming, onSend }: InterviewChatProps) {
+export function InterviewChat({
+  messages,
+  canSend,
+  isEnded,
+  isStreaming,
+  onSend,
+}: InterviewChatProps) {
   const [content, setContent] = useState("");
   const transcriptRef = useRef<HTMLDivElement | null>(null);
   const transcriptEndRef = useRef<HTMLDivElement>(null);
@@ -98,10 +106,10 @@ export function InterviewChat({ messages, canSend, isStreaming, onSend }: Interv
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col rounded-b-2xl bg-background">
-      <div ref={transcriptRef} className="min-h-0 flex-1 overflow-y-auto">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-muted/20">
+      <ScrollArea ref={transcriptRef} className="min-h-0 flex-1">
         {messages.length > 0 ? (
-          <div className="space-y-5 px-4 py-5 md:px-6">
+          <div className="space-y-7 px-5 py-6 md:px-7 md:py-7">
             {messages.map((message) => {
               const isCandidate = message.role === "candidate";
 
@@ -110,15 +118,15 @@ export function InterviewChat({ messages, canSend, isStreaming, onSend }: Interv
                   key={message.id}
                   className={isCandidate ? "flex justify-end" : "flex justify-start"}
                 >
-                  <div className="max-w-[88%] md:max-w-[72%]">
+                  <div className="max-w-[88%] md:max-w-[68%]">
                     <p className="mb-1 px-1 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
                       {isCandidate ? "You" : "Zero"}
                     </p>
                     <div
                       className={
                         isCandidate
-                          ? "rounded-2xl bg-primary px-4 py-3 text-sm text-primary-foreground"
-                          : "rounded-2xl border bg-muted px-4 py-3 text-sm text-foreground"
+                          ? "rounded-2xl bg-primary px-4 py-3 text-sm text-primary-foreground shadow-sm"
+                          : "rounded-2xl border border-border/60 bg-card px-4 py-3 text-sm text-foreground shadow-sm"
                       }
                     >
                       {message.content}
@@ -127,7 +135,7 @@ export function InterviewChat({ messages, canSend, isStreaming, onSend }: Interv
                 </div>
               );
             })}
-            <div ref={transcriptEndRef} />
+            <div ref={transcriptEndRef} className="h-1" />
           </div>
         ) : (
           <div className="flex h-full min-h-[18rem] flex-col items-center justify-center gap-3 p-10 text-center text-muted-foreground">
@@ -141,33 +149,39 @@ export function InterviewChat({ messages, canSend, isStreaming, onSend }: Interv
             <p className="text-sm">Your interview with Zero starts here.</p>
           </div>
         )}
-      </div>
+      </ScrollArea>
 
-      <div className="shrink-0 border-t bg-background px-3 py-3 md:px-4">
-        <div className="flex items-end gap-2 rounded-xl border bg-background p-2">
-          <Textarea
-            ref={composerRef}
-            value={content}
-            onChange={onComposerChange}
-            onKeyDown={onComposerKeyDown}
-            placeholder={canSend ? "Write your answer..." : "Interview is not active"}
-            disabled={!canSend}
-            className="min-h-10 flex-1 resize-none border-0 bg-transparent p-2 text-foreground placeholder:text-muted-foreground focus-visible:border-transparent focus-visible:ring-0"
-            rows={1}
-          />
-          <Button
-            type="button"
-            size="icon"
-            className="shrink-0 rounded-xl"
-            onMouseDown={onSendMouseDown}
-            onClick={onSubmit}
-            disabled={!canSend || isStreaming || content.trim().length === 0}
-          >
-            <HugeiconsIcon icon={SentIcon} strokeWidth={2} className="size-4" />
-            <span className="sr-only">Send message</span>
-          </Button>
+      {isEnded ? (
+        <div className="shrink-0 border-t border-border/50 bg-card px-5 py-4 text-sm text-muted-foreground md:px-6">
+          This interview has ended.
         </div>
-      </div>
+      ) : (
+        <div className="shrink-0 bg-card px-4 pb-4 pt-3 md:px-6 md:pb-5">
+          <div className="flex items-end gap-2 rounded-2xl border border-border/70 bg-background p-2.5 shadow-sm">
+            <Textarea
+              ref={composerRef}
+              value={content}
+              onChange={onComposerChange}
+              onKeyDown={onComposerKeyDown}
+              placeholder={canSend ? "Write your answer..." : "Start the interview to answer"}
+              disabled={!canSend}
+              className="min-h-10 flex-1 resize-none border-0 bg-transparent p-2 text-foreground placeholder:text-muted-foreground focus-visible:border-transparent focus-visible:ring-0"
+              rows={1}
+            />
+            <Button
+              type="button"
+              size="icon"
+              className="shrink-0 rounded-xl"
+              onMouseDown={onSendMouseDown}
+              onClick={onSubmit}
+              disabled={!canSend || isStreaming || content.trim().length === 0}
+            >
+              <HugeiconsIcon icon={SentIcon} strokeWidth={2} className="size-4" />
+              <span className="sr-only">Send message</span>
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
