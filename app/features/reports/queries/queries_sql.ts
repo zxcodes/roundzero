@@ -1,7 +1,7 @@
 import { Sql } from "postgres";
 
 export const getReportByApplicationIdQuery = `-- name: getReportByApplicationId :one
-SELECT id, interview_id, application_id, summary, strengths, weaknesses, insights, evidence, scores, recommendation, created_at
+SELECT id, interview_id, application_id, summary, strengths, weaknesses, insights, evidence, screening_answers, scores, recommendation, created_at
 FROM reports
 WHERE application_id = $1`;
 
@@ -18,6 +18,7 @@ export interface getReportByApplicationIdRow {
     weaknesses: any;
     insights: any;
     evidence: any;
+    screeningAnswers: any;
     scores: any;
     recommendation: string;
     createdAt: Date;
@@ -38,14 +39,15 @@ export async function getReportByApplicationId(sql: Sql, args: getReportByApplic
         weaknesses: row[5],
         insights: row[6],
         evidence: row[7],
-        scores: row[8],
-        recommendation: row[9],
-        createdAt: row[10]
+        screeningAnswers: row[8],
+        scores: row[9],
+        recommendation: row[10],
+        createdAt: row[11]
     };
 }
 
 export const getReportByIdQuery = `-- name: getReportById :one
-SELECT id, interview_id, application_id, summary, strengths, weaknesses, insights, evidence, scores, recommendation, created_at
+SELECT id, interview_id, application_id, summary, strengths, weaknesses, insights, evidence, screening_answers, scores, recommendation, created_at
 FROM reports
 WHERE id = $1`;
 
@@ -62,6 +64,7 @@ export interface getReportByIdRow {
     weaknesses: any;
     insights: any;
     evidence: any;
+    screeningAnswers: any;
     scores: any;
     recommendation: string;
     createdAt: Date;
@@ -82,14 +85,15 @@ export async function getReportById(sql: Sql, args: getReportByIdArgs): Promise<
         weaknesses: row[5],
         insights: row[6],
         evidence: row[7],
-        scores: row[8],
-        recommendation: row[9],
-        createdAt: row[10]
+        screeningAnswers: row[8],
+        scores: row[9],
+        recommendation: row[10],
+        createdAt: row[11]
     };
 }
 
 export const getReportsByJobIdQuery = `-- name: getReportsByJobId :many
-SELECT r.id, r.interview_id, r.application_id, r.summary, r.strengths, r.weaknesses, r.insights, r.evidence, r.scores, r.recommendation, r.created_at,
+SELECT r.id, r.interview_id, r.application_id, r.summary, r.strengths, r.weaknesses, r.insights, r.evidence, r.screening_answers, r.scores, r.recommendation, r.created_at,
        a.job_id
 FROM reports r
 JOIN applications a ON a.id = r.application_id
@@ -109,6 +113,7 @@ export interface getReportsByJobIdRow {
     weaknesses: any;
     insights: any;
     evidence: any;
+    screeningAnswers: any;
     scores: any;
     recommendation: string;
     createdAt: Date;
@@ -125,10 +130,11 @@ export async function getReportsByJobId(sql: Sql, args: getReportsByJobIdArgs): 
         weaknesses: row[5],
         insights: row[6],
         evidence: row[7],
-        scores: row[8],
-        recommendation: row[9],
-        createdAt: row[10],
-        jobId: row[11]
+        screeningAnswers: row[8],
+        scores: row[9],
+        recommendation: row[10],
+        createdAt: row[11],
+        jobId: row[12]
     }));
 }
 

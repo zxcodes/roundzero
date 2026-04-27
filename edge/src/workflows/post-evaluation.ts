@@ -19,12 +19,22 @@ type PostEvaluationPayload = {
   interviewId: string;
 };
 
+type ScreeningConcern = "none" | "minor" | "dealbreaker";
+
+type ScreeningAnswer = {
+  question: string;
+  answer: string | null;
+  concern: ScreeningConcern;
+  notes: string;
+};
+
 type ReportModelResponse = {
   summary: string;
   strengths: string[];
   weaknesses: string[];
   insights: string[];
   evidence: string[];
+  screeningAnswers: ScreeningAnswer[];
   scores: {
     communication: number;
     problemSolving: number;
@@ -48,6 +58,7 @@ function isReportModelResponse(value: unknown): value is ReportModelResponse {
     !Array.isArray(record.weaknesses) ||
     !Array.isArray(record.insights) ||
     !Array.isArray(record.evidence) ||
+    !Array.isArray(record.screeningAnswers) ||
     typeof record.scores !== "object" ||
     record.scores === null ||
     !["strong_yes", "yes", "lean_no", "no"].includes(String(record.recommendation))
@@ -56,10 +67,27 @@ function isReportModelResponse(value: unknown): value is ReportModelResponse {
   }
 
   const scores = record.scores as Record<string, unknown>;
-
-  return ["communication", "problemSolving", "ownership", "roleFit", "overall"].every(
+  const scoresOk = ["communication", "problemSolving", "ownership", "roleFit", "overall"].every(
     (key) => typeof scores[key] === "number",
   );
+  if (!scoresOk) {
+    return false;
+  }
+
+  const screeningOk = record.screeningAnswers.every((entry): entry is ScreeningAnswer => {
+    if (typeof entry !== "object" || entry === null) {
+      return false;
+    }
+    const e = entry as Record<string, unknown>;
+    return (
+      typeof e.question === "string" &&
+      (e.answer === null || typeof e.answer === "string") &&
+      ["none", "minor", "dealbreaker"].includes(String(e.concern)) &&
+      typeof e.notes === "string"
+    );
+  });
+
+  return screeningOk;
 }
 
 type InterviewAgentMessage = {
@@ -98,6 +126,19 @@ const reportSchema = {
     weaknesses: { type: "array", items: { type: "string" } },
     insights: { type: "array", items: { type: "string" } },
     evidence: { type: "array", items: { type: "string" } },
+    screeningAnswers: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          question: { type: "string" },
+          answer: { type: ["string", "null"] },
+          concern: { type: "string", enum: ["none", "minor", "dealbreaker"] },
+          notes: { type: "string" },
+        },
+        required: ["question", "answer", "concern", "notes"],
+      },
+    },
     scores: {
       type: "object",
       properties: {
@@ -117,6 +158,7 @@ const reportSchema = {
     "weaknesses",
     "insights",
     "evidence",
+    "screeningAnswers",
     "scores",
     "recommendation",
   ],
@@ -243,6 +285,7 @@ function fallbackReportFromText(interviewData: {
     jobTitle: string;
     candidateName: string;
   };
+  contextState: InterviewContextState;
   transcript: string;
 }): ReportModelResponse {
   const transcriptLower = interviewData.transcript.toLowerCase();
@@ -253,6 +296,15 @@ function fallbackReportFromText(interviewData: {
     transcriptLower.includes("i led") || transcriptLower.includes("i owned") ? 76 : 68;
   const roleFit = 70;
   const overall = Math.round((communication + problemSolving + ownership + roleFit) / 4);
+
+  const screeningAnswers: ScreeningAnswer[] = interviewData.contextState.customQuestions.map(
+    (question) => ({
+      question,
+      answer: null,
+      concern: "none",
+      notes: "Automatic fallback could not extract a structured answer from the transcript.",
+    }),
+  );
 
   return {
     summary: `${interviewData.interview.candidateName} completed a structured interview for ${interviewData.interview.jobTitle}. The transcript provides enough signal for a directional recommendation, but should be reviewed alongside resume and application context.`,
@@ -273,6 +325,7 @@ function fallbackReportFromText(interviewData: {
       "Interview transcript captured candidate-led examples",
       "Responses referenced implementation details and decision context",
     ],
+    screeningAnswers,
     scores: {
       communication,
       problemSolving,
@@ -421,23 +474,106 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
 
     const reportDraft = await step.do("generate_report", async () => {
       log.info("Generating structured interview report with Workers AI");
+
+      const customQuestions = interviewData.contextState.customQuestions;
+      const customQuestionsBlock =
+        customQuestions.length > 0
+          ? customQuestions.map((q, i) => `  ${i + 1}. ${q}`).join("\n")
+          : "  (none — the company supplied no specific screening questions)";
+
+      const requirementsBlock =
+        interviewData.contextState.jobRequirements.length > 0
+          ? interviewData.contextState.jobRequirements.map((r) => `  - ${r}`).join("\n")
+          : "  (none provided)";
+
+      const missingRequirementsBlock =
+        interviewData.contextState.preEvaluation.missingRequirements.length > 0
+          ? interviewData.contextState.preEvaluation.missingRequirements
+              .map((r) => `  - ${r}`)
+              .join("\n")
+          : "  (none flagged)";
+
+      const systemPrompt = [
+        "# Identity",
+        "You are Zero, the senior evaluator on RoundZero's hiring panel. Behave like an experienced engineering hiring manager + recruiter writing a written debrief that real humans (the company's hiring team) will read to make a hire / no-hire decision.",
+        "",
+        "# Mission",
+        "Produce a fair, sharp, evidence-grounded interview report from the supplied interview transcript and context. Your job is to surface signal — both strengths and concerns — that materially helps the hiring team decide.",
+        "",
+        "# Hard rules (violating these makes the report useless)",
+        "1. Ground EVERY claim in the transcript. If the transcript does not say it, do not say it. Never invent answers, projects, companies, numbers, or dates.",
+        "2. When you reference something the candidate said, paraphrase or quote it briefly so the reader can audit you (use the `evidence` array for short quoted snippets with attribution like 'Candidate: ...' or 'Interviewer: ...').",
+        "3. Treat the company-supplied screening questions as REQUIRED COVERAGE. For every single one, you must produce a `screeningAnswers` entry — even if the candidate was never asked it.",
+        "4. Be honest about gaps. If the candidate dodged, gave a non-answer, or it wasn't asked, say so explicitly. Do not paper over.",
+        "5. No marketing fluff. No 'overall, the candidate is a great communicator' without a specific transcript-grounded reason.",
+        "6. No advice to the candidate. This report is for the hiring team, not for the candidate.",
+        "7. Use plain professional English. No emojis, no markdown, no bullet syntax inside string fields.",
+        "",
+        "# How to fill each field",
+        "- summary: 3–6 sentences. The TL;DR a busy hiring manager can read in 20 seconds. Cover: who they are in one line, the strongest signal observed, the biggest concern, and your headline recommendation. Mention any dealbreaker screening answer here.",
+        "- strengths: 2–5 specific, transcript-grounded items. Each item is one sentence and references something the candidate actually said or demonstrated.",
+        "- weaknesses: 1–5 specific, transcript-grounded items. Be honest. Frame as 'limited evidence of X' or 'dodged when asked Y' — not as personal attacks.",
+        "- insights: 1–4 items that are NOT strengths or weaknesses but matter for the hire. Examples: motivations they shared, working-style preferences, signals about seniority, expansion potential.",
+        "- evidence: 3–8 short, near-verbatim transcript snippets that support the rest of the report. Each item should look like 'Candidate: \"...\"' or briefly paraphrase if too long. These are the audit trail.",
+        "- screeningAnswers: One entry PER company-supplied question, in the same order they were supplied. Each entry has:",
+        "    * question: the EXACT company-supplied question (copy verbatim from the input)",
+        "    * answer: the candidate's actual answer summarized in 1–2 sentences in their own substance, or null if it was not asked / not answered",
+        "    * concern: 'none' = answer is acceptable for this role; 'minor' = workable but flag it; 'dealbreaker' = the answer materially blocks the hire (e.g. cannot relocate for an onsite role, requires visa sponsorship the company can't offer, salary expectation is far above range, cannot meet start date, refuses on-call for an SRE role).",
+        "    * notes: 1 sentence explaining the concern level — what about the role + answer makes this 'none' / 'minor' / 'dealbreaker'. If concern is 'none' or there is no answer, still write a one-line note (e.g. 'Not asked during the interview' or 'Aligned with role expectations').",
+        "- scores (0–100, integers):",
+        "    * communication: clarity, structure, listening, signal-per-word",
+        "    * problemSolving: depth of reasoning, framing, tradeoff awareness",
+        "    * ownership: did they drive the work, or were they passenger; do they take accountability",
+        "    * roleFit: how well their experience + goals match THIS specific role/company",
+        "    * overall: holistic — NOT a simple average; reflect dealbreakers (any 'dealbreaker' screening concern should pull overall down meaningfully)",
+        "- recommendation:",
+        "    * strong_yes: rare. Top of band; would compete in any senior loop; no dealbreakers.",
+        "    * yes: clear hire signal; no dealbreakers; minor concerns at most.",
+        "    * lean_no: meaningful concerns or weak signal; weak roleFit; or one minor concern stacked with weak technical signal.",
+        "    * no: dealbreaker present, OR fundamental skills/communication gap, OR clearly mis-matched to role.",
+        "  Any 'dealbreaker' in screeningAnswers makes the recommendation `no` unless the transcript clearly shows mitigating context.",
+        "",
+        "# Calibration",
+        "Be a tough-but-fair senior interviewer. Most candidates are 'yes' or 'lean_no'. 'strong_yes' should require multiple standout moments. Never inflate to be polite.",
+      ].join("\n");
+
+      const userPrompt = [
+        "# Role context",
+        `- Job title: ${interviewData.interview.jobTitle}`,
+        `- Company: ${interviewData.interview.companyName}`,
+        `- Candidate: ${interviewData.interview.candidateName}`,
+        "",
+        "# Job description",
+        interviewData.contextState.jobDescription || "(not provided)",
+        "",
+        "# Job requirements",
+        requirementsBlock,
+        "",
+        "# Candidate summary (resume / profile excerpts)",
+        interviewData.contextState.candidateSummary || "(not provided)",
+        "",
+        "# Pre-evaluation signal (private — do not quote in the report)",
+        `- Pre-eval fit score: ${interviewData.contextState.preEvaluation.score ?? "unknown"} / 100`,
+        `- Pre-eval consistency score: ${interviewData.contextState.preEvaluation.consistencyScore ?? "unknown"} / 100`,
+        "- Missing requirements flagged before the interview:",
+        missingRequirementsBlock,
+        "",
+        "# Company-supplied screening questions (REQUIRED COVERAGE)",
+        "You MUST produce one `screeningAnswers` entry per question below, in this same order, with the exact question string copied verbatim:",
+        customQuestionsBlock,
+        "",
+        "# Interview transcript",
+        "The transcript follows. Lines starting with 'ASSISTANT:' are Zero (the AI interviewer). Lines starting with 'CANDIDATE:' are the candidate.",
+        "",
+        interviewData.transcript,
+        "",
+        "# Now produce the structured report.",
+        "Return ONLY the JSON object matching the schema. No prose outside the JSON.",
+      ].join("\n");
+
       const aiResponse = await runPostEvalJsonWithGateway(this.env, {
-        systemPrompt:
-          "You are Zero, an interview evaluator. Produce a concise, evidence-based assessment from the transcript.",
-        userPrompt: [
-          `Job title: ${interviewData.interview.jobTitle}`,
-          `Company: ${interviewData.interview.companyName}`,
-          `Candidate: ${interviewData.interview.candidateName}`,
-          `Job description: ${interviewData.contextState.jobDescription || "Not provided"}`,
-          `Job requirements: ${interviewData.contextState.jobRequirements.join(" | ") || "None"}`,
-          `Candidate summary: ${interviewData.contextState.candidateSummary || "Not provided"}`,
-          `Custom questions: ${interviewData.contextState.customQuestions.join(" | ") || "None"}`,
-          `Pre-eval score: ${interviewData.contextState.preEvaluation.score ?? "unknown"}`,
-          `Pre-eval missing requirements: ${interviewData.contextState.preEvaluation.missingRequirements.join(" | ") || "None"}`,
-          `Pre-eval consistency score: ${interviewData.contextState.preEvaluation.consistencyScore ?? "unknown"}`,
-          "Interview transcript:",
-          interviewData.transcript,
-        ].join("\n\n"),
+        systemPrompt,
+        userPrompt,
       });
       log.info(`AI Gateway log id (post-eval): ${this.env.AI.aiGatewayLogId ?? "n/a"}`);
 
@@ -476,6 +612,7 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
         weaknesses: reportDraft.weaknesses,
         insights: reportDraft.insights,
         evidence: reportDraft.evidence,
+        screeningAnswers: reportDraft.screeningAnswers,
         scores: reportDraft.scores,
         recommendation: reportDraft.recommendation,
       });
