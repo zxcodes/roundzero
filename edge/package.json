@@ -8,10 +8,10 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
-    "@cloudflare/ai-chat": "^0.5.1",
-    "agents": "^0.11.5",
+    "@cloudflare/ai-chat": "^0.5.2",
+    "agents": "^0.11.6",
     "ai": "^6.0.168",
-    "hono": "^4.12.14",
+    "hono": "^4.12.15",
     "mammoth": "^1.12.0",
     "postgres": "^3.4.9",
     "unpdf": "^1.6.0",
@@ -20,6 +20,6 @@
   },
   "devDependencies": {
     "typescript": "^6.0.3",
-    "wrangler": "^4.84.1"
+    "wrangler": "^4.85.0"
   }
 }
