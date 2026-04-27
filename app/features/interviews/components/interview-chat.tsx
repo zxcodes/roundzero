@@ -15,7 +15,7 @@ type InterviewChatProps = {
   canSend: boolean;
   isEnded: boolean;
   isStreaming: boolean;
-  onSend: (content: string) => void;
+  onSend: (content: string) => Promise<void>;
 };
 
 export function InterviewChat({
@@ -82,7 +82,7 @@ export function InterviewChat({
       return;
     }
 
-    onSend(trimmed);
+    void onSend(trimmed);
     setContent("");
     requestAnimationFrame(() => {
       composerRef.current?.focus();
