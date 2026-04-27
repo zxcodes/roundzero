@@ -372,8 +372,8 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
   }
 
   async onStart() {
-    if (!this.state.interviewId && this.name) {
-      await this.hydrateContextFromDb(this.name);
+    if (this.state.interviewId) {
+      await this.hydrateContextFromDb(this.state.interviewId);
     }
 
     if (!this.state.interviewId) {
@@ -415,9 +415,9 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
   }
 
   @callable()
-  async markStarted(): Promise<{ started: boolean }> {
-    if (!this.state.interviewId && this.name) {
-      await this.hydrateContextFromDb(this.name);
+  async markStarted(input: { interviewId: string }): Promise<{ started: boolean }> {
+    if (!this.state.interviewId) {
+      await this.hydrateContextFromDb(input.interviewId);
     }
 
     if (!this.state.interviewId) {
@@ -439,9 +439,9 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
   }
 
   @callable()
-  async kickoff(): Promise<{ greeted: boolean }> {
-    if (!this.state.interviewId && this.name) {
-      await this.hydrateContextFromDb(this.name);
+  async kickoff(input: { interviewId: string }): Promise<{ greeted: boolean }> {
+    if (!this.state.interviewId) {
+      await this.hydrateContextFromDb(input.interviewId);
     }
 
     if (!this.state.interviewId) {
@@ -512,7 +512,11 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
   }
 
   @callable()
-  async getInterviewState(): Promise<InterviewStateResponse> {
+  async getInterviewState(input: { interviewId: string }): Promise<InterviewStateResponse> {
+    if (!this.state.interviewId) {
+      await this.hydrateContextFromDb(input.interviewId);
+    }
+
     return toStateResponse(this.state, toLegacyTranscript(this.messages));
   }
 
@@ -557,8 +561,8 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
   }
 
   async onChatMessage(onFinish: StreamTextOnFinishCallback<ToolSet>) {
-    if (this.name) {
-      await this.hydrateContextFromDb(this.name);
+    if (this.state.interviewId) {
+      await this.hydrateContextFromDb(this.state.interviewId);
     }
 
     if (!this.state.interviewId) {
