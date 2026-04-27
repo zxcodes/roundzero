@@ -1,5 +1,7 @@
 import {
+  Alert02Icon,
   CheckmarkCircle02Icon,
+  HelpCircleIcon,
   Message01Icon,
   RankingIcon,
   Time04Icon,
@@ -18,12 +20,22 @@ type ReportScores = {
   overall: number;
 };
 
+type ScreeningConcern = "none" | "minor" | "dealbreaker";
+
+type ScreeningAnswer = {
+  question: string;
+  answer: string | null;
+  concern: ScreeningConcern;
+  notes: string;
+};
+
 type ReportData = {
   summary: string;
   strengths: string[];
   weaknesses: string[];
   insights: string[];
   evidence: string[];
+  screeningAnswers: ScreeningAnswer[];
   recommendation: Recommendation;
   scores: ReportScores;
 };
@@ -104,12 +116,47 @@ function toRecommendation(value: unknown): Recommendation {
   return "lean_no";
 }
 
+function toScreeningConcern(value: unknown): ScreeningConcern {
+  if (value === "none" || value === "minor" || value === "dealbreaker") {
+    return value;
+  }
+  return "none";
+}
+
+function toScreeningAnswers(value: unknown): ScreeningAnswer[] {
+  const parsed = parseJsonb<unknown[]>(value);
+  if (!Array.isArray(parsed)) {
+    return [];
+  }
+
+  const result: ScreeningAnswer[] = [];
+  for (const item of parsed) {
+    if (!isRecord(item)) {
+      continue;
+    }
+    const question = typeof item.question === "string" ? item.question : "";
+    if (!question) {
+      continue;
+    }
+    const answer =
+      typeof item.answer === "string" && item.answer.trim().length > 0 ? item.answer : null;
+    result.push({
+      question,
+      answer,
+      concern: toScreeningConcern(item.concern),
+      notes: typeof item.notes === "string" ? item.notes : "",
+    });
+  }
+  return result;
+}
+
 export function parseReportData(report: {
   summary: string;
   strengths: unknown;
   weaknesses: unknown;
   insights: unknown;
   evidence: unknown;
+  screeningAnswers?: unknown;
   recommendation: string;
   scores: unknown;
 }): ReportData {
@@ -122,6 +169,7 @@ export function parseReportData(report: {
     weaknesses: toStringArray(report.weaknesses),
     insights: toStringArray(report.insights),
     evidence: toStringArray(report.evidence),
+    screeningAnswers: toScreeningAnswers(report.screeningAnswers),
     recommendation: toRecommendation(report.recommendation),
     scores: {
       communication: toFiniteScore(scores.communication),
@@ -205,6 +253,82 @@ export function ReportInsightsCard({ report }: { report: ReportData }) {
       <SignalList title="Insights" items={report.insights} emptyText="No insights captured." />
       <SignalList title="Evidence" items={report.evidence} emptyText="No evidence captured." />
     </div>
+  );
+}
+
+const concernMeta: Record<
+  ScreeningConcern,
+  { label: string; badge: string; rowBorder: string; icon: typeof CheckmarkCircle02Icon }
+> = {
+  none: {
+    label: "OK",
+    badge: "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+    rowBorder: "border-border/70",
+    icon: CheckmarkCircle02Icon,
+  },
+  minor: {
+    label: "Flag",
+    badge: "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+    rowBorder: "border-amber-500/30",
+    icon: HelpCircleIcon,
+  },
+  dealbreaker: {
+    label: "Dealbreaker",
+    badge: "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300",
+    rowBorder: "border-rose-500/40",
+    icon: Alert02Icon,
+  },
+};
+
+export function ReportScreeningCard({ report }: { report: ReportData }) {
+  if (report.screeningAnswers.length === 0) {
+    return null;
+  }
+
+  return (
+    <Card className="border-border/70 bg-background/40">
+      <CardContent className="space-y-4">
+        <div className="space-y-1">
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
+            Screening question answers
+          </p>
+          <p className="text-sm text-muted-foreground">
+            How the candidate responded to each question the company required us to ask.
+          </p>
+        </div>
+        <ul className="space-y-3">
+          {report.screeningAnswers.map((entry) => {
+            const meta = concernMeta[entry.concern];
+            return (
+              <li
+                key={entry.question}
+                className={`rounded-2xl border ${meta.rowBorder} bg-background/40 p-4`}
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <p className="max-w-xl text-sm font-medium leading-6 text-foreground">
+                    {entry.question}
+                  </p>
+                  <Badge variant="outline" className={`gap-1.5 ${meta.badge}`}>
+                    <HugeiconsIcon icon={meta.icon} strokeWidth={2} className="size-3.5" />
+                    {meta.label}
+                  </Badge>
+                </div>
+                <p className="mt-2 text-sm leading-6 text-foreground">
+                  {entry.answer ?? (
+                    <span className="text-muted-foreground italic">
+                      Not asked or candidate did not answer.
+                    </span>
+                  )}
+                </p>
+                {entry.notes ? (
+                  <p className="mt-2 text-xs leading-5 text-muted-foreground">{entry.notes}</p>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
+      </CardContent>
+    </Card>
   );
 }
 

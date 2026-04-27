@@ -180,6 +180,7 @@ CREATE TABLE reports (
   weaknesses      JSONB NOT NULL DEFAULT '[]',
   insights        JSONB NOT NULL DEFAULT '[]',
   evidence        JSONB NOT NULL DEFAULT '[]',
+  screening_answers JSONB NOT NULL DEFAULT '[]',
   scores          JSONB NOT NULL,
   recommendation  TEXT NOT NULL,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now()

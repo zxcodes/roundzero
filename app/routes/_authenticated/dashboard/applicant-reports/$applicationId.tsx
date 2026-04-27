@@ -12,6 +12,7 @@ import { getApplicationResumeDownloadUrl } from "@/features/applications/server/
 import {
   parseReportData,
   ReportInsightsCard,
+  ReportScreeningCard,
   ReportSummaryCard,
   ReportTimelineCard,
 } from "@/features/reports/components/report-cards";
@@ -114,6 +115,7 @@ function ApplicantAiReportPage() {
       </div>
 
       <ReportSummaryCard report={parsedReport} />
+      <ReportScreeningCard report={parsedReport} />
       <ReportInsightsCard report={parsedReport} />
       <ReportTimelineCard
         preEvaluation={preEvaluation}

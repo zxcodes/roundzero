@@ -196,6 +196,7 @@ CREATE TABLE public.reports (
     weaknesses jsonb DEFAULT '[]'::jsonb NOT NULL,
     insights jsonb DEFAULT '[]'::jsonb NOT NULL,
     evidence jsonb DEFAULT '[]'::jsonb NOT NULL,
+    screening_answers jsonb DEFAULT '[]'::jsonb NOT NULL,
     scores jsonb NOT NULL,
     recommendation text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL
