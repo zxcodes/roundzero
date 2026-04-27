@@ -87,7 +87,8 @@ type InterviewContextState = {
   };
 };
 
-const MODEL = "@cf/meta/llama-3.1-8b-instruct";
+const POST_EVAL_PRIMARY_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+const POST_EVAL_FALLBACK_MODEL = "@cf/meta/llama-3.1-70b-instruct";
 
 const reportSchema = {
   type: "object",
@@ -147,6 +148,72 @@ function parseJsonPayload(payload: unknown): Record<string, unknown> {
     }
   }
   throw new Error(`AI response payload is not a JSON object: ${typeof payload}`);
+}
+
+async function runPostEvalJsonWithGateway(
+  env: Env,
+  args: {
+    systemPrompt: string;
+    userPrompt: string;
+  },
+): Promise<unknown> {
+  const gateway = {
+    id: env.AI_GATEWAY_ID,
+    skipCache: true,
+    collectLog: true,
+    metadata: {
+      workflow: "post-evaluation",
+      step: "generate_report",
+    },
+  };
+
+  try {
+    return await env.AI.run(
+      POST_EVAL_PRIMARY_MODEL,
+      {
+        messages: [
+          { role: "system", content: args.systemPrompt },
+          { role: "user", content: args.userPrompt },
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "interview_report",
+            schema: reportSchema,
+          },
+        },
+      },
+      { gateway },
+    );
+  } catch (primaryError) {
+    try {
+      return await env.AI.run(
+        POST_EVAL_FALLBACK_MODEL,
+        {
+          messages: [
+            { role: "system", content: args.systemPrompt },
+            { role: "user", content: args.userPrompt },
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "interview_report",
+              schema: reportSchema,
+            },
+          },
+        },
+        { gateway },
+      );
+    } catch (fallbackError) {
+      const primaryMessage =
+        primaryError instanceof Error ? primaryError.message : String(primaryError);
+      const fallbackMessage =
+        fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
+      throw new Error(
+        `AI extraction failed across gateway models (post-evaluation). primary=${primaryMessage}; fallback=${fallbackMessage}`,
+      );
+    }
+  }
 }
 
 function extractJsonObjectFromText(value: string): Record<string, unknown> | null {
@@ -354,40 +421,25 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
 
     const reportDraft = await step.do("generate_report", async () => {
       log.info("Generating structured interview report with Workers AI");
-
-      const aiResponse = await this.env.AI.run(MODEL, {
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are Zero, an interview evaluator. Produce a concise, evidence-based assessment from the transcript.",
-          },
-          {
-            role: "user",
-            content: [
-              `Job title: ${interviewData.interview.jobTitle}`,
-              `Company: ${interviewData.interview.companyName}`,
-              `Candidate: ${interviewData.interview.candidateName}`,
-              `Job description: ${interviewData.contextState.jobDescription || "Not provided"}`,
-              `Job requirements: ${interviewData.contextState.jobRequirements.join(" | ") || "None"}`,
-              `Candidate summary: ${interviewData.contextState.candidateSummary || "Not provided"}`,
-              `Custom questions: ${interviewData.contextState.customQuestions.join(" | ") || "None"}`,
-              `Pre-eval score: ${interviewData.contextState.preEvaluation.score ?? "unknown"}`,
-              `Pre-eval missing requirements: ${interviewData.contextState.preEvaluation.missingRequirements.join(" | ") || "None"}`,
-              `Pre-eval consistency score: ${interviewData.contextState.preEvaluation.consistencyScore ?? "unknown"}`,
-              "Interview transcript:",
-              interviewData.transcript,
-            ].join("\n\n"),
-          },
-        ],
-        response_format: {
-          type: "json_schema",
-          json_schema: {
-            name: "interview_report",
-            schema: reportSchema,
-          },
-        },
+      const aiResponse = await runPostEvalJsonWithGateway(this.env, {
+        systemPrompt:
+          "You are Zero, an interview evaluator. Produce a concise, evidence-based assessment from the transcript.",
+        userPrompt: [
+          `Job title: ${interviewData.interview.jobTitle}`,
+          `Company: ${interviewData.interview.companyName}`,
+          `Candidate: ${interviewData.interview.candidateName}`,
+          `Job description: ${interviewData.contextState.jobDescription || "Not provided"}`,
+          `Job requirements: ${interviewData.contextState.jobRequirements.join(" | ") || "None"}`,
+          `Candidate summary: ${interviewData.contextState.candidateSummary || "Not provided"}`,
+          `Custom questions: ${interviewData.contextState.customQuestions.join(" | ") || "None"}`,
+          `Pre-eval score: ${interviewData.contextState.preEvaluation.score ?? "unknown"}`,
+          `Pre-eval missing requirements: ${interviewData.contextState.preEvaluation.missingRequirements.join(" | ") || "None"}`,
+          `Pre-eval consistency score: ${interviewData.contextState.preEvaluation.consistencyScore ?? "unknown"}`,
+          "Interview transcript:",
+          interviewData.transcript,
+        ].join("\n\n"),
       });
+      log.info(`AI Gateway log id (post-eval): ${this.env.AI.aiGatewayLogId ?? "n/a"}`);
 
       const payload = getResponsePayload(aiResponse);
       let parsed: Record<string, unknown> | null = null;

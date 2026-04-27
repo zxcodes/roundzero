@@ -7,6 +7,16 @@ type InterviewAgentClient = {
   kickoff: () => Promise<{ greeted: boolean }>;
 };
 
+type InterviewSessionStatus = "pending" | "in_progress" | "completed" | "cancelled" | "expired";
+
+const interviewSessionStatuses: InterviewSessionStatus[] = [
+  "pending",
+  "in_progress",
+  "completed",
+  "cancelled",
+  "expired",
+];
+
 const getEdgeHost = () => {
   const fallback = "http://localhost:8787";
 
@@ -58,6 +68,13 @@ export function useInterviewChat(interviewId: string) {
     agent,
   });
 
+  const rawAgentState = agent.state as { status?: unknown } | undefined;
+  const sessionStatus =
+    typeof rawAgentState?.status === "string" &&
+    interviewSessionStatuses.includes(rawAgentState.status as InterviewSessionStatus)
+      ? (rawAgentState.status as InterviewSessionStatus)
+      : null;
+
   const messages: Array<{ id: string; role: "assistant" | "candidate"; content: string }> = [];
 
   for (const message of chat.messages) {
@@ -89,5 +106,6 @@ export function useInterviewChat(interviewId: string) {
     status: chat.status,
     isStreaming: chat.isStreaming,
     kickoff,
+    sessionStatus,
   };
 }

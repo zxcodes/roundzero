@@ -70,9 +70,14 @@ function InterviewWorkspacePage() {
   const router = useRouter();
   const chat = useInterviewChat(interview.id);
   const [commandOpen, setCommandOpen] = useState(false);
+  const agentSessionStatus = chat.sessionStatus;
+  const effectiveStatus =
+    interview.status === "in_progress" && agentSessionStatus && agentSessionStatus !== "in_progress"
+      ? agentSessionStatus
+      : interview.status;
 
-  const isPending = interview.status === "pending";
-  const isInProgress = interview.status === "in_progress";
+  const isPending = effectiveStatus === "pending";
+  const isInProgress = effectiveStatus === "in_progress";
 
   const startInterviewFn = useServerFn(startMyInterview);
   const cancelInterviewFn = useServerFn(cancelMyInterview);
@@ -111,15 +116,18 @@ function InterviewWorkspacePage() {
     },
   });
 
-  const status = statusConfig[interview.status] ?? {
-    label: interview.status,
+  const status = statusConfig[effectiveStatus] ?? {
+    label: effectiveStatus,
     tone: "bg-muted text-muted-foreground",
   };
 
-  const canSend = interview.status === "in_progress";
-  const isEnded = interview.status === "completed" || interview.status === "cancelled";
+  const canSend = effectiveStatus === "in_progress";
+  const isEnded = effectiveStatus === "completed" || effectiveStatus === "cancelled";
   const isStarting = isPending && startMutation.isPending;
   const isSubmitting = isInProgress && completeMutation.isPending;
+  const interviewsForSidebar = interviews.map((item) =>
+    item.id === interview.id ? { ...item, status: effectiveStatus } : item,
+  );
 
   const onStart = () => {
     startMutation.mutate({ data: { interviewId: interview.id } });
@@ -133,11 +141,12 @@ function InterviewWorkspacePage() {
     completeMutation.mutate({ data: { interviewId: interview.id } });
   };
 
-  const onSendMessage = (content: string) => {
-    void chat.sendMessage({
+  const onSendMessage = async (content: string) => {
+    await chat.sendMessage({
       role: "user",
       parts: [{ type: "text", text: content }],
     });
+    await router.invalidate();
   };
 
   useCommandPaletteShortcut(() => {
@@ -153,7 +162,7 @@ function InterviewWorkspacePage() {
       }
     >
       <CommandPalette isCompany={isCompany} open={commandOpen} onOpenChange={setCommandOpen} />
-      <InterviewSidebar interviewId={interview.id} interviews={interviews} />
+      <InterviewSidebar interviewId={interview.id} interviews={interviewsForSidebar} />
       <SidebarInset>
         <div className="flex h-full min-h-0 w-full bg-background p-2 text-foreground">
           <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">

@@ -24,10 +24,8 @@ import { initializeInterviewAgent } from "../shared/interview-agent-client";
 import { createWorkflowLogger } from "../shared/logger";
 import { notificationPayloadSchemas } from "../shared/notifications-config";
 
-// Model: the only 8B model empirically verified to support json_schema in this environment.
-// The "fast" and "fp8" variants are on the docs list but throw "5025: This model doesn't support JSON Schema" at runtime.
-// Stick with this until Cloudflare fixes the discrepancy.
-const MODEL = "@cf/meta/llama-3.1-8b-instruct"; // ~8K ctx, verified working
+const PRIMARY_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+const FALLBACK_MODEL = "@cf/meta/llama-3.1-70b-instruct";
 
 function getResponsePayload(response: unknown): { response: unknown } {
   if (typeof response !== "object" || response === null) {
@@ -84,6 +82,89 @@ function parseJsonPayload(payload: unknown): Record<string, unknown> {
   throw new Error(`AI response payload is not a JSON object: ${typeof payload}`);
 }
 
+async function runAiJsonWithGateway(
+  env: Env,
+  args: {
+    stepLabel: string;
+    systemPrompt: string;
+    userPrompt: string;
+    schema: unknown;
+  },
+): Promise<unknown> {
+  const gateway = {
+    id: env.AI_GATEWAY_ID,
+    skipCache: true,
+    collectLog: true,
+    metadata: {
+      workflow: "pre-evaluation",
+      step: args.stepLabel,
+    },
+  };
+
+  try {
+    return await env.AI.run(
+      PRIMARY_MODEL,
+      {
+        messages: [
+          { role: "system", content: args.systemPrompt },
+          { role: "user", content: args.userPrompt },
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: args.schema,
+        },
+      },
+      { gateway },
+    );
+  } catch (primaryError) {
+    try {
+      return await env.AI.run(
+        FALLBACK_MODEL,
+        {
+          messages: [
+            { role: "system", content: args.systemPrompt },
+            { role: "user", content: args.userPrompt },
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: args.schema,
+          },
+        },
+        { gateway },
+      );
+    } catch (fallbackError) {
+      const primaryMessage =
+        primaryError instanceof Error ? primaryError.message : String(primaryError);
+      const fallbackMessage =
+        fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
+      throw new Error(
+        `AI extraction failed across gateway models (${args.stepLabel}). primary=${primaryMessage}; fallback=${fallbackMessage}`,
+      );
+    }
+  }
+}
+
+function shouldInviteFromDeterministicRules(args: {
+  score: number;
+  consistencyScore: number;
+  missingRequirementsCount: number;
+}) {
+  if (args.consistencyScore < 35) {
+    return false;
+  }
+  if (args.score < 65) {
+    return false;
+  }
+  if (args.missingRequirementsCount > 3) {
+    return false;
+  }
+  return true;
+}
+
+function getInterviewTypeFromDeterministicRules(score: number): "full" | "quick_eval" {
+  return score >= 85 ? "full" : "quick_eval";
+}
+
 type PreEvaluationPayload = {
   applicationId: string;
 };
@@ -92,7 +173,7 @@ type PreEvaluationResult = {
   score: number;
   missingRequirements: string[];
   confidence: "low" | "medium" | "high";
-  nextStep: "interview_invited" | "ask_followups" | "hold";
+  modelNextStep: "interview_invited" | "ask_followups" | "hold";
 };
 
 const preEvaluationSchema = {
@@ -285,31 +366,37 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
       const prompt = `Job Title: ${applicationData.job.title}\n\nJob Description: ${applicationData.job.description}`;
 
       const startTime = Date.now();
-      const response = await this.env.AI.run(MODEL, {
-        messages: [
-          { role: "system", content: CLASSIFY_JOB_SYSTEM_PROMPT },
-          { role: "user", content: prompt },
-        ],
-        response_format: {
-          type: "json_schema",
-          json_schema: JOB_TYPE_SCHEMA,
-        },
-      });
-      const latency = Date.now() - startTime;
+      try {
+        const response = await runAiJsonWithGateway(this.env, {
+          stepLabel: "classify_job_type",
+          systemPrompt: CLASSIFY_JOB_SYSTEM_PROMPT,
+          userPrompt: prompt,
+          schema: JOB_TYPE_SCHEMA,
+        });
+        log.info(`AI Gateway log id (classify): ${this.env.AI.aiGatewayLogId ?? "n/a"}`);
+        const latency = Date.now() - startTime;
 
-      const payload = getResponsePayload(response).response;
-      const raw = parseJsonPayload(payload);
-      const result = {
-        roleType: typeof raw.roleType === "string" ? raw.roleType : "general",
-        reasoning: typeof raw.reasoning === "string" ? raw.reasoning : "",
-      };
+        const payload = getResponsePayload(response).response;
+        const raw = parseJsonPayload(payload);
+        const result = {
+          roleType: typeof raw.roleType === "string" ? raw.roleType : "general",
+          reasoning: typeof raw.reasoning === "string" ? raw.reasoning : "",
+        };
 
-      log.ai(prompt.length, 0, latency);
-      log.result("classify", {
-        roleType: result.roleType,
-        reasoning: result.reasoning.slice(0, 80),
-      });
-      return result;
+        log.ai(prompt.length, 0, latency);
+        log.result("classify", {
+          roleType: result.roleType,
+          reasoning: result.reasoning.slice(0, 80),
+        });
+        return result;
+      } catch (error) {
+        const latency = Date.now() - startTime;
+        log.ai(prompt.length, 0, latency);
+        log.warn(
+          `Classify fallback to general role type: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        return { roleType: "general", reasoning: "classification_unavailable" };
+      }
     });
 
     // Step 4: Slop detection
@@ -321,60 +408,49 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
       );
 
       const startTime = Date.now();
-      const response = await this.env.AI.run(MODEL, {
-        messages: [
-          { role: "system", content: SLOP_DETECTION_SYSTEM_PROMPT },
-          { role: "user", content: prompt },
-        ],
-        response_format: {
-          type: "json_schema",
-          json_schema: slopDetectionSchema,
-        },
-      });
-      const latency = Date.now() - startTime;
-
-      const payload = getResponsePayload(response).response;
-      let raw: Record<string, unknown>;
       try {
-        raw = parseJsonPayload(payload);
-      } catch {
-        const payloadPreview =
-          typeof payload === "string"
-            ? payload.slice(0, 300)
-            : JSON.stringify(payload).slice(0, 300);
-        log.warn(`Slop detection returned non-JSON payload: ${payloadPreview}`);
-        const fallback = {
-          consistencyScore: 50,
-          redFlags: [],
-          explanation: "Could not parse AI response",
+        const response = await runAiJsonWithGateway(this.env, {
+          stepLabel: "detect_slop",
+          systemPrompt: SLOP_DETECTION_SYSTEM_PROMPT,
+          userPrompt: prompt,
+          schema: slopDetectionSchema,
+        });
+        log.info(`AI Gateway log id (slop): ${this.env.AI.aiGatewayLogId ?? "n/a"}`);
+        const latency = Date.now() - startTime;
+
+        const payload = getResponsePayload(response).response;
+        const raw = parseJsonPayload(payload);
+
+        const result = {
+          consistencyScore:
+            typeof raw.consistencyScore === "number"
+              ? Math.max(0, Math.min(100, Math.round(raw.consistencyScore)))
+              : 0,
+          redFlags: Array.isArray(raw.redFlags)
+            ? raw.redFlags.filter((r: unknown): r is string => typeof r === "string")
+            : [],
+          explanation: typeof raw.explanation === "string" ? raw.explanation : "",
         };
+
         log.ai(prompt.length, 0, latency);
         log.result("slop", {
-          consistencyScore: fallback.consistencyScore,
-          redFlags: fallback.redFlags.length,
-          explanation: fallback.explanation,
+          consistencyScore: result.consistencyScore,
+          redFlags: result.redFlags.length,
+          explanation: result.explanation.slice(0, 100),
         });
-        return fallback;
+        return result;
+      } catch (error) {
+        const latency = Date.now() - startTime;
+        log.ai(prompt.length, 0, latency);
+        log.warn(
+          `Slop detection fallback: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        return {
+          consistencyScore: 0,
+          redFlags: ["slop_check_unavailable"],
+          explanation: "Slop detection unavailable",
+        };
       }
-
-      const result = {
-        consistencyScore:
-          typeof raw.consistencyScore === "number"
-            ? Math.max(0, Math.min(100, Math.round(raw.consistencyScore)))
-            : 50,
-        redFlags: Array.isArray(raw.redFlags)
-          ? raw.redFlags.filter((r: unknown): r is string => typeof r === "string")
-          : [],
-        explanation: typeof raw.explanation === "string" ? raw.explanation : "",
-      };
-
-      log.ai(prompt.length, 0, latency);
-      log.result("slop", {
-        consistencyScore: result.consistencyScore,
-        redFlags: result.redFlags.length,
-        explanation: result.explanation.slice(0, 100),
-      });
-      return result;
     });
 
     // Step 5: Run AI pre-evaluation
@@ -394,45 +470,63 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
         );
 
         const startTime = Date.now();
-        const response = await this.env.AI.run(MODEL, {
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt },
-          ],
-          response_format: {
-            type: "json_schema",
-            json_schema: preEvaluationSchema,
-          },
-        });
-        const latency = Date.now() - startTime;
+        try {
+          const response = await runAiJsonWithGateway(this.env, {
+            stepLabel: "run_ai_pre_evaluation",
+            systemPrompt,
+            userPrompt,
+            schema: preEvaluationSchema,
+          });
+          log.info(`AI Gateway log id (pre-eval): ${this.env.AI.aiGatewayLogId ?? "n/a"}`);
+          const latency = Date.now() - startTime;
 
-        const payload = getResponsePayload(response).response;
-        const raw = parseJsonPayload(payload);
-        const score =
-          typeof raw.score === "number" ? Math.max(0, Math.min(100, Math.round(raw.score))) : 0;
-        const missingRequirements = Array.isArray(raw.missingRequirements)
-          ? raw.missingRequirements.filter((r: unknown): r is string => typeof r === "string")
-          : [];
-        const confidence = ["low", "medium", "high"].includes(String(raw.confidence))
-          ? (String(raw.confidence) as "low" | "medium" | "high")
-          : "low";
-        const nextStep = ["interview_invited", "ask_followups", "hold"].includes(
-          String(raw.nextStep),
-        )
-          ? (String(raw.nextStep) as "interview_invited" | "ask_followups" | "hold")
-          : "hold";
+          const payload = getResponsePayload(response).response;
+          const raw = parseJsonPayload(payload);
+          const score =
+            typeof raw.score === "number" ? Math.max(0, Math.min(100, Math.round(raw.score))) : 0;
+          const missingRequirements = Array.isArray(raw.missingRequirements)
+            ? raw.missingRequirements.filter((r: unknown): r is string => typeof r === "string")
+            : [];
+          const confidence = ["low", "medium", "high"].includes(String(raw.confidence))
+            ? (String(raw.confidence) as "low" | "medium" | "high")
+            : "low";
+          const modelNextStep = ["interview_invited", "ask_followups", "hold"].includes(
+            String(raw.nextStep),
+          )
+            ? (String(raw.nextStep) as "interview_invited" | "ask_followups" | "hold")
+            : "hold";
 
-        const result: PreEvaluationResult = { score, missingRequirements, confidence, nextStep };
+          const result: PreEvaluationResult = {
+            score,
+            missingRequirements,
+            confidence,
+            modelNextStep,
+          };
 
-        log.ai(userPrompt.length, 0, latency);
-        log.result("ai", {
-          score: result.score,
-          confidence: result.confidence,
-          nextStep: result.nextStep,
-          missingCount: result.missingRequirements.length,
-        });
+          log.ai(userPrompt.length, 0, latency);
+          log.result("ai", {
+            score: result.score,
+            confidence: result.confidence,
+            modelNextStep: result.modelNextStep,
+            missingCount: result.missingRequirements.length,
+          });
 
-        return { result, rawResponse: JSON.stringify(response) };
+          return { result, rawResponse: JSON.stringify(response) };
+        } catch (error) {
+          const latency = Date.now() - startTime;
+          log.ai(userPrompt.length, 0, latency);
+          const message = error instanceof Error ? error.message : String(error);
+          log.warn(`Pre-evaluation fallback to hold: ${message}`);
+          return {
+            result: {
+              score: 0,
+              missingRequirements: ["pre_evaluation_unavailable"],
+              confidence: "low",
+              modelNextStep: "hold",
+            },
+            rawResponse: JSON.stringify({ error: message }),
+          };
+        }
       },
     );
 
@@ -445,7 +539,7 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
         score: aiResult.result.score,
         missingRequirements: aiResult.result.missingRequirements,
         confidence: aiResult.result.confidence,
-        nextStep: aiResult.result.nextStep,
+        nextStep: aiResult.result.modelNextStep,
         consistencyScore: slopCheck.consistencyScore,
         rawResponse: aiResult.rawResponse,
       });
@@ -462,7 +556,13 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
     // Step 7: Decision layer
     const decision = await step.do("decide_next_step", async () => {
       log.step("decide", "Checking quota and making decision");
-      if (aiResult.result.nextStep === "hold") {
+      const shouldInvite = shouldInviteFromDeterministicRules({
+        score: aiResult.result.score,
+        consistencyScore: slopCheck.consistencyScore,
+        missingRequirementsCount: aiResult.result.missingRequirements.length,
+      });
+
+      if (!shouldInvite) {
         log.result("decide", { action: "hold", reason: "low_fit" });
         return { action: "hold" as const };
       }
@@ -537,8 +637,7 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
         return { action: "quota_exhausted" as const };
       }
 
-      const interviewType =
-        aiResult.result.nextStep === "interview_invited" ? "full" : "quick_eval";
+      const interviewType = getInterviewTypeFromDeterministicRules(aiResult.result.score);
       const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
       const interview = await createInterview(db, {
         applicationId,
@@ -611,7 +710,7 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
     });
 
     log.info(
-      `Workflow complete: score=${aiResult.result.score}, nextStep=${aiResult.result.nextStep}, decision=${decision.action}`,
+      `Workflow complete: score=${aiResult.result.score}, modelNextStep=${aiResult.result.modelNextStep}, decision=${decision.action}`,
     );
     return { applicationId, result: aiResult.result };
   }
