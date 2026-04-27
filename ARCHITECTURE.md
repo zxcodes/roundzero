@@ -4,7 +4,7 @@
 
 This document reflects the app as it transitions from **platform-only** to **platform + AI layer**.
 
-**Currently live:**
+**Currently Not (NOT IN PROD):**
 
 - TanStack Start application (Nitro runtime)
 - Postgres-backed hiring platform
@@ -26,7 +26,7 @@ This document reflects the app as it transitions from **platform-only** to **pla
 
 | Layer | Technology |
 | --- | --- |
-| Framework | TanStack Start (React 19, Vite 7) |
+| Framework | TanStack Start (React 19, Vite 8) |
 | Runtime (app) | TanStack Start + Nitro |
 | Runtime (AI) | Cloudflare Workers (separate edge Worker with Workflows + Durable Objects) |
 | Database | Postgres (Docker locally, Neon intended for prod) |
