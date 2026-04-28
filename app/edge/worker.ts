@@ -3,7 +3,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { InterviewAgent } from "./agents/interview-agent";
 import { getInterviewContextById } from "./queries/interviews/queries_sql";
-import { getDb } from "./shared/db";
+import { getWorkerDb } from "./shared/db.worker";
 import { validateEnv } from "./shared/env.worker";
 import { getInterviewAgentState, markInterviewAgentStarted } from "./shared/interview-agent-client";
 import { PostEvaluationWorkflow } from "./workflows/post-evaluation";
@@ -65,7 +65,7 @@ app.get("/internal/interviews/:interviewId/state", async (c) => {
   }
 
   const interviewId = c.req.param("interviewId");
-  const db = getDb();
+  const db = getWorkerDb();
   const context = await getInterviewContextById(db, { id: interviewId });
   if (!context) {
     return c.json({ error: "Interview not found" }, 404);
@@ -84,7 +84,7 @@ app.post("/internal/interviews/:interviewId/start", async (c) => {
   }
 
   const interviewId = c.req.param("interviewId");
-  const db = getDb();
+  const db = getWorkerDb();
   const context = await getInterviewContextById(db, { id: interviewId });
   if (!context) {
     return c.json({ error: "Interview not found" }, 404);
