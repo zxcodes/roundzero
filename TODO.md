@@ -1,5 +1,6 @@
 ## TODO
 
+- use faded out empty states like cards more like a graphic plus texts
 - too many applicant status enums (follwup enum etc, only keep using ones)
 - company email reports are really bad. they have zero styling. review every single resend email template and align with rest of the app.
 - detect short and uninterested answers, + all the ai stuff I planned to detect (guardrails)

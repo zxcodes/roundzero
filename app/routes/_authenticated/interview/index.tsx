@@ -31,16 +31,14 @@ export const Route = createFileRoute("/_authenticated/interview/")({
 
 function InterviewIndexPage() {
   return (
-    <div className="mx-auto flex min-h-[70vh] w-full max-w-3xl items-center justify-center p-6">
+    <div className="flex min-h-0 flex-1 items-center justify-center p-6">
       <Empty>
         <EmptyHeader>
           <EmptyMedia>
             <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={2} className="size-5" />
           </EmptyMedia>
           <EmptyTitle>No interview sessions yet</EmptyTitle>
-          <EmptyDescription>
-            Interview invitations will appear here after pre-evaluation selects your application.
-          </EmptyDescription>
+          <EmptyDescription>Active and past interviews will appear here.</EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
           <Link to="/dashboard/applications" className="text-sm underline-offset-4 hover:underline">
