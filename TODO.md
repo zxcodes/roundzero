@@ -1,12 +1,9 @@
 ## TODO
 
-<!--- when the agent ends an interview, the ui doesnt update, i need to refresh to see interview has ended.-->
-<!--- the agent interview feels off. the entire interview should be based on the actual candidate's profile, dynamic followups etc like a full fledged conv. also check if the agent is asking company's questions (mandatory and all things I expected from the agent.)-->
 - maybe remove submit button since agent can auto-end an interview? think.
 - interview status indicator is being shown twice in interviews. might be redundant.
 - check interview expiry, show it in interviews etc.
 - the interviews has no sidebar or anything when there's are no interviews. show sidebar with empty states like rest of the app.
-- full report needs a lot of work including overall ux, ui, representation, accuracy, for ex (even if an interview goes bad, the report seems to show good points. prob in llm layer)
 - in post eval, refine the scores using the actual agent conv and add it to the final report.
 - update seed to include much more data for better agent evaluation with multiple jobs having company questions (relocation, visa, etc etc)
 - think about context compaction to save on costs.
@@ -34,6 +31,9 @@
 
 
 
+<!--- full report needs a lot of work including overall ux, ui, representation, accuracy, for ex (even if an interview goes bad, the report seems to show good points. prob in llm layer)-->
+<!--- when the agent ends an interview, the ui doesnt update, i need to refresh to see interview has ended.-->
+<!--- the agent interview feels off. the entire interview should be based on the actual candidate's profile, dynamic followups etc like a full fledged conv. also check if the agent is asking company's questions (mandatory and all things I expected from the agent.)-->
 <!--- when an interview starts or ends, the ui actions don't update. need to refresh page to see if an interview was ended. the entire chat ui should update in real time.-->
 <!--- the agent doesnt greet by default even after starting the interview. it mush greet with relevant info about the candidate.-->
 <!--- pre-evaluation: make system prompt more detail. instead of just looking at resume text, also consider what the candidate has done in terms of dx, tech debt, that should add up to the score.
