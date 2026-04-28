@@ -90,12 +90,11 @@ roundzero/              # Main app - TanStack Start + Nitro
 └── package.json        # TanStack Start deps
 
 edge/                   # AI Worker - Cloudflare Workers
-├── src/
-│   ├── worker.ts       # Hono + Agents fetch handler
-│   ├── workflows/      # Cloudflare Workflow classes
-│   ├── agents/         # Durable Object agent classes
-│   ├── queries/        # SQLC-generated query files
-│   └── shared/         # DB connection, env validation
+├── worker.ts           # Hono + Agents fetch handler
+├── workflows/          # Cloudflare Workflow classes
+├── agents/             # Durable Object agent classes
+├── queries/            # SQLC-generated query files
+├── shared/             # DB connection, env validation
 ├── package.json        # Wrangler, Workers deps
 └── wrangler.jsonc      # AI, R2, Workflow, DO bindings
 ```
@@ -207,20 +206,20 @@ app/
 ├── routes/              # TanStack file-based routes
 ├── features/            # Product feature modules
 ├── components/          # Shared/global UI
-├── shared/              # DB, middleware, form helpers, shared utilities
-├── lib/                 # Small app utilities
+├── shared/              # Cross-runtime utilities (safe for both app + edge)
+├── lib/                 # Small app utilities (client/server, non-edge-specific)
+│
+├── edge/                # ✅ Edge runtime (formerly /edge)
+│   ├── worker.ts         # Worker entrypoint (Hono server)
+│   ├── workflows/       # Cloudflare Workflows
+│   ├── agents/          # Durable Objects
+│   ├── queries/         # SQLC-generated queries
+│   ├── shared/          # Edge-only shared (env, DB bindings, etc.)
+│   ├── package.json     # Edge-specific deps (or merge—see below)
+│   └── wrangler.jsonc   # Worker config
+│
 ├── router.tsx
 └── styles.css
-
-edge/
-├── src/
-│   ├── index.ts         # Worker entrypoint (Hono HTTP server)
-│   ├── workflows/       # Cloudflare Workflow classes
-│   ├── agents/          # Durable Object agent classes
-│   ├── queries/         # SQLC-generated query files
-│   └── shared/          # DB connection, env validation
-├── package.json         # Edge Worker dependencies
-└── wrangler.jsonc       # Worker bindings configuration
 
 db/
 ├── migrations/          # dbmate init migration
