@@ -62,9 +62,9 @@ export function InterviewSidebar({
         </p>
       </SidebarHeader>
 
-      <SidebarContent className="flex items-center justify-center">
+      <SidebarContent>
         {interviews.length === 0 ? (
-          <div className="px-3 py-4">
+          <div className="flex h-full items-center justify-center px-3 py-4">
             <Empty>
               <EmptyHeader>
                 <EmptyMedia variant="icon">
