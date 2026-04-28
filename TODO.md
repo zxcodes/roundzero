@@ -1,6 +1,7 @@
 ## TODO
 
 - too many applicant status enums (follwup enum etc, only keep using ones)
+- company email reports are really bad. they have zero styling. review every single resend email template and align with rest of the app.
 - detect short and uninterested answers, + all the ai stuff I planned to detect (guardrails)
 - maybe remove submit button since agent can auto-end an interview? think.
 - interview status indicator is being shown twice in interviews. might be redundant.
