@@ -4,10 +4,10 @@
     "app/router.tsx",
     "app/routeTree.gen.ts",
     "app/routes/**/*.{ts,tsx}",
-    "edge/src/worker.ts"
+    "app/edge/worker.ts"
   ],
-  "project": ["app/**/*.{ts,tsx}", "edge/src/**/*.{ts,tsx}"],
-  "ignore": ["app/**/*_sql.ts", "app/components/ui/**", "edge/src/**/*_sql.ts"],
+  "project": ["app/**/*.{ts,tsx}", "app/edge/**/*.{ts,tsx}"],
+  "ignore": ["app/**/*_sql.ts", "app/components/ui/**", "app/edge/**/*_sql.ts"],
   "ignoreBinaries": ["sqlc"],
   "ignoreDependencies": [
     "@tanstack/react-devtools",
