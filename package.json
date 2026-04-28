@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "bun run --parallel dev:app dev:edge",
     "dev:app": "vite dev",
-    "dev:edge": "cd edge && wrangler dev",
+    "dev:edge": "cd app/edge && wrangler dev",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
@@ -14,13 +14,17 @@
     "db:seed:me": "bun ./db/seed/seed-me.ts",
     "db:migrate": "dbmate migrate up --url $DATABASE_URL",
     "check": "biome check . --write && bun typecheck",
-    "typecheck": "tsgo --noEmit && cd edge && tsgo --noEmit",
-    "typegen": "cd edge && wrangler types",
+    "typecheck": "tsgo --noEmit",
+    "typegen": "cd app/edge && wrangler types",
     "knip": "knip",
     "setup": "bun run setup.ts",
     "prepare": "husky"
   },
   "dependencies": {
+    "hono": "^4.12.15",
+    "mammoth": "^1.12.0",
+    "unpdf": "^1.6.0",
+    "workers-ai-provider": "^3.1.12",
     "@aws-sdk/client-s3": "^3.1038.0",
     "@aws-sdk/s3-request-presigner": "^3.1038.0",
     "@cloudflare/ai-chat": "^0.5.2",

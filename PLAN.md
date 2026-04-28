@@ -130,14 +130,14 @@ Prepare the database, enums, and server boundaries before the AI funnel goes liv
 
 ### 4.7 Cloudflare Workflows Setup
 
-- [x] Create `edge/src/workflows/pre-evaluation.ts`
+- [x] Create `app/edge/workflows/pre-evaluation.ts`
   - Extends `WorkflowEntrypoint<Env, { applicationId: string }>`
   - Defines durable steps for the pre-evaluation pipeline
-- [x] Create `edge/src/workflows/post-evaluation.ts`
+- [x] Create `app/edge/workflows/post-evaluation.ts`
   - Extends `WorkflowEntrypoint<Env, { interviewId: string }>`
   - Defines durable steps for the evaluation pipeline
 - [x] Add `workflows` array to `edge/wrangler.jsonc` with both workflow bindings
-- [x] Export workflow classes from `edge/src/index.ts`
+- [x] Export workflow classes from `app/edge/index.ts`
 - [x] Main app triggers workflows via authenticated HTTP `fetch()` to edge Worker
 
 ### 4.6 Remove Mock-Only AI Data
@@ -162,7 +162,7 @@ Build the lightweight pre-evaluation stage as a durable Cloudflare Workflow.
 
 ### 5.1 Workflow Definition
 
-- [x] Create `edge/src/workflows/pre-evaluation.ts`
+- [x] Create `app/edge/workflows/pre-evaluation.ts`
   - Extends `WorkflowEntrypoint<Env, { applicationId: string }>`
   - Steps execute sequentially with automatic retry on failure
   - Each step's result is persisted; interrupted workflows resume from the last completed step
@@ -287,7 +287,7 @@ Build the async chat interview surface and backend.
 
 ### 6.2 Interview Agent Boundary
 
-- [x] Create `edge/src/agents/interview-agent.ts`
+- [x] Create `app/edge/agents/interview-agent.ts`
   - Durable Object class for interview sessions
   - System prompt construction from job requirements + resume snapshot
   - For `quick_eval`: system prompt instructs 2–3 clarifying questions only
@@ -346,7 +346,7 @@ Build the report generation pipeline and company-facing report UI with real data
 
 ### 7.1 Post-Evaluation Workflow
 
-- [x] Create `edge/src/workflows/post-evaluation.ts`
+- [x] Create `app/edge/workflows/post-evaluation.ts`
   - Extends `WorkflowEntrypoint<Env, { interviewId: string }>`
   - Triggered when interview completes via `POST /post-evaluate`
 
@@ -367,7 +367,7 @@ Current implementation status:
 - [x] Workflow binding is `POST_EVALUATION`
 - [x] Report persistence is live (`createReport`)
 - [x] `report_ready` in-app notification creation is live
-- [x] Best-effort email delivery for `report_ready` is live (`edge/src/shared/email.ts`)
+- [x] Best-effort email delivery for `report_ready` is live (`app/edge/shared/email.ts`)
 - [ ] Advanced multi-step scoring decomposition (technical/communication/experience as separate LLM calls) — deferred to V2
 
 ### 7.2 Report Data Model
@@ -450,7 +450,7 @@ Replace the raw Durable Object + `env.AI.run()` interview implementation with th
 cd edge && npm install agents @cloudflare/ai-chat workers-ai-provider ai
 ```
 
-**New file: `edge/src/agents/interview-agent.ts`**
+**New file: `app/edge/agents/interview-agent.ts`**
 
 - Extend `AIChatAgent<Env>` instead of raw `DurableObject`
 - Override `onChatMessage(onFinish)` — called on every candidate message
@@ -477,8 +477,8 @@ cd edge && npm install agents @cloudflare/ai-chat workers-ai-provider ai
 - `completed` → agent triggers post-evaluation workflow via RPC or HTTP
 
 **Remove old files:**
-- `edge/src/agents/interview-agent.ts` (raw DO version) → replaced
-- Keep `edge/src/shared/interview-agent-client.ts` temporarily for backward compat during migration
+- `app/edge/agents/interview-agent.ts` (raw DO version) → replaced
+- Keep `app/edge/shared/interview-agent-client.ts` temporarily for backward compat during migration
 
 ### 7.5.2 Frontend: TanStack + Agents SDK Client
 
@@ -571,7 +571,7 @@ The interview experience gets a dedicated layout separate from the main dashboar
 
 ### 7.5.3 Worker Route Handlers
 
-**Update `edge/src/worker.ts`**
+**Update `app/edge/worker.ts`**
 
 - Add Agents SDK Hono middleware: `app.use("/agents/*", agentsMiddleware())`
 - Register `InterviewAgent` class via `app.agents("InterviewAgent", InterviewAgent)`

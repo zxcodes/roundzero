@@ -14,7 +14,7 @@ sql:
         options:
           runtime: node
           driver: postgres
-      - out: edge/src/queries/auth
+      - out: app/edge/queries/auth
         plugin: ts
         options:
           runtime: node
@@ -37,7 +37,7 @@ sql:
         options:
           runtime: node
           driver: postgres
-      - out: edge/src/queries/jobs
+      - out: app/edge/queries/jobs
         plugin: ts
         options:
           runtime: node
@@ -51,7 +51,7 @@ sql:
         options:
           runtime: node
           driver: postgres
-      - out: edge/src/queries/applications
+      - out: app/edge/queries/applications
         plugin: ts
         options:
           runtime: node
@@ -74,7 +74,7 @@ sql:
         options:
           runtime: node
           driver: postgres
-      - out: edge/src/queries/notifications
+      - out: app/edge/queries/notifications
         plugin: ts
         options:
           runtime: node
@@ -88,7 +88,7 @@ sql:
         options:
           runtime: node
           driver: postgres
-      - out: edge/src/queries/pre-evaluations
+      - out: app/edge/queries/pre-evaluations
         plugin: ts
         options:
           runtime: node
@@ -111,25 +111,25 @@ sql:
         options:
           runtime: node
           driver: postgres
-      - out: edge/src/queries/interviews
+      - out: app/edge/queries/interviews
         plugin: ts
         options:
           runtime: node
           driver: postgres
   - schema: "db/migrations"
-    queries: "edge/src/queries/reports/queries.sql"
+    queries: "app/edge/queries/reports/queries.sql"
     engine: postgresql
     codegen:
-      - out: edge/src/queries/reports
+      - out: app/edge/queries/reports
         plugin: ts
         options:
           runtime: node
           driver: postgres
   - schema: "db/migrations"
-    queries: "edge/src/queries/reports-by-job/queries.sql"
+    queries: "app/edge/queries/reports-by-job/queries.sql"
     engine: postgresql
     codegen:
-      - out: edge/src/queries/reports-by-job
+      - out: app/edge/queries/reports-by-job
         plugin: ts
         options:
           runtime: node

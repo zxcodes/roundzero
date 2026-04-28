@@ -1,19 +1,17 @@
 {
-  "$schema": "./node_modules/wrangler/config-schema.json",
+  "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "roundzero-edge",
   "preview_urls": true,
   "compatibility_date": "2026-04-23",
-  "compatibility_flags": [
-    "nodejs_compat"
-  ],
-  "main": "src/worker.ts",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "./worker.ts",
   "observability": {
     "enabled": true,
     "logs": {
-      "enabled": true,
+      "enabled": true
     },
     "traces": {
-      "enabled": true,
+      "enabled": true
     }
   },
   "ai": {
@@ -49,9 +47,7 @@
   "migrations": [
     {
       "tag": "v1",
-      "new_sqlite_classes": [
-        "InterviewAgent"
-      ]
+      "new_sqlite_classes": ["InterviewAgent"]
     }
   ]
 }

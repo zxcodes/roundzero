@@ -193,10 +193,10 @@ app/features/
 
 ### AI layer (in `edge/`)
 
-- `edge/src/workflows/pre-evaluation.ts`
-- `edge/src/workflows/post-evaluation.ts`
-- `edge/src/agents/interview-agent.ts`
-- `edge/src/shared/email.ts` (Resend helper for workflow email delivery)
+- `app/edge/workflows/pre-evaluation.ts`
+- `app/edge/workflows/post-evaluation.ts`
+- `app/edge/agents/interview-agent.ts`
+- `app/edge/shared/email.ts` (Resend helper for workflow email delivery)
 
 ---
 
