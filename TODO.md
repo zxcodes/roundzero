@@ -13,6 +13,7 @@
 - **pre-eval: switch slop + eval steps to OpenRouter (Claude 3.5 Haiku / Llama 3.3 70B)** for reliable structured outputs and deterministic scoring. Keep Workers AI for classify step only. See `pre-evaluation.ts` comments for context. Do this before scaling eval volume. And add temperature: 0 and explicit max_tokens — eliminates score variance.
 - pre-eval: Delete parseJsonPayload entirely — OpenRouter + Claude actually respects response_format. You’ll get clean objects every time.
 
+- changing from pre_screening to interview invite for pending roles throws an error.
 - use faded out empty states like cards more like a graphic plus texts
 - too many applicant status enums (follwup enum etc, only keep using ones by checking end to end flow)
 - company email reports are really bad. they have zero styling. review every single resend email template and align with rest of the app.
