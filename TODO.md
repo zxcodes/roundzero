@@ -2,17 +2,9 @@
 
 
 
-## Agent & AI Stuff
-- disable copy pasting in the entire agent interview chat.
-- add guard rails during agent conv, detect short and uninterested answers, detect screenshots, detect ai responses, detect if text was copied, and detect if answers don't align with normal conv tone and more. basically ai beating ai. - this will be another step in post-evaluation.
-- ai job creation (just describe the job, ai completes it, review, if yes, creates a posting. can use voice too to describe.)
-- show suggested skills based on job description.
-- gatekeep ai features using paywall.
-- auto find and apply to multiple jobs based on the profile (paid feature).
-- think about compacting existing user-agent chats and reusing them for similar roles to save time and compute.
-- **pre-eval: switch slop + eval steps to OpenRouter (Claude 3.5 Haiku / Llama 3.3 70B)** for reliable structured outputs and deterministic scoring. Keep Workers AI for classify step only. See `pre-evaluation.ts` comments for context. Do this before scaling eval volume. And add temperature: 0 and explicit max_tokens — eliminates score variance.
-- pre-eval: Delete parseJsonPayload entirely — OpenRouter + Claude actually respects response_format. You’ll get clean objects every time.
-
+- generated report on company side links to full profile, it should not
+- in post eval add another slop check to review interview transcript
+- switching interviews has stale data. switching to 1 shows data from 2nd and vice versa. fixes on refresh
 - changing from pre_screening to interview invite for pending roles throws an error.
 - use faded out empty states like cards more like a graphic plus texts
 - too many applicant status enums (follwup enum etc, only keep using ones by checking end to end flow)
@@ -44,7 +36,16 @@
 - Basic analytics, company interest (like, dislike(why)? stretch)
 
 
-
+## Agent & AI Stuff
+- disable copy pasting in the entire agent interview chat.
+- add guard rails during agent conv, detect short and uninterested answers, detect screenshots, detect ai responses, detect if text was copied, and detect if answers don't align with normal conv tone and more. basically ai beating ai. - this will be another step in post-evaluation.
+- ai job creation (just describe the job, ai completes it, review, if yes, creates a posting. can use voice too to describe.)
+- show suggested skills based on job description.
+- gatekeep ai features using paywall.
+- auto find and apply to multiple jobs based on the profile (paid feature).
+- think about compacting existing user-agent chats and reusing them for similar roles to save time and compute.
+- **pre-eval: switch slop + eval steps to OpenRouter (Claude 3.5 Haiku / Llama 3.3 70B)** for reliable structured outputs and deterministic scoring. Keep Workers AI for classify step only. See `pre-evaluation.ts` comments for context. Do this before scaling eval volume. And add temperature: 0 and explicit max_tokens — eliminates score variance.
+- pre-eval: Delete parseJsonPayload entirely — OpenRouter + Claude actually respects response_format. You’ll get clean objects every time.
 
 <!--- full report needs a lot of work including overall ux, ui, representation, accuracy, for ex (even if an interview goes bad, the report seems to show good points. prob in llm layer)-->
 <!--- when the agent ends an interview, the ui doesnt update, i need to refresh to see interview has ended.-->

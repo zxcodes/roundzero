@@ -22,7 +22,7 @@ export function InterviewTranscript({
 }: InterviewTranscriptProps) {
   if (messages.length === 0) {
     return (
-      <div className="flex h-full min-h-72 items-center justify-center px-6 py-10">
+      <div className="flex h-full min-h-[70vh] items-center justify-center px-6 py-10">
         <div className="mx-auto flex max-w-md flex-col items-center gap-3 text-center text-muted-foreground">
           <div className="flex size-12 items-center justify-center rounded-full border border-border/70 bg-card shadow-sm">
             <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={2} className="size-5 text-primary" />
