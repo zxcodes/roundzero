@@ -21,7 +21,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
-import type { ComponentProps, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -944,10 +944,3 @@ function TranscriptDialog({
     </Dialog>
   );
 }
-
-// Re-exports kept temporarily so that any consumer importing the old names
-// gets a clear breakage. The applicants route now uses ReportSnapshotCard,
-// the applicant-reports route uses ReportTimeline.
-export type { ReportData, TranscriptMessage };
-export type ReportSnapshotCardProps = ComponentProps<typeof ReportSnapshotCard>;
-export type ReportTimelineProps = ComponentProps<typeof ReportTimeline>;
