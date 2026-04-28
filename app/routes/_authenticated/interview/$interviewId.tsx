@@ -3,24 +3,19 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, notFound, redirect, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
 import { toast } from "sonner";
-import { CommandPalette } from "@/components/command-palette";
-import { InterviewWorkspaceSkeleton } from "@/components/route-skeletons";
+import { InterviewContentSkeleton } from "@/components/route-skeletons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { InterviewChat } from "@/features/interviews/components/interview-chat";
-import { InterviewSidebar } from "@/features/interviews/components/interview-sidebar";
 import { useInterviewChat } from "@/features/interviews/hooks/use-interview-chat";
 import {
   cancelMyInterview,
   completeMyInterview,
   getMyInterview,
-  getMyInterviews,
   startMyInterview,
 } from "@/features/interviews/server/functions";
-import { useCommandPaletteShortcut } from "@/hooks/use-command-palette-shortcut";
 import { validateUuidParams } from "@/shared/validation";
 
 const statusConfig: Record<string, { label: string; tone: string }> = {
@@ -51,25 +46,22 @@ export const Route = createFileRoute("/_authenticated/interview/$interviewId")({
     validateUuidParams({ interviewId: params.interviewId });
   },
   loader: async ({ params }) => {
-    const interviews = await getMyInterviews();
     const interview = await getMyInterview({ data: { interviewId: params.interviewId } });
 
     if (!interview) {
       throw notFound();
     }
 
-    return { interview, interviews };
+    return { interview };
   },
-  pendingComponent: InterviewWorkspaceSkeleton,
+  pendingComponent: InterviewContentSkeleton,
   component: InterviewWorkspacePage,
 });
 
 function InterviewWorkspacePage() {
-  const { interview, interviews } = Route.useLoaderData();
-  const { isCompany } = Route.useRouteContext();
+  const { interview } = Route.useLoaderData();
   const router = useRouter();
   const chat = useInterviewChat(interview.id);
-  const [commandOpen, setCommandOpen] = useState(false);
   const agentSessionStatus = chat.sessionStatus;
   const effectiveStatus =
     interview.status === "in_progress" && agentSessionStatus && agentSessionStatus !== "in_progress"
@@ -125,9 +117,6 @@ function InterviewWorkspacePage() {
   const isEnded = effectiveStatus === "completed" || effectiveStatus === "cancelled";
   const isStarting = isPending && startMutation.isPending;
   const isSubmitting = isInProgress && completeMutation.isPending;
-  const interviewsForSidebar = interviews.map((item) =>
-    item.id === interview.id ? { ...item, status: effectiveStatus } : item,
-  );
 
   const onStart = () => {
     startMutation.mutate({ data: { interviewId: interview.id } });
@@ -149,102 +138,74 @@ function InterviewWorkspacePage() {
     await router.invalidate();
   };
 
-  useCommandPaletteShortcut(() => {
-    setCommandOpen((prev) => !prev);
-  });
-
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-        } as { [key: string]: string }
-      }
-    >
-      <CommandPalette isCompany={isCompany} open={commandOpen} onOpenChange={setCommandOpen} />
-      <InterviewSidebar interviewId={interview.id} interviews={interviewsForSidebar} />
-      <SidebarInset>
-        <div className="flex h-full min-h-0 w-full bg-background p-2 text-foreground">
-          <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
-            <header className="flex shrink-0 flex-col gap-3 border-b border-border/60 bg-card px-4 py-3.5 md:flex-row md:items-center md:justify-between md:px-6 md:py-4">
-              <div className="min-w-0">
-                <div className="mb-1 flex items-center gap-2">
-                  <SidebarTrigger className="-ml-1.5" />
-                  <p className="truncate text-base font-semibold md:text-lg">
-                    {interview.jobTitle}
-                  </p>
-                  <Badge className={`text-[11px] ${status.tone}`}>{status.label}</Badge>
-                </div>
-                <p className="truncate text-xs text-muted-foreground md:text-sm">
-                  {interview.companyName}
-                </p>
-              </div>
+    <>
+      <header className="flex shrink-0 flex-col gap-3 border-b border-border/60 bg-card px-4 py-3.5 md:flex-row md:items-center md:justify-between md:px-6 md:py-4">
+        <div className="min-w-0">
+          <div className="mb-1 flex items-center gap-2">
+            <SidebarTrigger className="-ml-1.5" />
+            <p className="truncate text-base font-semibold md:text-lg">{interview.jobTitle}</p>
+            <Badge className={`text-[11px] ${status.tone}`}>{status.label}</Badge>
+          </div>
+          <p className="truncate text-xs text-muted-foreground md:text-sm">
+            {interview.companyName}
+          </p>
+        </div>
 
-              <div className="flex w-full flex-wrap justify-end gap-2 md:w-auto">
-                {canSend ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={onCancel}
-                    disabled={cancelMutation.isPending}
-                  >
-                    <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-4" />
-                    Cancel
-                  </Button>
-                ) : null}
+        <div className="flex w-full flex-wrap justify-end gap-2 md:w-auto">
+          {canSend ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onCancel}
+              disabled={cancelMutation.isPending}
+            >
+              <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-4" />
+              Cancel
+            </Button>
+          ) : null}
 
-                {isPending || isInProgress ? (
-                  <Button
-                    size="sm"
-                    onClick={isPending ? onStart : onComplete}
-                    disabled={startMutation.isPending || completeMutation.isPending}
-                  >
-                    {isStarting || isSubmitting ? (
-                      <HugeiconsIcon
-                        icon={Loading03Icon}
-                        strokeWidth={2}
-                        className="size-4 animate-spin"
-                      />
-                    ) : (
-                      <HugeiconsIcon
-                        icon={CheckmarkCircle02Icon}
-                        strokeWidth={2}
-                        className="size-4"
-                      />
-                    )}
-                    {isPending ? "Start" : "Submit"}
-                  </Button>
-                ) : null}
-              </div>
-            </header>
-
-            {isStarting || isSubmitting ? (
-              <div className="flex shrink-0 items-center gap-2 border-b border-border/60 bg-muted/40 px-4 py-2 text-sm text-muted-foreground md:px-6">
+          {isPending || isInProgress ? (
+            <Button
+              size="sm"
+              onClick={isPending ? onStart : onComplete}
+              disabled={startMutation.isPending || completeMutation.isPending}
+            >
+              {isStarting || isSubmitting ? (
                 <HugeiconsIcon
                   icon={Loading03Icon}
                   strokeWidth={2}
                   className="size-4 animate-spin"
                 />
-                <span>
-                  {isStarting
-                    ? "Starting interview and preparing your first question..."
-                    : "Submitting interview and generating your report..."}
-                </span>
-              </div>
-            ) : null}
-
-            <div className="min-h-0 flex-1">
-              <InterviewChat
-                messages={chat.messages}
-                canSend={canSend}
-                isEnded={isEnded}
-                isStreaming={chat.isStreaming}
-                onSend={onSendMessage}
-              />
-            </div>
-          </section>
+              ) : (
+                <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-4" />
+              )}
+              {isPending ? "Start" : "Submit"}
+            </Button>
+          ) : null}
         </div>
-      </SidebarInset>
-    </SidebarProvider>
+      </header>
+
+      {isStarting || isSubmitting ? (
+        <div className="flex shrink-0 items-center gap-2 border-b border-border/60 bg-muted/40 px-4 py-2 text-sm text-muted-foreground md:px-6">
+          <HugeiconsIcon icon={Loading03Icon} strokeWidth={2} className="size-4 animate-spin" />
+          <span>
+            {isStarting
+              ? "Starting interview and preparing your first question..."
+              : "Submitting interview and generating your report..."}
+          </span>
+        </div>
+      ) : null}
+
+      <div className="min-h-0 flex-1">
+        <InterviewChat
+          messages={chat.messages}
+          canSend={canSend}
+          isEnded={isEnded}
+          isStreaming={chat.isStreaming}
+          onSend={onSendMessage}
+        />
+      </div>
+    </>
   );
 }

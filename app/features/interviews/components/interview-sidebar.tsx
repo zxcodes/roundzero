@@ -2,6 +2,7 @@ import { ArrowLeft01Icon, BubbleChatIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import {
   Sidebar,
   SidebarContent,
@@ -16,7 +17,7 @@ import {
 import { cn } from "@/lib/utils";
 
 type InterviewSidebarProps = {
-  interviewId: string;
+  activeInterviewId?: string;
   interviews: Array<{
     id: string;
     jobTitle: string;
@@ -44,7 +45,7 @@ const getSessionTone = (value: string) => {
 };
 
 export function InterviewSidebar({
-  interviewId,
+  activeInterviewId,
   interviews,
   className,
   ...props
@@ -61,53 +62,66 @@ export function InterviewSidebar({
         </p>
       </SidebarHeader>
 
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu className="gap-2">
-              {interviews.map((item) => {
-                const isActive = item.id === interviewId;
+      <SidebarContent className="flex items-center justify-center">
+        {interviews.length === 0 ? (
+          <div className="px-3 py-4">
+            <Empty>
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={2} className="size-5" />
+                </EmptyMedia>
+                <EmptyTitle>No sessions</EmptyTitle>
+              </EmptyHeader>
+            </Empty>
+          </div>
+        ) : (
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu className="gap-2">
+                {interviews.map((item) => {
+                  const isActive = item.id === activeInterviewId;
 
-                return (
-                  <SidebarMenuItem key={item.id}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive}
-                      className={cn("h-auto flex-col items-start gap-1.5 rounded-xl px-3 py-3.5")}
-                    >
-                      <Link
-                        to="/interview/$interviewId"
-                        params={{ interviewId: item.id }}
-                        className="flex w-full flex-col items-start"
+                  return (
+                    <SidebarMenuItem key={item.id}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={isActive}
+                        className={cn("h-auto flex-col items-start gap-1.5 rounded-xl px-3 py-3.5")}
                       >
-                        <p className="w-full truncate text-sm font-medium">{item.jobTitle}</p>
-                        <p
-                          className={cn(
-                            "w-full truncate text-xs",
-                            isActive
-                              ? "text-sidebar-accent-foreground/80"
-                              : "text-muted-foreground",
-                          )}
+                        <Link
+                          to="/interview/$interviewId"
+                          params={{ interviewId: item.id }}
+                          className="flex w-full flex-col items-start"
                         >
-                          {item.companyName}
-                        </p>
-                        <Badge
-                          className={cn(
-                            "mt-1 text-[11px]",
-                            getSessionTone(item.status),
-                            isActive ? "ring-1 ring-sidebar-accent-foreground/25" : "",
-                          )}
-                        >
-                          {getSessionLabel(item.status)}
-                        </Badge>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                          <p className="w-full truncate text-sm font-medium">{item.jobTitle}</p>
+                          <p
+                            className={cn(
+                              "w-full truncate text-xs",
+                              isActive
+                                ? "text-sidebar-accent-foreground/80"
+                                : "text-muted-foreground",
+                            )}
+                          >
+                            {item.companyName}
+                          </p>
+                          <Badge
+                            className={cn(
+                              "mt-1 text-[11px]",
+                              getSessionTone(item.status),
+                              isActive ? "ring-1 ring-sidebar-accent-foreground/25" : "",
+                            )}
+                          >
+                            {getSessionLabel(item.status)}
+                          </Badge>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter>
