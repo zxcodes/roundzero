@@ -271,7 +271,7 @@ function ApplicantReviewPage() {
   const currentStageIndex = APPLICATION_STAGES.indexOf(
     currentStatus as (typeof APPLICATION_STAGES)[number],
   );
-  const meta = stageCopy[currentStatus as keyof typeof stageCopy] ?? stageCopy.applied;
+  const meta = stageCopy[currentStatus] ?? stageCopy.applied;
   const report = reportTimeline?.report ? parseReportData(reportTimeline.report) : null;
 
   const onStatusValueChange = async (value: string) => {
