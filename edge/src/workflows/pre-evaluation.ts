@@ -386,7 +386,7 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
         log.ai(prompt.length, 0, latency);
         log.result("classify", {
           roleType: result.roleType,
-          reasoning: result.reasoning.slice(0, 80),
+          reasoning: result.reasoning,
         });
         return result;
       } catch (error) {
@@ -436,7 +436,7 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
         log.result("slop", {
           consistencyScore: result.consistencyScore,
           redFlags: result.redFlags.length,
-          explanation: result.explanation.slice(0, 100),
+          explanation: result.explanation,
         });
         return result;
       } catch (error) {
