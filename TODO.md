@@ -3,6 +3,7 @@
 
 
 ## Agent & AI Stuff
+- disable copy pasting in the entire agent interview chat.
 - add guard rails during agent conv, detect short and uninterested answers, detect screenshots, detect ai responses, detect if text was copied, and detect if answers don't align with normal conv tone and more. basically ai beating ai. - this will be another step in post-evaluation.
 - ai job creation (just describe the job, ai completes it, review, if yes, creates a posting. can use voice too to describe.)
 - show suggested skills based on job description.
