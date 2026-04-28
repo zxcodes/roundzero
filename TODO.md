@@ -1,9 +1,20 @@
 ## TODO
 
+
+
+## Agent & AI Stuff
+- add guard rails during agent conv, detect short and uninterested answers, detect screenshots, detect ai responses, detect if text was copied, and detect if answers don't align with normal conv tone and more. basically ai beating ai.
+- ai job creation (just describe the job, ai completes it, review, if yes, creates a posting. can use voice too to describe.)
+- show suggested skills based on job description.
+- gatekeep ai features using paywall.
+- auto find and apply to multiple jobs based on the profile (paid feature).
+- think about compacting existing user-agent chats and reusing them for similar roles to save time and compute.
+- **pre-eval: switch slop + eval steps to OpenRouter (Claude 3.5 Haiku / Llama 3.3 70B)** for reliable structured outputs and deterministic scoring. Keep Workers AI for classify step only. See `pre-evaluation.ts` comments for context. Do this before scaling eval volume. And add temperature: 0 and explicit max_tokens — eliminates score variance.
+- pre-eval: Delete parseJsonPayload entirely — OpenRouter + Claude actually respects response_format. You’ll get clean objects every time.
+
 - use faded out empty states like cards more like a graphic plus texts
 - too many applicant status enums (follwup enum etc, only keep using ones)
 - company email reports are really bad. they have zero styling. review every single resend email template and align with rest of the app.
-- detect short and uninterested answers, + all the ai stuff I planned to detect (guardrails)
 - maybe remove submit button since agent can auto-end an interview? think.
 - interview status indicator is being shown twice in interviews. might be redundant.
 - check interview expiry, show it in interviews etc.
@@ -101,15 +112,7 @@
 
 
 
-## Agent & AI Stuff
-- add guard rails during agent conv, detect screenshots, detect ai responses, detect if text was copied, and detect if answers don't align with normal conv tone and more. basically ai beating ai.
-- ai job creation (just describe the job, ai completes it, review, if yes, creates a posting. can use voice too to describe.)
-- show suggested skills based on job description.
-- gatekeep ai features using paywall.
-- auto find and apply to multiple jobs based on the profile (paid feature).
-- think about compacting existing user-agent chats and reusing them for similar roles to save time and compute.
-- **pre-eval: switch slop + eval steps to OpenRouter (Claude 3.5 Haiku / Llama 3.3 70B)** for reliable structured outputs and deterministic scoring. Keep Workers AI for classify step only. See `pre-evaluation.ts` comments for context. Do this before scaling eval volume. And add temperature: 0 and explicit max_tokens — eliminates score variance.
-- pre-eval: Delete parseJsonPayload entirely — OpenRouter + Claude actually respects response_format. You’ll get clean objects every time.
+
 
 ## PROD THINGS
 - add sentry.
