@@ -1,5 +1,6 @@
 ## TODO
 
+- too many applicant status enums (follwup enum etc, only keep using ones)
 - detect short and uninterested answers, + all the ai stuff I planned to detect (guardrails)
 - maybe remove submit button since agent can auto-end an interview? think.
 - interview status indicator is being shown twice in interviews. might be redundant.
