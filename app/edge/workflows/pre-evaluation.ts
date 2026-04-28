@@ -19,7 +19,7 @@ import {
 import { getJobById } from "../queries/jobs/queries_sql";
 import { createNotification } from "../queries/notifications/queries_sql";
 import { createPreEvaluation } from "../queries/pre-evaluations/queries_sql";
-import { getDb } from "../shared/db";
+import { getWorkerDb } from "../shared/db.worker";
 import { initializeInterviewAgent } from "../shared/interview-agent-client";
 import { createWorkflowLogger } from "../shared/logger";
 import { notificationPayloadSchemas } from "../shared/notifications-config";
@@ -310,7 +310,7 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
     // Step 1: Read application + job data
     const applicationData = await step.do("read_application_data", async () => {
       log.step("read", "Loading application from DB");
-      const db = getDb();
+      const db = getWorkerDb();
       const application = await getApplicationById(db, { id: applicationId });
       if (!application) {
         throw new Error(`Application not found: ${applicationId}`);
@@ -533,7 +533,7 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
     // Step 6: Write result to DB
     await step.do("write_pre_evaluation", async () => {
       log.step("write", "Saving pre-evaluation to DB");
-      const db = getDb();
+      const db = getWorkerDb();
       await createPreEvaluation(db, {
         applicationId,
         score: aiResult.result.score,
@@ -567,7 +567,7 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
         return { action: "hold" as const };
       }
 
-      const db = getDb();
+      const db = getWorkerDb();
       const job = applicationData.job;
       const existingInterview = await getInterviewByApplicationId(db, {
         applicationId,

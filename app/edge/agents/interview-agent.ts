@@ -14,7 +14,7 @@ import {
 import { createWorkersAI } from "workers-ai-provider";
 import { z } from "zod";
 import { getInterviewContextById, updateInterviewStatus } from "../queries/interviews/queries_sql";
-import { getDb } from "../shared/db";
+import { getWorkerDb } from "../shared/db.worker";
 
 type InterviewSessionStatus = "pending" | "in_progress" | "completed" | "cancelled" | "expired";
 
@@ -278,7 +278,7 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
   }
 
   private async hydrateContextFromDb(interviewId: string) {
-    const db = getDb();
+    const db = getWorkerDb();
     const context = await getInterviewContextById(db, { id: interviewId });
     if (!context) {
       return false;
@@ -553,7 +553,7 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
       updatedAt: toNow(),
     });
 
-    const db = getDb();
+    const db = getWorkerDb();
     await updateInterviewStatus(db, {
       id: this.state.interviewId,
       status: "expired",
@@ -643,7 +643,7 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
                 updatedAt: toNow(),
               });
 
-              const db = getDb();
+              const db = getWorkerDb();
               await updateInterviewStatus(db, {
                 id: this.state.interviewId,
                 status: "completed",
