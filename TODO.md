@@ -18,9 +18,7 @@
 - too many applicant status enums (follwup enum etc, only keep using ones by checking end to end flow)
 - company email reports are really bad. they have zero styling. review every single resend email template and align with rest of the app.
 - maybe remove submit button since agent can auto-end an interview? think.
-- interview status indicator is being shown twice in interviews. might be redundant.
 - check interview expiry, show it in interviews etc.
-- the interviews has no sidebar or anything when there's are no interviews. show sidebar with empty states like rest of the app.
 - in post eval, refine the scores using the actual agent conv and add it to the final report.
 - update seed to include much more data for better agent evaluation with multiple jobs having company questions (relocation, visa, etc etc)
 - think about context compaction to save on costs.
