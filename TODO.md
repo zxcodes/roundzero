@@ -14,7 +14,7 @@
 - pre-eval: Delete parseJsonPayload entirely — OpenRouter + Claude actually respects response_format. You’ll get clean objects every time.
 
 - use faded out empty states like cards more like a graphic plus texts
-- too many applicant status enums (follwup enum etc, only keep using ones)
+- too many applicant status enums (follwup enum etc, only keep using ones by checking end to end flow)
 - company email reports are really bad. they have zero styling. review every single resend email template and align with rest of the app.
 - maybe remove submit button since agent can auto-end an interview? think.
 - interview status indicator is being shown twice in interviews. might be redundant.
