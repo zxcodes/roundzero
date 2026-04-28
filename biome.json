@@ -14,7 +14,7 @@
     "ignoreUnknown": false,
     "includes": [
       "**/app/**/*",
-      "**/edge/src/**/*",
+      "**/app/edge/**/*",
       "**/*.json",
       "**/vite.config.ts",
       "**/vitest.config.ts",
@@ -22,8 +22,9 @@
       "!**/app/**/*_sql.ts",
       "!**/app/components/ui",
       "!db/seed/**/*.ts",
-      "!edge/src/**/*.d.ts",
-      "!edge/src/queries/**/*.ts"
+      "!app/edge/**/*.d.ts",
+      "!app/edge/queries/**/*.ts",
+      "!**/.wrangler"
     ]
   },
   "formatter": {
@@ -118,7 +119,7 @@
       }
     },
     {
-      "includes": ["edge/src/**/*.ts"],
+      "includes": ["app/edge/**/*.ts"],
       "linter": {
         "rules": {
           "suspicious": {
