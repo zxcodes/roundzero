@@ -40,7 +40,7 @@ import {
   updateApplicationStatus,
 } from "@/features/applications/server/functions";
 import { getPreEvaluationForApplication } from "@/features/pre-evaluations/server/functions";
-import { parseReportData } from "@/features/reports/components/report-cards";
+import { parseReportData, ReportSnapshotCard } from "@/features/reports/components/report-cards";
 import { getCompanyApplicantReportTimeline } from "@/features/reports/server/functions";
 import {
   APPLICATION_STATUS_TRANSITIONS,
@@ -400,48 +400,7 @@ function ApplicantReviewPage() {
         </CardContent>
       </Card>
 
-      {report ? (
-        <Card className="border border-primary/10 bg-[radial-gradient(circle_at_top_right,var(--color-primary)/10,transparent_34%),var(--color-card)] shadow-lg shadow-primary/5">
-          <CardContent className="space-y-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="space-y-1.5">
-                <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-primary">
-                  Post-interview report
-                </p>
-                <h3 className="text-lg font-semibold tracking-tight">Actual evaluation score</h3>
-                <p className="text-sm text-muted-foreground">{report.summary}</p>
-              </div>
-              <Badge variant="outline" className="font-mono text-[12px]">
-                {Math.round(report.scores.overall)}/100
-              </Badge>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="secondary" className="text-xs">
-                Communication {Math.round(report.scores.communication)}/100
-              </Badge>
-              <Badge variant="secondary" className="text-xs">
-                Problem solving {Math.round(report.scores.problemSolving)}/100
-              </Badge>
-              <Badge variant="secondary" className="text-xs">
-                Ownership {Math.round(report.scores.ownership)}/100
-              </Badge>
-              <Badge variant="secondary" className="text-xs">
-                Role fit {Math.round(report.scores.roleFit)}/100
-              </Badge>
-            </div>
-
-            <Button variant="outline" asChild>
-              <Link
-                to="/dashboard/applicant-reports/$applicationId"
-                params={{ applicationId: application.id }}
-              >
-                View full report
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      ) : null}
+      {report ? <ReportSnapshotCard report={report} applicationId={application.id} /> : null}
 
       {preEvaluation ? (
         <Card
