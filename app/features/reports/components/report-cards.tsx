@@ -35,6 +35,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { InterviewTranscript } from "@/features/interviews/components/interview-transcript";
 import { cn } from "@/lib/utils";
 
 type Recommendation = "strong_yes" | "yes" | "lean_no" | "no";
@@ -304,13 +305,6 @@ const formatDateTime = (date: Date | string | null) => {
   return `${month} ${day}, ${year} · ${hours}:${minutes} UTC`;
 };
 
-const formatTime = (date: Date | string) => {
-  const value = toUtcDate(date);
-  const hours = String(value.getUTCHours()).padStart(2, "0");
-  const minutes = String(value.getUTCMinutes()).padStart(2, "0");
-  return `${hours}:${minutes} UTC`;
-};
-
 const formatShortDate = (date: Date | string) => {
   const value = toUtcDate(date);
   const month = monthLabels[value.getUTCMonth()];
@@ -439,7 +433,7 @@ function TimelineNode({
   children,
 }: TimelineNodeProps) {
   return (
-    <div className="relative flex gap-4">
+    <div className="relative flex gap-5">
       <div className="flex flex-col items-center">
         <div
           className={cn(
@@ -458,9 +452,9 @@ function TimelineNode({
         ) : null}
       </div>
 
-      <div className={cn("min-w-0 flex-1 pb-8", isLast && "pb-0")}>
-        <div className="flex flex-wrap items-center justify-between gap-2 pb-3">
-          <h4 className="text-sm font-semibold tracking-tight">{title}</h4>
+      <div className={cn("min-w-0 flex-1 pb-10", isLast && "pb-0")}>
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-4">
+          <h4 className="text-base font-semibold tracking-tight">{title}</h4>
           <span className="font-mono text-[11px] text-muted-foreground">
             {formatDateTime(timestamp)}
           </span>
@@ -571,7 +565,7 @@ export function ReportTimeline({
     : [];
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-2">
       <TimelineNode
         icon={UserCircleIcon}
         iconClass="text-muted-foreground"
@@ -704,7 +698,7 @@ export function ReportTimeline({
       >
         <div className="space-y-4">
           <Card className="overflow-hidden border-border/70">
-            <CardContent className="space-y-5 pt-5">
+            <CardContent className="space-y-6 pt-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="max-w-xl space-y-3">
                   <div className="flex items-center gap-2.5">
@@ -738,7 +732,7 @@ export function ReportTimeline({
                 </div>
               </div>
 
-              <div className="space-y-3 rounded-2xl border border-border/60 bg-muted/20 p-4">
+              <div className="space-y-3 rounded-3xl border border-border/60 bg-muted/20 p-5">
                 <div className="flex items-center gap-2">
                   <div
                     className={cn(
@@ -756,7 +750,7 @@ export function ReportTimeline({
                     Dimension scores
                   </p>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-4 sm:grid-cols-2">
                   {(Object.keys(dimensionMeta) as Array<keyof typeof dimensionMeta>).map((key) => {
                     const score = Math.round(report.scores[key]);
                     const dim = dimensionMeta[key];
@@ -787,7 +781,7 @@ export function ReportTimeline({
                 </div>
               </div>
 
-              <div className="grid gap-5 lg:grid-cols-2">
+              <div className="grid gap-6 lg:grid-cols-2">
                 <SignalSection
                   title="Strengths"
                   icon={CheckmarkCircle02Icon}
@@ -818,7 +812,7 @@ export function ReportTimeline({
 
           {report.screeningAnswers.length > 0 ? (
             <Card className="border-border/60">
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-4">
                 <div className="flex items-center gap-2">
                   <HugeiconsIcon
                     icon={ClipboardIcon}
@@ -898,114 +892,56 @@ function TranscriptDialog({
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline" className="gap-1.5">
+        <Button size="sm" variant="outline" className="gap-1.5 rounded-full px-4">
           <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={2} className="size-4" />
           View transcript
         </Button>
       </DialogTrigger>
-      <DialogContent className="flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
-        <DialogHeader className="space-y-2 border-b border-border/70 bg-card px-5 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex size-9 items-center justify-center rounded-full bg-muted/30 ring-1 ring-border">
+      <DialogContent className="flex max-h-[88vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
+        <DialogHeader className="space-y-4 border-b border-border/70 bg-card px-6 py-5">
+          <div className="flex items-start gap-4">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-border/70 bg-muted/30">
               <HugeiconsIcon
                 icon={BotIcon}
                 strokeWidth={2}
                 className="size-4 text-muted-foreground"
               />
             </div>
-            <div className="min-w-0 flex-1">
-              <DialogTitle className="text-base">Interview transcript</DialogTitle>
-              <DialogDescription className="text-xs">
-                Conversation between Zero and {candidate.name} ({messages.length} message
-                {messages.length === 1 ? "" : "s"})
-              </DialogDescription>
+            <div className="min-w-0 flex-1 space-y-2">
+              <div className="space-y-1">
+                <DialogTitle className="text-lg tracking-tight">Interview transcript</DialogTitle>
+                <DialogDescription className="text-sm">
+                  Full conversation between Zero and {candidate.name}
+                </DialogDescription>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="rounded-full border border-border/70 bg-muted/20 px-3 py-1 font-mono text-[11px] text-muted-foreground">
+                  {messages.length} message{messages.length === 1 ? "" : "s"}
+                </div>
+                <div className="rounded-full border border-border/70 bg-muted/20 px-3 py-1 font-mono text-[11px] text-muted-foreground">
+                  Candidate: {candidate.name}
+                </div>
+              </div>
             </div>
           </div>
         </DialogHeader>
 
-        <ScrollArea className="h-[60vh] flex-1 bg-muted/30">
-          {messages.length > 0 ? (
-            <div className="space-y-5 px-5 py-6">
-              {messages.map((message, index) => (
-                <TranscriptBubble
-                  key={`${message.createdAt}-${index}`}
-                  message={message}
-                  candidate={candidate}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="flex h-full min-h-72 items-center justify-center px-6 py-10">
-              <div className="mx-auto flex max-w-md flex-col items-center gap-3 text-center text-muted-foreground">
-                <div className="flex size-12 items-center justify-center rounded-full border border-border/70 bg-card">
-                  <HugeiconsIcon
-                    icon={BubbleChatIcon}
-                    strokeWidth={2}
-                    className="size-5 text-muted-foreground"
-                  />
-                </div>
-                <p className="text-sm">No transcript messages available.</p>
-              </div>
-            </div>
-          )}
-        </ScrollArea>
+        <div className="border-t border-border/60 bg-muted/20">
+          <ScrollArea className="h-[68vh] max-h-[68vh]">
+            <InterviewTranscript
+              messages={messages.map((message, index) => ({
+                id: `${message.createdAt}-${index}`,
+                role: message.role,
+                content: message.content,
+              }))}
+              userLabel={candidate.name}
+              emptyTitle="No transcript messages available."
+              emptyDescription="The interview finished without any persisted conversation history."
+            />
+          </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function TranscriptBubble({
-  message,
-  candidate,
-}: {
-  message: TranscriptMessage;
-  candidate: CandidateSummary;
-}) {
-  const isCandidate = message.role === "candidate";
-
-  if (isCandidate) {
-    return (
-      <div className="flex justify-end gap-2.5">
-        <div className="flex max-w-[80%] flex-col items-end gap-1">
-          <div className="flex items-center gap-1.5 px-1">
-            <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground/90">
-              {candidate.name}
-            </span>
-            <span className="text-[10px] text-muted-foreground/60">
-              · {formatTime(message.createdAt)}
-            </span>
-          </div>
-          <div className="whitespace-pre-wrap break-words rounded-2xl rounded-br-sm border border-border/70 bg-foreground px-4 py-2.5 text-sm leading-6 text-background shadow-sm ring-1 ring-border/35">
-            {message.content}
-          </div>
-        </div>
-        <Avatar className="mt-5 size-7 shrink-0">
-          <AvatarImage src={candidate.picture ?? undefined} alt={candidate.name} />
-          <AvatarFallback className="text-[10px]">{getInitials(candidate.name)}</AvatarFallback>
-        </Avatar>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex justify-start gap-2.5">
-      <div className="mt-5 flex size-7 shrink-0 items-center justify-center rounded-full bg-muted/30 ring-1 ring-border">
-        <HugeiconsIcon icon={BotIcon} strokeWidth={2} className="size-3.5 text-muted-foreground" />
-      </div>
-      <div className="flex max-w-[80%] flex-col items-start gap-1">
-        <div className="flex items-center gap-1.5 px-1">
-          <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground/90">
-            Zero
-          </span>
-          <span className="text-[10px] text-muted-foreground/60">
-            · {formatTime(message.createdAt)}
-          </span>
-        </div>
-        <div className="whitespace-pre-wrap break-words rounded-2xl rounded-bl-sm border border-border/70 bg-background px-4 py-2.5 text-sm leading-6 text-foreground shadow-sm ring-1 ring-border/35">
-          {message.content}
-        </div>
-      </div>
-    </div>
   );
 }
 
