@@ -1,4 +1,7 @@
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers";
+import { jsx } from "react/jsx-runtime";
+import { Resend } from "resend";
+import { ReportReadyEmailTemplate } from "../../features/notifications/components/report-ready-email-template";
 import { updateApplicationStatus } from "../queries/applications/queries_sql";
 import { getUserById } from "../queries/auth/queries_sql";
 import { getInterviewContextById } from "../queries/interviews/queries_sql";
@@ -10,7 +13,6 @@ import {
 } from "../queries/notifications/queries_sql";
 import { createReport, getReportByInterviewId } from "../queries/reports/queries_sql";
 import { getDb } from "../shared/db";
-import { sendEmailViaResend } from "../shared/email";
 import { getInterviewAgentState } from "../shared/interview-agent-client";
 import { createWorkflowLogger } from "../shared/logger";
 import { notificationPayloadSchemas } from "../shared/notifications-config";
@@ -680,22 +682,32 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
       }
 
       try {
-        const delivery = await sendEmailViaResend(resendApiKey, resendFromEmail, {
+        const resend = new Resend(resendApiKey);
+        const appUrl = this.env.APP_URL ?? "";
+        const reportUrl = appUrl
+          ? new URL(`/dashboard/reports/${report.id}`, appUrl).toString()
+          : "";
+
+        const response = await resend.emails.send({
+          from: `RoundZero <${resendFromEmail}>`,
           to: owner.email,
           subject: `Evaluation ready for ${interviewData.interview.candidateName}`,
-          text: [
-            `The AI evaluation for ${interviewData.interview.candidateName} on ${interviewData.interview.jobTitle} is ready.`,
-            ``,
-            `Overall score: ${Math.round(reportDraft.scores.overall)}/100`,
-            `Recommendation: ${reportDraft.recommendation}`,
-            ``,
-            `View the full report in RoundZero.`,
-          ].join("\n"),
+          react: jsx(ReportReadyEmailTemplate, {
+            candidateName: interviewData.interview.candidateName,
+            jobTitle: interviewData.interview.jobTitle,
+            overallScore: Math.round(reportDraft.scores.overall),
+            recommendation: reportDraft.recommendation,
+            reportUrl,
+          }),
         });
+
+        if (response.error) {
+          throw new Error(response.error.message);
+        }
 
         await markNotificationEmailDelivered(db, {
           id: notification.id,
-          providerMessageId: delivery.providerMessageId,
+          providerMessageId: response.data?.id ?? null,
         });
         log.info(`Report ready email sent to ${owner.email}`);
       } catch (error) {
