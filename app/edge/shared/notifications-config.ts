@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { applicationStatusSchema, jobStatusSchema, type notificationTypeSchema } from "./enums";
+import {
+  applicationStatusSchema,
+  jobStatusSchema,
+  type notificationTypeSchema,
+} from "@/shared/enums";
 
 const applicationStatusChangedPayloadSchema = z.object({
   applicationId: z.string().uuid(),

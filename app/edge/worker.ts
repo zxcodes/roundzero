@@ -4,7 +4,7 @@ import { cors } from "hono/cors";
 import { InterviewAgent } from "./agents/interview-agent";
 import { getInterviewContextById } from "./queries/interviews/queries_sql";
 import { getDb } from "./shared/db";
-import { validateEnv } from "./shared/env";
+import { validateEnv } from "./shared/env.worker";
 import { getInterviewAgentState, markInterviewAgentStarted } from "./shared/interview-agent-client";
 import { PostEvaluationWorkflow } from "./workflows/post-evaluation";
 import { PreEvaluationWorkflow } from "./workflows/pre-evaluation";
