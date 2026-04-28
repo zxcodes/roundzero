@@ -29,7 +29,7 @@ This document reflects the app as it transitions from **platform-only** to **pla
 | Framework | TanStack Start (React 19, Vite 8) |
 | Runtime (app) | TanStack Start + Nitro |
 | Runtime (AI) | Cloudflare Workers (separate edge Worker with Workflows + Durable Objects) |
-| Database | Postgres (Docker locally, Neon intended for prod) |
+| Database | Postgres (Docker locally, Neon intended for staging and PlanetScale for Prod) |
 | Typed queries | SQLC |
 | Migrations | dbmate |
 | Auth | Google OAuth with server-side cookie session |
