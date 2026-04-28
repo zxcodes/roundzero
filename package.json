@@ -6,6 +6,8 @@
     "dev": "bun run --parallel dev:app dev:edge",
     "dev:app": "vite dev",
     "dev:edge": "cd app/edge && wrangler dev",
+    "deploy:edge": "cd app/edge && wrangler deploy",
+    "typegen:edge": "cd app/edge && wrangler types",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
@@ -15,7 +17,6 @@
     "db:migrate": "dbmate migrate up --url $DATABASE_URL",
     "check": "biome check . --write && bun typecheck",
     "typecheck": "tsgo --noEmit",
-    "typegen": "cd app/edge && wrangler types",
     "knip": "knip",
     "setup": "bun run setup.ts",
     "prepare": "husky"
