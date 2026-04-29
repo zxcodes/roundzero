@@ -38,6 +38,7 @@ const interviewExpiredPayloadSchema = z.object({
   interviewId: z.string().uuid(),
   jobId: z.string().uuid(),
   jobTitle: z.string().min(1),
+  expiresAt: z.string().datetime().optional(),
 });
 
 const positionFilledPayloadSchema = z.object({
@@ -186,6 +187,9 @@ export const getNotificationPresentation = (notification: { type: string; payloa
       body: `The interview deadline has passed for ${payload.data.jobTitle}. If capacity allows, Zero may invite additional candidates from the pipeline.`,
       to: "/dashboard/application/$applicationId" as const,
       params: { applicationId: payload.data.applicationId },
+      meta: {
+        deadline: payload.data.expiresAt,
+      },
     };
   }
 

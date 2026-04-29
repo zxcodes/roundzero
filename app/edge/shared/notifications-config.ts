@@ -42,6 +42,7 @@ const interviewExpiredPayloadSchema = z.object({
   interviewId: z.string().uuid(),
   jobId: z.string().uuid(),
   jobTitle: z.string().min(1),
+  expiresAt: z.string().datetime().optional(),
 });
 
 const positionFilledPayloadSchema = z.object({

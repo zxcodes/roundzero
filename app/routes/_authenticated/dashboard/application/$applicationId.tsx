@@ -32,6 +32,7 @@ import {
   withdrawApplication,
 } from "@/features/applications/server/functions";
 import { getInterviewForApplication } from "@/features/interviews/server/functions";
+import { getInterviewExpiresAt } from "@/features/interviews/shared/expiry";
 import { validateUuidParams } from "@/shared/validation";
 
 export const Route = createFileRoute("/_authenticated/dashboard/application/$applicationId")({
@@ -119,6 +120,39 @@ const formatDateShort = (date: Date | string) => {
     month: "short",
     day: "numeric",
   });
+};
+
+const formatDateTime = (date: Date | string) => {
+  return new Date(date).toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+};
+
+const formatTimeLeft = (date: Date | null): string | null => {
+  if (!date) {
+    return null;
+  }
+
+  const diffMs = date.getTime() - Date.now();
+  if (diffMs <= 0) {
+    return "Expired";
+  }
+
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
+  if (diffMinutes < 60) {
+    return `${diffMinutes}m left`;
+  }
+
+  const hours = Math.floor(diffMinutes / 60);
+  if (hours < 24) {
+    return `${hours}h left`;
+  }
+
+  const days = Math.floor(hours / 24);
+  return `${days}d left`;
 };
 
 const toApplicationStage = (status: string): keyof typeof stageCopy => {
@@ -264,6 +298,8 @@ function CandidateApplicationDetailPage() {
     !application.companyOwnerDeleted;
 
   const hasInterview = interview !== null;
+  const interviewExpiresAt = interview ? getInterviewExpiresAt(interview.metadata) : null;
+  const interviewTimeLeft = formatTimeLeft(interviewExpiresAt);
 
   const onResumeView = async () => {
     await resumeDownloadMutation.mutateAsync({
@@ -385,6 +421,12 @@ function CandidateApplicationDetailPage() {
                     ? "This interview has been cancelled."
                     : "Complete your RoundZero interview to advance your application."}
             </p>
+            {interview.status === "pending" && interviewExpiresAt && interviewTimeLeft ? (
+              <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2.5 py-2 text-xs text-amber-700 dark:text-amber-300">
+                <p className="font-medium">{interviewTimeLeft}</p>
+                <p className="mt-0.5">Deadline: {formatDateTime(interviewExpiresAt)}</p>
+              </div>
+            ) : null}
             {interview.status === "pending" || interview.status === "in_progress" ? (
               <Button size="sm" asChild>
                 <Link to="/interview/$interviewId" params={{ interviewId: interview.id }}>

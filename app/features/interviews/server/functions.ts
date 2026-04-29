@@ -12,6 +12,12 @@ import {
   getInterviewsByCandidate,
   updateInterviewStatus,
 } from "@/features/interviews/queries/queries_sql";
+import {
+  getInterviewExpiresAt,
+  shouldAutoExpireInterview,
+} from "@/features/interviews/shared/expiry";
+import { notificationPayloadSchemas } from "@/features/notifications/config";
+import { createNotification } from "@/features/notifications/queries/queries_sql";
 import { getReportByApplicationId } from "@/features/reports/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { serverEnv } from "@/shared/env.server";
@@ -20,6 +26,80 @@ import { authMiddleware } from "@/shared/middleware";
 const interviewIdSchema = z.object({
   interviewId: z.string().uuid(),
 });
+
+type ExpirableInterview = {
+  id: string;
+  applicationId: string;
+  status: string;
+  metadata: unknown;
+  candidateId: string;
+  jobId: string;
+  jobTitle: string;
+};
+
+const createInterviewExpiredNotification = async (input: {
+  db: ReturnType<typeof getDb>;
+  candidateId: string;
+  applicationId: string;
+  interviewId: string;
+  jobId: string;
+  jobTitle: string;
+  expiresAt: string | null;
+}) => {
+  const payload = notificationPayloadSchemas.interview_expired.parse({
+    applicationId: input.applicationId,
+    interviewId: input.interviewId,
+    jobId: input.jobId,
+    jobTitle: input.jobTitle,
+    expiresAt: input.expiresAt ?? undefined,
+  });
+
+  const existing = await input.db
+    .unsafe(
+      `SELECT id FROM notifications WHERE user_id = $1 AND type = 'interview_expired' AND payload->>'interviewId' = $2 LIMIT 1`,
+      [input.candidateId, input.interviewId],
+    )
+    .values();
+
+  if (existing.length > 0) {
+    return;
+  }
+
+  await createNotification(input.db, {
+    userId: input.candidateId,
+    type: "interview_expired",
+    payload,
+  });
+};
+
+const expireInterviewIfNeeded = async <T extends ExpirableInterview>(input: {
+  db: ReturnType<typeof getDb>;
+  interview: T;
+}) => {
+  if (!shouldAutoExpireInterview(input.interview.status, input.interview.metadata)) {
+    return { interview: input.interview, expiredNow: false };
+  }
+
+  await updateInterviewStatus(input.db, {
+    id: input.interview.id,
+    status: "expired",
+  });
+
+  await createInterviewExpiredNotification({
+    db: input.db,
+    candidateId: input.interview.candidateId,
+    applicationId: input.interview.applicationId,
+    interviewId: input.interview.id,
+    jobId: input.interview.jobId,
+    jobTitle: input.interview.jobTitle,
+    expiresAt: getInterviewExpiresAt(input.interview.metadata)?.toISOString() ?? null,
+  });
+
+  return {
+    interview: { ...input.interview, status: "expired" as const },
+    expiredNow: true,
+  };
+};
 
 export const getMyInterview = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
@@ -31,10 +111,21 @@ export const getMyInterview = createServerFn({ method: "GET" })
       throw new Error("Only candidates can view interviews");
     }
 
-    return await getInterviewForCandidateById(db, {
+    const interview = await getInterviewForCandidateById(db, {
       id: data.interviewId,
       candidateId: context.userId,
     });
+
+    if (!interview) {
+      return null;
+    }
+
+    const expired = await expireInterviewIfNeeded({ db, interview });
+    if (expired.expiredNow) {
+      return expired.interview;
+    }
+
+    return interview;
   });
 
 export const getMyInterviews = createServerFn({ method: "GET" })
@@ -46,9 +137,23 @@ export const getMyInterviews = createServerFn({ method: "GET" })
       throw new Error("Only candidates can view interviews");
     }
 
-    return await getInterviewsByCandidate(db, {
+    const interviews = await getInterviewsByCandidate(db, {
       candidateId: context.userId,
     });
+
+    return await Promise.all(
+      interviews.map(async (interview) => {
+        if (!shouldAutoExpireInterview(interview.status, interview.metadata)) {
+          return interview;
+        }
+
+        const expired = await expireInterviewIfNeeded({
+          db,
+          interview,
+        });
+        return expired.interview;
+      }),
+    );
   });
 
 export const startMyInterview = createServerFn({ method: "POST" })
@@ -70,11 +175,18 @@ export const startMyInterview = createServerFn({ method: "POST" })
       return null;
     }
 
-    if (interview.status === "completed") {
-      return interview;
+    const expired = await expireInterviewIfNeeded({ db, interview });
+    const effectiveInterview = expired.interview;
+
+    if (effectiveInterview.status === "expired") {
+      throw new Error("Interview has expired");
     }
 
-    if (interview.status === "cancelled" || interview.status === "expired") {
+    if (effectiveInterview.status === "completed") {
+      return effectiveInterview;
+    }
+
+    if (effectiveInterview.status === "cancelled") {
       throw new Error("Interview is no longer available");
     }
 
@@ -88,7 +200,7 @@ export const startMyInterview = createServerFn({ method: "POST" })
     }
 
     await updateApplicationStatus(db, {
-      id: interview.applicationId,
+      id: effectiveInterview.applicationId,
       status: "interview_in_progress",
     });
 
@@ -129,12 +241,19 @@ export const cancelMyInterview = createServerFn({ method: "POST" })
       return null;
     }
 
-    if (interview.status === "completed") {
+    const expired = await expireInterviewIfNeeded({ db, interview });
+    const effectiveInterview = expired.interview;
+
+    if (effectiveInterview.status === "expired") {
+      return effectiveInterview;
+    }
+
+    if (effectiveInterview.status === "completed") {
       throw new Error("Completed interviews cannot be cancelled");
     }
 
-    if (interview.status === "cancelled" || interview.status === "expired") {
-      return interview;
+    if (effectiveInterview.status === "cancelled") {
+      return effectiveInterview;
     }
 
     const updated = await updateInterviewStatus(db, {
@@ -147,7 +266,7 @@ export const cancelMyInterview = createServerFn({ method: "POST" })
     }
 
     await updateApplicationStatus(db, {
-      id: interview.applicationId,
+      id: effectiveInterview.applicationId,
       status: "withdrawn",
     });
 
@@ -173,11 +292,18 @@ export const completeMyInterview = createServerFn({ method: "POST" })
       return null;
     }
 
-    if (interview.status === "completed") {
-      return interview;
+    const expired = await expireInterviewIfNeeded({ db, interview });
+    const effectiveInterview = expired.interview;
+
+    if (effectiveInterview.status === "expired") {
+      throw new Error("Interview has expired");
     }
 
-    if (interview.status === "cancelled" || interview.status === "expired") {
+    if (effectiveInterview.status === "completed") {
+      return effectiveInterview;
+    }
+
+    if (effectiveInterview.status === "cancelled") {
       throw new Error("Interview is no longer available");
     }
 
@@ -187,12 +313,12 @@ export const completeMyInterview = createServerFn({ method: "POST" })
     }
 
     await updateApplicationStatus(db, {
-      id: interview.applicationId,
+      id: effectiveInterview.applicationId,
       status: "evaluated",
     });
 
     const existingReport = await getReportByApplicationId(db, {
-      applicationId: interview.applicationId,
+      applicationId: effectiveInterview.applicationId,
     });
 
     if (!existingReport) {
@@ -247,7 +373,28 @@ export const getInterviewForApplication = createServerFn({ method: "GET" })
       throw new Error("Not authorized to view this interview");
     }
 
-    return await getInterviewByApplicationId(db, {
+    const interview = await getInterviewByApplicationId(db, {
       applicationId: data.applicationId,
     });
+
+    if (!interview) {
+      return null;
+    }
+
+    const expired = await expireInterviewIfNeeded({
+      db,
+      interview: {
+        ...interview,
+        candidateId: context.userId,
+        applicationStatus: application.status,
+        jobId: application.jobId,
+        jobTitle: application.jobTitle,
+        companyName: application.companyName,
+      },
+    });
+    if (expired.expiredNow) {
+      return expired.interview;
+    }
+
+    return interview;
   });

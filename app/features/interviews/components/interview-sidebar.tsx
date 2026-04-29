@@ -23,8 +23,56 @@ type InterviewSidebarProps = {
     jobTitle: string;
     companyName: string;
     status: string;
+    expiresAt: string | null;
   }>;
 } & React.ComponentProps<typeof Sidebar>;
+
+const formatDeadline = (value: string | null): string | null => {
+  if (!value) {
+    return null;
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+};
+
+const formatTimeLeft = (value: string | null): string | null => {
+  if (!value) {
+    return null;
+  }
+
+  const end = new Date(value).getTime();
+  if (Number.isNaN(end)) {
+    return null;
+  }
+
+  const diffMs = end - Date.now();
+  if (diffMs <= 0) {
+    return "Expired";
+  }
+
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
+  if (diffMinutes < 60) {
+    return `${diffMinutes}m left`;
+  }
+
+  const hours = Math.floor(diffMinutes / 60);
+  if (hours < 24) {
+    return `${hours}h left`;
+  }
+
+  const days = Math.floor(hours / 24);
+  return `${days}d left`;
+};
 
 const getSessionLabel = (value: string) => {
   if (value === "in_progress") return "In progress";
@@ -80,6 +128,8 @@ export function InterviewSidebar({
               <SidebarMenu className="gap-2">
                 {interviews.map((item) => {
                   const isActive = item.id === activeInterviewId;
+                  const deadline = formatDeadline(item.expiresAt);
+                  const timeLeft = formatTimeLeft(item.expiresAt);
 
                   return (
                     <SidebarMenuItem key={item.id}>
@@ -113,6 +163,18 @@ export function InterviewSidebar({
                           >
                             {getSessionLabel(item.status)}
                           </Badge>
+                          {item.status === "pending" && deadline && timeLeft ? (
+                            <p
+                              className={cn(
+                                "mt-1 text-[11px]",
+                                isActive
+                                  ? "text-sidebar-accent-foreground/80"
+                                  : "text-muted-foreground",
+                              )}
+                            >
+                              {timeLeft} · {deadline}
+                            </p>
+                          ) : null}
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
