@@ -1,5 +1,6 @@
 ## TODO
 
+- email templates use old design lang.
 - improve shortlisting behaviour across company and candidate. applicant detail page still shows as applied while the applications list does show as shortlisted. also think about notifications of shortlisting and notifications in general.
 - the landing page has fake metrics (first report 3 min etc, think how valid they're or replace them with actual claims).
 - the landing page needs to show major cost savings for the company while showing great benefits, compared to all the mainstream platforms based on real and accurate pricing as per today.
