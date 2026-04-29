@@ -2,7 +2,6 @@
 
 - think about this entire model: should companies even see applicants as they come? or should we force reports until they arrive? then show applications?
 - company logo doesn't reflect after uploading until I refresh.
-- email templates use old design lang.
 - the landing page has fake metrics (first report 3 min etc, think how valid they're or replace them with actual claims).
 - the landing page needs to show major cost savings for the company while showing great benefits, compared to all the mainstream platforms based on real and accurate pricing as per today.
 - think about sub agents that can actually be useful for candidate profile research in the bg and provide context to main agent.
@@ -36,6 +35,7 @@
 
 
 <!--- check interview expiry, show it in interviews etc.-->
+<!--- email templates use old design lang.-->
 <!--- use faded out empty states like cards more like a graphic plus texts-->
 <!--- in pre eval report what we are showing is not clear. missing requirements don't read good enough. the messaging needs to be clear.-->
 <!--- switching interviews has stale data. switching to 1 shows data from 2nd and vice versa. fixes on refresh-->
