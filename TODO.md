@@ -1,5 +1,6 @@
 ## TODO
 
+- the landing page has fake metrics (first report 3 min etc, think how valid they're or replace them with actual claims).
 - the landing page needs to show major cost savings for the company while showing great benefits, compared to all the mainstream platforms based on real and accurate pricing as per today.
 - think about sub agents that can actually be useful for candidate profile research in the bg and provide context to main agent.
 - need to hugely improve on messaging such as (dont worry about ai generated answers from candidates, we have guard rails, and how much human effort it eliminates by talking to multiple candidates and clearing a lot of things such as salary expectations, relocation, etc which would waste a lot of human time otherwise)
