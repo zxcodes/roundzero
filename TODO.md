@@ -15,7 +15,7 @@
 - changing from pre_screening to interview invite for pending roles throws an error.
 - use faded out empty states like cards more like a graphic plus texts
 - too many applicant status enums (follwup enum etc, only keep using ones by checking end to end flow)
-- company email reports are really bad. they have zero styling. review every single resend email template and align with rest of the app.
+- some company email reports are really bad and some are entirely missing for some flows. they have zero styling. review every single resend email template and align with rest of the app.
 - maybe remove submit button since agent can auto-end an interview? think.
 - check interview expiry, show it in interviews etc.
 - in post eval, refine the scores using the actual agent conv and add it to the final report.
