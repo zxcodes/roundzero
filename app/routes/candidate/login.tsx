@@ -100,7 +100,7 @@ function CandidateLoginPage() {
                 <HugeiconsIcon
                   icon={CheckmarkCircle02Icon}
                   strokeWidth={2}
-                  className="size-3.5 text-emerald-500"
+                  className="size-3.5 text-success"
                 />
                 Always free for candidates
               </span>
@@ -108,7 +108,7 @@ function CandidateLoginPage() {
                 <HugeiconsIcon
                   icon={CheckmarkCircle02Icon}
                   strokeWidth={2}
-                  className="size-3.5 text-emerald-500"
+                  className="size-3.5 text-success"
                 />
                 No hidden fees
               </span>
@@ -196,7 +196,7 @@ function CandidateLoginPage() {
                 <HugeiconsIcon
                   icon={CheckmarkCircle02Icon}
                   strokeWidth={2}
-                  className="size-3.5 text-emerald-500"
+                  className="size-3.5 text-success"
                 />
                 Always free for candidates
               </span>
@@ -204,7 +204,7 @@ function CandidateLoginPage() {
                 <HugeiconsIcon
                   icon={CheckmarkCircle02Icon}
                   strokeWidth={2}
-                  className="size-3.5 text-emerald-500"
+                  className="size-3.5 text-success"
                 />
                 No hidden fees
               </span>

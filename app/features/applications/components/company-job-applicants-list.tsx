@@ -15,19 +15,19 @@ import type { getJobApplicants } from "@/features/applications/server/functions"
 const recommendationMeta: Record<string, { label: string; className: string }> = {
   strong_yes: {
     label: "Strong yes",
-    className: "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+    className: "border-success/20 bg-success/10 text-success",
   },
   yes: {
     label: "Yes",
-    className: "border-sky-500/20 bg-sky-500/10 text-sky-700 dark:text-sky-300",
+    className: "border-info/20 bg-info/10 text-info",
   },
   lean_no: {
     label: "Lean no",
-    className: "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+    className: "border-warning/20 bg-warning/10 text-warning",
   },
   no: {
     label: "No",
-    className: "border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-300",
+    className: "border-danger/20 bg-danger/10 text-danger",
   },
 };
 

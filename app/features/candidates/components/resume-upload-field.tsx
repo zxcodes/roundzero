@@ -194,7 +194,7 @@ export function ResumeUploadField({
               View
             </Button>
           ) : (
-            <span className="text-xs font-medium text-emerald-600">Uploaded</span>
+            <span className="text-xs font-medium text-success">Uploaded</span>
           )}
         </div>
       ) : null}

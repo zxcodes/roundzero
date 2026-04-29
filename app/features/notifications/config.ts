@@ -66,15 +66,15 @@ export const notificationPayloadSchemas = {
 } satisfies Record<z.infer<typeof notificationTypeSchema>, z.ZodTypeAny>;
 
 const notificationTone = {
-  application_status_changed: "bg-sky-500/10 text-sky-700 dark:text-sky-300",
-  application_withdrawn: "bg-rose-500/10 text-rose-700 dark:text-rose-300",
-  report_ready: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-  interview_invited: "bg-violet-500/10 text-violet-700 dark:text-violet-300",
-  interview_expired: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
-  position_filled: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
-  job_published: "bg-violet-500/10 text-violet-700 dark:text-violet-300",
-  job_archived: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
-  job_closed: "bg-red-500/10 text-red-700 dark:text-red-300",
+  application_status_changed: "border-info/20 bg-info/10 text-info",
+  application_withdrawn: "border-danger/20 bg-danger/10 text-danger",
+  report_ready: "border-success/20 bg-success/10 text-success",
+  interview_invited: "border-active/20 bg-active/10 text-active",
+  interview_expired: "border-warning/20 bg-warning/10 text-warning",
+  position_filled: "border-warning/20 bg-warning/10 text-warning",
+  job_published: "border-active/20 bg-active/10 text-active",
+  job_archived: "border-warning/20 bg-warning/10 text-warning",
+  job_closed: "border-danger/20 bg-danger/10 text-danger",
 } as const;
 
 const formatApplicationStatusLabel = (status: z.infer<typeof applicationStatusSchema>) => {
