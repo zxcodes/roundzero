@@ -33,20 +33,6 @@ const interviewInvitedPayloadSchema = z.object({
   expiresAt: z.string().datetime(),
 });
 
-const interviewExpiredPayloadSchema = z.object({
-  applicationId: z.string().uuid(),
-  interviewId: z.string().uuid(),
-  jobId: z.string().uuid(),
-  jobTitle: z.string().min(1),
-  expiresAt: z.string().datetime().optional(),
-});
-
-const positionFilledPayloadSchema = z.object({
-  applicationId: z.string().uuid(),
-  jobId: z.string().uuid(),
-  jobTitle: z.string().min(1),
-});
-
 const jobLifecyclePayloadSchema = z.object({
   jobId: z.string().uuid(),
   jobTitle: z.string().min(1),
@@ -58,8 +44,6 @@ export const notificationPayloadSchemas = {
   application_withdrawn: applicationWithdrawnPayloadSchema,
   report_ready: reportReadyPayloadSchema,
   interview_invited: interviewInvitedPayloadSchema,
-  interview_expired: interviewExpiredPayloadSchema,
-  position_filled: positionFilledPayloadSchema,
   job_published: jobLifecyclePayloadSchema,
   job_archived: jobLifecyclePayloadSchema,
   job_closed: jobLifecyclePayloadSchema,
@@ -70,8 +54,6 @@ const notificationTone = {
   application_withdrawn: "border-danger/20 bg-danger/10 text-danger",
   report_ready: "border-success/20 bg-success/10 text-success",
   interview_invited: "border-active/20 bg-active/10 text-active",
-  interview_expired: "border-warning/20 bg-warning/10 text-warning",
-  position_filled: "border-warning/20 bg-warning/10 text-warning",
   job_published: "border-active/20 bg-active/10 text-active",
   job_archived: "border-warning/20 bg-warning/10 text-warning",
   job_closed: "border-danger/20 bg-danger/10 text-danger",
@@ -169,45 +151,6 @@ export const getNotificationPresentation = (notification: { type: string; payloa
         ctaLabel: "Start Interview",
         deadline: payload.data.expiresAt,
       },
-    };
-  }
-
-  if (type === "interview_expired") {
-    const payload = notificationPayloadSchemas.interview_expired.safeParse(
-      toRecord(notification.payload),
-    );
-    if (!payload.success) {
-      return null;
-    }
-
-    return {
-      type,
-      tone: notificationTone[type],
-      title: `Interview window closed for ${payload.data.jobTitle}`,
-      body: `The interview deadline has passed for ${payload.data.jobTitle}. If capacity allows, Zero may invite additional candidates from the pipeline.`,
-      to: "/dashboard/application/$applicationId" as const,
-      params: { applicationId: payload.data.applicationId },
-      meta: {
-        deadline: payload.data.expiresAt,
-      },
-    };
-  }
-
-  if (type === "position_filled") {
-    const payload = notificationPayloadSchemas.position_filled.safeParse(
-      toRecord(notification.payload),
-    );
-    if (!payload.success) {
-      return null;
-    }
-
-    return {
-      type,
-      tone: notificationTone[type],
-      title: `${payload.data.jobTitle} has received enough evaluations`,
-      body: `This position has reached its final report target. Your application is still on file and the company may review it directly.`,
-      to: "/dashboard/application/$applicationId" as const,
-      params: { applicationId: payload.data.applicationId },
     };
   }
 

@@ -39,8 +39,6 @@ export const notificationTypeSchema = z.enum([
   "application_withdrawn",
   "report_ready",
   "interview_invited",
-  "interview_expired",
-  "position_filled",
   "job_published",
   "job_archived",
   "job_closed",
