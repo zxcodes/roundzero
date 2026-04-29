@@ -124,7 +124,7 @@ const readUiMessageText = (message: UIMessage) => {
   return message.parts
     .map((part) => {
       if (part.type === "text" && typeof part.text === "string") {
-        return part.text;
+        return sanitizeVisibleText(part.text);
       }
       return "";
     })
@@ -132,10 +132,19 @@ const readUiMessageText = (message: UIMessage) => {
     .trim();
 };
 
-const stripToolLeakText = (value: string) => {
-  const trimmed = value.trim();
+const stripInternalReasoningText = (value: string) => {
+  const withoutThinkBlocks = value
+    .replace(/<think\b[^>]*>[\s\S]*?<\/think>/gi, "")
+    .replace(/<\/??think\b[^>]*>/gi, "");
+
+  return withoutThinkBlocks;
+};
+
+const sanitizeVisibleText = (value: string) => {
+  const cleaned = stripInternalReasoningText(value);
+  const trimmed = cleaned.trim();
   if (!trimmed.startsWith("{")) {
-    return value;
+    return cleaned;
   }
 
   try {
@@ -153,10 +162,10 @@ const stripToolLeakText = (value: string) => {
       return "";
     }
   } catch {
-    return value;
+    return cleaned;
   }
 
-  return value;
+  return cleaned;
 };
 
 const toLegacyTranscript = (messages: UIMessage[]): LegacyInterviewMessage[] => {
@@ -692,7 +701,7 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
           if (part.type === "text" && typeof part.text === "string") {
             return {
               ...part,
-              text: stripToolLeakText(part.text),
+              text: sanitizeVisibleText(part.text),
             };
           }
 
