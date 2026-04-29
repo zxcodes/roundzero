@@ -21,14 +21,11 @@ import { getInterviewExpiresAt } from "@/features/interviews/shared/expiry";
 import { validateUuidParams } from "@/shared/validation";
 
 const statusConfig: Record<string, { label: string; tone: string }> = {
-  pending: { label: "Ready", tone: "bg-amber-500/10 text-amber-700 dark:text-amber-300" },
+  pending: { label: "Ready", tone: "border-warning/20 bg-warning/10 text-warning" },
   in_progress: { label: "In progress", tone: "bg-primary/10 text-primary" },
-  completed: {
-    label: "Completed",
-    tone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-  },
+  completed: { label: "Completed", tone: "border-success/20 bg-success/10 text-success" },
   cancelled: { label: "Cancelled", tone: "bg-muted text-muted-foreground" },
-  expired: { label: "Expired", tone: "bg-rose-500/10 text-rose-700 dark:text-rose-300" },
+  expired: { label: "Expired", tone: "border-danger/20 bg-danger/10 text-danger" },
 };
 
 const getErrorMessage = (error: unknown, fallback: string): string => {

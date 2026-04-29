@@ -66,28 +66,28 @@ const stageCopy = {
   applied: {
     label: "Applied",
     badge: "Applied",
-    tone: "bg-sky-500/10 text-sky-700 dark:text-sky-300",
+    tone: "border-info/20 bg-info/10 text-info",
     summary: "Your application is in the review queue.",
     nextStep: "Keep your profile sharp - the next signal is typically a move to interview review.",
   },
   interviewing: {
     label: "Interviewing",
     badge: "Interviewing",
-    tone: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
+    tone: "border-warning/20 bg-warning/10 text-warning",
     summary: "You have been invited to a RoundZero interview for this role.",
     nextStep: "Complete the interview before the deadline to keep your evaluation slot.",
   },
   evaluated: {
     label: "Awaiting company decision",
     badge: "Awaiting company decision",
-    tone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+    tone: "border-success/20 bg-success/10 text-success",
     summary: "Your evaluation is complete and is now with the company for a decision.",
     nextStep: "Expect either a final decision or a follow-up step from the company.",
   },
   rejected: {
     label: "Closed",
     badge: "Closed",
-    tone: "bg-rose-500/10 text-rose-700 dark:text-rose-300",
+    tone: "border-danger/20 bg-danger/10 text-danger",
     summary: "This application is no longer moving forward.",
     nextStep: "Use what you learned here and keep applying to roles that match your profile.",
   },
@@ -102,7 +102,7 @@ const stageCopy = {
 
 const underReviewMeta = {
   badge: "Awaiting company decision",
-  tone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  tone: "border-success/20 bg-success/10 text-success",
   summary: "Your interview is complete and the company is now reviewing your evaluation.",
   nextStep: "You are waiting on a decision after review.",
 } as const;
@@ -422,7 +422,7 @@ function CandidateApplicationDetailPage() {
                     : "Complete your RoundZero interview to advance your application."}
             </p>
             {interview.status === "pending" && interviewExpiresAt && interviewTimeLeft ? (
-              <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2.5 py-2 text-xs text-amber-700 dark:text-amber-300">
+              <div className="rounded-md border border-warning/20 bg-warning/10 px-2.5 py-2 text-xs text-warning">
                 <p className="font-medium">{interviewTimeLeft}</p>
                 <p className="mt-0.5">Deadline: {formatDateTime(interviewExpiresAt)}</p>
               </div>

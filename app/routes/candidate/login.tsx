@@ -100,7 +100,7 @@ function CandidateLoginPage() {
                 <HugeiconsIcon
                   icon={CheckmarkCircle02Icon}
                   strokeWidth={2}
-                  className="size-3.5 text-emerald-500"
+                  className="size-3.5 text-success"
                 />
                 Always free for candidates
               </span>
@@ -108,7 +108,7 @@ function CandidateLoginPage() {
                 <HugeiconsIcon
                   icon={CheckmarkCircle02Icon}
                   strokeWidth={2}
-                  className="size-3.5 text-emerald-500"
+                  className="size-3.5 text-success"
                 />
                 No hidden fees
               </span>
@@ -196,7 +196,7 @@ function CandidateLoginPage() {
                 <HugeiconsIcon
                   icon={CheckmarkCircle02Icon}
                   strokeWidth={2}
-                  className="size-3.5 text-emerald-500"
+                  className="size-3.5 text-success"
                 />
                 Always free for candidates
               </span>
@@ -204,7 +204,7 @@ function CandidateLoginPage() {
                 <HugeiconsIcon
                   icon={CheckmarkCircle02Icon}
                   strokeWidth={2}
-                  className="size-3.5 text-emerald-500"
+                  className="size-3.5 text-success"
                 />
                 No hidden fees
               </span>
@@ -220,14 +220,8 @@ function CandidateLoginPage() {
             </p>
             <p>
               By continuing, you agree to our{" "}
-              <span className="underline underline-offset-2 hover:text-foreground cursor-pointer">
-                Terms
-              </span>{" "}
-              and{" "}
-              <span className="underline underline-offset-2 hover:text-foreground cursor-pointer">
-                Privacy Policy
-              </span>
-              .
+              <span className="underline underline-offset-2">Terms</span> and{" "}
+              <span className="underline underline-offset-2">Privacy Policy</span>.
             </p>
           </div>
         </div>

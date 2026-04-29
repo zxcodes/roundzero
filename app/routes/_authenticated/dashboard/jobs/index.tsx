@@ -246,13 +246,13 @@ const isStaleJob = (job: PipelineJob) => {
 };
 
 const pipelineSegments = [
-  { key: "appliedCount", label: "Applied", tone: "bg-sky-500" },
-  { key: "preScreeningCount", label: "Pre-screening", tone: "bg-slate-500" },
-  { key: "interviewInvitedCount", label: "Interview invited", tone: "bg-violet-500" },
-  { key: "interviewInProgressCount", label: "In progress", tone: "bg-amber-500" },
-  { key: "evaluatedCount", label: "Evaluated", tone: "bg-emerald-500" },
-  { key: "shortlistedCount", label: "Shortlisted", tone: "bg-teal-500" },
-  { key: "rejectedCount", label: "Closed", tone: "bg-rose-500" },
+  { key: "appliedCount", label: "Applied", tone: "bg-info" },
+  { key: "preScreeningCount", label: "Pre-screening", tone: "bg-pending" },
+  { key: "interviewInvitedCount", label: "Interview invited", tone: "bg-active" },
+  { key: "interviewInProgressCount", label: "In progress", tone: "bg-warning" },
+  { key: "evaluatedCount", label: "Evaluated", tone: "bg-success" },
+  { key: "shortlistedCount", label: "Shortlisted", tone: "bg-progress" },
+  { key: "rejectedCount", label: "Closed", tone: "bg-danger" },
 ] as const;
 
 function ActiveJobsTable({
@@ -331,7 +331,7 @@ function ActiveJobsTable({
                     </Badge>
                     {stale ? (
                       <span
-                        className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-600 dark:text-amber-400"
+                        className="inline-flex items-center gap-1 text-[11px] font-medium text-warning"
                         title={`Open ${STALE_DAYS}+ days with no applicants`}
                       >
                         <HugeiconsIcon icon={Alert01Icon} strokeWidth={2.5} className="size-3" />
