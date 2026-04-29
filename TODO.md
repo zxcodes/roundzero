@@ -1,5 +1,6 @@
 ## TODO
 
+- align sidebar and main app's padding equally on a global level. 
 - think about this entire model: should companies even see applicants as they come? or should we force reports until they arrive? then show applications?
 - company logo doesn't reflect after uploading until I refresh.
 - the landing page has fake metrics (first report 3 min etc, think how valid they're or replace them with actual claims).
