@@ -1,5 +1,6 @@
 ## TODO
 
+- think about this entire model: should companies even see applicants as they come? or should we force reports until they arrive? then show applications?
 - company logo doesn't reflect after uploading until I refresh.
 - email templates use old design lang.
 - the landing page has fake metrics (first report 3 min etc, think how valid they're or replace them with actual claims).
@@ -14,11 +15,8 @@
 - use faded out empty states like cards more like a graphic plus texts
 - too many applicant status enums (follwup enum etc, only keep using ones by checking end to end flow)
 - some company email reports are really bad and some are entirely missing for some flows. they have zero styling. review every single resend email template and align with rest of the app.
-- maybe remove submit button since agent can auto-end an interview? think.
-- check interview expiry, show it in interviews etc.
 - in post eval, refine the scores using the actual agent conv and add it to the final report.
 - update seed to include much more data for better agent evaluation with multiple jobs having company questions (relocation, visa, etc etc)
-- in pre eval report what we are showing is not clear. missing requirements don't read good enough. the messaging needs to be clear.
 - think about how previous evaluations and candidate profiles affect future score. helps with fabrication since we will have the candidate's work history and helps us maintain a consistent score when they apply to diff jobs.
 - think about showing pre eval report to companies bc the whole point is showing them tailored reports in the end. so instead of immediately showing them, show it only when the full reports are actually generated? think. fine for local dev bc we need to check the scores etc etc. 
 - show number of applicants on each job detail.
@@ -39,8 +37,11 @@
 
 
 
+<!--- in pre eval report what we are showing is not clear. missing requirements don't read good enough. the messaging needs to be clear.-->
+<!--- check interview expiry, show it in interviews etc.-->
 <!--- think about context compaction to save on costs.-->
 <!--- add a default expiry time for agent interviews. bc we can't make companies wait based on candidate's availability. think about it briefly. -->
+<!--- maybe remove submit button since agent can auto-end an interview? think.-->
 <!--- generated report on company side links to full profile, it should not-->
 <!--- improve shortlisting behaviour across company and candidate. applicant detail page still shows as applied while the applications list does show as shortlisted. also think about notifications of shortlisting and notifications in general.-->
 <!--- full report needs a lot of work including overall ux, ui, representation, accuracy, for ex (even if an interview goes bad, the report seems to show good points. prob in llm layer)-->
