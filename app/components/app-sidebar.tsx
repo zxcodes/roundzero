@@ -80,10 +80,20 @@ export function AppSidebar({
     <Sidebar collapsible="offcanvas" {...props} variant="floating">
       <SidebarHeader>
         <Link to="/dashboard" className="flex items-center gap-2.5 px-1 py-0.5">
-          <div className="flex size-7 items-center justify-center rounded-lg bg-primary">
-            <span className="text-xs font-bold text-primary-foreground">R0</span>
+          <div className="flex size-7 items-center justify-center rounded-md bg-brand text-brand-foreground">
+            <span
+              className="font-serif text-[13px] leading-none italic"
+              style={{ fontWeight: 500 }}
+            >
+              R0
+            </span>
           </div>
-          <span className="text-base font-semibold tracking-tight">roundzero</span>
+          <span
+            className="font-heading text-[18px] leading-none tracking-[-0.01em]"
+            style={{ fontWeight: 400 }}
+          >
+            RoundZero
+          </span>
         </Link>
       </SidebarHeader>
 
