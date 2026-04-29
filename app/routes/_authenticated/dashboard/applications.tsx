@@ -37,37 +37,37 @@ type Application = Applications[number];
 const stageCopy = {
   applied: {
     badge: "Application Received",
-    tone: "bg-sky-500/10 text-sky-700 dark:text-sky-300",
+    tone: "border-info/20 bg-info/10 text-info",
     blurb: "Waiting on first review",
   },
   interview_ready: {
     badge: "Interview Ready",
-    tone: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
+    tone: "border-warning/20 bg-warning/10 text-warning",
     blurb: "You have been invited to a RoundZero interview",
   },
   interview_in_progress: {
     badge: "Interview in Progress",
-    tone: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
+    tone: "border-warning/20 bg-warning/10 text-warning",
     blurb: "Your RoundZero interview is in progress",
   },
   under_review: {
     badge: "Awaiting company decision",
-    tone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+    tone: "border-success/20 bg-success/10 text-success",
     blurb: "Interview completed. Awaiting company decision",
   },
   evaluated: {
     badge: "Awaiting company decision",
-    tone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+    tone: "border-success/20 bg-success/10 text-success",
     blurb: "Evaluation complete. Awaiting company decision",
   },
   shortlisted: {
     badge: "Shortlisted",
-    tone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+    tone: "border-success/20 bg-success/10 text-success",
     blurb: "You have been shortlisted for this role",
   },
   rejected: {
     badge: "Closed",
-    tone: "bg-rose-500/10 text-rose-700 dark:text-rose-300",
+    tone: "border-danger/20 bg-danger/10 text-danger",
     blurb: "No longer moving forward",
   },
   withdrawn: {

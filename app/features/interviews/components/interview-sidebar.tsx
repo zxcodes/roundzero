@@ -75,10 +75,10 @@ const getSessionLabel = (value: string) => {
 
 const getSessionTone = (value: string) => {
   if (value === "in_progress") return "bg-primary/10 text-primary";
-  if (value === "pending") return "bg-amber-500/10 text-amber-700 dark:text-amber-300";
-  if (value === "completed") return "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
+  if (value === "pending") return "border-warning/20 bg-warning/10 text-warning";
+  if (value === "completed") return "border-success/20 bg-success/10 text-success";
   if (value === "cancelled") return "bg-muted text-muted-foreground";
-  if (value === "expired") return "bg-rose-500/10 text-rose-700 dark:text-rose-300";
+  if (value === "expired") return "border-danger/20 bg-danger/10 text-danger";
   return "bg-muted text-muted-foreground";
 };
 

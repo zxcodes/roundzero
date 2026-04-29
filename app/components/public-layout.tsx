@@ -16,11 +16,18 @@ export function PublicHeader() {
     <header className="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-xl backdrop-saturate-150">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6 lg:px-8">
         <div className="flex items-center gap-8">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="flex size-7 items-center justify-center rounded-lg bg-primary">
-              <span className="text-xs font-bold text-primary-foreground">R0</span>
+          <Link to="/" className="flex items-center gap-2.5">
+            <div className="flex size-7 items-center justify-center rounded-md bg-brand text-brand-foreground">
+              <span className="font-serif text-[13px] leading-none" style={{ fontWeight: 500 }}>
+                R0
+              </span>
             </div>
-            <span className="text-base font-semibold tracking-tight">roundzero</span>
+            <span
+              className="font-heading text-[19px] leading-none tracking-[-0.01em]"
+              style={{ fontWeight: 400 }}
+            >
+              RoundZero
+            </span>
           </Link>
           <nav className="hidden items-center gap-1 sm:flex">
             <Button variant="ghost" size="sm" className="text-muted-foreground" asChild>
@@ -122,8 +129,8 @@ export function PublicFooter() {
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6 text-sm text-muted-foreground lg:px-8">
         <span>&copy; {new Date().getFullYear()} RoundZero</span>
         <div className="flex gap-6">
-          <span className="cursor-pointer transition-colors hover:text-foreground">Privacy</span>
-          <span className="cursor-pointer transition-colors hover:text-foreground">Terms</span>
+          <span>Privacy Policy coming soon</span>
+          <span>Terms coming soon</span>
         </div>
       </div>
     </footer>

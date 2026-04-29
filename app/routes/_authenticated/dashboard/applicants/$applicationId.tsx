@@ -98,38 +98,38 @@ const STATUS_OPTIONS: { value: ApplicationStatus; label: string }[] = [
 const stageCopy = {
   applied: {
     badge: "Applied",
-    tone: "bg-sky-500/10 text-sky-700 dark:text-sky-300",
-    dot: "bg-sky-500",
+    tone: "border-info/20 bg-info/10 text-info",
+    dot: "bg-info",
   },
   pre_screening: {
     badge: "Pre-screening",
-    tone: "bg-slate-500/10 text-slate-700 dark:text-slate-300",
-    dot: "bg-slate-500",
+    tone: "border-pending/20 bg-pending/10 text-pending",
+    dot: "bg-pending",
   },
   interview_invited: {
     badge: "Interview invited",
-    tone: "bg-violet-500/10 text-violet-700 dark:text-violet-300",
-    dot: "bg-violet-500",
+    tone: "border-active/20 bg-active/10 text-active",
+    dot: "bg-active",
   },
   interview_in_progress: {
     badge: "Interview in progress",
-    tone: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
-    dot: "bg-amber-500",
+    tone: "border-warning/20 bg-warning/10 text-warning",
+    dot: "bg-warning",
   },
   evaluated: {
     badge: "Evaluated",
-    tone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-    dot: "bg-emerald-500",
+    tone: "border-success/20 bg-success/10 text-success",
+    dot: "bg-success",
   },
   shortlisted: {
     badge: "Shortlisted",
-    tone: "bg-teal-500/10 text-teal-700 dark:text-teal-300",
-    dot: "bg-teal-500",
+    tone: "border-progress/20 bg-progress/10 text-progress",
+    dot: "bg-progress",
   },
   rejected: {
     badge: "Rejected",
-    tone: "bg-rose-500/10 text-rose-700 dark:text-rose-300",
-    dot: "bg-rose-500",
+    tone: "border-danger/20 bg-danger/10 text-danger",
+    dot: "bg-danger",
   },
   withdrawn: {
     badge: "Withdrawn",
@@ -430,7 +430,7 @@ function ApplicantReviewPage() {
                 {preEvaluation.missingRequirements.length === 1 ? "" : "s"} detected
               </p>
             ) : (
-              <p className="text-sm text-emerald-600">All key requirements matched</p>
+              <p className="text-sm text-success">All key requirements matched</p>
             )}
           </CardContent>
         </Card>

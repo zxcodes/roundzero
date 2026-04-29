@@ -1,4 +1,4 @@
-import { ArrowUp01Icon } from "@hugeicons/core-free-icons";
+import { ArrowUp01Icon, BubbleChatIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
@@ -109,13 +109,15 @@ export function InterviewChat({
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-muted/30">
-      <ScrollArea ref={transcriptRef} className="min-h-0 flex-1">
-        <InterviewTranscript
-          messages={messages}
-          userLabel="You"
-          emptyTitle="Your interview with Zero starts here."
-          emptyDescription={canSend ? "Say hi to begin." : "Press Start when you are ready."}
+      {!messages.length ? (
+        <EmptyInterviewComponent
+          description="Press start when you are ready."
+          title="Your interview with Zero starts here"
         />
+      ) : null}
+
+      <ScrollArea ref={transcriptRef} className="min-h-0 flex-1">
+        <InterviewTranscript messages={messages} userLabel="You" />
         <div ref={transcriptEndRef} className="h-1" />
       </ScrollArea>
 
@@ -155,6 +157,26 @@ export function InterviewChat({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+export function EmptyInterviewComponent({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="flex h-full items-center justify-center">
+      <div className="mx-auto flex max-w-md flex-col items-center gap-3 text-center text-muted-foreground">
+        <div className="flex size-12 items-center justify-center rounded-full border border-border/70 bg-card shadow-sm">
+          <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={2} className="size-5 text-primary" />
+        </div>
+        <p className="text-sm leading-relaxed">{title}.</p>
+        <p className="text-xs text-muted-foreground/80">{description}</p>
+      </div>
     </div>
   );
 }

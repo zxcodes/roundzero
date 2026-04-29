@@ -35,6 +35,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { EmptyInterviewComponent } from "@/features/interviews/components/interview-chat";
 import { InterviewTranscript } from "@/features/interviews/components/interview-transcript";
 import { cn } from "@/lib/utils";
 
@@ -927,6 +928,13 @@ function TranscriptDialog({
         </DialogHeader>
 
         <div className="border-t border-border/60 bg-muted/20">
+          {!messages.length ? (
+            <EmptyInterviewComponent
+              description="The interview finished without any persisted conversation history."
+              title="No transcript messages available."
+            />
+          ) : null}
+
           <ScrollArea className="h-[68vh] max-h-[68vh]">
             <InterviewTranscript
               messages={messages.map((message, index) => ({
@@ -935,8 +943,6 @@ function TranscriptDialog({
                 content: message.content,
               }))}
               userLabel={candidate.name}
-              emptyTitle="No transcript messages available."
-              emptyDescription="The interview finished without any persisted conversation history."
             />
           </ScrollArea>
         </div>
