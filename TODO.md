@@ -22,13 +22,12 @@
 - in pre eval report what we are showing is not clear. missing requirements don't read good enough. the messaging needs to be clear.
 - think about how previous evaluations and candidate profiles affect future score. helps with fabrication since we will have the candidate's work history and helps us maintain a consistent score when they apply to diff jobs.
 - think about showing pre eval report to companies bc the whole point is showing them tailored reports in the end. so instead of immediately showing them, show it only when the full reports are actually generated? think. fine for local dev bc we need to check the scores etc etc. 
-- add a default expiry time for agent interviews. bc we can't make companies wait based on candidate's availability. think about it briefly. 
 - show number of applicants on each job detail.
 - think more about the duration from first report to last report generation bc it will depend on the candidate. think if we need to add an expiry or something and pass it to the next candidate?
 - you just post a job and you will be notified with the reports. (major overhaul on company side.), also check how long should it take for reports to arrive, let companies choose how many reports they wanna see per job while creating it etc.
 - add a job creation shortcut using "N" also indicate it on the button.
 - see shadcn dashboard block for inspiration on company dashboard. (bunx shadcn@latest add dashboard-01)
-- resend testing in dev. (candidates tested, need company reports testing, also add email preview instead of sending and checking emails (react-email))
+- check all resend templates for all notifications exist, if they link to proper paths etc.
 - company dashboard needs a big overhaul. graphs, charts, recent reports, etc
 - see if we can use SST for deployments.
 - check for leaking info in api calls (emails, ids etc)
@@ -41,6 +40,7 @@
 
 
 
+<!--- add a default expiry time for agent interviews. bc we can't make companies wait based on candidate's availability. think about it briefly. -->
 <!--- generated report on company side links to full profile, it should not-->
 <!--- improve shortlisting behaviour across company and candidate. applicant detail page still shows as applied while the applications list does show as shortlisted. also think about notifications of shortlisting and notifications in general.-->
 <!--- full report needs a lot of work including overall ux, ui, representation, accuracy, for ex (even if an interview goes bad, the report seems to show good points. prob in llm layer)-->
