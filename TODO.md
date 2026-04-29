@@ -10,7 +10,6 @@
 - detect failures in the whole pipeline and give candidates or companies an option to retry. make as failure proof as possible. specifically in model responses. 
 - strictly make agent ask interview questions from the profile and then from the actual job. right now it's not even close. asks vague questions. check if we're feeding the agent context the right way.
 - in post eval add another slop check to review interview transcript
-- switching interviews has stale data. switching to 1 shows data from 2nd and vice versa. fixes on refresh
 - changing from pre_screening to interview invite for pending roles throws an error.
 - too many applicant status enums (follwup enum etc, only keep using ones by checking end to end flow)
 - some company email reports are really bad and some are entirely missing for some flows. they have zero styling. review every single resend email template and align with rest of the app.
@@ -36,9 +35,10 @@
 
 
 
+<!--- check interview expiry, show it in interviews etc.-->
 <!--- use faded out empty states like cards more like a graphic plus texts-->
 <!--- in pre eval report what we are showing is not clear. missing requirements don't read good enough. the messaging needs to be clear.-->
-<!--- check interview expiry, show it in interviews etc.-->
+<!--- switching interviews has stale data. switching to 1 shows data from 2nd and vice versa. fixes on refresh-->
 <!--- think about context compaction to save on costs.-->
 <!--- add a default expiry time for agent interviews. bc we can't make companies wait based on candidate's availability. think about it briefly. -->
 <!--- maybe remove submit button since agent can auto-end an interview? think.-->
