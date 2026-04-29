@@ -160,7 +160,7 @@ function Hero() {
             >
               <SmallCaps>The lede</SmallCaps>
               <p
-                className="font-serif text-[17px] leading-[1.5]"
+                className="font-serif text-[17px] leading-normal"
                 style={{ color: "var(--ed-ink)" }}
               >
                 AI-polished resumes and one-click applications have buried the inbox. RoundZero
@@ -591,7 +591,7 @@ function ReportSpread() {
                   {s.value.toFixed(1)}
                 </span>
               </div>
-              <div className="h-[2px] w-full" style={{ background: "var(--ed-rule-hair)" }}>
+              <div className="h-0.5 w-full" style={{ background: "var(--ed-rule-hair)" }}>
                 <div
                   className="h-full"
                   style={{
@@ -860,7 +860,7 @@ function PricingTable() {
                     </span>
                   </div>
                   <p
-                    className="max-w-[26ch] text-[13px] leading-[1.5]"
+                    className="max-w-[26ch] text-[13px] leading-normal"
                     style={{ color: "var(--ed-muted)" }}
                   >
                     {t.description}
@@ -904,7 +904,7 @@ function PricingTable() {
                     </span>
                   </div>
                   <p
-                    className="max-w-[26ch] text-[13px] leading-[1.5]"
+                    className="max-w-[26ch] text-[13px] leading-normal"
                     style={{ color: "var(--ed-muted)" }}
                   >
                     {t.description}
@@ -1091,7 +1091,7 @@ function Closing() {
           </div>
           <div className="col-span-12 lg:col-span-8 lg:col-start-3">
             <h2
-              className="font-serif text-[clamp(2rem,5vw,4.5rem)] leading-[1] tracking-[-0.02em]"
+              className="font-serif text-[clamp(2rem,5vw,4.5rem)] leading-none tracking-[-0.02em]"
               style={{ color: "var(--ed-ink)", fontWeight: 350 }}
             >
               Stop reading résumés.{" "}
