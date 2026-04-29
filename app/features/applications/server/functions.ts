@@ -52,7 +52,7 @@ export const applyToJob = createServerFn({ method: "POST" })
       {
         triggerPreEvaluation: async (applicationId: string) => {
           try {
-            await fetch(`${serverEnv.EDGE_WORKER_URL}/pre-evaluate`, {
+            const response = await fetch(`${serverEnv.EDGE_WORKER_URL}/pre-evaluate`, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -60,6 +60,12 @@ export const applyToJob = createServerFn({ method: "POST" })
               },
               body: JSON.stringify({ applicationId }),
             });
+
+            if (!response.ok) {
+              console.error(
+                `[applyToJob] Failed to trigger pre-evaluation for ${applicationId} with status ${response.status}`,
+              );
+            }
           } catch {
             console.error(`Failed to trigger pre-evaluation for ${applicationId}`);
           }

@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+const edgeWorkerSecretSchema = z
+  .string()
+  .min(32, "EDGE_WORKER_SECRET must be at least 32 characters");
+
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "staging", "test"]).default("development"),
 
@@ -26,10 +30,19 @@ const envSchema = z.object({
 
   // Edge Worker
   EDGE_WORKER_URL: z.string().url().default("http://localhost:8787"),
-  EDGE_WORKER_SECRET: z.string().default("dev-secret"),
+  EDGE_WORKER_SECRET: edgeWorkerSecretSchema,
 
   // Edge Worker URL for client websocket chat
   VITE_EDGE_WORKER_URL: z.string().url().default("http://localhost:8787"),
 });
 
-export const serverEnv = envSchema.parse(process.env);
+const parsedEnv = envSchema.parse(process.env);
+
+if (
+  parsedEnv.NODE_ENV !== "test" &&
+  parsedEnv.EDGE_WORKER_SECRET.toLowerCase().includes("dev-secret")
+) {
+  throw new Error("EDGE_WORKER_SECRET must not use a dev-secret value outside tests");
+}
+
+export const serverEnv = parsedEnv;

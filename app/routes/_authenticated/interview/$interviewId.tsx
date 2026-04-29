@@ -114,7 +114,7 @@ function InterviewWorkspaceContent({
   expiresAt: string | null;
 }) {
   const router = useRouter();
-  const chat = useInterviewChat(interview.id);
+  const chat = useInterviewChat(interview.id, interview.agentToken);
   const agentSessionStatus = chat.sessionStatus;
   const effectiveStatus =
     interview.status === "in_progress" && agentSessionStatus && agentSessionStatus !== "in_progress"
