@@ -114,7 +114,7 @@ function Roman({ n }: { n: string }) {
 function Hero() {
   return (
     <section className="relative">
-      <div className="mx-auto w-full max-w-[1280px] px-6 lg:px-12">
+      <div className="mx-auto w-full max-w-6xl px-6 lg:px-8">
         {/* Masthead row */}
         <div className="flex items-center justify-between pt-10 pb-6">
           <SmallCaps>{ISSUE_LABEL}</SmallCaps>
@@ -266,7 +266,7 @@ const tickerStats = [
 function Ticker() {
   return (
     <div className="relative">
-      <div className="mx-auto w-full max-w-[1280px] px-6 lg:px-12">
+      <div className="mx-auto w-full max-w-6xl px-6 lg:px-8">
         <Rule />
         <div className="grid grid-cols-2 md:grid-cols-4">
           {tickerStats.map((s, i) => (
@@ -310,25 +310,23 @@ function Chapter({
 }) {
   return (
     <section>
-      <div className="mx-auto w-full max-w-[1280px] px-6 lg:px-12">
-        <div className="grid grid-cols-12 gap-x-6 pt-20 pb-6 lg:pt-28">
-          <div className="col-span-12 lg:col-span-2">
-            <div
-              className="font-serif text-[clamp(2.25rem,3vw,3rem)] leading-none"
+      <div className="mx-auto w-full max-w-6xl px-6 lg:px-8">
+        <div className="flex items-end justify-between gap-6 pt-20 pb-6 lg:pt-28">
+          <div className="flex items-baseline gap-4 md:gap-5">
+            <span
+              className="font-serif text-[clamp(1.6rem,2.4vw,2.4rem)] leading-none shrink-0"
               style={{ color: "var(--ed-accent)", fontWeight: 400 }}
             >
               <Roman n={roman} />
-            </div>
-          </div>
-          <div className="col-span-12 lg:col-span-10 flex items-end justify-between gap-6 pt-3 lg:pt-0">
+            </span>
             <h2
-              className="font-serif text-[clamp(1.7rem,3.6vw,3.25rem)] leading-[1.05] tracking-[-0.015em] max-w-[14ch]"
+              className="font-serif text-[clamp(1.7rem,3.6vw,3.25rem)] leading-[1.05] tracking-[-0.015em] max-w-[18ch]"
               style={{ color: "var(--ed-ink)", fontWeight: 400 }}
             >
               {title}
             </h2>
-            <SmallCaps className="shrink-0 hidden md:inline-block">{kicker}</SmallCaps>
           </div>
+          <SmallCaps className="hidden shrink-0 pb-2 md:inline-block">{kicker}</SmallCaps>
         </div>
         <Rule />
         <div className="py-14 lg:py-20">{children}</div>
@@ -974,14 +972,7 @@ function Faq() {
       <div className="col-span-12 md:col-span-9">
         <Accordion type="single" collapsible className="w-full">
           {faq.map((f, i) => (
-            <AccordionItem
-              key={f.q}
-              value={`q-${i}`}
-              style={{
-                borderTop: i === 0 ? "1px solid var(--ed-ink)" : undefined,
-                borderBottom: "1px solid var(--ed-rule-hair)",
-              }}
-            >
+            <AccordionItem key={f.q} value={`q-${i}`}>
               <AccordionTrigger
                 className="py-5 hover:no-underline"
                 style={{ color: "var(--ed-ink)" }}
@@ -1012,7 +1003,7 @@ function Faq() {
 function Closing() {
   return (
     <section>
-      <div className="mx-auto w-full max-w-[1280px] px-6 lg:px-12">
+      <div className="mx-auto w-full max-w-6xl px-6 lg:px-8">
         <Rule thick />
         <div className="grid grid-cols-12 gap-x-6 py-20 lg:py-32">
           <div className="col-span-12 lg:col-span-2">
