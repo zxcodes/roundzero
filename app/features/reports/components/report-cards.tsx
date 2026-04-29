@@ -927,24 +927,24 @@ function TranscriptDialog({
           </div>
         </DialogHeader>
 
-        <div className="border-t border-border/60 bg-muted/20">
+        <div className="border-t border-border/60 bg-muted/20 min-h-72 flex h-full justify-center items-center">
           {!messages.length ? (
             <EmptyInterviewComponent
               description="The interview finished without any persisted conversation history."
               title="No transcript messages available."
             />
-          ) : null}
-
-          <ScrollArea className="h-[68vh] max-h-[68vh]">
-            <InterviewTranscript
-              messages={messages.map((message, index) => ({
-                id: `${message.createdAt}-${index}`,
-                role: message.role,
-                content: message.content,
-              }))}
-              userLabel={candidate.name}
-            />
-          </ScrollArea>
+          ) : (
+            <ScrollArea className="h-[68vh] max-h-[68vh]">
+              <InterviewTranscript
+                messages={messages.map((message, index) => ({
+                  id: `${message.createdAt}-${index}`,
+                  role: message.role,
+                  content: message.content,
+                }))}
+                userLabel={candidate.name}
+              />
+            </ScrollArea>
+          )}
         </div>
       </DialogContent>
     </Dialog>

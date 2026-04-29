@@ -114,12 +114,12 @@ export function InterviewChat({
           description="Press start when you are ready."
           title="Your interview with Zero starts here"
         />
-      ) : null}
-
-      <ScrollArea ref={transcriptRef} className="min-h-0 flex-1">
-        <InterviewTranscript messages={messages} userLabel="You" />
-        <div ref={transcriptEndRef} className="h-1" />
-      </ScrollArea>
+      ) : (
+        <ScrollArea ref={transcriptRef} className="min-h-0 flex-1">
+          <InterviewTranscript messages={messages} userLabel="You" />
+          <div ref={transcriptEndRef} className="h-1" />
+        </ScrollArea>
+      )}
 
       {isEnded ? (
         <div className="shrink-0 border-t border-border/50 bg-card px-5 py-4 md:px-6">
