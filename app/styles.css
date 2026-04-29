@@ -138,6 +138,13 @@
   --ring: oklch(0.55 0.025 70);
   --brand: oklch(0.62 0.16 28);
   --brand-foreground: oklch(0.16 0.008 60);
+  --status-success: oklch(0.72 0.13 150);
+  --status-warning: oklch(0.78 0.14 70);
+  --status-info: oklch(0.74 0.09 235);
+  --status-danger: oklch(0.72 0.16 28);
+  --status-pending: oklch(0.72 0.015 70);
+  --status-active: oklch(0.72 0.12 295);
+  --status-progress: oklch(0.78 0.09 195);
   --chart-1: oklch(0.855 0.138 181.071);
   --chart-2: oklch(0.704 0.14 182.503);
   --chart-3: oklch(0.6 0.118 184.704);

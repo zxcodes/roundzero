@@ -99,7 +99,7 @@ function CompanyLoginPage() {
                 <HugeiconsIcon
                   icon={CheckmarkCircle02Icon}
                   strokeWidth={2}
-                  className="size-3.5 text-emerald-500"
+                  className="size-3.5 text-success"
                 />
                 No credit card required
               </span>
@@ -107,7 +107,7 @@ function CompanyLoginPage() {
                 <HugeiconsIcon
                   icon={CheckmarkCircle02Icon}
                   strokeWidth={2}
-                  className="size-3.5 text-emerald-500"
+                  className="size-3.5 text-success"
                 />
                 Free to post jobs
               </span>
@@ -191,7 +191,7 @@ function CompanyLoginPage() {
                 <HugeiconsIcon
                   icon={CheckmarkCircle02Icon}
                   strokeWidth={2}
-                  className="size-3.5 text-emerald-500"
+                  className="size-3.5 text-success"
                 />
                 No credit card required
               </span>
@@ -199,7 +199,7 @@ function CompanyLoginPage() {
                 <HugeiconsIcon
                   icon={CheckmarkCircle02Icon}
                   strokeWidth={2}
-                  className="size-3.5 text-emerald-500"
+                  className="size-3.5 text-success"
                 />
                 Free to post jobs
               </span>

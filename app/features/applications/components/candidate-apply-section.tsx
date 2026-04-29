@@ -61,7 +61,7 @@ export function CandidateApplySection({
           <HugeiconsIcon
             icon={CheckmarkCircle02Icon}
             strokeWidth={2}
-            className="size-4 text-emerald-500"
+            className="size-4 text-success"
           />
           <p className="text-sm font-medium text-muted-foreground">Application submitted</p>
         </CardContent>
@@ -76,7 +76,7 @@ export function CandidateApplySection({
           <HugeiconsIcon
             icon={CheckmarkCircle02Icon}
             strokeWidth={2}
-            className="size-4 text-emerald-500"
+            className="size-4 text-success"
           />
           <p className="text-sm font-medium text-muted-foreground">You have already applied</p>
         </CardContent>
