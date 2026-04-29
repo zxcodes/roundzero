@@ -118,9 +118,7 @@ function Hero() {
         {/* Masthead row */}
         <div className="flex items-center justify-between pt-10 pb-6">
           <SmallCaps>{ISSUE_LABEL}</SmallCaps>
-          <SmallCaps className="hidden md:inline-block">
-            By RoundZero · Issued in San Francisco
-          </SmallCaps>
+          <SmallCaps className="hidden md:inline-block">By RoundZero</SmallCaps>
         </div>
         <Rule thick />
 
