@@ -1,6 +1,3 @@
-import { BubbleChatIcon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-
 type InterviewTranscriptMessage = {
   id?: string;
   role: "assistant" | "candidate";
@@ -10,30 +7,9 @@ type InterviewTranscriptMessage = {
 type InterviewTranscriptProps = {
   messages: InterviewTranscriptMessage[];
   userLabel?: string;
-  emptyTitle: string;
-  emptyDescription: string;
 };
 
-export function InterviewTranscript({
-  messages,
-  userLabel = "You",
-  emptyTitle,
-  emptyDescription,
-}: InterviewTranscriptProps) {
-  if (messages.length === 0) {
-    return (
-      <div className="flex h-full min-h-[70vh] items-center justify-center px-6 py-10">
-        <div className="mx-auto flex max-w-md flex-col items-center gap-3 text-center text-muted-foreground">
-          <div className="flex size-12 items-center justify-center rounded-full border border-border/70 bg-card shadow-sm">
-            <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={2} className="size-5 text-primary" />
-          </div>
-          <p className="text-sm leading-relaxed">{emptyTitle}</p>
-          <p className="text-xs text-muted-foreground/80">{emptyDescription}</p>
-        </div>
-      </div>
-    );
-  }
-
+export function InterviewTranscript({ messages, userLabel = "You" }: InterviewTranscriptProps) {
   return (
     <div className="space-y-7 px-5 py-6 md:px-7 md:py-7">
       {messages.map((message, index) => {
