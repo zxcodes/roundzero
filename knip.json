@@ -15,6 +15,8 @@
     "@tanstack/react-query-devtools",
     "@fontsource-variable/geist-mono",
     "@fontsource-variable/geist",
+    "@fontsource-variable/fraunces",
+    "@fontsource/instrument-serif",
     "tailwindcss",
     "tw-animate-css",
     "recharts",
