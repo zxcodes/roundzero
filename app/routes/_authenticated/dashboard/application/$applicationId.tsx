@@ -84,6 +84,13 @@ const stageCopy = {
     summary: "Your evaluation is complete and is now with the company for a decision.",
     nextStep: "Expect either a final decision or a follow-up step from the company.",
   },
+  shortlisted: {
+    label: "Shortlisted",
+    badge: "Shortlisted",
+    tone: "border-success/20 bg-success/10 text-success",
+    summary: "You have been shortlisted for this role.",
+    nextStep: "The company may contact you directly with next steps.",
+  },
   rejected: {
     label: "Closed",
     badge: "Closed",
@@ -161,6 +168,7 @@ const toApplicationStage = (status: string): keyof typeof stageCopy => {
     case "interview_in_progress":
       return "interviewing";
     case "evaluated":
+    case "shortlisted":
     case "rejected":
     case "withdrawn":
       return status;
@@ -282,6 +290,7 @@ function CandidateApplicationDetailPage() {
 
   const metadata = toRecord(application.metadata);
   const currentStage = toApplicationStage(application.status);
+  const progressStage = currentStage === "shortlisted" ? "evaluated" : currentStage;
   const meta = getDisplayMeta({
     status: application.status,
     interviewStatus: interview?.status ?? null,
@@ -359,11 +368,11 @@ function CandidateApplicationDetailPage() {
         <div className="flex gap-8">
           {HAPPY_PATH_STAGES.map((stage) => {
             const stageIndex = HAPPY_PATH_STAGES.indexOf(stage);
-            const currentIndex = isTerminalStage(currentStage)
+            const currentIndex = isTerminalStage(progressStage)
               ? HAPPY_PATH_STAGES.length
-              : HAPPY_PATH_STAGES.indexOf(currentStage as (typeof HAPPY_PATH_STAGES)[number]);
+              : HAPPY_PATH_STAGES.indexOf(progressStage as (typeof HAPPY_PATH_STAGES)[number]);
             const isCompleted = stageIndex < currentIndex;
-            const isCurrent = stage === currentStage;
+            const isCurrent = stage === progressStage;
 
             const barClass = isCurrent ? "bg-primary" : isCompleted ? "bg-primary/35" : "bg-muted";
 

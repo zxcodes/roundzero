@@ -43,7 +43,6 @@ function getNotificationFromName(type: string): string {
     case "job_closed":
       return "RoundZero Update";
     case "interview_invited":
-    case "interview_expired":
     case "application_withdrawn":
       return "RoundZero Alert";
     default:
@@ -64,7 +63,6 @@ const formatDeadline = (value: unknown) => {
   return `Complete by ${date.toLocaleString("en-US", {
     dateStyle: "medium",
     timeStyle: "short",
-    timeZoneName: "short",
   })}.`;
 };
 

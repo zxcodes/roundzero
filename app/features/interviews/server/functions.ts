@@ -12,12 +12,7 @@ import {
   getInterviewsByCandidate,
   updateInterviewStatus,
 } from "@/features/interviews/queries/queries_sql";
-import {
-  getInterviewExpiresAt,
-  shouldAutoExpireInterview,
-} from "@/features/interviews/shared/expiry";
-import { notificationPayloadSchemas } from "@/features/notifications/config";
-import { createNotification } from "@/features/notifications/queries/queries_sql";
+import { shouldAutoExpireInterview } from "@/features/interviews/shared/expiry";
 import { getReportByApplicationId } from "@/features/reports/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { serverEnv } from "@/shared/env.server";
@@ -37,41 +32,6 @@ type ExpirableInterview = {
   jobTitle: string;
 };
 
-const createInterviewExpiredNotification = async (input: {
-  db: ReturnType<typeof getDb>;
-  candidateId: string;
-  applicationId: string;
-  interviewId: string;
-  jobId: string;
-  jobTitle: string;
-  expiresAt: string | null;
-}) => {
-  const payload = notificationPayloadSchemas.interview_expired.parse({
-    applicationId: input.applicationId,
-    interviewId: input.interviewId,
-    jobId: input.jobId,
-    jobTitle: input.jobTitle,
-    expiresAt: input.expiresAt ?? undefined,
-  });
-
-  const existing = await input.db
-    .unsafe(
-      `SELECT id FROM notifications WHERE user_id = $1 AND type = 'interview_expired' AND payload->>'interviewId' = $2 LIMIT 1`,
-      [input.candidateId, input.interviewId],
-    )
-    .values();
-
-  if (existing.length > 0) {
-    return;
-  }
-
-  await createNotification(input.db, {
-    userId: input.candidateId,
-    type: "interview_expired",
-    payload,
-  });
-};
-
 const expireInterviewIfNeeded = async <T extends ExpirableInterview>(input: {
   db: ReturnType<typeof getDb>;
   interview: T;
@@ -83,16 +43,6 @@ const expireInterviewIfNeeded = async <T extends ExpirableInterview>(input: {
   await updateInterviewStatus(input.db, {
     id: input.interview.id,
     status: "expired",
-  });
-
-  await createInterviewExpiredNotification({
-    db: input.db,
-    candidateId: input.interview.candidateId,
-    applicationId: input.interview.applicationId,
-    interviewId: input.interview.id,
-    jobId: input.interview.jobId,
-    jobTitle: input.interview.jobTitle,
-    expiresAt: getInterviewExpiresAt(input.interview.metadata)?.toISOString() ?? null,
   });
 
   return {

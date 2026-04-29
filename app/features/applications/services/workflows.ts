@@ -211,7 +211,10 @@ export const updateApplicationStatusWorkflow = async (
     return { application: updated };
   }
 
-  if (currentStatus !== input.status) {
+  const shouldNotifyCandidateOnStatusChange =
+    input.status === "shortlisted" || input.status === "rejected";
+
+  if (currentStatus !== input.status && shouldNotifyCandidateOnStatusChange) {
     const payload = notificationPayloadSchemas.application_status_changed.parse({
       applicationId: application.id,
       jobId: application.jobId,

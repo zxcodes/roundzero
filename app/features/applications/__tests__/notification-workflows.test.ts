@@ -46,7 +46,7 @@ describe("application notification workflows", () => {
     expect(application.status).toBe("applied");
   });
 
-  it("keeps the status workflow successful even if email delivery fails", async () => {
+  it("creates candidate notifications only for important decision statuses", async () => {
     const { company, owner } = await seedCompany({
       name: "Orbit",
     });
@@ -84,12 +84,83 @@ describe("application notification workflows", () => {
       },
     );
 
+    const noDecisionNotifications = await getNotificationsByUser(sql, {
+      userId: candidate.id,
+      limit: "10",
+    });
+
+    expect(noDecisionNotifications).toHaveLength(0);
+
+    await updateApplicationStatusWorkflow(
+      sql,
+      {
+        userId: owner.id,
+        applicationId: application.id,
+        status: "interview_invited",
+      },
+      {
+        sendNotificationEmail: async () => {
+          throw new Error("Resend rejected request");
+        },
+      },
+    );
+
+    const interviewNotifications = await getNotificationsByUser(sql, {
+      userId: candidate.id,
+      limit: "10",
+    });
+
+    expect(interviewNotifications).toHaveLength(1);
+    expect(interviewNotifications[0].type).toBe("interview_invited");
+
+    await updateApplicationStatusWorkflow(
+      sql,
+      {
+        userId: owner.id,
+        applicationId: application.id,
+        status: "interview_in_progress",
+      },
+      {
+        sendNotificationEmail: async () => {
+          throw new Error("Resend rejected request");
+        },
+      },
+    );
+
+    await updateApplicationStatusWorkflow(
+      sql,
+      {
+        userId: owner.id,
+        applicationId: application.id,
+        status: "evaluated",
+      },
+      {
+        sendNotificationEmail: async () => {
+          throw new Error("Resend rejected request");
+        },
+      },
+    );
+
+    await updateApplicationStatusWorkflow(
+      sql,
+      {
+        userId: owner.id,
+        applicationId: application.id,
+        status: "shortlisted",
+      },
+      {
+        sendNotificationEmail: async () => {
+          throw new Error("Resend rejected request");
+        },
+      },
+    );
+
     const notifications = await getNotificationsByUser(sql, {
       userId: candidate.id,
       limit: "10",
     });
 
-    expect(notifications).toHaveLength(1);
+    expect(notifications).toHaveLength(2);
     expect(notifications[0].type).toBe("application_status_changed");
     expect(notifications[0].readAt).toBeNull();
     expect(notifications[0].payload).toEqual({
@@ -97,11 +168,57 @@ describe("application notification workflows", () => {
       jobId: job.id,
       jobTitle: "Frontend Engineer",
       companyName: "Orbit",
-      status: "pre_screening",
+      status: "shortlisted",
     });
     expect(notifications[0].emailDeliveryStatus).toBe("failed");
     expect(notifications[0].emailDeliveryAttemptedAt).toBeInstanceOf(Date);
     expect(notifications[0].emailDeliverySentAt).toBeNull();
     expect(notifications[0].emailDeliveryError).toContain("Resend rejected request");
+
+    expect(notifications[1].type).toBe("interview_invited");
+
+    const rejectedCandidate = await seedUser({
+      role: "candidate",
+    });
+
+    const rejectionApplication = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: rejectedCandidate.id,
+      resumeKey: makeTestResumeKey(rejectedCandidate.id, "frontend-resume-2.pdf"),
+      metadata: {},
+      status: "applied",
+    });
+    expect(rejectionApplication).not.toBeNull();
+    if (!rejectionApplication) {
+      return;
+    }
+
+    await updateApplicationStatusWorkflow(
+      sql,
+      {
+        userId: owner.id,
+        applicationId: rejectionApplication.id,
+        status: "rejected",
+      },
+      {
+        sendNotificationEmail: async () => {
+          throw new Error("Resend rejected request");
+        },
+      },
+    );
+
+    const rejectionNotifications = await getNotificationsByUser(sql, {
+      userId: rejectedCandidate.id,
+      limit: "10",
+    });
+
+    expect(rejectionNotifications[0].type).toBe("application_status_changed");
+    expect(rejectionNotifications[0].payload).toEqual({
+      applicationId: rejectionApplication.id,
+      jobId: job.id,
+      jobTitle: "Frontend Engineer",
+      companyName: "Orbit",
+      status: "rejected",
+    });
   });
 });

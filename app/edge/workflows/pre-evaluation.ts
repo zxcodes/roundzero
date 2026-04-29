@@ -27,6 +27,36 @@ import { notificationPayloadSchemas } from "../shared/notifications-config";
 const PRIMARY_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const FALLBACK_MODEL = "@cf/meta/llama-3.1-70b-instruct";
 
+const createInterviewInviteNotificationIfNeeded = async (input: {
+  db: ReturnType<typeof getWorkerDb>;
+  candidateId: string;
+  payload: {
+    applicationId: string;
+    interviewId: string;
+    jobId: string;
+    jobTitle: string;
+    interviewType: string;
+    expiresAt: string;
+  };
+}) => {
+  const existing = await input.db
+    .unsafe(
+      `SELECT id FROM notifications WHERE user_id = $1 AND type = 'interview_invited' AND payload->>'interviewId' = $2 LIMIT 1`,
+      [input.candidateId, input.payload.interviewId],
+    )
+    .values();
+
+  if (existing.length > 0) {
+    return;
+  }
+
+  await createNotification(input.db, {
+    userId: input.candidateId,
+    type: "interview_invited",
+    payload: input.payload,
+  });
+};
+
 function getResponsePayload(response: unknown): { response: unknown } {
   if (typeof response !== "object" || response === null) {
     throw new Error(`AI response is not an object: ${typeof response}`);
@@ -594,9 +624,9 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
             expiresAt,
           });
 
-          await createNotification(db, {
-            userId: candidate.id,
-            type: "interview_invited",
+          await createInterviewInviteNotificationIfNeeded({
+            db,
+            candidateId: candidate.id,
             payload,
           });
         }
@@ -616,19 +646,6 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
       log.info(`Quota: ${usedCount}/${finalReportTarget} slots used`);
 
       if (usedCount >= finalReportTarget) {
-        const candidate = await getUserById(db, { id: applicationData.application.candidateId });
-        if (candidate) {
-          const payload = notificationPayloadSchemas.position_filled.parse({
-            applicationId,
-            jobId: job.id,
-            jobTitle: job.title,
-          });
-          await createNotification(db, {
-            userId: candidate.id,
-            type: "position_filled",
-            payload,
-          });
-        }
         log.result("decide", {
           action: "quota_exhausted",
           used: usedCount,
@@ -694,9 +711,9 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
           interviewType,
           expiresAt,
         });
-        await createNotification(db, {
-          userId: candidate.id,
-          type: "interview_invited",
+        await createInterviewInviteNotificationIfNeeded({
+          db,
+          candidateId: candidate.id,
           payload,
         });
       }

@@ -2,7 +2,6 @@
 
 - company logo doesn't reflect after uploading until I refresh.
 - email templates use old design lang.
-- improve shortlisting behaviour across company and candidate. applicant detail page still shows as applied while the applications list does show as shortlisted. also think about notifications of shortlisting and notifications in general.
 - the landing page has fake metrics (first report 3 min etc, think how valid they're or replace them with actual claims).
 - the landing page needs to show major cost savings for the company while showing great benefits, compared to all the mainstream platforms based on real and accurate pricing as per today.
 - think about sub agents that can actually be useful for candidate profile research in the bg and provide context to main agent.
@@ -43,16 +42,8 @@
 - Basic analytics, company interest (like, dislike(why)? stretch)
 
 
-## Agent & AI Stuff
-- add guard rails during agent conv, detect short and uninterested answers, detect screenshots, detect ai responses, detect if text was copied, and detect if answers don't align with normal conv tone and more. basically ai beating ai. - this will be another step in post-evaluation.
-- ai job creation (just describe the job, ai completes it, review, if yes, creates a posting. can use voice too to describe.)
-- show suggested skills based on job description.
-- gatekeep ai features using paywall.
-- auto find and apply to multiple jobs based on the profile (paid feature).
-- think about compacting existing user-agent chats and reusing them for similar roles to save time and compute.
-- **pre-eval: switch slop + eval steps to OpenRouter (Claude 3.5 Haiku / Llama 3.3 70B)** for reliable structured outputs and deterministic scoring. Keep Workers AI for classify step only. See `pre-evaluation.ts` comments for context. Do this before scaling eval volume. And add temperature: 0 and explicit max_tokens — eliminates score variance.
-- pre-eval: Delete parseJsonPayload entirely — OpenRouter + Claude actually respects response_format. You’ll get clean objects every time.
 
+<!--- improve shortlisting behaviour across company and candidate. applicant detail page still shows as applied while the applications list does show as shortlisted. also think about notifications of shortlisting and notifications in general.-->
 <!--- full report needs a lot of work including overall ux, ui, representation, accuracy, for ex (even if an interview goes bad, the report seems to show good points. prob in llm layer)-->
 <!--- when the agent ends an interview, the ui doesnt update, i need to refresh to see interview has ended.-->
 <!--- the agent interview feels off. the entire interview should be based on the actual candidate's profile, dynamic followups etc like a full fledged conv. also check if the agent is asking company's questions (mandatory and all things I expected from the agent.)-->
@@ -118,6 +109,16 @@
 <!--- make sure redirects work properly in the app.-->
 
 
+
+## Agent & AI Stuff
+- add guard rails during agent conv, detect short and uninterested answers, detect screenshots, detect ai responses, detect if text was copied, and detect if answers don't align with normal conv tone and more. basically ai beating ai. - this will be another step in post-evaluation.
+- ai job creation (just describe the job, ai completes it, review, if yes, creates a posting. can use voice too to describe.)
+- show suggested skills based on job description.
+- gatekeep ai features using paywall.
+- auto find and apply to multiple jobs based on the profile (paid feature).
+- think about compacting existing user-agent chats and reusing them for similar roles to save time and compute.
+- **pre-eval: switch slop + eval steps to OpenRouter (Claude 3.5 Haiku / Llama 3.3 70B)** for reliable structured outputs and deterministic scoring. Keep Workers AI for classify step only. See `pre-evaluation.ts` comments for context. Do this before scaling eval volume. And add temperature: 0 and explicit max_tokens — eliminates score variance.
+- pre-eval: Delete parseJsonPayload entirely — OpenRouter + Claude actually respects response_format. You’ll get clean objects every time.
 
 
 
