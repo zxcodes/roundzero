@@ -20,6 +20,8 @@ import {
 import { getInterviewExpiresAt } from "@/features/interviews/shared/expiry";
 import { validateUuidParams } from "@/shared/validation";
 
+type InterviewDetail = NonNullable<Awaited<ReturnType<typeof getMyInterview>>>;
+
 const statusConfig: Record<string, { label: string; tone: string }> = {
   pending: { label: "Ready", tone: "border-warning/20 bg-warning/10 text-warning" },
   in_progress: { label: "In progress", tone: "bg-primary/10 text-primary" },
@@ -98,6 +100,19 @@ export const Route = createFileRoute("/_authenticated/interview/$interviewId")({
 
 function InterviewWorkspacePage() {
   const { interview, expiresAt } = Route.useLoaderData();
+
+  return (
+    <InterviewWorkspaceContent key={interview.id} interview={interview} expiresAt={expiresAt} />
+  );
+}
+
+function InterviewWorkspaceContent({
+  interview,
+  expiresAt,
+}: {
+  interview: InterviewDetail;
+  expiresAt: string | null;
+}) {
   const router = useRouter();
   const chat = useInterviewChat(interview.id);
   const agentSessionStatus = chat.sessionStatus;

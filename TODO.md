@@ -12,7 +12,6 @@
 - in post eval add another slop check to review interview transcript
 - switching interviews has stale data. switching to 1 shows data from 2nd and vice versa. fixes on refresh
 - changing from pre_screening to interview invite for pending roles throws an error.
-- use faded out empty states like cards more like a graphic plus texts
 - too many applicant status enums (follwup enum etc, only keep using ones by checking end to end flow)
 - some company email reports are really bad and some are entirely missing for some flows. they have zero styling. review every single resend email template and align with rest of the app.
 - in post eval, refine the scores using the actual agent conv and add it to the final report.
@@ -37,6 +36,7 @@
 
 
 
+<!--- use faded out empty states like cards more like a graphic plus texts-->
 <!--- in pre eval report what we are showing is not clear. missing requirements don't read good enough. the messaging needs to be clear.-->
 <!--- check interview expiry, show it in interviews etc.-->
 <!--- think about context compaction to save on costs.-->
