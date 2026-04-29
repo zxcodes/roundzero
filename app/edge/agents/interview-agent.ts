@@ -56,6 +56,7 @@ type InterviewAgentState = {
   context: InterviewContextState;
   postEvaluationTriggered: boolean;
   kickoffGeneratedAt: string | null;
+  screeningCoverage: Record<number, "answered" | "skipped">;
 };
 
 type LegacyInterviewMessage = {
@@ -114,6 +115,7 @@ const emptyState = (): InterviewAgentState => ({
   context: emptyContext(),
   postEvaluationTriggered: false,
   kickoffGeneratedAt: null,
+  screeningCoverage: {},
 });
 
 const readUiMessageText = (message: UIMessage) => {
@@ -257,6 +259,7 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
       "Treat short factual screening questions (salary, notice period, visa, relocation, etc.) as quick conversational asks — get the answer, briefly acknowledge, and move on. Do NOT spend multiple turns drilling into them unless the answer is unclear or potentially a dealbreaker.",
       "Treat role-specific company-supplied questions (e.g. 'walk me through a system you designed') as substantive probing questions — push for depth.",
       "If the candidate gives a vague or non-answer to a screening question, ask once for clarification, then accept their answer (or noted refusal) and move on.",
+      "After each company-supplied question is resolved, silently call record_screening_coverage with the 1-based questionIndex and status='answered' when answered, or status='skipped' when unresolved.",
       "",
       "Company-supplied questions (REQUIRED COVERAGE, in order):",
       customQs,
@@ -375,6 +378,16 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
       completedAt: context.completedAt ? context.completedAt.toISOString() : prev.completedAt,
       updatedAt: toNow(),
       context: ctx,
+      screeningCoverage: Object.fromEntries(
+        Object.entries(prev.screeningCoverage ?? {}).filter(([key]) => {
+          const questionIndex = Number.parseInt(key, 10);
+          return (
+            Number.isFinite(questionIndex) &&
+            questionIndex >= 1 &&
+            questionIndex <= ctx.customQuestions.length
+          );
+        }),
+      ) as Record<number, "answered" | "skipped">,
     });
 
     return true;
@@ -643,6 +656,33 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
             return { matched };
           },
         }),
+        record_screening_coverage: tool({
+          description:
+            "Silently mark required company-question coverage. Use status='answered' when answered and status='skipped' when unanswered/refused.",
+          inputSchema: z.object({
+            questionIndex: z.number().int().min(1),
+            status: z.enum(["answered", "skipped"]),
+          }),
+          execute: async ({ questionIndex, status }) => {
+            const totalQuestions = this.state.context.customQuestions.length;
+            if (questionIndex > totalQuestions) {
+              throw new Error(
+                `Invalid screening question index ${questionIndex}. There are only ${totalQuestions} required questions.`,
+              );
+            }
+
+            this.setState({
+              ...this.state,
+              screeningCoverage: {
+                ...this.state.screeningCoverage,
+                [questionIndex]: status,
+              },
+              updatedAt: toNow(),
+            });
+
+            return { ok: true };
+          },
+        }),
         end_interview: tool({
           description:
             "Mark the interview complete and trigger post-evaluation. Call this AFTER you have already written a warm closing message to the candidate in plain prose.",
@@ -650,6 +690,23 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
             reason: z.string().min(1),
           }),
           execute: async ({ reason }) => {
+            const requiredQuestions = this.state.context.customQuestions.length;
+            if (requiredQuestions > 0) {
+              const uncovered: number[] = [];
+
+              for (let i = 1; i <= requiredQuestions; i++) {
+                if (!this.state.screeningCoverage[i]) {
+                  uncovered.push(i);
+                }
+              }
+
+              if (uncovered.length > 0) {
+                throw new Error(
+                  `Interview cannot end yet: missing required screening coverage for question indexes ${uncovered.join(", ")}.`,
+                );
+              }
+            }
+
             if (this.state.status !== "completed") {
               this.setState({
                 ...this.state,

@@ -49,7 +49,7 @@ const readMessageText = (message: UIMessage) => {
     .trim();
 };
 
-export function useInterviewChat(interviewId: string) {
+export function useInterviewChat(interviewId: string, agentToken: string) {
   // useAgent connects via WebSocket to the InterviewAgent Durable Object
   // identified by the interview UUID. AIChatAgent persists messages in its
   // own SQLite, so do NOT pass `getInitialMessages: null` — the default
@@ -59,6 +59,9 @@ export function useInterviewChat(interviewId: string) {
     agent: "InterviewAgent",
     name: interviewId,
     host: getEdgeHost(),
+    query: {
+      token: agentToken,
+    },
     onIdentityChange: () => {
       // Expected in dev during HMR/reconnect churn; identity is derived by server-side routing.
     },
