@@ -1,5 +1,6 @@
 ## TODO
 
+- need to hugely improve on messaging such as (dont worry about ai generated answers from candidates, we have guard rails, and how much human effort it eliminates by talking to multiple candidates and clearing a lot of things such as salary expectations, relocation, etc which would waste a lot of human time otherwise)
 - detect failures in the whole pipeline and give candidates or companies an option to retry. make as failure proof as possible. specifically in model responses. 
 - strictly make agent ask interview questions from the profile and then from the actual job. right now it's not even close. asks vague questions. check if we're feeding the agent context the right way.
 - generated report on company side links to full profile, it should not

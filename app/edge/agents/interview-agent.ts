@@ -13,6 +13,7 @@ import {
 } from "ai";
 import { createWorkersAI } from "workers-ai-provider";
 import { z } from "zod";
+import { shouldAutoExpireInterview } from "@/features/interviews/shared/expiry";
 import { getInterviewContextById, updateInterviewStatus } from "../queries/interviews/queries_sql";
 import { getWorkerDb } from "../shared/db.worker";
 
@@ -367,7 +368,6 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
       context: ctx,
     });
 
-    await this.schedule(48 * 60 * 60, "expireInterview", undefined, { idempotent: true });
     return true;
   }
 
@@ -387,8 +387,6 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
     ) {
       return;
     }
-
-    await this.schedule(48 * 60 * 60, "expireInterview", undefined, { idempotent: true });
   }
 
   async initializeContext(input: {
@@ -538,28 +536,6 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
     return toStateResponse(this.state, toLegacyTranscript(this.messages));
   }
 
-  async expireInterview() {
-    if (
-      this.state.status === "completed" ||
-      this.state.status === "cancelled" ||
-      this.state.status === "expired"
-    ) {
-      return;
-    }
-
-    this.setState({
-      ...this.state,
-      status: "expired",
-      updatedAt: toNow(),
-    });
-
-    const db = getWorkerDb();
-    await updateInterviewStatus(db, {
-      id: this.state.interviewId,
-      status: "expired",
-    });
-  }
-
   async onChatMessage(onFinish: StreamTextOnFinishCallback<ToolSet>) {
     if (this.state.interviewId) {
       await this.hydrateContextFromDb(this.state.interviewId);
@@ -567,6 +543,36 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
 
     if (!this.state.interviewId) {
       return new Response("Interview session not initialized", { status: 400 });
+    }
+
+    const db = getWorkerDb();
+    const interview = await getInterviewContextById(db, { id: this.state.interviewId });
+    if (!interview) {
+      return new Response("Interview not found", { status: 404 });
+    }
+
+    if (shouldAutoExpireInterview(interview.status, interview.metadata)) {
+      await updateInterviewStatus(db, {
+        id: this.state.interviewId,
+        status: "expired",
+      });
+      return new Response("Interview has expired", { status: 400 });
+    }
+
+    if (interview.status === "pending") {
+      return new Response("Interview has not been started", { status: 400 });
+    }
+
+    if (interview.status === "cancelled") {
+      return new Response("Interview is no longer available", { status: 400 });
+    }
+
+    if (interview.status === "expired") {
+      return new Response("Interview has expired", { status: 400 });
+    }
+
+    if (interview.status === "completed") {
+      return new Response("Interview already completed", { status: 400 });
     }
 
     if (this.state.status === "pending") {
@@ -643,7 +649,6 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
                 updatedAt: toNow(),
               });
 
-              const db = getWorkerDb();
               await updateInterviewStatus(db, {
                 id: this.state.interviewId,
                 status: "completed",
