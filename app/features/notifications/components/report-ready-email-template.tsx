@@ -9,6 +9,7 @@ import {
   Section,
   Text,
 } from "@react-email/components";
+import { emailTheme } from "./email-theme";
 
 type ReportReadyEmailTemplateProps = {
   candidateName: string;
@@ -66,21 +67,20 @@ ReportReadyEmailTemplate.PreviewProps = {
   jobTitle: "Senior Frontend Engineer",
   overallScore: 82,
   recommendation: "yes",
-  reportUrl: "https://roundzero.app/dashboard/reports/123",
+  reportUrl: "https://roundzero.dev/dashboard/applicant-reports/123",
 } satisfies ReportReadyEmailTemplateProps;
 
 const bodyStyle: React.CSSProperties = {
-  backgroundColor: "#06070a",
-  fontFamily:
-    '"Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  backgroundColor: emailTheme.colors.pageBg,
+  fontFamily: emailTheme.fontFamily,
   margin: "0",
   padding: "40px 20px",
 };
 
 const containerStyle: React.CSSProperties = {
-  backgroundColor: "#0d1014",
-  border: "1px solid rgba(255, 255, 255, 0.08)",
-  borderRadius: "20px",
+  backgroundColor: emailTheme.colors.surface,
+  border: `1px solid ${emailTheme.colors.surfaceBorder}`,
+  borderRadius: emailTheme.radii.card,
   margin: "0 auto",
   maxWidth: "560px",
   overflow: "hidden",
@@ -91,7 +91,7 @@ const headerStyle: React.CSSProperties = {
 };
 
 const brandStyle: React.CSSProperties = {
-  color: "#00ad9c",
+  color: emailTheme.colors.accent,
   fontSize: "12px",
   fontWeight: 700,
   letterSpacing: "0.24em",
@@ -104,7 +104,7 @@ const contentStyle: React.CSSProperties = {
 };
 
 const headingStyle: React.CSSProperties = {
-  color: "#f0f2f5",
+  color: emailTheme.colors.ink,
   fontSize: "20px",
   fontWeight: 700,
   lineHeight: "1.3",
@@ -112,43 +112,43 @@ const headingStyle: React.CSSProperties = {
 };
 
 const bodyTextStyle: React.CSSProperties = {
-  color: "#f0f2f5",
+  color: emailTheme.colors.ink,
   fontSize: "16px",
   lineHeight: "1.7",
   margin: "0 0 20px",
 };
 
 const scoresContainerStyle: React.CSSProperties = {
-  backgroundColor: "rgba(255, 255, 255, 0.04)",
-  borderRadius: "12px",
+  backgroundColor: emailTheme.colors.subtleSurface,
+  borderRadius: emailTheme.radii.block,
   display: "block",
   margin: "0 0 12px",
   padding: "16px 20px",
 };
 
 const scoreLabelStyle: React.CSSProperties = {
-  color: "#7b8189",
+  color: emailTheme.colors.muted,
   fontSize: "14px",
   marginRight: "8px",
 };
 
 const scoreValueStyle: React.CSSProperties = {
-  color: "#f0f2f5",
+  color: emailTheme.colors.ink,
   fontSize: "18px",
   fontWeight: 700,
 };
 
 const recommendationStyle: React.CSSProperties = {
-  color: "#f0f2f2f5",
+  color: emailTheme.colors.ink,
   fontSize: "16px",
   lineHeight: "1.6",
   margin: "0 0 24px",
 };
 
 const ctaStyle: React.CSSProperties = {
-  backgroundColor: "#00ad9c",
-  borderRadius: "999px",
-  color: "#000b0a",
+  backgroundColor: emailTheme.colors.accent,
+  borderRadius: emailTheme.radii.pill,
+  color: emailTheme.colors.accentText,
   display: "inline-block",
   fontSize: "14px",
   fontWeight: 700,
@@ -157,7 +157,7 @@ const ctaStyle: React.CSSProperties = {
 };
 
 const dividerStyle: React.CSSProperties = {
-  borderColor: "rgba(255, 255, 255, 0.06)",
+  borderColor: emailTheme.colors.divider,
   borderStyle: "solid",
   borderWidth: "1px 0 0",
   margin: "0",
@@ -168,14 +168,14 @@ const footerSectionStyle: React.CSSProperties = {
 };
 
 const footerStyle: React.CSSProperties = {
-  color: "#7b8189",
+  color: emailTheme.colors.muted,
   fontSize: "12px",
   lineHeight: "1.6",
   margin: "0",
 };
 
 const copyrightStyle: React.CSSProperties = {
-  color: "#7b8189",
+  color: emailTheme.colors.muted,
   fontSize: "11px",
   lineHeight: "1.5",
   margin: "12px 0 0",

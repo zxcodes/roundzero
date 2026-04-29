@@ -683,7 +683,10 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
         const resend = new Resend(resendApiKey);
         const appUrl = this.env.APP_URL ?? "";
         const reportUrl = appUrl
-          ? new URL(`/dashboard/reports/${report.id}`, appUrl).toString()
+          ? new URL(
+              `/dashboard/applicant-reports/${interviewData.interview.applicationId}`,
+              appUrl,
+            ).toString()
           : "";
 
         const response = await resend.emails.send({

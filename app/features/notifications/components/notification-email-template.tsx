@@ -9,6 +9,7 @@ import {
   Section,
   Text,
 } from "@react-email/components";
+import { emailTheme } from "./email-theme";
 
 type NotificationEmailTemplateProps = {
   previewText: string;
@@ -62,17 +63,16 @@ NotificationEmailTemplate.PreviewProps = {
 } satisfies NotificationEmailTemplateProps;
 
 const bodyStyle: React.CSSProperties = {
-  backgroundColor: "#06070a",
-  fontFamily:
-    '"Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  backgroundColor: emailTheme.colors.pageBg,
+  fontFamily: emailTheme.fontFamily,
   margin: "0",
   padding: "40px 20px",
 };
 
 const containerStyle: React.CSSProperties = {
-  backgroundColor: "#0d1014",
-  border: "1px solid rgba(255, 255, 255, 0.08)",
-  borderRadius: "20px",
+  backgroundColor: emailTheme.colors.surface,
+  border: `1px solid ${emailTheme.colors.surfaceBorder}`,
+  borderRadius: emailTheme.radii.card,
   margin: "0 auto",
   maxWidth: "560px",
   overflow: "hidden",
@@ -83,7 +83,7 @@ const headerStyle: React.CSSProperties = {
 };
 
 const brandStyle: React.CSSProperties = {
-  color: "#00ad9c",
+  color: emailTheme.colors.accent,
   fontSize: "12px",
   fontWeight: 700,
   letterSpacing: "0.24em",
@@ -96,16 +96,16 @@ const contentStyle: React.CSSProperties = {
 };
 
 const bodyTextStyle: React.CSSProperties = {
-  color: "#f0f2f5",
+  color: emailTheme.colors.ink,
   fontSize: "16px",
   lineHeight: "1.7",
   margin: "0",
 };
 
 const ctaStyle: React.CSSProperties = {
-  backgroundColor: "#00ad9c",
-  borderRadius: "999px",
-  color: "#000b0a",
+  backgroundColor: emailTheme.colors.accent,
+  borderRadius: emailTheme.radii.pill,
+  color: emailTheme.colors.accentText,
   display: "inline-block",
   fontSize: "14px",
   fontWeight: 700,
@@ -115,14 +115,14 @@ const ctaStyle: React.CSSProperties = {
 };
 
 const deadlineStyle: React.CSSProperties = {
-  color: "#f0f2f5",
+  color: emailTheme.colors.ink,
   fontSize: "14px",
   lineHeight: "1.6",
   margin: "16px 0 0",
 };
 
 const dividerStyle: React.CSSProperties = {
-  borderColor: "rgba(255, 255, 255, 0.06)",
+  borderColor: emailTheme.colors.divider,
   borderStyle: "solid",
   borderWidth: "1px 0 0",
   margin: "0",
@@ -133,14 +133,14 @@ const footerSectionStyle: React.CSSProperties = {
 };
 
 const footerStyle: React.CSSProperties = {
-  color: "#7b8189",
+  color: emailTheme.colors.muted,
   fontSize: "12px",
   lineHeight: "1.6",
   margin: "0",
 };
 
 const copyrightStyle: React.CSSProperties = {
-  color: "#7b8189",
+  color: emailTheme.colors.muted,
   fontSize: "11px",
   lineHeight: "1.5",
   margin: "12px 0 0",
