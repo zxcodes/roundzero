@@ -129,8 +129,8 @@ export function PublicFooter() {
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6 text-sm text-muted-foreground lg:px-8">
         <span>&copy; {new Date().getFullYear()} RoundZero</span>
         <div className="flex gap-6">
-          <span className="cursor-pointer transition-colors hover:text-foreground">Privacy</span>
-          <span className="cursor-pointer transition-colors hover:text-foreground">Terms</span>
+          <span>Privacy Policy coming soon</span>
+          <span>Terms coming soon</span>
         </div>
       </div>
     </footer>

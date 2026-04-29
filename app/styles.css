@@ -54,6 +54,16 @@
   --radius-4xl: calc(var(--radius) * 1.85);
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
+  /* Semantic status tokens — warm/dulled to share DNA with the editorial
+     palette instead of using stock Tailwind neon. Used as `bg-success/10`,
+     `text-warning`, `border-danger/30`, etc. Swap in dark mode below. */
+  --color-success: var(--status-success);
+  --color-warning: var(--status-warning);
+  --color-info: var(--status-info);
+  --color-danger: var(--status-danger);
+  --color-pending: var(--status-pending);
+  --color-active: var(--status-active);
+  --color-progress: var(--status-progress);
 }
 
 :root {
@@ -82,6 +92,15 @@
      for brand moments — focus rings, link hovers, status accents. */
   --brand: oklch(0.42 0.13 28);
   --brand-foreground: oklch(0.99 0.003 75);
+  /* Semantic status tones, dulled and warmed for the editorial palette.
+     Each is calibrated to read clearly as text on a 10–15% tint of itself. */
+  --status-success: oklch(0.5 0.11 150);
+  --status-warning: oklch(0.55 0.13 70);
+  --status-info: oklch(0.5 0.08 235);
+  --status-danger: oklch(0.5 0.16 28);
+  --status-pending: oklch(0.5 0.015 70);
+  --status-active: oklch(0.5 0.12 295);
+  --status-progress: oklch(0.55 0.08 195);
   --chart-1: oklch(0.855 0.138 181.071);
   --chart-2: oklch(0.704 0.14 182.503);
   --chart-3: oklch(0.6 0.118 184.704);
@@ -282,6 +301,52 @@
   font-feature-settings: "liga", "dlig";
 }
 
+.editorial-skip-link {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 60;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid var(--ed-ink);
+  background: var(--ed-paper-soft);
+  color: var(--ed-ink);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transform: translateY(-140%);
+  transition:
+    transform 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+.editorial-skip-link:focus-visible {
+  transform: translateY(0);
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(139 30 26 / 22%);
+}
+
+.editorial-cta {
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.editorial-cta:hover {
+  box-shadow: inset 0 0 0 999px rgb(139 30 26 / 4%);
+}
+
+.editorial-cta:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px rgb(139 30 26 / 18%),
+    0 0 0 1px var(--ed-accent);
+}
+
 @keyframes ed-rise {
   from {
     opacity: 0;
@@ -295,6 +360,17 @@
 
 .editorial .ed-rise {
   animation: ed-rise 0.9s cubic-bezier(0.2, 0.6, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .editorial-skip-link,
+  .editorial-cta {
+    transition: none;
+  }
+
+  .editorial .ed-rise {
+    animation: none;
+  }
 }
 
 @layer utilities {

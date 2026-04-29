@@ -29,28 +29,33 @@ const ISSUE_LABEL = "Vol. 01 · Spring 2026 · On Hiring";
 function HomePage() {
   return (
     <div className="editorial min-h-svh">
+      <a href="#main-content" className="editorial-skip-link">
+        Skip to main content
+      </a>
       <PublicHeader />
-      <Hero />
-      <Ticker />
-      <Chapter roman="I" title="The first round, rewritten" kicker="How it works">
-        <HowItWorks />
-      </Chapter>
-      <Chapter roman="II" title="A real interview, asynchronously" kicker="The conversation">
-        <InterviewSpread />
-      </Chapter>
-      <Chapter roman="III" title="Every score, with its receipt" kicker="The report">
-        <ReportSpread />
-      </Chapter>
-      <Chapter roman="IV" title="Five hundred applicants, five worth meeting" kicker="Ranking">
-        <RankingSpread />
-      </Chapter>
-      <Chapter roman="V" title="Pricing, plainly stated" kicker="Subscriptions">
-        <PricingTable />
-      </Chapter>
-      <Chapter roman="VI" title="Frequently asked" kicker="Correspondence">
-        <Faq />
-      </Chapter>
-      <Closing />
+      <main id="main-content">
+        <Hero />
+        <Ticker />
+        <Chapter roman="I" title="The first round, rewritten" kicker="How it works">
+          <HowItWorks />
+        </Chapter>
+        <Chapter roman="II" title="A real interview, asynchronously" kicker="The conversation">
+          <InterviewSpread />
+        </Chapter>
+        <Chapter roman="III" title="Every score, with its receipt" kicker="The report">
+          <ReportSpread />
+        </Chapter>
+        <Chapter roman="IV" title="Five hundred applicants, five worth meeting" kicker="Ranking">
+          <RankingSpread />
+        </Chapter>
+        <Chapter roman="V" title="Pricing, plainly stated" kicker="Subscriptions">
+          <PricingTable />
+        </Chapter>
+        <Chapter roman="VI" title="Frequently asked" kicker="Correspondence">
+          <Faq />
+        </Chapter>
+        <Closing />
+      </main>
       <PublicFooter />
     </div>
   );
@@ -219,7 +224,7 @@ function EditorialButton({
   primary?: boolean;
 }) {
   const base =
-    "group relative inline-flex w-full items-center justify-between gap-4 px-4 py-3 text-[13px] tracking-tight transition-colors";
+    "editorial-cta group relative inline-flex w-full items-center justify-between gap-4 px-4 py-3 text-[13px] tracking-tight transition-colors";
   if (primary) {
     return (
       <Link
@@ -815,80 +820,157 @@ function PricingTable() {
   return (
     <div>
       {/* Header row */}
-      <div
-        className="grid grid-cols-12 gap-x-6 pb-6"
-        style={{ borderBottom: "1px solid var(--ed-ink)" }}
-      >
-        <div className="col-span-3 hidden md:block" />
-        {tiers.map((t) => (
-          <div
-            key={t.name}
-            className="col-span-12 md:col-span-3 flex flex-col gap-2 pt-4 md:pt-0"
-            style={t.featured ? { color: "var(--ed-accent)" } : {}}
-          >
-            <SmallCaps className={t.featured ? "" : ""}>
-              {t.featured ? "Editor’s pick" : "\u00A0"}
-            </SmallCaps>
-            <span
-              className="font-serif text-[1.5rem]"
-              style={{ color: "var(--ed-ink)", fontWeight: 400 }}
-            >
-              {t.name}
-            </span>
-            <div className="flex items-baseline gap-2">
-              <span
-                className="font-serif text-[2.4rem] leading-none"
-                style={{ color: "var(--ed-ink)", fontWeight: 350 }}
+      <table className="w-full border-collapse">
+        <caption className="sr-only">
+          Compare RoundZero pricing tiers for active jobs, reports, seats, integrations, and
+          support.
+        </caption>
+        <thead style={{ borderBottom: "1px solid var(--ed-ink)" }}>
+          <tr className="hidden md:table-row">
+            <th scope="col" className="w-1/4 pb-6 text-left" />
+            {tiers.map((t) => (
+              <th
+                key={t.name}
+                scope="col"
+                className="w-1/4 px-3 pb-6 align-top text-left first:pl-0 last:pr-0"
               >
-                {t.price}
-              </span>
-              <span
-                className="font-editorial text-[13px]"
-                style={{ color: "var(--ed-muted)", fontStyle: "italic" }}
-              >
-                / {t.period}
-              </span>
-            </div>
-            <p
-              className="text-[13px] leading-[1.5] max-w-[26ch]"
-              style={{ color: "var(--ed-muted)" }}
-            >
-              {t.description}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      {/* Feature rows */}
-      <div>
-        {featureRows.map((row) => (
-          <div
-            key={row.label}
-            className="grid grid-cols-12 gap-x-6 py-4"
-            style={{ borderBottom: "1px solid var(--ed-rule-hair)" }}
-          >
-            <span
-              className="col-span-12 md:col-span-3 font-serif text-[15px]"
-              style={{ color: "var(--ed-ink)", fontWeight: 400 }}
-            >
-              {row.label}
-            </span>
-            {row.values.map((v, i) => (
-              <span
-                key={i}
-                className="col-span-4 md:col-span-3 text-[14px]"
-                style={{
-                  color: v === "—" ? "var(--ed-muted)" : "var(--ed-ink)",
-                  fontFamily: v === "—" || /\d/.test(v) ? "var(--font-mono)" : undefined,
-                  fontSize: v === "—" || /\d/.test(v) ? "13px" : undefined,
-                }}
-              >
-                {v}
-              </span>
+                <div
+                  className="flex flex-col gap-2"
+                  style={t.featured ? { color: "var(--ed-accent)" } : {}}
+                >
+                  <SmallCaps>{t.featured ? "Editor’s pick" : "\u00A0"}</SmallCaps>
+                  <span
+                    className="font-serif text-[1.5rem]"
+                    style={{ color: "var(--ed-ink)", fontWeight: 400 }}
+                  >
+                    {t.name}
+                  </span>
+                  <div className="flex items-baseline gap-2">
+                    <span
+                      className="font-serif text-[2.4rem] leading-none"
+                      style={{ color: "var(--ed-ink)", fontWeight: 350 }}
+                    >
+                      {t.price}
+                    </span>
+                    <span
+                      className="font-editorial text-[13px]"
+                      style={{ color: "var(--ed-muted)", fontStyle: "italic" }}
+                    >
+                      / {t.period}
+                    </span>
+                  </div>
+                  <p
+                    className="max-w-[26ch] text-[13px] leading-[1.5]"
+                    style={{ color: "var(--ed-muted)" }}
+                  >
+                    {t.description}
+                  </p>
+                </div>
+              </th>
             ))}
-          </div>
-        ))}
-      </div>
+          </tr>
+        </thead>
+        <tbody>
+          {tiers.map((t, tierIndex) => (
+            <tr
+              key={t.name}
+              className="border-b md:hidden"
+              style={{ borderColor: "var(--ed-ink)" }}
+            >
+              <th scope="row" className="px-0 pt-4 pb-3 text-left align-top">
+                <div
+                  className="flex flex-col gap-2"
+                  style={t.featured ? { color: "var(--ed-accent)" } : {}}
+                >
+                  <SmallCaps>{t.featured ? "Editor’s pick" : "\u00A0"}</SmallCaps>
+                  <span
+                    className="font-serif text-[1.5rem]"
+                    style={{ color: "var(--ed-ink)", fontWeight: 400 }}
+                  >
+                    {t.name}
+                  </span>
+                  <div className="flex items-baseline gap-2">
+                    <span
+                      className="font-serif text-[2.4rem] leading-none"
+                      style={{ color: "var(--ed-ink)", fontWeight: 350 }}
+                    >
+                      {t.price}
+                    </span>
+                    <span
+                      className="font-editorial text-[13px]"
+                      style={{ color: "var(--ed-muted)", fontStyle: "italic" }}
+                    >
+                      / {t.period}
+                    </span>
+                  </div>
+                  <p
+                    className="max-w-[26ch] text-[13px] leading-[1.5]"
+                    style={{ color: "var(--ed-muted)" }}
+                  >
+                    {t.description}
+                  </p>
+                </div>
+              </th>
+              <td className="px-0 pt-4 pb-3">
+                <dl className="space-y-3">
+                  {featureRows.map((row) => {
+                    const value = row.values[tierIndex];
+                    return (
+                      <div key={row.label} className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4">
+                        <dt
+                          className="font-serif text-[15px]"
+                          style={{ color: "var(--ed-ink)", fontWeight: 400 }}
+                        >
+                          {row.label}
+                        </dt>
+                        <dd
+                          className="text-right text-[14px]"
+                          style={{
+                            color: value === "—" ? "var(--ed-muted)" : "var(--ed-ink)",
+                            fontFamily:
+                              value === "—" || /\d/.test(value) ? "var(--font-mono)" : undefined,
+                            fontSize: value === "—" || /\d/.test(value) ? "13px" : undefined,
+                          }}
+                        >
+                          {value}
+                        </dd>
+                      </div>
+                    );
+                  })}
+                </dl>
+              </td>
+            </tr>
+          ))}
+          {featureRows.map((row) => (
+            <tr
+              key={row.label}
+              className="hidden md:table-row"
+              style={{ borderBottom: "1px solid var(--ed-rule-hair)" }}
+            >
+              <th
+                scope="row"
+                className="py-4 pr-6 text-left align-top font-serif text-[15px]"
+                style={{ color: "var(--ed-ink)", fontWeight: 400 }}
+              >
+                {row.label}
+              </th>
+              {row.values.map((value, valueIndex) => (
+                <td
+                  key={`${row.label}-${tiers[valueIndex]?.name}`}
+                  className="px-3 py-4 align-top text-[14px] first:pl-0 last:pr-0"
+                  style={{
+                    color: value === "—" ? "var(--ed-muted)" : "var(--ed-ink)",
+                    fontFamily: value === "—" || /\d/.test(value) ? "var(--font-mono)" : undefined,
+                    fontSize: value === "—" || /\d/.test(value) ? "13px" : undefined,
+                  }}
+                >
+                  {value}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
 
       {/* CTA row */}
       <div className="grid grid-cols-12 gap-x-6 pt-8">
@@ -897,7 +979,7 @@ function PricingTable() {
           <div key={t.name} className="col-span-12 md:col-span-3 mb-3">
             <Link
               to="/company/login"
-              className="group flex w-full items-center justify-between gap-3 px-4 py-3 text-[13px] tracking-tight"
+              className="editorial-cta group flex w-full items-center justify-between gap-3 px-4 py-3 text-[13px] tracking-tight"
               style={
                 t.featured
                   ? {

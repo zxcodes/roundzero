@@ -215,14 +215,8 @@ function CompanyLoginPage() {
             </p>
             <p>
               By continuing, you agree to our{" "}
-              <span className="underline underline-offset-2 hover:text-foreground cursor-pointer">
-                Terms
-              </span>{" "}
-              and{" "}
-              <span className="underline underline-offset-2 hover:text-foreground cursor-pointer">
-                Privacy Policy
-              </span>
-              .
+              <span className="underline underline-offset-2">Terms</span> and{" "}
+              <span className="underline underline-offset-2">Privacy Policy</span>.
             </p>
           </div>
         </div>
