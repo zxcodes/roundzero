@@ -1,6 +1,6 @@
 ## TODO
 
-- company logo doesn reflect after uploading until I refresh.
+- company logo doesn't reflect after uploading until I refresh.
 - email templates use old design lang.
 - improve shortlisting behaviour across company and candidate. applicant detail page still shows as applied while the applications list does show as shortlisted. also think about notifications of shortlisting and notifications in general.
 - the landing page has fake metrics (first report 3 min etc, think how valid they're or replace them with actual claims).
