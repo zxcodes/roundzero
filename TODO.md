@@ -8,7 +8,6 @@
 - need to hugely improve on messaging such as (dont worry about ai generated answers from candidates, we have guard rails, and how much human effort it eliminates by talking to multiple candidates and clearing a lot of things such as salary expectations, relocation, etc which would waste a lot of human time otherwise)
 - detect failures in the whole pipeline and give candidates or companies an option to retry. make as failure proof as possible. specifically in model responses. 
 - strictly make agent ask interview questions from the profile and then from the actual job. right now it's not even close. asks vague questions. check if we're feeding the agent context the right way.
-- generated report on company side links to full profile, it should not
 - in post eval add another slop check to review interview transcript
 - switching interviews has stale data. switching to 1 shows data from 2nd and vice versa. fixes on refresh
 - changing from pre_screening to interview invite for pending roles throws an error.
@@ -39,10 +38,10 @@
 - add a feedback option for people or requesting features etc.
 - add score breakdown. 
 - add a really good resume and candidate test suite to pass thru the ai.
-- Basic analytics, company interest (like, dislike(why)? stretch)
 
 
 
+<!--- generated report on company side links to full profile, it should not-->
 <!--- improve shortlisting behaviour across company and candidate. applicant detail page still shows as applied while the applications list does show as shortlisted. also think about notifications of shortlisting and notifications in general.-->
 <!--- full report needs a lot of work including overall ux, ui, representation, accuracy, for ex (even if an interview goes bad, the report seems to show good points. prob in llm layer)-->
 <!--- when the agent ends an interview, the ui doesnt update, i need to refresh to see interview has ended.-->
