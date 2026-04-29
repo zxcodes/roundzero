@@ -18,7 +18,6 @@
 - check interview expiry, show it in interviews etc.
 - in post eval, refine the scores using the actual agent conv and add it to the final report.
 - update seed to include much more data for better agent evaluation with multiple jobs having company questions (relocation, visa, etc etc)
-- think about context compaction to save on costs.
 - in pre eval report what we are showing is not clear. missing requirements don't read good enough. the messaging needs to be clear.
 - think about how previous evaluations and candidate profiles affect future score. helps with fabrication since we will have the candidate's work history and helps us maintain a consistent score when they apply to diff jobs.
 - think about showing pre eval report to companies bc the whole point is showing them tailored reports in the end. so instead of immediately showing them, show it only when the full reports are actually generated? think. fine for local dev bc we need to check the scores etc etc. 
@@ -40,6 +39,7 @@
 
 
 
+<!--- think about context compaction to save on costs.-->
 <!--- add a default expiry time for agent interviews. bc we can't make companies wait based on candidate's availability. think about it briefly. -->
 <!--- generated report on company side links to full profile, it should not-->
 <!--- improve shortlisting behaviour across company and candidate. applicant detail page still shows as applied while the applications list does show as shortlisted. also think about notifications of shortlisting and notifications in general.-->
