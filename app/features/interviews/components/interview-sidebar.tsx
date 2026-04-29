@@ -1,6 +1,7 @@
 import { ArrowLeft01Icon, BubbleChatIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
+import { differenceInMinutes, format, isValid, parseISO } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import {
@@ -32,17 +33,12 @@ const formatDeadline = (value: string | null): string | null => {
     return null;
   }
 
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
+  const date = parseISO(value);
+  if (!isValid(date)) {
     return null;
   }
 
-  return date.toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  return format(date, "MMM d, h:mm a");
 };
 
 const formatTimeLeft = (value: string | null): string | null => {
@@ -50,28 +46,22 @@ const formatTimeLeft = (value: string | null): string | null => {
     return null;
   }
 
-  const end = new Date(value).getTime();
-  if (Number.isNaN(end)) {
+  const end = parseISO(value);
+  if (!isValid(end)) {
     return null;
   }
 
-  const diffMs = end - Date.now();
-  if (diffMs <= 0) {
+  const minutesLeft = differenceInMinutes(end, new Date());
+  if (minutesLeft <= 0) {
     return "Expired";
   }
 
-  const diffMinutes = Math.floor(diffMs / (1000 * 60));
-  if (diffMinutes < 60) {
-    return `${diffMinutes}m left`;
+  const hoursLeft = Math.ceil(minutesLeft / 60);
+  if (hoursLeft < 1) {
+    return "<1h left";
   }
 
-  const hours = Math.floor(diffMinutes / 60);
-  if (hours < 24) {
-    return `${hours}h left`;
-  }
-
-  const days = Math.floor(hours / 24);
-  return `${days}d left`;
+  return `${hoursLeft}h left`;
 };
 
 const getSessionLabel = (value: string) => {
