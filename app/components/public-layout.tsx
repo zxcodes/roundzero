@@ -18,10 +18,7 @@ export function PublicHeader() {
         <div className="flex items-center gap-8">
           <Link to="/" className="flex items-center gap-2.5">
             <div className="flex size-7 items-center justify-center rounded-md bg-brand text-brand-foreground">
-              <span
-                className="font-serif text-[13px] leading-none italic"
-                style={{ fontWeight: 500 }}
-              >
+              <span className="font-serif text-[13px] leading-none" style={{ fontWeight: 500 }}>
                 R0
               </span>
             </div>
