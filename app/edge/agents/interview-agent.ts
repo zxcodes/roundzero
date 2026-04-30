@@ -205,6 +205,7 @@ const filterStrings = (input: unknown): string[] => {
 
 export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
   initialState = emptyState();
+  messageConcurrency = "queue" as const;
 
   private buildSystemPrompt(): string {
     const ctx = this.state.context;
@@ -237,6 +238,7 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
       "# Mission",
       `Conduct a real, structured screening interview with ${candidateName} for the ${ctx.jobTitle} role at ${ctx.companyName}. Your two jobs are:`,
       `  (1) Cover every company-supplied question, in order, getting a clear answer to each one. These are screening questions the company needs answers to (e.g. salary expectations, notice period, work authorization, visa sponsorship, relocation, motivation, role-specific deep-dives). They are NON-NEGOTIABLE.`,
+      `  (1) Cover company-supplied questions with clear answers whenever possible. If the candidate asks to end the interview, withdraws, or declines to continue, user intent wins immediately and you should close the interview without asking more questions.`,
       `  (2) Probe for real signal on depth of experience, problem solving, judgment, and role fit, beyond the script.`,
       "",
       "# Output rules (CRITICAL — break these and the interview fails)",
@@ -255,7 +257,7 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
       "- If they make a claim that doesn't appear in their resume / profile context, silently call check_resume_gap before deciding whether to challenge it.",
       "",
       "# Required coverage of company-supplied questions",
-      "These are the questions the company explicitly asked us to put to every candidate. You MUST cover EVERY one of them before ending the interview, in roughly the order given. You may rephrase them to sound natural and combine two if they're closely related, but you must extract a real answer to each.",
+      "These are the questions the company explicitly asked us to put to every candidate. Cover as many as you reasonably can, in roughly the order given. You may rephrase them to sound natural and combine two if they're closely related.",
       "Treat short factual screening questions (salary, notice period, visa, relocation, etc.) as quick conversational asks — get the answer, briefly acknowledge, and move on. Do NOT spend multiple turns drilling into them unless the answer is unclear or potentially a dealbreaker.",
       "Treat role-specific company-supplied questions (e.g. 'walk me through a system you designed') as substantive probing questions — push for depth.",
       "If the candidate gives a vague or non-answer to a screening question, ask once for clarification, then accept their answer (or noted refusal) and move on.",
@@ -267,8 +269,8 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
       "# Pacing",
       `- ${lengthGuidance}`,
       "- After each candidate answer, silently call evaluate_answer with relevance/depth/clarity scores (0–100). Then write your next message.",
-      `- Do not call end_interview until you have covered all ${customQuestionCount} company-supplied question(s). End early ONLY if the candidate explicitly withdraws or refuses to continue.`,
-      "- When you have covered all required questions and gathered enough additional signal, close warmly in plain prose (e.g. 'Thanks, this has been really helpful. I'll share your responses with the team and they'll be in touch with next steps. Best of luck.') and silently call end_interview with a one-sentence reason.",
+      "- If the candidate explicitly asks to end or submit now, immediately close warmly in plain prose and silently call end_interview in the same turn. Do not ask any additional questions.",
+      "- Otherwise, when you have gathered enough signal, close warmly in plain prose (e.g. 'Thanks, this has been really helpful. I'll share your responses with the team and they'll be in touch with next steps. Best of luck.') and silently call end_interview with a one-sentence reason.",
       "",
       "# Job context",
       `- Title: ${ctx.jobTitle}`,
@@ -611,12 +613,32 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
 
     const workersai = createWorkersAI({ binding: this.env.AI });
 
+    const latestCandidateMessage = [...this.messages]
+      .reverse()
+      .find((message) => message.role === "user");
+    const latestCandidateText = latestCandidateMessage
+      ? readUiMessageText(latestCandidateMessage)
+      : "";
+    const userRequestedEnd =
+      /\b(end|finish|submit|stop|done|wrap up|that's all|no more questions)\b/i.test(
+        latestCandidateText,
+      );
+
+    const systemPrompt = userRequestedEnd
+      ? [
+          this.buildSystemPrompt(),
+          "",
+          "# Immediate instruction override",
+          "The candidate just explicitly requested to end now. You MUST close immediately, ask no further questions, and call end_interview in this turn.",
+        ].join("\n")
+      : this.buildSystemPrompt();
+
     const result = streamText({
       model: workersai(MODEL),
-      system: this.buildSystemPrompt(),
+      system: systemPrompt,
       messages: await convertToModelMessages(this.messages),
       onFinish,
-      stopWhen: [stepCountIs(6), hasToolCall("end_interview")],
+      stopWhen: [stepCountIs(3), hasToolCall("end_interview")],
       tools: {
         evaluate_answer: tool({
           description:
@@ -690,23 +712,6 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
             reason: z.string().min(1),
           }),
           execute: async ({ reason }) => {
-            const requiredQuestions = this.state.context.customQuestions.length;
-            if (requiredQuestions > 0) {
-              const uncovered: number[] = [];
-
-              for (let i = 1; i <= requiredQuestions; i++) {
-                if (!this.state.screeningCoverage[i]) {
-                  uncovered.push(i);
-                }
-              }
-
-              if (uncovered.length > 0) {
-                throw new Error(
-                  `Interview cannot end yet: missing required screening coverage for question indexes ${uncovered.join(", ")}.`,
-                );
-              }
-            }
-
             if (this.state.status !== "completed") {
               this.setState({
                 ...this.state,
