@@ -1,5 +1,6 @@
 ## TODO
 
+- think about entire ai layer arch, it is on-demand right now, check if that's sufficient or we need queues etc?
 - think about using actual tools such as web fetch etc to assess technical skills etc?
 - think about voice recording for communication assessment.
 - align sidebar and main app's padding equally on a global level. 
