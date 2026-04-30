@@ -1,5 +1,6 @@
 ## TODO
 
+- think about using actual tools such as web fetch etc to assess technical skills etc?
 - think about voice recording for communication assessment.
 - align sidebar and main app's padding equally on a global level. 
 - think about this entire model: should companies even see applicants as they come? or should we force reports until they arrive? then show applications?
