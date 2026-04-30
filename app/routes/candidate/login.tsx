@@ -7,6 +7,7 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { z } from "zod";
+import { Logo } from "@/components/public-layout";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/features/auth/provider";
 
@@ -48,11 +49,8 @@ function CandidateLoginPage() {
       <div className="relative hidden overflow-hidden bg-muted lg:block">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,var(--color-primary)/8%,transparent_60%)]" />
         <div className="relative flex h-full flex-col justify-between p-10 xl:p-14">
-          {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-primary">
-              <span className="text-sm font-bold text-primary-foreground">R0</span>
-            </div>
+            <Logo />
             <span className="text-lg font-semibold tracking-tight">roundzero</span>
           </Link>
 
@@ -125,9 +123,7 @@ function CandidateLoginPage() {
           {/* Mobile logo */}
           <div className="flex justify-center lg:hidden">
             <Link to="/" className="flex items-center gap-2">
-              <div className="flex size-10 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/20">
-                <span className="text-base font-bold text-primary-foreground">R0</span>
-              </div>
+              <Logo classname="size-10" />
             </Link>
           </div>
 

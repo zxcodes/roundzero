@@ -4,10 +4,13 @@ import { Link, useRouteContext } from "@tanstack/react-router";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
 
 export function PublicHeader() {
   const { user } = useRouteContext({ from: "__root__" });
+
   const [mobileOpen, setMobileOpen] = useState(false);
+
   const onCloseMobileMenu = () => {
     setMobileOpen(false);
   };
@@ -17,11 +20,8 @@ export function PublicHeader() {
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6 lg:px-8">
         <div className="flex items-center gap-8">
           <Link to="/" className="flex items-center gap-2.5">
-            <div className="flex size-7 items-center justify-center rounded-md bg-brand text-brand-foreground">
-              <span className="font-serif text-[13px] leading-none" style={{ fontWeight: 500 }}>
-                R0
-              </span>
-            </div>
+            <Logo />
+
             <span
               className="font-heading text-[19px] leading-none tracking-[-0.01em]"
               style={{ fontWeight: 400 }}
@@ -134,5 +134,13 @@ export function PublicFooter() {
         </div>
       </div>
     </footer>
+  );
+}
+
+export function Logo({ classname }: { classname?: string }) {
+  return (
+    <div className={cn("size-7", classname)}>
+      <img src="/logo.svg" alt="app logo" className="rounded-md" />
+    </div>
   );
 }

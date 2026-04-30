@@ -1,4 +1,5 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
+import { Logo } from "@/components/public-layout";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
   component: OnboardingLayout,
@@ -13,9 +14,7 @@ function OnboardingLayout() {
         {/* Logo */}
         <div className="mb-8 flex justify-center">
           <Link to="/" className="flex items-center gap-2.5">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/20">
-              <span className="text-sm font-bold text-primary-foreground">R0</span>
-            </div>
+            <Logo classname="size-9" />
             <span className="text-lg font-semibold tracking-tight">roundzero</span>
           </Link>
         </div>
