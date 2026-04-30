@@ -14,7 +14,11 @@ type SeedApplication = {
   updatedAt: Date;
 };
 
-const candidateStatusNotifications = new Set(["interviewing", "evaluated", "rejected"]);
+const candidateStatusNotifications = new Set([
+  "interview_invited",
+  "shortlisted",
+  "rejected",
+]);
 
 async function seedNotifications() {
   const applications = await sql<SeedApplication[]>`
@@ -38,21 +42,7 @@ async function seedNotifications() {
   `;
 
   const notifications = applications.flatMap((application) => {
-    const baseRows = [
-      {
-        id: makeUuidFromSeed(`rz-seed-notification-company-${application.id}`),
-        userId: application.companyOwnerId,
-        type: "new_applicant",
-        payload: {
-          applicationId: application.id,
-          jobId: application.jobId,
-          jobTitle: application.jobTitle,
-          candidateName: application.candidateName,
-        },
-        readAt: application.status === "applied" ? null : application.updatedAt,
-        createdAt: application.createdAt,
-      },
-    ];
+    const baseRows = [];
 
     if (!candidateStatusNotifications.has(application.status)) {
       return baseRows;
