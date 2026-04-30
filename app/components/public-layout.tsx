@@ -13,7 +13,7 @@ export function PublicHeader() {
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-xl backdrop-saturate-150">
+    <header className="border-b border-border/40">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6 lg:px-8">
         <div className="flex items-center gap-8">
           <Link to="/" className="flex items-center gap-2.5">
