@@ -1,6 +1,7 @@
 import { useAgentChat } from "@cloudflare/ai-chat/react";
 import { useAgent } from "agents/react";
 import type { UIMessage } from "ai";
+import { clientEnv } from "@/shared/env.client";
 
 type InterviewAgentClient = {
   get state(): unknown;
@@ -16,17 +17,6 @@ const interviewSessionStatuses: InterviewSessionStatus[] = [
   "cancelled",
   "expired",
 ];
-
-const getEdgeHost = () => {
-  const fallback = "http://localhost:8787";
-
-  const envValue =
-    typeof window === "undefined"
-      ? (process.env.VITE_EDGE_WORKER_URL ?? process.env.EDGE_WORKER_URL)
-      : import.meta.env.VITE_EDGE_WORKER_URL;
-
-  return envValue?.length ? envValue : fallback;
-};
 
 const readMessageText = (message: UIMessage) => {
   if (!Array.isArray(message.parts)) {
@@ -58,7 +48,7 @@ export function useInterviewChat(interviewId: string, agentToken: string) {
   const agent = useAgent<InterviewAgentClient, unknown>({
     agent: "InterviewAgent",
     name: interviewId,
-    host: getEdgeHost(),
+    host: clientEnv.VITE_EDGE_WORKER_URL,
     query: {
       token: agentToken,
     },

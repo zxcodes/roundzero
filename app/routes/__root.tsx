@@ -7,6 +7,7 @@ import { AuthProvider } from "@/features/auth/provider";
 import { getCurrentUser } from "@/features/auth/server/functions";
 import { getThemeServerFn } from "@/lib/theme";
 import type { RouterContext } from "@/router";
+import { clientEnv } from "@/shared/env.client";
 import appCss from "../styles.css?url";
 
 export const Route = createRootRouteWithContext<RouterContext>()({
@@ -85,7 +86,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 
 function RootComponent() {
   const theme = Route.useLoaderData();
-  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? "";
+  const googleClientId = clientEnv.VITE_GOOGLE_CLIENT_ID ?? "";
 
   return (
     <GoogleOAuthProvider clientId={googleClientId}>
