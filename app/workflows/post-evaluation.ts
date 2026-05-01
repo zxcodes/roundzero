@@ -12,7 +12,7 @@ import {
   markNotificationEmailSkipped,
 } from "../queries/notifications/queries_sql";
 import { createReport, getReportByInterviewId } from "../queries/reports/queries_sql";
-import { getWorkerDb } from "../shared/db.worker";
+import { getDb } from "../shared/db";
 import { getInterviewAgentState } from "../shared/interview-agent-client";
 import { createWorkflowLogger } from "../shared/logger";
 import { notificationPayloadSchemas } from "../shared/notifications-config";
@@ -414,7 +414,7 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
     const { interviewId } = event.payload;
     const log = createWorkflowLogger("post-evaluation", interviewId);
 
-    const db = getWorkerDb();
+    const db = getDb();
 
     const existingReport = await step.do("load_existing_report", async () => {
       log.info("Loading existing report state");

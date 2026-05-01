@@ -23,7 +23,7 @@ import {
   createPreEvaluation,
   getPreEvaluationByApplicationId,
 } from "../queries/pre-evaluations/queries_sql";
-import { getWorkerDb } from "../shared/db.worker";
+import { getDb } from "../shared/db";
 import { initializeInterviewAgent } from "../shared/interview-agent-client";
 import { createWorkflowLogger } from "../shared/logger";
 import { notificationPayloadSchemas } from "../shared/notifications-config";
@@ -341,7 +341,7 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
     // Step 1: Read application + job data
     const applicationData = await step.do("read_application_data", async () => {
       log.step("read", "Loading application from DB");
-      const db = getWorkerDb();
+      const db = getDb();
       const application = await getApplicationById(db, { id: applicationId });
       if (!application) {
         throw new Error(`Application not found: ${applicationId}`);
@@ -564,7 +564,7 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
     // Step 6: Write result to DB
     await step.do("write_pre_evaluation", async () => {
       log.step("write", "Saving pre-evaluation to DB");
-      const db = getWorkerDb();
+      const db = getDb();
       await db.begin(async (tx) => {
         const transaction = tx as unknown as Sql;
         await tx
@@ -613,7 +613,7 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
         return { action: "hold" as const };
       }
 
-      const db = getWorkerDb();
+      const db = getDb();
       const job = applicationData.job;
       const interviewType = getInterviewTypeFromDeterministicRules(aiResult.result.score);
       const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
