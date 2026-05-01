@@ -23,6 +23,7 @@
       "!**/app/components/ui",
       "!db/seed/**/*.ts",
       "!app/edge/**/*.d.ts",
+      "!app/vite-env.d.ts",
       "!app/edge/queries/**/*.ts",
       "!**/.wrangler"
     ]
