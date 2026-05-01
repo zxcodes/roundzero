@@ -44,7 +44,7 @@ async function loadUser(role: "company" | "candidate"): Promise<DevUser | null> 
 
 async function seedForCompany(user: DevUser) {
   const companyId = makeUuidFromSeed(`seed-me-company-${user.id}`);
-  const slug = user.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  const slug = "minnu-corp";
 
   await sql`
     INSERT INTO companies (
