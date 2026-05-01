@@ -1,10 +1,10 @@
 {
-  "$schema": "../../node_modules/wrangler/config-schema.json",
-  "name": "roundzero-edge",
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "roundzero",
   "preview_urls": true,
   "compatibility_date": "2026-04-23",
   "compatibility_flags": ["nodejs_compat"],
-  "main": "./worker.ts",
+  "main": "./app/server.ts",
   "observability": {
     "enabled": true,
     "logs": {

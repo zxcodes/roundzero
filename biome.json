@@ -14,17 +14,16 @@
     "ignoreUnknown": false,
     "includes": [
       "**/app/**/*",
-      "**/app/edge/**/*",
       "**/*.json",
       "**/vite.config.ts",
       "**/vitest.config.ts",
+      "**/wrangler.jsonc",
       "!**/app/routeTree.gen.ts",
       "!**/app/**/*_sql.ts",
       "!**/app/components/ui",
       "!db/seed/**/*.ts",
-      "!app/edge/**/*.d.ts",
       "!app/vite-env.d.ts",
-      "!app/edge/queries/**/*.ts",
+      "!worker-configuration.d.ts",
       "!**/.wrangler"
     ]
   },
@@ -120,7 +119,12 @@
       }
     },
     {
-      "includes": ["app/edge/**/*.ts"],
+      "includes": [
+        "app/workflows/**/*.ts",
+        "app/agents/**/*.ts",
+        "app/server.ts",
+        "app/shared/logger.ts"
+      ],
       "linter": {
         "rules": {
           "suspicious": {

@@ -1,3 +1,4 @@
+import { env } from "cloudflare:workers";
 import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
@@ -16,6 +17,7 @@ import { shouldAutoExpireInterview } from "@/features/interviews/shared/expiry";
 import { getReportByApplicationId } from "@/features/reports/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { serverEnv } from "@/shared/env.server";
+import { markInterviewAgentStarted } from "@/shared/interview-agent-client";
 import { createInterviewAgentAccessToken } from "@/shared/interview-agent-token";
 import { authMiddleware } from "@/shared/middleware";
 
@@ -169,22 +171,7 @@ export const startMyInterview = createServerFn({ method: "POST" })
     });
 
     try {
-      const response = await fetch(
-        `${serverEnv.EDGE_WORKER_URL}/internal/interviews/${data.interviewId}/start`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${serverEnv.EDGE_WORKER_SECRET}`,
-          },
-        },
-      );
-
-      if (!response.ok) {
-        console.error(
-          `[startMyInterview] Agent start sync failed for ${data.interviewId} with status ${response.status}`,
-        );
-      }
+      await markInterviewAgentStarted(env, data.interviewId);
     } catch (error) {
       console.error(
         `[startMyInterview] Failed to sync agent start state for ${data.interviewId}`,
@@ -302,20 +289,7 @@ export const completeMyInterview = createServerFn({ method: "POST" })
 
     if (!existingReport) {
       try {
-        const response = await fetch(`${serverEnv.EDGE_WORKER_URL}/post-evaluate`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${serverEnv.EDGE_WORKER_SECRET}`,
-          },
-          body: JSON.stringify({ interviewId: data.interviewId }),
-        });
-
-        if (!response.ok) {
-          console.error(
-            `[completeMyInterview] Post-evaluation trigger failed for ${data.interviewId} with status ${response.status}`,
-          );
-        }
+        await env.POST_EVALUATION.create({ params: { interviewId: data.interviewId } });
       } catch (error) {
         console.error(
           `[completeMyInterview] Failed to trigger post-evaluation for ${data.interviewId}`,
