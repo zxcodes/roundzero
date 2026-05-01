@@ -58,7 +58,7 @@ const urlOrEmpty = z
   .string()
   .trim()
   .max(500)
-  .refine((val) => !val || z.string().url().safeParse(val).success, {
+  .refine((val) => !val || z.url().safeParse(val).success, {
     message: "Must be a valid URL",
   });
 

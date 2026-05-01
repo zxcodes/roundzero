@@ -1,8 +1,10 @@
+import { clientEnv } from "./env.client";
+
 function getPublicAssetBaseUrl() {
   const value =
     typeof window === "undefined"
       ? process.env.VITE_PUBLIC_ASSET_BASE_URL
-      : import.meta.env.VITE_PUBLIC_ASSET_BASE_URL;
+      : clientEnv.VITE_PUBLIC_ASSET_BASE_URL;
 
   return value?.replace(/\/+$/, "") ?? null;
 }

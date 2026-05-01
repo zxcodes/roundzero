@@ -65,7 +65,7 @@ export function optionalTrimmedUrl() {
 
     const trimmed = value.trim();
     return trimmed.length > 0 ? trimmed : undefined;
-  }, z.string().url().optional());
+  }, z.url().optional());
 }
 
 export function nullableTrimmedUrl() {
@@ -76,5 +76,5 @@ export function nullableTrimmedUrl() {
 
     const trimmed = value.trim();
     return trimmed.length > 0 ? trimmed : null;
-  }, z.string().url().nullable());
+  }, z.url().nullable());
 }

@@ -24,6 +24,7 @@ import { DeleteAccountSection } from "@/features/auth/components/delete-account-
 import { CompanyLogoUploadField } from "@/features/companies/components/company-logo-upload-field";
 import { type getMyCompany, updateCompanyProfile } from "@/features/companies/server/functions";
 import { type CompanySize, companySizeLabels, type Industry, industryLabels } from "@/shared/enums";
+import { clientEnv } from "@/shared/env.client";
 
 type Company = NonNullable<Awaited<ReturnType<typeof getMyCompany>>>;
 
@@ -176,12 +177,12 @@ export function CompanySettings({ company }: { company: Company }) {
               <p className="text-muted-foreground text-xs">
                 Your public URL:{" "}
                 <a
-                  href={`${import.meta.env.VITE_APP_URL}/companies/${company.slug}`}
+                  href={`${clientEnv.VITE_APP_URL}/companies/${company.slug}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-medium text-primary underline underline-offset-2 hover:text-primary/80"
                 >
-                  {import.meta.env.VITE_APP_URL}/companies/{company.slug}
+                  {clientEnv.VITE_APP_URL}/companies/{company.slug}
                 </a>
               </p>
             </div>

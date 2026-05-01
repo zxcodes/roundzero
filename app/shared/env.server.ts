@@ -29,11 +29,11 @@ const envSchema = z.object({
   STRIPE_SECRET_KEY: z.string(),
 
   // Edge Worker
-  EDGE_WORKER_URL: z.string().url().default("http://localhost:8787"),
+  EDGE_WORKER_URL: z.url().default("http://localhost:8787"),
   EDGE_WORKER_SECRET: edgeWorkerSecretSchema,
 
   // Edge Worker URL for client websocket chat
-  VITE_EDGE_WORKER_URL: z.string().url().default("http://localhost:8787"),
+  VITE_EDGE_WORKER_URL: z.url().default("http://localhost:8787"),
 });
 
 const parsedEnv = envSchema.parse(process.env);
