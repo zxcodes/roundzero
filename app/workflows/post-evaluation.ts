@@ -1,7 +1,7 @@
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers";
 import { jsx } from "react/jsx-runtime";
 import { Resend } from "resend";
-import { ReportReadyEmailTemplate } from "../../features/notifications/components/report-ready-email-template";
+import { ReportReadyEmailTemplate } from "../features/notifications/components/report-ready-email-template";
 import { updateApplicationStatus } from "../queries/applications/queries_sql";
 import { getUserById } from "../queries/auth/queries_sql";
 import { getInterviewContextById } from "../queries/interviews/queries_sql";

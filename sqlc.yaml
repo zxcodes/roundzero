@@ -14,7 +14,7 @@ sql:
         options:
           runtime: node
           driver: postgres
-      - out: app/edge/queries/auth
+      - out: app/queries/auth
         plugin: ts
         options:
           runtime: node
@@ -37,7 +37,7 @@ sql:
         options:
           runtime: node
           driver: postgres
-      - out: app/edge/queries/jobs
+      - out: app/queries/jobs
         plugin: ts
         options:
           runtime: node
@@ -51,7 +51,7 @@ sql:
         options:
           runtime: node
           driver: postgres
-      - out: app/edge/queries/applications
+      - out: app/queries/applications
         plugin: ts
         options:
           runtime: node
@@ -74,7 +74,7 @@ sql:
         options:
           runtime: node
           driver: postgres
-      - out: app/edge/queries/notifications
+      - out: app/queries/notifications
         plugin: ts
         options:
           runtime: node
@@ -88,7 +88,7 @@ sql:
         options:
           runtime: node
           driver: postgres
-      - out: app/edge/queries/pre-evaluations
+      - out: app/queries/pre-evaluations
         plugin: ts
         options:
           runtime: node
@@ -111,25 +111,25 @@ sql:
         options:
           runtime: node
           driver: postgres
-      - out: app/edge/queries/interviews
+      - out: app/queries/interviews
         plugin: ts
         options:
           runtime: node
           driver: postgres
   - schema: "db/migrations"
-    queries: "app/edge/queries/reports/queries.sql"
+    queries: "app/queries/reports/queries.sql"
     engine: postgresql
     codegen:
-      - out: app/edge/queries/reports
+      - out: app/queries/reports
         plugin: ts
         options:
           runtime: node
           driver: postgres
   - schema: "db/migrations"
-    queries: "app/edge/queries/reports-by-job/queries.sql"
+    queries: "app/queries/reports-by-job/queries.sql"
     engine: postgresql
     codegen:
-      - out: app/edge/queries/reports-by-job
+      - out: app/queries/reports-by-job
         plugin: ts
         options:
           runtime: node

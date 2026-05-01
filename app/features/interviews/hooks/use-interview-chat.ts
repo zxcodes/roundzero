@@ -47,7 +47,6 @@ export function useInterviewChat(interviewId: string, agentToken: string) {
   const agent = useAgent<InterviewAgentClient, unknown>({
     agent: "InterviewAgent",
     name: interviewId,
-    host: import.meta.env.VITE_EDGE_WORKER_URL,
     query: {
       token: agentToken,
     },

@@ -1,23 +1,37 @@
+import { cloudflare } from "@cloudflare/vite-plugin";
 import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
 import { devtools } from "@tanstack/devtools-vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact, { reactCompilerPreset } from "@vitejs/plugin-react";
-import { nitro } from "nitro/vite";
 import { defineConfig } from "vite";
+
+function decoratorPreset(options: Record<string, unknown>) {
+  return {
+    preset: () => ({
+      plugins: [["@babel/plugin-proposal-decorators", options]],
+    }),
+    rolldown: {
+      // Only run this transform if the file contains a decorator.
+      filter: {
+        code: "@",
+      },
+    },
+  };
+}
 
 const config = defineConfig({
   server: { port: 3000 },
   resolve: { tsconfigPaths: true },
   plugins: [
     devtools(),
-    nitro(),
+    cloudflare({ viteEnvironment: { name: "ssr" } }),
     tailwindcss(),
     tanstackStart({
       srcDirectory: "app",
     }),
     viteReact(),
-    babel({ presets: [reactCompilerPreset()] }),
+    babel({ presets: [reactCompilerPreset(), decoratorPreset({ version: "2023-11" })] }),
   ],
 });
 
