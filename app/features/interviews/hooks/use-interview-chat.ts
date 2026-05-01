@@ -1,7 +1,6 @@
 import { useAgentChat } from "@cloudflare/ai-chat/react";
 import { useAgent } from "agents/react";
 import type { UIMessage } from "ai";
-import { clientEnv } from "@/shared/env.client";
 
 type InterviewAgentClient = {
   get state(): unknown;
@@ -48,7 +47,7 @@ export function useInterviewChat(interviewId: string, agentToken: string) {
   const agent = useAgent<InterviewAgentClient, unknown>({
     agent: "InterviewAgent",
     name: interviewId,
-    host: clientEnv.VITE_EDGE_WORKER_URL,
+    host: import.meta.env.VITE_EDGE_WORKER_URL,
     query: {
       token: agentToken,
     },
