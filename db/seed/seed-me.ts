@@ -52,9 +52,9 @@ async function seedForCompany(user: DevUser) {
       industry, company_size, location, website, founded_year, tech_stack, culture, social_links
     )
       VALUES (
-      ${companyId}, ${user.id}, ${user.name}, ${slug}, now(),
+      ${companyId}, ${user.id}, ${"Minnu Corp"}, ${slug}, now(),
       ${"Innovative technology company at the forefront of AI-powered productivity tools. We're building intuitive platforms that help knowledge workers automate repetitive tasks, collaborate seamlessly, and focus on high-impact work. Our mission is to eliminate workplace friction through thoughtful design and cutting-edge AI."},
-      ${`https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=2563eb&color=ffffff&size=256&bold=true&format=svg`},
+      ${`https://images.unsplash.com/photo-1615497001839-b0a0eac3274c?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTF8fGN1dGUlMjBjYXR8ZW58MHx8MHx8fDA%3D`},
       ${"technology"}, ${"11-50"}, ${"San Francisco, CA"},
       ${`https://${slug}.com`}, ${2022},
       ${sql.json(["TypeScript", "React", "Node.js", "PostgreSQL", "AWS", "Docker", "Kubernetes", "GraphQL", "Redis"])},
@@ -418,7 +418,7 @@ async function seedForCandidate(user: DevUser) {
         updated_at = now()
     RETURNING id
   `;
-   
+
   const actualProfileId = result[0]!.id;
   console.log("  Candidate profile created");
 
