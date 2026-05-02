@@ -51,9 +51,7 @@ export function useInterviewChat(interviewId: string) {
     },
   });
 
-  const chat = useAgentChat({
-    agent,
-  });
+  const chat = useAgentChat({ agent });
 
   const rawAgentState = agent.state as { status?: unknown } | undefined;
   const sessionStatus =
