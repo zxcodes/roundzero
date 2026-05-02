@@ -37,7 +37,7 @@ export type PreEvaluationPayload = {
   applicationId: string;
 };
 
-export type PreEvaluationResult = {
+type PreEvaluationResult = {
   score: number;
   missingRequirements: string[];
   confidence: "low" | "medium" | "high";
