@@ -287,7 +287,7 @@ Build the async chat interview surface and backend.
 
 ### 6.2 Interview Agent Boundary
 
-- [x] Create `app/edge/agents/interview-agent.ts`
+- [x] Create `app/edge/agents/interview.ts`
   - Durable Object class for interview sessions
   - System prompt construction from job requirements + resume snapshot
   - For `quick_eval`: system prompt instructs 2–3 clarifying questions only
@@ -450,7 +450,7 @@ Replace the raw Durable Object + `env.AI.run()` interview implementation with th
 cd edge && npm install agents @cloudflare/ai-chat workers-ai-provider ai
 ```
 
-**New file: `app/edge/agents/interview-agent.ts`**
+**New file: `app/edge/agents/interview.ts`**
 
 - Extend `AIChatAgent<Env>` instead of raw `DurableObject`
 - Override `onChatMessage(onFinish)` — called on every candidate message
@@ -477,7 +477,7 @@ cd edge && npm install agents @cloudflare/ai-chat workers-ai-provider ai
 - `completed` → agent triggers post-evaluation workflow via RPC or HTTP
 
 **Remove old files:**
-- `app/edge/agents/interview-agent.ts` (raw DO version) → replaced
+- `app/edge/agents/interview.ts` (raw DO version) → replaced
 - Keep `app/edge/shared/interview-agent-client.ts` temporarily for backward compat during migration
 
 ### 7.5.2 Frontend: TanStack + Agents SDK Client
