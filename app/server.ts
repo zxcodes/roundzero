@@ -1,7 +1,7 @@
 import handler from "@tanstack/react-start/server-entry";
 import { routeAgentRequest } from "agents";
 
-export { InterviewAgent } from "./agents/interview-agent";
+export { InterviewAgent } from "./agents/interview";
 export { PostEvaluationWorkflow } from "./workflows/post-evaluation";
 export { PreEvaluationWorkflow } from "./workflows/pre-evaluation";
 
