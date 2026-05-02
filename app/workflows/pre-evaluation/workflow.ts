@@ -60,15 +60,7 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
 
     const decision = await step.do(
       "decide_next_step",
-      decideNextStep(
-        applicationId,
-        aiResult,
-        slopCheck,
-        applicationData,
-        resumeText,
-        this.env,
-        log,
-      ),
+      decideNextStep(applicationId, aiResult, slopCheck, applicationData, this.env, log),
     );
 
     log.info(

@@ -636,7 +636,6 @@ export function decideNextStep(
       interviewQuestions: unknown;
     };
   },
-  resumeText: string,
   env: Env,
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
@@ -786,32 +785,7 @@ export function decideNextStep(
 
     const interview = allocation.interview;
 
-    await initializeInterviewAgent(env, {
-      interviewId: interview.id,
-      applicationId,
-      interviewType: interviewType,
-      jobTitle: job.title,
-      companyName: job.companyName,
-      jobDescription: job.description,
-      jobRequirements: Array.isArray(job.requirements)
-        ? (job.requirements as unknown[])
-            .filter((requirement): requirement is string => typeof requirement === "string")
-            .map((requirement) => requirement.trim())
-            .filter((requirement) => requirement.length > 0)
-        : [],
-      candidateSummary: resumeText.slice(0, 2000),
-      customQuestions: Array.isArray(job.interviewQuestions)
-        ? (job.interviewQuestions as unknown[])
-            .filter((question): question is string => typeof question === "string")
-            .map((question) => question.trim())
-            .filter((question) => question.length > 0)
-        : [],
-      preEvaluation: {
-        score: aiResult.result.score,
-        missingRequirements: aiResult.result.missingRequirements,
-        consistencyScore: slopCheck.consistencyScore,
-      },
-    });
+    await initializeInterviewAgent(env, interview.id);
 
     await updateApplicationStatus(db, {
       id: applicationId,

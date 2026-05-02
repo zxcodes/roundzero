@@ -4,6 +4,7 @@ import {
   convertToModelMessages,
   generateText,
   hasToolCall,
+  pruneMessages,
   type StreamTextOnFinishCallback,
   stepCountIs,
   streamText,
@@ -55,11 +56,10 @@ type InterviewAgentState = {
   updatedAt: string;
   context: InterviewContextState;
   postEvaluationTriggered: boolean;
-  kickoffGeneratedAt: string | null;
   screeningCoverage: Record<number, "answered" | "skipped">;
 };
 
-type LegacyInterviewMessage = {
+type InterviewTranscriptMessage = {
   role: "assistant" | "candidate";
   content: string;
   createdAt: string;
@@ -80,10 +80,13 @@ type InterviewStateResponse = {
     cancelledAt: string | null;
     updatedAt: string;
   };
-  messages: LegacyInterviewMessage[];
+  messages: InterviewTranscriptMessage[];
 };
 
-const MODEL = "@cf/zai-org/glm-4.7-flash";
+// Llama 4 Scout: non-reasoning, native tool calling, used by Cloudflare's
+// official "Build a chat agent" tutorial. Replaces the previous reasoning
+// model (GLM-4.7-flash) which leaked chain-of-thought as visible text.
+const MODEL = "@cf/meta/llama-4-scout-17b-16e-instruct";
 
 const toNow = () => new Date().toISOString();
 
@@ -114,7 +117,6 @@ const emptyState = (): InterviewAgentState => ({
   updatedAt: toNow(),
   context: emptyContext(),
   postEvaluationTriggered: false,
-  kickoffGeneratedAt: null,
   screeningCoverage: {},
 });
 
@@ -126,7 +128,7 @@ const readUiMessageText = (message: UIMessage) => {
   return message.parts
     .map((part) => {
       if (part.type === "text" && typeof part.text === "string") {
-        return sanitizeVisibleText(part.text);
+        return part.text;
       }
       return "";
     })
@@ -134,44 +136,8 @@ const readUiMessageText = (message: UIMessage) => {
     .trim();
 };
 
-const stripInternalReasoningText = (value: string) => {
-  const withoutThinkBlocks = value
-    .replace(/<think\b[^>]*>[\s\S]*?<\/think>/gi, "")
-    .replace(/<\/??think\b[^>]*>/gi, "");
-
-  return withoutThinkBlocks;
-};
-
-const sanitizeVisibleText = (value: string) => {
-  const cleaned = stripInternalReasoningText(value);
-  const trimmed = cleaned.trim();
-  if (!trimmed.startsWith("{")) {
-    return cleaned;
-  }
-
-  try {
-    const parsed = JSON.parse(trimmed) as {
-      type?: unknown;
-      name?: unknown;
-      parameters?: unknown;
-    };
-
-    if (
-      parsed.type === "function" &&
-      typeof parsed.name === "string" &&
-      Object.hasOwn(parsed, "parameters")
-    ) {
-      return "";
-    }
-  } catch {
-    return cleaned;
-  }
-
-  return cleaned;
-};
-
-const toLegacyTranscript = (messages: UIMessage[]): LegacyInterviewMessage[] => {
-  const result: LegacyInterviewMessage[] = [];
+const toTranscript = (messages: UIMessage[]): InterviewTranscriptMessage[] => {
+  const result: InterviewTranscriptMessage[] = [];
   for (const message of messages) {
     if (message.role !== "assistant" && message.role !== "user") {
       continue;
@@ -205,89 +171,96 @@ const filterStrings = (input: unknown): string[] => {
 
 export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
   initialState = emptyState();
-  messageConcurrency = "queue" as const;
 
   private buildSystemPrompt(): string {
     const ctx = this.state.context;
     const reqs =
       ctx.jobRequirements.length > 0
-        ? ctx.jobRequirements.map((r) => `  - ${r}`).join("\n")
-        : "  (not provided)";
+        ? ctx.jobRequirements.map((r) => `- ${r}`).join("\n")
+        : "(not provided)";
     const customQs =
       ctx.customQuestions.length > 0
-        ? ctx.customQuestions.map((q, i) => `  Q${i + 1}. ${q}`).join("\n")
-        : "  (none — use your own judgment)";
+        ? ctx.customQuestions
+            .map((q, i) => {
+              const status = this.state.screeningCoverage[i + 1];
+              const tag =
+                status === "answered" ? " [answered]" : status === "skipped" ? " [skipped]" : "";
+              return `${i + 1}. ${q}${tag}`;
+            })
+            .join("\n")
+        : "(none — use your own judgment)";
     const missing =
       ctx.preEvaluation.missingRequirements.length > 0
-        ? ctx.preEvaluation.missingRequirements.map((r) => `  - ${r}`).join("\n")
-        : "  (none flagged)";
+        ? ctx.preEvaluation.missingRequirements.map((r) => `- ${r}`).join("\n")
+        : "(none flagged)";
     const score = ctx.preEvaluation.score == null ? "n/a" : `${ctx.preEvaluation.score}/100`;
     const candidateName = ctx.candidateName || "the candidate";
     const customQuestionCount = ctx.customQuestions.length;
     const substantiveTarget = ctx.type === "quick_eval" ? 2 : this.state.maxQuestions;
     const totalTarget = customQuestionCount + substantiveTarget;
-    const lengthGuidance =
+    const pacing =
       ctx.type === "quick_eval"
-        ? `This is a SHORT clarifying interview. Cover ALL ${customQuestionCount} company-supplied question(s), plus ~${substantiveTarget} short probing follow-ups, then end. Aim for ~${totalTarget} total turns.`
-        : `This is a FULL interview. Cover ALL ${customQuestionCount} company-supplied question(s) AND conduct ~${substantiveTarget} additional substantive probing questions. Aim for ~${totalTarget} total turns. Do not end early just because you hit ${substantiveTarget} substantive questions — every company-supplied question must be addressed.`;
+        ? `Short clarifying interview. Cover every one of the ${customQuestionCount} company question(s), plus ~${substantiveTarget} short follow-ups. Aim for ~${totalTarget} total turns.`
+        : `Full interview. Cover every one of the ${customQuestionCount} company question(s) AND ~${substantiveTarget} substantive probing question(s). Aim for ~${totalTarget} total turns.`;
+
+    const uncoveredIndexes = ctx.customQuestions
+      .map((_, i) => i + 1)
+      .filter((i) => !(i in this.state.screeningCoverage));
+    const assistantTurns = this.messages.filter((m) => m.role === "assistant").length;
+    const remainingBudget = Math.max(totalTarget - assistantTurns, 0);
+    const coverageDirective =
+      uncoveredIndexes.length === 0
+        ? "All company questions have been covered. Probe for remaining signal or close out warmly."
+        : remainingBudget <= uncoveredIndexes.length
+          ? `URGENT: only ~${remainingBudget} turn(s) left and ${uncoveredIndexes.length} company question(s) are still uncovered (#${uncoveredIndexes.join(", #")}). Your NEXT message MUST ask one of them. Stop probing other topics until they are covered.`
+          : `Still uncovered: question #${uncoveredIndexes.join(", #")}. Make sure you cover each before you call end_interview.`;
 
     return [
-      "# Identity",
-      "You are Zero, RoundZero's senior AI interviewer. You behave like a thoughtful, experienced human hiring manager conducting a structured 1:1 screening interview. You are warm, professional, attentive, and direct. You are NOT a chatbot, a survey form, or a robot.",
+      `You are Zero, a senior interviewer at RoundZero. You are interviewing ${candidateName} for the ${ctx.jobTitle} role at ${ctx.companyName}.`,
       "",
-      "# Mission",
-      `Conduct a real, structured screening interview with ${candidateName} for the ${ctx.jobTitle} role at ${ctx.companyName}. Your two jobs are:`,
-      `  (1) Cover every company-supplied question, in order, getting a clear answer to each one. These are screening questions the company needs answers to (e.g. salary expectations, notice period, work authorization, visa sponsorship, relocation, motivation, role-specific deep-dives). They are NON-NEGOTIABLE.`,
-      `  (1) Cover company-supplied questions with clear answers whenever possible. If the candidate asks to end the interview, withdraws, or declines to continue, user intent wins immediately and you should close the interview without asking more questions.`,
-      `  (2) Probe for real signal on depth of experience, problem solving, judgment, and role fit, beyond the script.`,
+      "Behave like a thoughtful, experienced human hiring manager on a Zoom screening call. Warm, professional, direct.",
       "",
-      "# Output rules (CRITICAL — break these and the interview fails)",
-      "- Speak ONLY in plain natural English prose, like a human in a Zoom interview.",
-      "- NEVER output JSON, code blocks, XML, markdown headers, bullet lists, or tool-call syntax in your visible reply.",
-      "- Avoid using em dashes. Prefer commas or periods. Use clear, grammatically correct sentences.",
-      "- NEVER say 'tool', 'function', 'evaluate_answer', 'check_resume_gap', or 'end_interview' out loud. Tools are silent. The candidate must never see them.",
-      "- One question per turn. Briefly acknowledge the candidate's previous answer in one sentence, then ask the next question.",
-      "- Keep each turn under ~80 words. Conversational, not formal. No HR boilerplate.",
+      "Style:",
+      "- Plain conversational English. No JSON, code, markdown, or lists.",
+      "- One question per turn. Briefly acknowledge the previous answer, then ask the next.",
+      "- Keep each turn under 80 words.",
+      "- Vary transitions. Probe tradeoffs and judgment, not just facts.",
+      "- Reference specific resume details when probing.",
       "",
-      "# Conversational style",
-      "- Reference specific details from their resume and the role when probing — show that you read it.",
-      "- React to what they actually said. If they mention a project, dig into it. If they're vague, push for a concrete example, a number, a person, or a tradeoff.",
-      "- Vary your transitions. Do not start every message with 'Great' or 'Thanks'.",
-      "- Probe tradeoffs and judgment, not just facts. Ask 'why', 'what would you do differently', 'what was the constraint that forced that choice'.",
-      "- If they make a claim that doesn't appear in their resume / profile context, silently call check_resume_gap before deciding whether to challenge it.",
+      "Required coverage of company questions:",
+      "- Every numbered company question below MUST be asked before the interview ends. Do not skip any.",
+      "- Ask them in order. You may rephrase to sound natural and combine two if closely related.",
+      "- Short factual screens (salary, notice period, visa, relocation, start date): get the answer in one or two turns and move on. Do not drill in unless the answer is unclear or a likely dealbreaker.",
+      "- Role-specific company questions (e.g. design a system, walk through a project): treat as substantive probes; push for depth, examples, tradeoffs.",
+      "- If the candidate gives a vague or non-answer, ask once for clarification, then accept their answer (or noted refusal) and move on.",
+      "- Once a company question is resolved, silently call record_screening_coverage with its 1-based questionIndex and status='answered' or 'skipped'.",
       "",
-      "# Required coverage of company-supplied questions",
-      "These are the questions the company explicitly asked us to put to every candidate. Cover as many as you reasonably can, in roughly the order given. You may rephrase them to sound natural and combine two if they're closely related.",
-      "Treat short factual screening questions (salary, notice period, visa, relocation, etc.) as quick conversational asks — get the answer, briefly acknowledge, and move on. Do NOT spend multiple turns drilling into them unless the answer is unclear or potentially a dealbreaker.",
-      "Treat role-specific company-supplied questions (e.g. 'walk me through a system you designed') as substantive probing questions — push for depth.",
-      "If the candidate gives a vague or non-answer to a screening question, ask once for clarification, then accept their answer (or noted refusal) and move on.",
-      "After each company-supplied question is resolved, silently call record_screening_coverage with the 1-based questionIndex and status='answered' when answered, or status='skipped' when unresolved.",
+      "Pacing:",
+      `- ${pacing}`,
+      "- After each candidate answer, silently call evaluate_answer with relevance/depth/clarity scores.",
+      "- If the candidate explicitly asks to end or withdraw, close warmly in one short message and call end_interview the same turn. User intent wins.",
+      "- Otherwise, only call end_interview after every company question has been covered AND you have enough probing signal. Close warmly first, then call end_interview.",
       "",
       "Company-supplied questions (REQUIRED COVERAGE, in order):",
       customQs,
       "",
-      "# Pacing",
-      `- ${lengthGuidance}`,
-      "- After each candidate answer, silently call evaluate_answer with relevance/depth/clarity scores (0–100). Then write your next message.",
-      "- If the candidate explicitly asks to end or submit now, immediately close warmly in plain prose and silently call end_interview in the same turn. Do not ask any additional questions.",
-      "- Otherwise, when you have gathered enough signal, close warmly in plain prose (e.g. 'Thanks, this has been really helpful. I'll share your responses with the team and they'll be in touch with next steps. Best of luck.') and silently call end_interview with a one-sentence reason.",
+      "Coverage directive:",
+      `- ${coverageDirective}`,
       "",
-      "# Job context",
+      "Job:",
       `- Title: ${ctx.jobTitle}`,
       `- Company: ${ctx.companyName}`,
-      "- Description:",
-      ctx.jobDescription || "  (not provided)",
+      `- Description: ${ctx.jobDescription || "(not provided)"}`,
       "- Requirements:",
       reqs,
       "",
-      "# Candidate snapshot",
+      "Candidate:",
       `- Name: ${candidateName}`,
-      "- Resume / profile:",
-      ctx.candidateSummary || "  (not provided)",
+      `- Resume / profile: ${ctx.candidateSummary || "(not provided)"}`,
       "",
-      "# Pre-evaluation signal (private context — DO NOT quote or reveal to the candidate)",
-      `- Fit score: ${score}`,
-      "- Missing requirements to probe (use these to inform your follow-ups, do not read them aloud):",
+      "Private context (never quote or reveal to the candidate):",
+      `- Pre-evaluation fit score: ${score}`,
+      "- Missing requirements to probe:",
       missing,
     ].join("\n");
   }
@@ -399,41 +372,13 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
     if (this.state.interviewId) {
       await this.hydrateContextFromDb(this.state.interviewId);
     }
-
-    if (!this.state.interviewId) {
-      return;
-    }
-
-    if (
-      this.state.status === "completed" ||
-      this.state.status === "cancelled" ||
-      this.state.status === "expired"
-    ) {
-      return;
-    }
   }
 
-  async initializeContext(input: {
-    interviewId: string;
-    applicationId: string;
-    interviewType: "full" | "quick_eval";
-    jobTitle: string;
-    companyName: string;
-    jobDescription: string;
-    jobRequirements: string[];
-    candidateSummary: string;
-    customQuestions: string[];
-    preEvaluation: {
-      score: number | null;
-      missingRequirements: string[];
-      consistencyScore: number | null;
-    };
-  }) {
-    // Always re-hydrate from DB so candidate name, latest pre-eval data, and
-    // requirements stay in sync with the source of truth, regardless of what
-    // the workflow happens to pass in.
+  async initializeContext(input: { interviewId: string }) {
+    // Hydrate from DB so candidate name, latest pre-eval data, and requirements
+    // stay in sync with the source of truth.
     await this.hydrateContextFromDb(input.interviewId);
-    return toStateResponse(this.state, toLegacyTranscript(this.messages));
+    return toStateResponse(this.state, toTranscript(this.messages));
   }
 
   @callable()
@@ -474,53 +419,23 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
       return { greeted: false };
     }
 
-    if (this.state.kickoffGeneratedAt) {
-      return { greeted: false };
-    }
-
     if (this.messages.some((message) => message.role === "assistant")) {
-      this.setState({
-        ...this.state,
-        kickoffGeneratedAt: this.state.kickoffGeneratedAt ?? toNow(),
-        updatedAt: toNow(),
-      });
       return { greeted: false };
     }
-
-    const stable = await this.waitUntilStable({ timeout: 10_000 });
-    if (!stable) {
-      return { greeted: false };
-    }
-
-    this.setState({
-      ...this.state,
-      kickoffGeneratedAt: toNow(),
-      updatedAt: toNow(),
-    });
 
     const workersai = createWorkersAI({ binding: this.env.AI });
     const result = await generateText({
       model: workersai(MODEL),
+      temperature: 0.7,
       system: this.buildSystemPrompt(),
-      prompt: [
-        `Open the interview. Greet ${this.state.context.candidateName || "the candidate"} warmly by name.`,
-        "Reference one specific detail from their resume that connects to this role.",
-        "Then ask your first focused interview question.",
-        "Plain natural English prose only. No JSON, no markdown, no tool calls.",
-      ].join(" "),
+      prompt: `Open the interview. Greet ${this.state.context.candidateName || "the candidate"} warmly by name, reference one specific resume detail that connects to this role, then ask your first focused interview question. Plain conversational English only.`,
     });
 
     const greeting = result.text.trim();
     if (!greeting) {
-      this.setState({
-        ...this.state,
-        kickoffGeneratedAt: null,
-        updatedAt: toNow(),
-      });
       return { greeted: false };
     }
 
-    await this.waitUntilStable();
     await this.persistMessages([
       ...this.messages,
       {
@@ -539,7 +454,7 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
       await this.hydrateContextFromDb(input.interviewId);
     }
 
-    return toStateResponse(this.state, toLegacyTranscript(this.messages));
+    return toStateResponse(this.state, toTranscript(this.messages));
   }
 
   @callable()
@@ -557,7 +472,7 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
       });
     }
 
-    return toStateResponse(this.state, toLegacyTranscript(this.messages));
+    return toStateResponse(this.state, toTranscript(this.messages));
   }
 
   async onChatMessage(onFinish: StreamTextOnFinishCallback<ToolSet>) {
@@ -583,39 +498,26 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
       return new Response("Interview has expired", { status: 400 });
     }
 
-    if (interview.status === "pending") {
+    if (interview.status === "pending" || this.state.status === "pending") {
       return new Response("Interview has not been started", { status: 400 });
     }
 
-    if (interview.status === "cancelled") {
+    if (
+      interview.status === "cancelled" ||
+      this.state.status === "cancelled" ||
+      interview.status === "expired" ||
+      this.state.status === "expired"
+    ) {
       return new Response("Interview is no longer available", { status: 400 });
     }
 
-    if (interview.status === "expired") {
-      return new Response("Interview has expired", { status: 400 });
-    }
-
-    if (interview.status === "completed") {
-      return new Response("Interview already completed", { status: 400 });
-    }
-
-    if (this.state.status === "pending") {
-      return new Response("Interview has not been started", { status: 400 });
-    }
-
-    if (this.state.status === "cancelled" || this.state.status === "expired") {
-      return new Response("Interview is no longer available", { status: 400 });
-    }
-
-    if (this.state.status === "completed") {
+    if (interview.status === "completed" || this.state.status === "completed") {
       return new Response("Interview already completed", { status: 400 });
     }
 
     const workersai = createWorkersAI({ binding: this.env.AI });
 
-    const latestCandidateMessage = [...this.messages]
-      .reverse()
-      .find((message) => message.role === "user");
+    const latestCandidateMessage = [...this.messages].reverse().find((m) => m.role === "user");
     const latestCandidateText = latestCandidateMessage
       ? readUiMessageText(latestCandidateMessage)
       : "";
@@ -625,20 +527,20 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
       );
 
     const systemPrompt = userRequestedEnd
-      ? [
-          this.buildSystemPrompt(),
-          "",
-          "# Immediate instruction override",
-          "The candidate just explicitly requested to end now. You MUST close immediately, ask no further questions, and call end_interview in this turn.",
-        ].join("\n")
+      ? `${this.buildSystemPrompt()}\n\nThe candidate just explicitly asked to end. Close warmly in one short message and call end_interview this turn. Ask no further questions.`
       : this.buildSystemPrompt();
 
     const result = streamText({
       model: workersai(MODEL),
+      temperature: 0.7,
       system: systemPrompt,
-      messages: await convertToModelMessages(this.messages),
+      messages: pruneMessages({
+        messages: await convertToModelMessages(this.messages),
+        reasoning: "before-last-message",
+        toolCalls: "before-last-2-messages",
+      }),
       onFinish,
-      stopWhen: [stepCountIs(3), hasToolCall("end_interview")],
+      stopWhen: [stepCountIs(5), hasToolCall("end_interview")],
       tools: {
         evaluate_answer: tool({
           description:
@@ -651,15 +553,14 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
           execute: async ({ relevance, depth, clarity }) => {
             const scores = this.state.scores;
             const nextCount = scores.count + 1;
-            const nextScores = {
-              relevance: scores.relevance + relevance,
-              depth: scores.depth + depth,
-              clarity: scores.clarity + clarity,
-              count: nextCount,
-            };
             this.setState({
               ...this.state,
-              scores: nextScores,
+              scores: {
+                relevance: scores.relevance + relevance,
+                depth: scores.depth + depth,
+                clarity: scores.clarity + clarity,
+                count: nextCount,
+              },
               askedQuestions: this.state.askedQuestions + 1,
               updatedAt: toNow(),
             });
@@ -674,8 +575,7 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
           }),
           execute: async ({ claim }) => {
             const haystack = this.state.context.candidateSummary.toLowerCase();
-            const matched = haystack.includes(claim.toLowerCase());
-            return { matched };
+            return { matched: haystack.includes(claim.toLowerCase()) };
           },
         }),
         record_screening_coverage: tool({
@@ -749,40 +649,11 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
 
     return result.toUIMessageStreamResponse();
   }
-
-  protected override sanitizeMessageForPersistence(message: UIMessage): UIMessage {
-    const sanitized = super.sanitizeMessageForPersistence(message);
-    if (!Array.isArray(sanitized.parts)) {
-      return sanitized;
-    }
-
-    return {
-      ...sanitized,
-      parts: sanitized.parts
-        .map((part) => {
-          if (part.type === "text" && typeof part.text === "string") {
-            return {
-              ...part,
-              text: sanitizeVisibleText(part.text),
-            };
-          }
-
-          return part;
-        })
-        .filter((part) => {
-          if (part.type === "text") {
-            return part.text.trim().length > 0;
-          }
-
-          return true;
-        }),
-    };
-  }
 }
 
 const toStateResponse = (
   state: InterviewAgentState,
-  messages: LegacyInterviewMessage[],
+  messages: InterviewTranscriptMessage[],
 ): InterviewStateResponse => ({
   session: {
     interviewId: state.interviewId,
