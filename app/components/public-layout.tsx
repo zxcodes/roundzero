@@ -30,12 +30,22 @@ export function PublicHeader() {
             </span>
           </Link>
           <nav className="hidden items-center gap-1 sm:flex">
-            <Button variant="ghost" size="sm" className="text-muted-foreground" asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground rounded-none"
+              asChild
+            >
               <Link to="/jobs" activeProps={{ className: "text-foreground bg-accent" }}>
                 Jobs
               </Link>
             </Button>
-            <Button variant="ghost" size="sm" className="text-muted-foreground" asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground rounded-none"
+              asChild
+            >
               <Link to="/companies" activeProps={{ className: "text-foreground bg-accent" }}>
                 Companies
               </Link>
@@ -52,12 +62,12 @@ export function PublicHeader() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="hidden text-muted-foreground sm:inline-flex"
+                className="hidden text-muted-foreground sm:inline-flex rounded-none"
                 asChild
               >
                 <Link to="/company/login">For employers</Link>
               </Button>
-              <Button size="sm" asChild>
+              <Button size="sm" asChild className="rounded-none">
                 <Link to="/candidate/login">For job seekers</Link>
               </Button>
             </>
