@@ -188,8 +188,10 @@ app/features/
 
 ### AI layer
 
-- `app/workflows/pre-evaluation.ts`
-- `app/workflows/post-evaluation.ts`
+- `app/workflows/pre-evaluation/workflow.ts`
+- `app/workflows/pre-evaluation/steps.ts`
+- `app/workflows/post-evaluation/workflow.ts`
+- `app/workflows/post-evaluation/steps.ts`
 - `app/agents/interview.ts`
 
 ---

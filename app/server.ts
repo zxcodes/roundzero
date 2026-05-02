@@ -2,8 +2,8 @@ import handler from "@tanstack/react-start/server-entry";
 import { routeAgentRequest } from "agents";
 
 export { InterviewAgent } from "./agents/interview";
-export { PostEvaluationWorkflow } from "./workflows/post-evaluation";
-export { PreEvaluationWorkflow } from "./workflows/pre-evaluation";
+export { PostEvaluationWorkflow } from "./workflows/post-evaluation/workflow";
+export { PreEvaluationWorkflow } from "./workflows/pre-evaluation/workflow";
 
 // biome-ignore lint/style/noDefaultExport: worker entrypoint
 export default {
