@@ -1035,6 +1035,10 @@ const faq = [
     q: "Can I customise what the AI evaluates?",
     a: "Yes — on Pro and Enterprise plans, you define custom evaluation criteria. The AI uses your job requirements, interview questions, and weighting preferences.",
   },
+  {
+    q: "Does RoundZero only work for technical roles?",
+    a: "No, not at all. RoundZero can evaluate any role as long as the requirements and skills are clearly defined when creating the job. Just create a detailed job description, and our AI will take care of the rest.",
+  },
 ];
 
 function Faq() {
