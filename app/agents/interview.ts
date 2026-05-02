@@ -15,7 +15,7 @@ import { createWorkersAI } from "workers-ai-provider";
 import { z } from "zod";
 import { shouldAutoExpireInterview } from "@/features/interviews/shared/expiry";
 import { getInterviewContextById, updateInterviewStatus } from "../queries/interviews/queries_sql";
-import { getWorkerDb } from "../shared/db.worker";
+import { getDb } from "../shared/db";
 
 type InterviewSessionStatus = "pending" | "in_progress" | "completed" | "cancelled" | "expired";
 
@@ -293,7 +293,7 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
   }
 
   private async hydrateContextFromDb(interviewId: string) {
-    const db = getWorkerDb();
+    const db = getDb();
     const context = await getInterviewContextById(db, { id: interviewId });
     if (!context) {
       return false;
@@ -569,7 +569,7 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
       return new Response("Interview session not initialized", { status: 400 });
     }
 
-    const db = getWorkerDb();
+    const db = getDb();
     const interview = await getInterviewContextById(db, { id: this.state.interviewId });
     if (!interview) {
       return new Response("Interview not found", { status: 404 });

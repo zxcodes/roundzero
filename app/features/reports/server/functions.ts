@@ -1,3 +1,4 @@
+import { env } from "cloudflare:workers";
 import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
@@ -6,7 +7,7 @@ import { getInterviewByApplicationId } from "@/features/interviews/queries/queri
 import { getPreEvaluationByApplicationId } from "@/features/pre-evaluations/queries/queries_sql";
 import { getReportByApplicationId } from "@/features/reports/queries/queries_sql";
 import { getDb } from "@/shared/db";
-import { serverEnv } from "@/shared/env.server";
+import { getInterviewAgentState } from "@/shared/interview-agent-client";
 import { companyMiddleware } from "@/shared/middleware";
 
 const applicationIdSchema = z.object({
@@ -49,21 +50,7 @@ const isInterviewAgentState = (value: unknown): value is InterviewAgentState => 
 
 const getInterviewStateForCompany = async (interviewId: string) => {
   try {
-    const response = await fetch(
-      `${serverEnv.EDGE_WORKER_URL}/internal/interviews/${interviewId}/state`,
-      {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${serverEnv.EDGE_WORKER_SECRET}`,
-        },
-      },
-    );
-
-    if (!response.ok) {
-      return null;
-    }
-
-    const payload = (await response.json()) as unknown;
+    const payload = (await getInterviewAgentState(env, interviewId)) as unknown;
     if (!isInterviewAgentState(payload)) {
       return null;
     }

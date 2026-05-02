@@ -1,13 +1,8 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "entry": [
-    "app/router.tsx",
-    "app/routeTree.gen.ts",
-    "app/routes/**/*.{ts,tsx}",
-    "app/edge/worker.ts"
-  ],
-  "project": ["app/**/*.{ts,tsx}", "app/edge/**/*.{ts,tsx}"],
-  "ignore": ["app/**/*_sql.ts", "app/components/ui/**", "app/edge/**/*_sql.ts"],
+  "entry": ["app/router.tsx", "app/routeTree.gen.ts", "app/routes/**/*.{ts,tsx}"],
+  "project": ["app/**/*.{ts,tsx}"],
+  "ignore": ["app/**/*_sql.ts", "app/components/ui/**"],
   "ignoreBinaries": ["sqlc"],
   "ignoreDependencies": [
     "@tanstack/react-devtools",
@@ -23,7 +18,8 @@
     "vaul",
     "shadcn",
     "@tanstack/router-plugin",
-    "@snaplet/copycat"
+    "@snaplet/copycat",
+    "@babel/plugin-proposal-decorators"
   ],
   "exclude": ["unlisted"]
 }

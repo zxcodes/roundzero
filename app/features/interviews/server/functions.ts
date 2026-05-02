@@ -1,3 +1,4 @@
+import { env } from "cloudflare:workers";
 import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
@@ -15,26 +16,12 @@ import {
 import { shouldAutoExpireInterview } from "@/features/interviews/shared/expiry";
 import { getReportByApplicationId } from "@/features/reports/queries/queries_sql";
 import { getDb } from "@/shared/db";
-import { serverEnv } from "@/shared/env.server";
-import { createInterviewAgentAccessToken } from "@/shared/interview-agent-token";
+import { markInterviewAgentStarted } from "@/shared/interview-agent-client";
 import { authMiddleware } from "@/shared/middleware";
 
 const interviewIdSchema = z.object({
   interviewId: z.string().uuid(),
 });
-
-const withAgentToken = async <T extends { id: string; candidateId: string }>(interview: T) => {
-  const token = await createInterviewAgentAccessToken({
-    interviewId: interview.id,
-    candidateId: interview.candidateId,
-    secret: serverEnv.EDGE_WORKER_SECRET,
-  });
-
-  return {
-    ...interview,
-    agentToken: token,
-  };
-};
 
 type ExpirableInterview = {
   id: string;
@@ -86,10 +73,10 @@ export const getMyInterview = createServerFn({ method: "GET" })
 
     const expired = await expireInterviewIfNeeded({ db, interview });
     if (expired.expiredNow) {
-      return await withAgentToken(expired.interview);
+      return expired.interview;
     }
 
-    return await withAgentToken(interview);
+    return interview;
   });
 
 export const getMyInterviews = createServerFn({ method: "GET" })
@@ -147,7 +134,7 @@ export const startMyInterview = createServerFn({ method: "POST" })
     }
 
     if (effectiveInterview.status === "completed") {
-      return await withAgentToken(effectiveInterview);
+      return effectiveInterview;
     }
 
     if (effectiveInterview.status === "cancelled") {
@@ -169,22 +156,7 @@ export const startMyInterview = createServerFn({ method: "POST" })
     });
 
     try {
-      const response = await fetch(
-        `${serverEnv.EDGE_WORKER_URL}/internal/interviews/${data.interviewId}/start`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${serverEnv.EDGE_WORKER_SECRET}`,
-          },
-        },
-      );
-
-      if (!response.ok) {
-        console.error(
-          `[startMyInterview] Agent start sync failed for ${data.interviewId} with status ${response.status}`,
-        );
-      }
+      await markInterviewAgentStarted(env, data.interviewId);
     } catch (error) {
       console.error(
         `[startMyInterview] Failed to sync agent start state for ${data.interviewId}`,
@@ -192,10 +164,10 @@ export const startMyInterview = createServerFn({ method: "POST" })
       );
     }
 
-    return await withAgentToken({
+    return {
       ...updated,
       candidateId: effectiveInterview.candidateId,
-    });
+    };
   });
 
 export const cancelMyInterview = createServerFn({ method: "POST" })
@@ -221,7 +193,7 @@ export const cancelMyInterview = createServerFn({ method: "POST" })
     const effectiveInterview = expired.interview;
 
     if (effectiveInterview.status === "expired") {
-      return await withAgentToken(effectiveInterview);
+      return effectiveInterview;
     }
 
     if (effectiveInterview.status === "completed") {
@@ -229,7 +201,7 @@ export const cancelMyInterview = createServerFn({ method: "POST" })
     }
 
     if (effectiveInterview.status === "cancelled") {
-      return await withAgentToken(effectiveInterview);
+      return effectiveInterview;
     }
 
     const updated = await updateInterviewStatus(db, {
@@ -246,10 +218,10 @@ export const cancelMyInterview = createServerFn({ method: "POST" })
       status: "withdrawn",
     });
 
-    return await withAgentToken({
+    return {
       ...updated,
       candidateId: effectiveInterview.candidateId,
-    });
+    };
   });
 
 export const completeMyInterview = createServerFn({ method: "POST" })
@@ -279,7 +251,7 @@ export const completeMyInterview = createServerFn({ method: "POST" })
     }
 
     if (effectiveInterview.status === "completed") {
-      return await withAgentToken(effectiveInterview);
+      return effectiveInterview;
     }
 
     if (effectiveInterview.status === "cancelled") {
@@ -302,20 +274,7 @@ export const completeMyInterview = createServerFn({ method: "POST" })
 
     if (!existingReport) {
       try {
-        const response = await fetch(`${serverEnv.EDGE_WORKER_URL}/post-evaluate`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${serverEnv.EDGE_WORKER_SECRET}`,
-          },
-          body: JSON.stringify({ interviewId: data.interviewId }),
-        });
-
-        if (!response.ok) {
-          console.error(
-            `[completeMyInterview] Post-evaluation trigger failed for ${data.interviewId} with status ${response.status}`,
-          );
-        }
+        await env.POST_EVALUATION.create({ params: { interviewId: data.interviewId } });
       } catch (error) {
         console.error(
           `[completeMyInterview] Failed to trigger post-evaluation for ${data.interviewId}`,
@@ -324,10 +283,10 @@ export const completeMyInterview = createServerFn({ method: "POST" })
       }
     }
 
-    return await withAgentToken({
+    return {
       ...updated,
       candidateId: effectiveInterview.candidateId,
-    });
+    };
   });
 
 export const getInterviewForApplication = createServerFn({ method: "GET" })
