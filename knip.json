@@ -1,6 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "entry": ["app/router.tsx", "app/routeTree.gen.ts", "app/routes/**/*.{ts,tsx}", "app/server.ts"],
+  "entry": ["app/router.tsx", "app/routeTree.gen.ts", "app/routes/**/*.{ts,tsx}"],
   "project": ["app/**/*.{ts,tsx}"],
   "ignore": ["app/**/*_sql.ts", "app/components/ui/**"],
   "ignoreBinaries": ["sqlc"],
@@ -18,7 +18,8 @@
     "vaul",
     "shadcn",
     "@tanstack/router-plugin",
-    "@snaplet/copycat"
+    "@snaplet/copycat",
+    "@babel/plugin-proposal-decorators"
   ],
   "exclude": ["unlisted"]
 }

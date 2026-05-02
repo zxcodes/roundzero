@@ -16,27 +16,12 @@ import {
 import { shouldAutoExpireInterview } from "@/features/interviews/shared/expiry";
 import { getReportByApplicationId } from "@/features/reports/queries/queries_sql";
 import { getDb } from "@/shared/db";
-import { serverEnv } from "@/shared/env.server";
 import { markInterviewAgentStarted } from "@/shared/interview-agent-client";
-import { createInterviewAgentAccessToken } from "@/shared/interview-agent-token";
 import { authMiddleware } from "@/shared/middleware";
 
 const interviewIdSchema = z.object({
   interviewId: z.string().uuid(),
 });
-
-const withAgentToken = async <T extends { id: string; candidateId: string }>(interview: T) => {
-  const token = await createInterviewAgentAccessToken({
-    interviewId: interview.id,
-    candidateId: interview.candidateId,
-    secret: serverEnv.EDGE_WORKER_SECRET,
-  });
-
-  return {
-    ...interview,
-    agentToken: token,
-  };
-};
 
 type ExpirableInterview = {
   id: string;
@@ -88,10 +73,10 @@ export const getMyInterview = createServerFn({ method: "GET" })
 
     const expired = await expireInterviewIfNeeded({ db, interview });
     if (expired.expiredNow) {
-      return await withAgentToken(expired.interview);
+      return expired.interview;
     }
 
-    return await withAgentToken(interview);
+    return interview;
   });
 
 export const getMyInterviews = createServerFn({ method: "GET" })
@@ -149,7 +134,7 @@ export const startMyInterview = createServerFn({ method: "POST" })
     }
 
     if (effectiveInterview.status === "completed") {
-      return await withAgentToken(effectiveInterview);
+      return effectiveInterview;
     }
 
     if (effectiveInterview.status === "cancelled") {
@@ -179,10 +164,10 @@ export const startMyInterview = createServerFn({ method: "POST" })
       );
     }
 
-    return await withAgentToken({
+    return {
       ...updated,
       candidateId: effectiveInterview.candidateId,
-    });
+    };
   });
 
 export const cancelMyInterview = createServerFn({ method: "POST" })
@@ -208,7 +193,7 @@ export const cancelMyInterview = createServerFn({ method: "POST" })
     const effectiveInterview = expired.interview;
 
     if (effectiveInterview.status === "expired") {
-      return await withAgentToken(effectiveInterview);
+      return effectiveInterview;
     }
 
     if (effectiveInterview.status === "completed") {
@@ -216,7 +201,7 @@ export const cancelMyInterview = createServerFn({ method: "POST" })
     }
 
     if (effectiveInterview.status === "cancelled") {
-      return await withAgentToken(effectiveInterview);
+      return effectiveInterview;
     }
 
     const updated = await updateInterviewStatus(db, {
@@ -233,10 +218,10 @@ export const cancelMyInterview = createServerFn({ method: "POST" })
       status: "withdrawn",
     });
 
-    return await withAgentToken({
+    return {
       ...updated,
       candidateId: effectiveInterview.candidateId,
-    });
+    };
   });
 
 export const completeMyInterview = createServerFn({ method: "POST" })
@@ -266,7 +251,7 @@ export const completeMyInterview = createServerFn({ method: "POST" })
     }
 
     if (effectiveInterview.status === "completed") {
-      return await withAgentToken(effectiveInterview);
+      return effectiveInterview;
     }
 
     if (effectiveInterview.status === "cancelled") {
@@ -298,10 +283,10 @@ export const completeMyInterview = createServerFn({ method: "POST" })
       }
     }
 
-    return await withAgentToken({
+    return {
       ...updated,
       candidateId: effectiveInterview.candidateId,
-    });
+    };
   });
 
 export const getInterviewForApplication = createServerFn({ method: "GET" })
