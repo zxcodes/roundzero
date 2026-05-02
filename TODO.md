@@ -1,5 +1,8 @@
 ## TODO
 
+- give drizzle a shot?
+- update relevant arch files since we no longer have edge.
+- refactor workflows to have separate steps.ts file. change structure for cleanliness.
 - we can prob use cf workflow's waitUntil method to gather all the reports and then send all at once to the company?
 - think about showing expiry date of jobs and also activeness of each job for ease of candidates. also think about this entire end to end lifecycle of each job on the platform. 
 - think about entire ai layer arch, it is on-demand right now, check if that's sufficient or we need queues etc?

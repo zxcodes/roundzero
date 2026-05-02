@@ -1,7 +1,6 @@
 import { useAgentChat } from "@cloudflare/ai-chat/react";
 import { useAgent } from "agents/react";
 import type { UIMessage } from "ai";
-import { clientEnv } from "@/shared/env.client";
 
 type InterviewAgentClient = {
   get state(): unknown;
@@ -39,7 +38,7 @@ const readMessageText = (message: UIMessage) => {
     .trim();
 };
 
-export function useInterviewChat(interviewId: string, agentToken: string) {
+export function useInterviewChat(interviewId: string) {
   // useAgent connects via WebSocket to the InterviewAgent Durable Object
   // identified by the interview UUID. AIChatAgent persists messages in its
   // own SQLite, so do NOT pass `getInitialMessages: null` — the default
@@ -48,10 +47,6 @@ export function useInterviewChat(interviewId: string, agentToken: string) {
   const agent = useAgent<InterviewAgentClient, unknown>({
     agent: "InterviewAgent",
     name: interviewId,
-    host: clientEnv.VITE_EDGE_WORKER_URL,
-    query: {
-      token: agentToken,
-    },
     onIdentityChange: () => {
       // Expected in dev during HMR/reconnect churn; identity is derived by server-side routing.
     },

@@ -28,12 +28,8 @@ const envSchema = z.object({
   STRIPE_PUBLISHABLE_KEY: z.string(),
   STRIPE_SECRET_KEY: z.string(),
 
-  // Edge Worker
-  EDGE_WORKER_URL: z.url().default("http://localhost:8787"),
+  // Interview agent token-signing secret (HMAC for candidate WS auth)
   EDGE_WORKER_SECRET: edgeWorkerSecretSchema,
-
-  // Edge Worker URL for client websocket chat
-  VITE_EDGE_WORKER_URL: z.url().default("http://localhost:8787"),
 });
 
 const parsedEnv = envSchema.parse(process.env);

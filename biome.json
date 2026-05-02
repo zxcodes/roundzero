@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.4.13/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.4.14/schema.json",
   "vcs": {
     "enabled": false,
     "clientKind": "git",
@@ -14,16 +14,16 @@
     "ignoreUnknown": false,
     "includes": [
       "**/app/**/*",
-      "**/app/edge/**/*",
       "**/*.json",
       "**/vite.config.ts",
       "**/vitest.config.ts",
+      "**/wrangler.jsonc",
       "!**/app/routeTree.gen.ts",
       "!**/app/**/*_sql.ts",
       "!**/app/components/ui",
       "!db/seed/**/*.ts",
-      "!app/edge/**/*.d.ts",
-      "!app/edge/queries/**/*.ts",
+      "!app/vite-env.d.ts",
+      "!worker-configuration.d.ts",
       "!**/.wrangler"
     ]
   },
@@ -119,7 +119,12 @@
       }
     },
     {
-      "includes": ["app/edge/**/*.ts"],
+      "includes": [
+        "app/workflows/**/*.ts",
+        "app/agents/**/*.ts",
+        "app/server.ts",
+        "app/shared/logger.ts"
+      ],
       "linter": {
         "rules": {
           "suspicious": {

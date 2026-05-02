@@ -1,3 +1,4 @@
+import { env } from "cloudflare:workers";
 import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
@@ -5,7 +6,6 @@ import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
 import { getJobById } from "@/features/jobs/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { applicationStatusSchema } from "@/shared/enums";
-import { serverEnv } from "@/shared/env.server";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
 import { createR2ResumeDownloadUrl } from "@/shared/r2.server";
 import {
@@ -52,22 +52,9 @@ export const applyToJob = createServerFn({ method: "POST" })
       {
         triggerPreEvaluation: async (applicationId: string) => {
           try {
-            const response = await fetch(`${serverEnv.EDGE_WORKER_URL}/pre-evaluate`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${serverEnv.EDGE_WORKER_SECRET}`,
-              },
-              body: JSON.stringify({ applicationId }),
-            });
-
-            if (!response.ok) {
-              console.error(
-                `[applyToJob] Failed to trigger pre-evaluation for ${applicationId} with status ${response.status}`,
-              );
-            }
-          } catch {
-            console.error(`Failed to trigger pre-evaluation for ${applicationId}`);
+            await env.PRE_EVALUATION.create({ params: { applicationId } });
+          } catch (error) {
+            console.error(`Failed to trigger pre-evaluation for ${applicationId}`, error);
           }
         },
       },

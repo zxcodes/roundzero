@@ -28,7 +28,7 @@ This document reflects the app as it transitions from **platform-only** to **pla
 | --- | --- |
 | Framework | TanStack Start (React 19, Vite 8) |
 | Runtime (app) | TanStack Start + Nitro |
-| Runtime (AI) | Cloudflare Workers (separate edge Worker with Workflows + Durable Objects) |
+| Runtime (AI) | Cloudflare Workers (single Worker with Workflows + Durable Objects) |
 | Database | Postgres (Docker locally, Neon intended for staging and PlanetScale for Prod) |
 | Typed queries | SQLC |
 | Migrations | dbmate |
@@ -37,8 +37,8 @@ This document reflects the app as it transitions from **platform-only** to **pla
 | Validation | Zod |
 | Notifications | In-app inbox + Resend email delivery |
 | File storage | Cloudflare R2 for resumes and company logos |
-| AI layer | Cloudflare Workers AI + edge Worker |
-| AI pipelines | Cloudflare Workflows (durable multi-step) in edge Worker |
+| AI layer | Cloudflare Workers AI |
+| AI pipelines | Cloudflare Workflows (durable multi-step) |
 | Interview runtime | Cloudflare Agents SDK (`AIChatAgent`) + `workers-ai-provider` |
 | Chat transport | WebSocket via Agents SDK (streaming) |
 | Linting | Biome |
@@ -60,43 +60,39 @@ The app runs as a standard TanStack Start app with server functions for:
 - notifications
 - resume/logo storage contracts
 
-### AI Edge Worker (Cloudflare Workers)
+### Single Cloudflare Worker Runtime
 
-The AI layer lives in a separate `edge/` directory as a standalone Cloudflare Worker:
+The main app and AI layer run together as a single Cloudflare Worker via `@cloudflare/vite-plugin`. The TanStack Start server entry (`app/server.ts`) exports both the app handler and the agent/workflow classes:
 
-- Hono HTTP server with `/pre-evaluate`, `/post-evaluate`, and internal report endpoints
+- `app/server.ts` — Worker entrypoint that routes agent requests via `routeAgentRequest()` before falling through to TanStack Start
 - Cloudflare Workflows run pre-evaluation and report generation pipelines
 - Agents SDK routes interview agents over WebSocket/HTTP
 - R2 stores resumes
 - Workers AI binding provides model inference
 
-**Why a separate Worker:**
-- Cloudflare Workflows only execute in `wrangler dev` / deployed Workers, not in the Vite plugin's local dev
-- The main app needs fast HMR and standard Node.js dev (Nitro)
-- The edge Worker gets real workflow step execution, bindings, and Durable Objects
-- One command (`bun run dev`) starts both via `bun run --parallel`
+**Why one Worker:**
+- `@cloudflare/vite-plugin` runs the entire app inside `workerd` during `vite dev`
+- Cloudflare Workflows, Durable Objects, and bindings all work in local dev
+- No cross-process HTTP calls or secret sharing between separate runtimes
+- Simpler deployment: one `wrangler.jsonc`, one build output
 
 **Communication:**
-- Main app calls edge Worker via authenticated HTTP `fetch()`
-- Edge Worker reads/writes the same Postgres database
-- Both share DB schema and SQLC-generated queries (generated to both locations)
+- Workflows are triggered directly from server functions (no HTTP hop)
+- Agent WebSocket routes are handled by `routeAgentRequest()` in `app/server.ts`
+- Everything reads/writes the same Postgres database
 
 ### Directory Layout
 
 ```
-roundzero/              # Main app - TanStack Start + Nitro
+roundzero/              # TanStack Start + Cloudflare Worker
 ├── app/                # Routes, components, server functions
+│   ├── server.ts       # Worker entrypoint (app + agent routing)
+│   ├── workflows/      # Cloudflare Workflow classes
+│   ├── agents/         # Durable Object agent classes
+│   └── ...
 ├── db/                 # Migrations, seed
-└── package.json        # TanStack Start deps
-
-edge/                   # AI Worker - Cloudflare Workers
-├── worker.ts           # Hono + Agents fetch handler
-├── workflows/          # Cloudflare Workflow classes
-├── agents/             # Durable Object agent classes
-├── queries/            # SQLC-generated query files
-├── shared/             # DB connection, env validation
-├── package.json        # Wrangler, Workers deps
-└── wrangler.jsonc      # AI, R2, Workflow, DO bindings
+├── wrangler.jsonc      # Worker config (AI, R2, Workflow, DO bindings)
+└── package.json
 ```
 
 The codebase keeps clean boundaries:
@@ -104,7 +100,7 @@ The codebase keeps clean boundaries:
 - explicit server functions in the main app
 - storage behind server contracts
 - database-centric source of truth
-- agent logic lives in the edge Worker, triggered by HTTP from the main app
+- agent logic lives alongside the app, triggered directly from server functions
 
 ---
 
@@ -190,12 +186,13 @@ app/features/
 - `pre-evaluations`: pre-screening result queries and compact card components
 - `reports`: post-evaluation report queries, server functions, and reusable report view components
 
-### AI layer (in `edge/`)
+### AI layer
 
-- `app/edge/workflows/pre-evaluation.ts`
-- `app/edge/workflows/post-evaluation.ts`
-- `app/edge/agents/interview-agent.ts`
-- `app/edge/shared/email.ts` (Resend helper for workflow email delivery)
+- `app/workflows/pre-evaluation/workflow.ts`
+- `app/workflows/pre-evaluation/steps.ts`
+- `app/workflows/post-evaluation/workflow.ts`
+- `app/workflows/post-evaluation/steps.ts`
+- `app/agents/interview.ts`
 
 ---
 
@@ -206,24 +203,13 @@ app/
 ├── routes/              # TanStack file-based routes
 ├── features/            # Product feature modules
 ├── components/          # Shared/global UI
-├── shared/              # Cross-runtime utilities (safe for both app + edge)
-├── lib/                 # Small app utilities (client/server, non-edge-specific)
-│
-├── edge/                # ✅ Edge runtime (formerly /edge)
-│   ├── worker.ts         # Worker entrypoint (Hono server)
-│   ├── workflows/       # Cloudflare Workflows
-│   ├── agents/          # Durable Objects
-│   ├── queries/         # SQLC-generated queries
-│   ├── shared/          # Edge-only shared (env, DB bindings, etc.)
-│   ├── package.json     # Edge-specific deps (or merge—see below)
-│   └── wrangler.jsonc   # Worker config
-│
+├── shared/              # Cross-cutting utilities (db, auth, env, etc.)
+├── lib/                 # Small app utilities (client/server)
+├── agents/              # Durable Object agent classes
+├── workflows/           # Cloudflare Workflow classes
+├── server.ts            # Worker entrypoint (app + agent routing)
 ├── router.tsx
 └── styles.css
-
-db/
-├── migrations/          # dbmate init migration
-└── schema.sql           # generated schema dump
 ```
 
 Conventions:
@@ -447,7 +433,7 @@ Current company/application resume server function:
 ### Runtime note
 
 - Resume upload uses S3-compatible R2 API from the main app server with presigned `PUT`/`GET` URLs
-- The edge Worker accesses the same R2 bucket via native `env.RESUMES` binding for workflow resume extraction
+- Workflows access the same R2 bucket via native `env.RESUMES` binding for resume extraction
 
 Why `resume_key` instead of `resume_url`:
 
@@ -605,11 +591,11 @@ Coverage needed for AI layer:
 
 ## 14. AI Architecture
 
-The AI layer runs in a separate `edge/` Cloudflare Worker, triggered by authenticated HTTP calls from the main app.
+The AI layer runs in the same Cloudflare Worker as the main app. Workflows and agents are triggered directly from server functions.
 
 ### Pre-Evaluation Pipeline (Cloudflare Workflow)
 
-- Triggered when the main app POSTs to `/pre-evaluate` on the edge Worker
+- Triggered directly from a server function (no HTTP hop)
 - Durable multi-step execution:
   1. Read application + job from Postgres
   2. Fetch resume from R2
@@ -660,7 +646,7 @@ The AI layer runs in a separate `edge/` Cloudflare Worker, triggered by authenti
 
 ### Report Generation Pipeline (Cloudflare Workflow)
 
-- Triggered when interview completes (main app POSTs to `/post-evaluate`)
+- Triggered directly when interview completes (`this.runWorkflow()` from the agent or a server function)
 - Durable multi-step execution:
   1. Idempotency check (skip if report already exists)
   2. Read interview context + transcript from Durable Object state
@@ -694,15 +680,15 @@ See `PLAN.md` for the full build plan. Current focus:
 
 ---
 
-## 16. Post-Release Hardening (Edge / AI Layer)
+## 16. Post-Release Hardening (AI Layer)
 
 | Item | Why | Approach |
 | --- | --- | --- |
-| Recovery sweep for stuck applications | Fire-and-forget trigger has no retry — if edge is down, applications stay in `applied` with no pre-evaluation forever | Add a cron (CF Cron Trigger or main app scheduled task) that finds `applied` rows with no `pre_evaluations` row and re-triggers them |
+| Recovery sweep for stuck applications | Fire-and-forget trigger has no retry — if Workflows are failing, applications stay in `applied` with no pre-evaluation forever | Add a cron (CF Cron Trigger or scheduled task) that finds `applied` rows with no `pre_evaluations` row and re-triggers them |
 | Quota race condition | Two concurrent workflows can over-invite for a job if capacity checks are non-atomic | Use transactional locking (`SELECT ... FOR UPDATE`) on job-level capacity checks when creating interviews |
 | LLM model adequacy | Interview chat currently uses `@cf/zai-org/glm-4.7-flash`; pre-eval/report quality can still drift by role complexity | Keep periodic score-quality checks and re-evaluate model mix if report consistency drops |
 | Workflow failure orphans | If workflow errors after `write_pre_evaluation` but before `decide_next_step`, application is stuck in `pre_screening` | Recovery sweep covers this too — detect `pre_screening` rows older than N minutes with no interview |
-| Edge Worker secret rotation | Shared secret is a single static value | Use a proper random secret in prod; consider HMAC request signing or CF Access Service Tokens for zero-trust |
+| Worker secret rotation | `EDGE_WORKER_SECRET` is a single static value | Use a proper random secret in prod; consider HMAC request signing or CF Access Service Tokens for zero-trust |
 
 ---
 
@@ -717,6 +703,6 @@ See `PLAN.md` for the full build plan. Current focus:
 | Resume upload | Direct-to-R2 signed upload | Avoids proxying file bytes through app server |
 | Notifications | In-app notifications + Resend | Durable app record first, email as secondary delivery |
 | Auth | Google OAuth + cookie session | Good enough for current phase |
-| AI pipelines | Cloudflare Workflows in edge Worker | Durable multi-step execution with retries |
-| Interview runtime | Cloudflare Agents SDK (`AIChatAgent`) in edge Worker | Stateful streaming chat with built-in message persistence |
+| AI pipelines | Cloudflare Workflows | Durable multi-step execution with retries |
+| Interview runtime | Cloudflare Agents SDK (`AIChatAgent`) | Stateful streaming chat with built-in message persistence |
 | Resume text extraction | Local libraries per file type (PDF / DOCX) | LLM reads unstructured text; no external parser needed |

@@ -1,5 +1,5 @@
 {
-  "include": ["app/**/*.ts", "app/**/*.tsx", "vite.config.ts"],
+  "include": ["app/**/*.ts", "app/**/*.tsx", "vite.config.ts", "worker-configuration.d.ts"],
   "exclude": ["app/**/*_sql.ts", "db/seed/**/*.ts"],
   "compilerOptions": {
     "target": "ES2022",
