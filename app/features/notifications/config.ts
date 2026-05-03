@@ -1,59 +1,15 @@
 import { z } from "zod";
-import { applicationStatusSchema, jobStatusSchema, notificationTypeSchema } from "@/shared/enums";
+import { type applicationStatusSchema, notificationTypeSchema } from "@/shared/enums";
+import { notificationPayloadSchemas } from "@/shared/notifications-config";
 
-const applicationStatusChangedPayloadSchema = z.object({
-  applicationId: z.string().uuid(),
-  jobId: z.string().uuid(),
-  jobTitle: z.string().min(1),
-  companyName: z.string().min(1),
-  status: applicationStatusSchema,
-});
-
-const applicationWithdrawnPayloadSchema = z.object({
-  applicationId: z.string().uuid(),
-  jobId: z.string().uuid(),
-  jobTitle: z.string().min(1),
-  candidateName: z.string().min(1),
-});
-
-const reportReadyPayloadSchema = z.object({
-  applicationId: z.string().uuid(),
-  jobId: z.string().uuid(),
-  jobTitle: z.string().min(1),
-  candidateName: z.string().min(1),
-  score: z.number().optional(),
-});
-
-const interviewInvitedPayloadSchema = z.object({
-  applicationId: z.string().uuid(),
-  interviewId: z.string().uuid(),
-  jobId: z.string().uuid(),
-  jobTitle: z.string().min(1),
-  interviewType: z.string().min(1),
-  expiresAt: z.string().datetime(),
-});
-
-const jobLifecyclePayloadSchema = z.object({
-  jobId: z.string().uuid(),
-  jobTitle: z.string().min(1),
-  status: jobStatusSchema,
-});
-
-export const notificationPayloadSchemas = {
-  application_status_changed: applicationStatusChangedPayloadSchema,
-  application_withdrawn: applicationWithdrawnPayloadSchema,
-  report_ready: reportReadyPayloadSchema,
-  interview_invited: interviewInvitedPayloadSchema,
-  job_published: jobLifecyclePayloadSchema,
-  job_archived: jobLifecyclePayloadSchema,
-  job_closed: jobLifecyclePayloadSchema,
-} satisfies Record<z.infer<typeof notificationTypeSchema>, z.ZodTypeAny>;
+export { notificationPayloadSchemas };
 
 const notificationTone = {
   application_status_changed: "border-info/20 bg-info/10 text-info",
   application_withdrawn: "border-danger/20 bg-danger/10 text-danger",
   report_ready: "border-success/20 bg-success/10 text-success",
   interview_invited: "border-active/20 bg-active/10 text-active",
+  position_filled: "border-warning/20 bg-warning/10 text-warning",
   job_published: "border-active/20 bg-active/10 text-active",
   job_archived: "border-warning/20 bg-warning/10 text-warning",
   job_closed: "border-danger/20 bg-danger/10 text-danger",
@@ -77,6 +33,8 @@ const formatApplicationStatusLabel = (status: z.infer<typeof applicationStatusSc
       return "Rejected";
     case "withdrawn":
       return "Withdrawn";
+    case "evaluation_failed":
+      return "Evaluation failed";
   }
 };
 
@@ -151,6 +109,24 @@ export const getNotificationPresentation = (notification: { type: string; payloa
         ctaLabel: "Start Interview",
         deadline: payload.data.expiresAt,
       },
+    };
+  }
+
+  if (type === "position_filled") {
+    const payload = notificationPayloadSchemas.position_filled.safeParse(
+      toRecord(notification.payload),
+    );
+    if (!payload.success) {
+      return null;
+    }
+
+    return {
+      type,
+      tone: notificationTone[type],
+      title: `Position filled`,
+      body: `The position for ${payload.data.jobTitle} has been filled. Your application will remain on file, but no further evaluation slots are available.`,
+      to: "/dashboard/application/$applicationId" as const,
+      params: { applicationId: payload.data.applicationId },
     };
   }
 

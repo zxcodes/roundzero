@@ -1,3 +1,4 @@
+import { NonRetryableError } from "cloudflare:workflows";
 import type { Sql } from "postgres";
 import { jsx } from "react/jsx-runtime";
 import { Resend } from "resend";
@@ -448,7 +449,7 @@ export function readInterviewData(
 
     const interview = await getInterviewContextById(db, { id: interviewId });
     if (!interview) {
-      throw new Error(`Interview not found: ${interviewId}`);
+      throw new NonRetryableError(`Interview not found: ${interviewId}`);
     }
 
     const contextState = parseInterviewContextState(interview.metadata);

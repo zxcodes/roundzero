@@ -1,4 +1,9 @@
-import { ArrowLeft01Icon, File02Icon, SparklesIcon } from "@hugeicons/core-free-icons";
+import {
+  ArrowLeft01Icon,
+  File02Icon,
+  Loading03Icon,
+  SparklesIcon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link, notFound, redirect } from "@tanstack/react-router";
@@ -53,6 +58,9 @@ function ApplicantAiReportPage() {
   };
 
   if (!report) {
+    const isInterviewCompleted = interview?.status === "completed";
+    const isEvalFailed = application.status === "evaluation_failed";
+
     return (
       <div className="animate-fade-in space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -67,14 +75,42 @@ function ApplicantAiReportPage() {
           </Button>
         </div>
 
-        <Empty className="border">
-          <EmptyHeader>
-            <EmptyTitle>No post-interview report yet</EmptyTitle>
-            <EmptyDescription>
-              This applicant does not have a generated post-evaluation report yet.
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
+        {isEvalFailed ? (
+          <Empty className="border">
+            <EmptyHeader>
+              <EmptyTitle>Evaluation failed</EmptyTitle>
+              <EmptyDescription>
+                The AI evaluation could not be completed for this applicant. You can reject the
+                application or wait for a manual review.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        ) : isInterviewCompleted ? (
+          <Empty className="border">
+            <EmptyHeader>
+              <EmptyTitle className="flex items-center gap-2">
+                <HugeiconsIcon
+                  icon={Loading03Icon}
+                  strokeWidth={2}
+                  className="size-4 animate-spin"
+                />
+                Evaluation in progress
+              </EmptyTitle>
+              <EmptyDescription>
+                Zero is generating the post-interview report. Check back in a few minutes.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        ) : (
+          <Empty className="border">
+            <EmptyHeader>
+              <EmptyTitle>No post-interview report yet</EmptyTitle>
+              <EmptyDescription>
+                This applicant does not have a generated post-evaluation report yet.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        )}
       </div>
     );
   }

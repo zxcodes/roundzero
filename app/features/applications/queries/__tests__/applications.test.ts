@@ -572,3 +572,63 @@ describe("candidate application tracking — interview status", () => {
     expect(detail!.status).toBe("applied");
   });
 });
+
+describe("evaluation_failed status", () => {
+  it("supports transitioning from applied to evaluation_failed", async () => {
+    const { company } = await seedCompany();
+    const candidate = await seedUser({ role: "candidate" });
+    const job = await makeOpenJob(company.id);
+    const app = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: {},
+      status: "applied",
+    });
+
+    const updated = await updateApplicationStatus(sql, {
+      id: app!.id,
+      status: "evaluation_failed",
+    });
+    expect(updated).not.toBeNull();
+    expect(updated!.status).toBe("evaluation_failed");
+  });
+
+  it("allows rejection from evaluation_failed", async () => {
+    const { company } = await seedCompany();
+    const candidate = await seedUser({ role: "candidate" });
+    const job = await makeOpenJob(company.id);
+    const app = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: {},
+      status: "evaluation_failed",
+    });
+
+    const rejected = await updateApplicationStatus(sql, {
+      id: app!.id,
+      status: "rejected",
+    });
+    expect(rejected).not.toBeNull();
+    expect(rejected!.status).toBe("rejected");
+  });
+
+  it("surfaces evaluation_failed in candidate application list", async () => {
+    const { company } = await seedCompany();
+    const candidate = await seedUser({ role: "candidate" });
+    const job = await makeOpenJob(company.id);
+    await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: {},
+      status: "evaluation_failed",
+    });
+
+    const apps = await getApplicationsByCandidate(sql, { candidateId: candidate.id });
+    expect(apps).toHaveLength(1);
+    expect(apps[0].status).toBe("evaluation_failed");
+    expect(apps[0].jobTitle).toBe("Open Job");
+  });
+});

@@ -93,6 +93,7 @@ const STATUS_OPTIONS: { value: ApplicationStatus; label: string }[] = [
   { value: "evaluated", label: "Evaluated" },
   { value: "shortlisted", label: "Shortlisted" },
   { value: "rejected", label: "Rejected" },
+  { value: "evaluation_failed", label: "Evaluation failed" },
 ];
 
 const stageCopy = {
@@ -135,6 +136,11 @@ const stageCopy = {
     badge: "Withdrawn",
     tone: "bg-muted text-muted-foreground",
     dot: "bg-muted-foreground/50",
+  },
+  evaluation_failed: {
+    badge: "Evaluation failed",
+    tone: "border-danger/20 bg-danger/10 text-danger",
+    dot: "bg-danger",
   },
 } as const;
 
@@ -271,6 +277,7 @@ function ApplicantReviewPage() {
   const currentStageIndex = APPLICATION_STAGES.indexOf(
     currentStatus as (typeof APPLICATION_STAGES)[number],
   );
+  const isFailed = currentStatus === "evaluation_failed";
   const meta = stageCopy[currentStatus] ?? stageCopy.applied;
   const report = reportTimeline?.report ? parseReportData(reportTimeline.report) : null;
 
@@ -371,8 +378,9 @@ function ApplicantReviewPage() {
         <CardContent className="space-y-2 py-0">
           <div className="flex flex-wrap gap-2">
             {APPLICATION_STAGES.map((stage) => {
-              const isCurrent = stage === currentStatus;
+              const isCurrent = !isFailed && stage === currentStatus;
               const isCompleted =
+                !isFailed &&
                 APPLICATION_STAGES.indexOf(stage) < currentStageIndex &&
                 currentStatus !== "rejected";
               const stageMeta = stageCopy[stage];
@@ -390,6 +398,12 @@ function ApplicantReviewPage() {
                 </div>
               );
             })}
+            {isFailed ? (
+              <div className="flex items-center gap-2">
+                <div className="size-2 rounded-full bg-danger" />
+                <span className="text-xs font-medium text-danger">Evaluation failed</span>
+              </div>
+            ) : null}
           </div>
           <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
             <span>Contact: {application.candidateEmail}</span>

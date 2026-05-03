@@ -1,3 +1,4 @@
+import { NonRetryableError } from "cloudflare:workflows";
 import mammoth from "mammoth";
 import type { Sql } from "postgres";
 import { extractText, getDocumentProxy } from "unpdf";
@@ -347,15 +348,15 @@ export function readApplicationData(
     const db = getDb();
     const application = await getApplicationById(db, { id: applicationId });
     if (!application) {
-      throw new Error(`Application not found: ${applicationId}`);
+      throw new NonRetryableError(`Application not found: ${applicationId}`);
     }
     if (!application.resumeKey) {
-      throw new Error(`Application has no resume: ${applicationId}`);
+      throw new NonRetryableError(`Application has no resume: ${applicationId}`);
     }
 
     const job = await getJobById(db, { id: application.jobId });
     if (!job) {
-      throw new Error(`Job not found: ${application.jobId}`);
+      throw new NonRetryableError(`Job not found: ${application.jobId}`);
     }
 
     log.result("read", {
@@ -741,6 +742,21 @@ export function decideNextStep(
         completedReports: allocation.completedReports,
         limit: allocation.limit,
       });
+
+      const candidate = await getUserById(db, { id: applicationData.application.candidateId });
+      if (candidate) {
+        const payload = notificationPayloadSchemas.position_filled.parse({
+          applicationId,
+          jobId: job.id,
+          jobTitle: job.title,
+        });
+        await createNotification(db, {
+          userId: candidate.id,
+          type: "position_filled",
+          payload,
+        });
+      }
+
       return { action: "quota_exhausted" as const };
     }
 

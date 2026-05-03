@@ -31,6 +31,7 @@ export const applicationStatusSchema = z.enum([
   "shortlisted",
   "rejected",
   "withdrawn",
+  "evaluation_failed",
 ]);
 export type ApplicationStatus = z.infer<typeof applicationStatusSchema>;
 
@@ -39,6 +40,7 @@ export const notificationTypeSchema = z.enum([
   "application_withdrawn",
   "report_ready",
   "interview_invited",
+  "position_filled",
   "job_published",
   "job_archived",
   "job_closed",
@@ -59,6 +61,7 @@ export const APPLICATION_STATUS_TRANSITIONS: Record<ApplicationStatus, Applicati
   shortlisted: ["rejected"],
   rejected: [],
   withdrawn: [],
+  evaluation_failed: ["rejected", "withdrawn"],
 };
 
 /** Returns true if the transition from `current` to `next` is valid. */
