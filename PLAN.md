@@ -6,7 +6,7 @@
 
 ## Phase 3.5: Pre-AI Hardening
 
-- [ ] Add tests for candidate application tracking views
+- [x] Add tests for candidate application tracking views
 - [ ] Run 5–10 real applications through manual evaluation using the planned output format
 - [ ] Show companies the output format and confirm they'd make decisions from it
 - [ ] Adjust scoring dimensions, weighting, and presentation based on feedback
@@ -27,7 +27,7 @@
 
 ## Phase 6: Interview System
 
-- [ ] Add explicit interview lifecycle columns: `invited_at`, `expired_at`, `cancelled_at`, `cancellation_reason` (currently stored in `metadata` JSONB)
+- [x] Add explicit interview lifecycle columns: `invited_at`, `expired_at`, `cancelled_at`, `cancellation_reason` (currently stored in `metadata` JSONB)
 - [ ] Final visual polish pass for terminal states and mobile layout edge cases
 - [ ] Time/question limits enforcement (configurable per interview type)
 - [ ] Interview progress tracking (stage transitions, question count)

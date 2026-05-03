@@ -141,16 +141,20 @@ CREATE INDEX idx_notifications_unread
 
 -- Interviews: each maps to a Durable Object instance
 CREATE TABLE interviews (
-  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  application_id  UUID NOT NULL REFERENCES applications(id) ON DELETE RESTRICT,
-  agent_id        TEXT,
-  type            TEXT NOT NULL DEFAULT 'full',
-  metadata        JSONB NOT NULL DEFAULT '{}',
-  status          TEXT NOT NULL DEFAULT 'pending',
-  started_at      TIMESTAMPTZ,
-  completed_at    TIMESTAMPTZ,
-  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+  id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  application_id      UUID NOT NULL REFERENCES applications(id) ON DELETE RESTRICT,
+  agent_id            TEXT,
+  type                TEXT NOT NULL DEFAULT 'full',
+  metadata            JSONB NOT NULL DEFAULT '{}',
+  status              TEXT NOT NULL DEFAULT 'pending',
+  invited_at          TIMESTAMPTZ,
+  started_at          TIMESTAMPTZ,
+  completed_at        TIMESTAMPTZ,
+  expired_at          TIMESTAMPTZ,
+  cancelled_at        TIMESTAMPTZ,
+  cancellation_reason TEXT,
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX idx_interviews_application ON interviews(application_id);

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { softDeleteUser } from "@/features/auth/queries/queries_sql";
+import { createInterview } from "@/features/interviews/queries/queries_sql";
 import { archiveJob, createJob } from "@/features/jobs/queries/queries_sql";
 import { getTestDb, makeTestResumeKey, seedCompany, seedUser } from "@/shared/__tests__/test-utils";
 import {
@@ -488,5 +489,86 @@ describe("countApplicationsByCandidate", () => {
     expect(counts!.activeCount).toBe(1); // interviewing (not rejected)
     expect(counts!.interviewInvitedCount).toBe(1);
     expect(counts!.evaluatedCount).toBe(0);
+  });
+});
+
+describe("candidate application tracking — interview status", () => {
+  it("getApplicationsByCandidate surfaces the latest interview status", async () => {
+    const { company } = await seedCompany();
+    const candidate = await seedUser({ role: "candidate" });
+    const job = await makeOpenJob(company.id);
+
+    const app = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: {},
+      status: "interview_invited",
+    });
+
+    await createInterview(sql, {
+      applicationId: app!.id,
+      agentId: null,
+      type: "full",
+      metadata: {},
+      status: "pending",
+      invitedAt: new Date(),
+      startedAt: null,
+      completedAt: null,
+    });
+
+    const apps = await getApplicationsByCandidate(sql, { candidateId: candidate.id });
+    expect(apps).toHaveLength(1);
+    expect(apps[0].interviewStatus).toBe("pending");
+  });
+
+  it("getApplicationsByCandidate reflects interview status changes", async () => {
+    const { company } = await seedCompany();
+    const candidate = await seedUser({ role: "candidate" });
+    const job = await makeOpenJob(company.id);
+
+    const app = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: {},
+      status: "interview_in_progress",
+    });
+
+    await createInterview(sql, {
+      applicationId: app!.id,
+      agentId: null,
+      type: "full",
+      metadata: {},
+      status: "in_progress",
+      invitedAt: new Date(),
+      startedAt: new Date(),
+      completedAt: null,
+    });
+
+    const apps = await getApplicationsByCandidate(sql, { candidateId: candidate.id });
+    expect(apps).toHaveLength(1);
+    expect(apps[0].interviewStatus).toBe("in_progress");
+    expect(apps[0].status).toBe("interview_in_progress");
+  });
+
+  it("getApplicationById includes job and company context for candidate detail view", async () => {
+    const { company } = await seedCompany({ name: "Detail Co" });
+    const candidate = await seedUser({ role: "candidate" });
+    const job = await makeOpenJob(company.id, "Detail Job");
+    const app = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: { headline: "Senior Engineer" },
+      status: "applied",
+    });
+
+    const detail = await getApplicationById(sql, { id: app!.id });
+    expect(detail).not.toBeNull();
+    expect(detail!.jobTitle).toBe("Detail Job");
+    expect(detail!.companyName).toBe("Detail Co");
+    expect(detail!.companyOwnerDeleted).toBe(false);
+    expect(detail!.status).toBe("applied");
   });
 });

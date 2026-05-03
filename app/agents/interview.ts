@@ -15,7 +15,11 @@ import {
 import { createWorkersAI } from "workers-ai-provider";
 import { z } from "zod";
 import { shouldAutoExpireInterview } from "@/features/interviews/shared/expiry";
-import { getInterviewContextById, updateInterviewStatus } from "../queries/interviews/queries_sql";
+import {
+  completeInterview,
+  expireInterview,
+  getInterviewContextById,
+} from "../queries/interviews/queries_sql";
 import { getDb } from "../shared/db";
 
 type InterviewSessionStatus = "pending" | "in_progress" | "completed" | "cancelled" | "expired";
@@ -491,10 +495,7 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
     }
 
     if (shouldAutoExpireInterview(interview.status, interview.metadata)) {
-      await updateInterviewStatus(db, {
-        id: this.state.interviewId,
-        status: "expired",
-      });
+      await expireInterview(db, { id: this.state.interviewId });
       return new Response("Interview has expired", { status: 400 });
     }
 
@@ -620,10 +621,7 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
                 updatedAt: toNow(),
               });
 
-              await updateInterviewStatus(db, {
-                id: this.state.interviewId,
-                status: "completed",
-              });
+              await completeInterview(db, { id: this.state.interviewId });
             }
 
             if (!this.state.postEvaluationTriggered) {

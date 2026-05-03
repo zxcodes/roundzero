@@ -7,7 +7,9 @@ import {
   updateApplicationStatus,
 } from "@/features/applications/queries/queries_sql";
 import {
+  cancelInterview,
   completeInterview,
+  expireInterview,
   getInterviewByApplicationId,
   getInterviewForCandidateById,
   getInterviewsByCandidate,
@@ -41,10 +43,7 @@ const expireInterviewIfNeeded = async <T extends ExpirableInterview>(input: {
     return { interview: input.interview, expiredNow: false };
   }
 
-  await updateInterviewStatus(input.db, {
-    id: input.interview.id,
-    status: "expired",
-  });
+  await expireInterview(input.db, { id: input.interview.id });
 
   return {
     interview: { ...input.interview, status: "expired" as const },
@@ -204,9 +203,9 @@ export const cancelMyInterview = createServerFn({ method: "POST" })
       return effectiveInterview;
     }
 
-    const updated = await updateInterviewStatus(db, {
+    const updated = await cancelInterview(db, {
       id: data.interviewId,
-      status: "cancelled",
+      cancellationReason: "Candidate cancelled via dashboard",
     });
 
     if (!updated) {
