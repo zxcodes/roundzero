@@ -5,37 +5,33 @@ import {
   type notificationTypeSchema,
 } from "@/shared/enums";
 
-const applicationStatusChangedPayloadSchema = z.object({
+const baseApplicationPayloadSchema = z.object({
   applicationId: z.string().uuid(),
   jobId: z.string().uuid(),
   jobTitle: z.string().min(1),
+});
+
+const applicationStatusChangedPayloadSchema = baseApplicationPayloadSchema.extend({
   companyName: z.string().min(1),
   status: applicationStatusSchema,
 });
 
-const applicationWithdrawnPayloadSchema = z.object({
-  applicationId: z.string().uuid(),
-  jobId: z.string().uuid(),
-  jobTitle: z.string().min(1),
+const applicationWithdrawnPayloadSchema = baseApplicationPayloadSchema.extend({
   candidateName: z.string().min(1),
 });
 
-const reportReadyPayloadSchema = z.object({
-  applicationId: z.string().uuid(),
-  jobId: z.string().uuid(),
-  jobTitle: z.string().min(1),
+const reportReadyPayloadSchema = baseApplicationPayloadSchema.extend({
   candidateName: z.string().min(1),
   score: z.number().optional(),
 });
 
-const interviewInvitedPayloadSchema = z.object({
-  applicationId: z.string().uuid(),
+const interviewInvitedPayloadSchema = baseApplicationPayloadSchema.extend({
   interviewId: z.string().uuid(),
-  jobId: z.string().uuid(),
-  jobTitle: z.string().min(1),
   interviewType: z.string().min(1),
   expiresAt: z.string().datetime(),
 });
+
+const positionFilledPayloadSchema = baseApplicationPayloadSchema;
 
 const jobLifecyclePayloadSchema = z.object({
   jobId: z.string().uuid(),
@@ -48,6 +44,7 @@ export const notificationPayloadSchemas = {
   application_withdrawn: applicationWithdrawnPayloadSchema,
   report_ready: reportReadyPayloadSchema,
   interview_invited: interviewInvitedPayloadSchema,
+  position_filled: positionFilledPayloadSchema,
   job_published: jobLifecyclePayloadSchema,
   job_archived: jobLifecyclePayloadSchema,
   job_closed: jobLifecyclePayloadSchema,

@@ -21,7 +21,7 @@
 - [x] Update `getJobApplicants` query to return all applicants (not just evaluated)
 - [x] Update `CompanyJobApplicantsList` to handle real pre/post-evaluation states
 - [x] Verify low fit stays in `pre_screening` with no interview row
-- [ ] Verify quota exhaustion sends `position_filled` notification
+- [x] Verify quota exhaustion sends `position_filled` notification
 
 ---
 
@@ -52,10 +52,10 @@
 
 ## Phase 9: Polish & Edge Cases
 
-- [ ] Failed evaluation handling (agent error → retry or manual flag)
+- [x] Failed evaluation handling (agent error → retry or manual flag)
 - [x] Route skeletons updated for new AI-aware layouts (only generic `InterviewContentSkeleton` exists)
 - [ ] Optimistic status transitions where appropriate
-- [ ] Loading states for report generation ("Evaluation in progress" spinners)
+- [x] Loading states for report generation ("Evaluation in progress" spinners)
 - [x] Interview chat UI works on mobile (minimal `md:` breakpoints only)
 - [ ] Report views are readable on small screens
 - [ ] Track funnel metrics: apply → pre-eval → interview → report

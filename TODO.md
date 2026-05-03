@@ -1,5 +1,6 @@
 ## TODO
 
+- configure different r2 buckets based on env.
 - manual interview invitation does not trigger post workflow on end (only checked using cancel action, not auto end from agent).
 - give drizzle a shot?
 - we can prob use cf workflow's waitForEvent method to gather all the reports and then send all at once to the company?
