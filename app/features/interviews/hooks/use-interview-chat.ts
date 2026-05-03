@@ -4,7 +4,6 @@ import type { UIMessage } from "ai";
 
 type InterviewAgentClient = {
   get state(): unknown;
-  kickoff: () => Promise<{ greeted: boolean }>;
 };
 
 type InterviewSessionStatus = "pending" | "in_progress" | "completed" | "cancelled" | "expired";
@@ -52,9 +51,7 @@ export function useInterviewChat(interviewId: string) {
     },
   });
 
-  const chat = useAgentChat({
-    agent,
-  });
+  const chat = useAgentChat({ agent });
 
   const rawAgentState = agent.state as { status?: unknown } | undefined;
   const sessionStatus =
@@ -84,16 +81,11 @@ export function useInterviewChat(interviewId: string) {
     });
   }
 
-  const kickoff = async () => {
-    return await agent.stub.kickoff();
-  };
-
   return {
     messages,
     sendMessage: chat.sendMessage,
     status: chat.status,
     isStreaming: chat.isStreaming,
-    kickoff,
     sessionStatus,
   };
 }
