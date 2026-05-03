@@ -1,5 +1,6 @@
 ## TODO
 
+- manual interview invitation does not trigger post workflow on end (only checked using cancel action, not auto end from agent).
 - give drizzle a shot?
 - we can prob use cf workflow's waitForEvent method to gather all the reports and then send all at once to the company?
 - think about showing expiry date of jobs and also activeness of each job for ease of candidates. also think about this entire end to end lifecycle of each job on the platform. 
