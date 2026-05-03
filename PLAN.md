@@ -17,10 +17,10 @@
 ## Phase 5: Pre-Evaluation Funnel
 
 - [ ] Server function returns `{ workflowInstanceId }` for debugging/tracking
-- [ ] Pre-eval candidates show: name, resume, apply date, "Evaluation in progress"
-- [ ] Update `getJobApplicants` query to return all applicants (not just evaluated)
-- [ ] Update `CompanyJobApplicantsList` to handle real pre/post-evaluation states
-- [ ] Verify low fit stays in `pre_screening` with no interview row
+- [x] Pre-eval candidates show: name, resume, apply date, "Evaluation in progress"
+- [x] Update `getJobApplicants` query to return all applicants (not just evaluated)
+- [x] Update `CompanyJobApplicantsList` to handle real pre/post-evaluation states
+- [x] Verify low fit stays in `pre_screening` with no interview row
 - [ ] Verify quota exhaustion sends `position_filled` notification
 
 ---
@@ -53,10 +53,10 @@
 ## Phase 9: Polish & Edge Cases
 
 - [ ] Failed evaluation handling (agent error → retry or manual flag)
-- [ ] Route skeletons updated for new AI-aware layouts (only generic `InterviewContentSkeleton` exists)
+- [x] Route skeletons updated for new AI-aware layouts (only generic `InterviewContentSkeleton` exists)
 - [ ] Optimistic status transitions where appropriate
 - [ ] Loading states for report generation ("Evaluation in progress" spinners)
-- [ ] Interview chat UI works on mobile (minimal `md:` breakpoints only)
+- [x] Interview chat UI works on mobile (minimal `md:` breakpoints only)
 - [ ] Report views are readable on small screens
 - [ ] Track funnel metrics: apply → pre-eval → interview → report
 - [ ] Time-to-evaluation per job
