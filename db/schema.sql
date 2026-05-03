@@ -109,8 +109,12 @@ CREATE TABLE public.interviews (
     type text DEFAULT 'full'::text NOT NULL,
     metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
     status text DEFAULT 'pending'::text NOT NULL,
+    invited_at timestamp with time zone,
     started_at timestamp with time zone,
     completed_at timestamp with time zone,
+    expired_at timestamp with time zone,
+    cancelled_at timestamp with time zone,
+    cancellation_reason text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
 );

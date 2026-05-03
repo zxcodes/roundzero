@@ -1,6 +1,6 @@
 -- name: createInterview :one
-INSERT INTO interviews (application_id, agent_id, type, metadata, status, started_at, completed_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+INSERT INTO interviews (application_id, agent_id, type, metadata, status, invited_at, started_at, completed_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 RETURNING *;
 
 -- name: getInterviewByApplicationId :one
@@ -14,8 +14,8 @@ FROM interviews
 WHERE id = $1;
 
 -- name: getInterviewForCandidateById :one
-SELECT i.id, i.application_id, i.agent_id, i.type, i.metadata, i.status, i.started_at, i.completed_at,
-       i.created_at, i.updated_at,
+SELECT i.id, i.application_id, i.agent_id, i.type, i.metadata, i.status, i.invited_at, i.started_at, i.completed_at,
+       i.expired_at, i.cancelled_at, i.cancellation_reason, i.created_at, i.updated_at,
        a.candidate_id, a.status AS application_status,
        a.job_id, j.title AS job_title, c.name AS company_name
 FROM interviews i
@@ -26,8 +26,8 @@ WHERE i.id = $1
   AND a.candidate_id = $2;
 
 -- name: getInterviewsByCandidate :many
-SELECT i.id, i.application_id, i.agent_id, i.type, i.metadata, i.status, i.started_at, i.completed_at,
-       i.created_at, i.updated_at,
+SELECT i.id, i.application_id, i.agent_id, i.type, i.metadata, i.status, i.invited_at, i.started_at, i.completed_at,
+       i.expired_at, i.cancelled_at, i.cancellation_reason, i.created_at, i.updated_at,
        a.candidate_id, a.status AS application_status,
        a.job_id, j.title AS job_title, c.name AS company_name
 FROM interviews i
@@ -52,9 +52,26 @@ SET status = 'completed',
 WHERE id = $1
 RETURNING *;
 
+-- name: expireInterview :one
+UPDATE interviews
+SET status = 'expired',
+    expired_at = now(),
+    updated_at = now()
+WHERE id = $1
+RETURNING *;
+
+-- name: cancelInterview :one
+UPDATE interviews
+SET status = 'cancelled',
+    cancelled_at = now(),
+    cancellation_reason = $2,
+    updated_at = now()
+WHERE id = $1
+RETURNING *;
+
 -- name: getInterviewContextById :one
-SELECT i.id, i.application_id, i.agent_id, i.type, i.metadata, i.status, i.started_at, i.completed_at,
-       i.created_at, i.updated_at,
+SELECT i.id, i.application_id, i.agent_id, i.type, i.metadata, i.status, i.invited_at, i.started_at, i.completed_at,
+       i.expired_at, i.cancelled_at, i.cancellation_reason, i.created_at, i.updated_at,
        a.candidate_id, a.status AS application_status,
        j.id AS job_id, j.title AS job_title,
        c.name AS company_name,

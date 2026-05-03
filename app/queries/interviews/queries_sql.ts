@@ -1,9 +1,9 @@
 import { Sql } from "postgres";
 
 export const createInterviewQuery = `-- name: createInterview :one
-INSERT INTO interviews (application_id, agent_id, type, metadata, status, started_at, completed_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
-RETURNING id, application_id, agent_id, type, metadata, status, started_at, completed_at, created_at, updated_at`;
+INSERT INTO interviews (application_id, agent_id, type, metadata, status, invited_at, started_at, completed_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+RETURNING id, application_id, agent_id, type, metadata, status, invited_at, started_at, completed_at, expired_at, cancelled_at, cancellation_reason, created_at, updated_at`;
 
 export interface createInterviewArgs {
     applicationId: string;
@@ -11,6 +11,7 @@ export interface createInterviewArgs {
     type: string;
     metadata: any;
     status: string;
+    invitedAt: Date | null;
     startedAt: Date | null;
     completedAt: Date | null;
 }
@@ -22,14 +23,18 @@ export interface createInterviewRow {
     type: string;
     metadata: any;
     status: string;
+    invitedAt: Date | null;
     startedAt: Date | null;
     completedAt: Date | null;
+    expiredAt: Date | null;
+    cancelledAt: Date | null;
+    cancellationReason: string | null;
     createdAt: Date;
     updatedAt: Date;
 }
 
 export async function createInterview(sql: Sql, args: createInterviewArgs): Promise<createInterviewRow | null> {
-    const rows = await sql.unsafe(createInterviewQuery, [args.applicationId, args.agentId, args.type, args.metadata, args.status, args.startedAt, args.completedAt]).values();
+    const rows = await sql.unsafe(createInterviewQuery, [args.applicationId, args.agentId, args.type, args.metadata, args.status, args.invitedAt, args.startedAt, args.completedAt]).values();
     if (rows.length !== 1) {
         return null;
     }
@@ -41,15 +46,19 @@ export async function createInterview(sql: Sql, args: createInterviewArgs): Prom
         type: row[3],
         metadata: row[4],
         status: row[5],
-        startedAt: row[6],
-        completedAt: row[7],
-        createdAt: row[8],
-        updatedAt: row[9]
+        invitedAt: row[6],
+        startedAt: row[7],
+        completedAt: row[8],
+        expiredAt: row[9],
+        cancelledAt: row[10],
+        cancellationReason: row[11],
+        createdAt: row[12],
+        updatedAt: row[13]
     };
 }
 
 export const getInterviewByApplicationIdQuery = `-- name: getInterviewByApplicationId :one
-SELECT id, application_id, agent_id, type, metadata, status, started_at, completed_at, created_at, updated_at
+SELECT id, application_id, agent_id, type, metadata, status, invited_at, started_at, completed_at, expired_at, cancelled_at, cancellation_reason, created_at, updated_at
 FROM interviews
 WHERE application_id = $1`;
 
@@ -64,8 +73,12 @@ export interface getInterviewByApplicationIdRow {
     type: string;
     metadata: any;
     status: string;
+    invitedAt: Date | null;
     startedAt: Date | null;
     completedAt: Date | null;
+    expiredAt: Date | null;
+    cancelledAt: Date | null;
+    cancellationReason: string | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -83,15 +96,19 @@ export async function getInterviewByApplicationId(sql: Sql, args: getInterviewBy
         type: row[3],
         metadata: row[4],
         status: row[5],
-        startedAt: row[6],
-        completedAt: row[7],
-        createdAt: row[8],
-        updatedAt: row[9]
+        invitedAt: row[6],
+        startedAt: row[7],
+        completedAt: row[8],
+        expiredAt: row[9],
+        cancelledAt: row[10],
+        cancellationReason: row[11],
+        createdAt: row[12],
+        updatedAt: row[13]
     };
 }
 
 export const getInterviewByIdQuery = `-- name: getInterviewById :one
-SELECT id, application_id, agent_id, type, metadata, status, started_at, completed_at, created_at, updated_at
+SELECT id, application_id, agent_id, type, metadata, status, invited_at, started_at, completed_at, expired_at, cancelled_at, cancellation_reason, created_at, updated_at
 FROM interviews
 WHERE id = $1`;
 
@@ -106,8 +123,12 @@ export interface getInterviewByIdRow {
     type: string;
     metadata: any;
     status: string;
+    invitedAt: Date | null;
     startedAt: Date | null;
     completedAt: Date | null;
+    expiredAt: Date | null;
+    cancelledAt: Date | null;
+    cancellationReason: string | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -125,16 +146,20 @@ export async function getInterviewById(sql: Sql, args: getInterviewByIdArgs): Pr
         type: row[3],
         metadata: row[4],
         status: row[5],
-        startedAt: row[6],
-        completedAt: row[7],
-        createdAt: row[8],
-        updatedAt: row[9]
+        invitedAt: row[6],
+        startedAt: row[7],
+        completedAt: row[8],
+        expiredAt: row[9],
+        cancelledAt: row[10],
+        cancellationReason: row[11],
+        createdAt: row[12],
+        updatedAt: row[13]
     };
 }
 
 export const getInterviewForCandidateByIdQuery = `-- name: getInterviewForCandidateById :one
-SELECT i.id, i.application_id, i.agent_id, i.type, i.metadata, i.status, i.started_at, i.completed_at,
-       i.created_at, i.updated_at,
+SELECT i.id, i.application_id, i.agent_id, i.type, i.metadata, i.status, i.invited_at, i.started_at, i.completed_at,
+       i.expired_at, i.cancelled_at, i.cancellation_reason, i.created_at, i.updated_at,
        a.candidate_id, a.status AS application_status,
        a.job_id, j.title AS job_title, c.name AS company_name
 FROM interviews i
@@ -156,8 +181,12 @@ export interface getInterviewForCandidateByIdRow {
     type: string;
     metadata: any;
     status: string;
+    invitedAt: Date | null;
     startedAt: Date | null;
     completedAt: Date | null;
+    expiredAt: Date | null;
+    cancelledAt: Date | null;
+    cancellationReason: string | null;
     createdAt: Date;
     updatedAt: Date;
     candidateId: string;
@@ -180,21 +209,25 @@ export async function getInterviewForCandidateById(sql: Sql, args: getInterviewF
         type: row[3],
         metadata: row[4],
         status: row[5],
-        startedAt: row[6],
-        completedAt: row[7],
-        createdAt: row[8],
-        updatedAt: row[9],
-        candidateId: row[10],
-        applicationStatus: row[11],
-        jobId: row[12],
-        jobTitle: row[13],
-        companyName: row[14]
+        invitedAt: row[6],
+        startedAt: row[7],
+        completedAt: row[8],
+        expiredAt: row[9],
+        cancelledAt: row[10],
+        cancellationReason: row[11],
+        createdAt: row[12],
+        updatedAt: row[13],
+        candidateId: row[14],
+        applicationStatus: row[15],
+        jobId: row[16],
+        jobTitle: row[17],
+        companyName: row[18]
     };
 }
 
 export const getInterviewsByCandidateQuery = `-- name: getInterviewsByCandidate :many
-SELECT i.id, i.application_id, i.agent_id, i.type, i.metadata, i.status, i.started_at, i.completed_at,
-       i.created_at, i.updated_at,
+SELECT i.id, i.application_id, i.agent_id, i.type, i.metadata, i.status, i.invited_at, i.started_at, i.completed_at,
+       i.expired_at, i.cancelled_at, i.cancellation_reason, i.created_at, i.updated_at,
        a.candidate_id, a.status AS application_status,
        a.job_id, j.title AS job_title, c.name AS company_name
 FROM interviews i
@@ -215,8 +248,12 @@ export interface getInterviewsByCandidateRow {
     type: string;
     metadata: any;
     status: string;
+    invitedAt: Date | null;
     startedAt: Date | null;
     completedAt: Date | null;
+    expiredAt: Date | null;
+    cancelledAt: Date | null;
+    cancellationReason: string | null;
     createdAt: Date;
     updatedAt: Date;
     candidateId: string;
@@ -234,15 +271,19 @@ export async function getInterviewsByCandidate(sql: Sql, args: getInterviewsByCa
         type: row[3],
         metadata: row[4],
         status: row[5],
-        startedAt: row[6],
-        completedAt: row[7],
-        createdAt: row[8],
-        updatedAt: row[9],
-        candidateId: row[10],
-        applicationStatus: row[11],
-        jobId: row[12],
-        jobTitle: row[13],
-        companyName: row[14]
+        invitedAt: row[6],
+        startedAt: row[7],
+        completedAt: row[8],
+        expiredAt: row[9],
+        cancelledAt: row[10],
+        cancellationReason: row[11],
+        createdAt: row[12],
+        updatedAt: row[13],
+        candidateId: row[14],
+        applicationStatus: row[15],
+        jobId: row[16],
+        jobTitle: row[17],
+        companyName: row[18]
     }));
 }
 
@@ -251,7 +292,7 @@ UPDATE interviews
 SET status = $1,
     updated_at = now()
 WHERE id = $2
-RETURNING id, application_id, agent_id, type, metadata, status, started_at, completed_at, created_at, updated_at`;
+RETURNING id, application_id, agent_id, type, metadata, status, invited_at, started_at, completed_at, expired_at, cancelled_at, cancellation_reason, created_at, updated_at`;
 
 export interface updateInterviewStatusArgs {
     status: string;
@@ -265,8 +306,12 @@ export interface updateInterviewStatusRow {
     type: string;
     metadata: any;
     status: string;
+    invitedAt: Date | null;
     startedAt: Date | null;
     completedAt: Date | null;
+    expiredAt: Date | null;
+    cancelledAt: Date | null;
+    cancellationReason: string | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -284,10 +329,14 @@ export async function updateInterviewStatus(sql: Sql, args: updateInterviewStatu
         type: row[3],
         metadata: row[4],
         status: row[5],
-        startedAt: row[6],
-        completedAt: row[7],
-        createdAt: row[8],
-        updatedAt: row[9]
+        invitedAt: row[6],
+        startedAt: row[7],
+        completedAt: row[8],
+        expiredAt: row[9],
+        cancelledAt: row[10],
+        cancellationReason: row[11],
+        createdAt: row[12],
+        updatedAt: row[13]
     };
 }
 
@@ -297,7 +346,7 @@ SET status = 'completed',
     completed_at = now(),
     updated_at = now()
 WHERE id = $1
-RETURNING id, application_id, agent_id, type, metadata, status, started_at, completed_at, created_at, updated_at`;
+RETURNING id, application_id, agent_id, type, metadata, status, invited_at, started_at, completed_at, expired_at, cancelled_at, cancellation_reason, created_at, updated_at`;
 
 export interface completeInterviewArgs {
     id: string;
@@ -310,8 +359,12 @@ export interface completeInterviewRow {
     type: string;
     metadata: any;
     status: string;
+    invitedAt: Date | null;
     startedAt: Date | null;
     completedAt: Date | null;
+    expiredAt: Date | null;
+    cancelledAt: Date | null;
+    cancellationReason: string | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -329,16 +382,128 @@ export async function completeInterview(sql: Sql, args: completeInterviewArgs): 
         type: row[3],
         metadata: row[4],
         status: row[5],
-        startedAt: row[6],
-        completedAt: row[7],
-        createdAt: row[8],
-        updatedAt: row[9]
+        invitedAt: row[6],
+        startedAt: row[7],
+        completedAt: row[8],
+        expiredAt: row[9],
+        cancelledAt: row[10],
+        cancellationReason: row[11],
+        createdAt: row[12],
+        updatedAt: row[13]
+    };
+}
+
+export const expireInterviewQuery = `-- name: expireInterview :one
+UPDATE interviews
+SET status = 'expired',
+    expired_at = now(),
+    updated_at = now()
+WHERE id = $1
+RETURNING id, application_id, agent_id, type, metadata, status, invited_at, started_at, completed_at, expired_at, cancelled_at, cancellation_reason, created_at, updated_at`;
+
+export interface expireInterviewArgs {
+    id: string;
+}
+
+export interface expireInterviewRow {
+    id: string;
+    applicationId: string;
+    agentId: string | null;
+    type: string;
+    metadata: any;
+    status: string;
+    invitedAt: Date | null;
+    startedAt: Date | null;
+    completedAt: Date | null;
+    expiredAt: Date | null;
+    cancelledAt: Date | null;
+    cancellationReason: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export async function expireInterview(sql: Sql, args: expireInterviewArgs): Promise<expireInterviewRow | null> {
+    const rows = await sql.unsafe(expireInterviewQuery, [args.id]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        applicationId: row[1],
+        agentId: row[2],
+        type: row[3],
+        metadata: row[4],
+        status: row[5],
+        invitedAt: row[6],
+        startedAt: row[7],
+        completedAt: row[8],
+        expiredAt: row[9],
+        cancelledAt: row[10],
+        cancellationReason: row[11],
+        createdAt: row[12],
+        updatedAt: row[13]
+    };
+}
+
+export const cancelInterviewQuery = `-- name: cancelInterview :one
+UPDATE interviews
+SET status = 'cancelled',
+    cancelled_at = now(),
+    cancellation_reason = $2,
+    updated_at = now()
+WHERE id = $1
+RETURNING id, application_id, agent_id, type, metadata, status, invited_at, started_at, completed_at, expired_at, cancelled_at, cancellation_reason, created_at, updated_at`;
+
+export interface cancelInterviewArgs {
+    id: string;
+    cancellationReason: string | null;
+}
+
+export interface cancelInterviewRow {
+    id: string;
+    applicationId: string;
+    agentId: string | null;
+    type: string;
+    metadata: any;
+    status: string;
+    invitedAt: Date | null;
+    startedAt: Date | null;
+    completedAt: Date | null;
+    expiredAt: Date | null;
+    cancelledAt: Date | null;
+    cancellationReason: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export async function cancelInterview(sql: Sql, args: cancelInterviewArgs): Promise<cancelInterviewRow | null> {
+    const rows = await sql.unsafe(cancelInterviewQuery, [args.id, args.cancellationReason]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        applicationId: row[1],
+        agentId: row[2],
+        type: row[3],
+        metadata: row[4],
+        status: row[5],
+        invitedAt: row[6],
+        startedAt: row[7],
+        completedAt: row[8],
+        expiredAt: row[9],
+        cancelledAt: row[10],
+        cancellationReason: row[11],
+        createdAt: row[12],
+        updatedAt: row[13]
     };
 }
 
 export const getInterviewContextByIdQuery = `-- name: getInterviewContextById :one
-SELECT i.id, i.application_id, i.agent_id, i.type, i.metadata, i.status, i.started_at, i.completed_at,
-       i.created_at, i.updated_at,
+SELECT i.id, i.application_id, i.agent_id, i.type, i.metadata, i.status, i.invited_at, i.started_at, i.completed_at,
+       i.expired_at, i.cancelled_at, i.cancellation_reason, i.created_at, i.updated_at,
        a.candidate_id, a.status AS application_status,
        j.id AS job_id, j.title AS job_title,
        c.name AS company_name,
@@ -362,8 +527,12 @@ export interface getInterviewContextByIdRow {
     type: string;
     metadata: any;
     status: string;
+    invitedAt: Date | null;
     startedAt: Date | null;
     completedAt: Date | null;
+    expiredAt: Date | null;
+    cancelledAt: Date | null;
+    cancellationReason: string | null;
     createdAt: Date;
     updatedAt: Date;
     candidateId: string;
@@ -388,17 +557,21 @@ export async function getInterviewContextById(sql: Sql, args: getInterviewContex
         type: row[3],
         metadata: row[4],
         status: row[5],
-        startedAt: row[6],
-        completedAt: row[7],
-        createdAt: row[8],
-        updatedAt: row[9],
-        candidateId: row[10],
-        applicationStatus: row[11],
-        jobId: row[12],
-        jobTitle: row[13],
-        companyName: row[14],
-        companyOwnerId: row[15],
-        candidateName: row[16]
+        invitedAt: row[6],
+        startedAt: row[7],
+        completedAt: row[8],
+        expiredAt: row[9],
+        cancelledAt: row[10],
+        cancellationReason: row[11],
+        createdAt: row[12],
+        updatedAt: row[13],
+        candidateId: row[14],
+        applicationStatus: row[15],
+        jobId: row[16],
+        jobTitle: row[17],
+        companyName: row[18],
+        companyOwnerId: row[19],
+        candidateName: row[20]
     };
 }
 

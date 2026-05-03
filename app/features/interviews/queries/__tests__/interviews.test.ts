@@ -65,6 +65,7 @@ describe("interview queries", () => {
       type: "full",
       metadata: { expiresAt: new Date().toISOString() },
       status: "pending",
+      invitedAt: new Date(),
       startedAt: null,
       completedAt: null,
     });
@@ -86,6 +87,7 @@ describe("interview queries", () => {
       type: "quick_eval",
       metadata: {},
       status: "pending",
+      invitedAt: new Date(),
       startedAt: null,
       completedAt: null,
     });

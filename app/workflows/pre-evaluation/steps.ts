@@ -714,6 +714,7 @@ export function decideNextStep(
         type: interviewType,
         metadata: { preEvaluationScore: aiResult.result.score, expiresAt },
         status: "pending",
+        invitedAt: new Date(),
         startedAt: null,
         completedAt: null,
       });

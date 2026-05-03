@@ -171,6 +171,7 @@ export const updateApplicationStatusWorkflow = async (
         type: interviewType,
         metadata: { preEvaluationScore: latestPreEvaluation?.score ?? null, expiresAt },
         status: "pending",
+        invitedAt: new Date(),
         startedAt: null,
         completedAt: null,
       }));
