@@ -16,7 +16,7 @@
 
 ## Phase 5: Pre-Evaluation Funnel
 
-- [ ] Server function returns `{ workflowInstanceId }` for debugging/tracking
+- [x] Server function returns `{ workflowInstanceId }` for debugging/tracking
 - [x] Pre-eval candidates show: name, resume, apply date, "Evaluation in progress"
 - [x] Update `getJobApplicants` query to return all applicants (not just evaluated)
 - [x] Update `CompanyJobApplicantsList` to handle real pre/post-evaluation states
@@ -54,10 +54,9 @@
 
 - [x] Failed evaluation handling (agent error → retry or manual flag)
 - [x] Route skeletons updated for new AI-aware layouts (only generic `InterviewContentSkeleton` exists)
-- [ ] Optimistic status transitions where appropriate
 - [x] Loading states for report generation ("Evaluation in progress" spinners)
 - [x] Interview chat UI works on mobile (minimal `md:` breakpoints only)
-- [ ] Report views are readable on small screens
+- [x] Report views are readable on small screens
 - [ ] Track funnel metrics: apply → pre-eval → interview → report
 - [ ] Time-to-evaluation per job
 - [ ] All edge cases handled gracefully

@@ -52,7 +52,8 @@ export const applyToJob = createServerFn({ method: "POST" })
       {
         triggerPreEvaluation: async (applicationId: string) => {
           try {
-            await env.PRE_EVALUATION.create({ params: { applicationId } });
+            const instance = await env.PRE_EVALUATION.create({ params: { applicationId } });
+            return { workflowInstanceId: instance.id };
           } catch (error) {
             console.error(`Failed to trigger pre-evaluation for ${applicationId}`, error);
           }
