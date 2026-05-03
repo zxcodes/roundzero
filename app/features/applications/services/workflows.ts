@@ -34,7 +34,9 @@ export const applyToJobWorkflow = async (
   },
   options?: {
     sendNotificationEmail?: NotificationEmailSender;
-    triggerPreEvaluation?: (applicationId: string) => Promise<void>;
+    triggerPreEvaluation?: (
+      applicationId: string,
+    ) => Promise<{ workflowInstanceId: string } | undefined>;
   },
 ) => {
   await db.unsafe(closeExpiredJobsQuery);
@@ -101,11 +103,15 @@ export const applyToJobWorkflow = async (
   // Pre-evaluation runs asynchronously and companies are notified via
   // "report_ready" when the AI evaluation completes.
 
+  let workflowInstanceId: string | null = null;
   if (options?.triggerPreEvaluation) {
-    await options.triggerPreEvaluation(application.id);
+    const result = await options.triggerPreEvaluation(application.id);
+    if (result && typeof result === "object" && "workflowInstanceId" in result) {
+      workflowInstanceId = result.workflowInstanceId;
+    }
   }
 
-  return { application };
+  return { application, workflowInstanceId };
 };
 
 export const updateApplicationStatusWorkflow = async (

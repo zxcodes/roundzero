@@ -434,11 +434,11 @@ function TimelineNode({
   children,
 }: TimelineNodeProps) {
   return (
-    <div className="relative flex gap-5">
+    <div className="relative flex gap-3 md:gap-5">
       <div className="flex flex-col items-center">
         <div
           className={cn(
-            "z-10 flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-background bg-card shadow-sm ring-1 ring-border",
+            "z-10 flex size-8 shrink-0 items-center justify-center rounded-full border-2 border-background bg-card shadow-sm ring-1 ring-border md:size-10",
             dotClassName,
           )}
         >
@@ -718,12 +718,15 @@ export function ReportTimeline({
                 </div>
                 <div
                   className={cn(
-                    "flex size-20 shrink-0 flex-col items-center justify-center rounded-3xl border-2",
+                    "flex size-16 shrink-0 flex-col items-center justify-center rounded-3xl border-2 md:size-20",
                     meta.scoreRing,
                   )}
                 >
                   <span
-                    className={cn("font-mono text-2xl font-semibold leading-none", meta.scoreText)}
+                    className={cn(
+                      "font-mono text-xl font-semibold leading-none md:text-2xl",
+                      meta.scoreText,
+                    )}
                   >
                     {overall}
                   </span>
