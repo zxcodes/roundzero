@@ -46,6 +46,7 @@
   "linter": {
     "enabled": true,
     "rules": {
+      "nursery": { "noFloatingPromises": "warn" },
       "recommended": true,
       "a11y": {
         "noAutofocus": "warn",

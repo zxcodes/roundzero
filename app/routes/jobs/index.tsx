@@ -124,27 +124,29 @@ function JobsPage() {
     SALARY_BRACKETS.USD;
 
   const onSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    navigate({ search: (prev) => ({ ...prev, search: e.target.value, page: 1 }) });
+    void navigate({ search: (prev) => ({ ...prev, search: e.target.value, page: 1 }) });
   };
 
   const onTypeChange = (value: string) => {
-    navigate({ search: (prev) => ({ ...prev, type: value, page: 1 }) });
+    void navigate({ search: (prev) => ({ ...prev, type: value, page: 1 }) });
   };
 
   const onLevelChange = (value: string) => {
-    navigate({ search: (prev) => ({ ...prev, level: value, page: 1 }) });
+    void navigate({ search: (prev) => ({ ...prev, level: value, page: 1 }) });
   };
 
   const onWorkplaceChange = (value: string) => {
-    navigate({ search: (prev) => ({ ...prev, workplace: value, page: 1 }) });
+    void navigate({ search: (prev) => ({ ...prev, workplace: value, page: 1 }) });
   };
 
   const onCurrencyChange = (value: string) => {
-    navigate({ search: (prev) => ({ ...prev, salaryCurrency: value, salaryMin: 0, page: 1 }) });
+    void navigate({
+      search: (prev) => ({ ...prev, salaryCurrency: value, salaryMin: 0, page: 1 }),
+    });
   };
 
   const onSalaryChange = (value: string) => {
-    navigate({ search: (prev) => ({ ...prev, salaryMin: Number(value), page: 1 }) });
+    void navigate({ search: (prev) => ({ ...prev, salaryMin: Number(value), page: 1 }) });
   };
 
   return (
@@ -299,7 +301,7 @@ function JobCard({ job, className }: { job: JobFromLoader; className?: string })
   const onCompanyClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    navigate({ to: "/companies/$slug", params: { slug: job.companySlug } });
+    void navigate({ to: "/companies/$slug", params: { slug: job.companySlug } });
   };
   const onCompanyKeyDown = (e: React.KeyboardEvent<HTMLSpanElement>) => {
     if (e.key === "Enter" || e.key === " ") {

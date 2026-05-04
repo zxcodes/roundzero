@@ -91,7 +91,7 @@ export function CommandPalette({ isCompany, open, onOpenChange }: CommandPalette
 
   const onSelectNav = (url: string) => {
     onOpenChange(false);
-    navigate({ to: url });
+    void navigate({ to: url });
   };
 
   const onToggleTheme = () => {

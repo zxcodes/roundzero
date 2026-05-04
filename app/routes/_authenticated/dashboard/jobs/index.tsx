@@ -190,7 +190,7 @@ function CompanyJobsList({
   };
 
   const onTabChange = (value: string) => {
-    navigate({ search: { tab: value as "active" | "archived" } });
+    void navigate({ search: { tab: value as "active" | "archived" } });
   };
 
   return (
@@ -305,7 +305,7 @@ function ActiveJobsTable({
             const stale = isStaleJob(job);
 
             const onPublishClick = () => {
-              onPublish(job.id);
+              void onPublish(job.id);
             };
 
             return (
@@ -507,27 +507,29 @@ function CandidateJobsList({ data }: { data: Awaited<ReturnType<typeof getOpenJo
     SALARY_BRACKETS.USD;
 
   const onSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    navigate({ search: (prev) => ({ ...prev, search: e.target.value, page: 1 }) });
+    void navigate({ search: (prev) => ({ ...prev, search: e.target.value, page: 1 }) });
   };
 
   const onTypeChange = (value: string) => {
-    navigate({ search: (prev) => ({ ...prev, type: value, page: 1 }) });
+    void navigate({ search: (prev) => ({ ...prev, type: value, page: 1 }) });
   };
 
   const onLevelChange = (value: string) => {
-    navigate({ search: (prev) => ({ ...prev, level: value, page: 1 }) });
+    void navigate({ search: (prev) => ({ ...prev, level: value, page: 1 }) });
   };
 
   const onWorkplaceChange = (value: string) => {
-    navigate({ search: (prev) => ({ ...prev, workplace: value, page: 1 }) });
+    void navigate({ search: (prev) => ({ ...prev, workplace: value, page: 1 }) });
   };
 
   const onCurrencyChange = (value: string) => {
-    navigate({ search: (prev) => ({ ...prev, salaryCurrency: value, salaryMin: 0, page: 1 }) });
+    void navigate({
+      search: (prev) => ({ ...prev, salaryCurrency: value, salaryMin: 0, page: 1 }),
+    });
   };
 
   const onSalaryChange = (value: string) => {
-    navigate({ search: (prev) => ({ ...prev, salaryMin: Number(value), page: 1 }) });
+    void navigate({ search: (prev) => ({ ...prev, salaryMin: Number(value), page: 1 }) });
   };
 
   return (

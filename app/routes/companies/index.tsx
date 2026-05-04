@@ -78,18 +78,18 @@ function CompaniesPage() {
   const hasFilters = search || industryFilter !== "all" || sizeFilter !== "all";
 
   const onSearchChange = (value: string) => {
-    navigate({ search: (prev) => ({ ...prev, search: value, page: 1 }) });
+    void navigate({ search: (prev) => ({ ...prev, search: value, page: 1 }) });
   };
   const onSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onSearchChange(e.target.value);
   };
 
   const onIndustryChange = (value: string) => {
-    navigate({ search: (prev) => ({ ...prev, industry: value, page: 1 }) });
+    void navigate({ search: (prev) => ({ ...prev, industry: value, page: 1 }) });
   };
 
   const onSizeChange = (value: string) => {
-    navigate({ search: (prev) => ({ ...prev, size: value, page: 1 }) });
+    void navigate({ search: (prev) => ({ ...prev, size: value, page: 1 }) });
   };
 
   return (
