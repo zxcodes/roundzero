@@ -56,6 +56,7 @@ import {
   getOpenJobsPaginated,
   publishJob,
 } from "@/features/jobs/server/functions";
+import { formatDate } from "@/shared/date";
 import {
   type EmploymentType,
   type ExperienceLevel,
@@ -140,14 +141,6 @@ const statusVariant = (status: string) => {
     default:
       return "secondary";
   }
-};
-
-const formatDate = (date: Date | string) => {
-  return new Date(date).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
 };
 
 function JobsListPage() {

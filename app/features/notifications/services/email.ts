@@ -8,6 +8,7 @@ import {
   markNotificationEmailFailed,
   markNotificationEmailSkipped,
 } from "@/features/notifications/queries/queries_sql";
+import { formatDateTime } from "@/shared/date";
 import { serverEnv } from "@/shared/env.server";
 
 type NotificationRecord = {
@@ -60,10 +61,7 @@ const formatDeadline = (value: unknown) => {
     return null;
   }
 
-  return `Complete by ${date.toLocaleString("en-US", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  })}.`;
+  return `Complete by ${formatDateTime(date)}.`;
 };
 
 const getEmailPresentationMeta = (presentation: ReturnType<typeof getNotificationPresentation>) => {

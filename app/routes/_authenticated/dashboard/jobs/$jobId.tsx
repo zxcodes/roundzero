@@ -44,6 +44,7 @@ import { getMyCandidateProfile } from "@/features/candidates/server/functions";
 import { JobForm, type JobFormData } from "@/features/jobs/components/job-form";
 import { JobPreviewDialog } from "@/features/jobs/components/job-preview-dialog";
 import { archiveJob, getJob, publishJob, updateJob } from "@/features/jobs/server/functions";
+import { formatDate } from "@/shared/date";
 import {
   type EmploymentType,
   type ExperienceLevel,
@@ -94,14 +95,6 @@ const statusVariant = (status: string) => {
     default:
       return "secondary" as const;
   }
-};
-
-const formatDate = (date: Date | string) => {
-  return new Date(date).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
 };
 
 function JobDetailPage() {

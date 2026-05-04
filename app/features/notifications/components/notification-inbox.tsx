@@ -36,29 +36,9 @@ import {
   markAllMyNotificationsRead,
   markMyNotificationRead,
 } from "@/features/notifications/server/functions";
+import { formatRelativeTime } from "@/shared/date";
 
 type NotificationFeed = Awaited<ReturnType<typeof getMyNotificationsFeed>>;
-
-const formatRelativeTime = (date: Date | string) => {
-  const timestamp = new Date(date).getTime();
-  const diffInMinutes = Math.round((Date.now() - timestamp) / (1000 * 60));
-
-  if (diffInMinutes < 1) {
-    return "Just now";
-  }
-
-  if (diffInMinutes < 60) {
-    return `${diffInMinutes}m ago`;
-  }
-
-  const diffInHours = Math.round(diffInMinutes / 60);
-  if (diffInHours < 24) {
-    return `${diffInHours}h ago`;
-  }
-
-  const diffInDays = Math.round(diffInHours / 24);
-  return `${diffInDays}d ago`;
-};
 
 export function NotificationInbox({
   feed = { items: [], unreadCount: 0 },

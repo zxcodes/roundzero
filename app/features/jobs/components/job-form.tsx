@@ -18,6 +18,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { JobPreviewDialog } from "@/features/jobs/components/job-preview-dialog";
+import { formatDate } from "@/shared/date";
 import {
   type EmploymentType,
   type ExperienceLevel,
@@ -506,14 +507,7 @@ export function JobForm({
                       >
                         <span className={field.state.value ? "" : "text-muted-foreground"}>
                           {field.state.value
-                            ? new Date(`${field.state.value}T00:00:00`).toLocaleDateString(
-                                "en-US",
-                                {
-                                  month: "short",
-                                  day: "numeric",
-                                  year: "numeric",
-                                },
-                              )
+                            ? formatDate(new Date(`${field.state.value}T00:00:00`))
                             : "Pick a date"}
                         </span>
                         <HugeiconsIcon

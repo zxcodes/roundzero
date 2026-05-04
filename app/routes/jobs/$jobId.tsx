@@ -22,6 +22,7 @@ import { CandidateApplySection } from "@/features/applications/components/candid
 import { hasApplied } from "@/features/applications/server/functions";
 import { getMyCandidateProfile } from "@/features/candidates/server/functions";
 import { getPublicJobById } from "@/features/jobs/server/functions";
+import { formatDate } from "@/shared/date";
 import type { EmploymentType, ExperienceLevel, WorkplaceType } from "@/shared/enums";
 import { employmentTypeLabels, experienceLevelLabels, workplaceTypeLabels } from "@/shared/enums";
 import { formatSalaryFull } from "@/shared/format";
@@ -70,11 +71,7 @@ function JobDetailPage() {
 
   const salary = formatSalaryFull(job.salaryMin, job.salaryMax, job.salaryCurrency);
   const requirements: string[] = Array.isArray(job.requirements) ? job.requirements : [];
-  const postedDate = new Date(job.createdAt).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  const postedDate = formatDate(job.createdAt);
 
   const dashboardJobPath = `/dashboard/jobs/${job.id}`;
   const isClosed = job.status !== "open";

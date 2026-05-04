@@ -33,6 +33,7 @@ import {
 import { InterviewInvitationCard } from "@/features/interviews/components/interview-invitation-card";
 import { getInterviewForApplication } from "@/features/interviews/server/functions";
 import { getInterviewExpiresAt } from "@/features/interviews/shared/expiry";
+import { formatDate, formatDateShort } from "@/shared/date";
 import { validateUuidParams } from "@/shared/validation";
 
 export const Route = createFileRoute("/_authenticated/dashboard/application/$applicationId")({
@@ -113,21 +114,6 @@ const underReviewMeta = {
   summary: "Your interview is complete and the company is now reviewing your evaluation.",
   nextStep: "You are waiting on a decision after review.",
 } as const;
-
-const formatDate = (date: Date | string) => {
-  return new Date(date).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-};
-
-const formatDateShort = (date: Date | string) => {
-  return new Date(date).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
-};
 
 const toApplicationStage = (status: string): keyof typeof stageCopy => {
   switch (status) {

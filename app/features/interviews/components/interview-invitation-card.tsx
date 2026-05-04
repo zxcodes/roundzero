@@ -11,31 +11,10 @@ import { Link } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { formatDateTime, formatTimeLeft } from "@/shared/date";
 
 const formatInterviewStatusLabel = (status: string) => {
   return status.replace(/_/g, " ");
-};
-
-const formatDateTime = (date: Date | null) => {
-  if (!date) return null;
-  return new Date(date).toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
-};
-
-const formatTimeLeft = (expiresAt: Date | null) => {
-  if (!expiresAt) return null;
-  const diff = new Date(expiresAt).getTime() - Date.now();
-  if (diff <= 0) return "Expired";
-  const hours = Math.ceil(diff / (1000 * 60 * 60));
-  if (hours < 1) return "<1h left";
-  if (hours < 24) return `${hours}h left`;
-  const days = Math.ceil(hours / 24);
-  return `${days}d left`;
 };
 
 type InterviewInvitationCardProps = {
