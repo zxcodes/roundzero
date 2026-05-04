@@ -17,7 +17,7 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       {
-        title: "RoundZero | An editorial on automated first-round hiring",
+        title: "RoundZero | Replace Your First Interview Round with AI",
       },
     ],
   }),
@@ -36,16 +36,16 @@ function HomePage() {
       <main id="main-content">
         <Hero />
         <Ticker />
-        <Chapter roman="I" title="The first round, rewritten" kicker="How it works">
+        <Chapter roman="I" title="How it works" kicker="The flow">
           <HowItWorks />
         </Chapter>
-        <Chapter roman="II" title="A real interview, asynchronously" kicker="The conversation">
+        <Chapter roman="II" title="What candidates experience" kicker="The interview">
           <InterviewSpread />
         </Chapter>
-        <Chapter roman="III" title="Every score, with its receipt" kicker="The report">
+        <Chapter roman="III" title="See how candidates actually perform" kicker="The report">
           <ReportSpread />
         </Chapter>
-        <Chapter roman="IV" title="Five hundred applicants, five worth meeting" kicker="Ranking">
+        <Chapter roman="IV" title="Ranked, not filtered" kicker="Ranking">
           <RankingSpread />
         </Chapter>
         <Chapter roman="V" title="Pricing, plainly stated" kicker="Subscriptions">
@@ -138,17 +138,8 @@ function Hero() {
                 fontVariationSettings: '"opsz" 144, "SOFT" 50',
               }}
             >
-              Candidates use <span style={{ color: "var(--ed-accent)" }}>A.I.</span> to apply.&nbsp;
-              <span
-                className="font-editorial"
-                style={{
-                  fontStyle: "italic",
-                  fontWeight: 400,
-                }}
-              >
-                Now you should use it
-              </span>{" "}
-              to&nbsp;screen.
+              Replace your first interview round with{" "}
+              <span style={{ color: "var(--ed-accent)" }}>AI</span>
             </h1>
           </div>
 
@@ -163,15 +154,17 @@ function Hero() {
                 className="font-serif text-[17px] leading-normal"
                 style={{ color: "var(--ed-ink)" }}
               >
-                AI-polished resumes and one-click applications have buried the inbox. RoundZero
-                pre-evaluates every applicant and deeply interviews the most promising — delivering
-                scored, evidenced reports before your team spends a minute.
+                Run AI interviews before you ever speak to a candidate. Get ranked, evaluated
+                candidates instead of resumes.
+              </p>
+              <p className="text-[13px] leading-normal" style={{ color: "var(--ed-muted)" }}>
+                Candidates use AI to apply. RoundZero uses AI to evaluate.
               </p>
               <div className="flex flex-col gap-2 pt-1">
                 <EditorialButton to="/company/login" primary>
-                  Begin as an employer
+                  Post a job
                 </EditorialButton>
-                <EditorialButton to="/candidate/login">Apply as a candidate</EditorialButton>
+                <EditorialButton to="/jobs">Browse jobs</EditorialButton>
               </div>
             </div>
           </aside>
@@ -199,13 +192,10 @@ function Hero() {
               >
                 T
               </span>
-              he hiring funnel was designed for resumes written by hand, read by hand, judged by
-              hand. None of those conditions still hold. RoundZero is built for what comes next: a
-              first round that is{" "}
-              <em className="font-editorial">
-                structured, explainable, and kind to everyone’s time
-              </em>
-              . What follows, in six chapters, is how that works.
+              he hiring funnel still starts with resumes — a weak signal that’s easy to game.
+              RoundZero moves real evaluation to the top of the funnel. Instead of filtering
+              candidates by what they claim, it evaluates how they think, communicate, and solve
+              problems. What follows is how that works.
             </p>
           </div>
         </div>
@@ -260,10 +250,10 @@ function EditorialButton({
 // Ticker — small data row
 // ───────────────────────────────────────────────────────────────────────────
 const tickerStats = [
-  { label: "Time to first report", value: "≈ 3 min" },
-  { label: "Resume claims validated", value: "91%" },
-  { label: "Scheduling required", value: "0 hrs" },
-  { label: "Interview format", value: "Async, 24/7" },
+  { label: "Skip", value: "Resume screening" },
+  { label: "Reduce", value: "Low-signal interviews" },
+  { label: "Evaluate", value: "How candidates think" },
+  { label: "Focus", value: "Only high-quality candidates" },
 ];
 
 function Ticker() {
@@ -344,23 +334,23 @@ function Chapter({
 const steps = [
   {
     n: "01",
-    title: "Post the role.",
-    body: "Describe what good looks like. RoundZero composes an interview script tailored to the position — its phrasing, its priorities, the questions it should not let slide.",
+    title: "Candidates apply normally.",
+    body: "Candidates submit their application and resume just like any other platform. No new tools to learn, no extra steps.",
   },
   {
     n: "02",
-    title: "Pre-evaluate every applicant.",
-    body: "Each application is read against the role’s requirements. Strong fits are invited to interview. Borderline candidates receive a short follow-up. Nobody is ghosted.",
+    title: "RoundZero runs the interview.",
+    body: "Each candidate completes a short AI-driven interview tailored to the role. No scheduling, no video calls, no calendar tetris.",
   },
   {
     n: "03",
-    title: "Run the interview, asynchronously.",
-    body: "An adaptive chat interview probes claims, follows up on vagueness, and tests role-relevant judgement. No video, no scheduling, no calendar tetris.",
+    title: "Top candidates are deeply evaluated.",
+    body: "You get ranked candidates with clear strengths, weaknesses, and reasoning.",
   },
   {
     n: "04",
-    title: "Receive scored, evidenced reports.",
-    body: "Your team opens a ranked shortlist. Every score links to the moment in the conversation that earned it. The reasoning is on the page.",
+    title: "Focus on the best.",
+    body: "Your team reviews only the top-ranked candidates. Every score links to evidence in the actual conversation.",
   },
 ];
 
@@ -447,7 +437,7 @@ function InterviewSpread() {
               "Validate specific claims on the résumé.",
               "Probe role-relevant judgement, not trivia.",
               "Follow up on vagueness, the way a human would.",
-              "Take twenty to forty minutes — never more.",
+              "Stay concise (20–40 minutes, async).",
             ].map((line) => (
               <li
                 key={line}
@@ -461,6 +451,37 @@ function InterviewSpread() {
               </li>
             ))}
           </ul>
+
+          <div className="mt-10 space-y-4 max-w-md">
+            <h4
+              className="font-serif text-[1.25rem]"
+              style={{ color: "var(--ed-ink)", fontWeight: 400 }}
+            >
+              For candidates.
+            </h4>
+            <ul className="space-y-3">
+              {[
+                "Get evaluated beyond your resume.",
+                "Show how you think and solve problems.",
+                "Avoid being filtered out by keyword matching.",
+                "Fairer and more meaningful evaluation.",
+              ].map((line) => (
+                <li
+                  key={line}
+                  className="flex gap-3 text-[14.5px] leading-[1.55]"
+                  style={{ color: "var(--ed-ink)" }}
+                >
+                  <span
+                    className="font-serif italic shrink-0"
+                    style={{ color: "var(--ed-accent)" }}
+                  >
+                    ¶
+                  </span>
+                  {line}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
 
@@ -558,11 +579,9 @@ function ReportSpread() {
           className="mt-4 max-w-sm text-[14.5px] leading-[1.6]"
           style={{ color: "var(--ed-muted)" }}
         >
-          Recommendation:{" "}
-          <em className="font-editorial" style={{ color: "var(--ed-ink)" }}>
-            advance to next round
-          </em>
-          . Confidence high. Evidence linked to transcript timestamps.
+          Each candidate comes with a structured report covering reasoning, communication, and
+          relevant experience — with an overall score, key strengths and concerns, and role-specific
+          evaluation.
         </p>
       </div>
 
@@ -686,16 +705,14 @@ function RankingSpread() {
           className="font-serif text-[clamp(1.2rem,1.8vw,1.55rem)] leading-[1.45] max-w-[28ch]"
           style={{ color: "var(--ed-ink)" }}
         >
-          The screen reduces to <em className="font-editorial">a single page of names</em>, ordered
-          by evidence, not eagerness. The applicants nobody had time to read are still on file — but
-          the five who matter are at the top.
+          After RoundZero, you don’t see applicants — you see ranked candidates.
         </p>
         <p
           className="mt-6 text-[13.5px] leading-[1.6] max-w-md"
           style={{ color: "var(--ed-muted)" }}
         >
-          Every recommendation links to the transcript. Disagreements are encouraged. Reversals
-          leave a trail.
+          Candidates are ordered by actual evaluation, not keyword matches or resume quality. Every
+          recommendation links back to real responses and reasoning.
         </p>
       </div>
 
@@ -1017,7 +1034,7 @@ const faq = [
   },
   {
     q: "Can candidates cheat or use AI to answer?",
-    a: "The interview is adaptive. It follows up on vague answers, asks for specifics about claimed experience, and cross-references responses against the résumé. Copied or AI-generated answers are flagged because they lack the context-specific details that real experience produces.",
+    a: "The interview is adaptive. It follows up on vague answers, asks for specifics about claimed experience, and cross-references responses against the résumé. The system evaluates consistency, depth, and context — not just correctness. Copied or AI-generated answers are flagged because they lack the context-specific details that real experience produces.",
   },
   {
     q: "How long before I see results?",
@@ -1098,20 +1115,19 @@ function Closing() {
               className="font-serif text-[clamp(2rem,5vw,4.5rem)] leading-none tracking-[-0.02em]"
               style={{ color: "var(--ed-ink)", fontWeight: 350 }}
             >
-              Stop reading résumés.{" "}
+              Run RoundZero before{" "}
               <span
                 className="font-editorial"
                 style={{ fontStyle: "italic", color: "var(--ed-accent)" }}
               >
-                Start reading reports.
+                Round One
               </span>
             </h2>
             <p
               className="mt-8 font-serif text-[clamp(1rem,1.5vw,1.25rem)] leading-[1.55] max-w-[60ch]"
               style={{ color: "var(--ed-muted)" }}
             >
-              Post your first job and let RoundZero run the first round. Every candidate
-              interviewed, scored, and explained — before your team spends a single minute.
+              Start replacing your first interview round today.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row gap-3 max-w-md">
               <Button
@@ -1124,7 +1140,7 @@ function Closing() {
                 }}
                 asChild
               >
-                <Link to="/company/login">For employers</Link>
+                <Link to="/company/login">Post your first job</Link>
               </Button>
               <Button
                 variant="outline"
@@ -1136,7 +1152,7 @@ function Closing() {
                 }}
                 asChild
               >
-                <Link to="/candidate/login">For job seekers</Link>
+                <Link to="/jobs">Browse jobs</Link>
               </Button>
             </div>
 

@@ -18,7 +18,7 @@ export function PublicHeader() {
   return (
     <header className="border-b border-border/40">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6 lg:px-8">
-        <div className="flex items-center gap-8">
+        <div className="flex items-center">
           <Link to="/" className="flex items-center gap-2.5">
             <Logo />
 
@@ -29,28 +29,6 @@ export function PublicHeader() {
               RoundZero
             </span>
           </Link>
-          <nav className="hidden items-center gap-1 sm:flex">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-muted-foreground rounded-none"
-              asChild
-            >
-              <Link to="/jobs" activeProps={{ className: "text-foreground bg-accent" }}>
-                Jobs
-              </Link>
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-muted-foreground rounded-none"
-              asChild
-            >
-              <Link to="/companies" activeProps={{ className: "text-foreground bg-accent" }}>
-                Companies
-              </Link>
-            </Button>
-          </nav>
         </div>
         <div className="flex items-center gap-2">
           {user ? (
@@ -89,8 +67,11 @@ export function PublicHeader() {
                   asChild
                   onClick={onCloseMobileMenu}
                 >
-                  <Link to="/jobs" activeProps={{ className: "text-foreground bg-accent" }}>
-                    Jobs
+                  <Link
+                    to="/company/login"
+                    activeProps={{ className: "text-foreground bg-accent" }}
+                  >
+                    For Employers
                   </Link>
                 </Button>
                 <Button
@@ -99,8 +80,21 @@ export function PublicHeader() {
                   asChild
                   onClick={onCloseMobileMenu}
                 >
-                  <Link to="/companies" activeProps={{ className: "text-foreground bg-accent" }}>
-                    Companies
+                  <Link
+                    to="/candidate/login"
+                    activeProps={{ className: "text-foreground bg-accent" }}
+                  >
+                    For Candidates
+                  </Link>
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="justify-start text-muted-foreground"
+                  asChild
+                  onClick={onCloseMobileMenu}
+                >
+                  <Link to="/jobs" activeProps={{ className: "text-foreground bg-accent" }}>
+                    Jobs
                   </Link>
                 </Button>
                 {!user ? (
