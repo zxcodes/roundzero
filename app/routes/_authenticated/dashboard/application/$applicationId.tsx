@@ -3,7 +3,6 @@ import {
   Calendar01Icon,
   Cancel01Icon,
   File02Icon,
-  Message01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
@@ -31,6 +30,7 @@ import {
   getMyApplicationDetail,
   withdrawApplication,
 } from "@/features/applications/server/functions";
+import { InterviewInvitationCard } from "@/features/interviews/components/interview-invitation-card";
 import { getInterviewForApplication } from "@/features/interviews/server/functions";
 import { getInterviewExpiresAt } from "@/features/interviews/shared/expiry";
 import { validateUuidParams } from "@/shared/validation";
@@ -116,7 +116,7 @@ const underReviewMeta = {
 
 const formatDate = (date: Date | string) => {
   return new Date(date).toLocaleDateString("en-US", {
-    month: "long",
+    month: "short",
     day: "numeric",
     year: "numeric",
   });
@@ -127,39 +127,6 @@ const formatDateShort = (date: Date | string) => {
     month: "short",
     day: "numeric",
   });
-};
-
-const formatDateTime = (date: Date | string) => {
-  return new Date(date).toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-};
-
-const formatTimeLeft = (date: Date | null): string | null => {
-  if (!date) {
-    return null;
-  }
-
-  const diffMs = date.getTime() - Date.now();
-  if (diffMs <= 0) {
-    return "Expired";
-  }
-
-  const diffMinutes = Math.floor(diffMs / (1000 * 60));
-  if (diffMinutes < 60) {
-    return `${diffMinutes}m left`;
-  }
-
-  const hours = Math.floor(diffMinutes / 60);
-  if (hours < 24) {
-    return `${hours}h left`;
-  }
-
-  const days = Math.floor(hours / 24);
-  return `${days}d left`;
 };
 
 const toApplicationStage = (status: string): keyof typeof stageCopy => {
@@ -189,14 +156,6 @@ const getDisplayMeta = ({
   }
 
   return stageCopy[toApplicationStage(status)];
-};
-
-const formatInterviewStatusLabel = (status: string) => {
-  if (status === "in_progress") {
-    return "In Progress";
-  }
-
-  return status.charAt(0).toUpperCase() + status.slice(1);
 };
 
 const isTerminalStage = (stage: string): stage is "rejected" | "withdrawn" => {
@@ -308,7 +267,6 @@ function CandidateApplicationDetailPage() {
 
   const hasInterview = interview !== null;
   const interviewExpiresAt = interview ? getInterviewExpiresAt(interview.metadata) : null;
-  const interviewTimeLeft = formatTimeLeft(interviewExpiresAt);
 
   const onResumeView = async () => {
     await resumeDownloadMutation.mutateAsync({
@@ -412,39 +370,12 @@ function CandidateApplicationDetailPage() {
       </div>
 
       {hasInterview && !application.companyOwnerDeleted ? (
-        <Card className="border border-primary/10 bg-[radial-gradient(circle_at_top_left,var(--color-primary)/10,transparent_32%),var(--color-card)] shadow-lg shadow-primary/5">
-          <CardContent className="space-y-3">
-            <div className="flex items-center gap-2">
-              <HugeiconsIcon icon={Message01Icon} strokeWidth={2} className="size-5 text-primary" />
-              <p className="text-sm font-medium">RoundZero interview</p>
-              <Badge variant="outline" className="text-[11px]">
-                {formatInterviewStatusLabel(interview.status)}
-              </Badge>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {interview.status === "completed"
-                ? "Your interview is complete. The company will review your evaluation."
-                : interview.status === "expired"
-                  ? "This interview window has expired."
-                  : interview.status === "cancelled"
-                    ? "This interview has been cancelled."
-                    : "Complete your RoundZero interview to advance your application."}
-            </p>
-            {interview.status === "pending" && interviewExpiresAt && interviewTimeLeft ? (
-              <div className="rounded-md border border-warning/20 bg-warning/10 px-2.5 py-2 text-xs text-warning">
-                <p className="font-medium">{interviewTimeLeft}</p>
-                <p className="mt-0.5">Deadline: {formatDateTime(interviewExpiresAt)}</p>
-              </div>
-            ) : null}
-            {interview.status === "pending" || interview.status === "in_progress" ? (
-              <Button size="sm" asChild>
-                <Link to="/interview/$interviewId" params={{ interviewId: interview.id }}>
-                  {interview.status === "in_progress" ? "Continue interview" : "Start interview"}
-                </Link>
-              </Button>
-            ) : null}
-          </CardContent>
-        </Card>
+        <InterviewInvitationCard
+          interviewId={interview.id}
+          interviewType={interview.type}
+          status={interview.status}
+          expiresAt={interviewExpiresAt}
+        />
       ) : null}
 
       <div className="flex flex-wrap gap-2">
