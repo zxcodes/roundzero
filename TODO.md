@@ -4,8 +4,8 @@
 - figure our the random stretched dashboard skeleton.
 - show interview invited button in applied job application pages if they have an existing interview, or in progress etc. basically like a status action.
 - configure different r2 buckets based on env.
+- configure sentry for prod envs.
 - manual interview invitation does not trigger post workflow on end (only checked using cancel action, not auto end from agent).
-- give drizzle a shot?
 - we can prob use cf workflow's waitForEvent method to gather all the reports and then send all at once to the company?
 - think about showing expiry date of jobs and also activeness of each job for ease of candidates. also think about this entire end to end lifecycle of each job on the platform. 
 - think about entire ai layer arch, it is on-demand right now, check if that's sufficient or we need queues etc?
