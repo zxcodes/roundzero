@@ -1,9 +1,4 @@
-import {
-  Alert02Icon,
-  CheckmarkCircle02Icon,
-  Notification02Icon,
-  Rocket01Icon,
-} from "@hugeicons/core-free-icons";
+import { Alert02Icon, CheckmarkCircle02Icon, Notification02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
@@ -206,9 +201,7 @@ export function NotificationInbox({
                       className={`mt-0.5 flex size-9 items-center justify-center rounded-lg ${presentation.tone}`}
                     >
                       <HugeiconsIcon
-                        icon={
-                          presentation.type === "report_ready" ? Rocket01Icon : Notification02Icon
-                        }
+                        icon={"icon" in presentation ? presentation.icon : Notification02Icon}
                         strokeWidth={2}
                         className="size-4"
                       />

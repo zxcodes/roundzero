@@ -1,3 +1,14 @@
+import {
+  Alert02Icon,
+  Archive01Icon,
+  BubbleChatIcon,
+  Cancel01Icon,
+  InformationCircleIcon,
+  Rocket01Icon,
+  TickDouble01Icon,
+  UserRemove01Icon,
+} from "@hugeicons/core-free-icons";
+import type { IconSvgElement } from "@hugeicons/react";
 import { z } from "zod";
 import { type applicationStatusSchema, notificationTypeSchema } from "@/shared/enums";
 import { notificationPayloadSchemas } from "@/shared/notifications-config";
@@ -14,6 +25,28 @@ const notificationTone = {
   job_archived: "border-warning/20 bg-warning/10 text-warning",
   job_closed: "border-danger/20 bg-danger/10 text-danger",
 } as const;
+
+const statusChangedIcon = (status: z.infer<typeof applicationStatusSchema>): IconSvgElement => {
+  switch (status) {
+    case "shortlisted":
+      return TickDouble01Icon;
+    case "rejected":
+      return Cancel01Icon;
+    default:
+      return InformationCircleIcon;
+  }
+};
+
+const statusChangedTone = (status: z.infer<typeof applicationStatusSchema>): string => {
+  switch (status) {
+    case "shortlisted":
+      return "border-success/20 bg-success/10 text-success";
+    case "rejected":
+      return "border-danger/20 bg-danger/10 text-danger";
+    default:
+      return notificationTone.application_status_changed;
+  }
+};
 
 const formatApplicationStatusLabel = (status: z.infer<typeof applicationStatusSchema>) => {
   switch (status) {
@@ -35,6 +68,29 @@ const formatApplicationStatusLabel = (status: z.infer<typeof applicationStatusSc
       return "Withdrawn";
     case "evaluation_failed":
       return "Evaluation failed";
+  }
+};
+
+const statusToPastTense = (status: z.infer<typeof applicationStatusSchema>) => {
+  switch (status) {
+    case "shortlisted":
+      return "shortlisted you";
+    case "rejected":
+      return "rejected your application";
+    case "evaluated":
+      return "completed your evaluation";
+    case "interview_invited":
+      return "invited you to interview";
+    case "interview_in_progress":
+      return "marked your interview in progress";
+    case "pre_screening":
+      return "moved you to pre-screening";
+    case "applied":
+      return "received your application";
+    case "withdrawn":
+      return "noted your withdrawal";
+    case "evaluation_failed":
+      return "evaluation could not be completed";
   }
 };
 
@@ -64,8 +120,9 @@ export const getNotificationPresentation = (notification: { type: string; payloa
 
     return {
       type,
-      tone: notificationTone[type],
-      title: `${payload.data.companyName} updated your application`,
+      tone: statusChangedTone(payload.data.status),
+      icon: statusChangedIcon(payload.data.status),
+      title: `${payload.data.companyName} ${statusToPastTense(payload.data.status)}`,
       body: `Your application for ${payload.data.jobTitle} at ${payload.data.companyName} is now ${formatApplicationStatusLabel(payload.data.status).toLowerCase()}.`,
       to: "/dashboard/application/$applicationId" as const,
       params: { applicationId: payload.data.applicationId },
@@ -83,6 +140,7 @@ export const getNotificationPresentation = (notification: { type: string; payloa
     return {
       type,
       tone: notificationTone[type],
+      icon: Rocket01Icon,
       title: `Evaluation ready for ${payload.data.candidateName}`,
       body: `The AI evaluation for ${payload.data.candidateName} on ${payload.data.jobTitle} is ready.`,
       to: "/dashboard/applicants/$applicationId" as const,
@@ -101,6 +159,7 @@ export const getNotificationPresentation = (notification: { type: string; payloa
     return {
       type,
       tone: notificationTone[type],
+      icon: BubbleChatIcon,
       title: `Zero invited you to an interview`,
       body: `You have been invited to complete a ${payload.data.interviewType === "quick_eval" ? "quick evaluation" : "full interview"} for ${payload.data.jobTitle}. Complete it before the deadline to keep your evaluation slot.`,
       to: "/interview/$interviewId" as const,
@@ -123,6 +182,7 @@ export const getNotificationPresentation = (notification: { type: string; payloa
     return {
       type,
       tone: notificationTone[type],
+      icon: Alert02Icon,
       title: `Position filled`,
       body: `The position for ${payload.data.jobTitle} has been filled. Your application will remain on file, but no further evaluation slots are available.`,
       to: "/dashboard/application/$applicationId" as const,
@@ -141,6 +201,7 @@ export const getNotificationPresentation = (notification: { type: string; payloa
     return {
       type,
       tone: notificationTone[type],
+      icon: UserRemove01Icon,
       title: `${payload.data.candidateName} withdrew their application`,
       body: `${payload.data.candidateName} has withdrawn their application for ${payload.data.jobTitle}.`,
       to: "/dashboard/job-applicants/$jobId" as const,
@@ -165,14 +226,17 @@ export const getNotificationPresentation = (notification: { type: string; payloa
     job_published: {
       title: `${jobPayload.data.jobTitle} is now live`,
       body: `Your job posting for ${jobPayload.data.jobTitle} is now live and accepting applications.`,
+      icon: Rocket01Icon,
     },
     job_archived: {
       title: `${jobPayload.data.jobTitle} has been archived`,
       body: `Your job posting for ${jobPayload.data.jobTitle} has been archived and is no longer accepting applications.`,
+      icon: Archive01Icon,
     },
     job_closed: {
       title: `${jobPayload.data.jobTitle} has closed`,
       body: `Your job posting for ${jobPayload.data.jobTitle} has expired and is now closed.`,
+      icon: Cancel01Icon,
     },
   };
 
