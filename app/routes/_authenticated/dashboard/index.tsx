@@ -358,7 +358,7 @@ function CompanyDashboardSection({ metrics }: { metrics: CompanyMetrics }) {
         </CardContent>
       </Card>
 
-      <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-card via-card to-secondary/30">
+      <Card className="overflow-hidden border-primary/20 bg-linear-to-br from-card via-card to-secondary/30">
         <CardHeader>
           <CardTitle>Reports Studio</CardTitle>
           <CardDescription>
@@ -374,7 +374,7 @@ function CompanyDashboardSection({ metrics }: { metrics: CompanyMetrics }) {
                   className="overflow-hidden border-foreground/10 bg-background/80"
                 >
                   <div
-                    className={`h-1 w-full bg-gradient-to-r ${recommendationSurfaceTone(report.recommendation)}`}
+                    className={`h-1 w-full bg-linear-to-r ${recommendationSurfaceTone(report.recommendation)}`}
                   />
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between gap-3">
