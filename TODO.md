@@ -1,5 +1,6 @@
 ## TODO
 
+- application status change notifications need to be good. right now they;re too generic even if the candidate is shortlisted/rejected.
 - figure our the random stretched dashboard skeleton.
 - show interview invited button in applied job application pages if they have an existing interview, or in progress etc. basically like a status action.
 - configure different r2 buckets based on env.
