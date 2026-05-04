@@ -40,11 +40,14 @@ async function loadUser(role: "company" | "candidate"): Promise<DevUser | null> 
   return user as DevUser;
 }
 
+const slug = "round-zero";
+const companyName = "RoundZero";
+
 // ─── Company seed ───────────────────────────────────────────────
 
 async function seedForCompany(user: DevUser) {
   const companyId = makeUuidFromSeed(`seed-me-company-${user.id}`);
-  const slug = "minnu-corp";
+
 
   await sql`
     INSERT INTO companies (
@@ -52,7 +55,7 @@ async function seedForCompany(user: DevUser) {
       industry, company_size, location, website, founded_year, tech_stack, culture, social_links
     )
       VALUES (
-      ${companyId}, ${user.id}, ${"Minnu Corp"}, ${slug}, now(),
+      ${companyId}, ${user.id}, ${companyName}, ${slug}, now(),
       ${"Innovative technology company at the forefront of AI-powered productivity tools. We're building intuitive platforms that help knowledge workers automate repetitive tasks, collaborate seamlessly, and focus on high-impact work. Our mission is to eliminate workplace friction through thoughtful design and cutting-edge AI."},
       ${`https://images.unsplash.com/photo-1615497001839-b0a0eac3274c?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTF8fGN1dGUlMjBjYXR8ZW58MHx8MHx8fDA%3D`},
       ${"technology"}, ${"11-50"}, ${"San Francisco, CA"},
@@ -71,7 +74,7 @@ async function seedForCompany(user: DevUser) {
         onboarding_completed_at = now(),
         updated_at = now()
   `;
-  console.log(`  Company created: ${user.name}`);
+  console.log(`  Company created: ${companyName}`);
 
   // Common pre-screening questions companies actually ask
   const commonScreeningQuestions = [
@@ -535,7 +538,7 @@ try {
       continue;
     }
 
-    console.log(`\nSeeding data for ${user.name} (${role})...\n`);
+    console.log(`\nSeeding data for ${role ==="candidate"? user.name: companyName} (${role})...\n`);
 
     if (role === "company") {
       await seedForCompany(user);
