@@ -836,14 +836,14 @@ const featureRows = [
 function PricingTable() {
   return (
     <div>
-      {/* Header row */}
-      <table className="w-full border-collapse">
+      {/* Desktop table */}
+      <table className="hidden md:table w-full border-collapse">
         <caption className="sr-only">
           Compare RoundZero pricing tiers for active jobs, reports, seats, integrations, and
           support.
         </caption>
         <thead style={{ borderBottom: "1px solid var(--ed-ink)" }}>
-          <tr className="hidden md:table-row">
+          <tr>
             <th scope="col" className="w-1/4 pb-6 text-left" />
             {tiers.map((t) => (
               <th
@@ -851,10 +851,7 @@ function PricingTable() {
                 scope="col"
                 className="w-1/4 px-3 pb-6 align-top text-left first:pl-0 last:pr-0"
               >
-                <div
-                  className="flex flex-col gap-2"
-                  style={t.featured ? { color: "var(--ed-accent)" } : {}}
-                >
+                <div className="flex flex-col gap-2">
                   <SmallCaps>{t.featured ? "Editor’s pick" : "\u00A0"}</SmallCaps>
                   <span
                     className="font-serif text-[1.5rem]"
@@ -888,82 +885,8 @@ function PricingTable() {
           </tr>
         </thead>
         <tbody>
-          {tiers.map((t, tierIndex) => (
-            <tr
-              key={t.name}
-              className="border-b md:hidden"
-              style={{ borderColor: "var(--ed-ink)" }}
-            >
-              <th scope="row" className="px-0 pt-4 pb-3 text-left align-top">
-                <div
-                  className="flex flex-col gap-2"
-                  style={t.featured ? { color: "var(--ed-accent)" } : {}}
-                >
-                  <SmallCaps>{t.featured ? "Editor’s pick" : "\u00A0"}</SmallCaps>
-                  <span
-                    className="font-serif text-[1.5rem]"
-                    style={{ color: "var(--ed-ink)", fontWeight: 400 }}
-                  >
-                    {t.name}
-                  </span>
-                  <div className="flex items-baseline gap-2">
-                    <span
-                      className="font-serif text-[2.4rem] leading-none"
-                      style={{ color: "var(--ed-ink)", fontWeight: 350 }}
-                    >
-                      {t.price}
-                    </span>
-                    <span
-                      className="font-editorial text-[13px]"
-                      style={{ color: "var(--ed-muted)", fontStyle: "italic" }}
-                    >
-                      / {t.period}
-                    </span>
-                  </div>
-                  <p
-                    className="max-w-[26ch] text-[13px] leading-normal"
-                    style={{ color: "var(--ed-muted)" }}
-                  >
-                    {t.description}
-                  </p>
-                </div>
-              </th>
-              <td className="px-0 pt-4 pb-3">
-                <dl className="space-y-3">
-                  {featureRows.map((row) => {
-                    const value = row.values[tierIndex];
-                    return (
-                      <div key={row.label} className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4">
-                        <dt
-                          className="font-serif text-[15px]"
-                          style={{ color: "var(--ed-ink)", fontWeight: 400 }}
-                        >
-                          {row.label}
-                        </dt>
-                        <dd
-                          className="text-right text-[14px]"
-                          style={{
-                            color: value === "—" ? "var(--ed-muted)" : "var(--ed-ink)",
-                            fontFamily:
-                              value === "—" || /\d/.test(value) ? "var(--font-mono)" : undefined,
-                            fontSize: value === "—" || /\d/.test(value) ? "13px" : undefined,
-                          }}
-                        >
-                          {value}
-                        </dd>
-                      </div>
-                    );
-                  })}
-                </dl>
-              </td>
-            </tr>
-          ))}
           {featureRows.map((row) => (
-            <tr
-              key={row.label}
-              className="hidden md:table-row"
-              style={{ borderBottom: "1px solid var(--ed-rule-hair)" }}
-            >
+            <tr key={row.label} style={{ borderBottom: "1px solid var(--ed-rule-hair)" }}>
               <th
                 scope="row"
                 className="py-4 pr-6 text-left align-top font-serif text-[15px]"
@@ -989,11 +912,94 @@ function PricingTable() {
         </tbody>
       </table>
 
-      {/* CTA row */}
-      <div className="grid grid-cols-12 gap-x-6 pt-8">
-        <div className="col-span-3 hidden md:block" />
+      {/* Mobile cards */}
+      <div className="md:hidden space-y-8">
+        {tiers.map((t, tierIndex) => (
+          <div key={t.name} className="border px-4 py-5" style={{ borderColor: "var(--ed-ink)" }}>
+            <div className="flex flex-col gap-2 mb-6">
+              <SmallCaps>{t.featured ? "Editor’s pick" : "\u00A0"}</SmallCaps>
+              <span
+                className="font-serif text-[1.5rem]"
+                style={{ color: "var(--ed-ink)", fontWeight: 400 }}
+              >
+                {t.name}
+              </span>
+              <div className="flex items-baseline gap-2">
+                <span
+                  className="font-serif text-[2.4rem] leading-none"
+                  style={{ color: "var(--ed-ink)", fontWeight: 350 }}
+                >
+                  {t.price}
+                </span>
+                <span
+                  className="font-editorial text-[13px]"
+                  style={{ color: "var(--ed-muted)", fontStyle: "italic" }}
+                >
+                  / {t.period}
+                </span>
+              </div>
+              <p className="text-[13px] leading-normal" style={{ color: "var(--ed-muted)" }}>
+                {t.description}
+              </p>
+            </div>
+            <dl className="space-y-3">
+              {featureRows.map((row) => {
+                const value = row.values[tierIndex];
+                return (
+                  <div
+                    key={row.label}
+                    className="flex items-baseline justify-between gap-x-4"
+                    style={{ borderTop: "1px solid var(--ed-rule-hair)", paddingTop: "10px" }}
+                  >
+                    <dt
+                      className="font-serif text-[15px]"
+                      style={{ color: "var(--ed-ink)", fontWeight: 400 }}
+                    >
+                      {row.label}
+                    </dt>
+                    <dd
+                      className="shrink-0 text-right text-[14px]"
+                      style={{
+                        color: value === "—" ? "var(--ed-muted)" : "var(--ed-ink)",
+                        fontFamily:
+                          value === "—" || /\d/.test(value) ? "var(--font-mono)" : undefined,
+                        fontSize: value === "—" || /\d/.test(value) ? "13px" : undefined,
+                      }}
+                    >
+                      {value}
+                    </dd>
+                  </div>
+                );
+              })}
+            </dl>
+            <Link
+              to="/company/login"
+              className="editorial-cta group mt-6 flex w-full items-center justify-between gap-3 px-4 py-3 text-[13px] tracking-tight"
+              style={
+                t.featured
+                  ? {
+                      background: "var(--ed-ink)",
+                      color: "var(--ed-paper)",
+                      border: "1px solid var(--ed-ink)",
+                    }
+                  : {
+                      border: "1px solid var(--ed-ink)",
+                      color: "var(--ed-ink)",
+                    }
+              }
+            >
+              <span>{t.cta}</span>
+              <span className="font-serif italic">→</span>
+            </Link>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop CTA row */}
+      <div className="hidden md:grid grid-cols-12 gap-x-6 pt-8">
+        <div className="col-span-3" />
         {tiers.map((t) => (
-          <div key={t.name} className="col-span-12 md:col-span-3 mb-3">
+          <div key={t.name} className="col-span-3">
             <Link
               to="/company/login"
               className="editorial-cta group flex w-full items-center justify-between gap-3 px-4 py-3 text-[13px] tracking-tight"
@@ -1129,10 +1135,9 @@ function Closing() {
             >
               Start replacing your first interview round today.
             </p>
-            <div className="mt-10 flex flex-col sm:flex-row gap-3 max-w-md">
+            <div className="mt-10 flex flex-col sm:flex-row gap-3">
               <Button
-                size="lg"
-                className="rounded-none flex-1"
+                className="rounded-none w-full sm:flex-1 h-12"
                 style={{
                   background: "var(--ed-ink)",
                   color: "var(--ed-paper)",
@@ -1144,8 +1149,7 @@ function Closing() {
               </Button>
               <Button
                 variant="outline"
-                size="lg"
-                className="rounded-none flex-1 bg-transparent"
+                className="rounded-none w-full sm:flex-1 h-12 bg-transparent"
                 style={{
                   border: "1px solid var(--ed-ink)",
                   color: "var(--ed-ink)",

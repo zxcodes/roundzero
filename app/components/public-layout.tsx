@@ -45,7 +45,12 @@ export function PublicHeader() {
               >
                 <Link to="/company/login">For employers</Link>
               </Button>
-              <Button size="sm" asChild className="rounded-none">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="hidden text-muted-foreground sm:inline-flex rounded-none"
+                asChild
+              >
                 <Link to="/candidate/login">For job seekers</Link>
               </Button>
             </>
@@ -97,27 +102,6 @@ export function PublicHeader() {
                     Jobs
                   </Link>
                 </Button>
-                {!user ? (
-                  <>
-                    <div className="my-2 h-px bg-border" />
-                    <Button
-                      variant="ghost"
-                      className="justify-start text-muted-foreground"
-                      asChild
-                      onClick={onCloseMobileMenu}
-                    >
-                      <Link to="/company/login">For employers</Link>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      className="justify-start text-muted-foreground"
-                      asChild
-                      onClick={onCloseMobileMenu}
-                    >
-                      <Link to="/candidate/login">For job seekers</Link>
-                    </Button>
-                  </>
-                ) : null}
               </div>
             </SheetContent>
           </Sheet>
@@ -130,7 +114,7 @@ export function PublicHeader() {
 export function PublicFooter() {
   return (
     <footer className="border-t border-border/40">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6 text-sm text-muted-foreground lg:px-8">
+      <div className="mx-auto flex max-w-6xl flex-col items-start gap-3 px-6 py-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between lg:px-8">
         <span>&copy; {new Date().getFullYear()} RoundZero</span>
         <div className="flex gap-6">
           <span>Privacy Policy coming soon</span>
