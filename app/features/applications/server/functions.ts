@@ -14,6 +14,8 @@ import {
   getApplicationReviewById,
   getApplicationsByCandidate,
   getApplicationsByJob,
+  getJobApplicationFunnel,
+  getJobAverageTimeToEvaluation,
 } from "../queries/queries_sql";
 import {
   applyToJobWorkflow,
@@ -224,5 +226,37 @@ export const getCompanyApplicantReview = createServerFn({ method: "GET" })
       applicantCount: applicants.length,
       previousApplicant,
       nextApplicant,
+    };
+  });
+
+export const getJobFunnelMetrics = createServerFn({ method: "GET" })
+  .middleware([companyMiddleware])
+  .inputValidator(zodValidator(jobIdSchema))
+  .handler(async ({ data, context }) => {
+    const db = getDb();
+
+    const job = await getJobById(db, { id: data.jobId });
+    if (!job || job.companyId !== context.company.id) {
+      throw new Error("Job not found or not authorized");
+    }
+
+    const funnel = await getJobApplicationFunnel(db, { jobId: data.jobId });
+    const timeToEval = await getJobAverageTimeToEvaluation(db, { jobId: data.jobId });
+
+    const funnelMap = new Map(funnel.map((row) => [row.status, row.count]));
+    const total = funnel.reduce((sum, row) => sum + row.count, 0);
+
+    return {
+      total,
+      applied: funnelMap.get("applied") ?? 0,
+      preScreening: funnelMap.get("pre_screening") ?? 0,
+      interviewInvited: funnelMap.get("interview_invited") ?? 0,
+      interviewInProgress: funnelMap.get("interview_in_progress") ?? 0,
+      evaluated: funnelMap.get("evaluated") ?? 0,
+      shortlisted: funnelMap.get("shortlisted") ?? 0,
+      rejected: funnelMap.get("rejected") ?? 0,
+      withdrawn: funnelMap.get("withdrawn") ?? 0,
+      evaluationFailed: funnelMap.get("evaluation_failed") ?? 0,
+      avgHoursToEvaluation: timeToEval?.avgHours ?? null,
     };
   });

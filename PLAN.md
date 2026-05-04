@@ -57,8 +57,8 @@
 - [x] Loading states for report generation ("Evaluation in progress" spinners)
 - [x] Interview chat UI works on mobile (minimal `md:` breakpoints only)
 - [x] Report views are readable on small screens
-- [ ] Track funnel metrics: apply → pre-eval → interview → report
-- [ ] Time-to-evaluation per job
+- [x] Track funnel metrics: apply → pre-eval → interview → report
+- [x] Time-to-evaluation per job
 - [ ] All edge cases handled gracefully
 - [ ] Mobile experience is usable
 - [ ] No production errors in core AI funnel
