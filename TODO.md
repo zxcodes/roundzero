@@ -1,5 +1,6 @@
 ## TODO
 
+- isn't serverEnv redundant now since this entire thing itself is a cf worker now? think and remove.
 - figure our the random stretched dashboard skeleton.
 - show interview invited button in applied job application pages if they have an existing interview, or in progress etc. basically like a status action.
 - configure different r2 buckets based on env.
