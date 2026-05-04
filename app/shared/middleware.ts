@@ -1,6 +1,6 @@
 import { createMiddleware } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
-import { getUserById, type getUserByIdRow } from "@/features/auth/queries/queries_sql";
+import { getUserById } from "@/features/auth/queries/queries_sql";
 import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { type SessionData, sessionConfig } from "@/shared/session";
@@ -18,11 +18,12 @@ export const authMiddleware = createMiddleware().server(async ({ next }) => {
 
   const db = getDb();
   const user = await getUserById(db, { id: session.data.userId });
+
   if (!user) {
     throw new Error("Not authenticated");
   }
 
-  return next({ context: { userId: user.id, user: user as getUserByIdRow } });
+  return next({ context: { userId: user.id, user } });
 });
 
 /**

@@ -86,7 +86,7 @@ export function CompanyLogoUploadField({
   };
 
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onLogoSelected(e.target.files?.[0] ?? null);
+    void onLogoSelected(e.target.files?.[0] ?? null);
   };
 
   return (

@@ -132,7 +132,7 @@ export function ResumeUploadField({
     }
   };
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onResumeSelected(e.target.files?.[0] ?? null);
+    void onResumeSelected(e.target.files?.[0] ?? null);
   };
 
   return (
