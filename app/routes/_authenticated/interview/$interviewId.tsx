@@ -3,7 +3,6 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, notFound, redirect, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { differenceInMinutes, format, isValid, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { InterviewContentSkeleton } from "@/components/route-skeletons";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +17,7 @@ import {
   startMyInterview,
 } from "@/features/interviews/server/functions";
 import { getInterviewExpiresAt } from "@/features/interviews/shared/expiry";
+import { formatDeadlineLabel, formatTimeLeft } from "@/shared/date";
 import { validateUuidParams } from "@/shared/validation";
 
 type InterviewDetail = NonNullable<Awaited<ReturnType<typeof getMyInterview>>>;
@@ -36,42 +36,6 @@ const getErrorMessage = (error: unknown, fallback: string): string => {
   }
 
   return fallback;
-};
-
-const formatDeadlineLabel = (value: string | null) => {
-  if (!value) {
-    return null;
-  }
-
-  const date = parseISO(value);
-  if (!isValid(date)) {
-    return null;
-  }
-
-  return format(date, "MMM d, yyyy h:mm a");
-};
-
-const formatTimeLeftLabel = (value: string | null) => {
-  if (!value) {
-    return null;
-  }
-
-  const end = parseISO(value);
-  if (!isValid(end)) {
-    return null;
-  }
-
-  const minutesLeft = differenceInMinutes(end, new Date());
-  if (minutesLeft <= 0) {
-    return "Expired";
-  }
-
-  const hoursLeft = Math.ceil(minutesLeft / 60);
-  if (hoursLeft < 1) {
-    return "<1h left";
-  }
-
-  return `${hoursLeft}h left`;
 };
 
 export const Route = createFileRoute("/_authenticated/interview/$interviewId")({
@@ -171,7 +135,7 @@ function InterviewWorkspaceContent({
   const isStarting = isPending && startMutation.isPending;
   const isSubmitting = isInProgress && completeMutation.isPending;
   const deadline = formatDeadlineLabel(expiresAt);
-  const timeLeft = formatTimeLeftLabel(expiresAt);
+  const timeLeft = formatTimeLeft(expiresAt);
 
   const onStart = () => {
     startMutation.mutate({ data: { interviewId: interview.id } });

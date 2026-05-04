@@ -8,6 +8,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link, notFound, redirect, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { format } from "date-fns";
 import { useState } from "react";
 import { toast } from "sonner";
 import { DashboardApplicantReviewSkeleton } from "@/components/route-skeletons";
@@ -42,6 +43,7 @@ import {
 import { getPreEvaluationForApplication } from "@/features/pre-evaluations/server/functions";
 import { parseReportData, ReportSnapshotCard } from "@/features/reports/components/report-cards";
 import { getCompanyApplicantReportTimeline } from "@/features/reports/server/functions";
+import { formatDate } from "@/shared/date";
 import {
   APPLICATION_STATUS_TRANSITIONS,
   type ApplicationStatus,
@@ -144,14 +146,6 @@ const stageCopy = {
   },
 } as const;
 
-const formatDate = (date: Date | string) => {
-  return new Date(date).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-};
-
 function toRecord(value: unknown) {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -225,7 +219,7 @@ const formatMonthRange = (entry: {
 const formatMonth = (value: string) => {
   const [year, month] = value.split("-").map(Number);
   const date = new Date(year, (month || 1) - 1, 1);
-  return date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+  return format(date, "MMM yyyy");
 };
 
 const getInitials = (name: string) => {

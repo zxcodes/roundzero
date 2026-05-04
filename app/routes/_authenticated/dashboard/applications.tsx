@@ -19,6 +19,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { getMyApplications } from "@/features/applications/server/functions";
+import { formatDate } from "@/shared/date";
 
 export const Route = createFileRoute("/_authenticated/dashboard/applications")({
   beforeLoad: ({ context }) => {
@@ -76,14 +77,6 @@ const stageCopy = {
     blurb: "You withdrew this application",
   },
 } as const;
-
-const formatDate = (date: Date | string) => {
-  return new Date(date).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-};
 
 const toApplicationStage = (status: string): keyof typeof stageCopy => {
   switch (status) {

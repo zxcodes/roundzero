@@ -38,6 +38,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { EmptyInterviewComponent } from "@/features/interviews/components/interview-chat";
 import { InterviewTranscript } from "@/features/interviews/components/interview-transcript";
 import { cn } from "@/lib/utils";
+import { formatDateShort, formatDateTimeUtc } from "@/shared/date";
 
 type Recommendation = "strong_yes" | "yes" | "lean_no" | "no";
 
@@ -274,45 +275,6 @@ const getInitials = (name: string) => {
     .slice(0, 2);
 };
 
-const monthLabels = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
-
-function toUtcDate(value: Date | string) {
-  return typeof value === "string" ? new Date(value) : value;
-}
-
-const formatDateTime = (date: Date | string | null) => {
-  if (!date) {
-    return "Pending";
-  }
-  const value = toUtcDate(date);
-  const month = monthLabels[value.getUTCMonth()];
-  const day = value.getUTCDate();
-  const year = value.getUTCFullYear();
-  const hours = String(value.getUTCHours()).padStart(2, "0");
-  const minutes = String(value.getUTCMinutes()).padStart(2, "0");
-  return `${month} ${day}, ${year} · ${hours}:${minutes} UTC`;
-};
-
-const formatShortDate = (date: Date | string) => {
-  const value = toUtcDate(date);
-  const month = monthLabels[value.getUTCMonth()];
-  const day = value.getUTCDate();
-  return `${month} ${day}`;
-};
-
 /**
  * Compact post-interview report snapshot rendered on the applicant detail page.
  * Replaces the AI-looking summary card with a clearer hero block + a primary CTA
@@ -457,7 +419,7 @@ function TimelineNode({
         <div className="flex flex-wrap items-center justify-between gap-3 pb-4">
           <h4 className="text-base font-semibold tracking-tight">{title}</h4>
           <span className="font-mono text-[11px] text-muted-foreground">
-            {formatDateTime(timestamp)}
+            {formatDateTimeUtc(timestamp)}
           </span>
         </div>
         {children}
@@ -588,7 +550,7 @@ export function ReportTimeline({
             </div>
             <Badge variant="outline" className="gap-1 font-mono text-[10px]">
               <HugeiconsIcon icon={Calendar01Icon} strokeWidth={2} className="size-3" />
-              {formatShortDate(application.createdAt)}
+              {formatDateShort(application.createdAt)}
             </Badge>
           </CardContent>
         </Card>

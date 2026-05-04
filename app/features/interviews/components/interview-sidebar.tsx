@@ -1,7 +1,6 @@
 import { ArrowLeft01Icon, BubbleChatIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
-import { differenceInMinutes, format, isValid, parseISO } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import {
@@ -16,6 +15,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
+import { formatDateTime, formatTimeLeft } from "@/shared/date";
 
 type InterviewSidebarProps = {
   activeInterviewId?: string;
@@ -27,42 +27,6 @@ type InterviewSidebarProps = {
     expiresAt: string | null;
   }>;
 } & React.ComponentProps<typeof Sidebar>;
-
-const formatDeadline = (value: string | null): string | null => {
-  if (!value) {
-    return null;
-  }
-
-  const date = parseISO(value);
-  if (!isValid(date)) {
-    return null;
-  }
-
-  return format(date, "MMM d, h:mm a");
-};
-
-const formatTimeLeft = (value: string | null): string | null => {
-  if (!value) {
-    return null;
-  }
-
-  const end = parseISO(value);
-  if (!isValid(end)) {
-    return null;
-  }
-
-  const minutesLeft = differenceInMinutes(end, new Date());
-  if (minutesLeft <= 0) {
-    return "Expired";
-  }
-
-  const hoursLeft = Math.ceil(minutesLeft / 60);
-  if (hoursLeft < 1) {
-    return "<1h left";
-  }
-
-  return `${hoursLeft}h left`;
-};
 
 const getSessionLabel = (value: string) => {
   if (value === "in_progress") return "In progress";
@@ -118,7 +82,7 @@ export function InterviewSidebar({
               <SidebarMenu className="gap-2">
                 {interviews.map((item) => {
                   const isActive = item.id === activeInterviewId;
-                  const deadline = formatDeadline(item.expiresAt);
+                  const deadline = formatDateTime(item.expiresAt);
                   const timeLeft = formatTimeLeft(item.expiresAt);
 
                   return (
