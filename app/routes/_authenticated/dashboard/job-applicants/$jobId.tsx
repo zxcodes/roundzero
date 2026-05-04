@@ -1,6 +1,7 @@
 import {
   ArrowLeft01Icon,
   Briefcase01Icon,
+  Clock01Icon,
   RankingIcon,
   UserGroupIcon,
 } from "@hugeicons/core-free-icons";
@@ -10,12 +11,26 @@ import { useState } from "react";
 import { DashboardJobApplicantsSkeleton } from "@/components/route-skeletons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { CompanyJobApplicantsList } from "@/features/applications/components/company-job-applicants-list";
-import { getJobApplicants } from "@/features/applications/server/functions";
+import { getJobApplicants, getJobFunnelMetrics } from "@/features/applications/server/functions";
 import { getJob } from "@/features/jobs/server/functions";
 import { validateUuidParams } from "@/shared/validation";
 
 type JobDetail = NonNullable<Awaited<ReturnType<typeof getJob>>>;
+type FunnelMetrics = NonNullable<Awaited<ReturnType<typeof getJobFunnelMetrics>>>;
+
+const funnelStages: {
+  key: keyof Omit<FunnelMetrics, "avgHoursToEvaluation" | "total">;
+  label: string;
+}[] = [
+  { key: "applied", label: "Applied" },
+  { key: "preScreening", label: "Pre-screening" },
+  { key: "interviewInvited", label: "Invited" },
+  { key: "interviewInProgress", label: "In progress" },
+  { key: "evaluated", label: "Evaluated" },
+  { key: "shortlisted", label: "Shortlisted" },
+];
 
 export const Route = createFileRoute("/_authenticated/dashboard/job-applicants/$jobId")({
   beforeLoad: ({ context, params }) => {
@@ -31,15 +46,18 @@ export const Route = createFileRoute("/_authenticated/dashboard/job-applicants/$
     }
     const job: JobDetail = jobResult;
 
-    const applicants = await getJobApplicants({ data: { jobId: params.jobId } });
-    return { job, applicants };
+    const [applicants, funnel] = await Promise.all([
+      getJobApplicants({ data: { jobId: params.jobId } }),
+      getJobFunnelMetrics({ data: { jobId: params.jobId } }),
+    ]);
+    return { job, applicants, funnel };
   },
   pendingComponent: DashboardJobApplicantsSkeleton,
   component: JobApplicantsPage,
 });
 
 function JobApplicantsPage() {
-  const { job, applicants } = Route.useLoaderData();
+  const { job, applicants, funnel } = Route.useLoaderData();
   const [activeTab, setActiveTab] = useState<"evaluated" | "pending">("evaluated");
 
   const evaluated = applicants.filter((a) => a.reportId !== null);
@@ -72,6 +90,45 @@ function JobApplicantsPage() {
           Review and manage everyone who applied to this role.
         </p>
       </div>
+
+      {funnel.total > 0 ? (
+        <Card size="sm" className="border-border/60">
+          <CardContent className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                Application funnel
+              </p>
+              {funnel.avgHoursToEvaluation !== null ? (
+                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                  <HugeiconsIcon icon={Clock01Icon} strokeWidth={2} className="size-3" />
+                  avg. {funnel.avgHoursToEvaluation}h to evaluation
+                </div>
+              ) : null}
+            </div>
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+              {funnelStages.map((stage) => {
+                const count = funnel[stage.key];
+                const isZero = count === 0;
+                return (
+                  <div
+                    key={stage.key}
+                    className={`rounded-xl border px-3 py-2.5 text-center ${isZero ? "border-border/40 bg-muted/20" : "border-border/60 bg-card"}`}
+                  >
+                    <p
+                      className={`font-mono text-lg font-semibold leading-none ${isZero ? "text-muted-foreground/40" : "text-foreground"}`}
+                    >
+                      {count}
+                    </p>
+                    <p className="mt-1 text-[10px] font-medium text-muted-foreground">
+                      {stage.label}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <div className="flex gap-2 border-b border-border/50">
         <button

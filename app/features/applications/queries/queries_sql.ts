@@ -432,3 +432,54 @@ export async function countApplicationsByCandidate(sql: Sql, args: countApplicat
     };
 }
 
+export const getJobApplicationFunnelQuery = `-- name: getJobApplicationFunnel :many
+SELECT status, count(*)::int AS count
+FROM applications
+WHERE job_id = $1
+GROUP BY status
+ORDER BY count DESC`;
+
+export interface getJobApplicationFunnelArgs {
+    jobId: string;
+}
+
+export interface getJobApplicationFunnelRow {
+    status: string;
+    count: number;
+}
+
+export async function getJobApplicationFunnel(sql: Sql, args: getJobApplicationFunnelArgs): Promise<getJobApplicationFunnelRow[]> {
+    return (await sql.unsafe(getJobApplicationFunnelQuery, [args.jobId]).values()).map(row => ({
+        status: row[0],
+        count: row[1]
+    }));
+}
+
+export const getJobAverageTimeToEvaluationQuery = `-- name: getJobAverageTimeToEvaluation :one
+SELECT COALESCE(
+  EXTRACT(EPOCH FROM avg(r.created_at - a.created_at)) / 3600,
+  0
+)::numeric(10,1) AS avg_hours
+FROM applications a
+JOIN reports r ON r.application_id = a.id
+WHERE a.job_id = $1`;
+
+export interface getJobAverageTimeToEvaluationArgs {
+    jobId: string;
+}
+
+export interface getJobAverageTimeToEvaluationRow {
+    avgHours: string;
+}
+
+export async function getJobAverageTimeToEvaluation(sql: Sql, args: getJobAverageTimeToEvaluationArgs): Promise<getJobAverageTimeToEvaluationRow | null> {
+    const rows = await sql.unsafe(getJobAverageTimeToEvaluationQuery, [args.jobId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        avgHours: row[0]
+    };
+}
+
