@@ -293,15 +293,11 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
   });
 
   const [skillInput, setSkillInput] = useState("");
-  const currentResumeKey = form.getFieldValue("resumeKey");
   const resumeDetails = profile.resumeUpdatedAt
     ? `Resume last updated ${format(new Date(profile.resumeUpdatedAt), "MMM d, yyyy 'at' h:mm a")}`
     : null;
 
   const skillInputId = `skill-input-${id}`;
-  const onResumeUploaded = async (resume: { resumeKey: string }) => {
-    form.setFieldValue("resumeKey", resume.resumeKey);
-  };
   const onSave = () => {
     form.handleSubmit();
   };
@@ -421,13 +417,19 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
               }}
             </form.Field>
 
-            <ResumeUploadField
-              value={currentResumeKey}
-              details={resumeDetails}
-              showViewButton
-              description="Upload a PDF, DOC, or DOCX file. This is the resume attached when you apply."
-              onUploaded={onResumeUploaded}
-            />
+            <form.Field name="resumeKey">
+              {(field) => (
+                <ResumeUploadField
+                  value={field.state.value}
+                  details={resumeDetails}
+                  showViewButton
+                  description="Upload a PDF, DOC, or DOCX file. This is the resume attached when you apply."
+                  onUploaded={async (resume) => {
+                    field.handleChange(resume.resumeKey);
+                  }}
+                />
+              )}
+            </form.Field>
           </CardContent>
         </Card>
 

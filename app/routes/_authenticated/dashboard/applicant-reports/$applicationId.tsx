@@ -12,9 +12,10 @@ import { toast } from "sonner";
 import { DashboardApplicantReviewSkeleton } from "@/components/route-skeletons";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
-import { getApplicationResumeDownloadUrl } from "@/features/applications/server/functions";
+import { getApplicationResume } from "@/features/applications/server/functions";
 import { parseReportData, ReportTimeline } from "@/features/reports/components/report-cards";
 import { getCompanyApplicantReportTimeline } from "@/features/reports/server/functions";
+import { base64ToBlob } from "@/shared/resume";
 import { validateUuidParams } from "@/shared/validation";
 
 export const Route = createFileRoute("/_authenticated/dashboard/applicant-reports/$applicationId")({
@@ -39,11 +40,13 @@ export const Route = createFileRoute("/_authenticated/dashboard/applicant-report
 
 function ApplicantAiReportPage() {
   const { application, preEvaluation, interview, interviewState, report } = Route.useLoaderData();
-  const getResumeUrlFn = useServerFn(getApplicationResumeDownloadUrl);
+  const getResumeFn = useServerFn(getApplicationResume);
 
   const resumeDownloadMutation = useMutation({
-    mutationFn: getResumeUrlFn,
-    onSuccess: ({ url }) => {
+    mutationFn: getResumeFn,
+    onSuccess: ({ base64, contentType }) => {
+      const blob = base64ToBlob(base64, contentType);
+      const url = URL.createObjectURL(blob);
       window.open(url, "_blank", "noopener,noreferrer");
     },
     onError: () => {

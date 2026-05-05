@@ -26,7 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { SubmittedProfileSnapshot } from "@/features/applications/components/submitted-profile-snapshot";
 import {
-  getApplicationResumeDownloadUrl,
+  getApplicationResume,
   getMyApplicationDetail,
   withdrawApplication,
 } from "@/features/applications/server/functions";
@@ -34,6 +34,7 @@ import { InterviewInvitationCard } from "@/features/interviews/components/interv
 import { getInterviewForApplication } from "@/features/interviews/server/functions";
 import { getInterviewExpiresAt } from "@/features/interviews/shared/expiry";
 import { formatDate, formatDateShort } from "@/shared/date";
+import { base64ToBlob } from "@/shared/resume";
 import { validateUuidParams } from "@/shared/validation";
 
 export const Route = createFileRoute("/_authenticated/dashboard/application/$applicationId")({
@@ -200,12 +201,14 @@ const getJobStateLabel = (application: Application) => {
 
 function CandidateApplicationDetailPage() {
   const { application, interview } = Route.useLoaderData();
-  const getResumeUrlFn = useServerFn(getApplicationResumeDownloadUrl);
+  const getResumeFn = useServerFn(getApplicationResume);
   const router = useRouter();
 
   const resumeDownloadMutation = useMutation({
-    mutationFn: getResumeUrlFn,
-    onSuccess: ({ url }) => {
+    mutationFn: getResumeFn,
+    onSuccess: ({ base64, contentType }) => {
+      const blob = base64ToBlob(base64, contentType);
+      const url = URL.createObjectURL(blob);
       window.open(url, "_blank", "noopener,noreferrer");
     },
     onError: () => {

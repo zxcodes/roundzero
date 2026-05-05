@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/select";
 import { SubmittedProfileSnapshot } from "@/features/applications/components/submitted-profile-snapshot";
 import {
-  getApplicationResumeDownloadUrl,
+  getApplicationResume,
   getCompanyApplicantReview,
   updateApplicationStatus,
 } from "@/features/applications/server/functions";
@@ -49,6 +49,7 @@ import {
   type ApplicationStatus,
   applicationStatusSchema,
 } from "@/shared/enums";
+import { base64ToBlob } from "@/shared/resume";
 import { validateUuidParams } from "@/shared/validation";
 
 export const Route = createFileRoute("/_authenticated/dashboard/applicants/$applicationId")({
@@ -238,7 +239,7 @@ function ApplicantReviewPage() {
   const [pendingStatus, setPendingStatus] = useState<ApplicationStatus | null>(null);
 
   const updateStatusFn = useServerFn(updateApplicationStatus);
-  const getResumeUrlFn = useServerFn(getApplicationResumeDownloadUrl);
+  const getResumeFn = useServerFn(getApplicationResume);
 
   const updateStatusMutation = useMutation({
     mutationFn: updateStatusFn,
@@ -252,8 +253,10 @@ function ApplicantReviewPage() {
   });
 
   const resumeDownloadMutation = useMutation({
-    mutationFn: getResumeUrlFn,
-    onSuccess: ({ url }) => {
+    mutationFn: getResumeFn,
+    onSuccess: ({ base64, contentType }) => {
+      const blob = base64ToBlob(base64, contentType);
+      const url = URL.createObjectURL(blob);
       window.open(url, "_blank", "noopener,noreferrer");
     },
     onError: () => {

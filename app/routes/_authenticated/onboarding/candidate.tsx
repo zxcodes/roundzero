@@ -74,13 +74,9 @@ function CandidateOnboardingPage() {
     },
   });
 
-  const currentResumeKey = form.getFieldValue("resumeKey");
   const onFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     form.handleSubmit();
-  };
-  const onResumeUploaded = (resume: { resumeKey: string }) => {
-    form.setFieldValue("resumeKey", resume.resumeKey);
   };
 
   return (
@@ -149,11 +145,17 @@ function CandidateOnboardingPage() {
             }}
           </form.Field>
 
-          <ResumeUploadField
-            value={currentResumeKey}
-            description="Upload a PDF, DOC, or DOCX resume. You can also add this later in settings."
-            onUploaded={onResumeUploaded}
-          />
+          <form.Field name="resumeKey">
+            {(field) => (
+              <ResumeUploadField
+                value={field.state.value}
+                description="Upload a PDF, DOC, or DOCX resume. You can also add this later in settings."
+                onUploaded={async (resume) => {
+                  field.handleChange(resume.resumeKey);
+                }}
+              />
+            )}
+          </form.Field>
 
           <form.Subscribe selector={(state) => state.isSubmitting}>
             {(isSubmitting) => (
