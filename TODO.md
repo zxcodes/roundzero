@@ -1,6 +1,6 @@
 ## TODO
 
-- also think about using frontier models for post evaluation. only for evaluation steps not extraction or something. 
+- use frontier models for the entire ai layer in prod.
 - wire stripe and pricing up. make sure to implement a really nice way of checking for an active sub throughout the app (context) perhaps?
 - show interview invited button in applied job application pages if they have an existing interview, or in progress etc. basically like a status action.
 - configure sentry for prod envs.
