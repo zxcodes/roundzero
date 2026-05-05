@@ -155,7 +155,7 @@ export const startMyInterview = createServerFn({ method: "POST" })
     });
 
     try {
-      await markInterviewAgentStarted(env, data.interviewId);
+      await markInterviewAgentStarted(data.interviewId);
     } catch (error) {
       console.error(
         `[startMyInterview] Failed to sync agent start state for ${data.interviewId}`,

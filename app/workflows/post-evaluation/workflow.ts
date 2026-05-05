@@ -40,14 +40,11 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
 
       const interviewData = await step.do(
         "read_interview_data",
-        readInterviewData(interviewId, this.env, db, log),
+        readInterviewData(interviewId, db, log),
       );
       applicationId = interviewData.interview.applicationId;
 
-      const reportDraft = await step.do(
-        "generate_report",
-        generateReport(interviewData, this.env, log),
-      );
+      const reportDraft = await step.do("generate_report", generateReport(interviewData, log));
 
       const report = await step.do(
         "persist_report",
@@ -63,7 +60,7 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
 
       await step.do(
         "send_report_ready_email",
-        sendReportReadyEmail(interviewData, notification, reportDraft, this.env, db, log),
+        sendReportReadyEmail(interviewData, notification, reportDraft, db, log),
       );
 
       log.info(`Post-evaluation complete: ${report.id}`);
