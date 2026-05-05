@@ -65,21 +65,6 @@
 
 ---
 
-## Phase 10 (Optional): Better Auth Migration
-
-- [ ] Install `better-auth` + `pg`, create Better Auth server/client instances
-- [ ] Add Better Auth tables (`account`, `session`, `verification`) to init migration
-- [ ] Add `email_verified` column to `users`, map `picture` → `image` via fields config
-- [ ] Create API route handler (`/api/auth/*`), `getSession`/`ensureSession` server functions
-- [ ] Replace `@react-oauth/google` + `loginWithGoogle` with Better Auth Google OAuth flow
-- [ ] Replace TanStack Start session management with Better Auth session management
-- [ ] Update auth/company middleware to use Better Auth sessions
-- [ ] Remove `app/shared/session.ts`, `@react-oauth/google`, `SESSION_SECRET` env var
-- [ ] Reset DB, update tests for new schema
-- [ ] (Optional) Add magic link, email/password, or 2FA plugins
-
----
-
 ## Phase 11 (Optional): Web Interface Guidelines Compliance
 
 - [ ] `prefers-reduced-motion` guard for animations
