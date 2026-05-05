@@ -4,7 +4,6 @@
 - wire stripe and pricing up. make sure to implement a really nice way of checking for an active sub throughout the app (context) perhaps?
 - show interview invited button in applied job application pages if they have an existing interview, or in progress etc. basically like a status action.
 - configure sentry for prod envs.
-- manual interview invitation does not trigger post workflow on end (only checked using cancel action, not auto end from agent).
 - we can prob use cf workflow's waitForEvent method to gather all the reports and then send all at once to the company?
 - think about showing expiry date of jobs and also activeness of each job for ease of candidates. also think about this entire end to end lifecycle of each job on the platform. 
 - think about entire ai layer arch, it is on-demand right now, check if that's sufficient or we need queues etc?
@@ -46,6 +45,7 @@
 
 <!--- see shadcn dashboard block for inspiration on company dashboard. (bunx shadcn@latest add dashboard-01)-->
 <!--- configure different r2 buckets based on env.-->
+<!--- manual interview invitation does not trigger post workflow on end (only checked using cancel action, not auto end from agent).-->
 <!--- isn't serverEnv redundant now since this entire thing itself is a cf worker now? think and remove.-->
 <!--- figure our the random stretched dashboard skeleton.-->
 <!--- test docx resumes, parsing errors etc. -->
