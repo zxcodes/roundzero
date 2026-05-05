@@ -22,7 +22,7 @@ bun install
 bash setup-db.sh setup_pg
 
 # Copy env template
-cp .env.sample .env
+cp .env.example .env
 # Fill in DATABASE_URL, and other values
 
 # Start dev server
