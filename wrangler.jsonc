@@ -17,6 +17,13 @@
   "ai": {
     "binding": "AI"
   },
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "<YOUR_HYPERDRIVE_CONFIG_ID>",
+      "localConnectionString": "postgres://postgres:password@localhost:6311/postgres?sslmode=disable"
+    }
+  ],
   "r2_buckets": [
     {
       "binding": "RESUMES",
