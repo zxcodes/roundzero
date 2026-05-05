@@ -19,4 +19,4 @@ const envSchema = z.object({
   STRIPE_SECRET_KEY: z.string(),
 });
 
-export const serverEnv = envSchema.parse(process.env);
+export const appEnv = envSchema.parse(process.env);
