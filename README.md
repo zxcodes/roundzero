@@ -23,7 +23,7 @@ bash setup-db.sh setup_pg
 
 # Copy env template
 cp .env.sample .env
-# Fill in DATABASE_URL, EDGE_WORKER_SECRET, and other values
+# Fill in DATABASE_URL, and other values
 
 # Start dev server
 bun run dev

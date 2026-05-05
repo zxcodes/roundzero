@@ -687,9 +687,7 @@ See `PLAN.md` for the full build plan. Current focus:
 | Recovery sweep for stuck applications | Fire-and-forget trigger has no retry — if Workflows are failing, applications stay in `applied` with no pre-evaluation forever | Add a cron (CF Cron Trigger or scheduled task) that finds `applied` rows with no `pre_evaluations` row and re-triggers them |
 | Quota race condition | Two concurrent workflows can over-invite for a job if capacity checks are non-atomic | Use transactional locking (`SELECT ... FOR UPDATE`) on job-level capacity checks when creating interviews |
 | LLM model adequacy | Interview chat currently uses `@cf/zai-org/glm-4.7-flash`; pre-eval/report quality can still drift by role complexity | Keep periodic score-quality checks and re-evaluate model mix if report consistency drops |
-| Workflow failure orphans | If workflow errors after `write_pre_evaluation` but before `decide_next_step`, application is stuck in `pre_screening` | Recovery sweep covers this too — detect `pre_screening` rows older than N minutes with no interview |
-| Worker secret rotation | `EDGE_WORKER_SECRET` is a single static value | Use a proper random secret in prod; consider HMAC request signing or CF Access Service Tokens for zero-trust |
-
+| Workflow failure orphans | If workflow errors after `write_pre_evaluation` but before `decide_next_step`, application is stuck in `pre_screening` | Recovery sweep covers this too — detect `pre_screening` rows older than N minutes with no interview
 ---
 
 ## 17. Key Decisions
