@@ -12,7 +12,6 @@ import {
   tool,
   type UIMessage,
 } from "ai";
-import { createWorkersAI } from "workers-ai-provider";
 import { z } from "zod";
 import { shouldAutoExpireInterview } from "@/features/interviews/shared/expiry";
 import {
@@ -21,6 +20,7 @@ import {
   getInterviewContextById,
 } from "../queries/interviews/queries_sql";
 import { getDb } from "../shared/db";
+import { getInterviewModelChain, getOpenRouter } from "../shared/openrouter";
 
 type InterviewSessionStatus = "pending" | "in_progress" | "completed" | "cancelled" | "expired";
 
@@ -86,11 +86,6 @@ type InterviewStateResponse = {
   };
   messages: InterviewTranscriptMessage[];
 };
-
-// Llama 4 Scout: non-reasoning, native tool calling, used by Cloudflare's
-// official "Build a chat agent" tutorial. Replaces the previous reasoning
-// model (GLM-4.7-flash) which leaked chain-of-thought as visible text.
-const MODEL = "@cf/meta/llama-4-scout-17b-16e-instruct";
 
 const toNow = () => new Date().toISOString();
 
@@ -427,12 +422,14 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
       return { greeted: false };
     }
 
-    const workersai = createWorkersAI({ binding: this.env.AI });
+    const openrouter = getOpenRouter();
+    const { model, models } = getInterviewModelChain();
     const result = await generateText({
-      model: workersai(MODEL),
+      model: openrouter.chat(model),
       temperature: 0.7,
       system: this.buildSystemPrompt(),
       prompt: `Open the interview. Greet ${this.state.context.candidateName || "the candidate"} warmly by name, reference one specific resume detail that connects to this role, then ask your first focused interview question. Plain conversational English only.`,
+      providerOptions: { openrouter: { models } },
     });
 
     const greeting = result.text.trim();
@@ -516,7 +513,8 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
       return new Response("Interview already completed", { status: 400 });
     }
 
-    const workersai = createWorkersAI({ binding: this.env.AI });
+    const openrouter = getOpenRouter();
+    const { model, models } = getInterviewModelChain();
 
     const latestCandidateMessage = [...this.messages].reverse().find((m) => m.role === "user");
     const latestCandidateText = latestCandidateMessage
@@ -532,7 +530,7 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
       : this.buildSystemPrompt();
 
     const result = streamText({
-      model: workersai(MODEL),
+      model: openrouter.chat(model),
       temperature: 0.7,
       system: systemPrompt,
       messages: pruneMessages({
@@ -542,6 +540,7 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
       }),
       onFinish,
       stopWhen: [stepCountIs(5), hasToolCall("end_interview")],
+      providerOptions: { openrouter: { models } },
       tools: {
         evaluate_answer: tool({
           description:
