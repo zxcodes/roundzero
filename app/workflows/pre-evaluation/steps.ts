@@ -1,3 +1,4 @@
+import { env } from "cloudflare:workers";
 import { NonRetryableError } from "cloudflare:workflows";
 import mammoth from "mammoth";
 import type { Sql } from "postgres";
@@ -123,15 +124,12 @@ function parseJsonPayload(payload: unknown): Record<string, unknown> {
   throw new Error(`AI response payload is not a JSON object: ${typeof payload}`);
 }
 
-async function runAiJsonWithGateway(
-  env: Env,
-  args: {
-    stepLabel: string;
-    systemPrompt: string;
-    userPrompt: string;
-    schema: unknown;
-  },
-): Promise<unknown> {
+async function runAiJsonWithGateway(args: {
+  stepLabel: string;
+  systemPrompt: string;
+  userPrompt: string;
+  schema: unknown;
+}): Promise<unknown> {
   const gateway = {
     id: env.AI_GATEWAY_ID,
     skipCache: true,
@@ -372,7 +370,6 @@ export function readApplicationData(
 export function fetchAndExtractResume(
   applicationId: string,
   resumeKey: string | null,
-  env: Env,
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
   return async () => {
@@ -404,7 +401,6 @@ export function fetchAndExtractResume(
 export function classifyJobType(
   jobTitle: string,
   jobDescription: string,
-  env: Env,
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
   return async () => {
@@ -413,7 +409,7 @@ export function classifyJobType(
 
     const startTime = Date.now();
     try {
-      const response = await runAiJsonWithGateway(env, {
+      const response = await runAiJsonWithGateway({
         stepLabel: "classify_job_type",
         systemPrompt: CLASSIFY_JOB_SYSTEM_PROMPT,
         userPrompt: prompt,
@@ -449,7 +445,6 @@ export function classifyJobType(
 export function detectSlop(
   candidateMeta: Record<string, unknown>,
   resumeText: string,
-  env: Env,
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
   return async () => {
@@ -458,7 +453,7 @@ export function detectSlop(
 
     const startTime = Date.now();
     try {
-      const response = await runAiJsonWithGateway(env, {
+      const response = await runAiJsonWithGateway({
         stepLabel: "detect_slop",
         systemPrompt: SLOP_DETECTION_SYSTEM_PROMPT,
         userPrompt: prompt,
@@ -508,7 +503,6 @@ export function runAiPreEvaluation(
   resumeText: string,
   candidateMeta: Record<string, unknown>,
   roleType: string,
-  env: Env,
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
   return async (): Promise<{ result: PreEvaluationResult; rawResponse: string }> => {
@@ -518,7 +512,7 @@ export function runAiPreEvaluation(
 
     const startTime = Date.now();
     try {
-      const response = await runAiJsonWithGateway(env, {
+      const response = await runAiJsonWithGateway({
         stepLabel: "run_ai_pre_evaluation",
         systemPrompt,
         userPrompt,
@@ -637,7 +631,6 @@ export function decideNextStep(
       interviewQuestions: unknown;
     };
   },
-  env: Env,
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
   return async () => {
@@ -802,7 +795,7 @@ export function decideNextStep(
 
     const interview = allocation.interview;
 
-    await initializeInterviewAgent(env, interview.id);
+    await initializeInterviewAgent(interview.id);
 
     await updateApplicationStatus(db, {
       id: applicationId,

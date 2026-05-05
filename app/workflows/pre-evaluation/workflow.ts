@@ -27,17 +27,17 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
 
       const resumeText = await step.do(
         "fetch_and_extract_resume",
-        fetchAndExtractResume(applicationId, applicationData.application.resumeKey, this.env, log),
+        fetchAndExtractResume(applicationId, applicationData.application.resumeKey, log),
       );
 
       const jobClassification = await step.do(
         "classify_job_type",
-        classifyJobType(applicationData.job.title, applicationData.job.description, this.env, log),
+        classifyJobType(applicationData.job.title, applicationData.job.description, log),
       );
 
       const slopCheck = await step.do(
         "detect_slop",
-        detectSlop(applicationData.application.metadata ?? {}, resumeText, this.env, log),
+        detectSlop(applicationData.application.metadata ?? {}, resumeText, log),
       );
 
       const aiResult = await step.do(
@@ -51,7 +51,7 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
           resumeText,
           applicationData.application.metadata ?? {},
           jobClassification.roleType,
-          this.env,
+
           log,
         ),
       );
@@ -63,7 +63,7 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
 
       const decision = await step.do(
         "decide_next_step",
-        decideNextStep(applicationId, aiResult, slopCheck, applicationData, this.env, log),
+        decideNextStep(applicationId, aiResult, slopCheck, applicationData, log),
       );
 
       log.info(

@@ -1,16 +1,17 @@
+import { env } from "cloudflare:workers";
 import { getAgentByName } from "agents";
 
-const createAgentStub = async (env: Env, interviewId: string) => {
+const createAgentStub = async (interviewId: string) => {
   return await getAgentByName(env.INTERVIEW_AGENT, interviewId);
 };
 
-export const initializeInterviewAgent = async (env: Env, interviewId: string) => {
-  const stub = await createAgentStub(env, interviewId);
+export const initializeInterviewAgent = async (interviewId: string) => {
+  const stub = await createAgentStub(interviewId);
   return await stub.initializeContext({ interviewId });
 };
 
-export const markInterviewAgentStarted = async (env: Env, interviewId: string) => {
-  const stub = await createAgentStub(env, interviewId);
+export const markInterviewAgentStarted = async (interviewId: string) => {
+  const stub = await createAgentStub(interviewId);
   const started = await stub.markStarted({ interviewId });
 
   if (!started.started) {
@@ -21,7 +22,7 @@ export const markInterviewAgentStarted = async (env: Env, interviewId: string) =
   return { started: started.started, greeted: greeted.greeted };
 };
 
-export const getInterviewAgentState = async (env: Env, interviewId: string) => {
-  const stub = await createAgentStub(env, interviewId);
+export const getInterviewAgentState = async (interviewId: string) => {
+  const stub = await createAgentStub(interviewId);
   return await stub.getInterviewState({ interviewId });
 };

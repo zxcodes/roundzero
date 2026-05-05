@@ -1,3 +1,4 @@
+import { env } from "cloudflare:workers";
 import { NonRetryableError } from "cloudflare:workflows";
 import type { Sql } from "postgres";
 import { jsx } from "react/jsx-runtime";
@@ -151,13 +152,10 @@ function parseJsonPayload(payload: unknown): Record<string, unknown> {
   throw new Error(`AI response payload is not a JSON object: ${typeof payload}`);
 }
 
-async function runPostEvalJsonWithGateway(
-  env: Env,
-  args: {
-    systemPrompt: string;
-    userPrompt: string;
-  },
-): Promise<unknown> {
+async function runPostEvalJsonWithGateway(args: {
+  systemPrompt: string;
+  userPrompt: string;
+}): Promise<unknown> {
   const gateway = {
     id: env.AI_GATEWAY_ID,
     skipCache: true,
@@ -440,7 +438,6 @@ export function markApplicationEvaluatedExisting(interviewId: string, db: Sql) {
 
 export function readInterviewData(
   interviewId: string,
-  env: Env,
   db: Sql,
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
@@ -454,7 +451,7 @@ export function readInterviewData(
 
     const contextState = parseInterviewContextState(interview.metadata);
 
-    const stateCandidate = await getInterviewAgentState(env, interviewId);
+    const stateCandidate = await getInterviewAgentState(interviewId);
     if (!isInterviewAgentState(stateCandidate)) {
       throw new Error(`Interview agent returned invalid state for ${interviewId}`);
     }
@@ -490,7 +487,6 @@ export function generateReport(
     transcript: string;
     contextState: InterviewContextState;
   },
-  env: Env,
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
   return async () => {
@@ -578,7 +574,7 @@ export function generateReport(
       transcript: interviewData.transcript,
     });
 
-    const aiResponse = await runPostEvalJsonWithGateway(env, {
+    const aiResponse = await runPostEvalJsonWithGateway({
       systemPrompt,
       userPrompt,
     });
@@ -710,7 +706,6 @@ export function sendReportReadyEmail(
   },
   notification: { id: string } | null,
   reportDraft: { scores: { overall: number }; recommendation: string },
-  env: Env,
   db: Sql,
   log: ReturnType<typeof createWorkflowLogger>,
 ) {

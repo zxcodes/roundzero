@@ -1,4 +1,3 @@
-import { env } from "cloudflare:workers";
 import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
@@ -50,12 +49,12 @@ const isInterviewAgentState = (value: unknown): value is InterviewAgentState => 
 
 const getInterviewStateForCompany = async (interviewId: string) => {
   try {
-    const payload = (await getInterviewAgentState(env, interviewId)) as unknown;
+    const payload = await getInterviewAgentState(interviewId);
     if (!isInterviewAgentState(payload)) {
       return null;
     }
 
-    return payload;
+    return { messages: payload.messages };
   } catch {
     return null;
   }
