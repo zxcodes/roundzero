@@ -1006,6 +1006,60 @@ export function InterviewWorkspaceSkeleton() {
   );
 }
 
+/**
+ * Skeleton for the dashboard layout — sidebar + header + content area.
+ * Used as pendingComponent on the /_authenticated/dashboard layout route.
+ */
+export function DashboardLayoutSkeleton() {
+  return (
+    <div className="flex h-svh w-full">
+      {/* Sidebar */}
+      <aside className="hidden h-full w-72 shrink-0 bg-sidebar text-sidebar-foreground shadow-sm ring-1 ring-sidebar-border md:flex md:flex-col">
+        <div className="p-4">
+          <Skeleton className="h-6 w-32" />
+          <Skeleton className="mt-2 h-4 w-24" />
+        </div>
+        <div className="flex-1 space-y-3 p-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-9 w-full rounded-lg" />
+          ))}
+        </div>
+        <div className="p-3">
+          <Skeleton className="h-9 w-full rounded-lg" />
+        </div>
+      </aside>
+
+      {/* Main area */}
+      <div className="flex min-h-0 flex-1 flex-col">
+        {/* SiteHeader */}
+        <header className="flex shrink-0 items-center justify-between gap-4 border-b border-border/60 bg-card px-4 py-3 md:px-6 md:py-3.5">
+          <Skeleton className="h-6 w-40" />
+          <div className="flex items-center gap-3">
+            <Skeleton className="size-8 rounded-md" />
+            <Skeleton className="size-8 rounded-full" />
+          </div>
+        </header>
+
+        {/* Content */}
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
+            <div className="animate-fade-in space-y-6">
+              <div className="space-y-2.5">
+                <Skeleton className="h-7 w-44" />
+                <Skeleton className="h-4 w-64" />
+              </div>
+              <div className="space-y-3">
+                <Skeleton className="h-28 w-full rounded-xl" />
+                <Skeleton className="h-28 w-full rounded-xl" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function InterviewContentSkeleton() {
   return (
     <>
