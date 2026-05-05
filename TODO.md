@@ -2,7 +2,6 @@
 
 - also think about using frontier models for post evaluation. only for evaluation steps not extraction or something. 
 - wire stripe and pricing up. make sure to implement a really nice way of checking for an active sub throughout the app (context) perhaps?
-- isn't serverEnv redundant now since this entire thing itself is a cf worker now? think and remove.
 - figure our the random stretched dashboard skeleton.
 - show interview invited button in applied job application pages if they have an existing interview, or in progress etc. basically like a status action.
 - configure different r2 buckets based on env.
@@ -48,6 +47,7 @@
 
 
 
+<!--- isn't serverEnv redundant now since this entire thing itself is a cf worker now? think and remove.-->
 <!--- test docx resumes, parsing errors etc. -->
 <!--- application status change notifications need to be good. right now they;re too generic even if the candidate is shortlisted/rejected.-->
 <!--- update relevant arch files since we no longer have edge.
