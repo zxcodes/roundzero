@@ -1,9 +1,5 @@
 import { z } from "zod";
 
-const edgeWorkerSecretSchema = z
-  .string()
-  .min(32, "EDGE_WORKER_SECRET must be at least 32 characters");
-
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "staging", "test"]).default("development"),
 
@@ -27,18 +23,6 @@ const envSchema = z.object({
   // Stripe Keys
   STRIPE_PUBLISHABLE_KEY: z.string(),
   STRIPE_SECRET_KEY: z.string(),
-
-  // Interview agent token-signing secret (HMAC for candidate WS auth)
-  EDGE_WORKER_SECRET: edgeWorkerSecretSchema,
 });
 
-const parsedEnv = envSchema.parse(process.env);
-
-if (
-  parsedEnv.NODE_ENV !== "test" &&
-  parsedEnv.EDGE_WORKER_SECRET.toLowerCase().includes("dev-secret")
-) {
-  throw new Error("EDGE_WORKER_SECRET must not use a dev-secret value outside tests");
-}
-
-export const serverEnv = parsedEnv;
+export const serverEnv = envSchema.parse(process.env);
