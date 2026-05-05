@@ -3,7 +3,6 @@
 - also think about using frontier models for post evaluation. only for evaluation steps not extraction or something. 
 - wire stripe and pricing up. make sure to implement a really nice way of checking for an active sub throughout the app (context) perhaps?
 - show interview invited button in applied job application pages if they have an existing interview, or in progress etc. basically like a status action.
-- configure different r2 buckets based on env.
 - configure sentry for prod envs.
 - manual interview invitation does not trigger post workflow on end (only checked using cancel action, not auto end from agent).
 - we can prob use cf workflow's waitForEvent method to gather all the reports and then send all at once to the company?
@@ -32,7 +31,6 @@
 - think more about the duration from first report to last report generation bc it will depend on the candidate. think if we need to add an expiry or something and pass it to the next candidate?
 - you just post a job and you will be notified with the reports. (major overhaul on company side.), also check how long should it take for reports to arrive, let companies choose how many reports they wanna see per job while creating it etc.
 - add a job creation shortcut using "N" also indicate it on the button.
-- see shadcn dashboard block for inspiration on company dashboard. (bunx shadcn@latest add dashboard-01)
 - check all resend templates for all notifications exist, if they link to proper paths etc.
 - company dashboard needs a big overhaul. graphs, charts, recent reports, etc
 - see if we can use SST for deployments.
@@ -46,6 +44,8 @@
 
 
 
+<!--- see shadcn dashboard block for inspiration on company dashboard. (bunx shadcn@latest add dashboard-01)-->
+<!--- configure different r2 buckets based on env.-->
 <!--- isn't serverEnv redundant now since this entire thing itself is a cf worker now? think and remove.-->
 <!--- figure our the random stretched dashboard skeleton.-->
 <!--- test docx resumes, parsing errors etc. -->
