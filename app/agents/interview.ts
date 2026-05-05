@@ -626,8 +626,8 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
 
             if (!this.state.postEvaluationTriggered) {
               try {
-                await this.runWorkflow("POST_EVALUATION", {
-                  interviewId: this.state.interviewId,
+                await this.env.POST_EVALUATION.create({
+                  params: { interviewId: this.state.interviewId },
                 });
                 this.setState({
                   ...this.state,
