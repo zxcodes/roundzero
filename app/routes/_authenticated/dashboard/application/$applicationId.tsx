@@ -210,7 +210,6 @@ function CandidateApplicationDetailPage() {
       const blob = base64ToBlob(base64, contentType);
       const url = URL.createObjectURL(blob);
       window.open(url, "_blank", "noopener,noreferrer");
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
     },
     onError: () => {
       toast.error("Failed to open the submitted resume. Please try again.");
