@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, useMatches } from "@tanstack/react-router";
 import { useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { CommandPalette } from "@/components/command-palette";
+import { DashboardLayoutSkeleton } from "@/components/route-skeletons";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,6 +15,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
       notificationsFeed: await getMyNotificationsFeed(),
     };
   },
+  pendingComponent: DashboardLayoutSkeleton,
   component: DashboardLayout,
 });
 
