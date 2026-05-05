@@ -212,7 +212,7 @@ async function extractResumeText(bytes: Uint8Array, contentType: string): Promis
   }
 
   if (contentType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
-    const result = await mammoth.extractRawText({ arrayBuffer: bytes.buffer as ArrayBuffer });
+    const result = await mammoth.extractRawText({ buffer: Buffer.from(bytes.buffer) });
     return result.value;
   }
 
@@ -384,13 +384,13 @@ export function fetchAndExtractResume(
     }
 
     const arrayBuffer = await object.arrayBuffer();
-    const bytes = new Uint8Array(arrayBuffer);
     const contentType = resumeKey.endsWith(".pdf")
       ? "application/pdf"
       : resumeKey.endsWith(".docx")
         ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         : "application/pdf";
 
+    const bytes = new Uint8Array(arrayBuffer);
     log.info(`Resume format: ${contentType}, size: ${bytes.length} bytes`);
     const text = await extractResumeText(bytes, contentType);
     log.result("resume", { chars: text.length, words: text.split(/\s+/).length });
