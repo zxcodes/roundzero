@@ -4,7 +4,33 @@ export function createWorkflowLogger(workflowName: string, applicationId: string
     applicationId: applicationId.slice(0, 8),
   };
 
-  const isProd = typeof process !== "undefined" ? process.env.NODE_ENV === "production" : true; // Workers → assume prod
+  const isProd = typeof process !== "undefined" ? process.env.NODE_ENV === "production" : true;
+
+  // ANSI colors (dev only)
+  const colors = {
+    reset: "\x1b[0m",
+    dim: "\x1b[2m",
+    cyan: "\x1b[36m",
+    green: "\x1b[32m",
+    yellow: "\x1b[33m",
+    red: "\x1b[31m",
+    magenta: "\x1b[35m",
+  };
+
+  function colorize(level: string, text: string) {
+    if (isProd) return text;
+
+    switch (level) {
+      case "info":
+        return `${colors.green}${text}${colors.reset}`;
+      case "warn":
+        return `${colors.yellow}${text}${colors.reset}`;
+      case "error":
+        return `${colors.red}${text}${colors.reset}`;
+      default:
+        return `${colors.cyan}${text}${colors.reset}`;
+    }
+  }
 
   function ts() {
     return new Date().toISOString();
@@ -30,16 +56,19 @@ export function createWorkflowLogger(workflowName: string, applicationId: string
   }
 
   function pretty(level: string, message: string, extra?: Record<string, unknown>) {
-    const prefix = `[${base.workflow}:${base.applicationId}]`;
+    const prefix = `${colors.dim}[${base.workflow}:${base.applicationId}]${colors.reset}`;
 
-    let line = `${prefix} [${level.toUpperCase()}] ${message}`;
+    const levelTag = colorize(level, `[${level.toUpperCase()}]`);
+    let line = `${prefix} ${levelTag} ${message}`;
 
     if (extra) {
       const rest = Object.entries(extra)
         .map(([k, v]) => (typeof v === "string" ? `${k}=${v}` : `${k}=${safeStringify(v)}`))
         .join(" ");
 
-      if (rest) line += ` → ${rest}`;
+      if (rest) {
+        line += ` ${colors.magenta}→${colors.reset} ${rest}`;
+      }
     }
 
     return line;
@@ -67,7 +96,7 @@ export function createWorkflowLogger(workflowName: string, applicationId: string
 
   return {
     step: (stepName: string, message: string) => {
-      write("info", `${stepName}: ${message}`);
+      write("info", `${colors.cyan}${stepName}${colors.reset}: ${message}`);
     },
 
     info: (message: string) => {
@@ -85,11 +114,11 @@ export function createWorkflowLogger(workflowName: string, applicationId: string
     },
 
     result: (stepName: string, data: Record<string, unknown>) => {
-      write("info", `${stepName} completed`, data);
+      write("info", `${colors.green}${stepName} completed${colors.reset}`, data);
     },
 
     ai: (promptLength: number, responseTokens: number, latencyMs: number) => {
-      write("info", "AI call", {
+      write("info", `${colors.magenta}AI call${colors.reset}`, {
         prompt: promptLength,
         tokens: responseTokens,
         latencyMs,
