@@ -1,3 +1,4 @@
+import { env } from "cloudflare:workers";
 import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { zodValidator } from "@tanstack/zod-adapter";
@@ -5,7 +6,6 @@ import { z } from "zod";
 import { getDb } from "@/shared/db";
 import { companySizeSchema, industrySchema, MAX_COMPANY_DESCRIPTION_LENGTH } from "@/shared/enums";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
-import { createR2UploadUrl, r2ObjectExists } from "@/shared/r2.server";
 import { type SessionData, sessionConfig } from "@/shared/session";
 import {
   nullableTrimmedString,
@@ -91,21 +91,28 @@ const allowedLogoTypes = {
 
 const maxLogoFileSize = 2 * 1024 * 1024;
 
-const logoUploadTargetSchema = z.object({
-  fileName: z.string().min(1).max(255),
-  fileSize: z.number().int().positive().max(maxLogoFileSize, "Logo must be 2MB or smaller"),
-  contentType: z.enum(
-    Object.keys(allowedLogoTypes) as [
-      keyof typeof allowedLogoTypes,
-      ...Array<keyof typeof allowedLogoTypes>,
-    ],
-    "Unsupported image format. Use PNG, JPG, WEBP, or SVG",
-  ),
-});
-
-const finalizeLogoUploadSchema = z.object({
-  logoKey: z.string().min(1),
-});
+const uploadCompanyLogoSchema = z
+  .object({
+    fileName: z.string().min(1).max(255),
+    contentType: z.enum(
+      Object.keys(allowedLogoTypes) as [
+        keyof typeof allowedLogoTypes,
+        ...Array<keyof typeof allowedLogoTypes>,
+      ],
+      "Unsupported image format. Use PNG, JPG, WEBP, or SVG",
+    ),
+    fileBase64: z.string().min(1),
+  })
+  .refine(
+    (data) => {
+      const approximateBytes = data.fileBase64.length * 0.75;
+      return approximateBytes <= maxLogoFileSize;
+    },
+    {
+      message: "Logo must be 2MB or smaller",
+      path: ["fileBase64"],
+    },
+  );
 
 const sanitizeLogoFileName = (fileName: string) => {
   const trimmed = fileName.trim().toLowerCase();
@@ -214,41 +221,20 @@ export const updateCompanyProfile = createServerFn({ method: "POST" })
     return { company: updated };
   });
 
-export const createCompanyLogoUploadTarget = createServerFn({ method: "POST" })
+export const uploadCompanyLogo = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidatorWithFormattedErrors(logoUploadTargetSchema))
+  .inputValidator(zodValidatorWithFormattedErrors(uploadCompanyLogoSchema))
   .handler(async ({ data, context }) => {
     if (context.user.role !== "company") {
       throw new Error("Only company users can upload logos");
     }
 
     const logoKey = buildLogoKey(context.userId, data.fileName, data.contentType);
-
-    return {
-      logoKey,
-      uploadUrl: await createR2UploadUrl({
-        data: { objectKey: logoKey, contentType: data.contentType },
-      }),
-      uploadMethod: "put" as const,
-      maxBytes: maxLogoFileSize,
-    };
-  });
-
-export const finalizeCompanyLogoUpload = createServerFn({ method: "POST" })
-  .middleware([authMiddleware])
-  .inputValidator(zodValidator(finalizeLogoUploadSchema))
-  .handler(async ({ data, context }) => {
-    if (context.user.role !== "company") {
-      throw new Error("Only company users can finalize logo uploads");
-    }
-
-    assertLogoKeyBelongsToUser(data.logoKey, context.userId);
-    const exists = await r2ObjectExists({ data: { key: data.logoKey } });
-    if (!exists) {
-      throw new Error("Uploaded logo could not be found");
-    }
-
-    return { logoKey: data.logoKey };
+    const bytes = Uint8Array.from(atob(data.fileBase64), (c) => c.charCodeAt(0));
+    await env.RESUMES.put(logoKey, bytes.buffer, {
+      httpMetadata: { contentType: data.contentType },
+    });
+    return { logoKey };
   });
 
 // --- Public Server Functions ---
