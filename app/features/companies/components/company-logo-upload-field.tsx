@@ -6,12 +6,9 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import {
-  createCompanyLogoUploadTarget,
-  finalizeCompanyLogoUpload,
-} from "@/features/companies/server/functions";
+import { uploadCompanyLogo } from "@/features/companies/server/functions";
 import { getPublicAssetUrl } from "@/shared/r2";
-import { uploadFileToSignedUrl } from "@/shared/resume";
+import { fileToBase64 } from "@/shared/resume";
 
 type CompanyLogoUploadFieldProps = {
   value: string | null | undefined;
@@ -31,13 +28,9 @@ export function CompanyLogoUploadField({
   onErrorChange,
 }: CompanyLogoUploadFieldProps) {
   const id = useId();
-  const [uploadState, setUploadState] = useState<{
-    status: "idle" | "uploading";
-    progress: number;
-  }>({ status: "idle", progress: 0 });
+  const [isUploading, setIsUploading] = useState(false);
 
-  const createUploadTargetFn = useServerFn(createCompanyLogoUploadTarget);
-  const finalizeUploadFn = useServerFn(finalizeCompanyLogoUpload);
+  const uploadLogoFn = useServerFn(uploadCompanyLogo);
   const inputId = `company-logo-${id}`;
   const logoUrl = value ? getPublicAssetUrl(value) : null;
 
@@ -48,40 +41,29 @@ export function CompanyLogoUploadField({
 
     try {
       onErrorChange?.(null);
-      setUploadState({ status: "uploading", progress: 0 });
+      setIsUploading(true);
 
-      const target = await createUploadTargetFn({
+      const fileBase64 = await fileToBase64(file);
+      const result = await uploadLogoFn({
         data: {
           fileName: file.name,
-          fileSize: file.size,
           contentType: file.type as "image/png" | "image/jpeg" | "image/webp" | "image/svg+xml",
+          fileBase64,
         },
       });
 
-      await uploadFileToSignedUrl({
-        file,
-        uploadUrl: target.uploadUrl,
-        onProgress: (progress) => {
-          setUploadState({ status: "uploading", progress });
-        },
-      });
-
-      const finalized = await finalizeUploadFn({
-        data: { logoKey: target.logoKey },
-      });
-
-      await onUploaded({ logoKey: finalized.logoKey });
-      setUploadState({ status: "idle", progress: 100 });
+      await onUploaded({ logoKey: result.logoKey });
       toast.success("Company logo uploaded", {
         style: { marginBottom: "4rem" },
       });
     } catch (uploadError) {
-      setUploadState({ status: "idle", progress: 0 });
       const message =
         uploadError instanceof Error ? uploadError.message : "Failed to upload company logo";
       toast.error(message, {
         style: { marginBottom: "4rem" },
       });
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -128,16 +110,13 @@ export function CompanyLogoUploadField({
                 </span>
               </div>
             )}
-            {uploadState.status === "uploading" ? (
+            {isUploading ? (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-background/70">
                 <span className="text-xs font-medium tabular-nums text-foreground">
-                  {uploadState.progress}%
+                  Uploading...
                 </span>
                 <div className="w-3/4 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-1.5 bg-primary transition-all"
-                    style={{ width: `${uploadState.progress}%` }}
-                  />
+                  <div className="h-1.5 w-full animate-pulse bg-primary" />
                 </div>
               </div>
             ) : null}
@@ -156,13 +135,13 @@ export function CompanyLogoUploadField({
                 size="sm"
                 asChild
                 className="sm:shrink-0"
-                disabled={uploadState.status === "uploading"}
+                disabled={isUploading}
               >
                 <label htmlFor={inputId}>{value ? "Replace" : "Upload"}</label>
               </Button>
             </div>
 
-            {uploadState.status === "uploading" ? (
+            {isUploading ? (
               <p className="text-xs text-muted-foreground">Uploading company logo...</p>
             ) : value ? (
               <p className="text-xs text-muted-foreground">

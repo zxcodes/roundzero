@@ -1,11 +1,11 @@
+import { env } from "cloudflare:workers";
 import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { getDb } from "@/shared/db";
 import { authMiddleware } from "@/shared/middleware";
-import { createR2ResumeDownloadUrl, createR2UploadUrl, r2ObjectExists } from "@/shared/r2.server";
-import { sanitizeResumeFileName } from "@/shared/resume";
+import { arrayBufferToBase64, sanitizeResumeFileName } from "@/shared/resume";
 import { type SessionData, sessionConfig } from "@/shared/session";
 import {
   nullableTrimmedString,
@@ -103,25 +103,31 @@ const allowedResumeTypes = {
 
 const maxResumeFileSize = 5 * 1024 * 1024;
 
-const resumeUploadTargetSchema = z.object({
-  fileName: z.string().min(1).max(255),
-  fileSize: z.number().int().positive().max(maxResumeFileSize, "Resume must be 5MB or smaller"),
-  contentType: z.enum(
-    Object.keys(allowedResumeTypes) as [
-      keyof typeof allowedResumeTypes,
-      ...Array<keyof typeof allowedResumeTypes>,
-    ],
-    "Unsupported file format. Use PDF or DOCX",
-  ),
-});
+const uploadResumeSchema = z
+  .object({
+    fileName: z.string().min(1).max(255),
+    contentType: z.enum(
+      Object.keys(allowedResumeTypes) as [
+        keyof typeof allowedResumeTypes,
+        ...Array<keyof typeof allowedResumeTypes>,
+      ],
+      "Unsupported file format. Use PDF or DOCX",
+    ),
+    fileBase64: z.string().min(1),
+  })
+  .refine(
+    (data) => {
+      const approximateBytes = data.fileBase64.length * 0.75;
+      return approximateBytes <= maxResumeFileSize;
+    },
+    {
+      message: "Resume must be 5MB or smaller",
+      path: ["fileBase64"],
+    },
+  );
 
-const finalizeResumeUploadSchema = z.object({
+const getResumeSchema = z.object({
   resumeKey: z.string().min(1),
-});
-
-const resumeFileNameSchema = z.object({
-  resumeKey: z.string().min(1),
-  fileName: z.string().min(1).max(255).optional(),
 });
 
 const buildResumeKey = (
@@ -288,47 +294,32 @@ export const updateMyCandidateProfile = createServerFn({ method: "POST" })
     return { profile };
   });
 
-export const createResumeUploadTarget = createServerFn({ method: "POST" })
+export const uploadResume = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidatorWithFormattedErrors(resumeUploadTargetSchema))
+  .inputValidator(zodValidatorWithFormattedErrors(uploadResumeSchema))
   .handler(async ({ data, context }) => {
     if (context.user.role !== "candidate") {
       throw new Error("Only candidates can upload resumes");
     }
     const resumeKey = buildResumeKey(context.userId, data.fileName, data.contentType);
-
-    return {
-      resumeKey,
-      uploadUrl: await createR2UploadUrl({
-        data: { objectKey: resumeKey, contentType: data.contentType },
-      }),
-      uploadMethod: "put" as const,
-      maxBytes: maxResumeFileSize,
-    };
-  });
-
-export const finalizeResumeUpload = createServerFn({ method: "POST" })
-  .middleware([authMiddleware])
-  .inputValidator(zodValidator(finalizeResumeUploadSchema))
-  .handler(async ({ data, context }) => {
-    if (context.user.role !== "candidate") {
-      throw new Error("Only candidates can finalize resume uploads");
-    }
-    assertResumeKeyBelongsToUser(data.resumeKey, context.userId);
-    const exists = await r2ObjectExists({ data: { key: data.resumeKey } });
-    if (!exists) {
-      throw new Error("Uploaded resume could not be found");
-    }
-    return { resumeKey: data.resumeKey };
-  });
-
-export const getResumeDownloadUrl = createServerFn({ method: "POST" })
-  .middleware([authMiddleware])
-  .inputValidator(zodValidator(resumeFileNameSchema))
-  .handler(async ({ data, context }) => {
-    assertResumeKeyBelongsToUser(data.resumeKey, context.userId);
-    const url = await createR2ResumeDownloadUrl({
-      data: { resumeKey: data.resumeKey, fileName: data.fileName },
+    const bytes = Uint8Array.from(atob(data.fileBase64), (c) => c.charCodeAt(0));
+    await env.RESUMES.put(resumeKey, bytes.buffer, {
+      httpMetadata: { contentType: data.contentType },
     });
-    return { url };
+    return { resumeKey };
+  });
+
+export const getResume = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .inputValidator(zodValidator(getResumeSchema))
+  .handler(async ({ data, context }) => {
+    assertResumeKeyBelongsToUser(data.resumeKey, context.userId);
+    const object = await env.RESUMES.get(data.resumeKey);
+    if (!object) {
+      throw new Error("Resume not found");
+    }
+    return {
+      base64: arrayBufferToBase64(await object.arrayBuffer()),
+      contentType: object.httpMetadata?.contentType ?? "application/octet-stream",
+    };
   });

@@ -5,12 +5,8 @@ import { useId, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  createResumeUploadTarget,
-  finalizeResumeUpload,
-  getResumeDownloadUrl,
-} from "@/features/candidates/server/functions";
-import { getResumeDisplayName, uploadFileToSignedUrl } from "@/shared/resume";
+import { getResume, uploadResume } from "@/features/candidates/server/functions";
+import { base64ToBlob, fileToBase64, getResumeDisplayName } from "@/shared/resume";
 
 type ResumeUploadFieldProps = {
   value: string | null | undefined;
@@ -38,17 +34,10 @@ export function ResumeUploadField({
     resumeKey: string;
     name: string;
   } | null>(null);
-  const [resumeUploadState, setResumeUploadState] = useState<{
-    status: "idle" | "uploading" | "uploaded";
-    progress: number;
-  }>({
-    status: "idle",
-    progress: 0,
-  });
+  const [isUploading, setIsUploading] = useState(false);
 
-  const createUploadTargetFn = useServerFn(createResumeUploadTarget);
-  const finalizeResumeUploadFn = useServerFn(finalizeResumeUpload);
-  const getResumeDownloadUrlFn = useServerFn(getResumeDownloadUrl);
+  const uploadResumeFn = useServerFn(uploadResume);
+  const getResumeFn = useServerFn(getResume);
   const inputId = `resume-${id}`;
   const uploadedResumeName =
     uploadedResume && uploadedResume.resumeKey === value ? uploadedResume.name : null;
@@ -64,37 +53,25 @@ export function ResumeUploadField({
     try {
       onErrorChange?.(null);
       setUploadedResume({ resumeKey: "", name: file.name });
-      setResumeUploadState({ status: "uploading", progress: 0 });
+      setIsUploading(true);
 
-      const target = await createUploadTargetFn({
+      const fileBase64 = await fileToBase64(file);
+      const result = await uploadResumeFn({
         data: {
           fileName: file.name,
-          fileSize: file.size,
           contentType: file.type as
             | "application/pdf"
             | "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          fileBase64,
         },
       });
 
-      await uploadFileToSignedUrl({
-        file,
-        uploadUrl: target.uploadUrl,
-        onProgress: (progress) => {
-          setResumeUploadState({ status: "uploading", progress });
-        },
-      });
-
-      const finalized = await finalizeResumeUploadFn({
-        data: { resumeKey: target.resumeKey },
-      });
-
-      await onUploaded({ resumeKey: finalized.resumeKey });
-      setUploadedResume({ resumeKey: finalized.resumeKey, name: file.name });
-      setResumeUploadState({ status: "uploaded", progress: 100 });
+      await onUploaded({ resumeKey: result.resumeKey });
+      setUploadedResume({ resumeKey: result.resumeKey, name: file.name });
       toast.success("Resume uploaded", {
         style: { marginBottom: "4rem" },
       });
-    } catch (error) {
+    } catch (uploadError) {
       setUploadedResume(
         value
           ? {
@@ -103,11 +80,13 @@ export function ResumeUploadField({
             }
           : null,
       );
-      setResumeUploadState({ status: "idle", progress: 0 });
-      const message = error instanceof Error ? error.message : "Failed to upload resume";
+      const message =
+        uploadError instanceof Error ? uploadError.message : "Failed to upload resume";
       toast.error(message, {
         style: { marginBottom: "4rem" },
       });
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -117,20 +96,20 @@ export function ResumeUploadField({
     }
 
     try {
-      const result = await getResumeDownloadUrlFn({
-        data: {
-          resumeKey: value,
-          fileName: displayName,
-        },
+      const result = await getResumeFn({
+        data: { resumeKey: value },
       });
 
-      window.open(result.url, "_blank", "noopener,noreferrer");
+      const blob = base64ToBlob(result.base64, result.contentType);
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank", "noopener,noreferrer");
     } catch {
       toast.error("Failed to open resume. Please try again.", {
         style: { marginBottom: "4rem" },
       });
     }
   };
+
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     void onResumeSelected(e.target.files?.[0] ?? null);
   };
@@ -164,17 +143,14 @@ export function ResumeUploadField({
       </label>
       <p className="text-muted-foreground text-xs">{description}</p>
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
-      {resumeUploadState.status === "uploading" ? (
+      {isUploading ? (
         <div className="space-y-2 rounded-lg border px-3 py-2">
           <div className="flex items-center justify-between text-sm">
             <span>{uploadedResume?.name ?? "Uploading resume..."}</span>
-            <span className="text-muted-foreground">{resumeUploadState.progress}%</span>
+            <span className="text-muted-foreground">Uploading...</span>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full bg-primary transition-all"
-              style={{ width: `${resumeUploadState.progress}%` }}
-            />
+            <div className="h-full w-full animate-pulse bg-primary" />
           </div>
         </div>
       ) : null}

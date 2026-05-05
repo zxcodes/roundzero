@@ -14,12 +14,6 @@ const envSchema = z.object({
   RESEND_API_KEY: z.string(),
   RESEND_FROM_EMAIL: z.email(),
 
-  // R2 Keys
-  R2_ACCOUNT_ID: z.string(),
-  R2_BUCKET_NAME: z.string(),
-  R2_ACCESS_KEY_ID: z.string(),
-  R2_SECRET_ACCESS_KEY: z.string(),
-
   // Stripe Keys
   STRIPE_PUBLISHABLE_KEY: z.string(),
   STRIPE_SECRET_KEY: z.string(),

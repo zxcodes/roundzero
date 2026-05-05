@@ -7,7 +7,7 @@ import { getJobById } from "@/features/jobs/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { applicationStatusSchema } from "@/shared/enums";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
-import { createR2ResumeDownloadUrl } from "@/shared/r2.server";
+import { arrayBufferToBase64 } from "@/shared/resume";
 import {
   getApplicationById,
   getApplicationByJobAndCandidate,
@@ -162,7 +162,7 @@ export const hasApplied = createServerFn({ method: "GET" })
     return !!existing;
   });
 
-export const getApplicationResumeDownloadUrl = createServerFn({ method: "POST" })
+export const getApplicationResume = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(zodValidator(applicationIdSchema))
   .handler(async ({ data, context }) => {
@@ -173,10 +173,8 @@ export const getApplicationResumeDownloadUrl = createServerFn({ method: "POST" }
       throw new Error("Resume not found");
     }
 
-    if (context.user.role === "candidate" && application.candidateId === context.userId) {
-      return {
-        url: await createR2ResumeDownloadUrl({ data: { resumeKey: application.resumeKey } }),
-      };
+    if (context.user.role === "candidate" && application.candidateId !== context.userId) {
+      throw new Error("Not authorized");
     }
 
     if (context.user.role === "company") {
@@ -189,13 +187,20 @@ export const getApplicationResumeDownloadUrl = createServerFn({ method: "POST" }
       if (!job || job.companyId !== company.id) {
         throw new Error("Not authorized");
       }
-
-      return {
-        url: await createR2ResumeDownloadUrl({ data: { resumeKey: application.resumeKey } }),
-      };
     }
 
-    throw new Error("Not authorized");
+    if (context.user.role !== "candidate" && context.user.role !== "company") {
+      throw new Error("Not authorized");
+    }
+
+    const object = await env.RESUMES.get(application.resumeKey);
+    if (!object) {
+      throw new Error("Resume not found");
+    }
+    return {
+      base64: arrayBufferToBase64(await object.arrayBuffer()),
+      contentType: object.httpMetadata?.contentType ?? "application/octet-stream",
+    };
   });
 
 export const getCompanyApplicantReview = createServerFn({ method: "GET" })

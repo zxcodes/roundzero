@@ -97,10 +97,6 @@ export function CompanySettings({ company }: { company: Company }) {
   const [tagInput, setTagInput] = useState("");
 
   const tagInputId = `tag-input-${id}`;
-  const currentLogoKey = form.getFieldValue("logoKey");
-  const onLogoUploaded = async ({ logoKey }: { logoKey: string }) => {
-    form.setFieldValue("logoKey", logoKey);
-  };
   const onTagInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTagInput(e.target.value);
   };
@@ -141,11 +137,17 @@ export function CompanySettings({ company }: { company: Company }) {
             <CardDescription>Your company name, logo, and description.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <CompanyLogoUploadField
-              value={currentLogoKey}
-              description="Upload a square or transparent company logo. This appears on your public company page."
-              onUploaded={onLogoUploaded}
-            />
+            <form.Field name="logoKey">
+              {(field) => (
+                <CompanyLogoUploadField
+                  value={field.state.value}
+                  description="Upload a square or transparent company logo. This appears on your public company page."
+                  onUploaded={async ({ logoKey }) => {
+                    field.handleChange(logoKey);
+                  }}
+                />
+              )}
+            </form.Field>
 
             <form.Field name="name">
               {(field) => {
