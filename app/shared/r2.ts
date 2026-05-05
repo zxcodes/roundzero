@@ -7,6 +7,13 @@ function getPublicAssetBaseUrl() {
   return value?.replace(/\/+$/, "") ?? null;
 }
 
+function isDevEnvironment(): boolean {
+  if (typeof window !== "undefined") {
+    return import.meta.env?.DEV === true;
+  }
+  return process.env.NODE_ENV === "development";
+}
+
 export function getPublicAssetUrl(objectKey: string) {
   if (objectKey.startsWith("http://") || objectKey.startsWith("https://")) {
     return objectKey;
@@ -15,6 +22,12 @@ export function getPublicAssetUrl(objectKey: string) {
   const baseUrl = getPublicAssetBaseUrl();
   if (!baseUrl) {
     return null;
+  }
+
+  // In local dev, serve R2 objects through the local API proxy instead of
+  // the production CDN (which cannot access the local Miniflare bucket).
+  if (isDevEnvironment()) {
+    return `/api/assets/${encodeURIComponent(objectKey)}`;
   }
 
   return `${baseUrl}/${objectKey}`;
