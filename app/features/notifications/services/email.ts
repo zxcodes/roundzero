@@ -9,7 +9,7 @@ import {
   markNotificationEmailSkipped,
 } from "@/features/notifications/queries/queries_sql";
 import { formatDateTime } from "@/shared/date";
-import { serverEnv } from "@/shared/env.server";
+import { appEnv } from "@/shared/env.app";
 
 type NotificationRecord = {
   id: string;
@@ -86,9 +86,9 @@ const getEmailPresentationMeta = (presentation: ReturnType<typeof getNotificatio
 };
 
 export const sendNotificationEmailViaResend: NotificationEmailSender = async (message) => {
-  const resend = new Resend(serverEnv.RESEND_API_KEY);
+  const resend = new Resend(appEnv.RESEND_API_KEY);
   const response = await resend.emails.send({
-    from: `${message.fromName} <${serverEnv.RESEND_FROM_EMAIL}>`,
+    from: `${message.fromName} <${appEnv.RESEND_FROM_EMAIL}>`,
     to: message.to,
     subject: message.subject,
     react: message.react,
@@ -128,7 +128,7 @@ export async function deliverNotificationEmail(
     return;
   }
 
-  const appUrl = serverEnv.APP_URL;
+  const appUrl = appEnv.APP_URL;
   let pathname = String(presentation.to);
   const meta = getEmailPresentationMeta(presentation);
   for (const [key, value] of Object.entries(presentation.params)) {
@@ -140,7 +140,7 @@ export async function deliverNotificationEmail(
   if (
     !sendEmail ||
     (sendEmail === sendNotificationEmailViaResend &&
-      (!serverEnv.RESEND_API_KEY || !serverEnv.RESEND_FROM_EMAIL))
+      (!appEnv.RESEND_API_KEY || !appEnv.RESEND_FROM_EMAIL))
   ) {
     await markNotificationEmailSkipped(db, {
       id: input.notification.id,
