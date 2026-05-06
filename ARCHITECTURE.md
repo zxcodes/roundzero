@@ -37,9 +37,9 @@ This document reflects the app as it transitions from **platform-only** to **pla
 | Validation | Zod |
 | Notifications | In-app inbox + Resend email delivery |
 | File storage | Cloudflare R2 for resumes and company logos |
-| AI layer | Cloudflare Workers AI |
+| AI layer | OpenRouter via AI SDK v6 |
 | AI pipelines | Cloudflare Workflows (durable multi-step) |
-| Interview runtime | Cloudflare Agents SDK (`AIChatAgent`) + `workers-ai-provider` |
+| Interview runtime | Cloudflare Agents SDK (`AIChatAgent`) + `@openrouter/ai-sdk-provider` |
 | Chat transport | WebSocket via Agents SDK (streaming) |
 | Linting | Biome |
 
@@ -68,7 +68,7 @@ The main app and AI layer run together as a single Cloudflare Worker via `@cloud
 - Cloudflare Workflows run pre-evaluation and report generation pipelines
 - Agents SDK routes interview agents over WebSocket/HTTP
 - R2 stores resumes
-- Workers AI binding provides model inference
+- OpenRouter API provides model inference via `@openrouter/ai-sdk-provider`
 
 **Why one Worker:**
 - `@cloudflare/vite-plugin` runs the entire app inside `workerd` during `vite dev`
@@ -686,7 +686,7 @@ See `PLAN.md` for the full build plan. Current focus:
 | --- | --- | --- |
 | Recovery sweep for stuck applications | Fire-and-forget trigger has no retry — if Workflows are failing, applications stay in `applied` with no pre-evaluation forever | Add a cron (CF Cron Trigger or scheduled task) that finds `applied` rows with no `pre_evaluations` row and re-triggers them |
 | Quota race condition | Two concurrent workflows can over-invite for a job if capacity checks are non-atomic | Use transactional locking (`SELECT ... FOR UPDATE`) on job-level capacity checks when creating interviews |
-| LLM model adequacy | Interview chat currently uses `@cf/zai-org/glm-4.7-flash`; pre-eval/report quality can still drift by role complexity | Keep periodic score-quality checks and re-evaluate model mix if report consistency drops |
+| LLM model adequacy | Interview chat uses `anthropic/claude-haiku-4.5` (prod) / `meta-llama/llama-3.3-70b-instruct:free` (dev); pre-eval/report quality monitored via token usage logs | Keep periodic score-quality checks and re-evaluate model mix if report consistency drops |
 | Workflow failure orphans | If workflow errors after `write_pre_evaluation` but before `decide_next_step`, application is stuck in `pre_screening` | Recovery sweep covers this too — detect `pre_screening` rows older than N minutes with no interview
 ---
 

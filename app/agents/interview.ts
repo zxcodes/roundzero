@@ -18,9 +18,9 @@ import {
   completeInterview,
   expireInterview,
   getInterviewContextById,
-} from "../queries/interviews/queries_sql";
-import { getDb } from "../shared/db";
-import { getInterviewModelChain, getOpenRouter } from "../shared/openrouter";
+} from "@/queries/interviews/queries_sql";
+import { getDb } from "@/shared/db";
+import { getInterviewModelChain, getOpenRouter } from "@/shared/openrouter";
 
 type InterviewSessionStatus = "pending" | "in_progress" | "completed" | "cancelled" | "expired";
 
@@ -128,6 +128,14 @@ const readUiMessageText = (message: UIMessage) => {
     .map((part) => {
       if (part.type === "text" && typeof part.text === "string") {
         return part.text;
+      }
+      if (part.type === "tool-call") {
+        const toolCall = part as unknown as { toolName: string };
+        return `[tool: ${toolCall.toolName}]`;
+      }
+      if (part.type === "tool-result") {
+        const toolResult = part as unknown as { toolName: string; output: unknown };
+        return `[tool result: ${toolResult.toolName} = ${JSON.stringify(toolResult.output)}]`;
       }
       return "";
     })
@@ -302,7 +310,7 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
           ? applicationMetadata.summary
           : "";
 
-    const candidateSummary = candidateSummaryRaw.slice(0, 4000);
+    const candidateSummary = candidateSummaryRaw.slice(0, 12000);
 
     const jobRows = await db
       .unsafe(`SELECT requirements, description, interview_questions FROM jobs WHERE id = $1`, [
@@ -540,123 +548,131 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
       ? `${this.buildSystemPrompt()}\n\nThe candidate just explicitly asked to end. Close warmly in one short message and call end_interview this turn. Ask no further questions.`
       : this.buildSystemPrompt();
 
-    const result = streamText({
-      model: openrouter.chat(model),
-      temperature: 0.3,
-      maxOutputTokens: 150,
-      system: systemPrompt,
-      messages: pruneMessages({
-        messages: await convertToModelMessages(this.messages),
-        reasoning: "before-last-message",
-        toolCalls: "before-last-2-messages",
-      }),
-      onFinish,
-      stopWhen: [stepCountIs(5), hasToolCall("end_interview")],
-      ...(fallbacks.length > 0 ? { providerOptions: { openrouter: { models: fallbacks } } } : {}),
-      tools: {
-        evaluate_answer: tool({
-          description:
-            "Silently record the interviewer's scoring of the candidate's most recent answer. Never reveal these scores to the candidate.",
-          inputSchema: z.object({
-            relevance: z.number().min(0).max(100),
-            depth: z.number().min(0).max(100),
-            clarity: z.number().min(0).max(100),
-          }),
-          execute: async ({ relevance, depth, clarity }) => {
-            const scores = this.state.scores;
-            const nextCount = scores.count + 1;
-            this.setState({
-              ...this.state,
-              scores: {
-                relevance: scores.relevance + relevance,
-                depth: scores.depth + depth,
-                clarity: scores.clarity + clarity,
-                count: nextCount,
-              },
-              askedQuestions: this.state.askedQuestions + 1,
-              updatedAt: toNow(),
-            });
-            return { ok: true };
-          },
+    try {
+      const result = streamText({
+        model: openrouter.chat(model),
+        temperature: 0.3,
+        maxOutputTokens: 150,
+        system: systemPrompt,
+        messages: pruneMessages({
+          messages: await convertToModelMessages(this.messages),
+          reasoning: "before-last-message",
+          toolCalls: "before-last-2-messages",
         }),
-        check_resume_gap: tool({
-          description:
-            "Silently check whether a candidate claim appears in their resume / profile context. Use before challenging or probing a vague claim.",
-          inputSchema: z.object({
-            claim: z.string().min(1),
-          }),
-          execute: async ({ claim }) => {
-            const haystack = this.state.context.candidateSummary.toLowerCase();
-            return { matched: haystack.includes(claim.toLowerCase()) };
-          },
-        }),
-        record_screening_coverage: tool({
-          description:
-            "Silently mark required company-question coverage. Use status='answered' when answered and status='skipped' when unanswered/refused.",
-          inputSchema: z.object({
-            questionIndex: z.number().int().min(1),
-            status: z.enum(["answered", "skipped"]),
-          }),
-          execute: async ({ questionIndex, status }) => {
-            const totalQuestions = this.state.context.customQuestions.length;
-            if (questionIndex > totalQuestions) {
-              throw new Error(
-                `Invalid screening question index ${questionIndex}. There are only ${totalQuestions} required questions.`,
-              );
-            }
-
-            this.setState({
-              ...this.state,
-              screeningCoverage: {
-                ...this.state.screeningCoverage,
-                [questionIndex]: status,
-              },
-              updatedAt: toNow(),
-            });
-
-            return { ok: true };
-          },
-        }),
-        end_interview: tool({
-          description:
-            "Mark the interview complete and trigger post-evaluation. Call this AFTER you have already written a warm closing message to the candidate in plain prose.",
-          inputSchema: z.object({
-            reason: z.string().min(1),
-          }),
-          execute: async ({ reason }) => {
-            if (this.state.status !== "completed") {
+        onFinish,
+        stopWhen: [stepCountIs(5), hasToolCall("end_interview")],
+        ...(fallbacks.length > 0 ? { providerOptions: { openrouter: { models: fallbacks } } } : {}),
+        tools: {
+          evaluate_answer: tool({
+            description:
+              "Silently record the interviewer's scoring of the candidate's most recent answer. Never reveal these scores to the candidate.",
+            inputSchema: z.object({
+              relevance: z.number().min(0).max(100),
+              depth: z.number().min(0).max(100),
+              clarity: z.number().min(0).max(100),
+            }),
+            execute: async ({ relevance, depth, clarity }) => {
+              const scores = this.state.scores;
+              const nextCount = scores.count + 1;
               this.setState({
                 ...this.state,
-                status: "completed",
-                completedAt: toNow(),
+                scores: {
+                  relevance: scores.relevance + relevance,
+                  depth: scores.depth + depth,
+                  clarity: scores.clarity + clarity,
+                  count: nextCount,
+                },
+                askedQuestions: this.state.askedQuestions + 1,
+                updatedAt: toNow(),
+              });
+              return { ok: true };
+            },
+          }),
+          check_resume_gap: tool({
+            description:
+              "Silently check whether a candidate claim appears in their resume / profile context. Use before challenging or probing a vague claim.",
+            inputSchema: z.object({
+              claim: z.string().min(1),
+            }),
+            execute: async ({ claim }) => {
+              const haystack = this.state.context.candidateSummary.toLowerCase();
+              return { matched: haystack.includes(claim.toLowerCase()) };
+            },
+          }),
+          record_screening_coverage: tool({
+            description:
+              "Silently mark required company-question coverage. Use status='answered' when answered and status='skipped' when unanswered/refused.",
+            inputSchema: z.object({
+              questionIndex: z.number().int().min(1),
+              status: z.enum(["answered", "skipped"]),
+            }),
+            execute: async ({ questionIndex, status }) => {
+              const totalQuestions = this.state.context.customQuestions.length;
+              if (questionIndex > totalQuestions) {
+                throw new Error(
+                  `Invalid screening question index ${questionIndex}. There are only ${totalQuestions} required questions.`,
+                );
+              }
+
+              this.setState({
+                ...this.state,
+                screeningCoverage: {
+                  ...this.state.screeningCoverage,
+                  [questionIndex]: status,
+                },
                 updatedAt: toNow(),
               });
 
-              await completeInterview(db, { id: this.state.interviewId });
-            }
-
-            if (!this.state.postEvaluationTriggered) {
-              try {
-                await this.env.POST_EVALUATION.create({
-                  params: { interviewId: this.state.interviewId },
-                });
+              return { ok: true };
+            },
+          }),
+          end_interview: tool({
+            description:
+              "Mark the interview complete and trigger post-evaluation. Call this AFTER you have already written a warm closing message to the candidate in plain prose.",
+            inputSchema: z.object({
+              reason: z.string().min(1),
+            }),
+            execute: async ({ reason }) => {
+              if (this.state.status !== "completed") {
                 this.setState({
                   ...this.state,
-                  postEvaluationTriggered: true,
+                  status: "completed",
+                  completedAt: toNow(),
                   updatedAt: toNow(),
                 });
-              } catch (error) {
-                console.error("[interview-agent] failed to trigger post-evaluation", error);
+
+                await completeInterview(db, { id: this.state.interviewId });
               }
-            }
 
-            return { completed: true, reason };
-          },
-        }),
-      },
-    });
+              if (!this.state.postEvaluationTriggered) {
+                try {
+                  await this.env.POST_EVALUATION.create({
+                    params: { interviewId: this.state.interviewId },
+                  });
+                  this.setState({
+                    ...this.state,
+                    postEvaluationTriggered: true,
+                    updatedAt: toNow(),
+                  });
+                } catch (error) {
+                  console.error("[interview-agent] failed to trigger post-evaluation", error);
+                }
+              }
 
-    return result.toUIMessageStreamResponse();
+              return { completed: true, reason };
+            },
+          }),
+        },
+      });
+
+      return result.toUIMessageStreamResponse();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error("[interview-agent] streamText failed:", message);
+      return new Response("Interview service temporarily unavailable. Please try again.", {
+        status: 503,
+      });
+    }
   }
 }
 

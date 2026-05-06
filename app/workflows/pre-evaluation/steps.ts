@@ -66,15 +66,14 @@ const slopDetectionSchema = z
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
 async function runPreEvalObject<T>(args: {
-  stepLabel: string;
   systemPrompt: string;
   userPrompt: string;
   schema: z.ZodSchema<T>;
-}): Promise<T> {
+}): Promise<{ object: T; usage: { inputTokens: number; outputTokens: number } }> {
   const openrouter = getOpenRouter();
   const { model, fallbacks } = getModelChain("pre_eval");
 
-  const { object } = await generateObject({
+  const result = await generateObject({
     model: openrouter.chat(model, { plugins: [{ id: "response-healing" }] }),
     schema: args.schema,
     system: args.systemPrompt,
@@ -82,7 +81,13 @@ async function runPreEvalObject<T>(args: {
     ...(fallbacks.length > 0 ? { providerOptions: { openrouter: { models: fallbacks } } } : {}),
   });
 
-  return object;
+  return {
+    object: result.object,
+    usage: {
+      inputTokens: result.usage.inputTokens ?? 0,
+      outputTokens: result.usage.outputTokens ?? 0,
+    },
+  };
 }
 
 function shouldInviteFromDeterministicRules(args: {
@@ -311,8 +316,7 @@ export function classifyJobType(
 
     const startTime = Date.now();
     try {
-      const raw = await runPreEvalObject({
-        stepLabel: "classify_job_type",
+      const { object: raw, usage } = await runPreEvalObject({
         systemPrompt: CLASSIFY_JOB_SYSTEM_PROMPT,
         userPrompt: prompt,
         schema: jobTypeSchema,
@@ -324,7 +328,7 @@ export function classifyJobType(
         reasoning: raw.reasoning,
       };
 
-      log.ai(prompt.length, 0, latency);
+      log.ai(prompt.length, usage.outputTokens, latency);
       log.result("classify", {
         roleType: result.roleType,
         reasoning: result.reasoning,
@@ -352,8 +356,7 @@ export function detectSlop(
 
     const startTime = Date.now();
     try {
-      const raw = await runPreEvalObject({
-        stepLabel: "detect_slop",
+      const { object: raw, usage } = await runPreEvalObject({
         systemPrompt: SLOP_DETECTION_SYSTEM_PROMPT,
         userPrompt: prompt,
         schema: slopDetectionSchema,
@@ -361,17 +364,12 @@ export function detectSlop(
       const latency = Date.now() - startTime;
 
       const result = {
-        consistencyScore:
-          typeof raw.consistencyScore === "number"
-            ? Math.max(0, Math.min(100, Math.round(raw.consistencyScore)))
-            : 0,
-        redFlags: Array.isArray(raw.redFlags)
-          ? raw.redFlags.filter((r: unknown): r is string => typeof r === "string")
-          : [],
-        explanation: typeof raw.explanation === "string" ? raw.explanation : "",
+        consistencyScore: Math.max(0, Math.min(100, Math.round(raw.consistencyScore))),
+        redFlags: raw.redFlags.filter((r: string) => typeof r === "string"),
+        explanation: raw.explanation,
       };
 
-      log.ai(prompt.length, 0, latency);
+      log.ai(prompt.length, usage.outputTokens, latency);
       log.result("slop", {
         consistencyScore: result.consistencyScore,
         redFlags: result.redFlags.length,
@@ -407,36 +405,21 @@ export function runAiPreEvaluation(
 
     const startTime = Date.now();
     try {
-      const raw = await runPreEvalObject({
-        stepLabel: "run_ai_pre_evaluation",
+      const { object: raw, usage } = await runPreEvalObject({
         systemPrompt,
         userPrompt,
         schema: preEvaluationSchema,
       });
       const latency = Date.now() - startTime;
 
-      const score =
-        typeof raw.score === "number" ? Math.max(0, Math.min(100, Math.round(raw.score))) : 0;
-      const missingRequirements = Array.isArray(raw.missingRequirements)
-        ? raw.missingRequirements.filter((r: unknown): r is string => typeof r === "string")
-        : [];
-      const confidence = ["low", "medium", "high"].includes(String(raw.confidence))
-        ? (String(raw.confidence) as "low" | "medium" | "high")
-        : "low";
-      const modelNextStep = ["interview_invited", "ask_followups", "hold"].includes(
-        String(raw.nextStep),
-      )
-        ? (String(raw.nextStep) as "interview_invited" | "ask_followups" | "hold")
-        : "hold";
-
       const result: PreEvaluationResult = {
-        score,
-        missingRequirements,
-        confidence,
-        modelNextStep,
+        score: Math.max(0, Math.min(100, Math.round(raw.score))),
+        missingRequirements: raw.missingRequirements.filter((r: string) => typeof r === "string"),
+        confidence: raw.confidence,
+        modelNextStep: raw.nextStep,
       };
 
-      log.ai(userPrompt.length, 0, latency);
+      log.ai(userPrompt.length, usage.outputTokens, latency);
       log.result("ai", {
         score: result.score,
         confidence: result.confidence,

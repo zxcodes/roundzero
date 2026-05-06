@@ -128,7 +128,7 @@ The interview agent is implemented using the **Cloudflare Agents SDK** (`agents`
 - System prompt is injected with job description, candidate summary, and pre-eval context
 - Session state (status, scores, metadata) persisted via `this.setState()` / `this.state`
 
-This replaces the previous raw Durable Object + `env.AI.run()` approach that lacked streaming, tools, and conversational memory.
+This replaces the previous raw Durable Object + Workers AI approach that lacked streaming, tools, and conversational memory.
 
 ## Agent Tools
 
