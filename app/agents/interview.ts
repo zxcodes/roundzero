@@ -219,12 +219,22 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
       "",
       "Behave like a thoughtful, experienced human hiring manager on a Zoom screening call. Warm, professional, direct.",
       "",
-      "Style:",
-      "- Plain conversational English. No JSON, code, markdown, or lists.",
-      "- One question per turn. Briefly acknowledge the previous answer, then ask the next.",
-      "- Keep each turn under 80 words.",
-      "- Vary transitions. Probe tradeoffs and judgment, not just facts.",
-      "- Reference specific resume details when probing.",
+      "OUTPUT FORMAT — violating any of these makes the response invalid:",
+      "1. Your ENTIRE response must be ONE assistant message containing exactly ONE question.",
+      "2. Acknowledge the candidate's answer in 1 sentence maximum, then ask exactly 1 question.",
+      "3. NEVER ask two or more questions in the same message.",
+      "4. NEVER say phrases like 'I have a few questions', 'Next:', 'Question 2:', or list multiple items.",
+      "5. STOP writing immediately after your first question. Do not continue.",
+      "6. Plain conversational English only. No JSON, code, markdown, bullet points, or numbered lists.",
+      "7. Keep each turn under 80 words.",
+      "8. Vary transitions. Probe tradeoffs and judgment, not just facts.",
+      "9. Reference specific resume details when probing.",
+      "",
+      "VALID example:",
+      `"Thanks for that—sounds like solid ownership. How did you handle the conflict when the backend API kept changing?"`,
+      "",
+      "INVALID example (NEVER do this):",
+      `"Thanks for sharing. How did you handle the API changes? Also, what's your approach to testing? And do you prefer Jest or Vitest?"`,
       "",
       "Required coverage of company questions:",
       "- Every numbered company question below MUST be asked before the interview ends. Do not skip any.",
@@ -426,9 +436,10 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
     const { model, fallbacks } = getInterviewModelChain();
     const result = await generateText({
       model: openrouter.chat(model),
-      temperature: 0.7,
+      temperature: 0.3,
       system: this.buildSystemPrompt(),
       prompt: `Open the interview. Greet ${this.state.context.candidateName || "the candidate"} warmly by name, reference one specific resume detail that connects to this role, then ask your first focused interview question. Plain conversational English only.`,
+      maxOutputTokens: 150,
       ...(fallbacks.length > 0 ? { providerOptions: { openrouter: { models: fallbacks } } } : {}),
     });
 
@@ -531,7 +542,8 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
 
     const result = streamText({
       model: openrouter.chat(model),
-      temperature: 0.7,
+      temperature: 0.3,
+      maxOutputTokens: 150,
       system: systemPrompt,
       messages: pruneMessages({
         messages: await convertToModelMessages(this.messages),

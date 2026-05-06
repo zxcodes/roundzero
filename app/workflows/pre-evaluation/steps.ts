@@ -1,39 +1,36 @@
 import { env } from "cloudflare:workers";
 import { NonRetryableError } from "cloudflare:workflows";
+import { generateObject } from "ai";
 import mammoth from "mammoth";
 import type { Sql } from "postgres";
 import { extractText, getDocumentProxy } from "unpdf";
-import { CLASSIFY_JOB_SYSTEM_PROMPT, JOB_TYPE_SCHEMA } from "../../prompts/classify-job";
-import { CREATIVE_EVAL_SYSTEM_PROMPT } from "../../prompts/evaluate/creative";
-import { CUSTOMER_FACING_EVAL_SYSTEM_PROMPT } from "../../prompts/evaluate/customer-facing";
-import { GENERAL_EVAL_SYSTEM_PROMPT } from "../../prompts/evaluate/general";
-import { LEADERSHIP_EVAL_SYSTEM_PROMPT } from "../../prompts/evaluate/leadership";
-import { OPERATIONS_EVAL_SYSTEM_PROMPT } from "../../prompts/evaluate/operations";
-import { TECHNICAL_EVAL_SYSTEM_PROMPT } from "../../prompts/evaluate/technical";
-import { SLOP_DETECTION_SYSTEM_PROMPT } from "../../prompts/slop-detection";
-import {
-  getApplicationById,
-  updateApplicationStatus,
-} from "../../queries/applications/queries_sql";
-import { getUserById } from "../../queries/auth/queries_sql";
+import { z } from "zod";
+import { CLASSIFY_JOB_SYSTEM_PROMPT, jobTypeSchema } from "@/prompts/classify-job";
+import { CREATIVE_EVAL_SYSTEM_PROMPT } from "@/prompts/evaluate/creative";
+import { CUSTOMER_FACING_EVAL_SYSTEM_PROMPT } from "@/prompts/evaluate/customer-facing";
+import { GENERAL_EVAL_SYSTEM_PROMPT } from "@/prompts/evaluate/general";
+import { LEADERSHIP_EVAL_SYSTEM_PROMPT } from "@/prompts/evaluate/leadership";
+import { OPERATIONS_EVAL_SYSTEM_PROMPT } from "@/prompts/evaluate/operations";
+import { TECHNICAL_EVAL_SYSTEM_PROMPT } from "@/prompts/evaluate/technical";
+import { SLOP_DETECTION_SYSTEM_PROMPT } from "@/prompts/slop-detection";
+import { getApplicationById, updateApplicationStatus } from "@/queries/applications/queries_sql";
+import { getUserById } from "@/queries/auth/queries_sql";
 import {
   countActiveInterviewSlotsByJob,
   createInterview,
   getInterviewByApplicationId,
-} from "../../queries/interviews/queries_sql";
-import { getJobById } from "../../queries/jobs/queries_sql";
-import { createNotification } from "../../queries/notifications/queries_sql";
+} from "@/queries/interviews/queries_sql";
+import { getJobById } from "@/queries/jobs/queries_sql";
+import { createNotification } from "@/queries/notifications/queries_sql";
 import {
   createPreEvaluation,
   getPreEvaluationByApplicationId,
-} from "../../queries/pre-evaluations/queries_sql";
-import { getDb } from "../../shared/db";
-import { initializeInterviewAgent } from "../../shared/interview-agent-client";
-import type { createWorkflowLogger } from "../../shared/logger";
-import { notificationPayloadSchemas } from "../../shared/notifications-config";
-
-const PRIMARY_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
-const FALLBACK_MODEL = "@cf/meta/llama-3.1-70b-instruct";
+} from "@/queries/pre-evaluations/queries_sql";
+import { getDb } from "@/shared/db";
+import { initializeInterviewAgent } from "@/shared/interview-agent-client";
+import type { createWorkflowLogger } from "@/shared/logger";
+import { notificationPayloadSchemas } from "@/shared/notifications-config";
+import { getModelChain, getOpenRouter } from "@/shared/openrouter";
 
 export type PreEvaluationPayload = {
   applicationId: string;
@@ -46,141 +43,46 @@ type PreEvaluationResult = {
   modelNextStep: "interview_invited" | "ask_followups" | "hold";
 };
 
-const preEvaluationSchema = {
-  type: "object",
-  properties: {
-    score: { type: "number", minimum: 0, maximum: 100 },
-    missingRequirements: { type: "array", items: { type: "string" } },
-    confidence: { type: "string", enum: ["low", "medium", "high"] },
-    nextStep: { type: "string", enum: ["interview_invited", "ask_followups", "hold"] },
-  },
-  required: ["score", "missingRequirements", "confidence", "nextStep"],
-} as const;
+// Zod schemas for structured output. `.strict()` enforces `additionalProperties: false`
+// so the model cannot hallucinate extra fields — equivalent to OpenRouter's `strict: true`.
+// https://openrouter.ai/docs/guides/features/structured-outputs
+const preEvaluationSchema = z
+  .object({
+    score: z.number().min(0).max(100),
+    missingRequirements: z.array(z.string()),
+    confidence: z.enum(["low", "medium", "high"]),
+    nextStep: z.enum(["interview_invited", "ask_followups", "hold"]),
+  })
+  .strict();
 
-const slopDetectionSchema = {
-  type: "object",
-  properties: {
-    consistencyScore: { type: "number", minimum: 0, maximum: 100 },
-    redFlags: { type: "array", items: { type: "string" } },
-    explanation: { type: "string" },
-  },
-  required: ["consistencyScore", "redFlags", "explanation"],
-} as const;
+const slopDetectionSchema = z
+  .object({
+    consistencyScore: z.number().min(0).max(100),
+    redFlags: z.array(z.string()),
+    explanation: z.string(),
+  })
+  .strict();
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
-function getResponsePayload(response: unknown): { response: unknown } {
-  if (typeof response !== "object" || response === null) {
-    throw new Error(`AI response is not an object: ${typeof response}`);
-  }
-  if ("response" in response) {
-    return response as { response: unknown };
-  }
-  return { response };
-}
-
-function parseJsonPayload(payload: unknown): Record<string, unknown> {
-  if (typeof payload === "object" && payload !== null) {
-    return payload as Record<string, unknown>;
-  }
-  if (typeof payload === "string") {
-    const trimmed = payload.trim();
-
-    try {
-      const parsed = JSON.parse(trimmed);
-      if (typeof parsed === "object" && parsed !== null) {
-        return parsed as Record<string, unknown>;
-      }
-    } catch {
-      // continue with extraction fallbacks
-    }
-
-    const fenceMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
-    if (fenceMatch?.[1]) {
-      try {
-        const parsed = JSON.parse(fenceMatch[1]);
-        if (typeof parsed === "object" && parsed !== null) {
-          return parsed as Record<string, unknown>;
-        }
-      } catch {
-        // continue with extraction fallbacks
-      }
-    }
-
-    const firstBrace = trimmed.indexOf("{");
-    const lastBrace = trimmed.lastIndexOf("}");
-    if (firstBrace !== -1 && lastBrace > firstBrace) {
-      const candidate = trimmed.slice(firstBrace, lastBrace + 1);
-      try {
-        const parsed = JSON.parse(candidate);
-        if (typeof parsed === "object" && parsed !== null) {
-          return parsed as Record<string, unknown>;
-        }
-      } catch {
-        // fall through to throw
-      }
-    }
-  }
-  throw new Error(`AI response payload is not a JSON object: ${typeof payload}`);
-}
-
-async function runAiJsonWithGateway(args: {
+async function runPreEvalObject<T>(args: {
   stepLabel: string;
   systemPrompt: string;
   userPrompt: string;
-  schema: unknown;
-}): Promise<unknown> {
-  const gateway = {
-    id: env.AI_GATEWAY_ID,
-    skipCache: true,
-    collectLog: false,
-    metadata: {
-      workflow: "pre-evaluation",
-      step: args.stepLabel,
-    },
-  };
+  schema: z.ZodSchema<T>;
+}): Promise<T> {
+  const openrouter = getOpenRouter();
+  const { model, fallbacks } = getModelChain("pre_eval");
 
-  try {
-    return await env.AI.run(
-      PRIMARY_MODEL,
-      {
-        messages: [
-          { role: "system", content: args.systemPrompt },
-          { role: "user", content: args.userPrompt },
-        ],
-        response_format: {
-          type: "json_schema",
-          json_schema: args.schema,
-        },
-      },
-      { gateway },
-    );
-  } catch (primaryError) {
-    try {
-      return await env.AI.run(
-        FALLBACK_MODEL,
-        {
-          messages: [
-            { role: "system", content: args.systemPrompt },
-            { role: "user", content: args.userPrompt },
-          ],
-          response_format: {
-            type: "json_schema",
-            json_schema: args.schema,
-          },
-        },
-        { gateway },
-      );
-    } catch (fallbackError) {
-      const primaryMessage =
-        primaryError instanceof Error ? primaryError.message : String(primaryError);
-      const fallbackMessage =
-        fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
-      throw new Error(
-        `AI extraction failed across gateway models (${args.stepLabel}). primary=${primaryMessage}; fallback=${fallbackMessage}`,
-      );
-    }
-  }
+  const { object } = await generateObject({
+    model: openrouter.chat(model, { plugins: [{ id: "response-healing" }] }),
+    schema: args.schema,
+    system: args.systemPrompt,
+    prompt: args.userPrompt,
+    ...(fallbacks.length > 0 ? { providerOptions: { openrouter: { models: fallbacks } } } : {}),
+  });
+
+  return object;
 }
 
 function shouldInviteFromDeterministicRules(args: {
@@ -409,20 +311,17 @@ export function classifyJobType(
 
     const startTime = Date.now();
     try {
-      const response = await runAiJsonWithGateway({
+      const raw = await runPreEvalObject({
         stepLabel: "classify_job_type",
         systemPrompt: CLASSIFY_JOB_SYSTEM_PROMPT,
         userPrompt: prompt,
-        schema: JOB_TYPE_SCHEMA,
+        schema: jobTypeSchema,
       });
-      log.info(`AI Gateway log id (classify): ${env.AI.aiGatewayLogId ?? "n/a"}`);
       const latency = Date.now() - startTime;
 
-      const payload = getResponsePayload(response).response;
-      const raw = parseJsonPayload(payload);
       const result = {
-        roleType: typeof raw.roleType === "string" ? raw.roleType : "general",
-        reasoning: typeof raw.reasoning === "string" ? raw.reasoning : "",
+        roleType: raw.roleType,
+        reasoning: raw.reasoning,
       };
 
       log.ai(prompt.length, 0, latency);
@@ -453,17 +352,13 @@ export function detectSlop(
 
     const startTime = Date.now();
     try {
-      const response = await runAiJsonWithGateway({
+      const raw = await runPreEvalObject({
         stepLabel: "detect_slop",
         systemPrompt: SLOP_DETECTION_SYSTEM_PROMPT,
         userPrompt: prompt,
         schema: slopDetectionSchema,
       });
-      log.info(`AI Gateway log id (slop): ${env.AI.aiGatewayLogId ?? "n/a"}`);
       const latency = Date.now() - startTime;
-
-      const payload = getResponsePayload(response).response;
-      const raw = parseJsonPayload(payload);
 
       const result = {
         consistencyScore:
@@ -506,23 +401,20 @@ export function runAiPreEvaluation(
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
   return async (): Promise<{ result: PreEvaluationResult; rawResponse: string }> => {
-    log.step("ai", "Calling Workers AI for pre-evaluation");
+    log.step("ai", "Calling OpenRouter for pre-evaluation");
     const systemPrompt = getPromptForRoleType(roleType);
     const userPrompt = buildPreEvaluationPrompt(job, resumeText, candidateMeta);
 
     const startTime = Date.now();
     try {
-      const response = await runAiJsonWithGateway({
+      const raw = await runPreEvalObject({
         stepLabel: "run_ai_pre_evaluation",
         systemPrompt,
         userPrompt,
         schema: preEvaluationSchema,
       });
-      log.info(`AI Gateway log id (pre-eval): ${env.AI.aiGatewayLogId ?? "n/a"}`);
       const latency = Date.now() - startTime;
 
-      const payload = getResponsePayload(response).response;
-      const raw = parseJsonPayload(payload);
       const score =
         typeof raw.score === "number" ? Math.max(0, Math.min(100, Math.round(raw.score))) : 0;
       const missingRequirements = Array.isArray(raw.missingRequirements)
@@ -552,7 +444,7 @@ export function runAiPreEvaluation(
         missingCount: result.missingRequirements.length,
       });
 
-      return { result, rawResponse: JSON.stringify(response) };
+      return { result, rawResponse: JSON.stringify(raw) };
     } catch (error) {
       const latency = Date.now() - startTime;
       log.ai(userPrompt.length, 0, latency);
