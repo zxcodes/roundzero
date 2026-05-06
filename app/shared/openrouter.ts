@@ -116,7 +116,7 @@ const TASK_CHAIN_MAP: Record<Task, { dev: readonly string[]; prod: readonly stri
  *
  * `model`  — primary model id (pass to `openrouter.chat(model)`).
  * `fallbacks` — ordered list of fallback models tried by OpenRouter when the
-n *   primary errors (429, downtime, moderation refusal). Must NOT include the
+ *   primary errors (429, downtime, moderation refusal). Must NOT include the
  *   primary model.
  */
 export function getModelChain(task: Task): { model: string; fallbacks: string[] } {

@@ -110,11 +110,11 @@ const reportSchema = z
 async function runPostEvalObject(args: {
   systemPrompt: string;
   userPrompt: string;
-}): Promise<ReportModelResponse> {
+}): Promise<{ object: ReportModelResponse; usage: { inputTokens: number; outputTokens: number } }> {
   const openrouter = getOpenRouter();
   const { model, fallbacks } = getModelChain("post_eval");
 
-  const { object } = await generateObject({
+  const result = await generateObject({
     model: openrouter.chat(model, { plugins: [{ id: "response-healing" }] }),
     schema: reportSchema,
     system: args.systemPrompt,
@@ -122,7 +122,13 @@ async function runPostEvalObject(args: {
     ...(fallbacks.length > 0 ? { providerOptions: { openrouter: { models: fallbacks } } } : {}),
   });
 
-  return object;
+  return {
+    object: result.object,
+    usage: {
+      inputTokens: result.usage.inputTokens ?? 0,
+      outputTokens: result.usage.outputTokens ?? 0,
+    },
+  };
 }
 
 function fallbackReportFromText(interviewData: {
@@ -180,51 +186,6 @@ function fallbackReportFromText(interviewData: {
     },
     recommendation: overall >= 75 ? "yes" : "lean_no",
   };
-}
-
-function isReportModelResponse(value: unknown): value is ReportModelResponse {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-
-  const record = value as Record<string, unknown>;
-
-  if (
-    typeof record.summary !== "string" ||
-    !Array.isArray(record.strengths) ||
-    !Array.isArray(record.weaknesses) ||
-    !Array.isArray(record.insights) ||
-    !Array.isArray(record.evidence) ||
-    !Array.isArray(record.screeningAnswers) ||
-    typeof record.scores !== "object" ||
-    record.scores === null ||
-    !["strong_yes", "yes", "lean_no", "no"].includes(String(record.recommendation))
-  ) {
-    return false;
-  }
-
-  const scores = record.scores as Record<string, unknown>;
-  const scoresOk = ["communication", "problemSolving", "ownership", "roleFit", "overall"].every(
-    (key) => typeof scores[key] === "number",
-  );
-  if (!scoresOk) {
-    return false;
-  }
-
-  const screeningOk = record.screeningAnswers.every((entry): entry is ScreeningAnswer => {
-    if (typeof entry !== "object" || entry === null) {
-      return false;
-    }
-    const e = entry as Record<string, unknown>;
-    return (
-      typeof e.question === "string" &&
-      (e.answer === null || typeof e.answer === "string") &&
-      ["none", "minor", "dealbreaker"].includes(String(e.concern)) &&
-      typeof e.notes === "string"
-    );
-  });
-
-  return screeningOk;
 }
 
 function isInterviewAgentState(value: unknown): value is InterviewAgentState {
@@ -462,20 +423,16 @@ export function generateReport(
         missingRequirements: missingRequirementsBlock,
       },
       requiredScreeningQuestions: customQuestionsBlock,
-      transcript: interviewData.transcript,
+      transcript: interviewData.transcript.slice(-15000),
     });
 
     try {
-      const report = await runPostEvalObject({
+      const { object: report, usage } = await runPostEvalObject({
         systemPrompt,
         userPrompt,
       });
 
-      if (!isReportModelResponse(report)) {
-        log.warn("OpenRouter returned invalid report shape. Using deterministic fallback report.");
-        return fallbackReportFromText(interviewData);
-      }
-
+      log.ai(userPrompt.length, usage.outputTokens, 0);
       return report;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
