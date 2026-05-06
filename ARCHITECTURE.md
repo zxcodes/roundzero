@@ -6,7 +6,7 @@ This document reflects the app as it transitions from **platform-only** to **pla
 
 **Currently Not (NOT IN PROD):**
 
-- TanStack Start application (Nitro runtime)
+- TanStack Start application (Cloudflare Worker runtime)
 - Postgres-backed hiring platform
 - role-based company/candidate workflows
 - public company and jobs browsing
@@ -24,32 +24,27 @@ This document reflects the app as it transitions from **platform-only** to **pla
 
 ## 1. Stack
 
-| Layer | Technology |
-| --- | --- |
-| Framework | TanStack Start (React 19, Vite 8) |
-| Runtime (app) | TanStack Start + Nitro |
-| Runtime (AI) | Cloudflare Workers (single Worker with Workflows + Durable Objects) |
-| Database | Postgres (Docker locally, Neon intended for staging and PlanetScale for Prod) |
-| Typed queries | SQLC |
-| Migrations | dbmate |
-| Auth | Google OAuth with server-side cookie session |
-| UI | shadcn/ui, Tailwind CSS v4, Hugeicons |
-| Validation | Zod |
-| Notifications | In-app inbox + Resend email delivery |
-| File storage | Cloudflare R2 for resumes and company logos |
-| AI layer | OpenRouter via AI SDK v6 |
-| AI pipelines | Cloudflare Workflows (durable multi-step) |
-| Interview runtime | Cloudflare Agents SDK (`AIChatAgent`) + `@openrouter/ai-sdk-provider` |
-| Chat transport | WebSocket via Agents SDK (streaming) |
-| Linting | Biome |
+| Layer                    | Technology                                                             |
+| ------------------------ | ---------------------------------------------------------------------- |
+| Framework                | TanStack Start (React 19, Vite 8)                                      |
+| Runtime                  | Cloudflare Worker (Durable Objects, Workflows, Agents SDK, WebSockets) |
+| Database                 | Postgres (Docker locally, Neon for staging, PlanetScale for prod)      |
+| Data Access & Migrations | SQLC, dbmate                                                           |
+| Auth                     | Google OAuth with server-side cookie session                           |
+| UI                       | shadcn/ui, Tailwind CSS v4, Hugeicons                                  |
+| Validation               | Zod                                                                    |
+| Notifications            | In-app inbox + Resend email delivery                                   |
+| Storage                  | Cloudflare R2 (resumes, company logos)                                 |
+| AI Layer                 | OpenRouter via AI SDK v6                                               |
+| Tooling                  | Biome, Knip                                                                  |
 
 ---
 
 ## 2. Runtime Architecture
 
-### Main App (Nitro)
+### Main App (TanStack Start)
 
-The app runs as a standard TanStack Start app with server functions for:
+The TanStack Start app runs on Cloudflare Worker, with server functions for:
 
 - auth
 - jobs
