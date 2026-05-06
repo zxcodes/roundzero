@@ -1,7 +1,7 @@
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers";
-import { updateApplicationStatus } from "../../queries/applications/queries_sql";
-import { getDb } from "../../shared/db";
-import { createWorkflowLogger } from "../../shared/logger";
+import { updateApplicationStatus } from "@/queries/applications/queries_sql";
+import { getDb } from "@/shared/db";
+import { createWorkflowLogger } from "@/shared/logger";
 import {
   classifyJobType,
   decideNextStep,

@@ -1,22 +1,25 @@
 import { env } from "cloudflare:workers";
 import { NonRetryableError } from "cloudflare:workflows";
+import { generateObject } from "ai";
 import type { Sql } from "postgres";
 import { jsx } from "react/jsx-runtime";
 import { Resend } from "resend";
-import { ReportReadyEmailTemplate } from "../../features/notifications/components/report-ready-email-template";
-import { updateApplicationStatus } from "../../queries/applications/queries_sql";
-import { getUserById } from "../../queries/auth/queries_sql";
-import { getInterviewContextById } from "../../queries/interviews/queries_sql";
+import { z } from "zod";
+import { ReportReadyEmailTemplate } from "@/features/notifications/components/report-ready-email-template";
+import { updateApplicationStatus } from "@/queries/applications/queries_sql";
+import { getUserById } from "@/queries/auth/queries_sql";
+import { getInterviewContextById } from "@/queries/interviews/queries_sql";
 import {
   createNotification,
   markNotificationEmailDelivered,
   markNotificationEmailFailed,
   markNotificationEmailSkipped,
-} from "../../queries/notifications/queries_sql";
-import { createReport, getReportByInterviewId } from "../../queries/reports/queries_sql";
-import { getInterviewAgentState } from "../../shared/interview-agent-client";
-import type { createWorkflowLogger } from "../../shared/logger";
-import { notificationPayloadSchemas } from "../../shared/notifications-config";
+} from "@/queries/notifications/queries_sql";
+import { createReport, getReportByInterviewId } from "@/queries/reports/queries_sql";
+import { getInterviewAgentState } from "@/shared/interview-agent-client";
+import type { createWorkflowLogger } from "@/shared/logger";
+import { notificationPayloadSchemas } from "@/shared/notifications-config";
+import { getModelChain, getOpenRouter } from "@/shared/openrouter";
 
 export type PostEvaluationPayload = {
   interviewId: string;
@@ -73,168 +76,59 @@ type InterviewContextState = {
   };
 };
 
-const POST_EVAL_PRIMARY_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
-const POST_EVAL_FALLBACK_MODEL = "@cf/meta/llama-3.1-70b-instruct";
-
-const reportSchema = {
-  type: "object",
-  properties: {
-    summary: { type: "string" },
-    strengths: { type: "array", items: { type: "string" } },
-    weaknesses: { type: "array", items: { type: "string" } },
-    insights: { type: "array", items: { type: "string" } },
-    evidence: { type: "array", items: { type: "string" } },
-    screeningAnswers: {
-      type: "array",
-      items: {
-        type: "object",
-        properties: {
-          question: { type: "string" },
-          answer: { type: ["string", "null"] },
-          concern: { type: "string", enum: ["none", "minor", "dealbreaker"] },
-          notes: { type: "string" },
-        },
-        required: ["question", "answer", "concern", "notes"],
-      },
-    },
-    scores: {
-      type: "object",
-      properties: {
-        communication: { type: "number", minimum: 0, maximum: 100 },
-        problemSolving: { type: "number", minimum: 0, maximum: 100 },
-        ownership: { type: "number", minimum: 0, maximum: 100 },
-        roleFit: { type: "number", minimum: 0, maximum: 100 },
-        overall: { type: "number", minimum: 0, maximum: 100 },
-      },
-      required: ["communication", "problemSolving", "ownership", "roleFit", "overall"],
-    },
-    recommendation: { type: "string", enum: ["strong_yes", "yes", "lean_no", "no"] },
-  },
-  required: [
-    "summary",
-    "strengths",
-    "weaknesses",
-    "insights",
-    "evidence",
-    "screeningAnswers",
-    "scores",
-    "recommendation",
-  ],
-} as const;
+// Zod schema for structured output. `.strict()` enforces `additionalProperties: false`
+// so the model cannot hallucinate extra fields — equivalent to OpenRouter's `strict: true`.
+// https://openrouter.ai/docs/guides/features/structured-outputs
+const reportSchema = z
+  .object({
+    summary: z.string(),
+    strengths: z.array(z.string()),
+    weaknesses: z.array(z.string()),
+    insights: z.array(z.string()),
+    evidence: z.array(z.string()),
+    screeningAnswers: z.array(
+      z.object({
+        question: z.string(),
+        answer: z.string().nullable(),
+        concern: z.enum(["none", "minor", "dealbreaker"]),
+        notes: z.string(),
+      }),
+    ),
+    scores: z.object({
+      communication: z.number().min(0).max(100),
+      problemSolving: z.number().min(0).max(100),
+      ownership: z.number().min(0).max(100),
+      roleFit: z.number().min(0).max(100),
+      overall: z.number().min(0).max(100),
+    }),
+    recommendation: z.enum(["strong_yes", "yes", "lean_no", "no"]),
+  })
+  .strict();
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
-function getResponsePayload(response: unknown): { response: unknown } {
-  if (typeof response !== "object" || response === null) {
-    throw new Error(`AI response is not an object: ${typeof response}`);
-  }
-  if ("response" in response) {
-    return response as { response: unknown };
-  }
-  return { response };
-}
-
-function parseJsonPayload(payload: unknown): Record<string, unknown> {
-  if (typeof payload === "object" && payload !== null) {
-    return payload as Record<string, unknown>;
-  }
-  if (typeof payload === "string") {
-    const trimmed = payload.trim();
-    try {
-      const parsed = JSON.parse(trimmed);
-      if (typeof parsed === "object" && parsed !== null) {
-        return parsed as Record<string, unknown>;
-      }
-    } catch {
-      // continue
-    }
-  }
-  throw new Error(`AI response payload is not a JSON object: ${typeof payload}`);
-}
-
-async function runPostEvalJsonWithGateway(args: {
+async function runPostEvalObject(args: {
   systemPrompt: string;
   userPrompt: string;
-}): Promise<unknown> {
-  const gateway = {
-    id: env.AI_GATEWAY_ID,
-    skipCache: true,
-    collectLog: false,
-    metadata: {
-      workflow: "post-evaluation",
-      step: "generate_report",
+}): Promise<{ object: ReportModelResponse; usage: { inputTokens: number; outputTokens: number } }> {
+  const openrouter = getOpenRouter();
+  const { model, fallbacks } = getModelChain("post_eval");
+
+  const result = await generateObject({
+    model: openrouter.chat(model, { plugins: [{ id: "response-healing" }] }),
+    schema: reportSchema,
+    system: args.systemPrompt,
+    prompt: args.userPrompt,
+    ...(fallbacks.length > 0 ? { providerOptions: { openrouter: { models: fallbacks } } } : {}),
+  });
+
+  return {
+    object: result.object,
+    usage: {
+      inputTokens: result.usage.inputTokens ?? 0,
+      outputTokens: result.usage.outputTokens ?? 0,
     },
   };
-
-  try {
-    return await env.AI.run(
-      POST_EVAL_PRIMARY_MODEL,
-      {
-        messages: [
-          { role: "system", content: args.systemPrompt },
-          { role: "user", content: args.userPrompt },
-        ],
-        response_format: {
-          type: "json_schema",
-          json_schema: {
-            name: "interview_report",
-            schema: reportSchema,
-          },
-        },
-      },
-      { gateway },
-    );
-  } catch (primaryError) {
-    try {
-      return await env.AI.run(
-        POST_EVAL_FALLBACK_MODEL,
-        {
-          messages: [
-            { role: "system", content: args.systemPrompt },
-            { role: "user", content: args.userPrompt },
-          ],
-          response_format: {
-            type: "json_schema",
-            json_schema: {
-              name: "interview_report",
-              schema: reportSchema,
-            },
-          },
-        },
-        { gateway },
-      );
-    } catch (fallbackError) {
-      const primaryMessage =
-        primaryError instanceof Error ? primaryError.message : String(primaryError);
-      const fallbackMessage =
-        fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
-      throw new Error(
-        `AI extraction failed across gateway models (post-evaluation). primary=${primaryMessage}; fallback=${fallbackMessage}`,
-      );
-    }
-  }
-}
-
-function extractJsonObjectFromText(value: string): Record<string, unknown> | null {
-  const trimmed = value.trim();
-  const firstBrace = trimmed.indexOf("{");
-  const lastBrace = trimmed.lastIndexOf("}");
-
-  if (firstBrace === -1 || lastBrace === -1 || firstBrace >= lastBrace) {
-    return null;
-  }
-
-  const jsonSlice = trimmed.slice(firstBrace, lastBrace + 1);
-  try {
-    const parsed = JSON.parse(jsonSlice);
-    if (typeof parsed === "object" && parsed !== null) {
-      return parsed as Record<string, unknown>;
-    }
-  } catch {
-    return null;
-  }
-
-  return null;
 }
 
 function fallbackReportFromText(interviewData: {
@@ -292,51 +186,6 @@ function fallbackReportFromText(interviewData: {
     },
     recommendation: overall >= 75 ? "yes" : "lean_no",
   };
-}
-
-function isReportModelResponse(value: unknown): value is ReportModelResponse {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-
-  const record = value as Record<string, unknown>;
-
-  if (
-    typeof record.summary !== "string" ||
-    !Array.isArray(record.strengths) ||
-    !Array.isArray(record.weaknesses) ||
-    !Array.isArray(record.insights) ||
-    !Array.isArray(record.evidence) ||
-    !Array.isArray(record.screeningAnswers) ||
-    typeof record.scores !== "object" ||
-    record.scores === null ||
-    !["strong_yes", "yes", "lean_no", "no"].includes(String(record.recommendation))
-  ) {
-    return false;
-  }
-
-  const scores = record.scores as Record<string, unknown>;
-  const scoresOk = ["communication", "problemSolving", "ownership", "roleFit", "overall"].every(
-    (key) => typeof scores[key] === "number",
-  );
-  if (!scoresOk) {
-    return false;
-  }
-
-  const screeningOk = record.screeningAnswers.every((entry): entry is ScreeningAnswer => {
-    if (typeof entry !== "object" || entry === null) {
-      return false;
-    }
-    const e = entry as Record<string, unknown>;
-    return (
-      typeof e.question === "string" &&
-      (e.answer === null || typeof e.answer === "string") &&
-      ["none", "minor", "dealbreaker"].includes(String(e.concern)) &&
-      typeof e.notes === "string"
-    );
-  });
-
-  return screeningOk;
 }
 
 function isInterviewAgentState(value: unknown): value is InterviewAgentState {
@@ -490,7 +339,7 @@ export function generateReport(
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
   return async () => {
-    log.info("Generating structured interview report with Workers AI");
+    log.info("Generating structured interview report with OpenRouter");
 
     const customQuestions = interviewData.contextState.customQuestions;
     const customQuestionsBlock =
@@ -513,6 +362,9 @@ export function generateReport(
     const systemPrompt = [
       "# Identity",
       "You are Zero, the senior evaluator on RoundZero's hiring panel. Behave like an experienced engineering hiring manager + recruiter writing a written debrief that real humans (the company's hiring team) will read to make a hire / no-hire decision.",
+      "",
+      "# Output Format",
+      "You MUST respond with a single JSON object containing exactly the fields specified below. Do NOT include any text outside the JSON object. No markdown, no explanations, no preamble.",
       "",
       "# Mission",
       "Produce a fair, sharp, evidence-grounded interview report from the supplied interview transcript and context. Your job is to surface signal — both strengths and concerns — that materially helps the hiring team decide.",
@@ -571,37 +423,24 @@ export function generateReport(
         missingRequirements: missingRequirementsBlock,
       },
       requiredScreeningQuestions: customQuestionsBlock,
-      transcript: interviewData.transcript,
+      transcript: interviewData.transcript.slice(-15000),
     });
-
-    const aiResponse = await runPostEvalJsonWithGateway({
-      systemPrompt,
-      userPrompt,
-    });
-    log.info(`AI Gateway log id (post-eval): ${env.AI.aiGatewayLogId ?? "n/a"}`);
-
-    const payload = getResponsePayload(aiResponse);
-    let parsed: Record<string, unknown> | null = null;
 
     try {
-      parsed = parseJsonPayload(payload.response);
-    } catch {
-      if (typeof payload.response === "string") {
-        parsed = extractJsonObjectFromText(payload.response);
-      }
-    }
+      const { object: report, usage } = await runPostEvalObject({
+        systemPrompt,
+        userPrompt,
+      });
 
-    if (!parsed) {
-      log.warn("Workers AI returned non-JSON payload. Using deterministic fallback report.");
+      log.ai(userPrompt.length, usage.outputTokens, 0);
+      return report;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      log.warn(
+        `OpenRouter report generation failed: ${message}. Using deterministic fallback report.`,
+      );
       return fallbackReportFromText(interviewData);
     }
-
-    if (!isReportModelResponse(parsed)) {
-      log.warn("Workers AI returned invalid report shape. Using deterministic fallback report.");
-      return fallbackReportFromText(interviewData);
-    }
-
-    return parsed;
   };
 }
 
