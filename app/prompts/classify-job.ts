@@ -1,20 +1,37 @@
-export const JOB_TYPE_SCHEMA = {
-  type: "object",
-  properties: {
-    roleType: {
-      type: "string",
-      enum: ["technical", "customer_facing", "creative", "operations", "leadership", "general"],
-    },
-    reasoning: { type: "string" },
-  },
-  required: ["roleType", "reasoning"],
-} as const;
+import { z } from "zod";
 
-export const CLASSIFY_JOB_SYSTEM_PROMPT = `You are a job classifier. Given a job title and description, classify the role into one of these categories:
+export const jobTypeSchema = z
+  .object({
+    roleType: z.enum([
+      "technical",
+      "customer_facing",
+      "creative",
+      "operations",
+      "leadership",
+      "general",
+    ]),
+    reasoning: z.string(),
+  })
+  .strict();
 
-- technical: Engineering, data science, DevOps, security, architecture, etc.
-- customer_facing: Sales, support, success, account management, etc.
-- creative: Design, content, marketing, copywriting, etc.
-- operations: HR, finance, legal, admin, supply chain, etc.
-- leadership: Executive, VP, director, head of department
-- general: Roles that don't clearly fit above (e.g., generalist, consultant)`;
+export const CLASSIFY_JOB_SYSTEM_PROMPT = `You are a job classifier. Given a job title and description, classify the role into exactly one of these categories.
+
+## Output Format
+You MUST respond with a single JSON object containing exactly these fields:
+- roleType: exactly one of "technical", "customer_facing", "creative", "operations", "leadership", "general"
+- reasoning: one sentence explaining why this category fits best
+
+Do NOT include any text outside the JSON object. No markdown, no explanations, no preamble.
+
+## Categories
+- technical: Engineering, data science, DevOps, security, architecture, QA, SRE, platform engineering, etc.
+- customer_facing: Sales, support, success, account management, customer experience, etc.
+- creative: Design, content, marketing, copywriting, brand, UX research, etc.
+- operations: HR, finance, legal, admin, supply chain, procurement, facilities, etc.
+- leadership: Executive, VP, director, head of department, C-suite, founder with 50+ reports, etc.
+- general: Roles that don't clearly fit above (e.g., generalist, consultant, project manager, product manager)
+
+## Rules
+- Pick exactly ONE category. Never combine or hedge.
+- If the role spans multiple areas, pick the PRIMARY focus based on day-to-day responsibilities.
+- If the description is empty or unreadable, default to "general".`;

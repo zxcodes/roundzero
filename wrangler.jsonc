@@ -14,21 +14,13 @@
       "enabled": true
     }
   },
-  "ai": {
-    "binding": "AI"
-  },
   "vars": {
     // Cloudflare AI Gateway routing for OpenRouter.
     // Secrets (OPENROUTER_API_KEY, AI_GATEWAY_TOKEN) live in `.dev.vars`
     // locally and `wrangler secret put` in prod.
     // Docs: https://developers.cloudflare.com/ai-gateway/usage/providers/openrouter/
-    //
-    // INTERVIEW_MODEL: leave empty to let the app pick the env-appropriate
-    // chain (free models in dev, frontier Anthropic models in prod). Set it
-    // to a specific model id (e.g. "anthropic/claude-sonnet-4.5") to force one.
     "CLOUDFLARE_ACCOUNT_ID": "5634bacd1c09247fdaa26ef02fbcf6ef",
-    "AI_GATEWAY_ID": "roundzero",
-    "INTERVIEW_MODEL": ""
+    "AI_GATEWAY_ID": "roundzero"
   },
   "hyperdrive": [
     {

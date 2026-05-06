@@ -61,42 +61,74 @@ export function getOpenRouter(): OpenRouterProvider {
   return cachedProvider;
 }
 
-// Free OpenRouter models with native tool calling, used for local dev + staging.
-// Order matters — first is primary, the rest are fallbacks tried by OpenRouter
-// when the primary is rate-limited / down. All models below are non-reasoning
-// instruct models so they don't leak chain-of-thought into chat output.
-// https://openrouter.ai/models?max_price=0&supported_parameters=tools
-const DEV_MODEL_CHAIN = [
+// ─── Model Chains ───────────────────────────────────────────────────────────
+//
+// Model selection is code-level, not infra-level. Change these typed arrays in
+// code when you want to switch models. No env vars.
+//
+// Each chain is ordered: [primary, fallback1, fallback2, ...]. The primary is
+// passed to `openrouter.chat(model)`. The rest are passed as
+// `providerOptions.openrouter.models` so OpenRouter auto-failovers on errors.
+// The `models` array must NOT include the primary (per OpenRouter docs).
+//
+// Dev / staging / test all use the free chains. Only production uses the paid
+// chains. This prevents burning credits during local iteration.
+//
+// https://openrouter.ai/docs/guides/routing/model-fallbacks
+
+// Free models for non-production environments (dev, staging, test).
+// Pre-eval and post-eval need models that support structured outputs
+// (response_format or structured_outputs parameter).
+const PRE_EVAL_DEV_CHAIN = [
+  "qwen/qwen3-next-80b-a3b-instruct:free",
+  "nvidia/nemotron-3-super-120b-a12b:free",
+] as const;
+
+const POST_EVAL_DEV_CHAIN = [
+  "qwen/qwen3-next-80b-a3b-instruct:free",
+  "nvidia/nemotron-3-super-120b-a12b:free",
+] as const;
+
+const INTERVIEW_DEV_CHAIN = [
   "meta-llama/llama-3.3-70b-instruct:free",
   "openai/gpt-oss-120b:free",
   "qwen/qwen3-next-80b-a3b-instruct:free",
   "nvidia/nemotron-3-nano-30b-a3b:free",
 ] as const;
 
-// Frontier paid models for production. Claude Haiku as primary (fast + cheap),
-// Sonnet as the rate-limit / outage fallback.
-const PROD_MODEL_CHAIN = ["anthropic/claude-haiku-4.5", "anthropic/claude-sonnet-4.5"] as const;
+// Paid frontier models for production.
+const PRE_EVAL_PROD_CHAIN = ["anthropic/claude-haiku-4.5", "anthropic/claude-sonnet-4.5"] as const;
+
+const POST_EVAL_PROD_CHAIN = ["anthropic/claude-sonnet-4.5", "anthropic/claude-opus-4.5"] as const;
+
+const INTERVIEW_PROD_CHAIN = ["anthropic/claude-haiku-4.5", "anthropic/claude-sonnet-4.5"] as const;
+
+type Task = "pre_eval" | "post_eval" | "interview";
+
+const TASK_CHAIN_MAP: Record<Task, { dev: readonly string[]; prod: readonly string[] }> = {
+  pre_eval: { dev: PRE_EVAL_DEV_CHAIN, prod: PRE_EVAL_PROD_CHAIN },
+  post_eval: { dev: POST_EVAL_DEV_CHAIN, prod: POST_EVAL_PROD_CHAIN },
+  interview: { dev: INTERVIEW_DEV_CHAIN, prod: INTERVIEW_PROD_CHAIN },
+};
 
 /**
- * Returns the model chain the interview agent should use for THIS environment.
- * `model` is the primary; `fallbacks` is everything tried if the primary errors.
+ * Returns the model chain for a given AI task in the current environment.
  *
- * Pass `model` to `openrouter.chat(model)` and (when fallbacks exist) pass
- * `providerOptions: { openrouter: { models: fallbacks } }` to enable
- * OpenRouter's automatic failover. Per the OpenRouter docs, the `models`
- * array must NOT include the primary — otherwise OpenRouter just retries the
- * same model first and fallback never triggers.
- *
- * https://openrouter.ai/docs/guides/routing/model-fallbacks
+ * `model`  — primary model id (pass to `openrouter.chat(model)`).
+ * `fallbacks` — ordered list of fallback models tried by OpenRouter when the
+n *   primary errors (429, downtime, moderation refusal). Must NOT include the
+ *   primary model.
+ */
+export function getModelChain(task: Task): { model: string; fallbacks: string[] } {
+  const isProd = env.NODE_ENV === "production";
+  const chain = TASK_CHAIN_MAP[task][isProd ? "prod" : "dev"];
+  return { model: chain[0], fallbacks: chain.slice(1) };
+}
+
+/**
+ * Backward-compatible alias for the interview agent.
+ * Delegates to `getModelChain("interview")`.
  */
 export function getInterviewModelChain(): { model: string; fallbacks: string[] } {
-  const override = env.INTERVIEW_MODEL?.trim();
-  if (override) {
-    return { model: override, fallbacks: [] };
-  }
-
-  // Only "production" uses the paid chain. Dev, staging, test all share the
-  // free chain so we don't burn credits during iteration.
-  const chain = env.NODE_ENV === "production" ? PROD_MODEL_CHAIN : DEV_MODEL_CHAIN;
-  return { model: chain[0], fallbacks: chain.slice(1) };
+  return getModelChain("interview");
 }
