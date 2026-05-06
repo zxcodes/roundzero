@@ -1,7 +1,6 @@
 ## TODO
 
 - we need to detect if agent messes up the interview and give candidate another chance with good ui feedback. 
-- use frontier models for the entire ai layer in prod.
 - wire stripe and pricing up. make sure to implement a really nice way of checking for an active sub throughout the app (context) perhaps?
 - show interview invited button in applied job application pages if they have an existing interview, or in progress etc. basically like a status action.
 - configure sentry for prod envs.
@@ -44,6 +43,7 @@
 
 
 
+<!--- use frontier models for the entire ai layer in prod.-->
 <!--- see shadcn dashboard block for inspiration on company dashboard. (bunx shadcn@latest add dashboard-01)-->
 <!--- configure different r2 buckets based on env.-->
 <!--- manual interview invitation does not trigger post workflow on end (only checked using cancel action, not auto end from agent).-->
