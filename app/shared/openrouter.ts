@@ -61,7 +61,7 @@ export function getOpenRouter(): OpenRouterProvider {
   return cachedProvider;
 }
 
-// Free OpenRouter models with native tool calling, used for local dev.
+// Free OpenRouter models with native tool calling, used for local dev + staging.
 // Order matters — first is primary, the rest are fallbacks tried by OpenRouter
 // when the primary is rate-limited / down. All models below are non-reasoning
 // instruct models so they don't leak chain-of-thought into chat output.
@@ -79,18 +79,24 @@ const PROD_MODEL_CHAIN = ["anthropic/claude-haiku-4.5", "anthropic/claude-sonnet
 
 /**
  * Returns the model chain the interview agent should use for THIS environment.
- * The first entry is the primary model id; pass the entire array as
- * `providerOptions.openrouter.models` so OpenRouter automatically falls back
- * through the list on 429s, provider outages, or moderation refusals.
+ * `model` is the primary; `fallbacks` is everything tried if the primary errors.
+ *
+ * Pass `model` to `openrouter.chat(model)` and (when fallbacks exist) pass
+ * `providerOptions: { openrouter: { models: fallbacks } }` to enable
+ * OpenRouter's automatic failover. Per the OpenRouter docs, the `models`
+ * array must NOT include the primary — otherwise OpenRouter just retries the
+ * same model first and fallback never triggers.
  *
  * https://openrouter.ai/docs/guides/routing/model-fallbacks
  */
-export function getInterviewModelChain(): { model: string; models: string[] } {
+export function getInterviewModelChain(): { model: string; fallbacks: string[] } {
   const override = env.INTERVIEW_MODEL?.trim();
   if (override) {
-    return { model: override, models: [override] };
+    return { model: override, fallbacks: [] };
   }
 
+  // Only "production" uses the paid chain. Dev, staging, test all share the
+  // free chain so we don't burn credits during iteration.
   const chain = env.NODE_ENV === "production" ? PROD_MODEL_CHAIN : DEV_MODEL_CHAIN;
-  return { model: chain[0], models: [...chain] };
+  return { model: chain[0], fallbacks: chain.slice(1) };
 }
