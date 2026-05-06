@@ -423,13 +423,13 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
     }
 
     const openrouter = getOpenRouter();
-    const { model, models } = getInterviewModelChain();
+    const { model, fallbacks } = getInterviewModelChain();
     const result = await generateText({
       model: openrouter.chat(model),
       temperature: 0.7,
       system: this.buildSystemPrompt(),
       prompt: `Open the interview. Greet ${this.state.context.candidateName || "the candidate"} warmly by name, reference one specific resume detail that connects to this role, then ask your first focused interview question. Plain conversational English only.`,
-      providerOptions: { openrouter: { models } },
+      ...(fallbacks.length > 0 ? { providerOptions: { openrouter: { models: fallbacks } } } : {}),
     });
 
     const greeting = result.text.trim();
@@ -514,7 +514,7 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
     }
 
     const openrouter = getOpenRouter();
-    const { model, models } = getInterviewModelChain();
+    const { model, fallbacks } = getInterviewModelChain();
 
     const latestCandidateMessage = [...this.messages].reverse().find((m) => m.role === "user");
     const latestCandidateText = latestCandidateMessage
@@ -540,7 +540,7 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
       }),
       onFinish,
       stopWhen: [stepCountIs(5), hasToolCall("end_interview")],
-      providerOptions: { openrouter: { models } },
+      ...(fallbacks.length > 0 ? { providerOptions: { openrouter: { models: fallbacks } } } : {}),
       tools: {
         evaluate_answer: tool({
           description:
