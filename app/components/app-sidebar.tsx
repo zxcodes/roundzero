@@ -2,6 +2,7 @@ import {
   AddCircleIcon,
   Briefcase01Icon,
   BubbleChatIcon,
+  CreditCardIcon,
   House01Icon,
   Search01Icon,
   Setting06Icon,
@@ -34,6 +35,11 @@ const companyMain = [
     title: "Jobs",
     url: "/dashboard/jobs",
     icon: <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} className="size-4" />,
+  },
+  {
+    title: "Billing",
+    url: "/dashboard/billing",
+    icon: <HugeiconsIcon icon={CreditCardIcon} strokeWidth={2} className="size-4" />,
   },
   {
     title: "Settings",

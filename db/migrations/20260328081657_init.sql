@@ -32,11 +32,21 @@ CREATE TABLE companies (
   tech_stack     JSONB DEFAULT '[]',
   culture        TEXT,
   social_links   JSONB DEFAULT '{}',
+  -- Stripe billing
+  stripe_customer_id              TEXT,
+  stripe_subscription_id          TEXT,
+  stripe_price_id                 TEXT,
+  subscription_plan               TEXT NOT NULL DEFAULT 'free',
+  subscription_status             TEXT NOT NULL DEFAULT 'inactive',
+  subscription_current_period_end TIMESTAMPTZ,
+  subscription_cancel_at_period_end BOOLEAN NOT NULL DEFAULT false,
   created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX idx_companies_owner ON companies(owner_id);
+CREATE UNIQUE INDEX idx_companies_stripe_customer
+  ON companies(stripe_customer_id) WHERE stripe_customer_id IS NOT NULL;
 
 -- Candidate profiles
 CREATE TABLE candidate_profiles (

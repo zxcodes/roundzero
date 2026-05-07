@@ -12,7 +12,7 @@ INSERT INTO companies (
   onboarding_completed_at
 )
 VALUES ($1, $2, $3, $4, $5, $6, $7, now())
-RETURNING id, owner_id, name, slug, onboarding_completed_at, description, logo_key, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, created_at, updated_at`;
+RETURNING id, owner_id, name, slug, onboarding_completed_at, description, logo_key, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, stripe_customer_id, stripe_subscription_id, stripe_price_id, subscription_plan, subscription_status, subscription_current_period_end, subscription_cancel_at_period_end, created_at, updated_at`;
 
 export interface createCompanyArgs {
     ownerId: string;
@@ -40,6 +40,13 @@ export interface createCompanyRow {
     techStack: any | null;
     culture: string | null;
     socialLinks: any | null;
+    stripeCustomerId: string | null;
+    stripeSubscriptionId: string | null;
+    stripePriceId: string | null;
+    subscriptionPlan: string;
+    subscriptionStatus: string;
+    subscriptionCurrentPeriodEnd: Date | null;
+    subscriptionCancelAtPeriodEnd: boolean;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -66,13 +73,20 @@ export async function createCompany(sql: Sql, args: createCompanyArgs): Promise<
         techStack: row[12],
         culture: row[13],
         socialLinks: row[14],
-        createdAt: row[15],
-        updatedAt: row[16]
+        stripeCustomerId: row[15],
+        stripeSubscriptionId: row[16],
+        stripePriceId: row[17],
+        subscriptionPlan: row[18],
+        subscriptionStatus: row[19],
+        subscriptionCurrentPeriodEnd: row[20],
+        subscriptionCancelAtPeriodEnd: row[21],
+        createdAt: row[22],
+        updatedAt: row[23]
     };
 }
 
 export const getCompanyByOwnerIdQuery = `-- name: getCompanyByOwnerId :one
-SELECT id, owner_id, name, slug, onboarding_completed_at, description, logo_key, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, created_at, updated_at
+SELECT id, owner_id, name, slug, onboarding_completed_at, description, logo_key, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, stripe_customer_id, stripe_subscription_id, stripe_price_id, subscription_plan, subscription_status, subscription_current_period_end, subscription_cancel_at_period_end, created_at, updated_at
 FROM companies
 WHERE owner_id = $1`;
 
@@ -96,6 +110,13 @@ export interface getCompanyByOwnerIdRow {
     techStack: any | null;
     culture: string | null;
     socialLinks: any | null;
+    stripeCustomerId: string | null;
+    stripeSubscriptionId: string | null;
+    stripePriceId: string | null;
+    subscriptionPlan: string;
+    subscriptionStatus: string;
+    subscriptionCurrentPeriodEnd: Date | null;
+    subscriptionCancelAtPeriodEnd: boolean;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -122,13 +143,20 @@ export async function getCompanyByOwnerId(sql: Sql, args: getCompanyByOwnerIdArg
         techStack: row[12],
         culture: row[13],
         socialLinks: row[14],
-        createdAt: row[15],
-        updatedAt: row[16]
+        stripeCustomerId: row[15],
+        stripeSubscriptionId: row[16],
+        stripePriceId: row[17],
+        subscriptionPlan: row[18],
+        subscriptionStatus: row[19],
+        subscriptionCurrentPeriodEnd: row[20],
+        subscriptionCancelAtPeriodEnd: row[21],
+        createdAt: row[22],
+        updatedAt: row[23]
     };
 }
 
 export const getCompanyByIdQuery = `-- name: getCompanyById :one
-SELECT id, owner_id, name, slug, onboarding_completed_at, description, logo_key, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, created_at, updated_at
+SELECT id, owner_id, name, slug, onboarding_completed_at, description, logo_key, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, stripe_customer_id, stripe_subscription_id, stripe_price_id, subscription_plan, subscription_status, subscription_current_period_end, subscription_cancel_at_period_end, created_at, updated_at
 FROM companies
 WHERE id = $1`;
 
@@ -152,6 +180,13 @@ export interface getCompanyByIdRow {
     techStack: any | null;
     culture: string | null;
     socialLinks: any | null;
+    stripeCustomerId: string | null;
+    stripeSubscriptionId: string | null;
+    stripePriceId: string | null;
+    subscriptionPlan: string;
+    subscriptionStatus: string;
+    subscriptionCurrentPeriodEnd: Date | null;
+    subscriptionCancelAtPeriodEnd: boolean;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -178,13 +213,20 @@ export async function getCompanyById(sql: Sql, args: getCompanyByIdArgs): Promis
         techStack: row[12],
         culture: row[13],
         socialLinks: row[14],
-        createdAt: row[15],
-        updatedAt: row[16]
+        stripeCustomerId: row[15],
+        stripeSubscriptionId: row[16],
+        stripePriceId: row[17],
+        subscriptionPlan: row[18],
+        subscriptionStatus: row[19],
+        subscriptionCurrentPeriodEnd: row[20],
+        subscriptionCancelAtPeriodEnd: row[21],
+        createdAt: row[22],
+        updatedAt: row[23]
     };
 }
 
 export const getCompanyBySlugQuery = `-- name: getCompanyBySlug :one
-SELECT c.id, c.owner_id, c.name, c.slug, c.onboarding_completed_at, c.description, c.logo_key, c.website, c.industry, c.company_size, c.founded_year, c.location, c.tech_stack, c.culture, c.social_links, c.created_at, c.updated_at,
+SELECT c.id, c.owner_id, c.name, c.slug, c.onboarding_completed_at, c.description, c.logo_key, c.website, c.industry, c.company_size, c.founded_year, c.location, c.tech_stack, c.culture, c.social_links, c.stripe_customer_id, c.stripe_subscription_id, c.stripe_price_id, c.subscription_plan, c.subscription_status, c.subscription_current_period_end, c.subscription_cancel_at_period_end, c.created_at, c.updated_at,
        u.name AS owner_name,
        u.picture AS owner_picture
 FROM companies c
@@ -211,6 +253,13 @@ export interface getCompanyBySlugRow {
     techStack: any | null;
     culture: string | null;
     socialLinks: any | null;
+    stripeCustomerId: string | null;
+    stripeSubscriptionId: string | null;
+    stripePriceId: string | null;
+    subscriptionPlan: string;
+    subscriptionStatus: string;
+    subscriptionCurrentPeriodEnd: Date | null;
+    subscriptionCancelAtPeriodEnd: boolean;
     createdAt: Date;
     updatedAt: Date;
     ownerName: string;
@@ -239,10 +288,17 @@ export async function getCompanyBySlug(sql: Sql, args: getCompanyBySlugArgs): Pr
         techStack: row[12],
         culture: row[13],
         socialLinks: row[14],
-        createdAt: row[15],
-        updatedAt: row[16],
-        ownerName: row[17],
-        ownerPicture: row[18]
+        stripeCustomerId: row[15],
+        stripeSubscriptionId: row[16],
+        stripePriceId: row[17],
+        subscriptionPlan: row[18],
+        subscriptionStatus: row[19],
+        subscriptionCurrentPeriodEnd: row[20],
+        subscriptionCancelAtPeriodEnd: row[21],
+        createdAt: row[22],
+        updatedAt: row[23],
+        ownerName: row[24],
+        ownerPicture: row[25]
     };
 }
 
@@ -262,7 +318,7 @@ SET name = $1,
     updated_at = now()
 WHERE id = $12
   AND owner_id = $13
-RETURNING id, owner_id, name, slug, onboarding_completed_at, description, logo_key, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, created_at, updated_at`;
+RETURNING id, owner_id, name, slug, onboarding_completed_at, description, logo_key, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, stripe_customer_id, stripe_subscription_id, stripe_price_id, subscription_plan, subscription_status, subscription_current_period_end, subscription_cancel_at_period_end, created_at, updated_at`;
 
 export interface updateCompanyProfileArgs {
     name: string;
@@ -296,6 +352,13 @@ export interface updateCompanyProfileRow {
     techStack: any | null;
     culture: string | null;
     socialLinks: any | null;
+    stripeCustomerId: string | null;
+    stripeSubscriptionId: string | null;
+    stripePriceId: string | null;
+    subscriptionPlan: string;
+    subscriptionStatus: string;
+    subscriptionCurrentPeriodEnd: Date | null;
+    subscriptionCancelAtPeriodEnd: boolean;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -322,8 +385,15 @@ export async function updateCompanyProfile(sql: Sql, args: updateCompanyProfileA
         techStack: row[12],
         culture: row[13],
         socialLinks: row[14],
-        createdAt: row[15],
-        updatedAt: row[16]
+        stripeCustomerId: row[15],
+        stripeSubscriptionId: row[16],
+        stripePriceId: row[17],
+        subscriptionPlan: row[18],
+        subscriptionStatus: row[19],
+        subscriptionCurrentPeriodEnd: row[20],
+        subscriptionCancelAtPeriodEnd: row[21],
+        createdAt: row[22],
+        updatedAt: row[23]
     };
 }
 
@@ -332,7 +402,7 @@ UPDATE companies
 SET logo_key = $1,
     updated_at = now()
 WHERE owner_id = $2
-RETURNING id, owner_id, name, slug, onboarding_completed_at, description, logo_key, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, created_at, updated_at`;
+RETURNING id, owner_id, name, slug, onboarding_completed_at, description, logo_key, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, stripe_customer_id, stripe_subscription_id, stripe_price_id, subscription_plan, subscription_status, subscription_current_period_end, subscription_cancel_at_period_end, created_at, updated_at`;
 
 export interface updateCompanyLogoByOwnerIdArgs {
     logoKey: string | null;
@@ -355,6 +425,13 @@ export interface updateCompanyLogoByOwnerIdRow {
     techStack: any | null;
     culture: string | null;
     socialLinks: any | null;
+    stripeCustomerId: string | null;
+    stripeSubscriptionId: string | null;
+    stripePriceId: string | null;
+    subscriptionPlan: string;
+    subscriptionStatus: string;
+    subscriptionCurrentPeriodEnd: Date | null;
+    subscriptionCancelAtPeriodEnd: boolean;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -381,13 +458,20 @@ export async function updateCompanyLogoByOwnerId(sql: Sql, args: updateCompanyLo
         techStack: row[12],
         culture: row[13],
         socialLinks: row[14],
-        createdAt: row[15],
-        updatedAt: row[16]
+        stripeCustomerId: row[15],
+        stripeSubscriptionId: row[16],
+        stripePriceId: row[17],
+        subscriptionPlan: row[18],
+        subscriptionStatus: row[19],
+        subscriptionCurrentPeriodEnd: row[20],
+        subscriptionCancelAtPeriodEnd: row[21],
+        createdAt: row[22],
+        updatedAt: row[23]
     };
 }
 
 export const getAllCompaniesQuery = `-- name: getAllCompanies :many
-SELECT c.id, c.owner_id, c.name, c.slug, c.onboarding_completed_at, c.description, c.logo_key, c.website, c.industry, c.company_size, c.founded_year, c.location, c.tech_stack, c.culture, c.social_links, c.created_at, c.updated_at,
+SELECT c.id, c.owner_id, c.name, c.slug, c.onboarding_completed_at, c.description, c.logo_key, c.website, c.industry, c.company_size, c.founded_year, c.location, c.tech_stack, c.culture, c.social_links, c.stripe_customer_id, c.stripe_subscription_id, c.stripe_price_id, c.subscription_plan, c.subscription_status, c.subscription_current_period_end, c.subscription_cancel_at_period_end, c.created_at, c.updated_at,
        (SELECT count(*)::int FROM jobs j WHERE j.company_id = c.id AND j.status = 'open' AND j.archived_at IS NULL) AS open_job_count
 FROM companies c
 JOIN users u ON u.id = c.owner_id AND u.deleted_at IS NULL
@@ -409,6 +493,13 @@ export interface getAllCompaniesRow {
     techStack: any | null;
     culture: string | null;
     socialLinks: any | null;
+    stripeCustomerId: string | null;
+    stripeSubscriptionId: string | null;
+    stripePriceId: string | null;
+    subscriptionPlan: string;
+    subscriptionStatus: string;
+    subscriptionCurrentPeriodEnd: Date | null;
+    subscriptionCancelAtPeriodEnd: boolean;
     createdAt: Date;
     updatedAt: Date;
     openJobCount: number;
@@ -431,14 +522,21 @@ export async function getAllCompanies(sql: Sql): Promise<getAllCompaniesRow[]> {
         techStack: row[12],
         culture: row[13],
         socialLinks: row[14],
-        createdAt: row[15],
-        updatedAt: row[16],
-        openJobCount: row[17]
+        stripeCustomerId: row[15],
+        stripeSubscriptionId: row[16],
+        stripePriceId: row[17],
+        subscriptionPlan: row[18],
+        subscriptionStatus: row[19],
+        subscriptionCurrentPeriodEnd: row[20],
+        subscriptionCancelAtPeriodEnd: row[21],
+        createdAt: row[22],
+        updatedAt: row[23],
+        openJobCount: row[24]
     }));
 }
 
 export const getAllCompaniesPaginatedQuery = `-- name: getAllCompaniesPaginated :many
-SELECT c.id, c.owner_id, c.name, c.slug, c.onboarding_completed_at, c.description, c.logo_key, c.website, c.industry, c.company_size, c.founded_year, c.location, c.tech_stack, c.culture, c.social_links, c.created_at, c.updated_at,
+SELECT c.id, c.owner_id, c.name, c.slug, c.onboarding_completed_at, c.description, c.logo_key, c.website, c.industry, c.company_size, c.founded_year, c.location, c.tech_stack, c.culture, c.social_links, c.stripe_customer_id, c.stripe_subscription_id, c.stripe_price_id, c.subscription_plan, c.subscription_status, c.subscription_current_period_end, c.subscription_cancel_at_period_end, c.created_at, c.updated_at,
        (SELECT count(*)::int FROM jobs j WHERE j.company_id = c.id AND j.status = 'open' AND j.archived_at IS NULL) AS open_job_count
 FROM companies c
 JOIN users u ON u.id = c.owner_id AND u.deleted_at IS NULL
@@ -472,6 +570,13 @@ export interface getAllCompaniesPaginatedRow {
     techStack: any | null;
     culture: string | null;
     socialLinks: any | null;
+    stripeCustomerId: string | null;
+    stripeSubscriptionId: string | null;
+    stripePriceId: string | null;
+    subscriptionPlan: string;
+    subscriptionStatus: string;
+    subscriptionCurrentPeriodEnd: Date | null;
+    subscriptionCancelAtPeriodEnd: boolean;
     createdAt: Date;
     updatedAt: Date;
     openJobCount: number;
@@ -494,9 +599,16 @@ export async function getAllCompaniesPaginated(sql: Sql, args: getAllCompaniesPa
         techStack: row[12],
         culture: row[13],
         socialLinks: row[14],
-        createdAt: row[15],
-        updatedAt: row[16],
-        openJobCount: row[17]
+        stripeCustomerId: row[15],
+        stripeSubscriptionId: row[16],
+        stripePriceId: row[17],
+        subscriptionPlan: row[18],
+        subscriptionStatus: row[19],
+        subscriptionCurrentPeriodEnd: row[20],
+        subscriptionCancelAtPeriodEnd: row[21],
+        createdAt: row[22],
+        updatedAt: row[23],
+        openJobCount: row[24]
     }));
 }
 
@@ -548,6 +660,309 @@ export async function slugExists(sql: Sql, args: slugExistsArgs): Promise<slugEx
     const row = rows[0];
     return {
         exists: row[0]
+    };
+}
+
+export const getCompanyByStripeCustomerIdQuery = `-- name: getCompanyByStripeCustomerId :one
+SELECT id, owner_id, name, slug, onboarding_completed_at, description, logo_key, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, stripe_customer_id, stripe_subscription_id, stripe_price_id, subscription_plan, subscription_status, subscription_current_period_end, subscription_cancel_at_period_end, created_at, updated_at
+FROM companies
+WHERE stripe_customer_id = $1`;
+
+export interface getCompanyByStripeCustomerIdArgs {
+    stripeCustomerId: string | null;
+}
+
+export interface getCompanyByStripeCustomerIdRow {
+    id: string;
+    ownerId: string;
+    name: string;
+    slug: string;
+    onboardingCompletedAt: Date | null;
+    description: string | null;
+    logoKey: string | null;
+    website: string | null;
+    industry: string | null;
+    companySize: string | null;
+    foundedYear: number | null;
+    location: string | null;
+    techStack: any | null;
+    culture: string | null;
+    socialLinks: any | null;
+    stripeCustomerId: string | null;
+    stripeSubscriptionId: string | null;
+    stripePriceId: string | null;
+    subscriptionPlan: string;
+    subscriptionStatus: string;
+    subscriptionCurrentPeriodEnd: Date | null;
+    subscriptionCancelAtPeriodEnd: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export async function getCompanyByStripeCustomerId(sql: Sql, args: getCompanyByStripeCustomerIdArgs): Promise<getCompanyByStripeCustomerIdRow | null> {
+    const rows = await sql.unsafe(getCompanyByStripeCustomerIdQuery, [args.stripeCustomerId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        ownerId: row[1],
+        name: row[2],
+        slug: row[3],
+        onboardingCompletedAt: row[4],
+        description: row[5],
+        logoKey: row[6],
+        website: row[7],
+        industry: row[8],
+        companySize: row[9],
+        foundedYear: row[10],
+        location: row[11],
+        techStack: row[12],
+        culture: row[13],
+        socialLinks: row[14],
+        stripeCustomerId: row[15],
+        stripeSubscriptionId: row[16],
+        stripePriceId: row[17],
+        subscriptionPlan: row[18],
+        subscriptionStatus: row[19],
+        subscriptionCurrentPeriodEnd: row[20],
+        subscriptionCancelAtPeriodEnd: row[21],
+        createdAt: row[22],
+        updatedAt: row[23]
+    };
+}
+
+export const setCompanyStripeCustomerQuery = `-- name: setCompanyStripeCustomer :one
+UPDATE companies
+SET stripe_customer_id = $1,
+    updated_at = now()
+WHERE id = $2
+RETURNING id, owner_id, name, slug, onboarding_completed_at, description, logo_key, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, stripe_customer_id, stripe_subscription_id, stripe_price_id, subscription_plan, subscription_status, subscription_current_period_end, subscription_cancel_at_period_end, created_at, updated_at`;
+
+export interface setCompanyStripeCustomerArgs {
+    stripeCustomerId: string | null;
+    id: string;
+}
+
+export interface setCompanyStripeCustomerRow {
+    id: string;
+    ownerId: string;
+    name: string;
+    slug: string;
+    onboardingCompletedAt: Date | null;
+    description: string | null;
+    logoKey: string | null;
+    website: string | null;
+    industry: string | null;
+    companySize: string | null;
+    foundedYear: number | null;
+    location: string | null;
+    techStack: any | null;
+    culture: string | null;
+    socialLinks: any | null;
+    stripeCustomerId: string | null;
+    stripeSubscriptionId: string | null;
+    stripePriceId: string | null;
+    subscriptionPlan: string;
+    subscriptionStatus: string;
+    subscriptionCurrentPeriodEnd: Date | null;
+    subscriptionCancelAtPeriodEnd: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export async function setCompanyStripeCustomer(sql: Sql, args: setCompanyStripeCustomerArgs): Promise<setCompanyStripeCustomerRow | null> {
+    const rows = await sql.unsafe(setCompanyStripeCustomerQuery, [args.stripeCustomerId, args.id]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        ownerId: row[1],
+        name: row[2],
+        slug: row[3],
+        onboardingCompletedAt: row[4],
+        description: row[5],
+        logoKey: row[6],
+        website: row[7],
+        industry: row[8],
+        companySize: row[9],
+        foundedYear: row[10],
+        location: row[11],
+        techStack: row[12],
+        culture: row[13],
+        socialLinks: row[14],
+        stripeCustomerId: row[15],
+        stripeSubscriptionId: row[16],
+        stripePriceId: row[17],
+        subscriptionPlan: row[18],
+        subscriptionStatus: row[19],
+        subscriptionCurrentPeriodEnd: row[20],
+        subscriptionCancelAtPeriodEnd: row[21],
+        createdAt: row[22],
+        updatedAt: row[23]
+    };
+}
+
+export const updateCompanySubscriptionQuery = `-- name: updateCompanySubscription :one
+UPDATE companies
+SET stripe_subscription_id = $1,
+    stripe_price_id = $2,
+    subscription_plan = $3,
+    subscription_status = $4,
+    subscription_current_period_end = $5,
+    subscription_cancel_at_period_end = $6,
+    updated_at = now()
+WHERE stripe_customer_id = $7
+RETURNING id, owner_id, name, slug, onboarding_completed_at, description, logo_key, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, stripe_customer_id, stripe_subscription_id, stripe_price_id, subscription_plan, subscription_status, subscription_current_period_end, subscription_cancel_at_period_end, created_at, updated_at`;
+
+export interface updateCompanySubscriptionArgs {
+    stripeSubscriptionId: string | null;
+    stripePriceId: string | null;
+    subscriptionPlan: string;
+    subscriptionStatus: string;
+    subscriptionCurrentPeriodEnd: Date | null;
+    subscriptionCancelAtPeriodEnd: boolean;
+    stripeCustomerId: string | null;
+}
+
+export interface updateCompanySubscriptionRow {
+    id: string;
+    ownerId: string;
+    name: string;
+    slug: string;
+    onboardingCompletedAt: Date | null;
+    description: string | null;
+    logoKey: string | null;
+    website: string | null;
+    industry: string | null;
+    companySize: string | null;
+    foundedYear: number | null;
+    location: string | null;
+    techStack: any | null;
+    culture: string | null;
+    socialLinks: any | null;
+    stripeCustomerId: string | null;
+    stripeSubscriptionId: string | null;
+    stripePriceId: string | null;
+    subscriptionPlan: string;
+    subscriptionStatus: string;
+    subscriptionCurrentPeriodEnd: Date | null;
+    subscriptionCancelAtPeriodEnd: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export async function updateCompanySubscription(sql: Sql, args: updateCompanySubscriptionArgs): Promise<updateCompanySubscriptionRow | null> {
+    const rows = await sql.unsafe(updateCompanySubscriptionQuery, [args.stripeSubscriptionId, args.stripePriceId, args.subscriptionPlan, args.subscriptionStatus, args.subscriptionCurrentPeriodEnd, args.subscriptionCancelAtPeriodEnd, args.stripeCustomerId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        ownerId: row[1],
+        name: row[2],
+        slug: row[3],
+        onboardingCompletedAt: row[4],
+        description: row[5],
+        logoKey: row[6],
+        website: row[7],
+        industry: row[8],
+        companySize: row[9],
+        foundedYear: row[10],
+        location: row[11],
+        techStack: row[12],
+        culture: row[13],
+        socialLinks: row[14],
+        stripeCustomerId: row[15],
+        stripeSubscriptionId: row[16],
+        stripePriceId: row[17],
+        subscriptionPlan: row[18],
+        subscriptionStatus: row[19],
+        subscriptionCurrentPeriodEnd: row[20],
+        subscriptionCancelAtPeriodEnd: row[21],
+        createdAt: row[22],
+        updatedAt: row[23]
+    };
+}
+
+export const clearCompanySubscriptionQuery = `-- name: clearCompanySubscription :one
+UPDATE companies
+SET stripe_subscription_id = NULL,
+    stripe_price_id = NULL,
+    subscription_plan = 'free',
+    subscription_status = 'canceled',
+    subscription_current_period_end = NULL,
+    subscription_cancel_at_period_end = false,
+    updated_at = now()
+WHERE stripe_customer_id = $1
+RETURNING id, owner_id, name, slug, onboarding_completed_at, description, logo_key, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, stripe_customer_id, stripe_subscription_id, stripe_price_id, subscription_plan, subscription_status, subscription_current_period_end, subscription_cancel_at_period_end, created_at, updated_at`;
+
+export interface clearCompanySubscriptionArgs {
+    stripeCustomerId: string | null;
+}
+
+export interface clearCompanySubscriptionRow {
+    id: string;
+    ownerId: string;
+    name: string;
+    slug: string;
+    onboardingCompletedAt: Date | null;
+    description: string | null;
+    logoKey: string | null;
+    website: string | null;
+    industry: string | null;
+    companySize: string | null;
+    foundedYear: number | null;
+    location: string | null;
+    techStack: any | null;
+    culture: string | null;
+    socialLinks: any | null;
+    stripeCustomerId: string | null;
+    stripeSubscriptionId: string | null;
+    stripePriceId: string | null;
+    subscriptionPlan: string;
+    subscriptionStatus: string;
+    subscriptionCurrentPeriodEnd: Date | null;
+    subscriptionCancelAtPeriodEnd: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export async function clearCompanySubscription(sql: Sql, args: clearCompanySubscriptionArgs): Promise<clearCompanySubscriptionRow | null> {
+    const rows = await sql.unsafe(clearCompanySubscriptionQuery, [args.stripeCustomerId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        ownerId: row[1],
+        name: row[2],
+        slug: row[3],
+        onboardingCompletedAt: row[4],
+        description: row[5],
+        logoKey: row[6],
+        website: row[7],
+        industry: row[8],
+        companySize: row[9],
+        foundedYear: row[10],
+        location: row[11],
+        techStack: row[12],
+        culture: row[13],
+        socialLinks: row[14],
+        stripeCustomerId: row[15],
+        stripeSubscriptionId: row[16],
+        stripePriceId: row[17],
+        subscriptionPlan: row[18],
+        subscriptionStatus: row[19],
+        subscriptionCurrentPeriodEnd: row[20],
+        subscriptionCancelAtPeriodEnd: row[21],
+        createdAt: row[22],
+        updatedAt: row[23]
     };
 }
 

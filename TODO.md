@@ -1,5 +1,6 @@
 ## TODO
 
+- copy agent testing patterns from opencode, pi etc. also see how they harden their prompts.
 - validate open router models using their api key in prod ci so we detect non existent models beforehand.
 - we need to detect if agent messes up the interview and give candidate another chance with good ui feedback. 
 - wire stripe and pricing up. make sure to implement a really nice way of checking for an active sub throughout the app (context) perhaps?

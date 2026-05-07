@@ -83,3 +83,39 @@ WHERE (sqlc.arg('search')::text = '' OR c.name ILIKE '%' || sqlc.arg('search') |
 
 -- name: slugExists :one
 SELECT EXISTS(SELECT 1 FROM companies WHERE slug = $1) AS exists;
+
+-- name: getCompanyByStripeCustomerId :one
+SELECT *
+FROM companies
+WHERE stripe_customer_id = $1;
+
+-- name: setCompanyStripeCustomer :one
+UPDATE companies
+SET stripe_customer_id = $1,
+    updated_at = now()
+WHERE id = $2
+RETURNING *;
+
+-- name: updateCompanySubscription :one
+UPDATE companies
+SET stripe_subscription_id = $1,
+    stripe_price_id = $2,
+    subscription_plan = $3,
+    subscription_status = $4,
+    subscription_current_period_end = $5,
+    subscription_cancel_at_period_end = $6,
+    updated_at = now()
+WHERE stripe_customer_id = $7
+RETURNING *;
+
+-- name: clearCompanySubscription :one
+UPDATE companies
+SET stripe_subscription_id = NULL,
+    stripe_price_id = NULL,
+    subscription_plan = 'free',
+    subscription_status = 'canceled',
+    subscription_current_period_end = NULL,
+    subscription_cancel_at_period_end = false,
+    updated_at = now()
+WHERE stripe_customer_id = $1
+RETURNING *;

@@ -93,6 +93,13 @@ CREATE TABLE public.companies (
     tech_stack jsonb DEFAULT '[]'::jsonb,
     culture text,
     social_links jsonb DEFAULT '{}'::jsonb,
+    stripe_customer_id text,
+    stripe_subscription_id text,
+    stripe_price_id text,
+    subscription_plan text DEFAULT 'free'::text NOT NULL,
+    subscription_status text DEFAULT 'inactive'::text NOT NULL,
+    subscription_current_period_end timestamp with time zone,
+    subscription_cancel_at_period_end boolean DEFAULT false NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -402,6 +409,13 @@ CREATE INDEX idx_candidate_work_history_profile ON public.candidate_work_history
 --
 
 CREATE INDEX idx_companies_owner ON public.companies USING btree (owner_id);
+
+
+--
+-- Name: idx_companies_stripe_customer; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_companies_stripe_customer ON public.companies USING btree (stripe_customer_id) WHERE (stripe_customer_id IS NOT NULL);
 
 
 --
