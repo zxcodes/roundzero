@@ -1,6 +1,6 @@
 import handler from "@tanstack/react-start/server-entry";
 import { routeAgentRequest } from "agents";
-import { handleStripeWebhook } from "./features/billing/webhook";
+import { handlePolarWebhook } from "./features/billing/webhook";
 
 export { InterviewAgent } from "./agents/interview";
 export { PostEvaluationWorkflow } from "./workflows/post-evaluation/workflow";
@@ -33,8 +33,8 @@ export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
-    if (url.pathname === "/api/stripe/webhook" && request.method === "POST") {
-      return handleStripeWebhook(request);
+    if (url.pathname === "/api/polar/webhook" && request.method === "POST") {
+      return handlePolarWebhook(request);
     }
 
     const agentResponse = await routeAgentRequest(request, env);

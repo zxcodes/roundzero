@@ -14,11 +14,11 @@ const envSchema = z.object({
   RESEND_API_KEY: z.string(),
   RESEND_FROM_EMAIL: z.email(),
 
-  // Stripe Keys
-  STRIPE_PUBLISHABLE_KEY: z.string(),
-  STRIPE_SECRET_KEY: z.string(),
-  STRIPE_WEBHOOK_SECRET: z.string(),
-  STRIPE_PRICE_ID_PRO: z.string(),
+  // Polar
+  POLAR_ACCESS_TOKEN: z.string(),
+  POLAR_WEBHOOK_SECRET: z.string(),
+  POLAR_MODE: z.enum(["sandbox", "production"]).default("sandbox"),
+  POLAR_PRODUCT_ID_PRO: z.string(),
 });
 
 export const appEnv = envSchema.parse(process.env);

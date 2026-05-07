@@ -3,29 +3,29 @@ import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import {
   getCompanyByOwnerId,
-  setCompanyStripeCustomer,
+  setCompanyPolarCustomer,
 } from "@/features/companies/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { appEnv } from "@/shared/env.app";
 import { companyMiddleware } from "@/shared/middleware";
 import { hasActiveSubscription, type SubscriptionPlan, subscriptionPlanSchema } from "../config";
-import { getStripe } from "../services/stripe";
+import { getPolar } from "../services/polar";
 
 const checkoutSchema = z.object({
   plan: subscriptionPlanSchema,
 });
 
-function priceIdForPlan(plan: SubscriptionPlan): string | null {
-  if (plan === "pro") return appEnv.STRIPE_PRICE_ID_PRO;
+function productIdForPlan(plan: SubscriptionPlan): string | null {
+  if (plan === "pro") return appEnv.POLAR_PRODUCT_ID_PRO;
   return null;
 }
 
 /**
- * Look up the company's Stripe customer ID, creating it on the fly if missing.
+ * Look up the company's Polar customer ID, creating it on the fly if missing.
  * Persists the customer ID on the company row so subsequent calls and webhooks
  * can find it.
  */
-async function ensureStripeCustomer(input: {
+async function ensurePolarCustomer(input: {
   companyId: string;
   existingCustomerId: string | null;
   email: string;
@@ -33,17 +33,17 @@ async function ensureStripeCustomer(input: {
 }): Promise<string> {
   if (input.existingCustomerId) return input.existingCustomerId;
 
-  const stripe = getStripe();
-  const customer = await stripe.customers.create({
+  const polar = getPolar();
+  const customer = await polar.customers.create({
     email: input.email,
     name: input.name,
-    metadata: { companyId: input.companyId },
+    externalId: input.companyId,
   });
 
   const db = getDb();
-  await setCompanyStripeCustomer(db, {
+  await setCompanyPolarCustomer(db, {
     id: input.companyId,
-    stripeCustomerId: customer.id,
+    polarCustomerId: customer.id,
   });
 
   return customer.id;
@@ -54,9 +54,9 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
   .inputValidator(zodValidator(checkoutSchema))
   .handler(async ({ data, context }) => {
     const plan = data.plan as SubscriptionPlan;
-    const priceId = priceIdForPlan(plan);
+    const productId = productIdForPlan(plan);
 
-    if (!priceId) {
+    if (!productId) {
       throw new Error(
         plan === "enterprise"
           ? "Contact sales for the Enterprise plan"
@@ -64,51 +64,40 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
       );
     }
 
-    const customerId = await ensureStripeCustomer({
+    await ensurePolarCustomer({
       companyId: context.company.id,
-      existingCustomerId: context.company.stripeCustomerId,
+      existingCustomerId: context.company.polarCustomerId,
       email: context.user.email,
       name: context.company.name,
     });
 
-    const stripe = getStripe();
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      customer: customerId,
-      line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${appEnv.APP_URL}/dashboard/billing?status=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${appEnv.APP_URL}/dashboard/billing?status=cancelled`,
-      allow_promotion_codes: true,
-      client_reference_id: context.company.id,
-      subscription_data: {
-        metadata: {
-          companyId: context.company.id,
-          plan,
-        },
-      },
+    const polar = getPolar();
+    const checkout = await polar.checkouts.create({
+      products: [productId],
+      externalCustomerId: context.company.id,
+      successUrl: `${appEnv.APP_URL}/dashboard/billing?status=success&checkout_id={CHECKOUT_ID}`,
     });
 
-    if (!session.url) {
-      throw new Error("Stripe checkout session has no URL");
+    if (!checkout.url) {
+      throw new Error("Polar checkout session has no URL");
     }
 
-    return { url: session.url };
+    return { url: checkout.url };
   });
 
 export const createBillingPortalSession = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
   .handler(async ({ context }) => {
-    if (!context.company.stripeCustomerId) {
-      throw new Error("No Stripe customer on file. Subscribe first.");
+    if (!context.company.polarCustomerId) {
+      throw new Error("No billing account on file. Subscribe first.");
     }
 
-    const stripe = getStripe();
-    const session = await stripe.billingPortal.sessions.create({
-      customer: context.company.stripeCustomerId,
-      return_url: `${appEnv.APP_URL}/dashboard/billing`,
+    const polar = getPolar();
+    const session = await polar.customerSessions.create({
+      customerId: context.company.polarCustomerId,
     });
 
-    return { url: session.url };
+    return { url: session.customerPortalUrl };
   });
 
 export const getMySubscription = createServerFn({ method: "GET" })
@@ -124,7 +113,7 @@ export const getMySubscription = createServerFn({ method: "GET" })
       status: company.subscriptionStatus ?? "inactive",
       currentPeriodEnd: company.subscriptionCurrentPeriodEnd,
       cancelAtPeriodEnd: company.subscriptionCancelAtPeriodEnd,
-      hasStripeCustomer: Boolean(company.stripeCustomerId),
+      hasPolarCustomer: Boolean(company.polarCustomerId),
       isActive: hasActiveSubscription({
         subscriptionPlan: company.subscriptionPlan,
         subscriptionStatus: company.subscriptionStatus,
