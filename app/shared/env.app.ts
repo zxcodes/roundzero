@@ -17,6 +17,8 @@ const envSchema = z.object({
   // Stripe Keys
   STRIPE_PUBLISHABLE_KEY: z.string(),
   STRIPE_SECRET_KEY: z.string(),
+  STRIPE_WEBHOOK_SECRET: z.string(),
+  STRIPE_PRICE_ID_PRO: z.string(),
 });
 
 export const appEnv = envSchema.parse(process.env);

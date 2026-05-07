@@ -1,5 +1,6 @@
 import handler from "@tanstack/react-start/server-entry";
 import { routeAgentRequest } from "agents";
+import { handleStripeWebhook } from "./features/billing/webhook";
 
 export { InterviewAgent } from "./agents/interview";
 export { PostEvaluationWorkflow } from "./workflows/post-evaluation/workflow";
@@ -30,6 +31,12 @@ async function serveAsset(request: Request, env: Env): Promise<Response | null> 
 // biome-ignore lint/style/noDefaultExport: worker entrypoint
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const url = new URL(request.url);
+
+    if (url.pathname === "/api/stripe/webhook" && request.method === "POST") {
+      return handleStripeWebhook(request);
+    }
+
     const agentResponse = await routeAgentRequest(request, env);
     if (agentResponse) return agentResponse;
 

@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { PaginationNav } from "@/components/pagination-nav";
 import { DashboardJobsListSkeleton } from "@/components/route-skeletons";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -52,6 +53,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   getMyArchivedJobs,
+  getMyJobCounts,
   getMyJobsWithPipeline,
   getOpenJobsPaginated,
   publishJob,
@@ -109,9 +111,11 @@ export const Route = createFileRoute("/_authenticated/dashboard/jobs/")({
   loaderDeps: ({ search }) => search,
   loader: async ({ context, deps }) => {
     if (context.isCompany) {
-      const jobs =
-        deps.tab === "archived" ? await getMyArchivedJobs() : await getMyJobsWithPipeline();
-      return { type: "company" as const, jobs };
+      const [jobs, counts] = await Promise.all([
+        deps.tab === "archived" ? getMyArchivedJobs() : getMyJobsWithPipeline(),
+        getMyJobCounts(),
+      ]);
+      return { type: "company" as const, jobs, counts };
     }
     const paginatedJobs = await getOpenJobsPaginated({
       data: {
@@ -147,7 +151,7 @@ function JobsListPage() {
   const data = Route.useLoaderData();
 
   if (data.type === "company") {
-    return <CompanyJobsList jobs={data.jobs} />;
+    return <CompanyJobsList jobs={data.jobs} counts={data.counts} />;
   }
 
   return <CandidateJobsList data={data.paginatedJobs} />;
@@ -155,16 +159,24 @@ function JobsListPage() {
 
 type PipelineJob = Awaited<ReturnType<typeof getMyJobsWithPipeline>>[number];
 
+type JobCounts = Awaited<ReturnType<typeof getMyJobCounts>>;
+
 function CompanyJobsList({
   jobs,
+  counts,
 }: {
   jobs:
     | Awaited<ReturnType<typeof getMyJobsWithPipeline>>
     | Awaited<ReturnType<typeof getMyArchivedJobs>>;
+  counts: JobCounts;
 }) {
   const router = useRouter();
   const { tab } = Route.useSearch();
   const navigate = useNavigate({ from: "/dashboard/jobs/" });
+  const context = Route.useRouteContext();
+  const subscription = "subscription" in context ? context.subscription : null;
+  const isPaid = subscription?.isActive ?? false;
+  const atLimit = !isPaid && counts.openCount >= 3;
 
   const publishJobFn = useServerFn(publishJob);
   const publishJobMutation = useMutation({
@@ -195,13 +207,33 @@ function CompanyJobsList({
             Manage your job postings and track applicants.
           </p>
         </div>
-        <Button asChild>
-          <Link to="/dashboard/jobs/new">
+        {atLimit ? (
+          <Button disabled>
             <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-4" />
             Post a job
-          </Link>
-        </Button>
+          </Button>
+        ) : (
+          <Button asChild>
+            <Link to="/dashboard/jobs/new">
+              <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-4" />
+              Post a job
+            </Link>
+          </Button>
+        )}
       </div>
+
+      {atLimit ? (
+        <Alert variant="default" className="bg-muted/50">
+          <AlertTitle>Job limit reached</AlertTitle>
+          <AlertDescription>
+            Free plan includes up to 3 active jobs.{" "}
+            <Link to="/dashboard/billing" className="font-medium underline underline-offset-4">
+              Upgrade to Pro
+            </Link>{" "}
+            for unlimited postings.
+          </AlertDescription>
+        </Alert>
+      ) : null}
 
       <Tabs value={tab} onValueChange={onTabChange}>
         <TabsList>
@@ -217,6 +249,7 @@ function CompanyJobsList({
             jobs={tab === "active" ? (jobs as PipelineJob[]) : []}
             onPublish={onPublish}
             isPending={publishJobMutation.isPending}
+            atLimit={atLimit}
           />
         </TabsContent>
 
@@ -252,10 +285,12 @@ function ActiveJobsTable({
   jobs,
   onPublish,
   isPending,
+  atLimit,
 }: {
   jobs: PipelineJob[];
   onPublish: (jobId: string) => Promise<void>;
   isPending: boolean;
+  atLimit: boolean;
 }) {
   if (jobs.length === 0) {
     return (
@@ -270,12 +305,19 @@ function ActiveJobsTable({
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
-          <Button size="sm" asChild>
-            <Link to="/dashboard/jobs/new">
+          {atLimit ? (
+            <Button size="sm" disabled>
               <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-3.5" />
               Post a job
-            </Link>
-          </Button>
+            </Button>
+          ) : (
+            <Button size="sm" asChild>
+              <Link to="/dashboard/jobs/new">
+                <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-3.5" />
+                Post a job
+              </Link>
+            </Button>
+          )}
         </EmptyContent>
       </Empty>
     );

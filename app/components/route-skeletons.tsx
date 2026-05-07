@@ -1096,3 +1096,19 @@ export function InterviewContentSkeleton() {
     </>
   );
 }
+
+/**
+ * Skeleton for /dashboard/billing — subscription plans + current plan card.
+ */
+export function BillingPageSkeleton() {
+  return (
+    <div className="flex flex-col gap-6">
+      <Skeleton className="h-32 w-full" />
+      <div className="grid gap-4 md:grid-cols-3">
+        <Skeleton className="h-72 w-full" />
+        <Skeleton className="h-72 w-full" />
+        <Skeleton className="h-72 w-full" />
+      </div>
+    </div>
+  );
+}

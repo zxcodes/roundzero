@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
+import { hasActiveSubscription } from "@/features/billing/config";
 import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
 import { createNotification } from "@/features/notifications/queries/queries_sql";
 import { getDb } from "@/shared/db";
@@ -8,6 +9,7 @@ import { authMiddleware, companyMiddleware } from "@/shared/middleware";
 import {
   archiveJob as archiveJobQuery,
   closeExpiredJobsQuery,
+  countJobsByCompanyAndStatus,
   countOpenJobsFiltered,
   createJob as createJobQuery,
   getArchivedJobsByCompanyId,
@@ -19,11 +21,37 @@ import {
 } from "../queries/queries_sql";
 import { jobFieldsSchema, jobIdSchema, updateJobSchema } from "../schemas";
 
+async function enforceJobLimit(
+  db: ReturnType<typeof getDb>,
+  companyId: string,
+  subscriptionPlan: string | null,
+  subscriptionStatus: string | null,
+): Promise<void> {
+  const isPaid = hasActiveSubscription({
+    subscriptionPlan,
+    subscriptionStatus,
+  });
+  if (isPaid) return;
+  const counts = await countJobsByCompanyAndStatus(db, { companyId });
+  if (counts && counts.openCount >= 3) {
+    throw new Error("Free plan limited to 3 active jobs. Upgrade to Pro to post more.");
+  }
+}
+
 export const createJob = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
   .inputValidator(zodValidator(jobFieldsSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
+
+    if (data.status === "open") {
+      await enforceJobLimit(
+        db,
+        context.company.id,
+        context.company.subscriptionPlan,
+        context.company.subscriptionStatus,
+      );
+    }
 
     const job = await createJobQuery(db, {
       companyId: context.company.id,
@@ -104,6 +132,18 @@ export const updateJob = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const db = getDb();
 
+    if (data.status === "open") {
+      const existing = await getJobById(db, { id: data.id });
+      if (existing && existing.status !== "open") {
+        await enforceJobLimit(
+          db,
+          context.company.id,
+          context.company.subscriptionPlan,
+          context.company.subscriptionStatus,
+        );
+      }
+    }
+
     const job = await updateJobQuery(db, {
       id: data.id,
       companyId: context.company.id,
@@ -175,6 +215,13 @@ export const publishJob = createServerFn({ method: "POST" })
     if (job.expiresAt && job.expiresAt <= new Date()) {
       throw new Error("This job has already expired. Update the deadline before publishing.");
     }
+
+    await enforceJobLimit(
+      db,
+      context.company.id,
+      context.company.subscriptionPlan,
+      context.company.subscriptionStatus,
+    );
 
     const updated = await updateJobQuery(db, {
       id: data.id,
@@ -279,4 +326,16 @@ export const getOpenJobsPaginated = createServerFn({ method: "GET" })
     const total = countRow?.total ?? 0;
 
     return { items, total, totalPages: Math.ceil(total / JOBS_PER_PAGE) };
+  });
+
+export const getMyJobCounts = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }) => {
+    const db = getDb();
+    const company = await getCompanyByOwnerId(db, { ownerId: context.userId });
+    if (!company) {
+      return { openCount: 0, draftCount: 0, totalCount: 0 };
+    }
+    const counts = await countJobsByCompanyAndStatus(db, { companyId: company.id });
+    return counts ?? { openCount: 0, draftCount: 0, totalCount: 0 };
   });
