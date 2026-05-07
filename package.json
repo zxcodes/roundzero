@@ -18,7 +18,8 @@
     "typecheck": "tsgo --noEmit",
     "knip": "knip",
     "setup": "bun run setup.ts",
-    "prepare": "husky"
+    "prepare": "husky",
+    "listen": "polar listen http://localhost:3000/api/polar/webhook"
   },
   "dependencies": {
     "@cloudflare/ai-chat": "^0.6.2",
