@@ -51,6 +51,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useSubscription } from "@/features/billing/hooks/use-subscription";
 import {
   getMyArchivedJobs,
   getMyJobCounts,
@@ -173,8 +174,7 @@ function CompanyJobsList({
   const router = useRouter();
   const { tab } = Route.useSearch();
   const navigate = useNavigate({ from: "/dashboard/jobs/" });
-  const context = Route.useRouteContext();
-  const subscription = "subscription" in context ? context.subscription : null;
+  const subscription = useSubscription();
   const isPaid = subscription?.isActive ?? false;
   const atLimit = !isPaid && counts.openCount >= 3;
 
