@@ -11,7 +11,7 @@ export const SUBSCRIPTION_PLANS = ["free", "pro", "enterprise"] as const;
 export const subscriptionPlanSchema = z.enum(SUBSCRIPTION_PLANS);
 export type SubscriptionPlan = z.infer<typeof subscriptionPlanSchema>;
 
-export const SUBSCRIPTION_STATUSES = [
+const SUBSCRIPTION_STATUSES = [
   "inactive",
   "trialing",
   "active",
@@ -22,7 +22,7 @@ export const SUBSCRIPTION_STATUSES = [
   "unpaid",
   "paused",
 ] as const;
-export const subscriptionStatusSchema = z.enum(SUBSCRIPTION_STATUSES);
+const subscriptionStatusSchema = z.enum(SUBSCRIPTION_STATUSES);
 export type SubscriptionStatus = z.infer<typeof subscriptionStatusSchema>;
 
 /** Plan-shape consumed by client UI. */
