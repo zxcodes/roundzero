@@ -1,8 +1,8 @@
 ## TODO
 
+- copy agent testing patterns from opencode, pi etc. also see how they harden their prompts.
 - validate open router models using their api key in prod ci so we detect non existent models beforehand.
 - we need to detect if agent messes up the interview and give candidate another chance with good ui feedback. 
-- wire stripe and pricing up. make sure to implement a really nice way of checking for an active sub throughout the app (context) perhaps?
 - show interview invited button in applied job application pages if they have an existing interview, or in progress etc. basically like a status action.
 - configure sentry for prod envs.
 - we can prob use cf workflow's waitForEvent method to gather all the reports and then send all at once to the company?
@@ -44,6 +44,7 @@
 
 
 
+<!--- ~~wire stripe and pricing up~~ done — using Polar. make sure to implement a really nice way of checking for an active sub throughout the app (context) perhaps?-->
 <!--- use frontier models for the entire ai layer in prod.-->
 <!--- see shadcn dashboard block for inspiration on company dashboard. (bunx shadcn@latest add dashboard-01)-->
 <!--- configure different r2 buckets based on env.-->

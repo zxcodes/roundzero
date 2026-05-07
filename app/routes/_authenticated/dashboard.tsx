@@ -26,16 +26,20 @@ const routeTitles: Record<string, string> = {
   "/_authenticated/dashboard/jobs/$jobId": "Job Details",
   "/_authenticated/dashboard/applications": "My Applications",
   "/_authenticated/dashboard/application/$applicationId": "Application Details",
+  "/_authenticated/dashboard/billing": "Billing",
   "/_authenticated/dashboard/settings": "Settings",
 };
 
 function DashboardLayout() {
-  const { user, isCompany } = Route.useRouteContext();
+  const context = Route.useRouteContext();
+  const { user, isCompany } = context;
   const { notificationsFeed } = Route.useLoaderData();
   const matches = useMatches();
   const lastMatch = matches[matches.length - 1];
   const title = routeTitles[lastMatch?.routeId ?? ""] ?? "Dashboard";
   const [commandOpen, setCommandOpen] = useState(false);
+
+  const atLimit = !context.subscription?.isActive && (context.jobCounts?.openCount ?? 0) >= 3;
 
   useCommandPaletteShortcut(() => {
     setCommandOpen((prev) => !prev);
@@ -56,8 +60,13 @@ function DashboardLayout() {
           } as { [key: string]: string }
         }
       >
-        <AppSidebar user={user} isCompany={isCompany} variant="inset" />
-        <CommandPalette isCompany={isCompany} open={commandOpen} onOpenChange={setCommandOpen} />
+        <AppSidebar user={user} isCompany={isCompany} atLimit={atLimit} variant="inset" />
+        <CommandPalette
+          isCompany={isCompany}
+          atLimit={atLimit}
+          open={commandOpen}
+          onOpenChange={setCommandOpen}
+        />
         <SidebarInset>
           <SiteHeader
             title={title}

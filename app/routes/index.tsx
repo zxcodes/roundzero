@@ -795,6 +795,7 @@ type Tier = {
   period: string;
   description: string;
   cta: string;
+  href: string;
   featured?: boolean;
 };
 
@@ -805,6 +806,7 @@ const tiers: Tier[] = [
     period: "forever",
     description: "Try RoundZero on your next hire. No commitment.",
     cta: "Begin free",
+    href: "/company/login",
   },
   {
     name: "Pro",
@@ -812,6 +814,7 @@ const tiers: Tier[] = [
     period: "per month",
     description: "For teams hiring across multiple roles.",
     cta: "Start a trial",
+    href: "/company/login?redirect=/dashboard/billing",
     featured: true,
   },
   {
@@ -820,6 +823,7 @@ const tiers: Tier[] = [
     period: "tailored",
     description: "High-volume hiring with dedicated support.",
     cta: "Speak with us",
+    href: "mailto:sales@roundzero.dev",
   },
 ];
 
@@ -972,25 +976,47 @@ function PricingTable() {
                 );
               })}
             </dl>
-            <Link
-              to="/company/login"
-              className="editorial-cta group mt-6 flex w-full items-center justify-between gap-3 px-4 py-3 text-[13px] tracking-tight"
-              style={
-                t.featured
-                  ? {
-                      background: "var(--ed-ink)",
-                      color: "var(--ed-paper)",
-                      border: "1px solid var(--ed-ink)",
-                    }
-                  : {
-                      border: "1px solid var(--ed-ink)",
-                      color: "var(--ed-ink)",
-                    }
-              }
-            >
-              <span>{t.cta}</span>
-              <span className="font-serif italic">→</span>
-            </Link>
+            {t.href.startsWith("mailto:") ? (
+              <a
+                href={t.href}
+                className="editorial-cta group mt-6 flex w-full items-center justify-between gap-3 px-4 py-3 text-[13px] tracking-tight"
+                style={
+                  t.featured
+                    ? {
+                        background: "var(--ed-ink)",
+                        color: "var(--ed-paper)",
+                        border: "1px solid var(--ed-ink)",
+                      }
+                    : {
+                        border: "1px solid var(--ed-ink)",
+                        color: "var(--ed-ink)",
+                      }
+                }
+              >
+                <span>{t.cta}</span>
+                <span className="font-serif italic">→</span>
+              </a>
+            ) : (
+              <Link
+                to={t.href}
+                className="editorial-cta group mt-6 flex w-full items-center justify-between gap-3 px-4 py-3 text-[13px] tracking-tight"
+                style={
+                  t.featured
+                    ? {
+                        background: "var(--ed-ink)",
+                        color: "var(--ed-paper)",
+                        border: "1px solid var(--ed-ink)",
+                      }
+                    : {
+                        border: "1px solid var(--ed-ink)",
+                        color: "var(--ed-ink)",
+                      }
+                }
+              >
+                <span>{t.cta}</span>
+                <span className="font-serif italic">→</span>
+              </Link>
+            )}
           </div>
         ))}
       </div>
@@ -1000,25 +1026,47 @@ function PricingTable() {
         <div className="col-span-3" />
         {tiers.map((t) => (
           <div key={t.name} className="col-span-3">
-            <Link
-              to="/company/login"
-              className="editorial-cta group flex w-full items-center justify-between gap-3 px-4 py-3 text-[13px] tracking-tight"
-              style={
-                t.featured
-                  ? {
-                      background: "var(--ed-ink)",
-                      color: "var(--ed-paper)",
-                      border: "1px solid var(--ed-ink)",
-                    }
-                  : {
-                      border: "1px solid var(--ed-ink)",
-                      color: "var(--ed-ink)",
-                    }
-              }
-            >
-              <span>{t.cta}</span>
-              <span className="font-serif italic">→</span>
-            </Link>
+            {t.href.startsWith("mailto:") ? (
+              <a
+                href={t.href}
+                className="editorial-cta group flex w-full items-center justify-between gap-3 px-4 py-3 text-[13px] tracking-tight"
+                style={
+                  t.featured
+                    ? {
+                        background: "var(--ed-ink)",
+                        color: "var(--ed-paper)",
+                        border: "1px solid var(--ed-ink)",
+                      }
+                    : {
+                        border: "1px solid var(--ed-ink)",
+                        color: "var(--ed-ink)",
+                      }
+                }
+              >
+                <span>{t.cta}</span>
+                <span className="font-serif italic">→</span>
+              </a>
+            ) : (
+              <Link
+                to={t.href}
+                className="editorial-cta group flex w-full items-center justify-between gap-3 px-4 py-3 text-[13px] tracking-tight"
+                style={
+                  t.featured
+                    ? {
+                        background: "var(--ed-ink)",
+                        color: "var(--ed-paper)",
+                        border: "1px solid var(--ed-ink)",
+                      }
+                    : {
+                        border: "1px solid var(--ed-ink)",
+                        color: "var(--ed-ink)",
+                      }
+                }
+              >
+                <span>{t.cta}</span>
+                <span className="font-serif italic">→</span>
+              </Link>
+            )}
           </div>
         ))}
       </div>

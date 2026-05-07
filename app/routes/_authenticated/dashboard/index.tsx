@@ -486,8 +486,8 @@ function DashboardIndexPage() {
   const context = Route.useRouteContext();
   const { user, isCompany, isCandidate } = context;
   const { metrics } = Route.useLoaderData();
-  const candidateProfile = "candidateProfile" in context ? context.candidateProfile : null;
-  const company = "company" in context ? context.company : null;
+  const candidateProfile = context.candidateProfile;
+  const company = context.company;
   const showResumeBanner = isCandidate && candidateProfile && !candidateProfile.resumeKey;
   const showCompanyLogoBanner = isCompany && company && !company.logoKey;
 

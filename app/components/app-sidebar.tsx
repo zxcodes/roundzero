@@ -2,6 +2,7 @@ import {
   AddCircleIcon,
   Briefcase01Icon,
   BubbleChatIcon,
+  CreditCardIcon,
   House01Icon,
   Search01Icon,
   Setting06Icon,
@@ -34,6 +35,11 @@ const companyMain = [
     title: "Jobs",
     url: "/dashboard/jobs",
     icon: <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} className="size-4" />,
+  },
+  {
+    title: "Billing",
+    url: "/dashboard/billing",
+    icon: <HugeiconsIcon icon={CreditCardIcon} strokeWidth={2} className="size-4" />,
   },
   {
     title: "Settings",
@@ -73,8 +79,13 @@ const candidateMain = [
 export function AppSidebar({
   user,
   isCompany,
+  atLimit,
   ...props
-}: React.ComponentProps<typeof Sidebar> & { user: User; isCompany: boolean }) {
+}: React.ComponentProps<typeof Sidebar> & {
+  user: User;
+  isCompany: boolean;
+  atLimit: boolean;
+}) {
   const mainItems = isCompany ? companyMain : candidateMain;
 
   return (
@@ -97,15 +108,27 @@ export function AppSidebar({
             <SidebarMenu>
               {isCompany ? (
                 <SidebarMenuItem className="flex items-center gap-2">
-                  <SidebarMenuButton
-                    asChild
-                    className="bg-primary text-primary-foreground min-w-8 hover:bg-primary/90 hover:text-primary-foreground"
-                  >
-                    <Link to="/dashboard/jobs/new">
-                      <HugeiconsIcon icon={AddCircleIcon} strokeWidth={2} className="size-4" />
-                      <span>Post a job</span>
-                    </Link>
-                  </SidebarMenuButton>
+                  {atLimit ? (
+                    <SidebarMenuButton
+                      asChild
+                      className="bg-primary text-primary-foreground min-w-8 hover:bg-primary/90 hover:text-primary-foreground"
+                    >
+                      <Link to="/dashboard/billing">
+                        <HugeiconsIcon icon={AddCircleIcon} strokeWidth={2} className="size-4" />
+                        <span>Upgrade to Pro</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  ) : (
+                    <SidebarMenuButton
+                      asChild
+                      className="bg-primary text-primary-foreground min-w-8 hover:bg-primary/90 hover:text-primary-foreground"
+                    >
+                      <Link to="/dashboard/jobs/new">
+                        <HugeiconsIcon icon={AddCircleIcon} strokeWidth={2} className="size-4" />
+                        <span>Post a job</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  )}
                 </SidebarMenuItem>
               ) : null}
             </SidebarMenu>
