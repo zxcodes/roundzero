@@ -2,13 +2,17 @@ import { describe, expect, it } from "vitest";
 import { softDeleteUser } from "@/features/auth/queries/queries_sql";
 import { getTestDb, seedUser } from "@/shared/__tests__/test-utils";
 import {
+  clearCompanySubscription,
   createCompany,
   getAllCompanies,
   getCompanyById,
   getCompanyByOwnerId,
+  getCompanyByPolarCustomerId,
   getCompanyBySlug,
+  setCompanyPolarCustomer,
   slugExists,
   updateCompanyProfile,
+  updateCompanySubscription,
 } from "../queries_sql";
 
 const sql = getTestDb();
@@ -325,5 +329,153 @@ describe("getAllCompanies", () => {
 
     const all = await getAllCompanies(sql);
     expect(all.find((c) => c.id === company!.id)).toBeUndefined();
+  });
+});
+
+// ─── Billing / subscription queries ─────────────────────────────
+
+describe("setCompanyPolarCustomer", () => {
+  it("sets polar_customer_id on a company", async () => {
+    const owner = await seedUser({ role: "company" });
+    const company = await createCompany(sql, {
+      ownerId: owner.id,
+      name: "Billing Co",
+      slug: "billing-co",
+      description: null,
+      logoKey: null,
+      industry: null,
+      companySize: null,
+    });
+
+    const updated = await setCompanyPolarCustomer(sql, {
+      id: company!.id,
+      polarCustomerId: "polar_cust_123",
+    });
+
+    expect(updated).not.toBeNull();
+    expect(updated!.polarCustomerId).toBe("polar_cust_123");
+  });
+});
+
+describe("getCompanyByPolarCustomerId", () => {
+  it("finds company by polar customer id", async () => {
+    const owner = await seedUser({ role: "company" });
+    const company = await createCompany(sql, {
+      ownerId: owner.id,
+      name: "Polar Co",
+      slug: "polar-co",
+      description: null,
+      logoKey: null,
+      industry: null,
+      companySize: null,
+    });
+    await setCompanyPolarCustomer(sql, {
+      id: company!.id,
+      polarCustomerId: "polar_cust_456",
+    });
+
+    const found = await getCompanyByPolarCustomerId(sql, { polarCustomerId: "polar_cust_456" });
+    expect(found).not.toBeNull();
+    expect(found!.id).toBe(company!.id);
+    expect(found!.name).toBe("Polar Co");
+  });
+
+  it("returns null for unknown polar customer id", async () => {
+    const found = await getCompanyByPolarCustomerId(sql, { polarCustomerId: "unknown" });
+    expect(found).toBeNull();
+  });
+});
+
+describe("updateCompanySubscription", () => {
+  it("updates subscription fields by polar customer id", async () => {
+    const owner = await seedUser({ role: "company" });
+    const company = await createCompany(sql, {
+      ownerId: owner.id,
+      name: "Sub Co",
+      slug: "sub-co",
+      description: null,
+      logoKey: null,
+      industry: null,
+      companySize: null,
+    });
+    await setCompanyPolarCustomer(sql, {
+      id: company!.id,
+      polarCustomerId: "polar_cust_sub",
+    });
+
+    const periodEnd = new Date("2026-12-31T00:00:00Z");
+    const updated = await updateCompanySubscription(sql, {
+      polarCustomerId: "polar_cust_sub",
+      polarSubscriptionId: "sub_123",
+      polarProductId: "prod_123",
+      subscriptionPlan: "pro",
+      subscriptionStatus: "active",
+      subscriptionCurrentPeriodEnd: periodEnd,
+      subscriptionCancelAtPeriodEnd: false,
+    });
+
+    expect(updated).not.toBeNull();
+    expect(updated!.subscriptionPlan).toBe("pro");
+    expect(updated!.subscriptionStatus).toBe("active");
+    expect(updated!.polarSubscriptionId).toBe("sub_123");
+    expect(updated!.polarProductId).toBe("prod_123");
+    expect(updated!.subscriptionCurrentPeriodEnd).toEqual(periodEnd);
+    expect(updated!.subscriptionCancelAtPeriodEnd).toBe(false);
+  });
+
+  it("returns null when polar customer id does not match any company", async () => {
+    const result = await updateCompanySubscription(sql, {
+      polarCustomerId: "nonexistent",
+      polarSubscriptionId: "sub_123",
+      polarProductId: "prod_123",
+      subscriptionPlan: "pro",
+      subscriptionStatus: "active",
+      subscriptionCurrentPeriodEnd: null,
+      subscriptionCancelAtPeriodEnd: false,
+    });
+    expect(result).toBeNull();
+  });
+});
+
+describe("clearCompanySubscription", () => {
+  it("resets subscription to free/canceled", async () => {
+    const owner = await seedUser({ role: "company" });
+    const company = await createCompany(sql, {
+      ownerId: owner.id,
+      name: "Cancel Co",
+      slug: "cancel-co",
+      description: null,
+      logoKey: null,
+      industry: null,
+      companySize: null,
+    });
+    await setCompanyPolarCustomer(sql, {
+      id: company!.id,
+      polarCustomerId: "polar_cust_cancel",
+    });
+    await updateCompanySubscription(sql, {
+      polarCustomerId: "polar_cust_cancel",
+      polarSubscriptionId: "sub_123",
+      polarProductId: "prod_123",
+      subscriptionPlan: "pro",
+      subscriptionStatus: "active",
+      subscriptionCurrentPeriodEnd: new Date(),
+      subscriptionCancelAtPeriodEnd: false,
+    });
+
+    const cleared = await clearCompanySubscription(sql, { polarCustomerId: "polar_cust_cancel" });
+
+    expect(cleared).not.toBeNull();
+    expect(cleared!.subscriptionPlan).toBe("free");
+    expect(cleared!.subscriptionStatus).toBe("canceled");
+    expect(cleared!.polarSubscriptionId).toBeNull();
+    expect(cleared!.polarProductId).toBeNull();
+    expect(cleared!.subscriptionCurrentPeriodEnd).toBeNull();
+    expect(cleared!.subscriptionCancelAtPeriodEnd).toBe(false);
+  });
+
+  it("returns null for unknown polar customer id", async () => {
+    const result = await clearCompanySubscription(sql, { polarCustomerId: "unknown" });
+    expect(result).toBeNull();
   });
 });
