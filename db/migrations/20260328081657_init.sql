@@ -32,11 +32,21 @@ CREATE TABLE companies (
   tech_stack     JSONB DEFAULT '[]',
   culture        TEXT,
   social_links   JSONB DEFAULT '{}',
+  -- Polar billing
+  polar_customer_id               TEXT,
+  polar_subscription_id           TEXT,
+  polar_product_id                TEXT,
+  subscription_plan               TEXT NOT NULL DEFAULT 'free',
+  subscription_status             TEXT NOT NULL DEFAULT 'inactive',
+  subscription_current_period_end TIMESTAMPTZ,
+  subscription_cancel_at_period_end BOOLEAN NOT NULL DEFAULT false,
   created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX idx_companies_owner ON companies(owner_id);
+CREATE UNIQUE INDEX idx_companies_polar_customer
+  ON companies(polar_customer_id) WHERE polar_customer_id IS NOT NULL;
 
 -- Candidate profiles
 CREATE TABLE candidate_profiles (

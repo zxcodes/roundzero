@@ -1,6 +1,8 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { hasActiveSubscription } from "@/features/billing/config";
 import { getMyCandidateProfile } from "@/features/candidates/server/functions";
 import { getMyCompany } from "@/features/companies/server/functions";
+import { getMyJobCounts } from "@/features/jobs/server/functions";
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async ({ context, location }) => {
@@ -30,7 +32,26 @@ export const Route = createFileRoute("/_authenticated")({
           to: "/dashboard",
         });
       }
-      return { company };
+
+      const subscription = company
+        ? {
+            plan: company.subscriptionPlan,
+            status: company.subscriptionStatus,
+            isActive: hasActiveSubscription({
+              subscriptionPlan: company.subscriptionPlan,
+              subscriptionStatus: company.subscriptionStatus,
+            }),
+          }
+        : null;
+
+      const jobCounts = await getMyJobCounts();
+
+      return {
+        company,
+        subscription,
+        jobCounts,
+        candidateProfile: null,
+      };
     }
 
     if (context.isCandidate) {
@@ -49,7 +70,12 @@ export const Route = createFileRoute("/_authenticated")({
           to: "/dashboard",
         });
       }
-      return { candidateProfile: profile };
+      return {
+        company: null,
+        subscription: null,
+        jobCounts: null,
+        candidateProfile: profile,
+      };
     }
   },
   component: AuthenticatedLayout,

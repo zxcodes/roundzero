@@ -5,15 +5,25 @@ import { ErrorBoundary } from "./components/error-boundary";
 import { NotFound } from "./components/not-found";
 import { RouteSpinner } from "./components/route-skeletons";
 import type { getCurrentUser } from "./features/auth/server/functions";
+import type { getMyCandidateProfile } from "./features/candidates/server/functions";
+import type { getMyCompany } from "./features/companies/server/functions";
+import type { getMyJobCounts } from "./features/jobs/server/functions";
 import { routeTree } from "./routeTree.gen";
 
 export type User = NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>;
+export type Company = NonNullable<Awaited<ReturnType<typeof getMyCompany>>>;
+export type CandidateProfile = NonNullable<Awaited<ReturnType<typeof getMyCandidateProfile>>>;
+export type JobCounts = NonNullable<Awaited<ReturnType<typeof getMyJobCounts>>>;
 
 export interface RouterContext {
   user: User | null;
   isCompany: boolean;
   isCandidate: boolean;
   queryClient: QueryClient;
+  company: Company | null;
+  subscription: { plan: string; status: string; isActive: boolean } | null;
+  jobCounts: JobCounts | null;
+  candidateProfile: CandidateProfile | null;
 }
 
 export function getRouter() {
@@ -35,6 +45,10 @@ export function getRouter() {
       isCompany: false,
       isCandidate: false,
       queryClient,
+      company: null,
+      subscription: null,
+      jobCounts: null,
+      candidateProfile: null,
     },
     defaultErrorComponent: ErrorBoundary,
     defaultNotFoundComponent: NotFound,

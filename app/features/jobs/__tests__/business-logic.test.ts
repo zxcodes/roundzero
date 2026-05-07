@@ -167,3 +167,64 @@ describe("company isolation", () => {
     expect(jobsB[0].title).toBe("B's Job");
   });
 });
+
+// ─── Subscription gating (job limits) ───────────────────────────
+// The server function `createJob` enforces a 3 active job limit on free plans.
+// These tests verify the data layer that supports that check.
+
+describe("job limit enforcement (data layer)", () => {
+  it("free company can have up to 3 open jobs", async () => {
+    const { company } = await seedCompany();
+
+    // Create 3 open jobs directly (bypassing server guard)
+    for (let i = 0; i < 3; i++) {
+      const job = await createJob(
+        sql,
+        makeJobArgs(company.id, { status: "open", title: `Job ${i}` }),
+      );
+      expect(job).not.toBeNull();
+    }
+
+    const openJobs = await getJobsByCompanyId(sql, { companyId: company.id });
+    expect(openJobs).toHaveLength(3);
+  });
+
+  it("paid company can have more than 3 open jobs (no DB constraint)", async () => {
+    const { company } = await seedCompany();
+
+    // Simulate a pro subscription by updating the company row
+    await sql`
+      UPDATE companies
+      SET subscription_plan = 'pro',
+          subscription_status = 'active',
+          polar_customer_id = 'cust_paid'
+      WHERE id = ${company.id}
+    `;
+
+    // Create 5 open jobs — DB allows it, server function would too
+    for (let i = 0; i < 5; i++) {
+      const job = await createJob(
+        sql,
+        makeJobArgs(company.id, { status: "open", title: `Paid Job ${i}` }),
+      );
+      expect(job).not.toBeNull();
+    }
+
+    const openJobs = await getJobsByCompanyId(sql, { companyId: company.id });
+    expect(openJobs).toHaveLength(5);
+  });
+
+  it("counts only open jobs toward the limit (drafts don't count)", async () => {
+    const { company } = await seedCompany();
+
+    // 2 open + 2 draft = 4 total, but only 2 count toward limit
+    await createJob(sql, makeJobArgs(company.id, { status: "open", title: "Open 1" }));
+    await createJob(sql, makeJobArgs(company.id, { status: "open", title: "Open 2" }));
+    await createJob(sql, makeJobArgs(company.id, { status: "draft", title: "Draft 1" }));
+    await createJob(sql, makeJobArgs(company.id, { status: "draft", title: "Draft 2" }));
+
+    const openJobs = await getJobsByCompanyId(sql, { companyId: company.id });
+    const openCount = openJobs.filter((j) => j.status === "open").length;
+    expect(openCount).toBe(2);
+  });
+});

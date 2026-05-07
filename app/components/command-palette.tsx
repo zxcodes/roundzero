@@ -27,11 +27,12 @@ import { useAuth } from "@/features/auth/provider";
 
 interface CommandPaletteProps {
   isCompany: boolean;
+  atLimit: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const companyNavItems = [
+const companyNavItems = (atLimit: boolean) => [
   {
     title: "Overview",
     url: "/dashboard",
@@ -42,11 +43,15 @@ const companyNavItems = [
     url: "/dashboard/jobs",
     icon: Briefcase01Icon,
   },
-  {
-    title: "Post a Job",
-    url: "/dashboard/jobs/new",
-    icon: AddCircleIcon,
-  },
+  ...(atLimit
+    ? []
+    : [
+        {
+          title: "Post a Job",
+          url: "/dashboard/jobs/new",
+          icon: AddCircleIcon,
+        },
+      ]),
   {
     title: "Settings",
     url: "/dashboard/settings",
@@ -82,12 +87,12 @@ const candidateNavItems = [
   },
 ];
 
-export function CommandPalette({ isCompany, open, onOpenChange }: CommandPaletteProps) {
+export function CommandPalette({ isCompany, atLimit, open, onOpenChange }: CommandPaletteProps) {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const { signOut } = useAuth();
 
-  const navItems = isCompany ? companyNavItems : candidateNavItems;
+  const navItems = isCompany ? companyNavItems(atLimit) : candidateNavItems;
 
   const onSelectNav = (url: string) => {
     onOpenChange(false);
