@@ -51,6 +51,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useSubscription } from "@/features/billing/hooks/use-subscription";
 import {
   getMyArchivedJobs,
@@ -210,10 +211,17 @@ function CompanyJobsList({
           </p>
         </div>
         {atLimit ? (
-          <Button disabled>
-            <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-4" />
-            Post a job
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button disabled>
+                <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-4" />
+                Post a job
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>You've reached the 3 active job limit on the free plan</p>
+            </TooltipContent>
+          </Tooltip>
         ) : (
           <Button asChild>
             <Link to="/dashboard/jobs/new">
@@ -225,12 +233,12 @@ function CompanyJobsList({
       </div>
 
       {atLimit ? (
-        <Alert variant="default" className="bg-muted/50">
-          <AlertTitle>Job limit reached</AlertTitle>
+        <Alert variant="destructive">
+          <AlertTitle>Job limit reached ({counts.openCount} of 3 active jobs)</AlertTitle>
           <AlertDescription>
-            Free plan includes up to 3 active jobs.{" "}
+            You've used all your active job slots on the free plan. Archive an existing job or{" "}
             <Link to="/dashboard/billing" className="font-medium underline underline-offset-4">
-              Upgrade to Pro
+              upgrade to Pro
             </Link>{" "}
             for unlimited postings.
           </AlertDescription>
@@ -308,10 +316,17 @@ function ActiveJobsTable({
         </EmptyHeader>
         <EmptyContent>
           {atLimit ? (
-            <Button size="sm" disabled>
-              <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-3.5" />
-              Post a job
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button size="sm" disabled>
+                  <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-3.5" />
+                  Post a job
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>You've reached the 3 active job limit on the free plan</p>
+              </TooltipContent>
+            </Tooltip>
           ) : (
             <Button size="sm" asChild>
               <Link to="/dashboard/jobs/new">

@@ -9,6 +9,7 @@ import { getMySubscription } from "@/features/billing/server/functions";
 const searchSchema = z.object({
   status: z.enum(["success", "cancelled"]).optional(),
   checkout_id: z.string().optional(),
+  reason: z.string().optional(),
 });
 
 export const Route = createFileRoute("/_authenticated/dashboard/billing")({
@@ -48,5 +49,17 @@ function BillingRoute() {
     void navigate({ search: {}, replace: true });
   }, [search.status, navigate]);
 
-  return <BillingPage subscription={subscription} />;
+  useEffect(() => {
+    if (search.reason === "job_limit") {
+      toast.info(
+        "You've reached the 3 active job limit on the free plan. Upgrade to Pro for unlimited postings.",
+      );
+      void navigate({ search: (prev) => ({ ...prev, reason: undefined }), replace: true });
+    }
+  }, [search.reason, navigate]);
+
+  const context = Route.useRouteContext();
+  const jobCounts = context.jobCounts;
+
+  return <BillingPage subscription={subscription} jobCounts={jobCounts} />;
 }
