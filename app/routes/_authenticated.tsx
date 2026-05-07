@@ -50,6 +50,7 @@ export const Route = createFileRoute("/_authenticated")({
         company,
         subscription,
         jobCounts,
+        candidateProfile: null,
       };
     }
 
@@ -69,7 +70,12 @@ export const Route = createFileRoute("/_authenticated")({
           to: "/dashboard",
         });
       }
-      return { candidateProfile: profile };
+      return {
+        company: null,
+        subscription: null,
+        jobCounts: null,
+        candidateProfile: profile,
+      };
     }
   },
   component: AuthenticatedLayout,

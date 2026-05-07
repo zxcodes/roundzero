@@ -39,13 +39,7 @@ function DashboardLayout() {
   const title = routeTitles[lastMatch?.routeId ?? ""] ?? "Dashboard";
   const [commandOpen, setCommandOpen] = useState(false);
 
-  const subscription =
-    context && typeof context === "object" && "subscription" in context
-      ? context.subscription
-      : null;
-  const jobCounts =
-    context && typeof context === "object" && "jobCounts" in context ? context.jobCounts : null;
-  const atLimit = !subscription?.isActive && (jobCounts?.openCount ?? 0) >= 3;
+  const atLimit = !context.subscription?.isActive && (context.jobCounts?.openCount ?? 0) >= 3;
 
   useCommandPaletteShortcut(() => {
     setCommandOpen((prev) => !prev);
