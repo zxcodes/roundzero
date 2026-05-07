@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/dashboard/jobs/new")({
     const atLimit = !context.subscription?.isActive && (context.jobCounts?.openCount ?? 0) >= 3;
 
     if (atLimit) {
-      throw redirect({ to: "/dashboard/billing" });
+      throw redirect({ to: "/dashboard/billing", search: { reason: "job_limit" } });
     }
   },
   component: NewJobPage,

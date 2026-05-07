@@ -1,10 +1,11 @@
-import { Tick02Icon } from "@hugeicons/core-free-icons";
+import { Briefcase01Icon, Tick02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { formatDate } from "@/shared/date";
 import { PLAN_CONFIGS, SUBSCRIPTION_PLANS, type SubscriptionPlan } from "../config";
 import {
@@ -15,7 +16,15 @@ import {
 
 type Subscription = NonNullable<Awaited<ReturnType<typeof getMySubscription>>>;
 
-export function BillingPage({ subscription }: { subscription: Subscription }) {
+type JobCounts = { openCount: number; totalCount: number } | null;
+
+export function BillingPage({
+  subscription,
+  jobCounts,
+}: {
+  subscription: Subscription;
+  jobCounts: JobCounts;
+}) {
   const checkoutMutation = useMutation({
     mutationFn: async (plan: SubscriptionPlan) => {
       const result = await createCheckoutSession({ data: { plan } });
@@ -54,6 +63,7 @@ export function BillingPage({ subscription }: { subscription: Subscription }) {
     <div className="flex flex-col gap-6">
       <CurrentPlanCard
         subscription={subscription}
+        jobCounts={jobCounts}
         onOpenPortal={onOpenPortal}
         portalLoading={portalMutation.isPending}
       />
@@ -75,10 +85,12 @@ export function BillingPage({ subscription }: { subscription: Subscription }) {
 
 function CurrentPlanCard({
   subscription,
+  jobCounts,
   onOpenPortal,
   portalLoading,
 }: {
   subscription: Subscription;
+  jobCounts: JobCounts;
   onOpenPortal: () => void;
   portalLoading: boolean;
 }) {
@@ -86,16 +98,19 @@ function CurrentPlanCard({
   const periodEnd = subscription.currentPeriodEnd
     ? formatDate(subscription.currentPeriodEnd)
     : null;
+  const isFree = subscription.plan === "free";
+  const jobLimit = isFree ? 3 : null;
+  const jobUsage = jobCounts?.openCount ?? 0;
 
   return (
-    <Card>
+    <Card className="border-primary/20">
       <CardHeader>
         <div className="flex items-start justify-between gap-4">
           <div className="flex flex-col gap-1.5">
             <CardTitle className="flex items-center gap-2">
               {config.name}
-              <Badge variant={subscription.isActive ? "default" : "secondary"}>
-                {subscription.status}
+              <Badge variant={subscription.isActive || isFree ? "default" : "secondary"}>
+                {isFree ? "active" : subscription.status}
               </Badge>
             </CardTitle>
             <CardDescription>{config.description}</CardDescription>
@@ -107,15 +122,51 @@ function CurrentPlanCard({
           ) : null}
         </div>
       </CardHeader>
-      {periodEnd ? (
-        <CardContent>
+      <CardContent className="space-y-4">
+        {periodEnd ? (
           <p className="text-sm text-muted-foreground">
             {subscription.cancelAtPeriodEnd
               ? `Cancels on ${periodEnd}.`
               : `Renews on ${periodEnd}.`}
           </p>
-        </CardContent>
-      ) : null}
+        ) : null}
+
+        {jobLimit ? (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="flex items-center gap-2">
+                <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} className="size-4" />
+                Active jobs
+              </span>
+              <span className="font-medium">
+                {jobUsage} of {jobLimit}
+              </span>
+            </div>
+            <Progress value={(jobUsage / jobLimit) * 100} className="h-2" />
+            {jobUsage >= jobLimit ? (
+              <p className="text-xs text-destructive">
+                You've reached your job limit. Upgrade to Pro for unlimited postings.
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+
+        <div className="space-y-2">
+          <p className="text-sm font-medium">What's included</p>
+          <ul className="grid gap-1 sm:grid-cols-2">
+            {config.features.map((feature) => (
+              <li key={feature} className="flex items-start gap-2 text-sm">
+                <HugeiconsIcon
+                  icon={Tick02Icon}
+                  strokeWidth={2}
+                  className="mt-0.5 size-4 shrink-0 text-primary"
+                />
+                <span>{feature}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </CardContent>
     </Card>
   );
 }
@@ -141,7 +192,10 @@ function PlanCard({
   };
 
   return (
-    <Card data-current={isCurrent ? "true" : undefined} className="flex flex-col">
+    <Card
+      data-current={isCurrent ? "true" : undefined}
+      className={`flex flex-col ${isCurrent ? "border-primary" : ""}`}
+    >
       <CardHeader>
         <CardTitle>{config.name}</CardTitle>
         <div className="flex items-baseline gap-2">
