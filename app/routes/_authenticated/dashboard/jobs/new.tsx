@@ -14,6 +14,14 @@ export const Route = createFileRoute("/_authenticated/dashboard/jobs/new")({
     if (!context.isCompany) {
       throw redirect({ to: "/dashboard" });
     }
+
+    const subscription = "subscription" in context ? context.subscription : null;
+    const jobCounts = "jobCounts" in context ? context.jobCounts : null;
+    const atLimit = !subscription?.isActive && (jobCounts?.openCount ?? 0) >= 3;
+
+    if (atLimit) {
+      throw redirect({ to: "/dashboard/billing" });
+    }
   },
   component: NewJobPage,
 });

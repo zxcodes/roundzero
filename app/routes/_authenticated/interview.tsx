@@ -49,7 +49,12 @@ function InterviewWorkspaceLayout() {
           } as { [key: string]: string }
         }
       >
-        <CommandPalette isCompany={false} open={commandOpen} onOpenChange={setCommandOpen} />
+        <CommandPalette
+          isCompany={false}
+          atLimit={false}
+          open={commandOpen}
+          onOpenChange={setCommandOpen}
+        />
         <InterviewSidebar activeInterviewId={activeInterviewId} interviews={interviews} />
         <SidebarInset>
           <div className="flex h-dvh min-h-0 w-full bg-background p-2 text-foreground">

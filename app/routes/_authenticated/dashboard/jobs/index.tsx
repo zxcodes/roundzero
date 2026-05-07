@@ -185,8 +185,10 @@ function CompanyJobsList({
       toast.success("Job published successfully");
       await router.invalidate();
     },
-    onError: () => {
-      toast.error("Failed to publish job. Please try again.");
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to publish job. Please try again.",
+      );
     },
   });
 

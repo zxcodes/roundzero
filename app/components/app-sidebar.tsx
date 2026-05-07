@@ -79,8 +79,13 @@ const candidateMain = [
 export function AppSidebar({
   user,
   isCompany,
+  atLimit,
   ...props
-}: React.ComponentProps<typeof Sidebar> & { user: User; isCompany: boolean }) {
+}: React.ComponentProps<typeof Sidebar> & {
+  user: User;
+  isCompany: boolean;
+  atLimit: boolean;
+}) {
   const mainItems = isCompany ? companyMain : candidateMain;
 
   return (
@@ -103,15 +108,27 @@ export function AppSidebar({
             <SidebarMenu>
               {isCompany ? (
                 <SidebarMenuItem className="flex items-center gap-2">
-                  <SidebarMenuButton
-                    asChild
-                    className="bg-primary text-primary-foreground min-w-8 hover:bg-primary/90 hover:text-primary-foreground"
-                  >
-                    <Link to="/dashboard/jobs/new">
-                      <HugeiconsIcon icon={AddCircleIcon} strokeWidth={2} className="size-4" />
-                      <span>Post a job</span>
-                    </Link>
-                  </SidebarMenuButton>
+                  {atLimit ? (
+                    <SidebarMenuButton
+                      asChild
+                      className="bg-primary text-primary-foreground min-w-8 hover:bg-primary/90 hover:text-primary-foreground"
+                    >
+                      <Link to="/dashboard/billing">
+                        <HugeiconsIcon icon={AddCircleIcon} strokeWidth={2} className="size-4" />
+                        <span>Upgrade to Pro</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  ) : (
+                    <SidebarMenuButton
+                      asChild
+                      className="bg-primary text-primary-foreground min-w-8 hover:bg-primary/90 hover:text-primary-foreground"
+                    >
+                      <Link to="/dashboard/jobs/new">
+                        <HugeiconsIcon icon={AddCircleIcon} strokeWidth={2} className="size-4" />
+                        <span>Post a job</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  )}
                 </SidebarMenuItem>
               ) : null}
             </SidebarMenu>

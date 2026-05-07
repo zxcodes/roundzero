@@ -44,14 +44,14 @@ export const createJob = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const db = getDb();
 
-    if (data.status === "open") {
-      await enforceJobLimit(
-        db,
-        context.company.id,
-        context.company.subscriptionPlan,
-        context.company.subscriptionStatus,
-      );
-    }
+    // Enforce the 3-job limit for all creations on free plans.
+    // Paid plans bypass this check entirely.
+    await enforceJobLimit(
+      db,
+      context.company.id,
+      context.company.subscriptionPlan,
+      context.company.subscriptionStatus,
+    );
 
     const job = await createJobQuery(db, {
       companyId: context.company.id,
