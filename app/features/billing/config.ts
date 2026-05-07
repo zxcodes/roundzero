@@ -5,7 +5,7 @@ import { z } from "zod";
  *
  * - `free`: default for every new company. No paid features.
  * - `pro`: $149/mo recurring. Unlocks unlimited active jobs, custom criteria, etc.
- * - `enterprise`: contact-sales, provisioned manually (no Stripe price).
+ * - `enterprise`: contact-sales, provisioned manually.
  */
 export const SUBSCRIPTION_PLANS = ["free", "pro", "enterprise"] as const;
 export const subscriptionPlanSchema = z.enum(SUBSCRIPTION_PLANS);
