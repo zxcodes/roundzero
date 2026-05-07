@@ -8,7 +8,7 @@ import { getMySubscription } from "@/features/billing/server/functions";
 
 const searchSchema = z.object({
   status: z.enum(["success", "cancelled"]).optional(),
-  session_id: z.string().optional(),
+  checkout_id: z.string().optional(),
 });
 
 export const Route = createFileRoute("/_authenticated/dashboard/billing")({

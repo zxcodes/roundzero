@@ -100,7 +100,7 @@ function CurrentPlanCard({
             </CardTitle>
             <CardDescription>{config.description}</CardDescription>
           </div>
-          {subscription.hasStripeCustomer ? (
+          {subscription.hasPolarCustomer ? (
             <Button variant="outline" onClick={onOpenPortal} disabled={portalLoading}>
               {portalLoading ? "Opening…" : "Manage billing"}
             </Button>
