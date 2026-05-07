@@ -17,9 +17,11 @@ interface Subscription {
  */
 export function useSubscription(): Subscription | null {
   const context = useRouteContext({ from: "/_authenticated" });
-  const subscription =
-    context && typeof context === "object" && "subscription" in context
-      ? (context.subscription as Subscription | null)
-      : null;
-  return subscription;
+
+  if (context && typeof context === "object" && "subscription" in context) {
+    const sub = context.subscription;
+    if (sub) return sub;
+  }
+
+  return null;
 }
