@@ -270,7 +270,7 @@ Schema dump:
 - stores:
   - `resume_key` snapshot
   - `metadata` snapshot for non-resume candidate profile data
-  - status: `applied`, `pre_screening`, `interview_invited`, `interview_in_progress`, `evaluated`, `shortlisted`, `rejected`
+  - status: `applied`, `pre_screening`, `queued_for_batch`, `interview_invited`, `interview_in_progress`, `evaluated`, `evaluated_held`, `shortlisted`, `rejected`
 
 This is important architecturally:
 
@@ -292,6 +292,7 @@ This is important architecturally:
 - stores:
   - `type`: `'full'` | `'quick_eval'`
   - `status`: `'pending'` | `'in_progress'` | `'completed'` | `'expired'` | `'cancelled'`
+  - `batch_id` — nullable FK to `job_batches`
   - `metadata` (JSONB) — includes `expiresAt`, `expiredAt`, `cancelledAt`, `cancellationReason`
   - `started_at`, `completed_at`
 
@@ -306,11 +307,12 @@ This is important architecturally:
 
 Quota semantics:
 
-- `final_report_target` is consumed by completed reports, not interview invites
+- `final_report_target` controls total reports delivered to the company per job
+- Reports are held in batches and only count as "completed" when the batch releases
 - invite capacity per job is computed as:
-  - `remainingReports = final_report_target - completedReports`
+  - `remainingReports = final_report_target - releasedReports`
   - `availableInviteSlots = remainingReports - activeInterviews(status IN pending|in_progress)`
-- if an interview expires or is cancelled, that slot is recycled and the next best candidate is invited
+- if an interview expires or is cancelled, that slot returns to the pool for the next batch
 
 ### Schema Decisions
 
@@ -458,13 +460,14 @@ Notifications are implemented as a durable in-app inbox with Resend-backed email
   - `created_at`
 - supported event types:
   - `application_status_changed`
-  - `report_ready`
+  - `batch_ready`
+  - `report_ready` (legacy, for non-batched releases)
   - `interview_invited`
   - `interview_expired`
   - `position_filled`
   - `job_published`, `job_archived`, `job_closed`
   - `application_withdrawn`
-- application statuses include all 8: `applied`, `pre_screening`, `interview_invited`, `interview_in_progress`, `evaluated`, `shortlisted`, `rejected`, `withdrawn`
+- application statuses include all 10: `applied`, `pre_screening`, `queued_for_batch`, `interview_invited`, `interview_in_progress`, `evaluated`, `evaluated_held`, `shortlisted`, `rejected`, `withdrawn`
 - the app shell/dashboard header renders the inbox surface
 
 ### Current module layout
@@ -491,7 +494,7 @@ Provider:
 Current email-backed use cases:
 
 - candidate application status updates
-- company-side report ready notifications
+- company-side batch ready digest notifications
 - interview expiry notifications
 
 Future email-backed use cases:
@@ -611,7 +614,7 @@ The AI layer runs in the same Cloudflare Worker as the main app. Workflows and a
 - Two modes:
   - `full`: complete RoundZero interview
   - `quick_eval`: 2–3 clarifying questions for medium-fit candidates
-- Interview invites expire after 48 hours via `this.schedule()` (per-interview alarm, no global cron)
+- Interview invites expire after 12 hours via `this.schedule()` (per-interview alarm, no global cron)
 
 **Agents SDK capabilities used:**
 
@@ -634,10 +637,11 @@ The AI layer runs in the same Cloudflare Worker as the main app. Workflows and a
 
 ### Interview Lifecycle Manager (Agent Scheduling)
 
-- Each interview schedules its own expiry via `this.schedule(48h, "expireInterview")`
-- On expiry: agent updates status, sends notification, triggers backfill workflow
+- Each interview schedules its own expiry via `this.schedule(12h, "expireInterview")`
+- On expiry: agent updates status, sends notification, triggers batch completion check
 - No global cron needed — each interview manages its own lifecycle
 - Agent schedules are persisted in SQLite and survive restarts
+- Expiry reduced from 48h → 12h to keep batch turnaround tight
 
 ### Report Generation Pipeline (Cloudflare Workflow)
 
@@ -647,15 +651,91 @@ The AI layer runs in the same Cloudflare Worker as the main app. Workflows and a
   2. Read interview context + transcript from Durable Object state
   3. Generate report via single LLM call with structured JSON schema output
      - Fallback deterministic report when LLM returns non-JSON or invalid shape
-  4. Persist report to `reports` table; update application status → `evaluated`
-  5. Create in-app `report_ready` notification for company owner
-  6. Send best-effort Resend email to company owner
+  4. Persist report to `reports` table; update application status → `evaluated_held`
+  5. Check if all interviews in the batch are resolved
+  6. If yes → send `batch-reports-complete` event to the batch orchestration workflow
+
+### Batch Orchestration Pipeline (Cloudflare Workflow)
+
+Instead of releasing reports one-by-one as interviews complete, the system holds reports in a batch and releases them as a single ranked drop.
+
+**Why:** One report in isolation is low-signal. Five reports ranked side-by-side is high-signal. Companies review faster and with more confidence.
+
+**Configurable constants** (`app/features/batches/config.ts`):
+
+```ts
+export const BATCH_CONFIG = {
+  INTERVIEW_EXPIRY_MS: 12 * 60 * 60 * 1000,      // 12h — how long a candidate has to complete
+  POOL_FORMATION_TIMEOUT_MS: 12 * 60 * 60 * 1000, // 12h — max time to pool before launching
+  MIN_BATCH_SIZE: 3,                               // min candidates to launch before timeout
+  DEFAULT_TARGET_SIZE: 5,                          // default batch size (capped by final_report_target)
+  POOL_CHECK_INTERVAL_MS: 6 * 60 * 60 * 1000,      // 6h — periodic pool check frequency
+  BACKFILL_THRESHOLD: 5,                           // pool size needed to auto-launch next batch
+} as const;
+```
+
+**Data model additions:**
+
+- `job_batches` table:
+  - `id`, `job_id`, `status` (`forming` | `active` | `released`)
+  - `target_size`, `created_at`, `launched_at`, `released_at`
+- `interviews.batch_id` — nullable FK to `job_batches`
+- `reports.released_at` — nullable timestamp
+- `applications.status` — add `queued_for_batch` (candidate-visible: "Under review")
+
+**Batch lifecycle:**
+
+1. **Pool formation:** Pre-evaluation adds strong/medium-fit candidates to a per-job pool. A pool check runs every 6h and after every pre-eval completion.
+2. **Launch:** When pool ≥ target (or ≥ `MIN_BATCH_SIZE` and oldest queued > 12h, or any queued > 24h), the system:
+   - Creates a `job_batches` row
+   - Invites all candidates simultaneously
+   - Starts a `BatchOrchestrationWorkflow` instance
+3. **Active:** Candidates have 12h to complete interviews. Reports are generated as they finish but held at `evaluated_held`.
+4. **Release:** The batch workflow uses `step.waitForEvent("batch-reports-complete", { timeout: "12 hours" })`. It releases when:
+   - All interviews resolve (post-eval sends the event)
+   - OR the 12h timeout fires
+5. **Backfill:** After release, if the pool has ≥ `BACKFILL_THRESHOLD` ready candidates, a new batch launches immediately (hybrid rule).
+
+**Release action:**
+- `batch.status = 'released'`
+- All `evaluated_held` → `evaluated`
+- Set `reports.released_at`
+- Send ONE `batch_ready` in-app notification
+- Send ONE email digest with ranked candidate list
+
+**Candidate UX:**
+- Application tracking shows `queued_for_batch` as "Under review" with explainer text
+- Interview invitation card displays 12h deadline with countdown timer
+- Post-interview: candidate sees "Evaluation complete" — no scores or ranking until company batch releases
+- No batch-level visibility for candidates (they only know their own status)
+
+**Company UX:**
+- **Dashboard:**
+  - "Active Batch" progress card replaces real-time report cards
+  - Shows: job title, X of Y complete, time until release (or "Releasing now")
+  - Released batches section: ranked list of recent drops
+  - No per-candidate report highlights
+- **Job applicants page:**
+  - Tabs: **Released** | **Active Batch** | **Queued**
+  - Active Batch tab: progress bar + count, no candidate names/scores visible yet
+  - Queued tab: count only, no names or scores
+  - Released tab: full report cards (same as current evaluated view)
+- **Batch detail view** (`/dashboard/job-batches/$batchId`):
+  - Ranked list of all candidates with scores, recommendation badges, quick CTAs
+  - Sortable by score (default), name, recommendation
+- **Applicant detail page:**
+  - `evaluated_held`: "Evaluation complete — releasing in batch" (no report card)
+  - `queued_for_batch`: "Queued for next evaluation batch"
+- **Notifications:**
+  - `batch_ready` in-app notification with jobTitle, reportCount, topScore
+  - Batch digest email with ranked table, score bars, recommendation badges
+- **No per-candidate `report_ready` emails in batch flow**
 
 ### Output Layer
 
 - Report reads from Postgres
-- Candidate ranking per job by report score
-- Company dashboard shows evaluated + pending tabs
+- Candidate ranking per job by report score (only visible after batch release)
+- Company dashboard shows active batch progress + released batches
 
 ### Key Constraint
 
@@ -667,11 +747,12 @@ The AI layer runs in the same Cloudflare Worker as the main app. Workflows and a
 
 See `PLAN.md` for the full build plan. Current focus:
 
-1. **Interview UX polish**: finish chat auto-scroll parity, duplicate-assistant safeguards, and terminal state UI polish
-2. **Phase 8 wrap-up**: candidate applications list visible status labels, dedicated interview invitation cards
-3. **Phase 9 polish**: mobile responsive pass, pending/evaluated tabs on job applicants
-4. **Testing**: end-to-end smoke test of full apply → pre-eval → invite → interview → complete → report flow
-5. **Optional**: Better Auth migration (Phase 10), Web Interface Guidelines compliance (Phase 11)
+1. **Phase 7.5: Batch Report Release** — pool-and-batch system with held reports, batch orchestration workflow, and updated company/candidate UI
+2. **Interview UX polish**: finish chat auto-scroll parity, duplicate-assistant safeguards, and terminal state UI polish
+3. **Phase 8 wrap-up**: candidate applications list visible status labels, dedicated interview invitation cards (with 12h deadline)
+4. **Phase 9 polish**: mobile responsive pass, Released/Active/Queued tabs on job applicants
+5. **Testing**: end-to-end smoke test of full apply → pre-eval → pool → batch launch → interview → complete → batch release → company report view
+6. **Optional**: Better Auth migration (Phase 10), Web Interface Guidelines compliance (Phase 11)
 
 ---
 
