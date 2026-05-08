@@ -81,8 +81,10 @@ export const Route = createFileRoute("/_authenticated/dashboard/applicants/$appl
 const APPLICATION_STAGES = [
   "applied",
   "pre_screening",
+  "queued_for_batch",
   "interview_invited",
   "interview_in_progress",
+  "evaluated_held",
   "evaluated",
   "shortlisted",
   "rejected",
@@ -91,8 +93,10 @@ const APPLICATION_STAGES = [
 const STATUS_OPTIONS: { value: ApplicationStatus; label: string }[] = [
   { value: "applied", label: "Applied" },
   { value: "pre_screening", label: "Pre-screening" },
+  { value: "queued_for_batch", label: "Queued for evaluation" },
   { value: "interview_invited", label: "Interview invited" },
   { value: "interview_in_progress", label: "Interview in progress" },
+  { value: "evaluated_held", label: "Evaluation complete" },
   { value: "evaluated", label: "Evaluated" },
   { value: "shortlisted", label: "Shortlisted" },
   { value: "rejected", label: "Rejected" },
@@ -110,6 +114,11 @@ const stageCopy = {
     tone: "border-pending/20 bg-pending/10 text-pending",
     dot: "bg-pending",
   },
+  queued_for_batch: {
+    badge: "Queued",
+    tone: "border-pending/20 bg-pending/10 text-pending",
+    dot: "bg-pending",
+  },
   interview_invited: {
     badge: "Interview invited",
     tone: "border-active/20 bg-active/10 text-active",
@@ -119,6 +128,11 @@ const stageCopy = {
     badge: "Interview in progress",
     tone: "border-warning/20 bg-warning/10 text-warning",
     dot: "bg-warning",
+  },
+  evaluated_held: {
+    badge: "Evaluation complete",
+    tone: "border-success/20 bg-success/10 text-success",
+    dot: "bg-success",
   },
   evaluated: {
     badge: "Evaluated",

@@ -47,10 +47,10 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
       const roleHealth = jobsWithPipeline
         .filter((job) => job.status === "open")
         .map((job) => {
-          const reportsCompleted = job.evaluatedCount + job.shortlistedCount + job.rejectedCount;
+          const releasedReports = job.evaluatedCount;
           const backlog = job.evaluatedCount;
           const shortlistRate =
-            reportsCompleted > 0 ? Math.round((job.shortlistedCount / reportsCompleted) * 100) : 0;
+            releasedReports > 0 ? Math.round((job.shortlistedCount / releasedReports) * 100) : 0;
 
           const now = Date.now();
           const expiresAt = job.expiresAt ? job.expiresAt.getTime() : null;
@@ -65,12 +65,14 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
             applicants: job.totalApplicants,
             applied: job.appliedCount,
             preScreening: job.preScreeningCount,
+            queuedForBatch: job.queuedForBatchCount ?? 0,
             invited: job.interviewInvitedCount,
             inProgress: job.interviewInProgressCount,
+            evaluatedHeld: job.evaluatedHeldCount ?? 0,
             evaluated: job.evaluatedCount,
             shortlisted: job.shortlistedCount,
             rejected: job.rejectedCount,
-            reportsCompleted,
+            reportsCompleted: releasedReports,
             finalReportTarget: job.finalReportTarget,
             backlog,
             shortlistRate,
@@ -99,7 +101,7 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
         const jobApplicants = await getApplicationsByJob(db, { jobId: role.jobId });
 
         for (const applicant of jobApplicants) {
-          if (applicant.reportId === null) {
+          if (applicant.reportId === null || applicant.reportReleasedAt === null) {
             continue;
           }
 

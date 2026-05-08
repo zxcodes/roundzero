@@ -41,6 +41,11 @@ const stageCopy = {
     tone: "border-info/20 bg-info/10 text-info",
     blurb: "Waiting on first review",
   },
+  queued_for_batch: {
+    badge: "Under review",
+    tone: "border-info/20 bg-info/10 text-info",
+    blurb: "Strong fit — queued for the next evaluation batch",
+  },
   interview_ready: {
     badge: "Interview Ready",
     tone: "border-warning/20 bg-warning/10 text-warning",
@@ -55,6 +60,11 @@ const stageCopy = {
     badge: "Awaiting company decision",
     tone: "border-success/20 bg-success/10 text-success",
     blurb: "Interview completed. Awaiting company decision",
+  },
+  evaluated_held: {
+    badge: "Evaluation complete",
+    tone: "border-success/20 bg-success/10 text-success",
+    blurb: "Evaluation complete. Releasing with the next batch",
   },
   evaluated: {
     badge: "Awaiting company decision",
@@ -80,10 +90,14 @@ const stageCopy = {
 
 const toApplicationStage = (status: string): keyof typeof stageCopy => {
   switch (status) {
+    case "queued_for_batch":
+      return "queued_for_batch";
     case "interview_invited":
       return "interview_ready";
     case "interview_in_progress":
       return "interview_in_progress";
+    case "evaluated_held":
+      return "evaluated_held";
     case "evaluated":
       return "evaluated";
     case "shortlisted":
