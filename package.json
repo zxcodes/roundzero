@@ -27,7 +27,7 @@
     "@fontsource-variable/geist": "^5.2.8",
     "@fontsource-variable/geist-mono": "^5.2.7",
     "@fontsource/instrument-serif": "^5.2.8",
-    "@hugeicons/core-free-icons": "^4.1.1",
+    "@hugeicons/core-free-icons": "^4.1.2",
     "@hugeicons/react": "^1.1.6",
     "@openrouter/ai-sdk-provider": "^2.9.0",
     "@react-email/components": "^1.0.12",
@@ -42,7 +42,7 @@
     "@tanstack/router-plugin": "^1.167.35",
     "@tanstack/zod-adapter": "^1.166.9",
     "agents": "^0.12.3",
-    "ai": "^6.0.175",
+    "ai": "^6.0.176",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -70,7 +70,7 @@
     "@babel/core": "^7.29.0",
     "@babel/plugin-proposal-decorators": "^7.29.0",
     "@biomejs/biome": "2.4.14",
-    "@cloudflare/vite-plugin": "^1.36.2",
+    "@cloudflare/vite-plugin": "^1.36.3",
     "@rolldown/plugin-babel": "^0.2.3",
     "@tanstack/devtools-vite": "^0.6.0",
     "@tanstack/react-devtools": "^0.10.2",
@@ -78,7 +78,7 @@
     "@tanstack/react-query-devtools": "^5.100.9",
     "@types/babel__core": "^7.20.5",
     "@types/bun": "^1.3.13",
-    "@types/node": "^25.6.0",
+    "@types/node": "^25.6.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@typescript/native-preview": "7.0.0-dev.20260507.1",
@@ -87,10 +87,10 @@
     "dbmate": "^2.33.0",
     "husky": "^9.1.7",
     "jsdom": "^29.1.1",
-    "knip": "^6.12.0",
+    "knip": "^6.12.1",
     "typescript": "^6.0.3",
     "vite": "^8.0.11",
     "vitest": "^4.1.5",
-    "wrangler": "^4.89.1"
+    "wrangler": "^4.90.0"
   }
 }
