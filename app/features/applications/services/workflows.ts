@@ -167,7 +167,7 @@ export const updateApplicationStatusWorkflow = async (
 
     const interviewType =
       latestPreEvaluation?.nextStep === "interview_invited" ? "full" : "quick_eval";
-    const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+    const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString();
 
     const interview =
       existingInterview ??
