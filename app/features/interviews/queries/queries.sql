@@ -70,7 +70,7 @@ WHERE id = $1
 RETURNING *;
 
 -- name: getInterviewContextById :one
-SELECT i.id, i.application_id, i.agent_id, i.type, i.metadata, i.status, i.invited_at, i.started_at, i.completed_at,
+SELECT i.id, i.application_id, i.batch_id, i.agent_id, i.type, i.metadata, i.status, i.invited_at, i.started_at, i.completed_at,
        i.expired_at, i.cancelled_at, i.cancellation_reason, i.created_at, i.updated_at,
        a.candidate_id, a.status AS application_status,
        j.id AS job_id, j.title AS job_title,

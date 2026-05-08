@@ -3,7 +3,7 @@ import { Sql } from "postgres";
 export const createInterviewQuery = `-- name: createInterview :one
 INSERT INTO interviews (application_id, agent_id, type, metadata, status, invited_at, started_at, completed_at)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-RETURNING id, application_id, agent_id, type, metadata, status, invited_at, started_at, completed_at, expired_at, cancelled_at, cancellation_reason, created_at, updated_at`;
+RETURNING id, application_id, batch_id, agent_id, type, metadata, status, invited_at, started_at, completed_at, expired_at, cancelled_at, cancellation_reason, created_at, updated_at`;
 
 export interface createInterviewArgs {
     applicationId: string;
@@ -19,6 +19,7 @@ export interface createInterviewArgs {
 export interface createInterviewRow {
     id: string;
     applicationId: string;
+    batchId: string | null;
     agentId: string | null;
     type: string;
     metadata: any;
@@ -42,23 +43,24 @@ export async function createInterview(sql: Sql, args: createInterviewArgs): Prom
     return {
         id: row[0],
         applicationId: row[1],
-        agentId: row[2],
-        type: row[3],
-        metadata: row[4],
-        status: row[5],
-        invitedAt: row[6],
-        startedAt: row[7],
-        completedAt: row[8],
-        expiredAt: row[9],
-        cancelledAt: row[10],
-        cancellationReason: row[11],
-        createdAt: row[12],
-        updatedAt: row[13]
+        batchId: row[2],
+        agentId: row[3],
+        type: row[4],
+        metadata: row[5],
+        status: row[6],
+        invitedAt: row[7],
+        startedAt: row[8],
+        completedAt: row[9],
+        expiredAt: row[10],
+        cancelledAt: row[11],
+        cancellationReason: row[12],
+        createdAt: row[13],
+        updatedAt: row[14]
     };
 }
 
 export const getInterviewByApplicationIdQuery = `-- name: getInterviewByApplicationId :one
-SELECT id, application_id, agent_id, type, metadata, status, invited_at, started_at, completed_at, expired_at, cancelled_at, cancellation_reason, created_at, updated_at
+SELECT id, application_id, batch_id, agent_id, type, metadata, status, invited_at, started_at, completed_at, expired_at, cancelled_at, cancellation_reason, created_at, updated_at
 FROM interviews
 WHERE application_id = $1`;
 
@@ -69,6 +71,7 @@ export interface getInterviewByApplicationIdArgs {
 export interface getInterviewByApplicationIdRow {
     id: string;
     applicationId: string;
+    batchId: string | null;
     agentId: string | null;
     type: string;
     metadata: any;
@@ -92,23 +95,24 @@ export async function getInterviewByApplicationId(sql: Sql, args: getInterviewBy
     return {
         id: row[0],
         applicationId: row[1],
-        agentId: row[2],
-        type: row[3],
-        metadata: row[4],
-        status: row[5],
-        invitedAt: row[6],
-        startedAt: row[7],
-        completedAt: row[8],
-        expiredAt: row[9],
-        cancelledAt: row[10],
-        cancellationReason: row[11],
-        createdAt: row[12],
-        updatedAt: row[13]
+        batchId: row[2],
+        agentId: row[3],
+        type: row[4],
+        metadata: row[5],
+        status: row[6],
+        invitedAt: row[7],
+        startedAt: row[8],
+        completedAt: row[9],
+        expiredAt: row[10],
+        cancelledAt: row[11],
+        cancellationReason: row[12],
+        createdAt: row[13],
+        updatedAt: row[14]
     };
 }
 
 export const getInterviewByIdQuery = `-- name: getInterviewById :one
-SELECT id, application_id, agent_id, type, metadata, status, invited_at, started_at, completed_at, expired_at, cancelled_at, cancellation_reason, created_at, updated_at
+SELECT id, application_id, batch_id, agent_id, type, metadata, status, invited_at, started_at, completed_at, expired_at, cancelled_at, cancellation_reason, created_at, updated_at
 FROM interviews
 WHERE id = $1`;
 
@@ -119,6 +123,7 @@ export interface getInterviewByIdArgs {
 export interface getInterviewByIdRow {
     id: string;
     applicationId: string;
+    batchId: string | null;
     agentId: string | null;
     type: string;
     metadata: any;
@@ -142,18 +147,19 @@ export async function getInterviewById(sql: Sql, args: getInterviewByIdArgs): Pr
     return {
         id: row[0],
         applicationId: row[1],
-        agentId: row[2],
-        type: row[3],
-        metadata: row[4],
-        status: row[5],
-        invitedAt: row[6],
-        startedAt: row[7],
-        completedAt: row[8],
-        expiredAt: row[9],
-        cancelledAt: row[10],
-        cancellationReason: row[11],
-        createdAt: row[12],
-        updatedAt: row[13]
+        batchId: row[2],
+        agentId: row[3],
+        type: row[4],
+        metadata: row[5],
+        status: row[6],
+        invitedAt: row[7],
+        startedAt: row[8],
+        completedAt: row[9],
+        expiredAt: row[10],
+        cancelledAt: row[11],
+        cancellationReason: row[12],
+        createdAt: row[13],
+        updatedAt: row[14]
     };
 }
 
@@ -292,7 +298,7 @@ UPDATE interviews
 SET status = $1,
     updated_at = now()
 WHERE id = $2
-RETURNING id, application_id, agent_id, type, metadata, status, invited_at, started_at, completed_at, expired_at, cancelled_at, cancellation_reason, created_at, updated_at`;
+RETURNING id, application_id, batch_id, agent_id, type, metadata, status, invited_at, started_at, completed_at, expired_at, cancelled_at, cancellation_reason, created_at, updated_at`;
 
 export interface updateInterviewStatusArgs {
     status: string;
@@ -302,6 +308,7 @@ export interface updateInterviewStatusArgs {
 export interface updateInterviewStatusRow {
     id: string;
     applicationId: string;
+    batchId: string | null;
     agentId: string | null;
     type: string;
     metadata: any;
@@ -325,18 +332,19 @@ export async function updateInterviewStatus(sql: Sql, args: updateInterviewStatu
     return {
         id: row[0],
         applicationId: row[1],
-        agentId: row[2],
-        type: row[3],
-        metadata: row[4],
-        status: row[5],
-        invitedAt: row[6],
-        startedAt: row[7],
-        completedAt: row[8],
-        expiredAt: row[9],
-        cancelledAt: row[10],
-        cancellationReason: row[11],
-        createdAt: row[12],
-        updatedAt: row[13]
+        batchId: row[2],
+        agentId: row[3],
+        type: row[4],
+        metadata: row[5],
+        status: row[6],
+        invitedAt: row[7],
+        startedAt: row[8],
+        completedAt: row[9],
+        expiredAt: row[10],
+        cancelledAt: row[11],
+        cancellationReason: row[12],
+        createdAt: row[13],
+        updatedAt: row[14]
     };
 }
 
@@ -346,7 +354,7 @@ SET status = 'completed',
     completed_at = now(),
     updated_at = now()
 WHERE id = $1
-RETURNING id, application_id, agent_id, type, metadata, status, invited_at, started_at, completed_at, expired_at, cancelled_at, cancellation_reason, created_at, updated_at`;
+RETURNING id, application_id, batch_id, agent_id, type, metadata, status, invited_at, started_at, completed_at, expired_at, cancelled_at, cancellation_reason, created_at, updated_at`;
 
 export interface completeInterviewArgs {
     id: string;
@@ -355,6 +363,7 @@ export interface completeInterviewArgs {
 export interface completeInterviewRow {
     id: string;
     applicationId: string;
+    batchId: string | null;
     agentId: string | null;
     type: string;
     metadata: any;
@@ -378,18 +387,19 @@ export async function completeInterview(sql: Sql, args: completeInterviewArgs): 
     return {
         id: row[0],
         applicationId: row[1],
-        agentId: row[2],
-        type: row[3],
-        metadata: row[4],
-        status: row[5],
-        invitedAt: row[6],
-        startedAt: row[7],
-        completedAt: row[8],
-        expiredAt: row[9],
-        cancelledAt: row[10],
-        cancellationReason: row[11],
-        createdAt: row[12],
-        updatedAt: row[13]
+        batchId: row[2],
+        agentId: row[3],
+        type: row[4],
+        metadata: row[5],
+        status: row[6],
+        invitedAt: row[7],
+        startedAt: row[8],
+        completedAt: row[9],
+        expiredAt: row[10],
+        cancelledAt: row[11],
+        cancellationReason: row[12],
+        createdAt: row[13],
+        updatedAt: row[14]
     };
 }
 
@@ -399,7 +409,7 @@ SET status = 'expired',
     expired_at = now(),
     updated_at = now()
 WHERE id = $1
-RETURNING id, application_id, agent_id, type, metadata, status, invited_at, started_at, completed_at, expired_at, cancelled_at, cancellation_reason, created_at, updated_at`;
+RETURNING id, application_id, batch_id, agent_id, type, metadata, status, invited_at, started_at, completed_at, expired_at, cancelled_at, cancellation_reason, created_at, updated_at`;
 
 export interface expireInterviewArgs {
     id: string;
@@ -408,6 +418,7 @@ export interface expireInterviewArgs {
 export interface expireInterviewRow {
     id: string;
     applicationId: string;
+    batchId: string | null;
     agentId: string | null;
     type: string;
     metadata: any;
@@ -431,18 +442,19 @@ export async function expireInterview(sql: Sql, args: expireInterviewArgs): Prom
     return {
         id: row[0],
         applicationId: row[1],
-        agentId: row[2],
-        type: row[3],
-        metadata: row[4],
-        status: row[5],
-        invitedAt: row[6],
-        startedAt: row[7],
-        completedAt: row[8],
-        expiredAt: row[9],
-        cancelledAt: row[10],
-        cancellationReason: row[11],
-        createdAt: row[12],
-        updatedAt: row[13]
+        batchId: row[2],
+        agentId: row[3],
+        type: row[4],
+        metadata: row[5],
+        status: row[6],
+        invitedAt: row[7],
+        startedAt: row[8],
+        completedAt: row[9],
+        expiredAt: row[10],
+        cancelledAt: row[11],
+        cancellationReason: row[12],
+        createdAt: row[13],
+        updatedAt: row[14]
     };
 }
 
@@ -453,7 +465,7 @@ SET status = 'cancelled',
     cancellation_reason = $2,
     updated_at = now()
 WHERE id = $1
-RETURNING id, application_id, agent_id, type, metadata, status, invited_at, started_at, completed_at, expired_at, cancelled_at, cancellation_reason, created_at, updated_at`;
+RETURNING id, application_id, batch_id, agent_id, type, metadata, status, invited_at, started_at, completed_at, expired_at, cancelled_at, cancellation_reason, created_at, updated_at`;
 
 export interface cancelInterviewArgs {
     id: string;
@@ -463,6 +475,7 @@ export interface cancelInterviewArgs {
 export interface cancelInterviewRow {
     id: string;
     applicationId: string;
+    batchId: string | null;
     agentId: string | null;
     type: string;
     metadata: any;
@@ -486,23 +499,24 @@ export async function cancelInterview(sql: Sql, args: cancelInterviewArgs): Prom
     return {
         id: row[0],
         applicationId: row[1],
-        agentId: row[2],
-        type: row[3],
-        metadata: row[4],
-        status: row[5],
-        invitedAt: row[6],
-        startedAt: row[7],
-        completedAt: row[8],
-        expiredAt: row[9],
-        cancelledAt: row[10],
-        cancellationReason: row[11],
-        createdAt: row[12],
-        updatedAt: row[13]
+        batchId: row[2],
+        agentId: row[3],
+        type: row[4],
+        metadata: row[5],
+        status: row[6],
+        invitedAt: row[7],
+        startedAt: row[8],
+        completedAt: row[9],
+        expiredAt: row[10],
+        cancelledAt: row[11],
+        cancellationReason: row[12],
+        createdAt: row[13],
+        updatedAt: row[14]
     };
 }
 
 export const getInterviewContextByIdQuery = `-- name: getInterviewContextById :one
-SELECT i.id, i.application_id, i.agent_id, i.type, i.metadata, i.status, i.invited_at, i.started_at, i.completed_at,
+SELECT i.id, i.application_id, i.batch_id, i.agent_id, i.type, i.metadata, i.status, i.invited_at, i.started_at, i.completed_at,
        i.expired_at, i.cancelled_at, i.cancellation_reason, i.created_at, i.updated_at,
        a.candidate_id, a.status AS application_status,
        j.id AS job_id, j.title AS job_title,
@@ -523,6 +537,7 @@ export interface getInterviewContextByIdArgs {
 export interface getInterviewContextByIdRow {
     id: string;
     applicationId: string;
+    batchId: string | null;
     agentId: string | null;
     type: string;
     metadata: any;
@@ -553,25 +568,26 @@ export async function getInterviewContextById(sql: Sql, args: getInterviewContex
     return {
         id: row[0],
         applicationId: row[1],
-        agentId: row[2],
-        type: row[3],
-        metadata: row[4],
-        status: row[5],
-        invitedAt: row[6],
-        startedAt: row[7],
-        completedAt: row[8],
-        expiredAt: row[9],
-        cancelledAt: row[10],
-        cancellationReason: row[11],
-        createdAt: row[12],
-        updatedAt: row[13],
-        candidateId: row[14],
-        applicationStatus: row[15],
-        jobId: row[16],
-        jobTitle: row[17],
-        companyName: row[18],
-        companyOwnerId: row[19],
-        candidateName: row[20]
+        batchId: row[2],
+        agentId: row[3],
+        type: row[4],
+        metadata: row[5],
+        status: row[6],
+        invitedAt: row[7],
+        startedAt: row[8],
+        completedAt: row[9],
+        expiredAt: row[10],
+        cancelledAt: row[11],
+        cancellationReason: row[12],
+        createdAt: row[13],
+        updatedAt: row[14],
+        candidateId: row[15],
+        applicationStatus: row[16],
+        jobId: row[17],
+        jobTitle: row[18],
+        companyName: row[19],
+        companyOwnerId: row[20],
+        candidateName: row[21]
     };
 }
 
