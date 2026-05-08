@@ -48,12 +48,15 @@ describe("applicationStatusSchema", () => {
     for (const status of [
       "applied",
       "pre_screening",
+      "queued_for_batch",
       "interview_invited",
       "interview_in_progress",
+      "evaluated_held",
       "evaluated",
       "shortlisted",
       "rejected",
       "withdrawn",
+      "evaluation_failed",
     ]) {
       expect(applicationStatusSchema.parse(status)).toBe(status);
     }
@@ -114,9 +117,17 @@ describe("isValidTransition", () => {
   it("allows valid forward transitions", () => {
     expect(isValidTransition("applied", "pre_screening")).toBe(true);
     expect(isValidTransition("applied", "rejected")).toBe(true);
-    expect(isValidTransition("pre_screening", "interview_invited")).toBe(true);
+    expect(isValidTransition("pre_screening", "queued_for_batch")).toBe(true);
+    expect(isValidTransition("queued_for_batch", "interview_invited")).toBe(true);
     expect(isValidTransition("interview_invited", "rejected")).toBe(true);
+    expect(isValidTransition("interview_in_progress", "evaluated_held")).toBe(true);
+    expect(isValidTransition("evaluated_held", "evaluated")).toBe(true);
+    expect(isValidTransition("evaluated_held", "rejected")).toBe(true);
     expect(isValidTransition("evaluated", "rejected")).toBe(true);
+  });
+
+  it("rejects direct pre_screening → interview_invited (must go through queued_for_batch)", () => {
+    expect(isValidTransition("pre_screening", "interview_invited")).toBe(false);
   });
 
   it("rejects backward transitions", () => {
@@ -149,10 +160,12 @@ describe("isValidTransition", () => {
   it("allows withdrawal from applied and interviewing", () => {
     expect(isValidTransition("applied", "withdrawn")).toBe(true);
     expect(isValidTransition("interview_invited", "withdrawn")).toBe(true);
+    expect(isValidTransition("queued_for_batch", "withdrawn")).toBe(true);
   });
 
   it("rejects withdrawal from evaluated and rejected", () => {
     expect(isValidTransition("evaluated", "withdrawn")).toBe(false);
+    expect(isValidTransition("evaluated_held", "withdrawn")).toBe(false);
     expect(isValidTransition("rejected", "withdrawn")).toBe(false);
   });
 
