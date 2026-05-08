@@ -5,6 +5,7 @@ import mammoth from "mammoth";
 import type { Sql } from "postgres";
 import { extractText, getDocumentProxy } from "unpdf";
 import { z } from "zod";
+import { checkAndLaunchBatch } from "@/features/batches/server/functions";
 import { CLASSIFY_JOB_SYSTEM_PROMPT, jobTypeSchema } from "@/prompts/classify-job";
 import { CREATIVE_EVAL_SYSTEM_PROMPT } from "@/prompts/evaluate/creative";
 import { CUSTOMER_FACING_EVAL_SYSTEM_PROMPT } from "@/prompts/evaluate/customer-facing";
@@ -17,7 +18,6 @@ import { getApplicationById, updateApplicationStatus } from "@/queries/applicati
 import { getUserById } from "@/queries/auth/queries_sql";
 import {
   countActiveInterviewSlotsByJob,
-  createInterview,
   getInterviewByApplicationId,
 } from "@/queries/interviews/queries_sql";
 import { getJobById } from "@/queries/jobs/queries_sql";
@@ -27,7 +27,6 @@ import {
   getPreEvaluationByApplicationId,
 } from "@/queries/pre-evaluations/queries_sql";
 import { getDb } from "@/shared/db";
-import { initializeInterviewAgent } from "@/shared/interview-agent-client";
 import type { createWorkflowLogger } from "@/shared/logger";
 import { notificationPayloadSchemas } from "@/shared/notifications-config";
 import { getModelChain, getOpenRouter } from "@/shared/openrouter";
@@ -105,10 +104,6 @@ function shouldInviteFromDeterministicRules(args: {
     return false;
   }
   return true;
-}
-
-function getInterviewTypeFromDeterministicRules(score: number): "full" | "quick_eval" {
-  return score >= 85 ? "full" : "quick_eval";
 }
 
 async function extractResumeText(bytes: Uint8Array, contentType: string): Promise<string> {
@@ -209,36 +204,6 @@ function buildSlopDetectionPrompt(
       skills,
     },
     resumeText: resumeText.slice(0, 8000),
-  });
-}
-
-async function createInterviewInviteNotificationIfNeeded(input: {
-  db: Sql;
-  candidateId: string;
-  payload: {
-    applicationId: string;
-    interviewId: string;
-    jobId: string;
-    jobTitle: string;
-    interviewType: string;
-    expiresAt: string;
-  };
-}) {
-  const existing = await input.db
-    .unsafe(
-      `SELECT id FROM notifications WHERE user_id = $1 AND type = 'interview_invited' AND payload->>'interviewId' = $2 LIMIT 1`,
-      [input.candidateId, input.payload.interviewId],
-    )
-    .values();
-
-  if (existing.length > 0) {
-    return;
-  }
-
-  await createNotification(input.db, {
-    userId: input.candidateId,
-    type: "interview_invited",
-    payload: input.payload,
   });
 }
 
@@ -523,9 +488,6 @@ export function decideNextStep(
 
     const db = getDb();
     const job = applicationData.job;
-    const interviewType = getInterviewTypeFromDeterministicRules(aiResult.result.score);
-    const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
-
     const finalReportTarget = typeof job.finalReportTarget === "number" ? job.finalReportTarget : 5;
 
     const allocation = await db.begin(async (tx) => {
@@ -554,49 +516,39 @@ export function decideNextStep(
 
       const completedReportsRows = await tx
         .unsafe(
-          `SELECT count(*)::int AS count FROM reports r JOIN applications a ON a.id = r.application_id WHERE a.job_id = $1`,
+          `SELECT count(*)::int AS count FROM reports r JOIN applications a ON a.id = r.application_id WHERE a.job_id = $1 AND r.released_at IS NOT NULL`,
           [job.id],
         )
         .values();
-      const completedReports =
+      const releasedReports =
         completedReportsRows.length === 1 && typeof completedReportsRows[0]?.[0] === "number"
           ? completedReportsRows[0][0]
           : 0;
 
       const activeSlots = await countActiveInterviewSlotsByJob(transaction, { jobId: job.id });
       const activeCount = activeSlots?.count ?? 0;
-      const remainingReports = Math.max(0, lockedFinalReportTarget - completedReports);
+      const remainingReports = Math.max(0, lockedFinalReportTarget - releasedReports);
       const availableInviteSlots = remainingReports - activeCount;
 
       if (availableInviteSlots <= 0) {
         return {
           kind: "quota_exhausted" as const,
           activeCount,
-          completedReports,
+          releasedReports,
           limit: lockedFinalReportTarget,
         };
       }
 
-      const createdInterview = await createInterview(transaction, {
-        applicationId,
-        agentId: null,
-        type: interviewType,
-        metadata: { preEvaluationScore: aiResult.result.score, expiresAt },
-        status: "pending",
-        invitedAt: new Date(),
-        startedAt: null,
-        completedAt: null,
+      // Instead of creating an interview immediately, add candidate to pool
+      await updateApplicationStatus(transaction, {
+        id: applicationId,
+        status: "queued_for_batch",
       });
 
-      if (!createdInterview) {
-        throw new Error(`Failed to create interview for application: ${applicationId}`);
-      }
-
       return {
-        kind: "created" as const,
-        interview: createdInterview,
+        kind: "pooled" as const,
         activeCount,
-        completedReports,
+        releasedReports,
         limit: lockedFinalReportTarget,
         remainingReports,
         availableInviteSlots,
@@ -607,7 +559,7 @@ export function decideNextStep(
       log.result("decide", {
         action: "quota_exhausted",
         active: allocation.activeCount,
-        completedReports: allocation.completedReports,
+        releasedReports: allocation.releasedReports,
         limit: allocation.limit,
       });
 
@@ -629,76 +581,26 @@ export function decideNextStep(
     }
 
     if (allocation.kind === "existing") {
-      const candidate = await getUserById(db, { id: applicationData.application.candidateId });
-      if (candidate) {
-        const existingPayloadMetadata =
-          typeof allocation.interview.metadata === "object" &&
-          allocation.interview.metadata !== null
-            ? (allocation.interview.metadata as Record<string, unknown>)
-            : {};
-
-        const existingExpiresAt =
-          typeof existingPayloadMetadata.expiresAt === "string"
-            ? existingPayloadMetadata.expiresAt
-            : new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
-
-        const payload = notificationPayloadSchemas.interview_invited.parse({
-          applicationId,
-          interviewId: allocation.interview.id,
-          jobId: job.id,
-          jobTitle: job.title,
-          interviewType: allocation.interview.type,
-          expiresAt: existingExpiresAt,
-        });
-
-        await createInterviewInviteNotificationIfNeeded({
-          db,
-          candidateId: candidate.id,
-          payload,
-        });
-      }
-
       log.result("decide", {
         action: "already_invited",
         interviewId: allocation.interview.id,
       });
-      return {
-        action: "interview_created" as const,
-        interviewType: allocation.interview.type,
-      };
-    }
-
-    const interview = allocation.interview;
-
-    await initializeInterviewAgent(interview.id);
-
-    await updateApplicationStatus(db, {
-      id: applicationId,
-      status: "interview_invited",
-    });
-
-    const candidate = await getUserById(db, { id: applicationData.application.candidateId });
-    if (candidate) {
-      const payload = notificationPayloadSchemas.interview_invited.parse({
-        applicationId,
-        interviewId: interview.id,
-        jobId: job.id,
-        jobTitle: job.title,
-        interviewType,
-        expiresAt,
-      });
-      await createInterviewInviteNotificationIfNeeded({
-        db,
-        candidateId: candidate.id,
-        payload,
-      });
+      return { action: "already_invited" as const };
     }
 
     log.result("decide", {
-      action: "interview_created",
-      interviewType,
-      newStatus: "interview_invited",
+      action: "pooled",
+      newStatus: "queued_for_batch",
+      availableSlots: allocation.availableInviteSlots,
     });
-    return { action: "interview_created" as const, interviewType };
+
+    // Trigger batch check asynchronously — if pool is large enough, launch immediately
+    checkAndLaunchBatch(job.id).catch((error) => {
+      log.warn(
+        `Background batch check failed for job ${job.id}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    });
+
+    return { action: "pooled" as const };
   };
 }

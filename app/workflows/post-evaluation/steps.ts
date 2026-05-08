@@ -280,7 +280,7 @@ export function markApplicationEvaluatedExisting(interviewId: string, db: Sql) {
 
     await updateApplicationStatus(db, {
       id: interview.applicationId,
-      status: "evaluated",
+      status: "evaluated_held",
     });
   };
 }
@@ -496,7 +496,7 @@ export function markApplicationEvaluated(
   return async () => {
     await updateApplicationStatus(db, {
       id: interviewData.interview.applicationId,
-      status: "evaluated",
+      status: "evaluated_held",
     });
   };
 }

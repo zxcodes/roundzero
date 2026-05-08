@@ -25,9 +25,11 @@ export type ExperienceLevel = z.infer<typeof experienceLevelSchema>;
 export const applicationStatusSchema = z.enum([
   "applied",
   "pre_screening",
+  "queued_for_batch",
   "interview_invited",
   "interview_in_progress",
   "evaluated",
+  "evaluated_held",
   "shortlisted",
   "rejected",
   "withdrawn",
@@ -38,6 +40,7 @@ export type ApplicationStatus = z.infer<typeof applicationStatusSchema>;
 export const notificationTypeSchema = z.enum([
   "application_status_changed",
   "application_withdrawn",
+  "batch_ready",
   "report_ready",
   "interview_invited",
   "position_filled",
@@ -48,15 +51,17 @@ export const notificationTypeSchema = z.enum([
 
 /** Valid status transitions for applications.
  *
- * System auto-advances: applied -> pre_screening -> interview_invited -> interview_in_progress -> evaluated
+ * System auto-advances: applied -> pre_screening -> queued_for_batch -> interview_invited -> interview_in_progress -> evaluated_held -> evaluated
  * Companies can reject at any pre-evaluation stage and can move evaluated -> shortlisted | rejected
  * Candidates can withdraw from any non-terminal state.
  */
 export const APPLICATION_STATUS_TRANSITIONS: Record<ApplicationStatus, ApplicationStatus[]> = {
   applied: ["pre_screening", "rejected", "withdrawn"],
-  pre_screening: ["interview_invited", "rejected", "withdrawn"],
+  pre_screening: ["queued_for_batch", "rejected", "withdrawn"],
+  queued_for_batch: ["interview_invited", "rejected", "withdrawn"],
   interview_invited: ["interview_in_progress", "rejected", "withdrawn"],
-  interview_in_progress: ["evaluated", "rejected", "withdrawn"],
+  interview_in_progress: ["evaluated_held", "rejected", "withdrawn"],
+  evaluated_held: ["evaluated", "rejected"],
   evaluated: ["shortlisted", "rejected"],
   shortlisted: ["rejected"],
   rejected: [],

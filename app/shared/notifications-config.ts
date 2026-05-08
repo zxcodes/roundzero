@@ -25,6 +25,15 @@ const reportReadyPayloadSchema = baseApplicationPayloadSchema.extend({
   score: z.number().optional(),
 });
 
+const batchReadyPayloadSchema = z.object({
+  batchId: z.string().uuid(),
+  jobId: z.string().uuid(),
+  jobTitle: z.string().min(1),
+  reportCount: z.number().int().min(1),
+  topScore: z.number().optional(),
+  topCandidateName: z.string().optional(),
+});
+
 const interviewInvitedPayloadSchema = baseApplicationPayloadSchema.extend({
   interviewId: z.string().uuid(),
   interviewType: z.string().min(1),
@@ -42,6 +51,7 @@ const jobLifecyclePayloadSchema = z.object({
 export const notificationPayloadSchemas = {
   application_status_changed: applicationStatusChangedPayloadSchema,
   application_withdrawn: applicationWithdrawnPayloadSchema,
+  batch_ready: batchReadyPayloadSchema,
   report_ready: reportReadyPayloadSchema,
   interview_invited: interviewInvitedPayloadSchema,
   position_filled: positionFilledPayloadSchema,
