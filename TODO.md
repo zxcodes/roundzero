@@ -33,7 +33,6 @@
 - company dashboard needs a big overhaul. graphs, charts, recent reports, etc
 - see if we can use SST for deployments.
 - check for leaking info in api calls (emails, ids etc)
-- add a tailored tos and privacy policy.
 - think about pricing (per job flat fee, or monthly, etc. something that suits a hiring platform. subscription based might not work for this kind of platforms.)
 - for company full report, they should also see what they did in the chat, detecting ai responses, pasting, etc.
 - add a feedback option for people or requesting features etc.
@@ -41,9 +40,9 @@
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- add a tailored tos and privacy policy.-->
 <!--- changing from pre_screening to interview invite for pending roles throws an error.-->
 <!--- show interview invited button in applied job application pages if they have an existing interview, or in progress etc. basically like a status action.-->
-
 <!--- wire polar and pricing up. make sure to implement a really nice way of checking for an active sub throughout the app (context) perhaps?-->
 <!--- use frontier models for the entire ai layer in prod.-->
 <!--- see shadcn dashboard block for inspiration on company dashboard. (bunx shadcn@latest add dashboard-01)-->
