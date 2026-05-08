@@ -4,6 +4,7 @@ import {
   countApplicationsByCompany,
   getApplicationsByJob,
 } from "@/features/applications/queries/queries_sql";
+import { getActiveBatchesByCompany } from "@/features/batches/queries/queries_sql";
 import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
 import {
   countJobsByCompanyAndStatus,
@@ -35,13 +36,15 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
           shortlistRate: 0,
           roleHealth: [],
           reportHighlights: [],
+          activeBatches: [],
         };
       }
 
-      const [jobCounts, appCounts, jobsWithPipeline] = await Promise.all([
+      const [jobCounts, appCounts, jobsWithPipeline, activeBatches] = await Promise.all([
         countJobsByCompanyAndStatus(db, { companyId: company.id }),
         countApplicationsByCompany(db, { companyId: company.id }),
         getJobsWithPipelineByCompanyId(db, { companyId: company.id }),
+        getActiveBatchesByCompany(db, { companyId: company.id }),
       ]);
 
       const roleHealth = jobsWithPipeline
@@ -150,6 +153,7 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
         shortlistRate,
         roleHealth,
         reportHighlights: reportHighlights.slice(0, 8),
+        activeBatches: activeBatches ?? [],
       };
     }
 

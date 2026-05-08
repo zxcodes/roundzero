@@ -110,6 +110,42 @@ export async function getActiveBatchForJob(sql: Sql, args: getActiveBatchForJobA
     };
 }
 
+export const getActiveBatchesByCompanyQuery = `-- name: getActiveBatchesByCompany :many
+SELECT b.id, b.job_id, b.status, b.target_size, b.created_at, b.launched_at, b.released_at,
+       j.title AS job_title
+FROM job_batches b
+JOIN jobs j ON j.id = b.job_id
+WHERE j.company_id = $1 AND b.status = 'active'
+ORDER BY b.launched_at DESC`;
+
+export interface getActiveBatchesByCompanyArgs {
+    companyId: string;
+}
+
+export interface getActiveBatchesByCompanyRow {
+    id: string;
+    jobId: string;
+    status: string;
+    targetSize: number;
+    createdAt: Date;
+    launchedAt: Date | null;
+    releasedAt: Date | null;
+    jobTitle: string;
+}
+
+export async function getActiveBatchesByCompany(sql: Sql, args: getActiveBatchesByCompanyArgs): Promise<getActiveBatchesByCompanyRow[]> {
+    return (await sql.unsafe(getActiveBatchesByCompanyQuery, [args.companyId]).values()).map(row => ({
+        id: row[0],
+        jobId: row[1],
+        status: row[2],
+        targetSize: row[3],
+        createdAt: row[4],
+        launchedAt: row[5],
+        releasedAt: row[6],
+        jobTitle: row[7]
+    }));
+}
+
 export const getFormingBatchForJobQuery = `-- name: getFormingBatchForJob :one
 SELECT id, job_id, status, target_size, created_at, launched_at, released_at
 FROM job_batches

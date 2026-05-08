@@ -16,6 +16,7 @@ import { BATCH_CONFIG } from "@/features/batches/config";
 import {
   assignInterviewToBatch,
   createBatch,
+  getActiveBatchForJob,
   getBatchDetail,
   getFormingBatchForJob,
   getInterviewsByBatchWithCandidate,
@@ -234,6 +235,28 @@ export async function maybeLaunchNextBatch(jobId: string): Promise<PoolCheckResu
 }
 
 // ─── Server functions ────────────────────────────────────────────────────────
+
+const jobIdSchema = z.object({ jobId: z.string().uuid() });
+
+export const getActiveBatchForJobServer = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .inputValidator(zodValidator(jobIdSchema))
+  .handler(async ({ data, context }) => {
+    const db = getDb();
+
+    const company = await getCompanyByOwnerId(db, { ownerId: context.userId });
+    if (!company) {
+      throw new Error("No company found");
+    }
+
+    const job = await getJobById(db, { id: data.jobId });
+    if (!job || job.companyId !== company.id) {
+      throw new Error("Job not found or not authorized");
+    }
+
+    const batch = await getActiveBatchForJob(db, { jobId: data.jobId });
+    return batch;
+  });
 
 const batchIdSchema = z.object({ batchId: z.string().uuid() });
 

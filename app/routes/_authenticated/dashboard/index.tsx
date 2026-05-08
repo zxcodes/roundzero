@@ -216,6 +216,41 @@ function CompanyDashboardSection({ metrics }: { metrics: CompanyMetrics }) {
         </Card>
       </div>
 
+      {metrics.activeBatches.length > 0 ? (
+        <Card className="border-primary/20 bg-linear-to-br from-card via-card to-primary/5">
+          <CardHeader>
+            <CardTitle>Active Batches</CardTitle>
+            <CardDescription>
+              Batches currently in progress — reports will release when all candidates respond or
+              the batch window closes.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {metrics.activeBatches.map((batch) => (
+              <div
+                key={batch.id}
+                className="flex items-center justify-between gap-3 rounded-lg border bg-background/80 p-3"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{batch.jobTitle}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {batch.targetSize} candidates · launched{" "}
+                    {batch.launchedAt
+                      ? new Date(batch.launchedAt).toLocaleDateString()
+                      : "recently"}
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/dashboard/job-batches/$batchId" params={{ batchId: batch.id }}>
+                    View batch
+                  </Link>
+                </Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
+
       <div className="grid gap-4 xl:grid-cols-3">
         <Card className="xl:col-span-2">
           <CardHeader>
