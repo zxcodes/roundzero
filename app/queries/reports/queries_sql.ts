@@ -3,7 +3,7 @@ import { Sql } from "postgres";
 export const createReportQuery = `-- name: createReport :one
 INSERT INTO reports (interview_id, application_id, summary, strengths, weaknesses, insights, evidence, screening_answers, scores, recommendation)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-RETURNING id, interview_id, application_id, summary, strengths, weaknesses, insights, evidence, screening_answers, scores, recommendation, created_at`;
+RETURNING id, interview_id, application_id, summary, strengths, weaknesses, insights, evidence, screening_answers, scores, recommendation, released_at, created_at`;
 
 export interface createReportArgs {
     interviewId: string;
@@ -30,6 +30,7 @@ export interface createReportRow {
     screeningAnswers: any;
     scores: any;
     recommendation: string;
+    releasedAt: Date | null;
     createdAt: Date;
 }
 
@@ -51,12 +52,13 @@ export async function createReport(sql: Sql, args: createReportArgs): Promise<cr
         screeningAnswers: row[8],
         scores: row[9],
         recommendation: row[10],
-        createdAt: row[11]
+        releasedAt: row[11],
+        createdAt: row[12]
     };
 }
 
 export const getReportByInterviewIdQuery = `-- name: getReportByInterviewId :one
-SELECT id, interview_id, application_id, summary, strengths, weaknesses, insights, evidence, screening_answers, scores, recommendation, created_at
+SELECT id, interview_id, application_id, summary, strengths, weaknesses, insights, evidence, screening_answers, scores, recommendation, released_at, created_at
 FROM reports
 WHERE interview_id = $1`;
 
@@ -76,6 +78,7 @@ export interface getReportByInterviewIdRow {
     screeningAnswers: any;
     scores: any;
     recommendation: string;
+    releasedAt: Date | null;
     createdAt: Date;
 }
 
@@ -97,7 +100,8 @@ export async function getReportByInterviewId(sql: Sql, args: getReportByIntervie
         screeningAnswers: row[8],
         scores: row[9],
         recommendation: row[10],
-        createdAt: row[11]
+        releasedAt: row[11],
+        createdAt: row[12]
     };
 }
 
