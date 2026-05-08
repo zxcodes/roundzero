@@ -67,12 +67,17 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
 
         if (fullyResolved) {
           await step.do("signal_batch_complete", async () => {
-            const instance = await env.BATCH_ORCHESTRATION.get(batchId);
-            await instance.sendEvent({
-              type: "batch-reports-complete",
-              payload: { batchId },
-            });
-            log.info(`Sent early completion signal to batch ${batchId}`);
+            try {
+              const instance = await env.BATCH_ORCHESTRATION.get(batchId);
+              await instance.sendEvent({
+                type: "batch-reports-complete",
+                payload: { batchId },
+              });
+              log.info(`Sent early completion signal to batch ${batchId}`);
+            } catch {
+              // Batch may have already timed out and released — this is fine
+              log.info(`Batch ${batchId} already released, no signal needed`);
+            }
           });
         } else {
           log.info(`Report held in batch ${batchId}, waiting for remaining candidates`);

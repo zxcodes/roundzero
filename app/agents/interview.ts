@@ -13,7 +13,10 @@ import {
   type UIMessage,
 } from "ai";
 import { z } from "zod";
-import { shouldAutoExpireInterview } from "@/features/interviews/shared/expiry";
+import {
+  getInterviewExpiresAt,
+  shouldAutoExpireInterview,
+} from "@/features/interviews/shared/expiry";
 import {
   completeInterview,
   expireInterview,
@@ -395,7 +398,42 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
     // Hydrate from DB so candidate name, latest pre-eval data, and requirements
     // stay in sync with the source of truth.
     await this.hydrateContextFromDb(input.interviewId);
+
+    // Schedule expiry alarm using Agents SDK built-in scheduling
+    // (replaces handrolled request-time polling)
+    const db = getDb();
+    const interview = await getInterviewContextById(db, { id: input.interviewId });
+    if (interview && interview.status !== "expired" && interview.status !== "completed") {
+      const expiresAt = getInterviewExpiresAt(interview.metadata);
+      if (expiresAt) {
+        const schedules = await this.listSchedules();
+        const existing = schedules.find((s) => s.callback === "expireInterview");
+        if (!existing) {
+          const delaySeconds = Math.max(0, Math.ceil((expiresAt.getTime() - Date.now()) / 1000));
+          await this.schedule(delaySeconds, "expireInterview", {
+            interviewId: input.interviewId,
+          });
+        }
+      }
+    }
+
     return toStateResponse(this.state, toTranscript(this.messages));
+  }
+
+  async expireInterview(payload: { interviewId: string }) {
+    const db = getDb();
+    const interview = await getInterviewContextById(db, { id: payload.interviewId });
+    if (!interview) {
+      return;
+    }
+    if (interview.status === "pending" || interview.status === "in_progress") {
+      await expireInterview(db, { id: payload.interviewId });
+      this.setState({
+        ...this.state,
+        status: "expired",
+        updatedAt: toNow(),
+      });
+    }
   }
 
   @callable()
