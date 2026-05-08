@@ -125,7 +125,7 @@ describe("application status transitions", () => {
     expect(isValidTransition("applied", "evaluated")).toBe(false);
   });
 
-  it("pre_screening → interview_invited (valid)", async () => {
+  it("pre_screening → queued_for_batch (valid)", async () => {
     const { company } = await seedCompany();
     const candidate = await seedUser({ role: "candidate" });
     const job = await makeOpenJob(company.id);
@@ -138,7 +138,31 @@ describe("application status transitions", () => {
     });
     await updateApplicationStatus(sql, { id: app!.id, status: "pre_screening" });
 
-    expect(isValidTransition("pre_screening", "interview_invited")).toBe(true);
+    expect(isValidTransition("pre_screening", "queued_for_batch")).toBe(true);
+
+    const updated = await updateApplicationStatus(sql, {
+      id: app!.id,
+      status: "queued_for_batch",
+    });
+    expect(updated).not.toBeNull();
+    expect(updated!.status).toBe("queued_for_batch");
+  });
+
+  it("queued_for_batch → interview_invited (valid)", async () => {
+    const { company } = await seedCompany();
+    const candidate = await seedUser({ role: "candidate" });
+    const job = await makeOpenJob(company.id);
+    const app = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: {},
+      status: "applied",
+    });
+    await updateApplicationStatus(sql, { id: app!.id, status: "pre_screening" });
+    await updateApplicationStatus(sql, { id: app!.id, status: "queued_for_batch" });
+
+    expect(isValidTransition("queued_for_batch", "interview_invited")).toBe(true);
 
     const updated = await updateApplicationStatus(sql, {
       id: app!.id,
@@ -146,6 +170,22 @@ describe("application status transitions", () => {
     });
     expect(updated).not.toBeNull();
     expect(updated!.status).toBe("interview_invited");
+  });
+
+  it("pre_screening → interview_invited is invalid (must go through queued_for_batch)", async () => {
+    const { company } = await seedCompany();
+    const candidate = await seedUser({ role: "candidate" });
+    const job = await makeOpenJob(company.id);
+    const app = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: {},
+      status: "applied",
+    });
+    await updateApplicationStatus(sql, { id: app!.id, status: "pre_screening" });
+
+    expect(isValidTransition("pre_screening", "interview_invited")).toBe(false);
   });
 
   it("rejected is terminal — DB still allows update but business logic blocks it", async () => {
@@ -168,7 +208,79 @@ describe("application status transitions", () => {
     expect(isValidTransition("rejected", "rejected")).toBe(false);
   });
 
-  it("full lifecycle: applied → pre_screening → interview_invited → interview_in_progress → evaluated → rejected", async () => {
+  it("interview_in_progress → evaluated_held (valid)", async () => {
+    const { company } = await seedCompany();
+    const candidate = await seedUser({ role: "candidate" });
+    const job = await makeOpenJob(company.id);
+    const app = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: {},
+      status: "applied",
+    });
+    await updateApplicationStatus(sql, { id: app!.id, status: "interview_invited" });
+    await updateApplicationStatus(sql, { id: app!.id, status: "interview_in_progress" });
+
+    expect(isValidTransition("interview_in_progress", "evaluated_held")).toBe(true);
+
+    const updated = await updateApplicationStatus(sql, {
+      id: app!.id,
+      status: "evaluated_held",
+    });
+    expect(updated).not.toBeNull();
+    expect(updated!.status).toBe("evaluated_held");
+  });
+
+  it("evaluated_held → evaluated (valid — batch release)", async () => {
+    const { company } = await seedCompany();
+    const candidate = await seedUser({ role: "candidate" });
+    const job = await makeOpenJob(company.id);
+    const app = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: {},
+      status: "applied",
+    });
+    await updateApplicationStatus(sql, { id: app!.id, status: "interview_in_progress" });
+    await updateApplicationStatus(sql, { id: app!.id, status: "evaluated_held" });
+
+    expect(isValidTransition("evaluated_held", "evaluated")).toBe(true);
+
+    const updated = await updateApplicationStatus(sql, {
+      id: app!.id,
+      status: "evaluated",
+    });
+    expect(updated).not.toBeNull();
+    expect(updated!.status).toBe("evaluated");
+  });
+
+  it("evaluated_held → rejected (valid)", async () => {
+    const { company } = await seedCompany();
+    const candidate = await seedUser({ role: "candidate" });
+    const job = await makeOpenJob(company.id);
+    const app = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: {},
+      status: "applied",
+    });
+    await updateApplicationStatus(sql, { id: app!.id, status: "interview_in_progress" });
+    await updateApplicationStatus(sql, { id: app!.id, status: "evaluated_held" });
+
+    expect(isValidTransition("evaluated_held", "rejected")).toBe(true);
+
+    const updated = await updateApplicationStatus(sql, {
+      id: app!.id,
+      status: "rejected",
+    });
+    expect(updated).not.toBeNull();
+    expect(updated!.status).toBe("rejected");
+  });
+
+  it("full lifecycle: applied → pre_screening → queued_for_batch → interview_invited → interview_in_progress → evaluated_held → evaluated → rejected", async () => {
     const { company } = await seedCompany();
     const candidate = await seedUser({ role: "candidate" });
     const job = await makeOpenJob(company.id);
@@ -183,20 +295,26 @@ describe("application status transitions", () => {
     const step1 = await updateApplicationStatus(sql, { id: app!.id, status: "pre_screening" });
     expect(step1!.status).toBe("pre_screening");
 
-    const step2 = await updateApplicationStatus(sql, { id: app!.id, status: "interview_invited" });
-    expect(step2!.status).toBe("interview_invited");
+    const step2 = await updateApplicationStatus(sql, { id: app!.id, status: "queued_for_batch" });
+    expect(step2!.status).toBe("queued_for_batch");
 
-    const step3 = await updateApplicationStatus(sql, {
+    const step3 = await updateApplicationStatus(sql, { id: app!.id, status: "interview_invited" });
+    expect(step3!.status).toBe("interview_invited");
+
+    const step4 = await updateApplicationStatus(sql, {
       id: app!.id,
       status: "interview_in_progress",
     });
-    expect(step3!.status).toBe("interview_in_progress");
+    expect(step4!.status).toBe("interview_in_progress");
 
-    const step4 = await updateApplicationStatus(sql, { id: app!.id, status: "evaluated" });
-    expect(step4!.status).toBe("evaluated");
+    const step5 = await updateApplicationStatus(sql, { id: app!.id, status: "evaluated_held" });
+    expect(step5!.status).toBe("evaluated_held");
 
-    const step5 = await updateApplicationStatus(sql, { id: app!.id, status: "rejected" });
-    expect(step5!.status).toBe("rejected");
+    const step6 = await updateApplicationStatus(sql, { id: app!.id, status: "evaluated" });
+    expect(step6!.status).toBe("evaluated");
+
+    const step7 = await updateApplicationStatus(sql, { id: app!.id, status: "rejected" });
+    expect(step7!.status).toBe("rejected");
   });
 });
 
