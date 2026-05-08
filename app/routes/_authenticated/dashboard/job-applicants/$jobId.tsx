@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CompanyJobApplicantsList } from "@/features/applications/components/company-job-applicants-list";
 import { getJobApplicants, getJobFunnelMetrics } from "@/features/applications/server/functions";
+import { getActiveBatchForJobServer } from "@/features/batches/server/functions";
 import { getJob } from "@/features/jobs/server/functions";
 import { validateUuidParams } from "@/shared/validation";
 
@@ -48,28 +49,33 @@ export const Route = createFileRoute("/_authenticated/dashboard/job-applicants/$
     }
     const job: JobDetail = jobResult;
 
-    const [applicants, funnel] = await Promise.all([
+    const [applicants, funnel, activeBatch] = await Promise.all([
       getJobApplicants({ data: { jobId: params.jobId } }),
       getJobFunnelMetrics({ data: { jobId: params.jobId } }),
+      getActiveBatchForJobServer({ data: { jobId: params.jobId } }),
     ]);
-    return { job, applicants, funnel };
+    return { job, applicants, funnel, activeBatch };
   },
   pendingComponent: DashboardJobApplicantsSkeleton,
   component: JobApplicantsPage,
 });
 
 function JobApplicantsPage() {
-  const { job, applicants, funnel } = Route.useLoaderData();
+  const { job, applicants, funnel, activeBatch } = Route.useLoaderData();
   const [activeTab, setActiveTab] = useState<"released" | "active" | "queued">("released");
 
-  const released = applicants.filter((a) => a.reportReleasedAt !== null);
+  const released = applicants.filter(
+    (a: (typeof applicants)[number]) => a.reportReleasedAt !== null,
+  );
   const active = applicants.filter(
-    (a) =>
+    (a: (typeof applicants)[number]) =>
       a.status === "interview_invited" ||
       a.status === "interview_in_progress" ||
       a.status === "evaluated_held",
   );
-  const queued = applicants.filter((a) => a.status === "queued_for_batch");
+  const queued = applicants.filter(
+    (a: (typeof applicants)[number]) => a.status === "queued_for_batch",
+  );
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -189,7 +195,7 @@ function JobApplicantsPage() {
       {activeTab === "released" ? (
         <CompanyJobApplicantsList applicants={released} />
       ) : activeTab === "active" ? (
-        <ActiveBatchPanel applicants={active} />
+        <ActiveBatchPanel applicants={active} batchId={activeBatch?.id ?? null} />
       ) : (
         <QueuedPanel count={queued.length} />
       )}
@@ -199,8 +205,10 @@ function JobApplicantsPage() {
 
 function ActiveBatchPanel({
   applicants,
+  batchId,
 }: {
   applicants: Awaited<ReturnType<typeof getJobApplicants>>;
+  batchId: string | null;
 }) {
   if (applicants.length === 0) {
     return (
@@ -229,9 +237,18 @@ function ActiveBatchPanel({
               {completed} of {applicants.length} completed
             </p>
           </div>
-          <Badge variant="secondary" className="font-mono text-[10px]">
-            {inProgress} in progress · {invited} invited
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="font-mono text-[10px]">
+              {inProgress} in progress · {invited} invited
+            </Badge>
+            {batchId ? (
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/dashboard/job-batches/$batchId" params={{ batchId }}>
+                  View batch
+                </Link>
+              </Button>
+            ) : null}
+          </div>
         </div>
         <div className="h-2 overflow-hidden rounded-full bg-muted">
           <div
