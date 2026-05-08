@@ -319,8 +319,9 @@ function CompanyDashboardSection({ metrics }: { metrics: CompanyMetrics }) {
                     <TableCell className="font-medium">{role.title}</TableCell>
                     <TableCell>{role.applicants}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">
-                      A:{role.applied} / P:{role.preScreening} / I:{role.invited} / IP:
-                      {role.inProgress} / E:{role.evaluated} / S:{role.shortlisted}
+                      A:{role.applied} / P:{role.preScreening} / Q:{role.queuedForBatch} / I:
+                      {role.invited} / IP:{role.inProgress} / EH:{role.evaluatedHeld} / E:
+                      {role.evaluated} / S:{role.shortlisted}
                     </TableCell>
                     <TableCell>
                       {role.reportsCompleted}/{role.finalReportTarget}
@@ -360,9 +361,9 @@ function CompanyDashboardSection({ metrics }: { metrics: CompanyMetrics }) {
 
       <Card className="overflow-hidden border-primary/20 bg-linear-to-br from-card via-card to-secondary/30">
         <CardHeader>
-          <CardTitle>Reports Studio</CardTitle>
+          <CardTitle>Released Batches</CardTitle>
           <CardDescription>
-            Highest-signal evaluations for quick shortlist/reject decisions.
+            Evaluations are released in batches so you can compare candidates side-by-side.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -446,9 +447,10 @@ function CompanyDashboardSection({ metrics }: { metrics: CompanyMetrics }) {
           ) : (
             <Empty className="border">
               <EmptyHeader>
-                <EmptyTitle>No report highlights yet</EmptyTitle>
+                <EmptyTitle>No released batches yet</EmptyTitle>
                 <EmptyDescription>
-                  As interviews complete, top evaluation cards will appear here.
+                  When a batch of candidate evaluations is ready, it will appear here as a ranked
+                  list.
                 </EmptyDescription>
               </EmptyHeader>
             </Empty>

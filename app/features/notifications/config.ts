@@ -54,12 +54,16 @@ const formatApplicationStatusLabel = (status: z.infer<typeof applicationStatusSc
       return "Applied";
     case "pre_screening":
       return "Pre-screening";
+    case "queued_for_batch":
+      return "Queued for evaluation";
     case "interview_invited":
       return "Interview invited";
     case "interview_in_progress":
       return "Interview in progress";
     case "evaluated":
       return "Evaluated";
+    case "evaluated_held":
+      return "Evaluation complete";
     case "shortlisted":
       return "Shortlisted";
     case "rejected":
@@ -79,10 +83,14 @@ const statusToPastTense = (status: z.infer<typeof applicationStatusSchema>) => {
       return "rejected your application";
     case "evaluated":
       return "completed your evaluation";
+    case "evaluated_held":
+      return "completed your evaluation";
     case "interview_invited":
       return "invited you to interview";
     case "interview_in_progress":
       return "marked your interview in progress";
+    case "queued_for_batch":
+      return "queued you for evaluation";
     case "pre_screening":
       return "moved you to pre-screening";
     case "applied":
@@ -126,6 +134,25 @@ export const getNotificationPresentation = (notification: { type: string; payloa
       body: `Your application for ${payload.data.jobTitle} at ${payload.data.companyName} is now ${formatApplicationStatusLabel(payload.data.status).toLowerCase()}.`,
       to: "/dashboard/application/$applicationId" as const,
       params: { applicationId: payload.data.applicationId },
+    };
+  }
+
+  if (type === "batch_ready") {
+    const payload = notificationPayloadSchemas.batch_ready.safeParse(
+      toRecord(notification.payload),
+    );
+    if (!payload.success) {
+      return null;
+    }
+
+    return {
+      type,
+      tone: "border-success/20 bg-success/10 text-success",
+      icon: Rocket01Icon,
+      title: `Batch ready: ${payload.data.jobTitle}`,
+      body: `${payload.data.reportCount} candidate evaluation${payload.data.reportCount === 1 ? "" : "s"} ready for review.`,
+      to: "/dashboard/job-batches/$batchId" as const,
+      params: { batchId: payload.data.batchId },
     };
   }
 
