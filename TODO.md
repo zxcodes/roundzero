@@ -19,7 +19,6 @@
 - detect failures in the whole pipeline and give candidates or companies an option to retry. make as failure proof as possible. specifically in model responses. 
 - strictly make agent ask interview questions from the profile and then from the actual job. right now it's not even close. asks vague questions. check if we're feeding the agent context the right way.
 - in post eval add another slop check to review interview transcript
-- changing from pre_screening to interview invite for pending roles throws an error.
 - too many applicant status enums (follwup enum etc, only keep using ones by checking end to end flow)
 - some company email reports are really bad and some are entirely missing for some flows. they have zero styling. review every single resend email template and align with rest of the app.
 - in post eval, refine the scores using the actual agent conv and add it to the final report.
@@ -42,6 +41,7 @@
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- changing from pre_screening to interview invite for pending roles throws an error.-->
 <!--- show interview invited button in applied job application pages if they have an existing interview, or in progress etc. basically like a status action.-->
 
 <!--- wire polar and pricing up. make sure to implement a really nice way of checking for an active sub throughout the app (context) perhaps?-->
