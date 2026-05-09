@@ -55,6 +55,6 @@ app/
 
 ## Documentation
 
-- **[platform.md](platform.md)** — Product specification
+- **[PLATFORM.md](PLATFORM.md)** — Product specification
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** — Technical architecture
 - **[AGENTS.md](AGENTS.md)** — Agent/AI coding conventions
