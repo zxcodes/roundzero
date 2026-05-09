@@ -107,7 +107,7 @@ JOIN pre_evaluations pe ON pe.application_id = a.id
 JOIN users u ON u.id = a.candidate_id AND u.deleted_at IS NULL
 WHERE a.job_id = $1
   AND a.status = 'pre_screening'
-  AND pe.next_step IN ('interview_invited', 'ask_followups')
+  AND pe.next_step = 'interview_invited'
   AND NOT EXISTS (
     SELECT 1
     FROM interviews i

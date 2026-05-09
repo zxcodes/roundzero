@@ -84,7 +84,7 @@ describe("interview queries", () => {
     const interview = await createInterview(sql, {
       applicationId: setup.applicationId,
       agentId: null,
-      type: "quick_eval",
+      type: "full",
       metadata: {},
       status: "pending",
       invitedAt: new Date(),

@@ -1,6 +1,5 @@
 ## TODO
 
-- slop checks need fixing. it even flags if resume and profile are similar.
 - prevent dark mode from applying to landing pages.
 - shortlisting/rejecting actions should nicely accessible on top of each report for easy auctioning. right now they're buried under drop downs.
 - copy agent testing patterns from opencode, pi etc. also see how they harden their prompts.
@@ -43,6 +42,7 @@
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- slop checks need fixing. it even flags if resume and profile are similar.-->
 <!--- add a tailored tos and privacy policy.-->
 <!--- changing from pre_screening to interview invite for pending roles throws an error.-->
 <!--- show interview invited button in applied job application pages if they have an existing interview, or in progress etc. basically like a status action.-->
