@@ -1,5 +1,6 @@
 ## TODO
 
+- prevent dark mode from applying to landing pages.
 - shortlisting/rejecting actions should nicely accessible on top of each report for easy auctioning. right now they're buried under drop downs.
 - copy agent testing patterns from opencode, pi etc. also see how they harden their prompts.
 - validate open router models using their api key in prod ci so we detect non existent models beforehand.
