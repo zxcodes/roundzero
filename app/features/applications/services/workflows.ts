@@ -165,8 +165,6 @@ export const updateApplicationStatusWorkflow = async (
       applicationId: application.id,
     });
 
-    const interviewType =
-      latestPreEvaluation?.nextStep === "interview_invited" ? "full" : "quick_eval";
     const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString();
 
     const interview =
@@ -174,7 +172,7 @@ export const updateApplicationStatusWorkflow = async (
       (await createInterview(db, {
         applicationId: application.id,
         agentId: null,
-        type: interviewType,
+        type: "full",
         metadata: { preEvaluationScore: latestPreEvaluation?.score ?? null, expiresAt },
         status: "pending",
         invitedAt: new Date(),

@@ -61,7 +61,7 @@ describe("getNotificationsByUser", () => {
         interviewId: crypto.randomUUID(),
         jobId: crypto.randomUUID(),
         jobTitle: "Designer",
-        interviewType: "quick_eval",
+        interviewType: "full",
         expiresAt: new Date().toISOString(),
       },
     });
@@ -140,7 +140,7 @@ describe("notification read state", () => {
         interviewId: crypto.randomUUID(),
         jobId: crypto.randomUUID(),
         jobTitle: "Staff Engineer",
-        interviewType: "quick_eval",
+        interviewType: "full",
         expiresAt: new Date().toISOString(),
       },
     });
@@ -202,7 +202,7 @@ describe("notification email delivery state", () => {
         interviewId: crypto.randomUUID(),
         jobId: crypto.randomUUID(),
         jobTitle: "Designer",
-        interviewType: "quick_eval",
+        interviewType: "full",
         expiresAt: new Date().toISOString(),
       },
     });

@@ -234,7 +234,7 @@ async function seedApplicationsAndReports(companyId: string, jobs: SeedJob[], ca
             ${interviewId},
             ${applicationId},
             ${`agent-${interviewId}`},
-            ${pick(["full", "quick_eval"] as const, i)},
+            ${"full"},
             ${sql.json({ expiresAt: expiresAt.toISOString(), preEvaluationScore: randomInt(`${interviewId}-pre`, 55, 92) })},
             ${interviewStatus},
             ${startedAt},
