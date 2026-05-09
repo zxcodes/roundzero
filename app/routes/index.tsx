@@ -1114,7 +1114,7 @@ const faq = [
     q: "How is RoundZero different from other AI hiring platforms?",
     a: "Most platforms rely on video interviews or resume screening. RoundZero uses adaptive chat-based interviews — Zero follows up on vague answers, cross-references claims, and adjusts questions based on the role and candidate responses. You get rich, context-specific insights that catch inconsistencies and validate genuine experience. No scheduling friction, no video anxiety, and candidates show who they really are.",
   },
-  ];
+];
 
 function Faq() {
   return (
