@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { BATCH_CONFIG } from "@/features/batches/config";
-import { checkAndLaunchBatch, maybeLaunchNextBatch } from "@/features/batches/server/functions";
+import { checkAndLaunchBatch, maybeLaunchNextBatch } from "@/features/batches/server/orchestration";
 import {
   getTestDb,
   makeTestResumeKey,
