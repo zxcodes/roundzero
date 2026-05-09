@@ -1,4 +1,4 @@
-import { appEnv } from "./env.app";
+import { isDev } from "./env.app";
 
 function getPublicAssetBaseUrl() {
   const value =
@@ -13,7 +13,7 @@ function isDevEnvironment(): boolean {
   if (typeof window !== "undefined") {
     return import.meta.env?.DEV === true;
   }
-  return appEnv.NODE_ENV === "development";
+  return isDev;
 }
 
 export function getPublicAssetUrl(objectKey: string) {
