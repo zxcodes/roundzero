@@ -1,5 +1,3 @@
-import { isDev } from "./env.app";
-
 function getPublicAssetBaseUrl() {
   const value =
     typeof window === "undefined"
@@ -7,13 +5,6 @@ function getPublicAssetBaseUrl() {
       : import.meta.env.VITE_PUBLIC_ASSET_BASE_URL;
 
   return value?.replace(/\/+$/, "") ?? null;
-}
-
-function isDevEnvironment(): boolean {
-  if (typeof window !== "undefined") {
-    return import.meta.env?.DEV === true;
-  }
-  return isDev;
 }
 
 export function getPublicAssetUrl(objectKey: string) {
@@ -28,7 +19,7 @@ export function getPublicAssetUrl(objectKey: string) {
 
   // In local dev, serve R2 objects through the local API proxy instead of
   // the production CDN (which cannot access the local Miniflare bucket).
-  if (isDevEnvironment()) {
+  if (import.meta.env?.DEV) {
     return `/api/assets/${encodeURIComponent(objectKey)}`;
   }
 
