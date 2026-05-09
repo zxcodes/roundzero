@@ -5,7 +5,7 @@ import mammoth from "mammoth";
 import type { Sql } from "postgres";
 import { extractText, getDocumentProxy } from "unpdf";
 import { z } from "zod";
-import { checkAndLaunchBatch } from "@/features/batches/server/functions";
+import { checkAndLaunchBatch } from "@/features/batches/server/orchestration";
 import { CLASSIFY_JOB_SYSTEM_PROMPT, jobTypeSchema } from "@/prompts/classify-job";
 import { CREATIVE_EVAL_SYSTEM_PROMPT } from "@/prompts/evaluate/creative";
 import { CUSTOMER_FACING_EVAL_SYSTEM_PROMPT } from "@/prompts/evaluate/customer-facing";

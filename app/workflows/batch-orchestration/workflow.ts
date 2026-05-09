@@ -1,5 +1,8 @@
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers";
-import { maybeLaunchNextBatch, releaseBatchAndNotify } from "@/features/batches/server/functions";
+import {
+  maybeLaunchNextBatch,
+  releaseBatchAndNotify,
+} from "@/features/batches/server/orchestration";
 import { createWorkflowLogger } from "@/shared/logger";
 
 type BatchPayload = {

@@ -1,5 +1,5 @@
 import { env, WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers";
-import { isBatchFullyResolved } from "@/features/batches/server/functions";
+import { isBatchFullyResolved } from "@/features/batches/server/release";
 import { updateApplicationStatus } from "@/queries/applications/queries_sql";
 import { getInterviewContextById } from "@/queries/interviews/queries_sql";
 import { getDb } from "@/shared/db";
