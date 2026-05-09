@@ -1,10 +1,11 @@
+import { appEnv } from "@/shared/env.app";
+
 /** Batch orchestration configuration.
  *
  * All timing and sizing constants live here so they can be tuned in one place.
  * Change values and redeploy — no env vars needed.
  */
-const isDevelopmentEnvironment =
-  typeof process !== "undefined" && process.env.NODE_ENV === "development";
+const isDevelopmentEnvironment = appEnv.NODE_ENV === "development";
 
 export const BATCH_CONFIG = {
   /** How long a candidate has to complete their interview after batch launch. */
