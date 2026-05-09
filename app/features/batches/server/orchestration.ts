@@ -6,6 +6,7 @@
  */
 import { env } from "cloudflare:workers";
 import type { Sql } from "postgres";
+import { getUserById } from "@/features/auth/queries/queries_sql";
 import { BATCH_CONFIG } from "@/features/batches/config";
 import {
   assignInterviewToBatch,
@@ -20,7 +21,6 @@ import {
 } from "@/features/interviews/queries/queries_sql";
 import { getJobById } from "@/features/jobs/queries/queries_sql";
 import { createNotification } from "@/features/notifications/queries/queries_sql";
-import { getUserById } from "@/queries/auth/queries_sql";
 import { getDb } from "@/shared/db";
 import { initializeInterviewAgent } from "@/shared/interview-agent-client";
 import { notificationPayloadSchemas } from "@/shared/notifications-config";

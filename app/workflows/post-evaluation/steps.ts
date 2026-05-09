@@ -5,17 +5,17 @@ import type { Sql } from "postgres";
 import { jsx } from "react/jsx-runtime";
 import { Resend } from "resend";
 import { z } from "zod";
+import { updateApplicationStatus } from "@/features/applications/queries/queries_sql";
+import { getUserById } from "@/features/auth/queries/queries_sql";
+import { getInterviewContextById } from "@/features/interviews/queries/queries_sql";
 import { ReportReadyEmailTemplate } from "@/features/notifications/components/report-ready-email-template";
-import { updateApplicationStatus } from "@/queries/applications/queries_sql";
-import { getUserById } from "@/queries/auth/queries_sql";
-import { getInterviewContextById } from "@/queries/interviews/queries_sql";
 import {
   createNotification,
   markNotificationEmailDelivered,
   markNotificationEmailFailed,
   markNotificationEmailSkipped,
-} from "@/queries/notifications/queries_sql";
-import { createReport, getReportByInterviewId } from "@/queries/reports/queries_sql";
+} from "@/features/notifications/queries/queries_sql";
+import { createReport, getReportByInterviewId } from "@/features/reports/queries/queries_sql";
 import { getInterviewAgentState } from "@/shared/interview-agent-client";
 import type { createWorkflowLogger } from "@/shared/logger";
 import { notificationPayloadSchemas } from "@/shared/notifications-config";
