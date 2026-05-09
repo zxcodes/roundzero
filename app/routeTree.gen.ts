@@ -33,6 +33,7 @@ import { Route as AuthenticatedDashboardApplicationsRouteImport } from './routes
 import { Route as AuthenticatedDashboardJobsIndexRouteImport } from './routes/_authenticated/dashboard/jobs/index'
 import { Route as AuthenticatedDashboardJobsNewRouteImport } from './routes/_authenticated/dashboard/jobs/new'
 import { Route as AuthenticatedDashboardJobsJobIdRouteImport } from './routes/_authenticated/dashboard/jobs/$jobId'
+import { Route as AuthenticatedDashboardJobBatchesBatchIdRouteImport } from './routes/_authenticated/dashboard/job-batches/$batchId'
 import { Route as AuthenticatedDashboardJobApplicantsJobIdRouteImport } from './routes/_authenticated/dashboard/job-applicants/$jobId'
 import { Route as AuthenticatedDashboardApplicationApplicationIdRouteImport } from './routes/_authenticated/dashboard/application/$applicationId'
 import { Route as AuthenticatedDashboardApplicantsApplicationIdRouteImport } from './routes/_authenticated/dashboard/applicants/$applicationId'
@@ -168,6 +169,12 @@ const AuthenticatedDashboardJobsJobIdRoute =
     path: '/jobs/$jobId',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
+const AuthenticatedDashboardJobBatchesBatchIdRoute =
+  AuthenticatedDashboardJobBatchesBatchIdRouteImport.update({
+    id: '/job-batches/$batchId',
+    path: '/job-batches/$batchId',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
 const AuthenticatedDashboardJobApplicantsJobIdRoute =
   AuthenticatedDashboardJobApplicantsJobIdRouteImport.update({
     id: '/job-applicants/$jobId',
@@ -218,6 +225,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/applicants/$applicationId': typeof AuthenticatedDashboardApplicantsApplicationIdRoute
   '/dashboard/application/$applicationId': typeof AuthenticatedDashboardApplicationApplicationIdRoute
   '/dashboard/job-applicants/$jobId': typeof AuthenticatedDashboardJobApplicantsJobIdRoute
+  '/dashboard/job-batches/$batchId': typeof AuthenticatedDashboardJobBatchesBatchIdRoute
   '/dashboard/jobs/$jobId': typeof AuthenticatedDashboardJobsJobIdRoute
   '/dashboard/jobs/new': typeof AuthenticatedDashboardJobsNewRoute
   '/dashboard/jobs/': typeof AuthenticatedDashboardJobsIndexRoute
@@ -245,6 +253,7 @@ export interface FileRoutesByTo {
   '/dashboard/applicants/$applicationId': typeof AuthenticatedDashboardApplicantsApplicationIdRoute
   '/dashboard/application/$applicationId': typeof AuthenticatedDashboardApplicationApplicationIdRoute
   '/dashboard/job-applicants/$jobId': typeof AuthenticatedDashboardJobApplicantsJobIdRoute
+  '/dashboard/job-batches/$batchId': typeof AuthenticatedDashboardJobBatchesBatchIdRoute
   '/dashboard/jobs/$jobId': typeof AuthenticatedDashboardJobsJobIdRoute
   '/dashboard/jobs/new': typeof AuthenticatedDashboardJobsNewRoute
   '/dashboard/jobs': typeof AuthenticatedDashboardJobsIndexRoute
@@ -276,6 +285,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard/applicants/$applicationId': typeof AuthenticatedDashboardApplicantsApplicationIdRoute
   '/_authenticated/dashboard/application/$applicationId': typeof AuthenticatedDashboardApplicationApplicationIdRoute
   '/_authenticated/dashboard/job-applicants/$jobId': typeof AuthenticatedDashboardJobApplicantsJobIdRoute
+  '/_authenticated/dashboard/job-batches/$batchId': typeof AuthenticatedDashboardJobBatchesBatchIdRoute
   '/_authenticated/dashboard/jobs/$jobId': typeof AuthenticatedDashboardJobsJobIdRoute
   '/_authenticated/dashboard/jobs/new': typeof AuthenticatedDashboardJobsNewRoute
   '/_authenticated/dashboard/jobs/': typeof AuthenticatedDashboardJobsIndexRoute
@@ -307,6 +317,7 @@ export interface FileRouteTypes {
     | '/dashboard/applicants/$applicationId'
     | '/dashboard/application/$applicationId'
     | '/dashboard/job-applicants/$jobId'
+    | '/dashboard/job-batches/$batchId'
     | '/dashboard/jobs/$jobId'
     | '/dashboard/jobs/new'
     | '/dashboard/jobs/'
@@ -334,6 +345,7 @@ export interface FileRouteTypes {
     | '/dashboard/applicants/$applicationId'
     | '/dashboard/application/$applicationId'
     | '/dashboard/job-applicants/$jobId'
+    | '/dashboard/job-batches/$batchId'
     | '/dashboard/jobs/$jobId'
     | '/dashboard/jobs/new'
     | '/dashboard/jobs'
@@ -364,6 +376,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard/applicants/$applicationId'
     | '/_authenticated/dashboard/application/$applicationId'
     | '/_authenticated/dashboard/job-applicants/$jobId'
+    | '/_authenticated/dashboard/job-batches/$batchId'
     | '/_authenticated/dashboard/jobs/$jobId'
     | '/_authenticated/dashboard/jobs/new'
     | '/_authenticated/dashboard/jobs/'
@@ -552,6 +565,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardJobsJobIdRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
+    '/_authenticated/dashboard/job-batches/$batchId': {
+      id: '/_authenticated/dashboard/job-batches/$batchId'
+      path: '/job-batches/$batchId'
+      fullPath: '/dashboard/job-batches/$batchId'
+      preLoaderRoute: typeof AuthenticatedDashboardJobBatchesBatchIdRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
     '/_authenticated/dashboard/job-applicants/$jobId': {
       id: '/_authenticated/dashboard/job-applicants/$jobId'
       path: '/job-applicants/$jobId'
@@ -592,6 +612,7 @@ interface AuthenticatedDashboardRouteChildren {
   AuthenticatedDashboardApplicantsApplicationIdRoute: typeof AuthenticatedDashboardApplicantsApplicationIdRoute
   AuthenticatedDashboardApplicationApplicationIdRoute: typeof AuthenticatedDashboardApplicationApplicationIdRoute
   AuthenticatedDashboardJobApplicantsJobIdRoute: typeof AuthenticatedDashboardJobApplicantsJobIdRoute
+  AuthenticatedDashboardJobBatchesBatchIdRoute: typeof AuthenticatedDashboardJobBatchesBatchIdRoute
   AuthenticatedDashboardJobsJobIdRoute: typeof AuthenticatedDashboardJobsJobIdRoute
   AuthenticatedDashboardJobsNewRoute: typeof AuthenticatedDashboardJobsNewRoute
   AuthenticatedDashboardJobsIndexRoute: typeof AuthenticatedDashboardJobsIndexRoute
@@ -612,6 +633,8 @@ const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
       AuthenticatedDashboardApplicationApplicationIdRoute,
     AuthenticatedDashboardJobApplicantsJobIdRoute:
       AuthenticatedDashboardJobApplicantsJobIdRoute,
+    AuthenticatedDashboardJobBatchesBatchIdRoute:
+      AuthenticatedDashboardJobBatchesBatchIdRoute,
     AuthenticatedDashboardJobsJobIdRoute: AuthenticatedDashboardJobsJobIdRoute,
     AuthenticatedDashboardJobsNewRoute: AuthenticatedDashboardJobsNewRoute,
     AuthenticatedDashboardJobsIndexRoute: AuthenticatedDashboardJobsIndexRoute,

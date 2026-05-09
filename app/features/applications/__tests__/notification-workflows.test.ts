@@ -96,6 +96,20 @@ describe("application notification workflows", () => {
       {
         userId: owner.id,
         applicationId: application.id,
+        status: "queued_for_batch",
+      },
+      {
+        sendNotificationEmail: async () => {
+          throw new Error("Resend rejected request");
+        },
+      },
+    );
+
+    await updateApplicationStatusWorkflow(
+      sql,
+      {
+        userId: owner.id,
+        applicationId: application.id,
         status: "interview_invited",
       },
       {
@@ -119,6 +133,20 @@ describe("application notification workflows", () => {
         userId: owner.id,
         applicationId: application.id,
         status: "interview_in_progress",
+      },
+      {
+        sendNotificationEmail: async () => {
+          throw new Error("Resend rejected request");
+        },
+      },
+    );
+
+    await updateApplicationStatusWorkflow(
+      sql,
+      {
+        userId: owner.id,
+        applicationId: application.id,
+        status: "evaluated_held",
       },
       {
         sendNotificationEmail: async () => {

@@ -150,8 +150,10 @@ SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.interview_q
        count(a.id)::int AS total_applicants,
        count(a.id) FILTER (WHERE a.status = 'applied')::int AS applied_count,
        count(a.id) FILTER (WHERE a.status = 'pre_screening')::int AS pre_screening_count,
+       count(a.id) FILTER (WHERE a.status = 'queued_for_batch')::int AS queued_for_batch_count,
        count(a.id) FILTER (WHERE a.status = 'interview_invited')::int AS interview_invited_count,
        count(a.id) FILTER (WHERE a.status = 'interview_in_progress')::int AS interview_in_progress_count,
+       count(a.id) FILTER (WHERE a.status = 'evaluated_held')::int AS evaluated_held_count,
        count(a.id) FILTER (WHERE a.status = 'evaluated')::int AS evaluated_count,
        count(a.id) FILTER (WHERE a.status = 'shortlisted')::int AS shortlisted_count,
        count(a.id) FILTER (WHERE a.status = 'rejected')::int AS rejected_count
@@ -191,8 +193,10 @@ export interface getJobsWithPipelineByCompanyIdRow {
     totalApplicants: number;
     appliedCount: number;
     preScreeningCount: number;
+    queuedForBatchCount: number;
     interviewInvitedCount: number;
     interviewInProgressCount: number;
+    evaluatedHeldCount: number;
     evaluatedCount: number;
     shortlistedCount: number;
     rejectedCount: number;
@@ -224,11 +228,13 @@ export async function getJobsWithPipelineByCompanyId(sql: Sql, args: getJobsWith
         totalApplicants: row[21],
         appliedCount: row[22],
         preScreeningCount: row[23],
-        interviewInvitedCount: row[24],
-        interviewInProgressCount: row[25],
-        evaluatedCount: row[26],
-        shortlistedCount: row[27],
-        rejectedCount: row[28]
+        queuedForBatchCount: row[24],
+        interviewInvitedCount: row[25],
+        interviewInProgressCount: row[26],
+        evaluatedHeldCount: row[27],
+        evaluatedCount: row[28],
+        shortlistedCount: row[29],
+        rejectedCount: row[30]
     }));
 }
 

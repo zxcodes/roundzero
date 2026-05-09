@@ -4,6 +4,7 @@ import {
   countApplicationsByCompany,
   getApplicationsByJob,
 } from "@/features/applications/queries/queries_sql";
+import { getActiveBatchesByCompany } from "@/features/batches/queries/queries_sql";
 import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
 import {
   countJobsByCompanyAndStatus,
@@ -35,22 +36,24 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
           shortlistRate: 0,
           roleHealth: [],
           reportHighlights: [],
+          activeBatches: [],
         };
       }
 
-      const [jobCounts, appCounts, jobsWithPipeline] = await Promise.all([
+      const [jobCounts, appCounts, jobsWithPipeline, activeBatches] = await Promise.all([
         countJobsByCompanyAndStatus(db, { companyId: company.id }),
         countApplicationsByCompany(db, { companyId: company.id }),
         getJobsWithPipelineByCompanyId(db, { companyId: company.id }),
+        getActiveBatchesByCompany(db, { companyId: company.id }),
       ]);
 
       const roleHealth = jobsWithPipeline
         .filter((job) => job.status === "open")
         .map((job) => {
-          const reportsCompleted = job.evaluatedCount + job.shortlistedCount + job.rejectedCount;
+          const releasedReports = job.evaluatedCount;
           const backlog = job.evaluatedCount;
           const shortlistRate =
-            reportsCompleted > 0 ? Math.round((job.shortlistedCount / reportsCompleted) * 100) : 0;
+            releasedReports > 0 ? Math.round((job.shortlistedCount / releasedReports) * 100) : 0;
 
           const now = Date.now();
           const expiresAt = job.expiresAt ? job.expiresAt.getTime() : null;
@@ -65,12 +68,14 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
             applicants: job.totalApplicants,
             applied: job.appliedCount,
             preScreening: job.preScreeningCount,
+            queuedForBatch: job.queuedForBatchCount ?? 0,
             invited: job.interviewInvitedCount,
             inProgress: job.interviewInProgressCount,
+            evaluatedHeld: job.evaluatedHeldCount ?? 0,
             evaluated: job.evaluatedCount,
             shortlisted: job.shortlistedCount,
             rejected: job.rejectedCount,
-            reportsCompleted,
+            reportsCompleted: releasedReports,
             finalReportTarget: job.finalReportTarget,
             backlog,
             shortlistRate,
@@ -99,7 +104,7 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
         const jobApplicants = await getApplicationsByJob(db, { jobId: role.jobId });
 
         for (const applicant of jobApplicants) {
-          if (applicant.reportId === null) {
+          if (applicant.reportId === null || applicant.reportReleasedAt === null) {
             continue;
           }
 
@@ -148,6 +153,7 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
         shortlistRate,
         roleHealth,
         reportHighlights: reportHighlights.slice(0, 8),
+        activeBatches: activeBatches ?? [],
       };
     }
 

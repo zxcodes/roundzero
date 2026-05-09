@@ -143,12 +143,13 @@ export async function getApplicationsByCandidate(sql: Sql, args: getApplications
 export const getApplicationsByJobQuery = `-- name: getApplicationsByJob :many
 SELECT a.id, a.job_id, a.candidate_id, a.resume_key, a.metadata, a.status, a.created_at, a.updated_at,
        u.name AS candidate_name, u.email AS candidate_email, u.picture AS candidate_picture,
-       r.id AS report_id, r.recommendation AS report_recommendation, r.scores AS report_scores
+       r.id AS report_id, r.recommendation AS report_recommendation, r.scores AS report_scores,
+       r.released_at AS report_released_at
 FROM applications a
 JOIN users u ON u.id = a.candidate_id AND u.deleted_at IS NULL
 LEFT JOIN reports r ON r.application_id = a.id
 WHERE a.job_id = $1
-ORDER BY (r.id IS NOT NULL) DESC, COALESCE((r.scores->>'overall')::numeric, 0) DESC, a.created_at DESC`;
+ORDER BY (r.released_at IS NOT NULL) DESC, COALESCE((r.scores->>'overall')::numeric, 0) DESC, a.created_at DESC`;
 
 export interface getApplicationsByJobArgs {
     jobId: string;
@@ -169,6 +170,7 @@ export interface getApplicationsByJobRow {
     reportId: string | null;
     reportRecommendation: string | null;
     reportScores: any | null;
+    reportReleasedAt: Date | null;
 }
 
 export async function getApplicationsByJob(sql: Sql, args: getApplicationsByJobArgs): Promise<getApplicationsByJobRow[]> {
@@ -186,7 +188,8 @@ export async function getApplicationsByJob(sql: Sql, args: getApplicationsByJobA
         candidatePicture: row[10],
         reportId: row[11],
         reportRecommendation: row[12],
-        reportScores: row[13]
+        reportScores: row[13],
+        reportReleasedAt: row[14]
     }));
 }
 
@@ -399,7 +402,7 @@ SELECT
   count(*) FILTER (WHERE a.status NOT IN ('rejected', 'withdrawn'))::int AS active_count,
   count(*) FILTER (WHERE a.status = 'interview_invited')::int AS interview_invited_count,
   count(*) FILTER (WHERE a.status = 'interview_in_progress')::int AS interview_in_progress_count,
-  count(*) FILTER (WHERE a.status = 'evaluated')::int AS evaluated_count
+  count(*) FILTER (WHERE a.status IN ('evaluated', 'evaluated_held'))::int AS evaluated_count
 FROM applications a
 JOIN jobs j ON j.id = a.job_id
 WHERE a.candidate_id = $1

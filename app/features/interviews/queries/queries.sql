@@ -70,7 +70,7 @@ WHERE id = $1
 RETURNING *;
 
 -- name: getInterviewContextById :one
-SELECT i.id, i.application_id, i.agent_id, i.type, i.metadata, i.status, i.invited_at, i.started_at, i.completed_at,
+SELECT i.id, i.application_id, i.batch_id, i.agent_id, i.type, i.metadata, i.status, i.invited_at, i.started_at, i.completed_at,
        i.expired_at, i.cancelled_at, i.cancellation_reason, i.created_at, i.updated_at,
        a.candidate_id, a.status AS application_status,
        j.id AS job_id, j.title AS job_title,
@@ -107,7 +107,7 @@ JOIN pre_evaluations pe ON pe.application_id = a.id
 JOIN users u ON u.id = a.candidate_id AND u.deleted_at IS NULL
 WHERE a.job_id = $1
   AND a.status = 'pre_screening'
-  AND pe.next_step IN ('interview_invited', 'ask_followups')
+  AND pe.next_step = 'interview_invited'
   AND NOT EXISTS (
     SELECT 1
     FROM interviews i

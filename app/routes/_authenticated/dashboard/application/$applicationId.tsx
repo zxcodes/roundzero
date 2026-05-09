@@ -72,12 +72,27 @@ const stageCopy = {
     summary: "Your application is in the review queue.",
     nextStep: "Keep your profile sharp - the next signal is typically a move to interview review.",
   },
+  queued_for_batch: {
+    label: "Under review",
+    badge: "Under review",
+    tone: "border-info/20 bg-info/10 text-info",
+    summary: "You are a strong fit and have been queued for the next evaluation batch.",
+    nextStep:
+      "We'll send your interview invite when the next batch launches — typically within 12 hours.",
+  },
   interviewing: {
     label: "Interviewing",
     badge: "Interviewing",
     tone: "border-warning/20 bg-warning/10 text-warning",
     summary: "You have been invited to a RoundZero interview for this role.",
     nextStep: "Complete the interview before the deadline to keep your evaluation slot.",
+  },
+  evaluated_held: {
+    label: "Evaluation complete",
+    badge: "Evaluation complete",
+    tone: "border-success/20 bg-success/10 text-success",
+    summary: "Your evaluation is complete. Releasing with the next batch of candidates.",
+    nextStep: "The company reviews candidates side-by-side after each batch is released.",
   },
   evaluated: {
     label: "Awaiting company decision",
@@ -118,9 +133,13 @@ const underReviewMeta = {
 
 const toApplicationStage = (status: string): keyof typeof stageCopy => {
   switch (status) {
+    case "queued_for_batch":
+      return "queued_for_batch";
     case "interview_invited":
     case "interview_in_progress":
       return "interviewing";
+    case "evaluated_held":
+      return "evaluated_held";
     case "evaluated":
     case "shortlisted":
     case "rejected":
