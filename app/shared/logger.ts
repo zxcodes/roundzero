@@ -1,12 +1,10 @@
-import { appEnv } from "./env.app";
+import { isProd } from "./env.app";
 
 export function createWorkflowLogger(workflowName: string, applicationId: string) {
   const base = {
     workflow: workflowName,
     applicationId: applicationId.slice(0, 8),
   };
-
-  const isProd = appEnv.NODE_ENV === "production";
 
   // ANSI colors (dev only)
   const colors = {
