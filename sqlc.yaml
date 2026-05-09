@@ -14,11 +14,6 @@ sql:
         options:
           runtime: node
           driver: postgres
-      - out: app/queries/auth
-        plugin: ts
-        options:
-          runtime: node
-          driver: postgres
   - schema: "db/migrations"
     queries: "app/features/companies/queries/queries.sql"
     engine: postgresql
@@ -37,21 +32,11 @@ sql:
         options:
           runtime: node
           driver: postgres
-      - out: app/queries/jobs
-        plugin: ts
-        options:
-          runtime: node
-          driver: postgres
   - schema: "db/migrations"
     queries: "app/features/applications/queries/queries.sql"
     engine: postgresql
     codegen:
       - out: app/features/applications/queries
-        plugin: ts
-        options:
-          runtime: node
-          driver: postgres
-      - out: app/queries/applications
         plugin: ts
         options:
           runtime: node
@@ -74,21 +59,11 @@ sql:
         options:
           runtime: node
           driver: postgres
-      - out: app/queries/notifications
-        plugin: ts
-        options:
-          runtime: node
-          driver: postgres
   - schema: "db/migrations"
     queries: "app/features/pre-evaluations/queries/queries.sql"
     engine: postgresql
     codegen:
       - out: app/features/pre-evaluations/queries
-        plugin: ts
-        options:
-          runtime: node
-          driver: postgres
-      - out: app/queries/pre-evaluations
         plugin: ts
         options:
           runtime: node
@@ -107,29 +82,6 @@ sql:
     engine: postgresql
     codegen:
       - out: app/features/interviews/queries
-        plugin: ts
-        options:
-          runtime: node
-          driver: postgres
-      - out: app/queries/interviews
-        plugin: ts
-        options:
-          runtime: node
-          driver: postgres
-  - schema: "db/migrations"
-    queries: "app/queries/reports/queries.sql"
-    engine: postgresql
-    codegen:
-      - out: app/queries/reports
-        plugin: ts
-        options:
-          runtime: node
-          driver: postgres
-  - schema: "db/migrations"
-    queries: "app/queries/reports-by-job/queries.sql"
-    engine: postgresql
-    codegen:
-      - out: app/queries/reports-by-job
         plugin: ts
         options:
           runtime: node

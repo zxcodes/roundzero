@@ -14,14 +14,14 @@ import {
 } from "ai";
 import { z } from "zod";
 import {
-  getInterviewExpiresAt,
-  shouldAutoExpireInterview,
-} from "@/features/interviews/shared/expiry";
-import {
   completeInterview,
   expireInterview,
   getInterviewContextById,
-} from "@/queries/interviews/queries_sql";
+} from "@/features/interviews/queries/queries_sql";
+import {
+  getInterviewExpiresAt,
+  shouldAutoExpireInterview,
+} from "@/features/interviews/shared/expiry";
 import { buildCandidateProfileSummary } from "@/shared/ai-candidate-profile";
 import { getDb } from "@/shared/db";
 import { getInterviewModelChain, getOpenRouter } from "@/shared/openrouter";

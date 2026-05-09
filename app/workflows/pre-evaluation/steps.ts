@@ -5,7 +5,22 @@ import mammoth from "mammoth";
 import type { Sql } from "postgres";
 import { extractText, getDocumentProxy } from "unpdf";
 import { z } from "zod";
+import {
+  getApplicationById,
+  updateApplicationStatus,
+} from "@/features/applications/queries/queries_sql";
+import { getUserById } from "@/features/auth/queries/queries_sql";
 import { checkAndLaunchBatch } from "@/features/batches/server/orchestration";
+import {
+  countActiveInterviewSlotsByJob,
+  getInterviewByApplicationId,
+} from "@/features/interviews/queries/queries_sql";
+import { getJobById } from "@/features/jobs/queries/queries_sql";
+import { createNotification } from "@/features/notifications/queries/queries_sql";
+import {
+  createPreEvaluation,
+  getPreEvaluationByApplicationId,
+} from "@/features/pre-evaluations/queries/queries_sql";
 import { CLASSIFY_JOB_SYSTEM_PROMPT, jobTypeSchema } from "@/prompts/classify-job";
 import { CREATIVE_EVAL_SYSTEM_PROMPT } from "@/prompts/evaluate/creative";
 import { CUSTOMER_FACING_EVAL_SYSTEM_PROMPT } from "@/prompts/evaluate/customer-facing";
@@ -14,18 +29,6 @@ import { LEADERSHIP_EVAL_SYSTEM_PROMPT } from "@/prompts/evaluate/leadership";
 import { OPERATIONS_EVAL_SYSTEM_PROMPT } from "@/prompts/evaluate/operations";
 import { TECHNICAL_EVAL_SYSTEM_PROMPT } from "@/prompts/evaluate/technical";
 import { SLOP_DETECTION_SYSTEM_PROMPT } from "@/prompts/slop-detection";
-import { getApplicationById, updateApplicationStatus } from "@/queries/applications/queries_sql";
-import { getUserById } from "@/queries/auth/queries_sql";
-import {
-  countActiveInterviewSlotsByJob,
-  getInterviewByApplicationId,
-} from "@/queries/interviews/queries_sql";
-import { getJobById } from "@/queries/jobs/queries_sql";
-import { createNotification } from "@/queries/notifications/queries_sql";
-import {
-  createPreEvaluation,
-  getPreEvaluationByApplicationId,
-} from "@/queries/pre-evaluations/queries_sql";
 import { buildCandidateProfilePromptPayload } from "@/shared/ai-candidate-profile";
 import { getDb } from "@/shared/db";
 import type { createWorkflowLogger } from "@/shared/logger";
