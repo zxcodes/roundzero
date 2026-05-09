@@ -3,7 +3,7 @@
   "entry": ["app/router.tsx", "app/routeTree.gen.ts", "app/routes/**/*.{ts,tsx}"],
   "project": ["app/**/*.{ts,tsx}"],
   "ignore": ["app/**/*_sql.ts", "app/components/ui/**"],
-  "ignoreBinaries": ["sqlc"],
+  "ignoreBinaries": ["sqlc", "polar"],
   "ignoreDependencies": [
     "@tanstack/react-devtools",
     "@tanstack/react-router-devtools",

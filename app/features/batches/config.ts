@@ -25,7 +25,3 @@ export const BATCH_CONFIG = {
   /** Pool size needed to auto-launch next batch after a release. Local dev uses 1. */
   BACKFILL_THRESHOLD: isDevelopmentEnvironment ? 1 : 5,
 } as const;
-
-export type BatchStatus = "forming" | "active" | "released";
-
-export const BATCH_STATUSES: BatchStatus[] = ["forming", "active", "released"];
