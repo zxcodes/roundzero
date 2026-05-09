@@ -16,6 +16,7 @@ Always consult both before making design decisions or implementing features.
 - **No thin wrappers or trivial abstractions.** Don't create helper functions that just forward to another function with renamed args, add a null check, or wrap a single call. Inline the logic at the call site instead. Only extract a shared helper when it contains real logic and is used across multiple features.
 - **Use `@/shared/date` for all date formatting.** Never write inline `toLocaleDateString("en-US", ...)` or `new Date(...).toLocaleString(...)` in components. The module exports `formatDate`, `formatDateShort`, `formatDateTime`, `formatDateTimeUtc`, `formatRelativeTime`, `formatTimeLeft`, and `formatDeadlineLabel` using `date-fns` as the single source of truth.
 - Always use early returns in functions when possible. This applies to both UI components and server functions.
+- Always use constants (isDev, isProd, isStaging from `app/shared/env.app.ts` instead of manually doing `process.env.NODE_ENV` where relevant.)
 
 ## Database + SQLC
 
