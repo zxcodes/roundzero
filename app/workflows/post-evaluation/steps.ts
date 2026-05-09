@@ -73,6 +73,8 @@ type InterviewContextState = {
     score: number | null;
     missingRequirements: string[];
     consistencyScore: number | null;
+    authenticityFlags: string[];
+    authenticityExplanation: string | null;
   };
 };
 
@@ -219,7 +221,13 @@ function parseInterviewContextState(metadata: unknown): InterviewContextState {
       jobRequirements: [],
       candidateSummary: "",
       customQuestions: [],
-      preEvaluation: { score: null, missingRequirements: [], consistencyScore: null },
+      preEvaluation: {
+        score: null,
+        missingRequirements: [],
+        consistencyScore: null,
+        authenticityFlags: [],
+        authenticityExplanation: null,
+      },
     };
   }
 
@@ -253,6 +261,15 @@ function parseInterviewContextState(metadata: unknown): InterviewContextState {
       typeof preEvaluationRaw.consistencyScore === "number"
         ? preEvaluationRaw.consistencyScore
         : null,
+    authenticityFlags: Array.isArray(preEvaluationRaw.authenticityFlags)
+      ? preEvaluationRaw.authenticityFlags.filter(
+          (flag): flag is string => typeof flag === "string",
+        )
+      : [],
+    authenticityExplanation:
+      typeof preEvaluationRaw.authenticityExplanation === "string"
+        ? preEvaluationRaw.authenticityExplanation
+        : null,
   };
 
   return { jobDescription, jobRequirements, candidateSummary, customQuestions, preEvaluation };
@@ -280,7 +297,7 @@ export function markApplicationEvaluatedExisting(interviewId: string, db: Sql) {
 
     await updateApplicationStatus(db, {
       id: interview.applicationId,
-      status: "evaluated",
+      status: "evaluated_held",
     });
   };
 }
@@ -358,6 +375,12 @@ export function generateReport(
             .map((r) => `  - ${r}`)
             .join("\n")
         : "  (none flagged)";
+    const authenticityFlagsBlock =
+      interviewData.contextState.preEvaluation.authenticityFlags.length > 0
+        ? interviewData.contextState.preEvaluation.authenticityFlags
+            .map((flag) => `  - ${flag}`)
+            .join("\n")
+        : "  (no direct contradictions flagged)";
 
     const systemPrompt = [
       "# Identity",
@@ -377,6 +400,7 @@ export function generateReport(
       "5. No marketing fluff. No 'overall, the candidate is a great communicator' without a specific transcript-grounded reason.",
       "6. No advice to the candidate. This report is for the hiring team, not for the candidate.",
       "7. Use plain professional English. No emojis, no markdown, no bullet syntax inside string fields.",
+      "8. Treat pre-evaluation authenticity signals as supporting context only. Do not call the candidate dishonest unless the transcript or provided evidence clearly supports it.",
       "",
       "# How to fill each field",
       "- summary: 3–6 sentences. The TL;DR a busy hiring manager can read in 20 seconds. Cover: who they are in one line, the strongest signal observed, the biggest concern, and your headline recommendation. Mention any dealbreaker screening answer here.",
@@ -421,6 +445,10 @@ export function generateReport(
         fitScore: interviewData.contextState.preEvaluation.score,
         consistencyScore: interviewData.contextState.preEvaluation.consistencyScore,
         missingRequirements: missingRequirementsBlock,
+        authenticityExplanation:
+          interviewData.contextState.preEvaluation.authenticityExplanation ||
+          "No additional authenticity note.",
+        authenticityFlags: authenticityFlagsBlock,
       },
       requiredScreeningQuestions: customQuestionsBlock,
       transcript: interviewData.transcript.slice(-15000),
@@ -496,7 +524,7 @@ export function markApplicationEvaluated(
   return async () => {
     await updateApplicationStatus(db, {
       id: interviewData.interview.applicationId,
-      status: "evaluated",
+      status: "evaluated_held",
     });
   };
 }

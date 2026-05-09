@@ -2,126 +2,106 @@
 
 ## 0. Status
 
-This document reflects the app as it transitions from **platform-only** to **platform + AI layer**.
+This document reflects the current codebase: a TanStack Start hiring platform running on a single Cloudflare Worker, with the AI layer, batch orchestration, notifications, and billing integrated into the same runtime.
 
-**Currently Not (NOT IN PROD):**
+Implemented in the repo today:
 
-- TanStack Start application (Cloudflare Worker runtime)
+- TanStack Start app on Cloudflare Worker
 - Postgres-backed hiring platform
-- role-based company/candidate workflows
-- public company and jobs browsing
+- role-based company and candidate workflows
+- public companies and jobs browsing
+- candidate profiles with resume upload
 - one-click applications with profile snapshots
-- durable in-app notifications with Resend email delivery
-- Cloudflare Workflows for pre-evaluation and post-evaluation pipelines
-- Cloudflare Agents SDK interview runtime (`AIChatAgent`)
-- AI-driven candidate evaluation and structured reports
-- `final_report_target` quota system per job
-- 8-status application lifecycle with pre-screening funnel
-- dedicated candidate interview workspace at `/interview/$interviewId`
-- company-facing report views with scoring and timeline
+- in-app notifications with Resend-backed email delivery
+- Cloudflare Workflows for pre-evaluation, post-evaluation, and batch orchestration
+- Cloudflare Agents SDK interview runtime
+- AI pre-evaluation, interviews, reports, and ranked batch release flow
+- billing plan config and Polar webhook handling
+
+Important current constraints:
+
+- the AI layer is live in code, but both `report_ready` and `batch_ready` concepts still coexist
+- interview flow currently has one meaningful candidate-facing mode: `full`
+- resume uploads/downloads are server-mediated; the app does not currently use signed upload/download URLs
 
 ---
 
 ## 1. Stack
 
-| Layer                    | Technology                                                             |
-| ------------------------ | ---------------------------------------------------------------------- |
-| Framework                | TanStack Start (React 19, Vite 8)                                      |
-| Runtime                  | Cloudflare Worker (Durable Objects, Workflows, Agents SDK, WebSockets) |
-| Database                 | Postgres (Docker locally, Neon for staging, PlanetScale for prod)      |
-| Data Access & Migrations | SQLC, dbmate                                                           |
-| Auth                     | Google OAuth with server-side cookie session                           |
-| UI                       | shadcn/ui, Tailwind CSS v4, Hugeicons                                  |
-| Validation               | Zod                                                                    |
-| Notifications            | In-app inbox + Resend email delivery                                   |
-| Storage                  | Cloudflare R2 (resumes, company logos)                                 |
-| AI Layer                 | OpenRouter via AI SDK v6                                               |
-| Tooling                  | Biome, Knip                                                                  |
+| Layer | Technology |
+| --- | --- |
+| Framework | TanStack Start, React 19, Vite 8 |
+| Runtime | Cloudflare Worker |
+| AI Runtime | Cloudflare Workflows, Durable Objects / Agents SDK |
+| Database | Postgres |
+| Local DB | Docker Postgres containers (`rz_pg_dev`, `rz_pg_test`) |
+| Deployed DB Access | Hyperdrive binding in `wrangler.jsonc` |
+| Data Access | SQLC + handwritten SQL |
+| Migrations | dbmate |
+| Auth | Google OAuth + cookie session |
+| UI | shadcn/ui, Tailwind CSS v4, Hugeicons |
+| Validation | Zod |
+| Storage | Cloudflare R2 |
+| Email | Resend |
+| LLM Provider | OpenRouter via AI SDK v6 |
+| Tooling | Biome, Vitest, Knip |
 
 ---
 
 ## 2. Runtime Architecture
 
-### Main App (TanStack Start)
+### Single Worker Runtime
 
-The TanStack Start app runs on Cloudflare Worker, with server functions for:
+The app and AI layer run together inside one Cloudflare Worker:
 
-- auth
-- jobs
-- applications
-- company profile management
-- candidate profile management
-- dashboard metrics
-- notifications
-- resume/logo storage contracts
+- `app/server.ts` is the Worker entrypoint
+- TanStack Start handles the main app request flow
+- `routeAgentRequest()` handles interview agent routes
+- Workflow bindings run pre-evaluation, post-evaluation, and batch-orchestration jobs
+- the Worker scheduled handler periodically checks queued applicant pools and launches batches
+- R2 stores resumes and other assets
 
-### Single Cloudflare Worker Runtime
+Why this shape:
 
-The main app and AI layer run together as a single Cloudflare Worker via `@cloudflare/vite-plugin`. The TanStack Start server entry (`app/server.ts`) exports both the app handler and the agent/workflow classes:
+- no cross-service HTTP hop between app, workflows, and interview runtime
+- shared bindings and shared database access
+- simpler deployment and local development story
 
-- `app/server.ts` — Worker entrypoint that routes agent requests via `routeAgentRequest()` before falling through to TanStack Start
-- Cloudflare Workflows run pre-evaluation and report generation pipelines
-- Agents SDK routes interview agents over WebSocket/HTTP
-- R2 stores resumes
-- OpenRouter API provides model inference via `@openrouter/ai-sdk-provider`
+### Current `app/server.ts` responsibilities
 
-**Why one Worker:**
-- `@cloudflare/vite-plugin` runs the entire app inside `workerd` during `vite dev`
-- Cloudflare Workflows, Durable Objects, and bindings all work in local dev
-- No cross-process HTTP calls or secret sharing between separate runtimes
-- Simpler deployment: one `wrangler.jsonc`, one build output
-
-**Communication:**
-- Workflows are triggered directly from server functions (no HTTP hop)
-- Agent WebSocket routes are handled by `routeAgentRequest()` in `app/server.ts`
-- Everything reads/writes the same Postgres database
-
-### Directory Layout
-
-```
-roundzero/              # TanStack Start + Cloudflare Worker
-├── app/                # Routes, components, server functions
-│   ├── server.ts       # Worker entrypoint (app + agent routing)
-│   ├── workflows/      # Cloudflare Workflow classes
-│   ├── agents/         # Durable Object agent classes
-│   └── ...
-├── db/                 # Migrations, seed
-├── wrangler.jsonc      # Worker config (AI, R2, Workflow, DO bindings)
-└── package.json
-```
-
-The codebase keeps clean boundaries:
-
-- explicit server functions in the main app
-- storage behind server contracts
-- database-centric source of truth
-- agent logic lives alongside the app, triggered directly from server functions
+- serve the main TanStack Start app
+- route Agents SDK requests
+- handle the Polar billing webhook
+- serve local/public asset reads under `/api/assets/:key`
+- run scheduled batch pool checks
 
 ---
 
 ## 3. Current Product Surface
 
-## Routes
+### Routes
 
 Current file-based routes:
 
-```
+```text
 app/routes/
 ├── __root.tsx
 ├── _authenticated.tsx
 ├── _authenticated/dashboard.tsx
-├── _authenticated/dashboard/applicants/$applicationId.tsx
-├── _authenticated/dashboard/applicant-reports/$applicationId.tsx
-├── _authenticated/dashboard/application/$applicationId.tsx
 ├── _authenticated/dashboard/applications.tsx
+├── _authenticated/dashboard/applicant-reports/$applicationId.tsx
+├── _authenticated/dashboard/applicants/$applicationId.tsx
+├── _authenticated/dashboard/application/$applicationId.tsx
+├── _authenticated/dashboard/billing.tsx
 ├── _authenticated/dashboard/index.tsx
 ├── _authenticated/dashboard/job-applicants/$jobId.tsx
+├── _authenticated/dashboard/job-batches/$batchId.tsx
 ├── _authenticated/dashboard/jobs/new.tsx
 ├── _authenticated/dashboard/jobs/index.tsx
 ├── _authenticated/dashboard/jobs/$jobId.tsx
 ├── _authenticated/dashboard/settings.tsx
-├── _authenticated/interview.tsx           # interview layout (shadcn Sidebar + chat pane)
-├── _authenticated/interview/index.tsx     # redirects to most recent session
+├── _authenticated/interview.tsx
+├── _authenticated/interview/index.tsx
 ├── _authenticated/interview/$interviewId.tsx
 ├── _authenticated/onboarding.tsx
 ├── _authenticated/onboarding/candidate.tsx
@@ -132,35 +112,36 @@ app/routes/
 ├── company/login.tsx
 ├── index.tsx
 ├── jobs/index.tsx
-└── jobs/$jobId.tsx
+├── jobs/$jobId.tsx
+├── privacy.tsx
+└── tos.tsx
 ```
 
-What this means in practice:
+What exists in practice:
 
-- public browsing exists
-- role-specific login exists
-- company/candidate onboarding exists
-- dashboard basics exist
-- dedicated company applicant review pages exist
-- dedicated candidate application detail pages exist
-- candidate application tracking exists
-- notification inbox exists in the app shell
-
-Missing route surface today:
-
-- none for core MVP interview/report flows
+- public marketing and discovery surfaces
+- company and candidate login/onboarding
+- candidate application tracking
+- company applicant review, reports, and batch review surfaces
+- dedicated interview workspace
+- billing page for company users
 
 ---
 
-## 4. Current Feature Modules
+## 4. Feature Modules
 
-```
+Current top-level feature modules:
+
+```text
 app/features/
-├── auth/
 ├── applications/
+├── auth/
+├── batches/
+├── billing/
 ├── candidates/
 ├── companies/
 ├── dashboard/
+├── edge/
 ├── interviews/
 ├── jobs/
 ├── notifications/
@@ -168,51 +149,57 @@ app/features/
 └── reports/
 ```
 
-### What exists
+High-level responsibilities:
 
-- `auth`: login/session/provider/query layer
-- `companies`: company CRUD/settings/logo upload/public data
-- `candidates`: candidate profile/settings and resume contract
-- `jobs`: job CRUD, filtering, pagination, status/archive/expiry behavior, interview questions
-- `applications`: one-click apply, applicant lists, application status, notification workflows
-- `dashboard`: role-specific metrics
-- `interviews`: interview lifecycle, dedicated workspace routes, agent chat hooks/components, server functions
-- `notifications`: per-user in-app notification inbox, Resend email delivery, workflow event records
-- `pre-evaluations`: pre-screening result queries and compact card components
-- `reports`: post-evaluation report queries, server functions, and reusable report view components
+- `applications`: apply flow, applicant lists, status transitions, workflow triggers
+- `auth`: Google login, session bootstrap, user data
+- `batches`: pooling, launch orchestration, release, batch digest email
+- `billing`: subscription plan config, billing page, Polar webhook integration
+- `candidates`: profile CRUD, work history, resume upload contract
+- `companies`: company profile CRUD, logo handling, public company data
+- `dashboard`: role-specific metrics and dashboard data
+- `edge`: edge/runtime-specific code surface
+- `interviews`: interview lifecycle, routes, agent chat hooks/components, server functions
+- `jobs`: job CRUD, lifecycle, requirements, interview questions
+- `notifications`: inbox UI, payload rendering, email delivery
+- `pre-evaluations`: pre-screening queries and server functions
+- `reports`: post-evaluation reports, report pages, reusable report components
 
-### AI layer
+### AI-specific code
 
-- `app/workflows/pre-evaluation/workflow.ts`
+- `app/workflows/pre-evaluation/policy.ts`
 - `app/workflows/pre-evaluation/steps.ts`
-- `app/workflows/post-evaluation/workflow.ts`
+- `app/workflows/pre-evaluation/workflow.ts`
 - `app/workflows/post-evaluation/steps.ts`
+- `app/workflows/post-evaluation/workflow.ts`
+- `app/workflows/batch-orchestration/workflow.ts`
 - `app/agents/interview.ts`
 
 ---
 
-## 5. Directory Structure
+## 5. Directory Conventions
 
-```
+```text
 app/
-├── routes/              # TanStack file-based routes
-├── features/            # Product feature modules
-├── components/          # Shared/global UI
-├── shared/              # Cross-cutting utilities (db, auth, env, etc.)
-├── lib/                 # Small app utilities (client/server)
-├── agents/              # Durable Object agent classes
-├── workflows/           # Cloudflare Workflow classes
-├── server.ts            # Worker entrypoint (app + agent routing)
+├── routes/
+├── features/
+├── components/
+├── shared/
+├── lib/
+├── agents/
+├── workflows/
+├── server.ts
 ├── router.tsx
 └── styles.css
 ```
 
-Conventions:
+Conventions used by the codebase:
 
 - feature-first structure
-- SQL lives beside each feature under `queries/queries.sql`
-- generated SQLC output is the typed query boundary
+- SQL lives beside each feature in `queries/queries.sql`
+- generated `queries_sql.ts` files are the typed DB boundary
 - server functions are the app-facing mutation/read boundary
+- shared cross-cutting helpers live in `app/shared/`
 
 ---
 
@@ -220,24 +207,22 @@ Conventions:
 
 Source of truth:
 
-- `db/migrations/20260328081657_init.sql`
+- migration: `db/migrations/20260328081657_init.sql`
+- schema dump: `db/schema.sql`
 
-Schema dump:
-
-- `db/schema.sql`
-
-### Key Tables
+### Core tables
 
 #### `users`
 
-- identity
-- Google auth linkage
-- app role (`company` or `candidate`)
+- Google-authenticated user identity
+- role: `company` or `candidate`
+- soft delete support via `deleted_at`
 
 #### `companies`
 
 - owned by a company user
-- contains both onboarding data and public profile data
+- stores onboarding and public company profile data
+- includes billing/subscription fields
 - includes public `slug`
 
 #### `candidate_profiles`
@@ -246,97 +231,120 @@ Schema dump:
 - stores:
   - headline
   - `resume_key`
+  - `resume_updated_at`
   - bio
   - skills
-  - work history
   - links
+
+#### `candidate_work_history`
+
+- separate normalized work-history rows linked to `candidate_profiles`
+- stores company, title, month range, current-role flag, description, sort order
 
 #### `jobs`
 
 - owned by a company
-- stores structured hiring data
-- includes:
-  - status
-  - salary info
-  - team/headcount
-  - `final_report_target` (default 5, max 15) — controls how many final reports companies receive
-  - `interview_questions` (JSONB, for AI agent context)
-  - `expires_at`
-  - `archived_at`
+- stores:
+  - title, description
+  - requirements
+  - interview questions
+  - lifecycle status (`draft`, `open`, `closed`)
+  - salary / workplace / experience fields
+  - `final_report_target`
+  - `expires_at`, `archived_at`
 
 #### `applications`
 
 - unique per `(job_id, candidate_id)`
 - stores:
-  - `resume_key` snapshot
-  - `metadata` snapshot for non-resume candidate profile data
-  - status: `applied`, `pre_screening`, `interview_invited`, `interview_in_progress`, `evaluated`, `shortlisted`, `rejected`
+  - `resume_key`
+  - `metadata` profile snapshot
+  - lifecycle status
 
-This is important architecturally:
+Current application statuses:
 
-- `candidate_profiles` is the current source of truth
-- `applications` is the apply-time snapshot
+- `applied`
+- `pre_screening`
+- `queued_for_batch`
+- `interview_invited`
+- `interview_in_progress`
+- `evaluated`
+- `evaluated_held`
+- `shortlisted`
+- `rejected`
+- `withdrawn`
+- `evaluation_failed`
+
+Architecturally:
+
+- `candidate_profiles` is the live profile source of truth
+- `applications.metadata` is the apply-time snapshot
 
 #### `pre_evaluations`
 
-- one per application
-- stores lightweight pre-evaluation output:
-  - `score` (0–100)
-  - `missing_requirements` (JSONB)
-  - `confidence` (high/medium/low)
-  - `next_step` (invite_roundzero / ask_followups / hold)
+- one row per application
+- stores:
+  - `score`
+  - `missing_requirements`
+  - `confidence`
+  - `next_step` (`interview_invited` or `hold`)
+  - `consistency_score`
+  - `raw_response`
+
+#### `job_batches`
+
+- groups interviews into ranked batch releases
+- stores:
+  - `status` (`forming`, `active`, `released`)
+  - `target_size`
+  - `launched_at`, `released_at`
 
 #### `interviews`
 
-- link between applications and AI interview sessions
+- links applications to interview sessions
 - stores:
-  - `type`: `'full'` | `'quick_eval'`
-  - `status`: `'pending'` | `'in_progress'` | `'completed'` | `'expired'` | `'cancelled'`
-  - `metadata` (JSONB) — includes `expiresAt`, `expiredAt`, `cancelledAt`, `cancellationReason`
-  - `started_at`, `completed_at`
+  - `type` (currently `full` in active flows)
+  - `status` (`pending`, `in_progress`, `completed`, `expired`, `cancelled`)
+  - `batch_id`
+  - `metadata`
+  - `invited_at`, `started_at`, `completed_at`, `expired_at`, `cancelled_at`
 
 #### `reports`
 
-- evaluation output after interview completion
-- stores structured report data:
-  - overall score, recommendation
-  - dimension scores (technical, communication, experience relevance)
-  - strengths, concerns, evidence
-  - question/answer timeline
+- stores final evaluation output
+- stores:
+  - summary
+  - strengths, weaknesses, insights, evidence
+  - screening answers
+  - scores
+  - recommendation
+  - `released_at`
 
-Quota semantics:
+### Schema decisions
 
-- `final_report_target` is consumed by completed reports, not interview invites
-- invite capacity per job is computed as:
-  - `remainingReports = final_report_target - completedReports`
-  - `availableInviteSlots = remainingReports - activeInterviews(status IN pending|in_progress)`
-- if an interview expires or is cancelled, that slot is recycled and the next best candidate is invited
-
-### Schema Decisions
-
-- No DB enums/check constraints for app-domain statuses
-- Zod validates enum-like values in app code
-- No triggers
+- app-domain enum-like values are validated in app code with Zod
+- SQLC is the typed query boundary
+- no triggers
 - `updated_at` is set explicitly in update queries
-- JSONB is used for structured but flexible data
-- all FKs use `ON DELETE RESTRICT`
+- JSONB columns are stored as raw JS objects/arrays, not stringified JSON
 
 ---
 
 ## 7. Query and Type Strategy
 
-- SQLC is the typed DB layer
-- generated `queries_sql.ts` files are never hand-edited
-- no manual DB/data-shape types should be re-declared in app components when they can be inferred from SQLC or server function return types
-- JSONB columns should be passed as raw JS objects/arrays, not stringified
-
 Data flow pattern:
 
-1. SQL query in `queries.sql`
-2. SQLC generates typed query function
-3. feature server function wraps query and business rules
-4. route loader or mutation consumes server function
-5. components infer types from loader/server return values
+1. SQL query lives in `queries.sql`
+2. SQLC generates a typed function in `queries_sql.ts`
+3. feature server functions add business logic and auth rules
+4. routes/loaders call server functions
+5. components infer types from loader or server-function results
+
+Rules reflected in the codebase:
+
+- generated SQLC files are never hand-edited
+- no manual duplicate DB shape types where inference is possible
+- JSONB is passed around as raw JS values
 
 ---
 
@@ -344,214 +352,162 @@ Data flow pattern:
 
 Current auth flow:
 
-1. Candidate or company hits a role-specific login route
+1. user hits a role-specific login route
 2. Google OAuth succeeds
 3. server upserts the user
 4. session cookie is written
-5. role determines onboarding/dashboard path
+5. role determines onboarding and dashboard paths
 
 Characteristics:
 
-- simple and sufficient for current phase
-- cookie-session based
-- no DB-backed session table
-
-Future note:
-
-- Better Auth remains a later optional migration if more auth methods are needed
+- cookie session, not DB-backed session storage
+- session config lives in `app/shared/session.ts`
+- current cookie name: `rz-session`
+- session max age: 30 days
 
 ---
 
-## 9. Current Application Flow
+## 9. Application Flow
 
 ### Candidate profile + resume
 
-Current intended flow:
-
-1. Candidate completes onboarding
-2. Candidate uploads resume through the app
+1. candidate completes onboarding
+2. candidate uploads a resume through the app
 3. app stores `resume_key` on `candidate_profiles`
-4. candidate can maintain profile in settings
+4. candidate can maintain profile, work history, links, and skills in settings
 
 ### Applying
 
-1. Candidate selects a job
-2. app checks if they already applied
-3. app checks whether `candidate_profiles.resume_key` exists
-4. app creates application row
+1. candidate selects a job
+2. app checks duplicate-application rules
+3. app requires a resume on the candidate profile
+4. app creates an application row
 5. application snapshots:
    - `resume_key`
-   - profile metadata
+   - structured profile metadata
+6. pre-evaluation workflow is triggered asynchronously
 
 ### Company review
 
-1. Company views a job or the dedicated applicants page for that job
-2. navigates into a dedicated applicant/application detail route
-3. sees submitted resume, snapshot data, timestamps, and current status
-4. updates application status from that review surface
+1. company views a job or applicant surface
+2. company navigates into applicant or report routes
+3. company sees snapshot data, resume, workflow status, and evaluation output
+4. company updates application status from those surfaces
 
 ---
 
-## 10. Resume Storage Architecture
+## 10. Asset and Resume Storage
 
-Resume handling uses a **contract-first** design.
+Resume handling is `resume_key`-first, not URL-first.
 
 ### Current model
 
-- the database stores `resume_key`, not `resume_url`
-- onboarding/settings use file-picking UI
-- the server already exposes resume upload/read boundaries
-- resume uploads now use real Cloudflare R2 signed URLs in the current runtime
+- the DB stores `resume_key`, not `resume_url`
+- R2 is the canonical object store
+- candidate and company resume access is mediated by server functions
+- local/public asset reads can also go through `/api/assets/:key` or `VITE_PUBLIC_ASSET_BASE_URL`
 
-### Resume server boundaries
+### Current candidate resume server functions
 
-Current candidate resume server functions:
+- `uploadResume`
+- `getResume`
 
-- `createResumeUploadTarget`
-- `finalizeResumeUpload`
-- `getResumeDownloadUrl`
+### Current company/application resume server function
 
-Current company/application resume server function:
-
-- `getApplicationResumeDownloadUrl`
+- `getApplicationResume`
 
 ### Current flow
 
-1. client requests signed upload target
-2. server creates user-scoped key:
+1. client picks a file
+2. server builds a user-scoped key:
    - `resumes/<userId>/<uuid>--<sanitized-file-name>.<ext>`
-3. client uploads directly to Cloudflare R2
-4. server verifies the object exists in R2 during finalize
-5. server stores `resume_key` on `candidate_profiles`
-6. candidate self-view and company applicant review use short-lived signed URLs
-
-### Runtime note
-
-- Resume upload uses S3-compatible R2 API from the main app server with presigned `PUT`/`GET` URLs
-- Workflows access the same R2 bucket via native `env.RESUMES` binding for resume extraction
+3. client sends base64 file bytes to the server function
+4. server writes the object with `env.RESUMES.put(...)`
+5. server stores `resume_key` on the candidate profile
+6. candidate/company reads fetch object bytes back through server functions
 
 Why `resume_key` instead of `resume_url`:
 
-- stable internal reference
-- avoids coupling DB state to delivery URL format
-- easier to move between CDN/signed URL strategies later
+- stable internal storage reference
+- DB remains decoupled from delivery URL format
+- easier to change delivery strategy later
 
 ---
 
 ## 11. Notifications Architecture
 
-Notifications are implemented as a durable in-app inbox with Resend-backed email delivery as a secondary best-effort channel. In-app notification records are the primary system of record.
+Notifications are durable in-app records first, with Resend-backed email as a secondary delivery channel.
 
-### Current model
+### Notifications table
 
-- `notifications` table stores:
-  - `id`
-  - `user_id`
-  - `type`
-  - `payload`
-  - `read_at`
-  - `email_delivery_status`
-  - `email_delivery_error`
-  - `email_delivery_attempted_at`
-  - `email_delivery_sent_at`
-  - `email_provider_message_id`
-  - `created_at`
-- supported event types:
-  - `application_status_changed`
-  - `report_ready`
-  - `interview_invited`
-  - `interview_expired`
-  - `position_filled`
-  - `job_published`, `job_archived`, `job_closed`
-  - `application_withdrawn`
-- application statuses include all 8: `applied`, `pre_screening`, `interview_invited`, `interview_in_progress`, `evaluated`, `shortlisted`, `rejected`, `withdrawn`
-- the app shell/dashboard header renders the inbox surface
+`notifications` stores:
 
-### Current module layout
+- `user_id`
+- `type`
+- `payload`
+- `read_at`
+- email delivery status/error/attempt timestamps
+- provider message id
+- `created_at`
 
-```
-app/features/notifications/
-├── components/
-│   ├── notification-email-template.tsx
-│   └── notification-inbox.tsx
-├── config.ts
-├── queries/
-│   ├── queries.sql
-│   └── queries_sql.ts
-├── server/
-│   └── functions.ts
-└── services/
-    └── email.ts
-```
+### Supported notification types in code
 
-Provider:
+- `application_status_changed`
+- `application_withdrawn`
+- `batch_ready`
+- `report_ready`
+- `interview_invited`
+- `position_filled`
+- `job_published`
+- `job_archived`
+- `job_closed`
 
-- **Resend**
+### Current delivery model
 
-Current email-backed use cases:
+- create DB notification row first
+- render that row in the in-app inbox
+- optionally send email for selected event types
+- persist email delivery result directly on the same row
 
-- candidate application status updates
-- company-side report ready notifications
-- interview expiry notifications
+Current email-backed use cases include:
 
-Future email-backed use cases:
-
-- interview ready / interview reminder
-- position filled notifications
-
-Recommended architecture:
-
-- write a notification record to the database first
-- treat in-app notifications as the primary system of record
-- send email as a secondary best-effort delivery channel for selected events
-- keep notification sending behind server-side functions/services
-- trigger notifications from explicit workflow events, not UI-only actions
-- persist delivery result directly on the notification row while there is only one secondary transport
-- do not couple domain logic directly to a provider SDK in routes/components
-
-Current delivery tracking:
-
-- `notifications`
-  - keeps `type` + `payload` as the canonical event record
-  - stores email delivery attempt/result fields directly on the row
-
-Future extension points:
-
-- move email delivery attempts into a separate table once we need retries, webhooks, or multiple secondary channels
+- interview invited
+- application status changed
+- application withdrawn
+- report ready
+- batch ready digest
 
 Design principle:
 
-- if email delivery fails, the notification still exists in-app
-- email is a transport, not the canonical event record
-
-Current module additions:
-
-- `app/features/notifications/services/email.ts`
+- in-app notification is canonical
+- email is a transport, not the source of truth
 
 ---
 
-## 12. Job Lifecycle Architecture
+## 12. Job and Batch Lifecycle
 
 Jobs support:
 
-- draft/open/closed states
+- `draft`, `open`, `closed`
 - archive behavior
-- `expires_at` with date picker on create/edit
-- stale role indicator (90+ days with no expiry)
-- auto-close on read for expired jobs
-- hidden-by-default expired/closed jobs on public surfaces
-- `interview_questions` JSONB field for future AI agent context
+- `expires_at`
+- auto-close behavior for expired jobs
+- interview questions stored in JSONB
 
-AI integration:
+Batch-oriented evaluation adds:
 
-- `final_report_target` controls how many final reports companies receive per job
-- `interview_questions` (JSONB) feeds into agent system prompts
+- `queued_for_batch` application status
+- `job_batches`
+- `evaluated_held` until release
+- batch release and backfill logic
+
+`final_report_target` still controls how many reports a company should receive per job, but delivery is batch-aware rather than purely per-candidate.
 
 ---
 
 ## 13. Testing Architecture
 
-Two Postgres containers:
+Two local Postgres containers:
 
 | Container | Port | Purpose |
 | --- | --- | --- |
@@ -560,142 +516,124 @@ Two Postgres containers:
 
 Testing approach:
 
-- real Postgres for query and workflow tests
-- no DB mocking for query/business-logic layers
-- shared test setup handles cleanup
+- real Postgres for query/business-logic tests
+- shared setup handles cleanup
 - seed helpers create minimal valid records
+- targeted Vitest coverage across feature query layers and workflow logic
 
-Current coverage focus:
+Current high-value AI-layer coverage areas:
 
-- auth queries
-- companies queries
-- jobs queries/business logic
-- applications queries/business logic
-- application notification workflows
-- dashboard metrics
-- notifications queries
-
-Coverage needed for AI layer:
-
-- pre-evaluation workflow steps (with mocked LLM responses)
-- report generation workflow steps
-- interview agent state transitions
-- quota exhaustion logic
+- pre-evaluation prompt/policy helpers
+- interview query/state transitions
+- notification payload handling
+- batch formation and release logic
 
 ---
 
 ## 14. AI Architecture
 
-The AI layer runs in the same Cloudflare Worker as the main app. Workflows and agents are triggered directly from server functions.
+The AI layer runs inside the same Worker as the app.
 
-### Pre-Evaluation Pipeline (Cloudflare Workflow)
+### Pre-Evaluation Workflow
 
-- Triggered directly from a server function (no HTTP hop)
-- Durable multi-step execution:
-  1. Read application + job from Postgres
-  2. Fetch resume from R2
-  3. Extract text from resume based on file type (PDF / DOCX)
-  4. Merge profile metadata + resume text + job context
-  5. Call LLM for scoring
-  6. Write result to `pre_evaluations`
-  7. Decision layer: create interview or hold
-- Automatic retries per step
-- Resumes from last completed step if interrupted
+Triggered from the application flow. Steps:
 
-### Interview Layer (Cloudflare Agents SDK)
+1. read application + job from Postgres
+2. fetch resume from R2
+3. extract text from PDF or DOCX
+4. combine job context, profile snapshot, and resume text
+5. classify job type
+6. run authenticity / consistency check
+7. run role-specific pre-evaluation
+8. persist `pre_evaluations`
+9. decide whether to hold or queue for batch
 
-- One `AIChatAgent` instance per interview session (extends Durable Object)
-- Built-in message persistence via `AIChatAgent` SQLite storage
-- WebSocket streaming transport (token-by-token responses)
-- System prompt injected with job requirements + resume context via Session API
-- Two modes:
-  - `full`: complete RoundZero interview
-  - `quick_eval`: 2–3 clarifying questions for medium-fit candidates
-- Interview invites expire after 48 hours via `this.schedule()` (per-interview alarm, no global cron)
+### Interview Agent
 
-**Agents SDK capabilities used:**
+`app/agents/interview.ts` uses `AIChatAgent`.
 
-| Feature | How we use it | What it replaces |
-|---|---|---|
-| `AIChatAgent` | Interview agent class with `onChatMessage()` | Raw Durable Object + manual storage |
-| `streamText()` | Token streaming to candidate | Full-response waiting |
-| Tools (`tool()`) | `evaluate_answer`, `check_resume_gap`, `end_interview` | Hardcoded question limits |
-| Session API | Structured context memory (job, candidate, evaluation notes) | Flat string concat |
-| `this.schedule()` | Per-interview expiry alarm | Global cron polling |
-| `this.runWorkflow()` | Trigger post-evaluation from agent | HTTP POST to endpoint |
-| State sync | Real-time status/scores to client | Frontend polling |
-| `this.queue()` | Background context refresh | Inline blocking fetch |
+Current behavior:
 
-**Agent decision making:**
-- The LLM decides when to end the interview via `end_interview` tool (no hardcoded 5-question limit)
-- The agent evaluates each answer via `evaluate_answer` tool and stores running scores
-- The agent checks claims against resume via `check_resume_gap` tool
-- The agent triggers post-evaluation workflow directly when sufficient signal is gathered
+- one agent instance per interview
+- token streaming to the candidate
+- job context + candidate summary hydrated from DB/application snapshot
+- internal tool calls for:
+  - `evaluate_answer`
+  - `check_resume_gap`
+  - `record_screening_coverage`
+  - `end_interview`
+- post-evaluation workflow is triggered from the agent when the interview ends
 
-### Interview Lifecycle Manager (Agent Scheduling)
+Current active interview mode:
 
-- Each interview schedules its own expiry via `this.schedule(48h, "expireInterview")`
-- On expiry: agent updates status, sends notification, triggers backfill workflow
-- No global cron needed — each interview manages its own lifecycle
-- Agent schedules are persisted in SQLite and survive restarts
+- `full`
 
-### Report Generation Pipeline (Cloudflare Workflow)
+### Post-Evaluation Workflow
 
-- Triggered directly when interview completes (`this.runWorkflow()` from the agent or a server function)
-- Durable multi-step execution:
-  1. Idempotency check (skip if report already exists)
-  2. Read interview context + transcript from Durable Object state
-  3. Generate report via single LLM call with structured JSON schema output
-     - Fallback deterministic report when LLM returns non-JSON or invalid shape
-  4. Persist report to `reports` table; update application status → `evaluated`
-  5. Create in-app `report_ready` notification for company owner
-  6. Send best-effort Resend email to company owner
+Triggered after interview completion. Steps:
 
-### Output Layer
+1. idempotency check
+2. read interview context and transcript
+3. generate structured report with LLM
+4. fall back deterministically if report generation fails
+5. persist report
+6. move application to `evaluated_held`
+7. notify company and/or batch orchestration flow
 
-- Report reads from Postgres
-- Candidate ranking per job by report score
-- Company dashboard shows evaluated + pending tabs
+### Batch Orchestration Workflow
 
-### Key Constraint
+Batch release is a first-class workflow:
 
-- The AI layer sits on top of a complete hiring platform, not replacing unfinished basics
+1. candidates accumulate in a per-job pool (`queued_for_batch`)
+2. pool checks run on pre-eval completion and on the Worker scheduled handler
+3. when launch criteria are met, the app creates a batch and invites candidates
+4. completed reports are held until the batch releases
+5. release notifies the company and can trigger backfill logic for the next batch
+
+### Current AI-layer outputs
+
+- `pre_evaluations`
+- `interviews`
+- `reports`
+- `job_batches`
+- applicant and batch notifications
 
 ---
 
 ## 15. Near-Term Priorities
 
-See `PLAN.md` for the full build plan. Current focus:
+See `PLAN.md` for the full build plan. Based on the current architecture, likely near-term hardening areas are:
 
-1. **Interview UX polish**: finish chat auto-scroll parity, duplicate-assistant safeguards, and terminal state UI polish
-2. **Phase 8 wrap-up**: candidate applications list visible status labels, dedicated interview invitation cards
-3. **Phase 9 polish**: mobile responsive pass, pending/evaluated tabs on job applicants
-4. **Testing**: end-to-end smoke test of full apply → pre-eval → invite → interview → complete → report flow
-5. **Optional**: Better Auth migration (Phase 10), Web Interface Guidelines compliance (Phase 11)
+1. align remaining per-candidate `report_ready` and batch `batch_ready` semantics
+2. polish candidate interview UX and terminal states
+3. continue AI prompt/policy calibration
+4. harden billing and plan-gating behavior
+5. expand end-to-end workflow coverage
 
 ---
 
-## 16. Post-Release Hardening (AI Layer)
+## 16. Post-Release Hardening
 
 | Item | Why | Approach |
 | --- | --- | --- |
-| Recovery sweep for stuck applications | Fire-and-forget trigger has no retry — if Workflows are failing, applications stay in `applied` with no pre-evaluation forever | Add a cron (CF Cron Trigger or scheduled task) that finds `applied` rows with no `pre_evaluations` row and re-triggers them |
-| Quota race condition | Two concurrent workflows can over-invite for a job if capacity checks are non-atomic | Use transactional locking (`SELECT ... FOR UPDATE`) on job-level capacity checks when creating interviews |
-| LLM model adequacy | Interview chat uses `anthropic/claude-haiku-4.5` (prod) / `meta-llama/llama-3.3-70b-instruct:free` (dev); pre-eval/report quality monitored via token usage logs | Keep periodic score-quality checks and re-evaluate model mix if report consistency drops |
-| Workflow failure orphans | If workflow errors after `write_pre_evaluation` but before `decide_next_step`, application is stuck in `pre_screening` | Recovery sweep covers this too — detect `pre_screening` rows older than N minutes with no interview
+| Recovery sweep for stuck applications | async workflow triggers can still fail around edges | scheduled recovery for stale `applied` / `pre_screening` rows |
+| Batch / quota race conditions | concurrency around invites and release can over-allocate | keep job-level locking and idempotent release checks |
+| AI quality drift | prompts and model mix can regress | periodic audit of score/report consistency and routing behavior |
+| Workflow failure orphans | partial workflow completion can strand rows | recovery sweeps plus idempotent re-entry |
+
 ---
 
 ## 17. Key Decisions
 
 | Decision | Choice | Rationale |
 | --- | --- | --- |
-| Product layering | Platform first, AI second | Avoids using AI to mask workflow gaps |
-| DB typing | SQLC + inference | Keeps DB layer authoritative |
-| Resume persistence | `resume_key` | Stable storage reference |
-| Resume delivery | Signed read URLs | Keeps resumes private |
-| Resume upload | Direct-to-R2 signed upload | Avoids proxying file bytes through app server |
-| Notifications | In-app notifications + Resend | Durable app record first, email as secondary delivery |
-| Auth | Google OAuth + cookie session | Good enough for current phase |
-| AI pipelines | Cloudflare Workflows | Durable multi-step execution with retries |
-| Interview runtime | Cloudflare Agents SDK (`AIChatAgent`) | Stateful streaming chat with built-in message persistence |
-| Resume text extraction | Local libraries per file type (PDF / DOCX) | LLM reads unstructured text; no external parser needed |
+| Product layering | Platform first, AI second | AI should sit on top of a credible hiring workflow |
+| Runtime | Single Cloudflare Worker | shared bindings, simpler local/dev/prod flow |
+| DB typing | SQLC + inference | keeps SQL authoritative |
+| Resume persistence | `resume_key` | stable storage reference |
+| Resume upload | server-mediated R2 writes | simplest current contract |
+| Resume delivery | server-mediated reads + asset endpoint/public base URL | flexible delivery without DB URL coupling |
+| Notifications | DB-first in-app records + Resend | durable record first, email second |
+| Auth | Google OAuth + cookie session | sufficient for current scope |
+| AI orchestration | Cloudflare Workflows | durable multi-step execution |
+| Interview runtime | Agents SDK `AIChatAgent` | stateful streaming interview agent |

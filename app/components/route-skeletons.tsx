@@ -1112,3 +1112,42 @@ export function BillingPageSkeleton() {
     </div>
   );
 }
+
+/**
+ * Skeleton for /dashboard/job-batches/$batchId — batch detail page.
+ * Matches: header + 3 timestamp cards + ranked candidate list.
+ */
+export function BatchDetailSkeleton() {
+  return (
+    <div className="animate-fade-in space-y-6">
+      <div className="space-y-2">
+        <Skeleton className="h-7 w-32" />
+        <Skeleton className="h-7 w-72" />
+        <Skeleton className="h-4 w-60" />
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Skeleton className="h-20 w-full rounded-xl" />
+        <Skeleton className="h-20 w-full rounded-xl" />
+        <Skeleton className="h-20 w-full rounded-xl" />
+      </div>
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-5 w-44" />
+          <Skeleton className="mt-2 h-3.5 w-72" />
+        </CardHeader>
+        <CardContent className="space-y-3 p-5">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-4">
+              <Skeleton className="size-10 rounded-full" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-1/3" />
+                <Skeleton className="h-3 w-2/3" />
+              </div>
+              <Skeleton className="size-10 rounded-2xl" />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

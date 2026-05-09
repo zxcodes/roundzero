@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CompanyJobApplicantsList } from "@/features/applications/components/company-job-applicants-list";
 import { getJobApplicants, getJobFunnelMetrics } from "@/features/applications/server/functions";
+import { getActiveBatchForJobServer } from "@/features/batches/server/functions";
 import { getJob } from "@/features/jobs/server/functions";
 import { validateUuidParams } from "@/shared/validation";
 
@@ -26,8 +27,10 @@ const funnelStages: {
 }[] = [
   { key: "applied", label: "Applied" },
   { key: "preScreening", label: "Pre-screening" },
+  { key: "queuedForBatch", label: "Queued" },
   { key: "interviewInvited", label: "Invited" },
   { key: "interviewInProgress", label: "In progress" },
+  { key: "evaluatedHeld", label: "Held" },
   { key: "evaluated", label: "Evaluated" },
   { key: "shortlisted", label: "Shortlisted" },
 ];
@@ -46,22 +49,33 @@ export const Route = createFileRoute("/_authenticated/dashboard/job-applicants/$
     }
     const job: JobDetail = jobResult;
 
-    const [applicants, funnel] = await Promise.all([
+    const [applicants, funnel, activeBatch] = await Promise.all([
       getJobApplicants({ data: { jobId: params.jobId } }),
       getJobFunnelMetrics({ data: { jobId: params.jobId } }),
+      getActiveBatchForJobServer({ data: { jobId: params.jobId } }),
     ]);
-    return { job, applicants, funnel };
+    return { job, applicants, funnel, activeBatch };
   },
   pendingComponent: DashboardJobApplicantsSkeleton,
   component: JobApplicantsPage,
 });
 
 function JobApplicantsPage() {
-  const { job, applicants, funnel } = Route.useLoaderData();
-  const [activeTab, setActiveTab] = useState<"evaluated" | "pending">("evaluated");
+  const { job, applicants, funnel, activeBatch } = Route.useLoaderData();
+  const [activeTab, setActiveTab] = useState<"released" | "active" | "queued">("released");
 
-  const evaluated = applicants.filter((a) => a.reportId !== null);
-  const pending = applicants.filter((a) => a.reportId === null);
+  const released = applicants.filter(
+    (a: (typeof applicants)[number]) => a.reportReleasedAt !== null,
+  );
+  const active = applicants.filter(
+    (a: (typeof applicants)[number]) =>
+      a.status === "interview_invited" ||
+      a.status === "interview_in_progress" ||
+      a.status === "evaluated_held",
+  );
+  const queued = applicants.filter(
+    (a: (typeof applicants)[number]) => a.status === "queued_for_batch",
+  );
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -133,41 +147,148 @@ function JobApplicantsPage() {
       <div className="flex gap-2 border-b border-border/50">
         <button
           type="button"
-          onClick={() => setActiveTab("evaluated")}
+          onClick={() => setActiveTab("released")}
           className={`flex items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
-            activeTab === "evaluated"
+            activeTab === "released"
               ? "border-primary text-foreground"
               : "border-transparent text-muted-foreground hover:text-foreground"
           }`}
         >
           <HugeiconsIcon icon={RankingIcon} strokeWidth={2} className="size-4" />
-          Evaluated
+          Released
           <Badge variant="secondary" className="font-mono text-[10px]">
-            {evaluated.length}
+            {released.length}
           </Badge>
         </button>
         <button
           type="button"
-          onClick={() => setActiveTab("pending")}
+          onClick={() => setActiveTab("active")}
           className={`flex items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
-            activeTab === "pending"
+            activeTab === "active"
+              ? "border-primary text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <HugeiconsIcon icon={Clock01Icon} strokeWidth={2} className="size-4" />
+          Active Batch
+          <Badge variant="secondary" className="font-mono text-[10px]">
+            {active.length}
+          </Badge>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("queued")}
+          className={`flex items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
+            activeTab === "queued"
               ? "border-primary text-foreground"
               : "border-transparent text-muted-foreground hover:text-foreground"
           }`}
         >
           <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} className="size-4" />
-          Pending
+          Queued
           <Badge variant="secondary" className="font-mono text-[10px]">
-            {pending.length}
+            {queued.length}
           </Badge>
         </button>
       </div>
 
-      {activeTab === "evaluated" ? (
-        <CompanyJobApplicantsList applicants={evaluated} />
+      {activeTab === "released" ? (
+        <CompanyJobApplicantsList applicants={released} />
+      ) : activeTab === "active" ? (
+        <ActiveBatchPanel applicants={active} batchId={activeBatch?.id ?? null} />
       ) : (
-        <CompanyJobApplicantsList applicants={pending} />
+        <QueuedPanel count={queued.length} />
       )}
     </div>
+  );
+}
+
+function ActiveBatchPanel({
+  applicants,
+  batchId,
+}: {
+  applicants: Awaited<ReturnType<typeof getJobApplicants>>;
+  batchId: string | null;
+}) {
+  if (applicants.length === 0) {
+    return (
+      <Card className="border-dashed border-border/60">
+        <CardContent className="py-8 text-center">
+          <p className="text-sm text-muted-foreground">No active batch right now.</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Candidates will appear here when a batch is launched.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const completed = applicants.filter((a) => a.status === "evaluated_held").length;
+  const inProgress = applicants.filter((a) => a.status === "interview_in_progress").length;
+  const invited = applicants.filter((a) => a.status === "interview_invited").length;
+
+  return (
+    <Card className="border-border/60">
+      <CardContent className="space-y-4 py-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium">Batch in progress</p>
+            <p className="text-xs text-muted-foreground">
+              {completed} of {applicants.length} completed
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="font-mono text-[10px]">
+              {inProgress} in progress · {invited} invited
+            </Badge>
+            {batchId ? (
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/dashboard/job-batches/$batchId" params={{ batchId }}>
+                  View batch
+                </Link>
+              </Button>
+            ) : null}
+          </div>
+        </div>
+        <div className="h-2 overflow-hidden rounded-full bg-muted">
+          <div
+            className="h-full rounded-full bg-primary transition-all"
+            style={{ width: `${(completed / applicants.length) * 100}%` }}
+          />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Reports will release when all candidates respond or when the batch window closes.
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function QueuedPanel({ count }: { count: number }) {
+  if (count === 0) {
+    return (
+      <Card className="border-dashed border-border/60">
+        <CardContent className="py-8 text-center">
+          <p className="text-sm text-muted-foreground">No candidates queued.</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Strong-fit candidates will appear here before the next batch launches.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="border-border/60">
+      <CardContent className="py-6">
+        <p className="text-sm font-medium">
+          {count} candidate{count === 1 ? "" : "s"} queued
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Candidates are queued for the next evaluation batch. Scores and names will be visible
+          after the batch releases.
+        </p>
+      </CardContent>
+    </Card>
   );
 }

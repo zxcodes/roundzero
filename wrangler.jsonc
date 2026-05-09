@@ -45,6 +45,11 @@
       "name": "post-evaluation",
       "binding": "POST_EVALUATION",
       "class_name": "PostEvaluationWorkflow"
+    },
+    {
+      "name": "batch-orchestration",
+      "binding": "BATCH_ORCHESTRATION",
+      "class_name": "BatchOrchestrationWorkflow"
     }
   ],
   "durable_objects": {
@@ -60,5 +65,8 @@
       "tag": "v1",
       "new_sqlite_classes": ["InterviewAgent"]
     }
-  ]
+  ],
+  "triggers": {
+    "crons": ["0 */6 * * *"]
+  }
 }

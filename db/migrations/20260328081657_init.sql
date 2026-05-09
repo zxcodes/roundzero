@@ -149,10 +149,25 @@ CREATE INDEX idx_notifications_unread
   ON notifications(user_id, read_at)
   WHERE read_at IS NULL;
 
+-- Job Batches: groups of interviews launched together
+CREATE TABLE job_batches (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  job_id        UUID NOT NULL REFERENCES jobs(id) ON DELETE RESTRICT,
+  status        TEXT NOT NULL DEFAULT 'forming',
+  target_size   INTEGER NOT NULL DEFAULT 5,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  launched_at   TIMESTAMPTZ,
+  released_at   TIMESTAMPTZ
+);
+
+CREATE INDEX idx_job_batches_job ON job_batches(job_id);
+CREATE INDEX idx_job_batches_status ON job_batches(status) WHERE status IN ('forming', 'active');
+
 -- Interviews: each maps to a Durable Object instance
 CREATE TABLE interviews (
   id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   application_id      UUID NOT NULL REFERENCES applications(id) ON DELETE RESTRICT,
+  batch_id            UUID REFERENCES job_batches(id) ON DELETE SET NULL,
   agent_id            TEXT,
   type                TEXT NOT NULL DEFAULT 'full',
   metadata            JSONB NOT NULL DEFAULT '{}',
@@ -168,6 +183,7 @@ CREATE TABLE interviews (
 );
 
 CREATE INDEX idx_interviews_application ON interviews(application_id);
+CREATE INDEX idx_interviews_batch ON interviews(batch_id);
 
 -- Pre-evaluations: lightweight AI pre-screening results
 CREATE TABLE pre_evaluations (
@@ -197,9 +213,11 @@ CREATE TABLE reports (
   screening_answers JSONB NOT NULL DEFAULT '[]',
   scores          JSONB NOT NULL,
   recommendation  TEXT NOT NULL,
+  released_at     TIMESTAMPTZ,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX idx_reports_application ON reports(application_id);
+CREATE INDEX idx_reports_released ON reports(released_at) WHERE released_at IS NULL;
 
 -- migrate:down

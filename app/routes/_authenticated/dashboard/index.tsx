@@ -216,6 +216,41 @@ function CompanyDashboardSection({ metrics }: { metrics: CompanyMetrics }) {
         </Card>
       </div>
 
+      {metrics.activeBatches.length > 0 ? (
+        <Card className="border-primary/20 bg-linear-to-br from-card via-card to-primary/5">
+          <CardHeader>
+            <CardTitle>Active Batches</CardTitle>
+            <CardDescription>
+              Batches currently in progress — reports will release when all candidates respond or
+              the batch window closes.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {metrics.activeBatches.map((batch) => (
+              <div
+                key={batch.id}
+                className="flex items-center justify-between gap-3 rounded-lg border bg-background/80 p-3"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{batch.jobTitle}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {batch.targetSize} candidates · launched{" "}
+                    {batch.launchedAt
+                      ? new Date(batch.launchedAt).toLocaleDateString()
+                      : "recently"}
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/dashboard/job-batches/$batchId" params={{ batchId: batch.id }}>
+                    View batch
+                  </Link>
+                </Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
+
       <div className="grid gap-4 xl:grid-cols-3">
         <Card className="xl:col-span-2">
           <CardHeader>
@@ -319,8 +354,9 @@ function CompanyDashboardSection({ metrics }: { metrics: CompanyMetrics }) {
                     <TableCell className="font-medium">{role.title}</TableCell>
                     <TableCell>{role.applicants}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">
-                      A:{role.applied} / P:{role.preScreening} / I:{role.invited} / IP:
-                      {role.inProgress} / E:{role.evaluated} / S:{role.shortlisted}
+                      A:{role.applied} / P:{role.preScreening} / Q:{role.queuedForBatch} / I:
+                      {role.invited} / IP:{role.inProgress} / EH:{role.evaluatedHeld} / E:
+                      {role.evaluated} / S:{role.shortlisted}
                     </TableCell>
                     <TableCell>
                       {role.reportsCompleted}/{role.finalReportTarget}
@@ -360,9 +396,9 @@ function CompanyDashboardSection({ metrics }: { metrics: CompanyMetrics }) {
 
       <Card className="overflow-hidden border-primary/20 bg-linear-to-br from-card via-card to-secondary/30">
         <CardHeader>
-          <CardTitle>Reports Studio</CardTitle>
+          <CardTitle>Released Batches</CardTitle>
           <CardDescription>
-            Highest-signal evaluations for quick shortlist/reject decisions.
+            Evaluations are released in batches so you can compare candidates side-by-side.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -446,9 +482,10 @@ function CompanyDashboardSection({ metrics }: { metrics: CompanyMetrics }) {
           ) : (
             <Empty className="border">
               <EmptyHeader>
-                <EmptyTitle>No report highlights yet</EmptyTitle>
+                <EmptyTitle>No released batches yet</EmptyTitle>
                 <EmptyDescription>
-                  As interviews complete, top evaluation cards will appear here.
+                  When a batch of candidate evaluations is ready, it will appear here as a ranked
+                  list.
                 </EmptyDescription>
               </EmptyHeader>
             </Empty>

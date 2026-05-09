@@ -112,6 +112,7 @@ CREATE TABLE public.companies (
 CREATE TABLE public.interviews (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     application_id uuid NOT NULL,
+    batch_id uuid,
     agent_id text,
     type text DEFAULT 'full'::text NOT NULL,
     metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
@@ -124,6 +125,21 @@ CREATE TABLE public.interviews (
     cancellation_reason text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: job_batches; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.job_batches (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    job_id uuid NOT NULL,
+    status text DEFAULT 'forming'::text NOT NULL,
+    target_size integer DEFAULT 5 NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    launched_at timestamp with time zone,
+    released_at timestamp with time zone
 );
 
 
@@ -210,6 +226,7 @@ CREATE TABLE public.reports (
     screening_answers jsonb DEFAULT '[]'::jsonb NOT NULL,
     scores jsonb NOT NULL,
     recommendation text NOT NULL,
+    released_at timestamp with time zone,
     created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
@@ -302,6 +319,14 @@ ALTER TABLE ONLY public.companies
 
 ALTER TABLE ONLY public.interviews
     ADD CONSTRAINT interviews_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: job_batches job_batches_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.job_batches
+    ADD CONSTRAINT job_batches_pkey PRIMARY KEY (id);
 
 
 --
@@ -426,6 +451,27 @@ CREATE INDEX idx_interviews_application ON public.interviews USING btree (applic
 
 
 --
+-- Name: idx_interviews_batch; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_interviews_batch ON public.interviews USING btree (batch_id);
+
+
+--
+-- Name: idx_job_batches_job; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_job_batches_job ON public.job_batches USING btree (job_id);
+
+
+--
+-- Name: idx_job_batches_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_job_batches_status ON public.job_batches USING btree (status) WHERE (status = ANY (ARRAY['forming'::text, 'active'::text]));
+
+
+--
 -- Name: idx_jobs_archived; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -472,6 +518,13 @@ CREATE INDEX idx_pre_evaluations_application ON public.pre_evaluations USING btr
 --
 
 CREATE INDEX idx_reports_application ON public.reports USING btree (application_id);
+
+
+--
+-- Name: idx_reports_released; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_reports_released ON public.reports USING btree (released_at) WHERE (released_at IS NULL);
 
 
 --
@@ -527,6 +580,22 @@ ALTER TABLE ONLY public.companies
 
 ALTER TABLE ONLY public.interviews
     ADD CONSTRAINT interviews_application_id_fkey FOREIGN KEY (application_id) REFERENCES public.applications(id) ON DELETE RESTRICT;
+
+
+--
+-- Name: interviews interviews_batch_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.interviews
+    ADD CONSTRAINT interviews_batch_id_fkey FOREIGN KEY (batch_id) REFERENCES public.job_batches(id) ON DELETE SET NULL;
+
+
+--
+-- Name: job_batches job_batches_job_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.job_batches
+    ADD CONSTRAINT job_batches_job_id_fkey FOREIGN KEY (job_id) REFERENCES public.jobs(id) ON DELETE RESTRICT;
 
 
 --

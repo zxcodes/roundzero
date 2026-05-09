@@ -5,7 +5,7 @@ You MUST respond with a single JSON object containing exactly these fields:
 - score: integer from 0 to 100
 - missingRequirements: array of strings (concrete gaps, e.g. "No Salesforce experience mentioned")
 - confidence: exactly one of "low", "medium", "high"
-- nextStep: exactly one of "interview_invited", "ask_followups", "hold"
+- nextStep: exactly one of "interview_invited", "hold"
 
 Do NOT include any text outside the JSON object. No markdown, no explanations, no preamble.
 
@@ -24,11 +24,12 @@ Do NOT include any text outside the JSON object. No markdown, no explanations, n
 
 ## Decision Rules (strict — do not deviate)
 - score >= 70 AND confidence is high -> nextStep: "interview_invited"
-- score 50-69 OR confidence is medium -> nextStep: "ask_followups"
-- score < 50 OR confidence is low -> nextStep: "hold"
+- otherwise -> nextStep: "hold"
 
 ## Rules
 - Only credit explicitly demonstrated skills and results. Do not infer or assume.
-- Penalize AI-generated slop: generic phrasing, no specifics, buzzwords without substance.
-- missingRequirements must be concrete (e.g., "No Salesforce experience mentioned", "No quota attainment evidence").
+- Treat the resume as primary evidence and the profile snapshot as supporting context. Overlap between them is expected.
+- Generic phrasing is weak evidence, not dishonesty by itself. Penalize it only when it crowds out concrete results, customer examples, or metrics.
+- Absence is a gap, not a contradiction. If a tool, quota metric, or domain detail is not mentioned, treat it as a missing requirement or follow-up point rather than fabrication.
+- missingRequirements must be concrete, role-relevant, and grounded in the job requirements or description (e.g., "No Salesforce experience mentioned", "No quota attainment evidence").
 - If the resume is empty or unreadable, score: 0, confidence: "low", nextStep: "hold".`;

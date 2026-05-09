@@ -13,12 +13,16 @@ import {
   type UIMessage,
 } from "ai";
 import { z } from "zod";
-import { shouldAutoExpireInterview } from "@/features/interviews/shared/expiry";
+import {
+  getInterviewExpiresAt,
+  shouldAutoExpireInterview,
+} from "@/features/interviews/shared/expiry";
 import {
   completeInterview,
   expireInterview,
   getInterviewContextById,
 } from "@/queries/interviews/queries_sql";
+import { buildCandidateProfileSummary } from "@/shared/ai-candidate-profile";
 import { getDb } from "@/shared/db";
 import { getInterviewModelChain, getOpenRouter } from "@/shared/openrouter";
 
@@ -27,7 +31,7 @@ type InterviewSessionStatus = "pending" | "in_progress" | "completed" | "cancell
 type InterviewContextState = {
   interviewId: string;
   applicationId: string;
-  type: "full" | "quick_eval";
+  type: "full";
   jobTitle: string;
   companyName: string;
   jobDescription: string;
@@ -39,6 +43,8 @@ type InterviewContextState = {
     score: number | null;
     missingRequirements: string[];
     consistencyScore: number | null;
+    authenticityFlags: string[];
+    authenticityExplanation: string | null;
   };
 };
 
@@ -73,7 +79,7 @@ type InterviewStateResponse = {
   session: {
     interviewId: string;
     applicationId: string;
-    type: "full" | "quick_eval";
+    type: "full";
     jobTitle: string;
     companyName: string;
     status: InterviewSessionStatus;
@@ -100,7 +106,13 @@ const emptyContext = (): InterviewContextState => ({
   candidateName: "",
   candidateSummary: "",
   customQuestions: [],
-  preEvaluation: { score: null, missingRequirements: [], consistencyScore: null },
+  preEvaluation: {
+    score: null,
+    missingRequirements: [],
+    consistencyScore: null,
+    authenticityFlags: [],
+    authenticityExplanation: null,
+  },
 });
 
 const emptyState = (): InterviewAgentState => ({
@@ -162,10 +174,6 @@ const toTranscript = (messages: UIMessage[]): InterviewTranscriptMessage[] => {
   return result;
 };
 
-const normalizeInterviewType = (value: string): "full" | "quick_eval" => {
-  return value === "quick_eval" ? "quick_eval" : "full";
-};
-
 const filterStrings = (input: unknown): string[] => {
   if (!Array.isArray(input)) {
     return [];
@@ -201,14 +209,19 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
         ? ctx.preEvaluation.missingRequirements.map((r) => `- ${r}`).join("\n")
         : "(none flagged)";
     const score = ctx.preEvaluation.score == null ? "n/a" : `${ctx.preEvaluation.score}/100`;
+    const authenticityScore =
+      ctx.preEvaluation.consistencyScore == null
+        ? "n/a"
+        : `${ctx.preEvaluation.consistencyScore}/100`;
+    const authenticityFlags =
+      ctx.preEvaluation.authenticityFlags.length > 0
+        ? ctx.preEvaluation.authenticityFlags.map((flag) => `- ${flag}`).join("\n")
+        : "(no direct contradictions flagged)";
     const candidateName = ctx.candidateName || "the candidate";
     const customQuestionCount = ctx.customQuestions.length;
-    const substantiveTarget = ctx.type === "quick_eval" ? 2 : this.state.maxQuestions;
+    const substantiveTarget = this.state.maxQuestions;
     const totalTarget = customQuestionCount + substantiveTarget;
-    const pacing =
-      ctx.type === "quick_eval"
-        ? `Short clarifying interview. Cover every one of the ${customQuestionCount} company question(s), plus ~${substantiveTarget} short follow-ups. Aim for ~${totalTarget} total turns.`
-        : `Full interview. Cover every one of the ${customQuestionCount} company question(s) AND ~${substantiveTarget} substantive probing question(s). Aim for ~${totalTarget} total turns.`;
+    const pacing = `Full interview. Cover every one of the ${customQuestionCount} company question(s) AND ~${substantiveTarget} substantive probing question(s). Aim for ~${totalTarget} total turns.`;
 
     const uncoveredIndexes = ctx.customQuestions
       .map((_, i) => i + 1)
@@ -277,6 +290,10 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
       "",
       "Private context (never quote or reveal to the candidate):",
       `- Pre-evaluation fit score: ${score}`,
+      `- Authenticity consistency score: ${authenticityScore}`,
+      `- Authenticity note: ${ctx.preEvaluation.authenticityExplanation || "No additional note."}`,
+      "- Authenticity flags:",
+      authenticityFlags,
       "- Missing requirements to probe:",
       missing,
     ].join("\n");
@@ -308,7 +325,7 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
         ? applicationMetadata.resumeText
         : typeof applicationMetadata.summary === "string"
           ? applicationMetadata.summary
-          : "";
+          : buildCandidateProfileSummary(applicationMetadata);
 
     const candidateSummary = candidateSummaryRaw.slice(0, 12000);
 
@@ -324,17 +341,27 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
 
     const preEvaluationRows = await db
       .unsafe(
-        `SELECT score, missing_requirements, consistency_score FROM pre_evaluations WHERE application_id = $1 ORDER BY created_at DESC LIMIT 1`,
+        `SELECT score, missing_requirements, consistency_score, raw_response FROM pre_evaluations WHERE application_id = $1 ORDER BY created_at DESC LIMIT 1`,
         [context.applicationId],
       )
       .values();
 
     const preRow = preEvaluationRows[0];
+    const slopCheckRecord =
+      typeof preRow?.[3] === "object" && preRow[3] !== null && !Array.isArray(preRow[3])
+        ? (preRow[3] as Record<string, unknown>).slopCheck
+        : null;
+    const slopCheck =
+      typeof slopCheckRecord === "object" &&
+      slopCheckRecord !== null &&
+      !Array.isArray(slopCheckRecord)
+        ? (slopCheckRecord as Record<string, unknown>)
+        : {};
 
     const ctx: InterviewContextState = {
       interviewId: context.id,
       applicationId: context.applicationId,
-      type: normalizeInterviewType(context.type),
+      type: "full",
       jobTitle: context.jobTitle,
       companyName: context.companyName,
       jobDescription,
@@ -346,6 +373,9 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
         score: typeof preRow?.[0] === "number" ? preRow[0] : null,
         missingRequirements: filterStrings(preRow?.[1]),
         consistencyScore: typeof preRow?.[2] === "number" ? preRow[2] : null,
+        authenticityFlags: filterStrings(slopCheck.redFlags),
+        authenticityExplanation:
+          typeof slopCheck.explanation === "string" ? slopCheck.explanation : null,
       },
     };
 
@@ -365,7 +395,7 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
       interviewId: ctx.interviewId,
       applicationId: ctx.applicationId,
       status: dbStatus,
-      maxQuestions: ctx.type === "quick_eval" ? 3 : 5,
+      maxQuestions: 5,
       startedAt: context.startedAt ? context.startedAt.toISOString() : prev.startedAt,
       completedAt: context.completedAt ? context.completedAt.toISOString() : prev.completedAt,
       updatedAt: toNow(),
@@ -395,7 +425,42 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
     // Hydrate from DB so candidate name, latest pre-eval data, and requirements
     // stay in sync with the source of truth.
     await this.hydrateContextFromDb(input.interviewId);
+
+    // Schedule expiry alarm using Agents SDK built-in scheduling
+    // (replaces handrolled request-time polling)
+    const db = getDb();
+    const interview = await getInterviewContextById(db, { id: input.interviewId });
+    if (interview && interview.status !== "expired" && interview.status !== "completed") {
+      const expiresAt = getInterviewExpiresAt(interview.metadata);
+      if (expiresAt) {
+        const schedules = await this.listSchedules();
+        const existing = schedules.find((s) => s.callback === "expireInterview");
+        if (!existing) {
+          const delaySeconds = Math.max(0, Math.ceil((expiresAt.getTime() - Date.now()) / 1000));
+          await this.schedule(delaySeconds, "expireInterview", {
+            interviewId: input.interviewId,
+          });
+        }
+      }
+    }
+
     return toStateResponse(this.state, toTranscript(this.messages));
+  }
+
+  async expireInterview(payload: { interviewId: string }) {
+    const db = getDb();
+    const interview = await getInterviewContextById(db, { id: payload.interviewId });
+    if (!interview) {
+      return;
+    }
+    if (interview.status === "pending" || interview.status === "in_progress") {
+      await expireInterview(db, { id: payload.interviewId });
+      this.setState({
+        ...this.state,
+        status: "expired",
+        updatedAt: toNow(),
+      });
+    }
   }
 
   @callable()
