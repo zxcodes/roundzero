@@ -1,5 +1,12 @@
 import { GoogleOAuthProvider } from "@react-oauth/google";
-import { createRootRouteWithContext, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
+import {
+  createRootRouteWithContext,
+  HeadContent,
+  Outlet,
+  Scripts,
+  useLocation,
+  useRouteContext,
+} from "@tanstack/react-router";
 import { NotFound } from "@/components/not-found";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -7,7 +14,7 @@ import { AuthProvider } from "@/features/auth/provider";
 import { getCurrentUser } from "@/features/auth/server/functions";
 import { getThemeServerFn } from "@/lib/theme";
 import type { RouterContext } from "@/router";
-
+import type { FileRoutesByTo } from "@/routeTree.gen";
 import appCss from "../styles.css?url";
 
 export const Route = createRootRouteWithContext<RouterContext>()({
@@ -81,6 +88,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 
 function RootComponent() {
   const theme = Route.useLoaderData();
+
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? "";
 
   return (
@@ -97,8 +105,36 @@ function RootComponent() {
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   const theme = Route.useLoaderData();
+  const { user } = useRouteContext({ from: "__root__" });
+  const { pathname } = useLocation();
+
+  const routes: (keyof FileRoutesByTo)[] = [
+    "/",
+    "/jobs",
+    "/jobs/$jobId",
+    "/companies",
+    "/companies/$slug",
+    "/candidate/login",
+    "/company/login",
+  ];
+
+  const matchesRoute = (route: string, pathname: string) => {
+    const routeParts = route.split("/");
+    const pathParts = pathname.split("/");
+
+    if (routeParts.length !== pathParts.length) {
+      return false;
+    }
+
+    return routeParts.every((part, index) => {
+      return part.startsWith("$") || part === pathParts[index];
+    });
+  };
+
+  const isPublicRoute = !user && routes.some((route) => matchesRoute(route, pathname));
+
   return (
-    <html className={theme} lang="en" suppressHydrationWarning>
+    <html className={isPublicRoute ? "light" : theme} lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>
