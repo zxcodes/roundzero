@@ -1,9 +1,3 @@
-/** Batch orchestration code (workflow + cron-side).
- *
- * This module imports `cloudflare:workers` for the BATCH_ORCHESTRATION binding,
- * so it must NOT be imported by client-side code (route files). Routes should
- * import from `./functions` instead.
- */
 import { env } from "cloudflare:workers";
 import type { Sql } from "postgres";
 import { getUserById } from "@/features/auth/queries/queries_sql";
