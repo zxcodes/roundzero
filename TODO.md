@@ -1,5 +1,6 @@
 ## TODO
 
+- update landing page messaging to say the time of resumes is over. it's time for real evaluation etc.
 - prevent dark mode from applying to landing pages.
 - shortlisting/rejecting actions should nicely accessible on top of each report for easy auctioning. right now they're buried under drop downs.
 - copy agent testing patterns from opencode, pi etc. also see how they harden their prompts.
