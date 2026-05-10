@@ -1,6 +1,6 @@
 ## TODO
 
-- need to redefine the landing and product branding: (resumes are outdated, yoe is just a number, cracked people exist, experience no longer matters, etc etc.)
+- need to redefine the landing and product branding: (resumes are outdated, yoe is just a number now, cracked people exist, ai needs to find them, experience is no longer a good metric, etc etc.)
 - if a candidate goes into hold, there is no way for companies to manually invite them to interview because of new batch flow?
 - update landing page messaging to say the time of resumes is over. it's time for real evaluation etc.
 - prevent dark mode from applying to landing pages.
