@@ -53,6 +53,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useSubscription } from "@/features/billing/hooks/use-subscription";
+import { isJobClosingSoon } from "@/features/jobs/components/job-status-badge";
 import {
   getMyArchivedJobs,
   getMyJobCounts,
@@ -60,7 +61,7 @@ import {
   getOpenJobsPaginated,
   publishJob,
 } from "@/features/jobs/server/functions";
-import { formatDate } from "@/shared/date";
+import { formatDate, formatDaysLeft } from "@/shared/date";
 import {
   type EmploymentType,
   type ExperienceLevel,
@@ -349,12 +350,15 @@ function ActiveJobsTable({
             <TableHead>Status</TableHead>
             <TableHead>Pipeline</TableHead>
             <TableHead>Created</TableHead>
+            <TableHead>Expires</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {jobs.map((job) => {
             const stale = isStaleJob(job);
+            const closingLabel = formatDaysLeft(job.expiresAt);
+            const closingSoon = isJobClosingSoon(job);
 
             const onPublishClick = () => {
               void onPublish(job.id);
@@ -397,6 +401,11 @@ function ActiveJobsTable({
                 </TableCell>
                 <TableCell className="font-mono text-xs text-muted-foreground">
                   {formatDate(job.createdAt)}
+                </TableCell>
+                <TableCell
+                  className={`font-mono text-xs ${closingSoon ? "font-medium text-destructive" : "text-muted-foreground"}`}
+                >
+                  {closingLabel ?? "—"}
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-1">

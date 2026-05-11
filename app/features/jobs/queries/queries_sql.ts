@@ -241,7 +241,8 @@ export async function getJobsWithPipelineByCompanyId(sql: Sql, args: getJobsWith
 export const getJobByIdQuery = `-- name: getJobById :one
 SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.interview_questions, j.status, j.location, j.workplace_type, j.employment_type, j.experience_level, j.salary_min, j.salary_max, j.salary_currency, j.team_size, j.headcount, j.final_report_target, j.expires_at, j.archived_at, j.created_at, j.updated_at,
        c.name AS company_name,
-       c.slug AS company_slug
+       c.slug AS company_slug,
+       (SELECT count(*)::int FROM applications a WHERE a.job_id = j.id) AS applicant_count
 FROM jobs j
 JOIN companies c ON c.id = j.company_id
 JOIN users u ON u.id = c.owner_id AND u.deleted_at IS NULL
@@ -275,6 +276,7 @@ export interface getJobByIdRow {
     updatedAt: Date;
     companyName: string;
     companySlug: string;
+    applicantCount: number;
 }
 
 export async function getJobById(sql: Sql, args: getJobByIdArgs): Promise<getJobByIdRow | null> {
@@ -306,7 +308,8 @@ export async function getJobById(sql: Sql, args: getJobByIdArgs): Promise<getJob
         createdAt: row[19],
         updatedAt: row[20],
         companyName: row[21],
-        companySlug: row[22]
+        companySlug: row[22],
+        applicantCount: row[23]
     };
 }
 

@@ -1,4 +1,4 @@
-import { differenceInMinutes, format, isValid, parseISO } from "date-fns";
+import { differenceInDays, differenceInMinutes, format, isValid, parseISO } from "date-fns";
 
 export function formatDate(date: Date | string | null): string {
   if (!date) return "";
@@ -65,6 +65,19 @@ export function formatTimeLeft(date: Date | string | null): string | null {
   if (hoursLeft < 1) return "<1h left";
 
   return `${hoursLeft}h left`;
+}
+
+export function formatDaysLeft(date: Date | string | null): string | null {
+  if (!date) return null;
+  const end = typeof date === "string" ? new Date(date) : date;
+  if (!isValid(end)) return null;
+
+  const days = differenceInDays(end, new Date());
+  if (days < 0) return "Expired";
+  if (days === 0) return "Closes today";
+  if (days === 1) return "Closes tomorrow";
+  if (days <= 30) return `Closes in ${days} days`;
+  return `Closes ${format(end, "MMM d, yyyy")}`;
 }
 
 export function formatDeadlineLabel(value: string | null): string | null {

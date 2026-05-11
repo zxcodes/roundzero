@@ -21,8 +21,9 @@ import { Empty, EmptyContent } from "@/components/ui/empty";
 import { CandidateApplySection } from "@/features/applications/components/candidate-apply-section";
 import { hasApplied } from "@/features/applications/server/functions";
 import { getMyCandidateProfile } from "@/features/candidates/server/functions";
+import { JobStatusBadge } from "@/features/jobs/components/job-status-badge";
 import { getPublicJobById } from "@/features/jobs/server/functions";
-import { formatDate } from "@/shared/date";
+import { formatDate, formatDaysLeft } from "@/shared/date";
 import type { EmploymentType, ExperienceLevel, WorkplaceType } from "@/shared/enums";
 import { employmentTypeLabels, experienceLevelLabels, workplaceTypeLabels } from "@/shared/enums";
 import { formatSalaryFull } from "@/shared/format";
@@ -72,6 +73,8 @@ function JobDetailPage() {
   const salary = formatSalaryFull(job.salaryMin, job.salaryMax, job.salaryCurrency);
   const requirements: string[] = Array.isArray(job.requirements) ? job.requirements : [];
   const postedDate = formatDate(job.createdAt);
+  const closingLabel = formatDaysLeft(job.expiresAt);
+  const deadlineDate = job.expiresAt ? formatDate(job.expiresAt) : null;
 
   const dashboardJobPath = `/dashboard/jobs/${job.id}`;
   const isClosed = job.status !== "open";
@@ -146,6 +149,7 @@ function JobDetailPage() {
 
               {/* Meta badges */}
               <div className="flex flex-wrap gap-2">
+                <JobStatusBadge job={job} />
                 {job.employmentType ? (
                   <Badge variant="secondary" className="gap-1">
                     <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} className="size-3" />
@@ -255,7 +259,15 @@ function JobDetailPage() {
                     value={`${job.headcount} ${job.headcount === 1 ? "position" : "positions"}`}
                   />
                 ) : null}
+                <DetailRow
+                  icon={UserGroupIcon}
+                  label="Applicants"
+                  value={`${job.applicantCount} ${job.applicantCount === 1 ? "applicant" : "applicants"}`}
+                />
                 <DetailRow icon={Clock01Icon} label="Posted" value={postedDate} />
+                {deadlineDate && closingLabel ? (
+                  <DetailRow icon={Clock01Icon} label="Apply by" value={closingLabel} />
+                ) : null}
               </CardContent>
             </Card>
 
