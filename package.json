@@ -74,7 +74,7 @@
     "@cloudflare/vite-plugin": "^1.36.3",
     "@rolldown/plugin-babel": "^0.2.3",
     "@tanstack/devtools-vite": "^0.6.0",
-    "@tanstack/react-devtools": "^0.10.2",
+    "@tanstack/react-devtools": "^0.10.3",
     "@tanstack/react-router-devtools": "^1.166.13",
     "@tanstack/react-query-devtools": "^5.100.9",
     "@types/babel__core": "^7.20.5",
@@ -82,7 +82,7 @@
     "@types/node": "^25.6.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@typescript/native-preview": "7.0.0-dev.20260510.1",
+    "@typescript/native-preview": "7.0.0-dev.20260511.1",
     "@vitejs/plugin-react": "^6.0.1",
     "babel-plugin-react-compiler": "^1.0.0",
     "dbmate": "^2.33.0",
@@ -90,7 +90,7 @@
     "jsdom": "^29.1.1",
     "knip": "^6.12.2",
     "typescript": "^6.0.3",
-    "vite": "^8.0.11",
+    "vite": "^8.0.12",
     "vitest": "^4.1.5",
     "wrangler": "^4.90.0"
   }
