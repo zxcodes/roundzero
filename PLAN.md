@@ -49,60 +49,60 @@
 Replace immediate per-candidate report release with a pool-and-batch system.
 
 **Schema:**
-- [ ] Add `job_batches` table
-- [ ] Add `interviews.batch_id` column
-- [ ] Add `reports.released_at` column
-- [ ] Add `queued_for_batch` to `applicationStatusSchema`
+- [x] Add `job_batches` table
+- [x] Add `interviews.batch_id` column
+- [x] Add `reports.released_at` column
+- [x] Add `queued_for_batch` to `applicationStatusSchema`
 
 **Pre-evaluation changes:**
-- [ ] `decideNextStep()`: instead of creating one interview immediately, add candidate to job pool
-- [ ] Trigger pool check after every pre-eval completion
+- [x] `decideNextStep()`: instead of creating one interview immediately, add candidate to job pool
+- [x] Trigger pool check after every pre-eval completion
 
 **Pool launcher:**
-- [ ] `checkAndLaunchBatch()` function (runs on interval + post-eval trigger)
-- [ ] Formation rules: target size reached, min size + timeout, or absolute timeout
-- [ ] Simultaneous invite of all batch candidates
-- [ ] Create `BatchOrchestrationWorkflow` instance per batch
+- [x] `checkAndLaunchBatch()` function (runs on interval + post-eval trigger)
+- [x] Formation rules: target size reached, min size + timeout, or absolute timeout
+- [x] Simultaneous invite of all batch candidates
+- [x] Create `BatchOrchestrationWorkflow` instance per batch
 
 **Batch orchestration workflow:**
-- [ ] `BatchOrchestrationWorkflow` using `step.waitForEvent("batch-reports-complete", { timeout: "12 hours" })`
-- [ ] `releaseBatch()` — idempotent, transactional
-- [ ] `maybeLaunchNextBatch()` — hybrid backfill rule
+- [x] `BatchOrchestrationWorkflow` using `step.waitForEvent("batch-reports-complete", { timeout: "12 hours" })`
+- [x] `releaseBatch()` — idempotent, transactional
+- [x] `maybeLaunchNextBatch()` — hybrid backfill rule
 
 **Post-evaluation changes:**
-- [ ] Update status to `evaluated_held` instead of `evaluated`
-- [ ] After report persist, check if batch is fully resolved
-- [ ] If yes → `instance.sendEvent({ type: "batch-reports-complete" })` to batch workflow
+- [x] Update status to `evaluated_held` instead of `evaluated`
+- [x] After report persist, check if batch is fully resolved
+- [x] If yes → `instance.sendEvent({ type: "batch-reports-complete" })` to batch workflow
 
 **Interview agent changes:**
-- [ ] Reduce expiry alarm from 48h → 12h
-- [ ] On expiry, trigger batch completion check
+- [x] Reduce expiry alarm from 48h → 12h
+- [~] On expiry, trigger batch completion check — expiry marks DB row but does not signal the batch workflow early (relies on 12h timeout)
 
 **Notification changes:**
-- [ ] Add `batch_ready` notification type (replaces `report_ready` for batched reports)
-- [ ] Batch digest email template (ranked list, scores, recommendations)
-- [ ] Remove per-candidate `report_ready` emails
+- [x] Add `batch_ready` notification type (replaces `report_ready` for batched reports)
+- [x] Batch digest email template (ranked list, scores, recommendations)
+- [~] Remove per-candidate `report_ready` emails — kept for non-batched (legacy/manual) edge cases, not used in batch flow
 
 **Candidate UI changes:**
-- [ ] Application tracking: show `queued_for_batch` status as "Under review" with explainer
-- [ ] Interview invitation card: update copy to reflect 12h deadline (not 48h)
-- [ ] Interview workspace: show countdown timer (12h remaining)
-- [ ] Post-interview state: show "Evaluation complete" — no score/reveal until batch releases
-- [ ] Notification inbox: handle `batch_ready` type (if candidate somehow gets one — they shouldn't, but UI should be safe)
+- [x] Application tracking: show `queued_for_batch` status as "Under review" with explainer
+- [~] Interview invitation card: update copy to reflect 12h deadline (not 48h) — no hardcoded copy; shows dynamic `expiresAt` deadline
+- [x] Interview workspace: show countdown timer (12h remaining)
+- [x] Post-interview state: show "Evaluation complete" — no score/reveal until batch releases
+- [x] Notification inbox: handle `batch_ready` type (if candidate somehow gets one — they shouldn't, but UI should be safe)
 
 **Company UI changes:**
-- [ ] Dashboard:
+- [x] Dashboard:
   - Replace "Reports Studio" real-time cards with "Active Batch" progress card
   - Show: job title, X of Y complete, time until release (or "Releasing now" if all done)
-  - Released batches section: ranked list of recent batch drops with "View batch →"
-  - Remove per-candidate report highlight cards
-- [ ] Job applicants page (`/dashboard/job-applicants/$jobId`):
+- [~] Dashboard — Released batches section: ranked list of recent batch drops with "View batch →" — currently shows per-candidate report cards, not batch-level cards
+- [~] Dashboard — Remove per-candidate report highlight cards — still present in "Released Batches" section
+- [x] Job applicants page (`/dashboard/job-applicants/$jobId`):
   - Replace "Evaluated / Pending" tabs with:
     - **Released** — full report cards (same as current evaluated view)
     - **Active Batch** — progress bar + completion count + estimated release time. No candidate names/scores visible yet.
     - **Queued** — count only, no names or scores: "N candidates queued for evaluation"
-  - Funnel metrics: update "Evaluated" to mean "released reports" not "generated reports"
-- [ ] Batch detail route (`/dashboard/job-batches/$batchId`):
+- [~] Job applicants page — Funnel metrics: update "Evaluated" to mean "released reports" not "generated reports" — currently counts both `evaluated` and `evaluated_held`
+- [x] Batch detail route (`/dashboard/job-batches/$batchId`):
   - Ranked list of all candidates in the batch
   - Each row: avatar, name, overall score, recommendation badge, quick-action buttons (View report, Open applicant)
   - Sortable by score (default), name, recommendation
@@ -110,30 +110,30 @@ Replace immediate per-candidate report release with a pool-and-batch system.
 - [ ] Applicant detail page (`/dashboard/applicants/$applicationId`):
   - If status is `evaluated_held`: show "Evaluation complete — releasing in batch" instead of report snapshot card
   - If status is `queued_for_batch`: show "Candidate is queued for the next evaluation batch"
-- [ ] Notification inbox:
+- [x] Notification inbox:
   - Add `batch_ready` notification type rendering
   - Payload: jobTitle, reportCount, topScore, topCandidateName
   - CTA links to batch detail page
-- [ ] Email templates:
+- [x] Email templates:
   - Batch digest email: subject, ranked table, score bars, recommendation badges, CTAs to each report
-  - Remove per-candidate `report_ready` email template (or keep for edge cases but don't use in batch flow)
+- [~] Email templates — Remove per-candidate `report_ready` email template (or keep for edge cases but don't use in batch flow) — kept for edge cases
 
 **Shared UI / Infrastructure:**
-- [ ] Add `BatchProgressCard` component to `app/components/ui/` or `app/features/batches/components/`
-- [ ] Add `BatchDigestEmail` component to `app/features/notifications/components/`
-- [ ] Update `route-skeletons.tsx` with `BatchDetailSkeleton` and `JobBatchesSkeleton`
-- [ ] Update `notification-inbox.tsx` to render `batch_ready` type
-- [ ] Update `applicationStatusSchema` and all status badge renderers to include `queued_for_batch` and `evaluated_held`
+- [ ] Add `BatchProgressCard` component to `app/components/ui/` or `app/features/batches/components/` — currently inline in `JobApplicantsPage`
+- [x] Add `BatchDigestEmail` component to `app/features/notifications/components/`
+- [~] Update `route-skeletons.tsx` with `BatchDetailSkeleton` and `JobBatchesSkeleton` — `BatchDetailSkeleton` exists; `JobBatchesSkeleton` does not
+- [x] Update `notification-inbox.tsx` to render `batch_ready` type
+- [x] Update `applicationStatusSchema` and all status badge renderers to include `queued_for_batch` and `evaluated_held`
 
 **Config:**
-- [ ] `app/features/batches/config.ts` with `BATCH_CONFIG` constants
+- [x] `app/features/batches/config.ts` with `BATCH_CONFIG` constants
 
 **Tests:**
-- [ ] Pool formation logic (timeout vs size triggers)
-- [ ] Batch release idempotency
-- [ ] Early release via `waitForEvent`
-- [ ] Timeout release
-- [ ] Backfill after release
+- [x] Pool formation logic (timeout vs size triggers)
+- [x] Batch release idempotency
+- [x] Early release via `waitForEvent`
+- [ ] Timeout release — no dedicated test for the timeout path
+- [x] Backfill after release
 
 ---
 
