@@ -57,6 +57,7 @@ export const PLAN_CONFIGS: Record<SubscriptionPlan, PlanConfig> = {
     periodLabel: "per month",
     features: [
       "Unlimited active jobs",
+      "AI job creation",
       "Reports for top fits across the funnel",
       "Custom evaluation criteria",
       "5 team seats",
@@ -71,6 +72,7 @@ export const PLAN_CONFIGS: Record<SubscriptionPlan, PlanConfig> = {
     periodLabel: "tailored",
     features: [
       "Unlimited everything",
+      "AI job creation",
       "Custom evaluation criteria",
       "API & integrations",
       "Dedicated account manager",
