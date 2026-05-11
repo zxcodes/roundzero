@@ -1,6 +1,6 @@
-import { Briefcase02Icon } from "@hugeicons/core-free-icons";
+import { Briefcase01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import type { JobTemplate } from "@/shared/job-templates";
 
 interface TemplateCardProps {
@@ -10,32 +10,35 @@ interface TemplateCardProps {
 
 export function TemplateCard({ template, onSelect }: TemplateCardProps) {
   return (
-    <Card
+    <button
+      type="button"
       onClick={() => onSelect(template)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onSelect(template);
-        }
-      }}
-      role="button"
-      tabIndex={0}
-      className="relative cursor-pointer p-6 transition-all duration-200 hover:shadow-md hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 active:opacity-90"
+      className="flex w-full items-start gap-4 rounded-lg border border-transparent p-4 text-left transition-colors hover:bg-muted/50 hover:border-border/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
     >
-      <div className="flex flex-col items-center text-center">
-        <div className="mb-3 inline-flex items-center justify-center rounded-lg bg-blue-50 p-2">
-          <HugeiconsIcon icon={Briefcase02Icon} className="size-6 text-blue-600" />
-        </div>
-        <h3 className="mb-2 font-semibold text-base">{template.title}</h3>
-        <p className="mb-4 text-sm text-muted-foreground">{template.description}</p>
-        <div className="flex flex-wrap justify-center gap-2">
-          {template.tags.map((tag) => (
-            <span key={tag} className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700">
-              {tag}
-            </span>
-          ))}
-        </div>
+      <div className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-md bg-muted">
+        <HugeiconsIcon
+          icon={Briefcase01Icon}
+          strokeWidth={2}
+          className="size-5 text-muted-foreground"
+        />
       </div>
-    </Card>
+
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-semibold">{template.title}</p>
+        </div>
+        <p className="mt-0.5 text-xs text-muted-foreground">{template.description}</p>
+
+        {template.tags.length > 0 ? (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {template.tags.map((tag) => (
+              <Badge key={tag} variant="secondary" className="text-[10px] font-normal">
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </button>
   );
 }
