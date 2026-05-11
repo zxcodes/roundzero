@@ -36,7 +36,7 @@
     "@snaplet/copycat": "^6.0.0",
     "@tailwindcss/vite": "^4.3.0",
     "@tanstack/react-form": "^1.32.0",
-    "@tanstack/react-query": "^5.100.9",
+    "@tanstack/react-query": "^5.100.10",
     "@tanstack/react-router": "^1.169.2",
     "@tanstack/react-router-ssr-query": "^1.166.12",
     "@tanstack/react-start": "^1.167.65",
@@ -76,7 +76,7 @@
     "@tanstack/devtools-vite": "^0.6.0",
     "@tanstack/react-devtools": "^0.10.3",
     "@tanstack/react-router-devtools": "^1.166.13",
-    "@tanstack/react-query-devtools": "^5.100.9",
+    "@tanstack/react-query-devtools": "^5.100.10",
     "@types/babel__core": "^7.20.5",
     "@types/bun": "^1.3.13",
     "@types/node": "^25.6.2",
@@ -91,7 +91,7 @@
     "knip": "^6.12.2",
     "typescript": "^6.0.3",
     "vite": "^8.0.12",
-    "vitest": "^4.1.5",
+    "vitest": "^4.1.6",
     "wrangler": "^4.90.0"
   }
 }
