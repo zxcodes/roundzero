@@ -11,7 +11,7 @@
 - think about entire ai layer arch, it is on-demand right now, check if that's sufficient or we need queues etc?
 - think about using actual tools such as web fetch etc to assess technical skills etc?
 - think about voice recording for communication assessment.
-- align sidebar and main app's padding equally on a global level. 
+- align interview sidebar and main app's padding equally on a global level. 
 - think about this entire model: should companies even see applicants as they come? or should we force reports until they arrive? then show applications?
 - company logo doesn't reflect after uploading until I refresh.
 - the landing page has fake metrics (first report 3 min etc, think how valid they're or replace them with actual claims).
@@ -19,12 +19,9 @@
 - think about sub agents that can actually be useful for candidate profile research in the bg and provide context to main agent.
 - need to hugely improve on messaging such as (dont worry about ai generated answers from candidates, we have guard rails, and how much human effort it eliminates by talking to multiple candidates and clearing a lot of things such as salary expectations, relocation, etc which would waste a lot of human time otherwise)
 - detect failures in the whole pipeline and give candidates or companies an option to retry. make as failure proof as possible. specifically in model responses. 
-- strictly make agent ask interview questions from the profile and then from the actual job. right now it's not even close. asks vague questions. check if we're feeding the agent context the right way.
 - in post eval add another slop check to review interview transcript
-- too many applicant status enums (follwup enum etc, only keep using ones by checking end to end flow)
 - some company email reports are really bad and some are entirely missing for some flows. they have zero styling. review every single resend email template and align with rest of the app.
 - in post eval, refine the scores using the actual agent conv and add it to the final report.
-- update seed to include much more data for better agent evaluation with multiple jobs having company questions (relocation, visa, etc etc)
 - think about how previous evaluations and candidate profiles affect future score. helps with fabrication since we will have the candidate's work history and helps us maintain a consistent score when they apply to diff jobs.
 - think about showing pre eval report to companies bc the whole point is showing them tailored reports in the end. so instead of immediately showing them, show it only when the full reports are actually generated? think. fine for local dev bc we need to check the scores etc etc. 
 - think more about the duration from first report to last report generation bc it will depend on the candidate. think if we need to add an expiry or something and pass it to the next candidate?
@@ -40,6 +37,9 @@
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- strictly make agent ask interview questions from the profile and then from the actual job. right now it's not even close. asks vague questions. check if we're feeding the agent context the right way (better models solve this).-->
+<!--- update seed to include much more data for better agent evaluation with multiple jobs having company questions (relocation, visa, etc etc)-->
+<!--- too many applicant status enums (follwup enum etc, only keep using ones by checking end to end flow)-->
 <!--- we can prob use cf workflow's waitForEvent method to gather all the reports and then send all at once to the company? (using batch workflow now)-->
 <!--- add pre-built job templates.-->
 <!--- ai job creation (just describe the job, ai completes it, review, if yes, creates a posting. can use voice too to describe.)-->
