@@ -17,13 +17,13 @@ export function TemplateSelectDialog({ isOpen, onClose, onSelect }: TemplateSele
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
-        <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-0">
+      <DialogContent className="max-w-5xl w-[90vw] max-h-[90vh] flex flex-col p-6">
+        <DialogHeader className="pb-4">
           <DialogTitle>Start from a template</DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 -mx-6 px-6">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <ScrollArea className="flex-1">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 pr-4">
             {JOB_TEMPLATES.map((template) => (
               <TemplateCard key={template.id} template={template} onSelect={handleSelect} />
             ))}
