@@ -9,7 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AiJobCreator } from "@/features/jobs/components/ai-job-creator";
 import { JobForm, type JobFormData } from "@/features/jobs/components/job-form";
+import { TemplateSelectDialog } from "@/features/jobs/components/template-select-dialog";
 import { createJob } from "@/features/jobs/server/functions";
+import type { JobTemplate } from "@/shared/job-templates";
 
 export const Route = createFileRoute("/_authenticated/dashboard/jobs/new")({
   beforeLoad: ({ context }) => {
@@ -32,6 +34,8 @@ function NewJobPage() {
   const companyName = context.company?.name ?? "";
   const isPaid = context.subscription?.isActive ?? false;
   const [draft, setDraft] = useState<JobFormData | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<JobTemplate | null>(null);
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
 
   const createJobFn = useServerFn(createJob);
   const createJobMutation = useMutation({
@@ -61,21 +65,37 @@ function NewJobPage() {
     setDraft(null);
   };
 
+  const onSelectTemplate = (template: JobTemplate) => {
+    setSelectedTemplate(template);
+    setTemplateDialogOpen(false);
+  };
+
   return (
     <div className="animate-fade-in space-y-6">
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" className="shrink-0" asChild>
-          <Link to="/dashboard/jobs">
-            <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
-          </Link>
-        </Button>
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Post a new job</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Fill in the details below to create a new job posting.
-          </p>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" className="shrink-0" asChild>
+            <Link to="/dashboard/jobs">
+              <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
+            </Link>
+          </Button>
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Post a new job</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Fill in the details below to create a new job posting.
+            </p>
+          </div>
         </div>
+        <Button variant="outline" onClick={() => setTemplateDialogOpen(true)}>
+          Start from a template
+        </Button>
       </div>
+
+      <TemplateSelectDialog
+        isOpen={templateDialogOpen}
+        onClose={() => setTemplateDialogOpen(false)}
+        onSelect={onSelectTemplate}
+      />
 
       <AiJobCreator isPaid={isPaid} onApply={onApplyDraft} onDiscard={onDiscardDraft} />
 
@@ -83,13 +103,15 @@ function NewJobPage() {
         <CardHeader>
           <CardTitle>Job details</CardTitle>
           <CardDescription className="text-xs">
-            Provide a clear title, description, and requirements to attract the right candidates.
+            {selectedTemplate
+              ? `Customizing "${selectedTemplate.title}" template`
+              : "Provide a clear title, description, and requirements to attract the right candidates."}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <JobForm
-            key={draft ? "draft" : "empty"}
-            defaultValues={draft ?? undefined}
+            key={selectedTemplate ? `template-${selectedTemplate.id}` : draft ? "draft" : "empty"}
+            defaultValues={selectedTemplate?.data ?? draft ?? undefined}
             onSubmit={onSubmit}
             submitLabel="Create job"
             companyName={companyName}
