@@ -1,6 +1,5 @@
 ## TODO
 
-- add pre-built job templates.
 - need to redefine the landing and product branding: (resumes are outdated, yoe is just a number now, cracked people exist, ai needs to find them, experience is no longer a good metric, etc etc.)
 - if a candidate goes into hold, there is no way for companies to manually invite them to interview because of new batch flow?
 - update landing page messaging to say the time of resumes is over. it's time for real evaluation etc.
@@ -43,6 +42,7 @@
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- add pre-built job templates.-->
 <!--- ai job creation (just describe the job, ai completes it, review, if yes, creates a posting. can use voice too to describe.)-->
 <!--- let companies choose how many reports they wanna see per job while creating it etc.-->
 <!--- show number of applicants on each job detail. (done — public job listing, detail, and company page now show applicant count.)-->

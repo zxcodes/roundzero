@@ -4,443 +4,414 @@ export interface JobTemplate {
   id: string;
   title: string;
   description: string;
-  icon: string;
   tags: string[];
   data: Partial<JobFormData>;
 }
 
 export const JOB_TEMPLATES: JobTemplate[] = [
   {
-    id: "backend_engineer",
-    title: "Backend Engineer",
-    description: "Build scalable APIs, databases, and server-side systems",
-    icon: "Code01Icon",
-    tags: ["Engineering", "Backend"],
+    id: "junior_frontend",
+    title: "Junior Frontend Engineer",
+    description:
+      "Entry-level role for developers early in their career. Work on real features with mentorship from senior engineers.",
+    tags: ["Engineering", "Frontend", "Entry-level"],
     data: {
-      description: `We're looking for a Backend Engineer to design and build the core infrastructure that powers our platform.
-
-You'll be responsible for:
-- Designing and implementing RESTful APIs and microservices
-- Optimizing database queries and data models
-- Building scalable systems that handle millions of requests
-- Collaborating with frontend engineers on API contracts
-- Writing clean, maintainable code with comprehensive tests
-- Participating in code reviews and technical design discussions
-
-You'll work with modern tools and have autonomy over technical decisions. We value thoughtful engineering, clear communication, and ownership of your work.`,
+      title: "Junior Frontend Engineer",
+      description:
+        "We're looking for a Junior Frontend Engineer to join our product team. You'll work on real customer-facing features with close mentorship from senior engineers. This is a great opportunity to grow your skills in a supportive environment while shipping code that users see every day.",
       requirements: [
-        "3+ years of backend development experience",
-        "Strong proficiency in at least one backend language (Node.js, Python, Go, Rust, Java)",
-        "Experience with SQL and NoSQL databases",
-        "Understanding of API design, REST principles, and microservices",
-        "Experience with version control (Git) and CI/CD pipelines",
-        "Strong problem-solving and debugging skills",
-        "Experience with cloud platforms (AWS, GCP, or Azure) is a plus",
+        "1+ years of experience with React or similar framework",
+        "Solid understanding of HTML, CSS, and JavaScript",
+        "Basic knowledge of Git and version control workflows",
+        "Willingness to learn and ask questions",
+        "Some portfolio or personal projects to share",
       ],
       interviewQuestions: [
-        "Walk us through a backend system you designed. What were the key technical decisions and trade-offs?",
-        "How do you approach database optimization? Describe a time you identified and fixed a performance issue.",
-        "Tell us about a time you had to debug a complex production issue. How did you approach it?",
-        "What's your experience with distributed systems? How do you handle eventual consistency?",
+        "Tell us about a project you're proud of. What did you learn from it?",
+        "How do you approach debugging when something isn't working?",
+        "What frontend concept have you been learning recently?",
       ],
-      experienceLevel: "mid",
-      workplaceType: "remote",
+      experienceLevel: "junior",
+      workplaceType: "hybrid",
       employmentType: "full_time",
-      salaryMin: 120000,
-      salaryMax: 180000,
-      salaryCurrency: "USD",
+      location: "London, UK",
+      salaryMin: 35000,
+      salaryMax: 55000,
+      salaryCurrency: "GBP",
+      teamSize: 4,
+      headcount: 1,
     },
   },
   {
-    id: "frontend_engineer",
-    title: "Frontend Engineer",
-    description: "Create beautiful, responsive user interfaces and rich web experiences",
-    icon: "Code02Icon",
-    tags: ["Engineering", "Frontend"],
+    id: "senior_backend",
+    title: "Senior Backend Engineer",
+    description:
+      "Design and build core infrastructure. Own services end-to-end and mentor junior engineers.",
+    tags: ["Engineering", "Backend", "Senior"],
     data: {
-      description: `We're seeking a Frontend Engineer to build intuitive, performant user interfaces that users love.
-
-You'll be responsible for:
-- Building responsive web applications with modern frameworks (React, Vue, Svelte)
-- Optimizing performance and ensuring fast load times
-- Implementing pixel-perfect designs from Figma and design systems
-- Writing semantic HTML and accessible components
-- Collaborating with designers and backend engineers
-- Staying current with frontend best practices and tooling
-- Testing your code and ensuring cross-browser compatibility
-
-We value clean code, attention to detail, and a user-centric mindset. You'll have the autonomy to make technical decisions that impact the user experience directly.`,
+      title: "Senior Backend Engineer",
+      description:
+        "We're hiring a Senior Backend Engineer to own critical services and infrastructure decisions. You'll design APIs, optimize data models, and mentor junior team members. This role requires deep technical expertise and the ability to balance velocity with long-term maintainability.",
       requirements: [
-        "2+ years of professional frontend development experience",
-        "Expert-level knowledge of HTML, CSS, and JavaScript/TypeScript",
-        "Strong experience with at least one modern frontend framework (React, Vue, Svelte)",
-        "Experience building responsive designs and mobile-first interfaces",
-        "Understanding of web accessibility (WCAG guidelines)",
-        "Familiarity with CSS frameworks or design systems",
-        "Experience with frontend tooling (Webpack, Vite, etc.)",
-        "Ability to work with design tools and understand design specifications",
+        "5+ years of backend development experience",
+        "Deep expertise in at least one of: Node.js, Python, Go, or Rust",
+        "Strong database design and optimization skills",
+        "Experience building and maintaining production APIs at scale",
+        "Comfortable with distributed systems and async architectures",
+        "Track record of mentoring junior engineers",
       ],
       interviewQuestions: [
-        "Describe a complex UI component you've built. How did you handle state management and performance?",
-        "How do you approach making a web application accessible? Give examples.",
-        "Walk us through how you'd optimize a slow-loading page.",
-        "Tell us about a time you had to implement a design that was technically challenging. How did you solve it?",
+        "Describe a system you designed that handled significant scale. What would you do differently?",
+        "How do you approach technical debt in a fast-moving team?",
+        "Tell us about a time you had to make a tough architectural trade-off.",
+        "How do you mentor junior engineers while meeting your own deadlines?",
       ],
-      experienceLevel: "mid",
+      experienceLevel: "senior",
       workplaceType: "remote",
       employmentType: "full_time",
-      salaryMin: 110000,
-      salaryMax: 170000,
+      location: "Remote (US timezone overlap)",
+      salaryMin: 180000,
+      salaryMax: 250000,
       salaryCurrency: "USD",
+      teamSize: 6,
+      headcount: 2,
     },
   },
   {
-    id: "full_stack_engineer",
-    title: "Full Stack Engineer",
-    description: "Own full-stack features from database to UI, working end-to-end",
-    icon: "Code03Icon",
-    tags: ["Engineering", "Full Stack"],
+    id: "react_frontend",
+    title: "React Frontend Engineer",
+    description:
+      "Build polished UI components and design systems. Focus on performance and accessibility.",
+    tags: ["Engineering", "Frontend", "React"],
     data: {
-      description: `Join us as a Full Stack Engineer and own complete features across our entire technology stack.
-
-You'll be responsible for:
-- Building end-to-end features from database schema to user interface
-- Making informed trade-offs between frontend and backend implementations
-- Shipping features quickly without compromising quality
-- Writing clean, well-tested code across the stack
-- Collaborating with product and design teams
-- Contributing to architecture decisions
-- Mentoring junior engineers
-
-We're looking for versatile engineers who enjoy the full picture and can navigate complexity across multiple domains. You'll have ownership and the autonomy to make decisions about how features are built.`,
+      title: "React Frontend Engineer",
+      description:
+        "Join our frontend team to build and maintain our design system and core product UI. You'll work closely with designers to ship accessible, performant components that power the entire application.",
       requirements: [
-        "3+ years of professional full-stack development experience",
-        "Strong backend fundamentals (databases, APIs, server-side logic)",
-        "Strong frontend fundamentals (React or similar framework, CSS, HTML)",
-        "Comfortable with both relational and NoSQL databases",
-        "Experience deploying and maintaining applications in production",
-        "Strong problem-solving and communication skills",
-        "Familiarity with DevOps concepts and cloud platforms is a plus",
+        "3+ years of professional React experience",
+        "Strong TypeScript skills",
+        "Experience with component libraries or design systems",
+        "Understanding of web performance optimization",
+        "Knowledge of accessibility standards (WCAG)",
       ],
       interviewQuestions: [
-        "Describe a full-stack feature you built from scratch. Walk us through your architectural decisions.",
-        "How do you decide what logic belongs on the frontend vs. the backend?",
-        "Tell us about a time you had to optimize something across the stack. What was the bottleneck?",
-        "How do you approach learning a new technology or framework when you need it for a project?",
+        "Walk us through a complex component you've built. How did you handle state and performance?",
+        "How do you ensure accessibility in your components?",
+        "Describe a performance issue you solved in a React app.",
       ],
       experienceLevel: "mid",
       workplaceType: "remote",
       employmentType: "full_time",
-      salaryMin: 130000,
-      salaryMax: 190000,
-      salaryCurrency: "USD",
-    },
-  },
-  {
-    id: "design_engineer",
-    title: "Design Engineer",
-    description: "Bridge design and engineering to build beautiful, functional products",
-    icon: "PencilEdit02Icon",
-    tags: ["Engineering", "Design"],
-    data: {
-      description: `We're looking for a Design Engineer who bridges the gap between design and engineering, translating beautiful designs into pixel-perfect, interactive products.
-
-You'll be responsible for:
-- Collaborating closely with product designers and UX/UI teams
-- Building reusable component libraries and design systems
-- Implementing complex interactions and animations
-- Ensuring accessibility and performance across all experiences
-- Prototyping and iterating quickly on design concepts
-- Maintaining and evolving our design system
-- Mentoring frontend engineers on design best practices
-
-You're the perfect fit if you understand both design and code, and you're passionate about creating exceptional user experiences. You'll push boundaries on what's possible in the browser while keeping accessibility and performance in mind.`,
-      requirements: [
-        "3+ years of experience in design engineering or similar hybrid role",
-        "Expert-level frontend development skills (React, TypeScript, CSS)",
-        "Strong understanding of design principles and user experience",
-        "Experience with design tools (Figma, Sketch) and design-to-code workflows",
-        "Proficiency in building component libraries and design systems",
-        "Understanding of animation, micro-interactions, and motion design",
-        "Experience implementing accessible interfaces (WCAG compliance)",
-        "Comfort with design feedback and iterative refinement",
-      ],
-      interviewQuestions: [
-        "Tell us about a design system you've built or contributed to. What challenges did you face?",
-        "How do you translate complex design specs into component APIs?",
-        "Describe your process for implementing a complex interaction. How do you balance fidelity and performance?",
-        "How do you stay aligned with designers while shipping features efficiently?",
-      ],
-      experienceLevel: "mid",
-      workplaceType: "remote",
-      employmentType: "full_time",
-      salaryMin: 125000,
-      salaryMax: 185000,
-      salaryCurrency: "USD",
+      location: "Berlin, Germany",
+      salaryMin: 65000,
+      salaryMax: 95000,
+      salaryCurrency: "EUR",
+      teamSize: 5,
+      headcount: 1,
     },
   },
   {
     id: "product_manager",
     title: "Product Manager",
-    description: "Define strategy and roadmap, working across design, engineering, and users",
-    icon: "Target01Icon",
+    description:
+      "Own product roadmap and execution. Work cross-functionally with design, engineering, and leadership.",
     tags: ["Product"],
     data: {
-      description: `We're seeking a Product Manager to drive our product vision and strategy, working cross-functionally with design, engineering, and our users.
-
-You'll be responsible for:
-- Defining product strategy and quarterly roadmaps
-- Conducting user research and synthesizing insights
-- Writing clear, compelling PRDs and user stories
-- Collaborating with designers on user experience
-- Working with engineers to ship features on time
-- Measuring success with metrics and analytics
-- Building relationships with key customers and stakeholders
-- Advocating for users and maintaining product quality
-
-You'll have autonomy to make strategic decisions and shape the direction of our product. We value data-driven decision-making, clear communication, and a user-first mindset.`,
+      title: "Product Manager",
+      description:
+        "We're looking for a Product Manager to own a key product area from discovery to delivery. You'll work with designers, engineers, and customers to identify opportunities, define requirements, and ship features that move metrics.",
       requirements: [
-        "3+ years of product management experience",
-        "Track record of shipping successful products or features",
-        "Strong analytical and problem-solving skills",
-        "Experience with user research and data analysis",
-        "Excellent written and verbal communication skills",
-        "Comfort with technical concepts and collaborating with engineers",
-        "Experience with product metrics and analytics tools",
-        "Passion for understanding users and solving real problems",
+        "3+ years of product management experience in a software company",
+        "Track record of shipping features that improved key metrics",
+        "Strong analytical skills — comfortable with data and A/B tests",
+        "Excellent written and verbal communication",
+        "Experience working with engineering teams in agile environments",
       ],
       interviewQuestions: [
-        "Walk us through a product you shipped from conception to launch. What was your role?",
-        "How do you approach user research? Describe a time you uncovered unexpected insights.",
-        "Tell us about a time a metric you tracked led to a product decision.",
-        "How do you balance user feedback with your own product intuition?",
+        "Tell us about a feature you shipped from idea to launch. What was the outcome?",
+        "How do you prioritize when everything feels important?",
+        "Describe a time you had to say no to a stakeholder. How did you handle it?",
       ],
       experienceLevel: "mid",
       workplaceType: "hybrid",
       employmentType: "full_time",
+      location: "New York, NY",
       salaryMin: 140000,
-      salaryMax: 200000,
+      salaryMax: 190000,
       salaryCurrency: "USD",
+      teamSize: 3,
+      headcount: 1,
+    },
+  },
+  {
+    id: "ux_designer",
+    title: "UX Designer",
+    description:
+      "Design intuitive user experiences. Conduct research, create prototypes, and work closely with engineers.",
+    tags: ["Design", "UX"],
+    data: {
+      title: "UX Designer",
+      description:
+        "We're seeking a UX Designer to improve how users interact with our product. You'll conduct user research, create wireframes and prototypes, and collaborate with engineers to ensure designs are implemented faithfully.",
+      requirements: [
+        "3+ years of UX design experience for digital products",
+        "Proficiency in Figma and prototyping tools",
+        "Experience conducting user interviews and usability tests",
+        "Strong portfolio showing end-to-end design process",
+        "Comfortable working in agile teams with engineers",
+      ],
+      interviewQuestions: [
+        "Walk us through a project in your portfolio. What problem were you solving?",
+        "How do you balance user needs with business constraints?",
+        "Describe a time user research changed your design direction.",
+      ],
+      experienceLevel: "mid",
+      workplaceType: "onsite",
+      employmentType: "full_time",
+      location: "Amsterdam, Netherlands",
+      salaryMin: 55000,
+      salaryMax: 80000,
+      salaryCurrency: "EUR",
+      teamSize: 2,
+      headcount: 1,
     },
   },
   {
     id: "devops_engineer",
-    title: "DevOps / Infrastructure",
-    description: "Build reliable infrastructure and deployment pipelines for scale",
-    icon: "Server01Icon",
+    title: "DevOps / Platform Engineer",
+    description:
+      "Build and maintain CI/CD, infrastructure, and developer tooling. Focus on reliability and automation.",
     tags: ["Engineering", "Infrastructure"],
     data: {
-      description: `We're looking for a DevOps Engineer to design and maintain the infrastructure that keeps our platform running smoothly at scale.
-
-You'll be responsible for:
-- Designing and implementing CI/CD pipelines
-- Managing cloud infrastructure (AWS, GCP, or Azure)
-- Ensuring high availability, security, and disaster recovery
-- Monitoring systems and responding to incidents
-- Optimizing infrastructure costs and performance
-- Documenting infrastructure and runbooks
-- Collaborating with engineers to improve deployment processes
-- Implementing Infrastructure as Code (Terraform, CloudFormation)
-
-You'll be the architect behind the scenes, ensuring our platform is reliable, secure, and scalable. We value proactive problem-solving, automation mindset, and clear communication about system design.`,
+      title: "DevOps / Platform Engineer",
+      description:
+        "Join our platform team to build the infrastructure and tooling that keeps our engineering team productive. You'll own CI/CD pipelines, cloud infrastructure, and observability systems.",
       requirements: [
-        "4+ years of DevOps or infrastructure engineering experience",
-        "Strong experience with at least one cloud platform (AWS, GCP, Azure)",
-        "Proficiency with Infrastructure as Code (Terraform, CloudFormation, Pulumi)",
-        "Experience with containerization and orchestration (Docker, Kubernetes)",
-        "Strong understanding of CI/CD pipelines and deployment automation",
-        "Experience with monitoring, logging, and alerting systems",
-        "Linux system administration experience",
-        "Experience with security best practices and compliance",
+        "4+ years of DevOps or platform engineering experience",
+        "Strong experience with AWS, GCP, or Azure",
+        "Proficiency with Terraform or similar IaC tools",
+        "Experience with Kubernetes and containerization",
+        "Strong scripting skills (Python, Bash, or Go)",
+        "Familiarity with monitoring and alerting (Datadog, Grafana, etc.)",
       ],
       interviewQuestions: [
-        "Describe a production incident you handled. How did you debug and resolve it?",
-        "Walk us through a CI/CD pipeline you designed. What tools did you use and why?",
-        "Tell us about your experience with Kubernetes or container orchestration.",
-        "How do you approach infrastructure cost optimization?",
+        "Describe a production incident you handled. What was your approach?",
+        "How do you balance infrastructure stability with engineering velocity?",
+        "Walk us through your ideal CI/CD pipeline.",
+        "How do you approach cost optimization in cloud infrastructure?",
       ],
-      experienceLevel: "mid",
+      experienceLevel: "senior",
       workplaceType: "remote",
       employmentType: "full_time",
-      salaryMin: 130000,
-      salaryMax: 190000,
-      salaryCurrency: "USD",
+      location: "Remote (EU timezone)",
+      salaryMin: 90000,
+      salaryMax: 140000,
+      salaryCurrency: "EUR",
+      teamSize: 3,
+      headcount: 1,
     },
   },
   {
     id: "data_engineer",
     title: "Data Engineer",
-    description: "Build robust data pipelines and infrastructure for analytics and ML",
-    icon: "BarChartSquare02Icon",
+    description:
+      "Build data pipelines and infrastructure. Support analytics and ML teams with reliable data systems.",
     tags: ["Engineering", "Data"],
     data: {
-      description: `We're seeking a Data Engineer to design and build the data infrastructure that powers our analytics and decision-making.
-
-You'll be responsible for:
-- Building robust ETL/ELT pipelines
-- Designing data warehouse and lake architectures
-- Ensuring data quality and reliability
-- Optimizing data workflows for performance and cost
-- Collaborating with analysts and data scientists
-- Implementing monitoring and alerting for data pipelines
-- Documenting data schemas and lineage
-- Working with both batch and streaming data
-
-You'll be the backbone of our data infrastructure, enabling better decision-making across the company. We value engineering rigor, problem-solving mindset, and clear communication about data systems.`,
+      title: "Data Engineer",
+      description:
+        "We're looking for a Data Engineer to build and maintain our data infrastructure. You'll design pipelines, ensure data quality, and support our analytics and ML initiatives with reliable, well-modeled data.",
       requirements: [
         "3+ years of data engineering experience",
-        "Strong SQL and Python/Scala programming skills",
-        "Experience with data warehousing (Snowflake, BigQuery, Redshift)",
-        "Proficiency with ETL/ELT tools (dbt, Airflow, Spark)",
+        "Strong SQL and Python skills",
+        "Experience with data warehouses (Snowflake, BigQuery, or Redshift)",
+        "Familiarity with orchestration tools (Airflow, dbt, or similar)",
         "Understanding of data modeling and schema design",
-        "Experience with version control and CI/CD for data",
-        "Familiarity with cloud platforms and their data services",
-        "Experience with both batch and streaming data is a plus",
+        "Experience with streaming data (Kafka, Pub/Sub) is a plus",
       ],
       interviewQuestions: [
-        "Describe a complex data pipeline you built. What were the challenges?",
-        "How do you approach data quality and validation?",
-        "Tell us about your experience with data warehousing and modeling.",
-        "Walk us through how you've optimized data pipeline performance.",
+        "Describe a data pipeline you built. What were the challenges?",
+        "How do you ensure data quality and catch issues early?",
+        "Walk us through how you'd design a real-time analytics pipeline.",
+      ],
+      experienceLevel: "mid",
+      workplaceType: "hybrid",
+      employmentType: "full_time",
+      location: "Toronto, Canada",
+      salaryMin: 110000,
+      salaryMax: 160000,
+      salaryCurrency: "CAD",
+      teamSize: 4,
+      headcount: 1,
+    },
+  },
+  {
+    id: "mobile_engineer",
+    title: "Mobile Engineer (iOS)",
+    description:
+      "Build native iOS features. Work on performance, animations, and seamless user experiences.",
+    tags: ["Engineering", "Mobile", "iOS"],
+    data: {
+      title: "Mobile Engineer (iOS)",
+      description:
+        "Join our mobile team to build and improve our iOS app. You'll work on features that users interact with daily, focusing on performance, smooth animations, and a polished native experience.",
+      requirements: [
+        "3+ years of iOS development experience",
+        "Strong Swift and UIKit/SwiftUI skills",
+        "Experience with Core Data or other persistence layers",
+        "Understanding of iOS app architecture patterns (MVVM, Coordinator, etc.)",
+        "Experience with app store submission and review processes",
+        "Familiarity with unit and UI testing on iOS",
+      ],
+      interviewQuestions: [
+        "Tell us about an iOS feature you built that you're proud of.",
+        "How do you approach performance optimization in a mobile app?",
+        "Describe a challenging bug you fixed related to memory or concurrency.",
+      ],
+      experienceLevel: "mid",
+      workplaceType: "hybrid",
+      employmentType: "full_time",
+      location: "San Francisco, CA",
+      salaryMin: 150000,
+      salaryMax: 210000,
+      salaryCurrency: "USD",
+      teamSize: 3,
+      headcount: 1,
+    },
+  },
+  {
+    id: "security_engineer",
+    title: "Security Engineer",
+    description: "Protect our systems and data. Build security tooling and lead incident response.",
+    tags: ["Engineering", "Security"],
+    data: {
+      title: "Security Engineer",
+      description:
+        "We're hiring a Security Engineer to protect our platform and customer data. You'll identify vulnerabilities, build security automation, and lead incident response when issues arise.",
+      requirements: [
+        "4+ years of experience in application or infrastructure security",
+        "Strong understanding of web application security (OWASP Top 10)",
+        "Experience with cloud security (AWS IAM, VPC, etc.)",
+        "Proficiency in at least one programming language",
+        "Experience with security tooling (SAST, DAST, SCA)",
+        "Familiarity with compliance frameworks (SOC 2, GDPR) is a plus",
+      ],
+      interviewQuestions: [
+        "Describe a security vulnerability you discovered and how you remediated it.",
+        "How do you balance security with engineering velocity?",
+        "Walk us through how you'd respond to a suspected data breach.",
+        "What security controls do you consider essential for a SaaS product?",
+      ],
+      experienceLevel: "senior",
+      workplaceType: "remote",
+      employmentType: "full_time",
+      location: "Remote (US)",
+      salaryMin: 170000,
+      salaryMax: 240000,
+      salaryCurrency: "USD",
+      teamSize: 2,
+      headcount: 1,
+    },
+  },
+  {
+    id: "qa_engineer",
+    title: "QA Engineer",
+    description:
+      "Ensure product quality through automated testing, test strategy, and release processes.",
+    tags: ["Engineering", "QA"],
+    data: {
+      title: "QA Engineer",
+      description:
+        "We're looking for a QA Engineer to own our testing strategy and automated test suite. You'll work with engineers to catch bugs early, improve test coverage, and ensure confident releases.",
+      requirements: [
+        "3+ years of QA or test engineering experience",
+        "Experience with automated testing frameworks (Playwright, Cypress, Selenium)",
+        "Strong understanding of CI/CD and test automation in pipelines",
+        "Ability to write clear bug reports and reproduction steps",
+        "Experience with API testing and performance testing is a plus",
+        "Familiarity with JavaScript/TypeScript or Python for test scripts",
+      ],
+      interviewQuestions: [
+        "How do you decide what to automate vs. test manually?",
+        "Describe a time you caught a critical bug before it reached production.",
+        "How do you measure the effectiveness of a test suite?",
       ],
       experienceLevel: "mid",
       workplaceType: "remote",
       employmentType: "full_time",
-      salaryMin: 125000,
-      salaryMax: 185000,
-      salaryCurrency: "USD",
-    },
-  },
-  {
-    id: "marketing_specialist",
-    title: "Marketing Specialist",
-    description: "Drive growth through strategic marketing campaigns and brand building",
-    icon: "MarketingIcon",
-    tags: ["Marketing"],
-    data: {
-      description: `We're looking for a Marketing Specialist to drive customer acquisition and brand growth through strategic campaigns and creative initiatives.
-
-You'll be responsible for:
-- Developing and executing integrated marketing campaigns
-- Managing digital channels (social media, email, content)
-- Creating compelling marketing copy and messaging
-- Analyzing campaign performance and optimizing for results
-- Collaborating with sales, product, and design teams
-- Building and nurturing our community
-- Researching market trends and competitor activity
-- Managing marketing budget and ROI
-
-You'll be key to our growth story, combining creative thinking with data-driven decision-making. We value entrepreneurial mindset, strong communication, and a passion for our customers.`,
-      requirements: [
-        "2+ years of marketing experience in B2B or B2C environments",
-        "Experience running digital marketing campaigns (paid, organic, email)",
-        "Strong writing and copywriting skills",
-        "Analytical mindset with experience tracking KPIs and metrics",
-        "Proficiency with marketing tools (HubSpot, Mailchimp, Google Analytics, etc.)",
-        "Experience with social media marketing and community building",
-        "Project management and organization skills",
-        "Understanding of marketing funnels and conversion optimization",
-      ],
-      interviewQuestions: [
-        "Describe a successful marketing campaign you ran. What metrics mattered most?",
-        "How do you approach developing marketing strategy for a new product or feature?",
-        "Tell us about your experience with content marketing or community building.",
-        "Walk us through how you'd measure the success of a campaign.",
-      ],
-      experienceLevel: "mid",
-      workplaceType: "hybrid",
-      employmentType: "full_time",
+      location: "Remote (EU)",
       salaryMin: 60000,
-      salaryMax: 100000,
-      salaryCurrency: "USD",
+      salaryMax: 95000,
+      salaryCurrency: "EUR",
+      teamSize: 4,
+      headcount: 1,
     },
   },
   {
-    id: "social_media_specialist",
-    title: "Social Media Specialist",
-    description: "Build engaging community and brand presence across social platforms",
-    icon: "Send01Icon",
-    tags: ["Marketing", "Social"],
+    id: "content_writer",
+    title: "Content Writer",
+    description: "Create clear, engaging content for our blog, docs, and marketing materials.",
+    tags: ["Marketing", "Content"],
     data: {
-      description: `We're seeking a Social Media Specialist to build an engaged community and establish our brand presence across social platforms.
-
-You'll be responsible for:
-- Creating compelling social media content across platforms
-- Managing our social channels (Twitter, LinkedIn, Instagram, TikTok)
-- Building and nurturing an engaged community
-- Responding to comments and DMs professionally and promptly
-- Analyzing social metrics and optimizing content strategy
-- Collaborating with marketing and product teams
-- Running social media campaigns and contests
-- Staying on top of trends and platform best practices
-
-You'll be the voice of our brand on social media, creating authentic connections with our audience. We value creativity, community focus, and data-driven thinking.`,
+      title: "Content Writer",
+      description:
+        "We're seeking a Content Writer to create technical and marketing content that resonates with developers and decision-makers. You'll write blog posts, documentation, case studies, and email campaigns.",
       requirements: [
-        "1+ years of social media management experience",
-        "Expertise in at least 2-3 major social platforms",
-        "Strong writing and storytelling skills",
-        "Experience creating visual content or working with design teams",
-        "Understanding of social media analytics and performance metrics",
-        "Comfort with community management and handling feedback",
-        "Ability to stay current with platform trends and algorithm changes",
-        "Experience with scheduling tools (Buffer, Later, Hootsuite)",
+        "2+ years of content writing experience, preferably in B2B SaaS",
+        "Ability to write clearly about technical topics for mixed audiences",
+        "Strong editing and proofreading skills",
+        "Experience with SEO basics and content strategy",
+        "Comfortable interviewing subject matter experts",
+        "Portfolio of published writing samples",
       ],
       interviewQuestions: [
-        "Tell us about your most successful social media post or campaign. Why did it resonate?",
-        "How do you approach building community engagement on social media?",
-        "Describe your social media content strategy. How do you decide what to post?",
-        "Walk us through how you'd measure social media success beyond followers.",
+        "Share a piece of writing you're proud of. What was your process?",
+        "How do you adapt your tone for technical vs. executive audiences?",
+        "Describe how you research a topic you're unfamiliar with.",
       ],
       experienceLevel: "mid",
-      workplaceType: "hybrid",
-      employmentType: "full_time",
-      salaryMin: 50000,
-      salaryMax: 85000,
+      workplaceType: "remote",
+      employmentType: "contract",
+      location: "Remote",
+      salaryMin: 350,
+      salaryMax: 600,
       salaryCurrency: "USD",
+      teamSize: 2,
+      headcount: 1,
     },
   },
   {
-    id: "community_manager",
-    title: "Community Manager",
-    description: "Foster engagement and build thriving communities around our brand",
-    icon: "Users01Icon",
-    tags: ["Community", "Operations"],
+    id: "sales_dev_rep",
+    title: "Sales Development Representative",
+    description:
+      "Generate pipeline through outbound outreach. Work closely with Account Executives.",
+    tags: ["Sales"],
     data: {
-      description: `We're looking for a Community Manager to foster meaningful connections, drive engagement, and build a thriving community around our brand.
-
-You'll be responsible for:
-- Moderating and nurturing our community spaces (Discord, forums, Slack communities)
-- Planning and hosting community events (webinars, AMAs, meetups)
-- Gathering and sharing community feedback with product and leadership
-- Creating community guidelines and ensuring a welcoming environment
-- Onboarding new community members and helping them succeed
-- Building relationships with community champions and advocates
-- Creating content that celebrates community contributions
-- Analyzing community metrics and engagement
-
-You'll be the heart of our community, creating belonging and enabling our users to help each other. We value empathy, authenticity, communication skills, and a genuine passion for community building.`,
+      title: "Sales Development Representative",
+      description:
+        "Join our sales team as an SDR to identify and qualify new business opportunities. You'll research prospects, craft personalized outreach, and set meetings for our Account Executives.",
       requirements: [
-        "1+ years of community management or community engagement experience",
-        "Experience managing online communities (Discord, Slack, forums, etc.)",
-        "Strong interpersonal and communication skills",
-        "Ability to handle moderation and resolve conflicts diplomatically",
-        "Event planning and execution experience",
-        "Content creation skills (writing, maybe video)",
-        "Understanding of community metrics and engagement",
-        "Passion for building inclusive, welcoming spaces",
+        "1-2 years of sales or customer-facing experience",
+        "Strong written and verbal communication skills",
+        "Comfortable with cold outreach and rejection",
+        "Experience with CRM tools (HubSpot, Salesforce)",
+        "Self-motivated and target-driven",
+        "Interest in technology and SaaS products",
       ],
       interviewQuestions: [
-        "Tell us about a community you've been part of or managed. What made it special?",
-        "Describe how you'd handle a conflict or negative situation in a community.",
-        "Walk us through a community event you've organized.",
-        "How do you measure community health and engagement beyond just numbers?",
+        "How do you research a prospect before reaching out?",
+        "Tell us about a time you turned a 'no' into a conversation.",
+        "What metrics do you think matter most in an SDR role?",
       ],
-      experienceLevel: "mid",
-      workplaceType: "hybrid",
+      experienceLevel: "junior",
+      workplaceType: "onsite",
       employmentType: "full_time",
+      location: "Austin, TX",
       salaryMin: 55000,
-      salaryMax: 90000,
+      salaryMax: 75000,
       salaryCurrency: "USD",
+      teamSize: 6,
+      headcount: 2,
     },
   },
 ];

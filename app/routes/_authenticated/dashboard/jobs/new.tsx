@@ -6,7 +6,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { AiJobCreator } from "@/features/jobs/components/ai-job-creator";
 import { JobForm, type JobFormData } from "@/features/jobs/components/job-form";
 import { TemplateSelectDialog } from "@/features/jobs/components/template-select-dialog";
@@ -68,26 +68,40 @@ function NewJobPage() {
   const onSelectTemplate = (template: JobTemplate) => {
     setSelectedTemplate(template);
     setTemplateDialogOpen(false);
+    toast.success(`Loaded "${template.title}" template`);
   };
 
   return (
     <div className="animate-fade-in space-y-6">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="shrink-0" asChild>
-            <Link to="/dashboard/jobs">
-              <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
-            </Link>
-          </Button>
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">Post a new job</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Fill in the details below to create a new job posting.
-            </p>
-          </div>
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="icon" className="shrink-0" asChild>
+          <Link to="/dashboard/jobs">
+            <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
+          </Link>
+        </Button>
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Post a new job</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Fill in the details below to create a new job posting.
+          </p>
         </div>
-        <Button variant="outline" onClick={() => setTemplateDialogOpen(true)}>
-          Start from a template
+      </div>
+
+      <AiJobCreator isPaid={isPaid} onApply={onApplyDraft} onDiscard={onDiscardDraft} />
+
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h3 className="text-base font-semibold">
+            {selectedTemplate ? `Customizing "${selectedTemplate.title}"` : "Job details"}
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            {selectedTemplate
+              ? "Edit any field before publishing."
+              : "Provide a clear title, description, and requirements to attract the right candidates."}
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={() => setTemplateDialogOpen(true)}>
+          {selectedTemplate ? "Change template" : "Start from a template"}
         </Button>
       </div>
 
@@ -97,18 +111,8 @@ function NewJobPage() {
         onSelect={onSelectTemplate}
       />
 
-      <AiJobCreator isPaid={isPaid} onApply={onApplyDraft} onDiscard={onDiscardDraft} />
-
       <Card className="animate-fade-in stagger-1">
-        <CardHeader>
-          <CardTitle>Job details</CardTitle>
-          <CardDescription className="text-xs">
-            {selectedTemplate
-              ? `Customizing "${selectedTemplate.title}" template`
-              : "Provide a clear title, description, and requirements to attract the right candidates."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <JobForm
             key={selectedTemplate ? `template-${selectedTemplate.id}` : draft ? "draft" : "empty"}
             defaultValues={selectedTemplate?.data ?? draft ?? undefined}
