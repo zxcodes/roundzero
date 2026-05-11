@@ -482,6 +482,9 @@ function CompanyActions({ job, requirements }: { job: JobDetail; requirements: s
               title: job.title,
               description: job.description,
               requirements,
+              interviewQuestions: Array.isArray(job.interviewQuestions)
+                ? job.interviewQuestions
+                : [],
               status: job.status as JobStatus,
               location: job.location,
               workplaceType: (job.workplaceType ?? undefined) as WorkplaceType | undefined,
