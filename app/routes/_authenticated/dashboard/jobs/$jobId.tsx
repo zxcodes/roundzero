@@ -2,6 +2,7 @@ import {
   Archive01Icon,
   ArrowLeft01Icon,
   ArrowRight01Icon,
+  Clock01Icon,
   Edit02Icon,
   Location01Icon,
   MoneyBag02Icon,
@@ -43,8 +44,9 @@ import { getJobApplicants, hasApplied } from "@/features/applications/server/fun
 import { getMyCandidateProfile } from "@/features/candidates/server/functions";
 import { JobForm, type JobFormData } from "@/features/jobs/components/job-form";
 import { JobPreviewDialog } from "@/features/jobs/components/job-preview-dialog";
+import { JobStatusBadge } from "@/features/jobs/components/job-status-badge";
 import { archiveJob, getJob, publishJob, updateJob } from "@/features/jobs/server/functions";
-import { formatDate } from "@/shared/date";
+import { formatDate, formatDaysLeft } from "@/shared/date";
 import {
   type EmploymentType,
   type ExperienceLevel,
@@ -84,19 +86,6 @@ export const Route = createFileRoute("/_authenticated/dashboard/jobs/$jobId")({
   component: JobDetailPage,
 });
 
-const statusVariant = (status: string) => {
-  switch (status) {
-    case "open":
-      return "default" as const;
-    case "draft":
-      return "secondary" as const;
-    case "closed":
-      return "outline" as const;
-    default:
-      return "secondary" as const;
-  }
-};
-
 function JobDetailPage() {
   const data = Route.useLoaderData();
   const { job } = data;
@@ -117,9 +106,7 @@ function JobDetailPage() {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-2xl font-bold tracking-tight">{job.title}</h2>
-            <Badge variant={statusVariant(job.status)} className="capitalize">
-              {job.status}
-            </Badge>
+            <JobStatusBadge job={job} />
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
             {job.companyName ? (
@@ -274,6 +261,38 @@ function JobDetailPage() {
                           {job.headcount === 1 ? "position" : "positions"}
                         </p>
                       ) : null}
+                    </div>
+                  </div>
+                </>
+              ) : null}
+
+              <Separator />
+              <div className="flex items-start gap-3">
+                <HugeiconsIcon
+                  icon={UserGroupIcon}
+                  strokeWidth={2}
+                  className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                />
+                <div>
+                  <p className="text-sm font-medium">
+                    {job.applicantCount} {job.applicantCount === 1 ? "applicant" : "applicants"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Total applications</p>
+                </div>
+              </div>
+
+              {job.expiresAt ? (
+                <>
+                  <Separator />
+                  <div className="flex items-start gap-3">
+                    <HugeiconsIcon
+                      icon={Clock01Icon}
+                      strokeWidth={2}
+                      className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                    />
+                    <div>
+                      <p className="text-sm font-medium">{formatDaysLeft(job.expiresAt)}</p>
+                      <p className="text-xs text-muted-foreground">Application deadline</p>
                     </div>
                   </div>
                 </>

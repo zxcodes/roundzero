@@ -36,7 +36,8 @@ ORDER BY j.created_at DESC;
 -- name: getJobById :one
 SELECT j.*,
        c.name AS company_name,
-       c.slug AS company_slug
+       c.slug AS company_slug,
+       (SELECT count(*)::int FROM applications a WHERE a.job_id = j.id) AS applicant_count
 FROM jobs j
 JOIN companies c ON c.id = j.company_id
 JOIN users u ON u.id = c.owner_id AND u.deleted_at IS NULL
