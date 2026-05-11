@@ -140,12 +140,12 @@
 
 ## Agent & AI Stuff
 - add guard rails during agent conv, detect short and uninterested answers, detect screenshots, detect ai responses, detect if text was copied, and detect if answers don't align with normal conv tone and more. basically ai beating ai. - this will be another step in post-evaluation.
-- show suggested skills based on job description.
-- gatekeep ai features using paywall.
-- auto find and apply to multiple jobs based on the profile (paid feature).
-- think about compacting existing user-agent chats and reusing them for similar roles to save time and compute.
-- **pre-eval: switch slop + eval steps to OpenRouter (Claude 3.5 Haiku / Llama 3.3 70B)** for reliable structured outputs and deterministic scoring. Keep Workers AI for classify step only. See `pre-evaluation.ts` comments for context. Do this before scaling eval volume. And add temperature: 0 and explicit max_tokens — eliminates score variance.
-- pre-eval: Delete parseJsonPayload entirely — OpenRouter + Claude actually respects response_format. You’ll get clean objects every time.
+<!--- show suggested skills based on job description.-->
+<!--- gatekeep ai features using paywall.-->
+<!--- auto find and apply to multiple jobs based on the profile (paid feature).-->
+<!--- think about compacting existing user-agent chats and reusing them for similar roles to save time and compute.-->
+<!--- **pre-eval: switch slop + eval steps to OpenRouter (Claude 3.5 Haiku / Llama 3.3 70B)** for reliable structured outputs and deterministic scoring. Keep Workers AI for classify step only. See `pre-evaluation.ts` comments for context. Do this before scaling eval volume. And add temperature: 0 and explicit max_tokens — eliminates score variance.-->
+<!--- pre-eval: Delete parseJsonPayload entirely — OpenRouter + Claude actually respects response_format. You’ll get clean objects every time.-->
 
 
 
