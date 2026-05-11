@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { UnsavedChangesBar } from "@/components/unsaved-changes-bar";
 import { JobPreviewDialog } from "@/features/jobs/components/job-preview-dialog";
 import { formatDate } from "@/shared/date";
 import {
@@ -131,11 +132,13 @@ export function JobForm({
   onSubmit,
   submitLabel,
   companyName,
+  onCancel,
 }: {
   defaultValues?: Partial<JobFormData>;
   onSubmit: (data: JobFormData) => void;
   submitLabel: string;
   companyName?: string;
+  onCancel?: () => void;
 }) {
   const [requirementInput, setRequirementInput] = useState("");
   const [interviewQuestionInput, setInterviewQuestionInput] = useState("");
@@ -204,6 +207,20 @@ export function JobForm({
 
   return (
     <form onSubmit={onFormSubmit} className="space-y-6">
+      {onCancel ? (
+        <form.Subscribe
+          selector={(state) => ({ isDirty: state.isDirty, isSubmitting: state.isSubmitting })}
+        >
+          {({ isDirty, isSubmitting }) => (
+            <UnsavedChangesBar
+              isDirty={isDirty}
+              isSubmitting={isSubmitting}
+              onDiscard={onCancel}
+              onSave={() => form.handleSubmit()}
+            />
+          )}
+        </form.Subscribe>
+      ) : null}
       <FieldGroup>
         <form.Field
           name="title"
@@ -833,36 +850,38 @@ export function JobForm({
           }}
         </form.Field>
 
-        <form.Subscribe
-          selector={(state) => ({ isSubmitting: state.isSubmitting, values: state.values })}
-        >
-          {({ isSubmitting, values }) => (
-            <div className="flex items-center gap-2">
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : submitLabel}
-              </Button>
-              {companyName ? (
-                <JobPreviewDialog
-                  data={{
-                    title: values.title,
-                    description: values.description,
-                    requirements: values.requirements,
-                    companyName,
-                    location: values.location || null,
-                    workplaceType: values.workplaceType || null,
-                    employmentType: values.employmentType || null,
-                    experienceLevel: values.experienceLevel || null,
-                    salaryMin: values.salaryMin ? Number(values.salaryMin) : null,
-                    salaryMax: values.salaryMax ? Number(values.salaryMax) : null,
-                    salaryCurrency: values.salaryCurrency,
-                    teamSize: values.teamSize ? Number(values.teamSize) : null,
-                    headcount: values.headcount ? Number(values.headcount) : null,
-                  }}
-                />
-              ) : null}
-            </div>
-          )}
-        </form.Subscribe>
+        {!onCancel ? (
+          <form.Subscribe
+            selector={(state) => ({ isSubmitting: state.isSubmitting, values: state.values })}
+          >
+            {({ isSubmitting, values }) => (
+              <div className="flex items-center gap-2">
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "Saving..." : submitLabel}
+                </Button>
+                {companyName ? (
+                  <JobPreviewDialog
+                    data={{
+                      title: values.title,
+                      description: values.description,
+                      requirements: values.requirements,
+                      companyName,
+                      location: values.location || null,
+                      workplaceType: values.workplaceType || null,
+                      employmentType: values.employmentType || null,
+                      experienceLevel: values.experienceLevel || null,
+                      salaryMin: values.salaryMin ? Number(values.salaryMin) : null,
+                      salaryMax: values.salaryMax ? Number(values.salaryMax) : null,
+                      salaryCurrency: values.salaryCurrency,
+                      teamSize: values.teamSize ? Number(values.teamSize) : null,
+                      headcount: values.headcount ? Number(values.headcount) : null,
+                    }}
+                  />
+                ) : null}
+              </div>
+            )}
+          </form.Subscribe>
+        ) : null}
       </div>
     </form>
   );
