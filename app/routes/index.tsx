@@ -829,6 +829,7 @@ const tiers: Tier[] = [
 
 const featureRows = [
   { label: "Active job postings", values: ["Up to 3", "Unlimited", "Unlimited"] },
+  { label: "AI job creation", values: ["—", "Included", "Included"] },
   { label: "AI pre-evaluation", values: ["All applicants", "All applicants", "All applicants"] },
   { label: "Deep-evaluated reports", values: ["5 per job", "Top fits", "Top fits"] },
   { label: "Custom evaluation criteria", values: ["—", "Included", "Included"] },
@@ -1105,6 +1106,10 @@ const faq = [
   {
     q: "Can I customise what the AI evaluates?",
     a: "Yes — on Pro and Enterprise plans, you define custom evaluation criteria. The AI uses your job requirements, interview questions, and weighting preferences.",
+  },
+  {
+    q: "What is AI job creation?",
+    a: "Describe a role in plain language — 'Senior React engineer, remote, $120-160k' — and our AI builds a complete job posting with title, description, requirements, salary, interview questions, and more. You review the draft, edit anything, then publish. Available on Pro and Enterprise.",
   },
   {
     q: "Does RoundZero only work for technical roles?",
