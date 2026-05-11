@@ -43,6 +43,7 @@
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- ai job creation (just describe the job, ai completes it, review, if yes, creates a posting. can use voice too to describe.)-->
 <!--- let companies choose how many reports they wanna see per job while creating it etc.-->
 <!--- show number of applicants on each job detail. (done — public job listing, detail, and company page now show applicant count.)-->
 <!--- think about this entire end to end lifecycle of each job on the platform (draft → open → quota-hit → expired/closed → archived). expiry deadline + activeness badge now shown to candidates. -->
@@ -140,7 +141,6 @@
 
 ## Agent & AI Stuff
 - add guard rails during agent conv, detect short and uninterested answers, detect screenshots, detect ai responses, detect if text was copied, and detect if answers don't align with normal conv tone and more. basically ai beating ai. - this will be another step in post-evaluation.
-- ai job creation (just describe the job, ai completes it, review, if yes, creates a posting. can use voice too to describe.)
 - show suggested skills based on job description.
 - gatekeep ai features using paywall.
 - auto find and apply to multiple jobs based on the profile (paid feature).
