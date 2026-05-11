@@ -38,6 +38,8 @@ import { Route as AuthenticatedDashboardJobApplicantsJobIdRouteImport } from './
 import { Route as AuthenticatedDashboardApplicationApplicationIdRouteImport } from './routes/_authenticated/dashboard/application/$applicationId'
 import { Route as AuthenticatedDashboardApplicantsApplicationIdRouteImport } from './routes/_authenticated/dashboard/applicants/$applicationId'
 import { Route as AuthenticatedDashboardApplicantReportsApplicationIdRouteImport } from './routes/_authenticated/dashboard/applicant-reports/$applicationId'
+import { Route as AuthenticatedDashboardJobsJobIdIndexRouteImport } from './routes/_authenticated/dashboard/jobs/$jobId/index'
+import { Route as AuthenticatedDashboardJobsJobIdEditRouteImport } from './routes/_authenticated/dashboard/jobs/$jobId/edit'
 
 const TosRoute = TosRouteImport.update({
   id: '/tos',
@@ -199,6 +201,18 @@ const AuthenticatedDashboardApplicantReportsApplicationIdRoute =
     path: '/applicant-reports/$applicationId',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
+const AuthenticatedDashboardJobsJobIdIndexRoute =
+  AuthenticatedDashboardJobsJobIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedDashboardJobsJobIdRoute,
+  } as any)
+const AuthenticatedDashboardJobsJobIdEditRoute =
+  AuthenticatedDashboardJobsJobIdEditRouteImport.update({
+    id: '/edit',
+    path: '/edit',
+    getParentRoute: () => AuthenticatedDashboardJobsJobIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -226,9 +240,11 @@ export interface FileRoutesByFullPath {
   '/dashboard/application/$applicationId': typeof AuthenticatedDashboardApplicationApplicationIdRoute
   '/dashboard/job-applicants/$jobId': typeof AuthenticatedDashboardJobApplicantsJobIdRoute
   '/dashboard/job-batches/$batchId': typeof AuthenticatedDashboardJobBatchesBatchIdRoute
-  '/dashboard/jobs/$jobId': typeof AuthenticatedDashboardJobsJobIdRoute
+  '/dashboard/jobs/$jobId': typeof AuthenticatedDashboardJobsJobIdRouteWithChildren
   '/dashboard/jobs/new': typeof AuthenticatedDashboardJobsNewRoute
   '/dashboard/jobs/': typeof AuthenticatedDashboardJobsIndexRoute
+  '/dashboard/jobs/$jobId/edit': typeof AuthenticatedDashboardJobsJobIdEditRoute
+  '/dashboard/jobs/$jobId/': typeof AuthenticatedDashboardJobsJobIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -254,9 +270,10 @@ export interface FileRoutesByTo {
   '/dashboard/application/$applicationId': typeof AuthenticatedDashboardApplicationApplicationIdRoute
   '/dashboard/job-applicants/$jobId': typeof AuthenticatedDashboardJobApplicantsJobIdRoute
   '/dashboard/job-batches/$batchId': typeof AuthenticatedDashboardJobBatchesBatchIdRoute
-  '/dashboard/jobs/$jobId': typeof AuthenticatedDashboardJobsJobIdRoute
   '/dashboard/jobs/new': typeof AuthenticatedDashboardJobsNewRoute
   '/dashboard/jobs': typeof AuthenticatedDashboardJobsIndexRoute
+  '/dashboard/jobs/$jobId/edit': typeof AuthenticatedDashboardJobsJobIdEditRoute
+  '/dashboard/jobs/$jobId': typeof AuthenticatedDashboardJobsJobIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -286,9 +303,11 @@ export interface FileRoutesById {
   '/_authenticated/dashboard/application/$applicationId': typeof AuthenticatedDashboardApplicationApplicationIdRoute
   '/_authenticated/dashboard/job-applicants/$jobId': typeof AuthenticatedDashboardJobApplicantsJobIdRoute
   '/_authenticated/dashboard/job-batches/$batchId': typeof AuthenticatedDashboardJobBatchesBatchIdRoute
-  '/_authenticated/dashboard/jobs/$jobId': typeof AuthenticatedDashboardJobsJobIdRoute
+  '/_authenticated/dashboard/jobs/$jobId': typeof AuthenticatedDashboardJobsJobIdRouteWithChildren
   '/_authenticated/dashboard/jobs/new': typeof AuthenticatedDashboardJobsNewRoute
   '/_authenticated/dashboard/jobs/': typeof AuthenticatedDashboardJobsIndexRoute
+  '/_authenticated/dashboard/jobs/$jobId/edit': typeof AuthenticatedDashboardJobsJobIdEditRoute
+  '/_authenticated/dashboard/jobs/$jobId/': typeof AuthenticatedDashboardJobsJobIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -321,6 +340,8 @@ export interface FileRouteTypes {
     | '/dashboard/jobs/$jobId'
     | '/dashboard/jobs/new'
     | '/dashboard/jobs/'
+    | '/dashboard/jobs/$jobId/edit'
+    | '/dashboard/jobs/$jobId/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -346,9 +367,10 @@ export interface FileRouteTypes {
     | '/dashboard/application/$applicationId'
     | '/dashboard/job-applicants/$jobId'
     | '/dashboard/job-batches/$batchId'
-    | '/dashboard/jobs/$jobId'
     | '/dashboard/jobs/new'
     | '/dashboard/jobs'
+    | '/dashboard/jobs/$jobId/edit'
+    | '/dashboard/jobs/$jobId'
   id:
     | '__root__'
     | '/'
@@ -380,6 +402,8 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard/jobs/$jobId'
     | '/_authenticated/dashboard/jobs/new'
     | '/_authenticated/dashboard/jobs/'
+    | '/_authenticated/dashboard/jobs/$jobId/edit'
+    | '/_authenticated/dashboard/jobs/$jobId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -600,8 +624,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardApplicantReportsApplicationIdRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
+    '/_authenticated/dashboard/jobs/$jobId/': {
+      id: '/_authenticated/dashboard/jobs/$jobId/'
+      path: '/'
+      fullPath: '/dashboard/jobs/$jobId/'
+      preLoaderRoute: typeof AuthenticatedDashboardJobsJobIdIndexRouteImport
+      parentRoute: typeof AuthenticatedDashboardJobsJobIdRoute
+    }
+    '/_authenticated/dashboard/jobs/$jobId/edit': {
+      id: '/_authenticated/dashboard/jobs/$jobId/edit'
+      path: '/edit'
+      fullPath: '/dashboard/jobs/$jobId/edit'
+      preLoaderRoute: typeof AuthenticatedDashboardJobsJobIdEditRouteImport
+      parentRoute: typeof AuthenticatedDashboardJobsJobIdRoute
+    }
   }
 }
+
+interface AuthenticatedDashboardJobsJobIdRouteChildren {
+  AuthenticatedDashboardJobsJobIdEditRoute: typeof AuthenticatedDashboardJobsJobIdEditRoute
+  AuthenticatedDashboardJobsJobIdIndexRoute: typeof AuthenticatedDashboardJobsJobIdIndexRoute
+}
+
+const AuthenticatedDashboardJobsJobIdRouteChildren: AuthenticatedDashboardJobsJobIdRouteChildren =
+  {
+    AuthenticatedDashboardJobsJobIdEditRoute:
+      AuthenticatedDashboardJobsJobIdEditRoute,
+    AuthenticatedDashboardJobsJobIdIndexRoute:
+      AuthenticatedDashboardJobsJobIdIndexRoute,
+  }
+
+const AuthenticatedDashboardJobsJobIdRouteWithChildren =
+  AuthenticatedDashboardJobsJobIdRoute._addFileChildren(
+    AuthenticatedDashboardJobsJobIdRouteChildren,
+  )
 
 interface AuthenticatedDashboardRouteChildren {
   AuthenticatedDashboardApplicationsRoute: typeof AuthenticatedDashboardApplicationsRoute
@@ -613,7 +669,7 @@ interface AuthenticatedDashboardRouteChildren {
   AuthenticatedDashboardApplicationApplicationIdRoute: typeof AuthenticatedDashboardApplicationApplicationIdRoute
   AuthenticatedDashboardJobApplicantsJobIdRoute: typeof AuthenticatedDashboardJobApplicantsJobIdRoute
   AuthenticatedDashboardJobBatchesBatchIdRoute: typeof AuthenticatedDashboardJobBatchesBatchIdRoute
-  AuthenticatedDashboardJobsJobIdRoute: typeof AuthenticatedDashboardJobsJobIdRoute
+  AuthenticatedDashboardJobsJobIdRoute: typeof AuthenticatedDashboardJobsJobIdRouteWithChildren
   AuthenticatedDashboardJobsNewRoute: typeof AuthenticatedDashboardJobsNewRoute
   AuthenticatedDashboardJobsIndexRoute: typeof AuthenticatedDashboardJobsIndexRoute
 }
@@ -635,7 +691,8 @@ const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
       AuthenticatedDashboardJobApplicantsJobIdRoute,
     AuthenticatedDashboardJobBatchesBatchIdRoute:
       AuthenticatedDashboardJobBatchesBatchIdRoute,
-    AuthenticatedDashboardJobsJobIdRoute: AuthenticatedDashboardJobsJobIdRoute,
+    AuthenticatedDashboardJobsJobIdRoute:
+      AuthenticatedDashboardJobsJobIdRouteWithChildren,
     AuthenticatedDashboardJobsNewRoute: AuthenticatedDashboardJobsNewRoute,
     AuthenticatedDashboardJobsIndexRoute: AuthenticatedDashboardJobsIndexRoute,
   }

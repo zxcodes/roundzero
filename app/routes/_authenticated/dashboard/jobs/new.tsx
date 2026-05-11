@@ -3,9 +3,11 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link, redirect, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AiJobCreator } from "@/features/jobs/components/ai-job-creator";
 import { JobForm, type JobFormData } from "@/features/jobs/components/job-form";
 import { createJob } from "@/features/jobs/server/functions";
 
@@ -28,6 +30,8 @@ function NewJobPage() {
   const router = useRouter();
   const context = Route.useRouteContext();
   const companyName = context.company?.name ?? "";
+  const isPaid = context.subscription?.isActive ?? false;
+  const [draft, setDraft] = useState<JobFormData | null>(null);
 
   const createJobFn = useServerFn(createJob);
   const createJobMutation = useMutation({
@@ -49,6 +53,14 @@ function NewJobPage() {
     await createJobMutation.mutateAsync({ data });
   };
 
+  const onApplyDraft = (data: JobFormData) => {
+    setDraft(data);
+  };
+
+  const onDiscardDraft = () => {
+    setDraft(null);
+  };
+
   return (
     <div className="animate-fade-in space-y-6">
       <div className="flex items-center gap-3">
@@ -65,6 +77,8 @@ function NewJobPage() {
         </div>
       </div>
 
+      <AiJobCreator isPaid={isPaid} onApply={onApplyDraft} onDiscard={onDiscardDraft} />
+
       <Card className="animate-fade-in stagger-1">
         <CardHeader>
           <CardTitle>Job details</CardTitle>
@@ -73,7 +87,13 @@ function NewJobPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <JobForm onSubmit={onSubmit} submitLabel="Create job" companyName={companyName} />
+          <JobForm
+            key={draft ? "draft" : "empty"}
+            defaultValues={draft ?? undefined}
+            onSubmit={onSubmit}
+            submitLabel="Create job"
+            companyName={companyName}
+          />
         </CardContent>
       </Card>
     </div>

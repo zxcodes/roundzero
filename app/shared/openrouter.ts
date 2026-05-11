@@ -98,6 +98,12 @@ const INTERVIEW_DEV_CHAIN = [
   "nvidia/nemotron-3-nano-30b-a3b:free",
 ] as const;
 
+const JOB_CREATION_DEV_CHAIN = [
+  "qwen/qwen3-next-80b-a3b-instruct:free",
+  "meta-llama/llama-3.3-70b-instruct:free",
+  "nvidia/nemotron-3-super-120b-a12b:free",
+] as const;
+
 // Paid frontier models for production.
 const PRE_EVAL_PROD_CHAIN = ["anthropic/claude-haiku-4.5", "anthropic/claude-sonnet-4.5"] as const;
 
@@ -105,12 +111,18 @@ const POST_EVAL_PROD_CHAIN = ["anthropic/claude-sonnet-4.5", "anthropic/claude-o
 
 const INTERVIEW_PROD_CHAIN = ["anthropic/claude-haiku-4.5", "anthropic/claude-sonnet-4.5"] as const;
 
-type Task = "pre_eval" | "post_eval" | "interview";
+const JOB_CREATION_PROD_CHAIN = [
+  "anthropic/claude-sonnet-4.5",
+  "anthropic/claude-haiku-4.5",
+] as const;
+
+type Task = "pre_eval" | "post_eval" | "interview" | "job_creation";
 
 const TASK_CHAIN_MAP: Record<Task, { dev: readonly string[]; prod: readonly string[] }> = {
   pre_eval: { dev: PRE_EVAL_DEV_CHAIN, prod: PRE_EVAL_PROD_CHAIN },
   post_eval: { dev: POST_EVAL_DEV_CHAIN, prod: POST_EVAL_PROD_CHAIN },
   interview: { dev: INTERVIEW_DEV_CHAIN, prod: INTERVIEW_PROD_CHAIN },
+  job_creation: { dev: JOB_CREATION_DEV_CHAIN, prod: JOB_CREATION_PROD_CHAIN },
 };
 
 /**
