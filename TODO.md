@@ -8,7 +8,6 @@
 - validate open router models using their api key in prod ci so we detect non existent models beforehand.
 - we need to detect if agent messes up the interview and give candidate another chance with good ui feedback. 
 - configure sentry for prod envs.
-- we can prob use cf workflow's waitForEvent method to gather all the reports and then send all at once to the company?
 - think about entire ai layer arch, it is on-demand right now, check if that's sufficient or we need queues etc?
 - think about using actual tools such as web fetch etc to assess technical skills etc?
 - think about voice recording for communication assessment.
@@ -29,10 +28,9 @@
 - think about how previous evaluations and candidate profiles affect future score. helps with fabrication since we will have the candidate's work history and helps us maintain a consistent score when they apply to diff jobs.
 - think about showing pre eval report to companies bc the whole point is showing them tailored reports in the end. so instead of immediately showing them, show it only when the full reports are actually generated? think. fine for local dev bc we need to check the scores etc etc. 
 - think more about the duration from first report to last report generation bc it will depend on the candidate. think if we need to add an expiry or something and pass it to the next candidate?
-- you just post a job and you will be notified with the reports. (major overhaul on company side.), also check how long should it take for reports to arrive, 
-- add a job creation shortcut using "N" also indicate it on the button.
+- you just post a job and you will be notified with the reports. (include in landing page messaging)
 - check all resend templates for all notifications exist, if they link to proper paths etc.
-- company dashboard needs a big overhaul. graphs, charts, recent reports, etc
+- company dashboard needs a big overhaul. graphs, charts, recent reports, etc (overhaul done but still sucks.)
 - see if we can use SST for deployments.
 - check for leaking info in api calls (emails, ids etc)
 - think about pricing (per job flat fee, or monthly, etc. something that suits a hiring platform. subscription based might not work for this kind of platforms.)
@@ -42,6 +40,7 @@
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- we can prob use cf workflow's waitForEvent method to gather all the reports and then send all at once to the company? (using batch workflow now)-->
 <!--- add pre-built job templates.-->
 <!--- ai job creation (just describe the job, ai completes it, review, if yes, creates a posting. can use voice too to describe.)-->
 <!--- let companies choose how many reports they wanna see per job while creating it etc.-->
