@@ -217,7 +217,7 @@ function CompanyDashboardSection({ metrics }: { metrics: CompanyMetrics }) {
       </div>
 
       {metrics.activeBatches.length > 0 ? (
-        <Card className="border-primary/20 bg-linear-to-br from-card via-card to-primary/5">
+        <Card className="brand-glow border-primary/20 bg-linear-to-br from-card via-card to-primary/5">
           <CardHeader>
             <CardTitle>Active Batches</CardTitle>
             <CardDescription>
@@ -531,13 +531,26 @@ function DashboardIndexPage() {
   const cards =
     metrics.type === "company" ? buildCompanyMetrics(metrics) : buildCandidateMetrics(metrics);
 
+  const welcomeMessage = (() => {
+    if (metrics.type === "company") {
+      const pending = metrics.evaluatedAwaitingDecision;
+      if (pending > 0)
+        return `You have ${pending} candidate${pending === 1 ? "" : "s"} awaiting a decision`;
+      if (metrics.openRoles > 0)
+        return `${metrics.openRoles} open role${metrics.openRoles === 1 ? "" : "s"} — ${metrics.totalApplicants} total applicant${metrics.totalApplicants === 1 ? "" : "s"}`;
+    } else {
+      const active = (metrics as CandidateMetrics).activeApplications;
+      if (active > 0)
+        return `${active} active application${active === 1 ? "" : "s"} — ${(metrics as CandidateMetrics).interviewInvites} moved to interview`;
+    }
+    return `Here is your ${isCompany ? "hiring pipeline" : "applications"} overview`;
+  })();
+
   return (
     <div className="animate-fade-in space-y-6">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Welcome back, {user?.name}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Here's what's happening with your {isCompany ? "hiring pipeline" : "applications"}.
-        </p>
+        <h2 className="text-2xl font-bold tracking-tight">{user?.name?.split(" ")[0]}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{welcomeMessage}</p>
       </div>
 
       {showResumeBanner ? (

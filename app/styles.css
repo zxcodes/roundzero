@@ -250,6 +250,15 @@
   }
 }
 
+@keyframes shimmer-scan {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
 /* --- Editorial (landing page) theme --- */
 
 .editorial {
@@ -390,6 +399,20 @@
   .animate-scale-in {
     animation: scale-in 0.3s ease-out both;
   }
+  .animate-shimmer-scan {
+    background-size: 200% 100%;
+    animation: shimmer-scan 1.8s ease-in-out infinite;
+  }
+
+  /* Brand highlight — subtle background tint for featured/primary cards */
+  .brand-glow {
+    background: linear-gradient(
+      135deg,
+      color-mix(in oklch, var(--brand) 6%, transparent) 0%,
+      transparent 60%
+    );
+  }
+
   .stagger-1 {
     animation-delay: 50ms;
   }
@@ -408,4 +431,5 @@
   .stagger-6 {
     animation-delay: 300ms;
   }
+
 }
