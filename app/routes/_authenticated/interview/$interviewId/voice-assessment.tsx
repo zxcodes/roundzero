@@ -1,8 +1,8 @@
 import { useVoiceAgent } from "@cloudflare/voice/react";
 import { Loading03Icon, Mic01Icon, Tick01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -19,75 +19,30 @@ export const Route = createFileRoute("/_authenticated/interview/$interviewId/voi
 
 function VoiceAssessmentPage() {
   const { interview } = ParentRoute.useLoaderData();
-
   return <VoiceAssessmentContent key={interview.id} interviewId={interview.id} />;
 }
 
-type PageState =
-  | "loading"
-  | "ready"
-  | "connecting"
-  | "in_call"
-  | "processing"
-  | "completed"
-  | "error"
-  | "skipped";
-
 function VoiceAssessmentContent({ interviewId }: { interviewId: string }) {
   const router = useRouter();
-  const [pageState, setPageState] = useState<PageState>("loading");
+  const [showLoading, setShowLoading] = useState(true);
+  const [showProcessing, setShowProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const getAssessmentFn = useServerFn(getMyVoiceAssessment);
-
-  const checkStatus = async (): Promise<PageState | null> => {
-    try {
-      const result = await getAssessmentFn({ data: { interviewId } });
-      if (!result?.assessment) {
-        return "ready";
+  const { data: assessment, isPending } = useQuery({
+    queryKey: ["voice-assessment-status", interviewId],
+    queryFn: async () => {
+      const result = await getMyVoiceAssessment({ data: { interviewId } });
+      return result?.assessment ?? null;
+    },
+    refetchInterval: (query) => {
+      if (query.state.data?.status && query.state.data.status !== "pending") {
+        return false;
       }
-      if (result.assessment.status === "completed") {
-        return "completed";
-      }
-      if (result.assessment.status === "skipped") {
-        return "skipped";
-      }
-      return null;
-    } catch {
-      return null;
-    }
-  };
-
-  const startPolling = () => {
-    pollRef.current = setInterval(async () => {
-      const status = await checkStatus();
-      if (status === "completed") {
-        setPageState("completed");
-        if (pollRef.current) clearInterval(pollRef.current);
-      }
-      if (status === "skipped") {
-        setPageState("skipped");
-        if (pollRef.current) clearInterval(pollRef.current);
-      }
-    }, 2000);
-  };
-
-  useEffect(() => {
-    (async () => {
-      const status = await checkStatus();
-      if (status === "completed" || status === "skipped") {
-        setPageState(status);
-        return;
-      }
-      setPageState("ready");
-    })();
-
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
-  }, [interviewId]);
+      if (showProcessing) return 2000;
+      return false;
+    },
+  });
 
   const voice = useVoiceAgent({
     agent: "VoiceAssessmentAgent",
@@ -95,19 +50,20 @@ function VoiceAssessmentContent({ interviewId }: { interviewId: string }) {
   });
 
   useEffect(() => {
-    if (
-      voice.status === "listening" ||
-      voice.status === "speaking" ||
-      voice.status === "thinking"
-    ) {
-      setPageState("in_call");
+    if (!isPending) {
+      setShowLoading(false);
     }
-  }, [voice.status]);
+  }, [isPending]);
+
+  useEffect(() => {
+    if (assessment?.status === "completed" || assessment?.status === "skipped") {
+      setShowProcessing(false);
+    }
+  }, [assessment?.status]);
 
   useEffect(() => {
     if (voice.error) {
       setErrorMessage(voice.error);
-      setPageState("error");
     }
   }, [voice.error]);
 
@@ -117,36 +73,7 @@ function VoiceAssessmentContent({ interviewId }: { interviewId: string }) {
     }
   }, [voice.transcript]);
 
-  const onStartCall = async () => {
-    setPageState("connecting");
-    setErrorMessage(null);
-    try {
-      await voice.startCall();
-    } catch {
-      setPageState("error");
-      setErrorMessage("Could not start voice call. Please check your microphone permissions.");
-    }
-  };
-
-  const onEndCall = () => {
-    voice.endCall();
-    setPageState("processing");
-    startPolling();
-  };
-
-  const onSkip = async () => {
-    setPageState("processing");
-    try {
-      await skipMyVoiceAssessment({ data: { interviewId } });
-      setPageState("skipped");
-      await router.invalidate();
-    } catch {
-      setPageState("ready");
-      toast.error("Could not skip assessment. Please try again.");
-    }
-  };
-
-  if (pageState === "loading") {
+  if (showLoading || isPending) {
     return (
       <div className="flex min-h-0 flex-1 items-center justify-center">
         <div className="flex flex-col items-center gap-3">
@@ -161,7 +88,7 @@ function VoiceAssessmentContent({ interviewId }: { interviewId: string }) {
     );
   }
 
-  if (pageState === "completed") {
+  if (assessment?.status === "completed") {
     return (
       <div className="flex min-h-0 flex-1 items-center justify-center">
         <div className="flex max-w-md flex-col items-center gap-4 text-center">
@@ -178,7 +105,7 @@ function VoiceAssessmentContent({ interviewId }: { interviewId: string }) {
     );
   }
 
-  if (pageState === "skipped") {
+  if (assessment?.status === "skipped") {
     return (
       <div className="flex min-h-0 flex-1 items-center justify-center">
         <div className="flex max-w-md flex-col items-center gap-4 text-center">
@@ -192,22 +119,51 @@ function VoiceAssessmentContent({ interviewId }: { interviewId: string }) {
     );
   }
 
-  if (pageState === "error") {
+  const isInError = errorMessage !== null;
+  const isVoiceActive =
+    voice.status === "listening" || voice.status === "speaking" || voice.status === "thinking";
+  const pageState = showProcessing
+    ? "processing"
+    : isVoiceActive
+      ? "in_call"
+      : isInError
+        ? "error"
+        : "ready";
+
+  const onStartCall = async () => {
+    setErrorMessage(null);
+    try {
+      await voice.startCall();
+    } catch {
+      setErrorMessage("Could not start voice call. Please check your microphone permissions.");
+    }
+  };
+
+  const onEndCall = () => {
+    voice.endCall();
+    setShowProcessing(true);
+  };
+
+  const onSkip = async () => {
+    setShowProcessing(true);
+    try {
+      await skipMyVoiceAssessment({ data: { interviewId } });
+      setShowProcessing(false);
+      await router.invalidate();
+    } catch {
+      setShowProcessing(false);
+      toast.error("Could not skip assessment. Please try again.");
+    }
+  };
+
+  if (isInError && pageState === "error") {
     return (
       <div className="flex min-h-0 flex-1 items-center justify-center">
         <div className="flex max-w-md flex-col items-center gap-4 text-center">
           <h2 className="text-xl font-semibold">Something Went Wrong</h2>
-          <p className="text-sm text-muted-foreground">
-            {errorMessage ?? "An unexpected error occurred."}
-          </p>
+          <p className="text-sm text-muted-foreground">{errorMessage}</p>
           <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setPageState("ready");
-                setErrorMessage(null);
-              }}
-            >
+            <Button variant="outline" onClick={() => setErrorMessage(null)}>
               Try Again
             </Button>
             <Button variant="ghost" onClick={onSkip}>
@@ -234,7 +190,7 @@ function VoiceAssessmentContent({ interviewId }: { interviewId: string }) {
               End Call
             </Button>
           ) : null}
-          {pageState === "ready" || pageState === "connecting" ? (
+          {pageState === "ready" || pageState === "error" ? (
             <Button variant="ghost" size="sm" onClick={onSkip}>
               Skip
             </Button>
@@ -264,7 +220,7 @@ function VoiceAssessmentContent({ interviewId }: { interviewId: string }) {
           </div>
         ) : null}
 
-        {pageState === "connecting" ? (
+        {pageState === "in_call" && !isVoiceActive ? (
           <div className="flex flex-col items-center gap-4">
             <div className="flex size-20 items-center justify-center rounded-full bg-primary/10">
               <HugeiconsIcon
@@ -277,7 +233,7 @@ function VoiceAssessmentContent({ interviewId }: { interviewId: string }) {
           </div>
         ) : null}
 
-        {pageState === "in_call" ? (
+        {pageState === "in_call" && isVoiceActive ? (
           <div className="flex w-full max-w-lg flex-1 flex-col gap-4">
             <div className="flex items-center justify-center gap-4">
               <div
@@ -318,9 +274,7 @@ function VoiceAssessmentContent({ interviewId }: { interviewId: string }) {
                   {voice.transcript.map((msg, i) => (
                     <p
                       key={i}
-                      className={`text-sm ${
-                        msg.role === "assistant" ? "text-foreground" : "text-primary"
-                      }`}
+                      className={`text-sm ${msg.role === "assistant" ? "text-foreground" : "text-primary"}`}
                     >
                       <span className="text-xs font-medium text-muted-foreground">
                         {msg.role === "assistant" ? "Zero" : "You"}:
