@@ -39,7 +39,8 @@ export const Route = createFileRoute("/_authenticated/dashboard/applicant-report
 });
 
 function ApplicantAiReportPage() {
-  const { application, preEvaluation, interview, interviewState, report } = Route.useLoaderData();
+  const { application, preEvaluation, interview, interviewState, report, communicationAssessment } =
+    Route.useLoaderData();
   const getResumeFn = useServerFn(getApplicationResume);
 
   const resumeDownloadMutation = useMutation({
@@ -190,6 +191,7 @@ function ApplicantAiReportPage() {
           interview={interview}
           messages={messages}
           reportCreatedAt={report.createdAt}
+          communicationAssessment={communicationAssessment}
           application={{
             candidateName: application.candidateName,
             candidatePicture: application.candidatePicture,

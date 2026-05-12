@@ -2,7 +2,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { getApplicationReviewById } from "@/features/applications/queries/queries_sql";
-import { getInterviewByApplicationId } from "@/features/interviews/queries/queries_sql";
+import {
+  getCommunicationAssessmentByApplicationId,
+  getInterviewByApplicationId,
+} from "@/features/interviews/queries/queries_sql";
 import { getPreEvaluationByApplicationId } from "@/features/pre-evaluations/queries/queries_sql";
 import { getReportByApplicationId } from "@/features/reports/queries/queries_sql";
 import { getDb } from "@/shared/db";
@@ -108,6 +111,9 @@ export const getCompanyApplicantReportTimeline = createServerFn({ method: "GET" 
     const report = await getReportByApplicationId(db, {
       applicationId: data.applicationId,
     });
+    const communicationAssessment = await getCommunicationAssessmentByApplicationId(db, {
+      applicationId: data.applicationId,
+    });
     const interviewState = interview
       ? ((await getInterviewStateForCompany(interview.id)) ??
         getInterviewFallbackTimeline(interview))
@@ -119,5 +125,6 @@ export const getCompanyApplicantReportTimeline = createServerFn({ method: "GET" 
       interview,
       interviewState,
       report,
+      communicationAssessment,
     };
   });

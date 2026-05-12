@@ -12,6 +12,7 @@ import {
   FlagIcon,
   HelpCircleIcon,
   Message01Icon,
+  Mic01Icon,
   RankingIcon,
   SparklesIcon,
   Target02Icon,
@@ -462,9 +463,9 @@ function SignalSection({
       </div>
       {items.length > 0 ? (
         <ul className="space-y-2">
-          {items.map((item) => (
+          {items.map((item, index) => (
             <li
-              key={item}
+              key={index}
               className="flex gap-3 rounded-2xl border border-border/60 bg-muted/15 px-4 py-3 text-sm leading-6 text-foreground"
             >
               <span className="mt-2 size-1.5 shrink-0 rounded-full bg-muted-foreground/60" />
@@ -491,6 +492,7 @@ export function ReportTimeline({
   interview,
   messages,
   reportCreatedAt,
+  communicationAssessment,
   application,
 }: {
   report: ReportData;
@@ -510,6 +512,12 @@ export function ReportTimeline({
   } | null;
   messages: TranscriptMessage[];
   reportCreatedAt: Date;
+  communicationAssessment: {
+    status: string;
+    transcript: Array<{ role: string; content: string }>;
+    analysis: unknown;
+    completedAt: Date | null;
+  } | null;
   application: {
     candidateName: string;
     candidatePicture: string | null;
@@ -656,6 +664,40 @@ export function ReportTimeline({
           </Card>
         )}
       </TimelineNode>
+
+      {communicationAssessment?.status === "completed" ? (
+        <TimelineNode
+          icon={Mic01Icon}
+          iconClass="text-foreground"
+          dotClassName="ring-2 ring-border"
+          title="Voice Communication Assessment"
+          timestamp={communicationAssessment.completedAt}
+        >
+          <Card className="border-border/70">
+            <CardContent className="p-4">
+              <p className="mb-3 text-xs text-muted-foreground">
+                Communication skills assessed via voice conversation.
+              </p>
+              {communicationAssessment.transcript.length > 0 ? (
+                <ScrollArea className="h-48">
+                  <div className="space-y-2 pr-3">
+                    {communicationAssessment.transcript
+                      .filter((m) => m.content.trim().length > 0)
+                      .map((m, i) => (
+                        <p key={i} className="text-xs leading-5">
+                          <span className="font-medium text-foreground">
+                            {m.role === "assistant" ? "Zero" : "Candidate"}:
+                          </span>{" "}
+                          <span className="text-muted-foreground">{m.content}</span>
+                        </p>
+                      ))}
+                  </div>
+                </ScrollArea>
+              ) : null}
+            </CardContent>
+          </Card>
+        </TimelineNode>
+      ) : null}
 
       <TimelineNode
         icon={SparklesIcon}
