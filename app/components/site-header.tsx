@@ -20,7 +20,7 @@ export function SiteHeader({
       <div className="flex w-full items-center gap-2 px-4 lg:px-6">
         <SidebarTrigger className="-ml-1" />
         <div className="mx-2 h-4 w-px bg-border" />
-        <h1 className="text-sm font-medium">{title}</h1>
+        <h1 className="text-sm font-medium tracking-tight">{title}</h1>
         <div className="ml-auto flex items-center gap-1">
           <Button
             variant="outline"
