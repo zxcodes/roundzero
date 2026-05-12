@@ -179,9 +179,12 @@ function JobDetailPage() {
 
               {job.employmentType ? (
                 <div className="flex items-center gap-3">
-                  <div className="flex size-4 shrink-0 items-center justify-center rounded bg-muted text-[10px] font-bold text-muted-foreground">
+                  <Badge
+                    variant="outline"
+                    className="size-5 p-0 flex items-center justify-center text-[10px] font-bold shrink-0 rounded"
+                  >
                     E
-                  </div>
+                  </Badge>
                   <p className="text-sm">
                     {employmentTypeLabels[job.employmentType as EmploymentType]}
                   </p>
@@ -190,9 +193,12 @@ function JobDetailPage() {
 
               {job.experienceLevel ? (
                 <div className="flex items-center gap-3">
-                  <div className="flex size-4 shrink-0 items-center justify-center rounded bg-muted text-[10px] font-bold text-muted-foreground">
+                  <Badge
+                    variant="outline"
+                    className="size-5 p-0 flex items-center justify-center text-[10px] font-bold shrink-0 rounded"
+                  >
                     L
-                  </div>
+                  </Badge>
                   <p className="text-sm">
                     {experienceLevelLabels[job.experienceLevel as ExperienceLevel]}
                   </p>

@@ -317,6 +317,7 @@ export function ReportSnapshotCard({
               className={cn(
                 "flex size-16 flex-col items-center justify-center rounded-2xl border-2",
                 meta.scoreRing,
+                report.recommendation === "strong_yes" ? "border-brand/30 bg-brand/5" : "",
               )}
             >
               <span className={cn("font-mono text-xl font-semibold leading-none", meta.scoreText)}>
@@ -364,7 +365,11 @@ export function ReportSnapshotCard({
           <p className="line-clamp-2 max-w-2xl text-sm leading-6 text-muted-foreground">
             {report.summary}
           </p>
-          <Button asChild size="default" className="shrink-0 shadow-sm">
+          <Button
+            asChild
+            size="default"
+            className="shrink-0 shadow-sm bg-brand text-brand-foreground hover:bg-brand/90"
+          >
             <Link to="/dashboard/applicant-reports/$applicationId" params={{ applicationId }}>
               View full report
               <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2.2} className="size-4" />
@@ -682,6 +687,7 @@ export function ReportTimeline({
                   className={cn(
                     "flex size-16 shrink-0 flex-col items-center justify-center rounded-3xl border-2 md:size-20",
                     meta.scoreRing,
+                    report.recommendation === "strong_yes" ? "border-brand/30 bg-brand/5" : "",
                   )}
                 >
                   <span
@@ -737,7 +743,7 @@ export function ReportTimeline({
                         </div>
                         <div className="h-1.5 overflow-hidden rounded-full bg-background">
                           <div
-                            className="h-full rounded-full bg-foreground"
+                            className="h-full rounded-full bg-linear-to-r from-brand/70 to-foreground"
                             style={{ width: `${Math.max(0, Math.min(100, score))}%` }}
                           />
                         </div>

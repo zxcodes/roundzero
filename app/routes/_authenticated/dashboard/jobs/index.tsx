@@ -224,7 +224,10 @@ function CompanyJobsList({
             </TooltipContent>
           </Tooltip>
         ) : (
-          <Button asChild>
+          <Button
+            asChild
+            className="bg-brand text-brand-foreground hover:bg-brand/90 shadow-sm shadow-brand/20"
+          >
             <Link to="/dashboard/jobs/new">
               <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-4" />
               Post a job
