@@ -5,6 +5,7 @@ import { handlePolarWebhook } from "./features/billing/webhook";
 import { getDb } from "./shared/db";
 
 export { InterviewAgent } from "./agents/interview";
+export { VoiceAssessmentAgent } from "./agents/voice-assessment";
 export { BatchOrchestrationWorkflow } from "./workflows/batch-orchestration/workflow";
 export { PostEvaluationWorkflow } from "./workflows/post-evaluation/workflow";
 export { PreEvaluationWorkflow } from "./workflows/pre-evaluation/workflow";

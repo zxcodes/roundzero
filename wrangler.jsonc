@@ -35,6 +35,9 @@
       "bucket_name": "roundzero-assets"
     }
   ],
+  "ai": {
+    "binding": "AI"
+  },
   "workflows": [
     {
       "name": "pre-evaluation",
@@ -57,6 +60,10 @@
       {
         "name": "INTERVIEW_AGENT",
         "class_name": "InterviewAgent"
+      },
+      {
+        "name": "VOICE_ASSESSMENT_AGENT",
+        "class_name": "VoiceAssessmentAgent"
       }
     ]
   },
@@ -64,6 +71,10 @@
     {
       "tag": "v1",
       "new_sqlite_classes": ["InterviewAgent"]
+    },
+    {
+      "tag": "v2",
+      "new_sqlite_classes": ["VoiceAssessmentAgent"]
     }
   ],
   "triggers": {

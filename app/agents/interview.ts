@@ -15,7 +15,9 @@ import {
 import { z } from "zod";
 import {
   completeInterview,
+  createCommunicationAssessment,
   expireInterview,
+  getCommunicationAssessmentByInterviewId,
   getInterviewContextById,
 } from "@/features/interviews/queries/queries_sql";
 import {
@@ -732,7 +734,31 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
 
               if (!this.state.postEvaluationTriggered) {
                 try {
+                  // Pre-create the voice communication assessment row in
+                  // "pending" state so the post-eval workflow knows to wait
+                  // for the candidate's optional voice call.
+                  const existing = await getCommunicationAssessmentByInterviewId(db, {
+                    interviewId: this.state.interviewId,
+                  });
+                  if (!existing) {
+                    await createCommunicationAssessment(db, {
+                      interviewId: this.state.interviewId,
+                      applicationId: this.state.applicationId,
+                      status: "pending",
+                    });
+                  }
+                } catch (error) {
+                  console.error(
+                    "[interview-agent] failed to seed communication assessment row",
+                    error,
+                  );
+                }
+
+                try {
                   await this.env.POST_EVALUATION.create({
+                    // Stable id so VoiceAssessmentAgent can later resolve the
+                    // running workflow instance via env.POST_EVALUATION.get().
+                    id: this.state.interviewId,
                     params: { interviewId: this.state.interviewId },
                   });
                   this.setState({

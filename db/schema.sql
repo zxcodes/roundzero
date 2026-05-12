@@ -74,6 +74,25 @@ CREATE TABLE public.candidate_work_history (
 
 
 --
+-- Name: communication_assessments; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.communication_assessments (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    interview_id uuid NOT NULL,
+    application_id uuid NOT NULL,
+    status text DEFAULT 'pending'::text NOT NULL,
+    audio_key text,
+    transcript jsonb DEFAULT '[]'::jsonb NOT NULL,
+    analysis jsonb,
+    started_at timestamp with time zone,
+    completed_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: companies; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -298,6 +317,22 @@ ALTER TABLE ONLY public.candidate_work_history
 
 
 --
+-- Name: communication_assessments communication_assessments_interview_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.communication_assessments
+    ADD CONSTRAINT communication_assessments_interview_id_key UNIQUE (interview_id);
+
+
+--
+-- Name: communication_assessments communication_assessments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.communication_assessments
+    ADD CONSTRAINT communication_assessments_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: companies companies_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -427,6 +462,20 @@ CREATE INDEX idx_candidate_profiles_user ON public.candidate_profiles USING btre
 --
 
 CREATE INDEX idx_candidate_work_history_profile ON public.candidate_work_history USING btree (candidate_profile_id, sort_order);
+
+
+--
+-- Name: idx_comm_assessments_application; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_comm_assessments_application ON public.communication_assessments USING btree (application_id);
+
+
+--
+-- Name: idx_comm_assessments_interview; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_comm_assessments_interview ON public.communication_assessments USING btree (interview_id);
 
 
 --
@@ -564,6 +613,22 @@ ALTER TABLE ONLY public.candidate_profiles
 
 ALTER TABLE ONLY public.candidate_work_history
     ADD CONSTRAINT candidate_work_history_candidate_profile_id_fkey FOREIGN KEY (candidate_profile_id) REFERENCES public.candidate_profiles(id) ON DELETE RESTRICT;
+
+
+--
+-- Name: communication_assessments communication_assessments_application_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.communication_assessments
+    ADD CONSTRAINT communication_assessments_application_id_fkey FOREIGN KEY (application_id) REFERENCES public.applications(id) ON DELETE RESTRICT;
+
+
+--
+-- Name: communication_assessments communication_assessments_interview_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.communication_assessments
+    ADD CONSTRAINT communication_assessments_interview_id_fkey FOREIGN KEY (interview_id) REFERENCES public.interviews(id) ON DELETE RESTRICT;
 
 
 --
