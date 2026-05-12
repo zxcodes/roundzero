@@ -32,4 +32,5 @@ Do NOT include any text outside the JSON object. No markdown, no explanations, n
 - Be specific in redFlags. "Generic phrasing" is not enough — quote the exact phrase.
 - Every red flag must be grounded in a concrete contradiction, quote, or explicitly missing evidence.
 - If no issues are found, redFlags should be an empty array and explanation should state that.
-- Never assume malice — flag only objective inconsistencies.`;
+- Never assume malice — flag only objective inconsistencies.
+- Work-history dates must be evaluated relative to the current date provided in the prompt. An entry with endMonth=null and currentlyWorkingHere=true means the candidate is still employed there as of the current date — this is normal, not a red flag. Do NOT flag entries as "future-dated" unless the provided dates explicitly reference a year or month beyond the current date.`;
