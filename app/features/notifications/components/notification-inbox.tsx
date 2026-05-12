@@ -30,13 +30,14 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { useSidebar } from "@/components/ui/sidebar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { getNotificationPresentation } from "@/features/notifications/config";
 import {
   type getMyNotificationsFeed,
   markAllMyNotificationsRead,
   markMyNotificationRead,
 } from "@/features/notifications/server/functions";
-import { formatRelativeTime } from "@/shared/date";
+import { formatDateTime, formatRelativeTime } from "@/shared/date";
 
 type NotificationFeed = Awaited<ReturnType<typeof getMyNotificationsFeed>>;
 
@@ -189,9 +190,16 @@ export function NotificationInbox({
                     <div className="min-w-0 flex-1 space-y-1">
                       <div className="flex items-start justify-between gap-3">
                         <p className="text-sm font-medium text-foreground">{presentation.title}</p>
-                        <span className="shrink-0 text-[11px] text-muted-foreground">
-                          {formatRelativeTime(notification.createdAt)}
-                        </span>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="shrink-0 text-[11px] text-muted-foreground cursor-default">
+                              {formatRelativeTime(notification.createdAt)}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="text-xs">
+                            {formatDateTime(notification.createdAt)}
+                          </TooltipContent>
+                        </Tooltip>
                       </div>
                       <p className="text-sm leading-6 text-muted-foreground">{presentation.body}</p>
                     </div>
