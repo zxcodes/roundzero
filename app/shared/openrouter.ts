@@ -80,8 +80,6 @@ export function getOpenRouter(): OpenRouterProvider {
 // Pre-eval and post-eval need models that support structured outputs
 // (response_format or structured_outputs parameter).
 const PRE_EVAL_DEV_CHAIN = [
-  "minimax/minimax-m2.5:free",
-  "google/gemma-4-31b-it:free",
   "qwen/qwen3-next-80b-a3b-instruct:free",
   "nvidia/nemotron-3-super-120b-a12b:free",
 ] as const;
