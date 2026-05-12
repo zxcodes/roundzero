@@ -4,7 +4,6 @@
 - if a candidate goes into hold, there is no way for companies to manually invite them to interview because of new batch flow?
 - update landing page messaging to say the time of resumes is over. it's time for real evaluation etc.
 - shortlisting/rejecting actions should nicely accessible on top of each report for easy auctioning. right now they're buried under drop downs.
-- copy agent testing patterns from opencode, pi etc. also see how they harden their prompts.
 - validate open router models using their api key in prod ci so we detect non existent models beforehand.
 - we need to detect if agent messes up the interview and give candidate another chance with good ui feedback. 
 - configure sentry for prod envs.
@@ -37,6 +36,7 @@
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- copy agent testing patterns from opencode, pi etc. also see how they harden their prompts.-->
 <!--- strictly make agent ask interview questions from the profile and then from the actual job. right now it's not even close. asks vague questions. check if we're feeding the agent context the right way (better models solve this).-->
 <!--- update seed to include much more data for better agent evaluation with multiple jobs having company questions (relocation, visa, etc etc)-->
 <!--- too many applicant status enums (follwup enum etc, only keep using ones by checking end to end flow)-->
