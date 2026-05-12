@@ -30,7 +30,9 @@ import { Route as AuthenticatedInterviewInterviewIdRouteImport } from './routes/
 import { Route as AuthenticatedDashboardSettingsRouteImport } from './routes/_authenticated/dashboard/settings'
 import { Route as AuthenticatedDashboardBillingRouteImport } from './routes/_authenticated/dashboard/billing'
 import { Route as AuthenticatedDashboardApplicationsRouteImport } from './routes/_authenticated/dashboard/applications'
+import { Route as AuthenticatedInterviewInterviewIdIndexRouteImport } from './routes/_authenticated/interview/$interviewId/index'
 import { Route as AuthenticatedDashboardJobsIndexRouteImport } from './routes/_authenticated/dashboard/jobs/index'
+import { Route as AuthenticatedInterviewInterviewIdVoiceAssessmentRouteImport } from './routes/_authenticated/interview/$interviewId/voice-assessment'
 import { Route as AuthenticatedDashboardJobsNewRouteImport } from './routes/_authenticated/dashboard/jobs/new'
 import { Route as AuthenticatedDashboardJobsJobIdRouteImport } from './routes/_authenticated/dashboard/jobs/$jobId'
 import { Route as AuthenticatedDashboardJobBatchesBatchIdRouteImport } from './routes/_authenticated/dashboard/job-batches/$batchId'
@@ -153,11 +155,23 @@ const AuthenticatedDashboardApplicationsRoute =
     path: '/applications',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
+const AuthenticatedInterviewInterviewIdIndexRoute =
+  AuthenticatedInterviewInterviewIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedInterviewInterviewIdRoute,
+  } as any)
 const AuthenticatedDashboardJobsIndexRoute =
   AuthenticatedDashboardJobsIndexRouteImport.update({
     id: '/jobs/',
     path: '/jobs/',
     getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedInterviewInterviewIdVoiceAssessmentRoute =
+  AuthenticatedInterviewInterviewIdVoiceAssessmentRouteImport.update({
+    id: '/voice-assessment',
+    path: '/voice-assessment',
+    getParentRoute: () => AuthenticatedInterviewInterviewIdRoute,
   } as any)
 const AuthenticatedDashboardJobsNewRoute =
   AuthenticatedDashboardJobsNewRouteImport.update({
@@ -230,7 +244,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/applications': typeof AuthenticatedDashboardApplicationsRoute
   '/dashboard/billing': typeof AuthenticatedDashboardBillingRoute
   '/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
-  '/interview/$interviewId': typeof AuthenticatedInterviewInterviewIdRoute
+  '/interview/$interviewId': typeof AuthenticatedInterviewInterviewIdRouteWithChildren
   '/onboarding/candidate': typeof AuthenticatedOnboardingCandidateRoute
   '/onboarding/company': typeof AuthenticatedOnboardingCompanyRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
@@ -242,7 +256,9 @@ export interface FileRoutesByFullPath {
   '/dashboard/job-batches/$batchId': typeof AuthenticatedDashboardJobBatchesBatchIdRoute
   '/dashboard/jobs/$jobId': typeof AuthenticatedDashboardJobsJobIdRouteWithChildren
   '/dashboard/jobs/new': typeof AuthenticatedDashboardJobsNewRoute
+  '/interview/$interviewId/voice-assessment': typeof AuthenticatedInterviewInterviewIdVoiceAssessmentRoute
   '/dashboard/jobs/': typeof AuthenticatedDashboardJobsIndexRoute
+  '/interview/$interviewId/': typeof AuthenticatedInterviewInterviewIdIndexRoute
   '/dashboard/jobs/$jobId/edit': typeof AuthenticatedDashboardJobsJobIdEditRoute
   '/dashboard/jobs/$jobId/': typeof AuthenticatedDashboardJobsJobIdIndexRoute
 }
@@ -260,7 +276,6 @@ export interface FileRoutesByTo {
   '/dashboard/applications': typeof AuthenticatedDashboardApplicationsRoute
   '/dashboard/billing': typeof AuthenticatedDashboardBillingRoute
   '/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
-  '/interview/$interviewId': typeof AuthenticatedInterviewInterviewIdRoute
   '/onboarding/candidate': typeof AuthenticatedOnboardingCandidateRoute
   '/onboarding/company': typeof AuthenticatedOnboardingCompanyRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
@@ -271,7 +286,9 @@ export interface FileRoutesByTo {
   '/dashboard/job-applicants/$jobId': typeof AuthenticatedDashboardJobApplicantsJobIdRoute
   '/dashboard/job-batches/$batchId': typeof AuthenticatedDashboardJobBatchesBatchIdRoute
   '/dashboard/jobs/new': typeof AuthenticatedDashboardJobsNewRoute
+  '/interview/$interviewId/voice-assessment': typeof AuthenticatedInterviewInterviewIdVoiceAssessmentRoute
   '/dashboard/jobs': typeof AuthenticatedDashboardJobsIndexRoute
+  '/interview/$interviewId': typeof AuthenticatedInterviewInterviewIdIndexRoute
   '/dashboard/jobs/$jobId/edit': typeof AuthenticatedDashboardJobsJobIdEditRoute
   '/dashboard/jobs/$jobId': typeof AuthenticatedDashboardJobsJobIdIndexRoute
 }
@@ -293,7 +310,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard/applications': typeof AuthenticatedDashboardApplicationsRoute
   '/_authenticated/dashboard/billing': typeof AuthenticatedDashboardBillingRoute
   '/_authenticated/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
-  '/_authenticated/interview/$interviewId': typeof AuthenticatedInterviewInterviewIdRoute
+  '/_authenticated/interview/$interviewId': typeof AuthenticatedInterviewInterviewIdRouteWithChildren
   '/_authenticated/onboarding/candidate': typeof AuthenticatedOnboardingCandidateRoute
   '/_authenticated/onboarding/company': typeof AuthenticatedOnboardingCompanyRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
@@ -305,7 +322,9 @@ export interface FileRoutesById {
   '/_authenticated/dashboard/job-batches/$batchId': typeof AuthenticatedDashboardJobBatchesBatchIdRoute
   '/_authenticated/dashboard/jobs/$jobId': typeof AuthenticatedDashboardJobsJobIdRouteWithChildren
   '/_authenticated/dashboard/jobs/new': typeof AuthenticatedDashboardJobsNewRoute
+  '/_authenticated/interview/$interviewId/voice-assessment': typeof AuthenticatedInterviewInterviewIdVoiceAssessmentRoute
   '/_authenticated/dashboard/jobs/': typeof AuthenticatedDashboardJobsIndexRoute
+  '/_authenticated/interview/$interviewId/': typeof AuthenticatedInterviewInterviewIdIndexRoute
   '/_authenticated/dashboard/jobs/$jobId/edit': typeof AuthenticatedDashboardJobsJobIdEditRoute
   '/_authenticated/dashboard/jobs/$jobId/': typeof AuthenticatedDashboardJobsJobIdIndexRoute
 }
@@ -339,7 +358,9 @@ export interface FileRouteTypes {
     | '/dashboard/job-batches/$batchId'
     | '/dashboard/jobs/$jobId'
     | '/dashboard/jobs/new'
+    | '/interview/$interviewId/voice-assessment'
     | '/dashboard/jobs/'
+    | '/interview/$interviewId/'
     | '/dashboard/jobs/$jobId/edit'
     | '/dashboard/jobs/$jobId/'
   fileRoutesByTo: FileRoutesByTo
@@ -357,7 +378,6 @@ export interface FileRouteTypes {
     | '/dashboard/applications'
     | '/dashboard/billing'
     | '/dashboard/settings'
-    | '/interview/$interviewId'
     | '/onboarding/candidate'
     | '/onboarding/company'
     | '/dashboard'
@@ -368,7 +388,9 @@ export interface FileRouteTypes {
     | '/dashboard/job-applicants/$jobId'
     | '/dashboard/job-batches/$batchId'
     | '/dashboard/jobs/new'
+    | '/interview/$interviewId/voice-assessment'
     | '/dashboard/jobs'
+    | '/interview/$interviewId'
     | '/dashboard/jobs/$jobId/edit'
     | '/dashboard/jobs/$jobId'
   id:
@@ -401,7 +423,9 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard/job-batches/$batchId'
     | '/_authenticated/dashboard/jobs/$jobId'
     | '/_authenticated/dashboard/jobs/new'
+    | '/_authenticated/interview/$interviewId/voice-assessment'
     | '/_authenticated/dashboard/jobs/'
+    | '/_authenticated/interview/$interviewId/'
     | '/_authenticated/dashboard/jobs/$jobId/edit'
     | '/_authenticated/dashboard/jobs/$jobId/'
   fileRoutesById: FileRoutesById
@@ -568,12 +592,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardApplicationsRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
+    '/_authenticated/interview/$interviewId/': {
+      id: '/_authenticated/interview/$interviewId/'
+      path: '/'
+      fullPath: '/interview/$interviewId/'
+      preLoaderRoute: typeof AuthenticatedInterviewInterviewIdIndexRouteImport
+      parentRoute: typeof AuthenticatedInterviewInterviewIdRoute
+    }
     '/_authenticated/dashboard/jobs/': {
       id: '/_authenticated/dashboard/jobs/'
       path: '/jobs'
       fullPath: '/dashboard/jobs/'
       preLoaderRoute: typeof AuthenticatedDashboardJobsIndexRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/interview/$interviewId/voice-assessment': {
+      id: '/_authenticated/interview/$interviewId/voice-assessment'
+      path: '/voice-assessment'
+      fullPath: '/interview/$interviewId/voice-assessment'
+      preLoaderRoute: typeof AuthenticatedInterviewInterviewIdVoiceAssessmentRouteImport
+      parentRoute: typeof AuthenticatedInterviewInterviewIdRoute
     }
     '/_authenticated/dashboard/jobs/new': {
       id: '/_authenticated/dashboard/jobs/new'
@@ -702,15 +740,33 @@ const AuthenticatedDashboardRouteWithChildren =
     AuthenticatedDashboardRouteChildren,
   )
 
+interface AuthenticatedInterviewInterviewIdRouteChildren {
+  AuthenticatedInterviewInterviewIdVoiceAssessmentRoute: typeof AuthenticatedInterviewInterviewIdVoiceAssessmentRoute
+  AuthenticatedInterviewInterviewIdIndexRoute: typeof AuthenticatedInterviewInterviewIdIndexRoute
+}
+
+const AuthenticatedInterviewInterviewIdRouteChildren: AuthenticatedInterviewInterviewIdRouteChildren =
+  {
+    AuthenticatedInterviewInterviewIdVoiceAssessmentRoute:
+      AuthenticatedInterviewInterviewIdVoiceAssessmentRoute,
+    AuthenticatedInterviewInterviewIdIndexRoute:
+      AuthenticatedInterviewInterviewIdIndexRoute,
+  }
+
+const AuthenticatedInterviewInterviewIdRouteWithChildren =
+  AuthenticatedInterviewInterviewIdRoute._addFileChildren(
+    AuthenticatedInterviewInterviewIdRouteChildren,
+  )
+
 interface AuthenticatedInterviewRouteChildren {
-  AuthenticatedInterviewInterviewIdRoute: typeof AuthenticatedInterviewInterviewIdRoute
+  AuthenticatedInterviewInterviewIdRoute: typeof AuthenticatedInterviewInterviewIdRouteWithChildren
   AuthenticatedInterviewIndexRoute: typeof AuthenticatedInterviewIndexRoute
 }
 
 const AuthenticatedInterviewRouteChildren: AuthenticatedInterviewRouteChildren =
   {
     AuthenticatedInterviewInterviewIdRoute:
-      AuthenticatedInterviewInterviewIdRoute,
+      AuthenticatedInterviewInterviewIdRouteWithChildren,
     AuthenticatedInterviewIndexRoute: AuthenticatedInterviewIndexRoute,
   }
 
