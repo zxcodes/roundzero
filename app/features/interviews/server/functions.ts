@@ -23,6 +23,7 @@ import { getDb } from "@/shared/db";
 import { markInterviewAgentStarted } from "@/shared/interview-agent-client";
 import { authMiddleware } from "@/shared/middleware";
 import {
+  getVoiceAssessmentTranscript,
   initializeVoiceAssessmentAgent,
   markVoiceAssessmentEndIntent,
   skipVoiceAssessmentAgent,
@@ -448,6 +449,27 @@ export const markMyVoiceAssessmentEndIntent = createServerFn({ method: "POST" })
 
     await markVoiceAssessmentEndIntent(data.interviewId);
     return { ok: true };
+  });
+
+export const getMyVoiceAssessmentTranscript = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .inputValidator(zodValidator(interviewIdSchema))
+  .handler(async ({ data, context }) => {
+    if (context.user.role !== "candidate") {
+      throw new Error("Only candidates can view voice assessment transcripts");
+    }
+
+    const db = getDb();
+    const interview = await getInterviewForCandidateById(db, {
+      id: data.interviewId,
+      candidateId: context.userId,
+    });
+    if (!interview) {
+      return { messages: [] as Array<{ role: string; content: string }> };
+    }
+
+    const result = await getVoiceAssessmentTranscript(data.interviewId);
+    return { messages: result.messages };
   });
 
 export const skipMyVoiceAssessment = createServerFn({ method: "POST" })

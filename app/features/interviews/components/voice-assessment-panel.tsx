@@ -12,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   getMyVoiceAssessment,
+  getMyVoiceAssessmentTranscript,
   initializeMyVoiceAssessment,
   markMyVoiceAssessmentEndIntent,
   skipMyVoiceAssessment,
@@ -47,10 +48,13 @@ function useVoiceAssessmentState(interviewId: string) {
 
 export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
   const router = useRouter();
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [clientError, setClientError] = useState<string | null>(null);
 
+  // DO state for completed/skipped end states
   const { status: doStatus, agentError } = useVoiceAssessmentState(interviewId);
 
+  // DB state for initial load + fallback
   const { data: dbData, isPending: dbPending } = useQuery({
     queryKey: ["voice-assessment", interviewId],
     queryFn: async () => {
@@ -63,9 +67,21 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
     dbData?.status === "in_progress"
       ? "in_call"
       : (dbData?.status as VoiceAssessmentStatus | undefined);
+
+  // Prefer DO state for real-time updates, fall back to DB
   const effectiveStatus: VoiceAssessmentStatus | null = doStatus ?? dbStatus ?? null;
+  const needsResume = effectiveStatus === "in_call";
+
+  // Voice hook — ALWAYS mounted unconditionally at top level.
+  // The WebSocket warms in the background; startCall() / endCall()
+  // gate the actual voice protocol.
+  const voice = useVoiceAgent({
+    agent: "VoiceAssessmentAgent",
+    name: interviewId,
+  });
 
   const initFn = useServerFn(initializeMyVoiceAssessment);
+  const endIntentFn = useServerFn(markMyVoiceAssessmentEndIntent);
   const skipFn = useServerFn(skipMyVoiceAssessment);
 
   const initMutation = useMutation({
@@ -86,11 +102,51 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
     },
   });
 
+  // Fetch historical transcript from DO when resuming so the UI shows
+  // the full conversation, not just the current WebSocket session.
+  const { data: historicalTranscript } = useQuery({
+    queryKey: ["voice-assessment-transcript", interviewId],
+    queryFn: async () => {
+      const result = await getMyVoiceAssessmentTranscript({ data: { interviewId } });
+      return result.messages;
+    },
+    enabled: needsResume,
+    staleTime: Number.POSITIVE_INFINITY,
+  });
+
+  type ChatMessage = { role: string; text: string };
+
+  // Merge historical (from DO SQLite) + live (from current voice session).
+  // Historical messages use `content`; live messages use `text`.
+  const mergedTranscript: ChatMessage[] = [
+    ...(historicalTranscript ?? []).map((m) => ({ role: m.role, text: m.content })),
+    ...voice.transcript.map((m) => ({ role: m.role, text: m.text })),
+  ];
+
+  // Filter out empty assistant turns (they appear while the model is thinking).
+  const visibleTranscript = mergedTranscript.filter(
+    (msg) => msg.role === "user" || msg.text.trim().length > 0,
+  );
+
+  const lastMsg = mergedTranscript[mergedTranscript.length - 1];
+  const isAgentResponding =
+    voice.status !== "idle" && lastMsg?.role === "assistant" && lastMsg.text.trim().length === 0;
+
   useEffect(() => {
     initMutation.mutate({ data: { interviewId } });
   }, [interviewId]);
 
-  const errorMessage = clientError ?? agentError;
+  useEffect(() => {
+    if (voice.error) {
+      setClientError(voice.error);
+    }
+  }, [voice.error]);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [visibleTranscript]);
 
   if (dbPending || initMutation.isPending) {
     return (
@@ -149,7 +205,30 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
     );
   }
 
-  const needsResume = effectiveStatus === "in_call";
+  const errorMessage = clientError ?? agentError;
+
+  const onStartCall = () => {
+    setClientError(null);
+    voice.startCall().catch(() => {
+      setClientError("Could not start voice call. Please check your microphone permissions.");
+    });
+  };
+
+  const onEndCall = async () => {
+    setClientError(null);
+    try {
+      await endIntentFn({ data: { interviewId } });
+    } catch {
+      // non-fatal — endCall below will still fire
+    }
+    voice.endCall();
+  };
+
+  const onSkip = () => {
+    skipMutation.mutate({ data: { interviewId } });
+  };
+
+  const isInCall = voice.status !== "idle";
 
   return (
     <div className="border-t border-border/60 bg-muted/20 p-4 md:p-6">
@@ -168,14 +247,16 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
                 </p>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => skipMutation.mutate({ data: { interviewId } })}
-              disabled={skipMutation.isPending}
-            >
-              Skip
-            </Button>
+            {isInCall ? (
+              <Button size="sm" variant="destructive" onClick={onEndCall}>
+                <HugeiconsIcon icon={PhoneOff01Icon} strokeWidth={2} className="mr-1.5 size-4" />
+                End Call
+              </Button>
+            ) : (
+              <Button variant="ghost" size="sm" onClick={onSkip} disabled={skipMutation.isPending}>
+                Skip
+              </Button>
+            )}
           </div>
 
           {/* Error state */}
@@ -186,218 +267,100 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
                 <Button variant="outline" onClick={() => setClientError(null)}>
                   Try Again
                 </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => skipMutation.mutate({ data: { interviewId } })}
-                >
+                <Button variant="ghost" onClick={onSkip}>
                   Skip
                 </Button>
               </div>
             </div>
-          ) : (
-            <VoiceCallController
-              interviewId={interviewId}
-              needsResume={needsResume}
-              onClientError={setClientError}
-            />
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
+          ) : null}
 
-/**
- * Only mounts useVoiceAgent once the user clicks Start/Resume.
- * This prevents premature WebSocket connections that confuse
- * the voice mixin's onCallStart lifecycle.
- */
-function VoiceCallController({
-  interviewId,
-  needsResume,
-  onClientError,
-}: {
-  interviewId: string;
-  needsResume: boolean;
-  onClientError: (msg: string | null) => void;
-}) {
-  const [phase, setPhase] = useState<"ready" | "active">("ready");
-
-  const onStart = () => {
-    onClientError(null);
-    setPhase("active");
-  };
-
-  const onEnd = () => {
-    setPhase("ready");
-  };
-
-  if (phase === "active") {
-    return (
-      <ActiveVoiceCall interviewId={interviewId} onEnd={onEnd} onClientError={onClientError} />
-    );
-  }
-
-  return (
-    <div className="flex flex-col items-center gap-4 py-4 text-center">
-      <div className="flex size-16 items-center justify-center rounded-full bg-primary/10">
-        <HugeiconsIcon icon={Mic01Icon} strokeWidth={2} className="size-8 text-primary" />
-      </div>
-      <div className="max-w-sm">
-        <p className="text-sm text-muted-foreground">
-          {needsResume
-            ? "Your voice call was interrupted. Click below to resume where you left off."
-            : "Speak naturally about your experience — there are no wrong answers. Make sure you are in a quiet environment and your microphone works."}
-        </p>
-      </div>
-      <Button size="lg" onClick={onStart}>
-        <HugeiconsIcon icon={Mic01Icon} strokeWidth={2} className="mr-2 size-5" />
-        {needsResume ? "Resume Call" : "Start Voice Assessment"}
-      </Button>
-    </div>
-  );
-}
-
-function ActiveVoiceCall({
-  interviewId,
-  onEnd,
-  onClientError,
-}: {
-  interviewId: string;
-  onEnd: () => void;
-  onClientError: (msg: string | null) => void;
-}) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [isEnding, setIsEnding] = useState(false);
-
-  const voice = useVoiceAgent({
-    agent: "VoiceAssessmentAgent",
-    name: interviewId,
-  });
-
-  const endIntentFn = useServerFn(markMyVoiceAssessmentEndIntent);
-
-  // Wait for the WebSocket to connect before calling startCall().
-  // useVoiceAgent manages the connection automatically, but startCall()
-  // requires the socket to be ready first.
-  const hasStartedCall = useRef(false);
-  useEffect(() => {
-    if (voice.connected && !hasStartedCall.current) {
-      hasStartedCall.current = true;
-      voice.startCall().catch(() => {
-        onClientError("Could not start voice call. Please check your microphone permissions.");
-      });
-    }
-  }, [voice.connected, interviewId, voice.startCall, onClientError]);
-
-  useEffect(() => {
-    if (voice.error) {
-      onClientError(voice.error);
-    }
-  }, [voice.error, onClientError]);
-
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [voice.transcript]);
-
-  const onEndCall = async () => {
-    if (isEnding) return;
-    setIsEnding(true);
-    onClientError(null);
-    try {
-      await endIntentFn({ data: { interviewId } });
-    } catch {
-      // non-fatal
-    }
-    voice.endCall();
-    onEnd();
-  };
-
-  const isVoiceActive =
-    voice.status === "listening" || voice.status === "speaking" || voice.status === "thinking";
-
-  // Only show assistant transcript lines that have actual text.
-  // If the agent is currently thinking/speaking but the latest assistant
-  // turn is still empty, we show a typing indicator instead.
-  const visibleTranscript = voice.transcript.filter(
-    (msg) => msg.role === "user" || msg.text.trim().length > 0,
-  );
-
-  const lastMsg = voice.transcript[voice.transcript.length - 1];
-  const isAgentResponding =
-    isVoiceActive && lastMsg?.role === "assistant" && lastMsg.text.trim().length === 0;
-
-  return (
-    <div className="space-y-4">
-      {/* Controls */}
-      <div className="flex items-center justify-end">
-        <Button size="sm" variant="destructive" onClick={onEndCall} disabled={isEnding}>
-          <HugeiconsIcon icon={PhoneOff01Icon} strokeWidth={2} className="mr-1.5 size-4" />
-          End Call
-        </Button>
-      </div>
-
-      {/* Mic viz */}
-      <div className="flex flex-col items-center gap-3 py-2">
-        <div
-          className="flex size-20 items-center justify-center rounded-full transition-all duration-150"
-          style={{
-            backgroundColor:
-              voice.status === "listening"
-                ? `hsl(142 76% 36% / ${0.1 + voice.audioLevel * 0.4})`
-                : "hsl(var(--muted))",
-            boxShadow:
-              voice.audioLevel > 0
-                ? `0 0 24px hsl(142 76% 36% / ${voice.audioLevel * 0.3})`
-                : "none",
-          }}
-        >
-          <HugeiconsIcon
-            icon={Mic01Icon}
-            strokeWidth={2}
-            className={`size-10 transition-colors ${
-              voice.status === "listening" ? "text-success" : "text-muted-foreground"
-            }`}
-          />
-        </div>
-        <p className="text-center text-sm text-muted-foreground">
-          {voice.status === "listening" ? "Listening..." : null}
-          {voice.status === "thinking" ? "Thinking..." : null}
-          {voice.status === "speaking" ? "Speaking..." : null}
-          {voice.status === "idle" ? "Ready" : null}
-        </p>
-      </div>
-
-      {/* Transcript */}
-      <ScrollArea
-        ref={scrollRef}
-        className="h-56 rounded-xl border border-border/60 bg-muted/30 p-3"
-      >
-        <div className="flex flex-col gap-2.5">
-          {visibleTranscript.map((msg, i) => (
-            <div key={i} className="flex gap-2">
-              <span className="mt-0.5 text-xs font-semibold text-muted-foreground">
-                {msg.role === "assistant" ? "Zero" : "You"}:
-              </span>
-              <p
-                className={`text-sm ${
-                  msg.role === "assistant" ? "text-foreground" : "text-primary"
-                }`}
-              >
-                {msg.text}
-              </p>
-            </div>
-          ))}
-          {isAgentResponding ? (
-            <div className="flex gap-2">
-              <span className="mt-0.5 text-xs font-semibold text-muted-foreground">Zero:</span>
-              <p className="text-sm text-muted-foreground">...</p>
+          {/* Idle state — ready to start/resume */}
+          {!isInCall && !errorMessage ? (
+            <div className="flex flex-col items-center gap-4 py-4 text-center">
+              <div className="flex size-16 items-center justify-center rounded-full bg-primary/10">
+                <HugeiconsIcon icon={Mic01Icon} strokeWidth={2} className="size-8 text-primary" />
+              </div>
+              <div className="max-w-sm">
+                <p className="text-sm text-muted-foreground">
+                  {needsResume
+                    ? "Your voice call was interrupted. Click below to resume where you left off."
+                    : "Speak naturally about your experience — there are no wrong answers. Make sure you are in a quiet environment and your microphone works."}
+                </p>
+              </div>
+              <Button size="lg" onClick={onStartCall}>
+                <HugeiconsIcon icon={Mic01Icon} strokeWidth={2} className="mr-2 size-5" />
+                {needsResume ? "Resume Call" : "Start Voice Assessment"}
+              </Button>
             </div>
           ) : null}
-        </div>
-      </ScrollArea>
+
+          {/* Active call state */}
+          {isInCall ? (
+            <div className="space-y-4">
+              {/* Mic viz */}
+              <div className="flex flex-col items-center gap-3 py-2">
+                <div
+                  className="flex size-20 items-center justify-center rounded-full transition-all duration-150"
+                  style={{
+                    backgroundColor:
+                      voice.status === "listening"
+                        ? `hsl(142 76% 36% / ${0.1 + voice.audioLevel * 0.4})`
+                        : "hsl(var(--muted))",
+                    boxShadow:
+                      voice.audioLevel > 0
+                        ? `0 0 24px hsl(142 76% 36% / ${voice.audioLevel * 0.3})`
+                        : "none",
+                  }}
+                >
+                  <HugeiconsIcon
+                    icon={Mic01Icon}
+                    strokeWidth={2}
+                    className={`size-10 transition-colors ${
+                      voice.status === "listening" ? "text-success" : "text-muted-foreground"
+                    }`}
+                  />
+                </div>
+                <p className="text-center text-sm text-muted-foreground">
+                  {voice.status === "listening" ? "Listening..." : null}
+                  {voice.status === "thinking" ? "Thinking..." : null}
+                  {voice.status === "speaking" ? "Speaking..." : null}
+                </p>
+              </div>
+
+              {/* Transcript */}
+              <ScrollArea
+                ref={scrollRef}
+                className="h-56 rounded-xl border border-border/60 bg-muted/30 p-3"
+              >
+                <div className="flex flex-col gap-2.5">
+                  {visibleTranscript.map((msg, i) => (
+                    <div key={i} className="flex gap-2">
+                      <span className="mt-0.5 text-xs font-semibold text-muted-foreground">
+                        {msg.role === "assistant" ? "Zero" : "You"}:
+                      </span>
+                      <p
+                        className={`text-sm ${
+                          msg.role === "assistant" ? "text-foreground" : "text-primary"
+                        }`}
+                      >
+                        {msg.text}
+                      </p>
+                    </div>
+                  ))}
+                  {isAgentResponding ? (
+                    <div className="flex gap-2">
+                      <span className="mt-0.5 text-xs font-semibold text-muted-foreground">
+                        Zero:
+                      </span>
+                      <p className="text-sm text-muted-foreground">...</p>
+                    </div>
+                  ) : null}
+                </div>
+              </ScrollArea>
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
     </div>
   );
 }
