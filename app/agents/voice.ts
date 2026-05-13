@@ -67,10 +67,8 @@ export class VoiceAssessmentAgent extends VoiceAgent<Env> {
     updatedAt: toNow(),
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: env.AI binding has loose typing
-  transcriber = new WorkersAIFluxSTT((this.env as any).AI);
-  // biome-ignore lint/suspicious/noExplicitAny: env.AI binding has loose typing
-  tts = new WorkersAITTS((this.env as any).AI);
+  transcriber = new WorkersAIFluxSTT(this.env.AI);
+  tts = new WorkersAITTS(this.env.AI);
 
   // Per-process cached interview context. Cheaper than re-querying every turn,
   // and harmless if lost on hibernation (re-loaded on next access).
@@ -222,10 +220,10 @@ export class VoiceAssessmentAgent extends VoiceAgent<Env> {
         abortSignal: onTurnContext.signal,
         messages: [
           ...onTurnContext.messages.map((m) => ({
-            role: m.role as "user" | "assistant",
+            role: m.role,
             content: m.content,
           })),
-          { role: "user" as const, content: transcript },
+          { role: "user", content: transcript },
         ],
         ...(fallbacks.length > 0 ? { providerOptions: { openrouter: { models: fallbacks } } } : {}),
       });
@@ -391,6 +389,17 @@ export class VoiceAssessmentAgent extends VoiceAgent<Env> {
       // re-checks the DB on its own pass anyway.
       console.warn("[voice-assessment-agent] signalPostEval failed:", error);
     }
+  }
+
+  @callable()
+  async getTranscript(): Promise<{ messages: Array<{ role: string; content: string }> }> {
+    const history = this.getConversationHistory(200);
+    return {
+      messages: history.map((m) => ({
+        role: m.role,
+        content: m.content.replaceAll(END_CALL_MARKER, "").trim(),
+      })),
+    };
   }
 
   @callable()

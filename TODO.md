@@ -1,6 +1,7 @@
 ## TODO
 
 
+- there is no indication after sending a message to the agent (both voice and text).
 - everything on the company side needs to be rethought. the ux isn't there. it's cluttered and messy.
 - remove new stupid gradients everywhere.
 - need to redefine the landing and product branding: (resumes are outdated, yoe is just a number now, cracked people exist, ai needs to find them, experience is no longer a good metric, etc etc.)
