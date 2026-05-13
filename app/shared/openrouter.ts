@@ -35,7 +35,7 @@ export function getOpenRouter(): OpenRouterProvider {
   // AI_GATEWAY_TOKEN is optional — only required when the gateway has
   // "Authenticated Gateway" enabled. Not declared in the worker types so
   // it doesn't have to be set in every environment.
-  const gatewayToken = (env as { AI_GATEWAY_TOKEN?: string }).AI_GATEWAY_TOKEN;
+  const gatewayToken = env.AI_GATEWAY_TOKEN;
 
   const baseURL =
     accountId && gatewayId
