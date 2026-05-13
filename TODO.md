@@ -1,6 +1,5 @@
 ## TODO
 
-
 - there is no indication after sending a message to the agent (both voice and text).
 - everything on the company side needs to be rethought. the ux isn't there. it's cluttered and messy.
 - remove new stupid gradients everywhere.
