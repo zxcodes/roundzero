@@ -37,67 +37,73 @@ type VoiceAssessmentContext = {
   candidateSummary: string;
 };
 
-type VoiceAssessmentStatus =
-  | "idle"
-  | "ready"
-  | "in_call"
-  | "processing"
-  | "completed"
-  | "skipped"
-  | "error";
+export type VoiceAssessmentStatus = "pending" | "in_call" | "completed" | "skipped" | "error";
 
-type VoiceAssessmentState = {
-  context: VoiceAssessmentContext | null;
+export type VoiceAssessmentState = {
   status: VoiceAssessmentStatus;
-  pendingAudioKey: string | null;
+  // Set true right before an intentional end (agent emitted ##END_CALL##, or
+  // candidate clicked End). Drives onCallEnd's decision to finalize vs treat
+  // as a transient WS drop.
+  intentionalEnd: boolean;
+  startedAt: string | null;
   errorMessage: string | null;
   updatedAt: string;
 };
 
 const toNow = () => new Date().toISOString();
 
-const emptyState = (): VoiceAssessmentState => ({
-  context: null,
-  status: "idle",
-  pendingAudioKey: null,
-  errorMessage: null,
-  updatedAt: toNow(),
-});
-
 export class VoiceAssessmentAgent extends VoiceAgent<Env> {
-  // The withVoice mixin erases the custom state type, so `this.state` is `unknown`.
-  // Every state access routes through `agentState` for correct typing.
-  private get agentState(): VoiceAssessmentState {
+  // The withVoice mixin erases the typed state, so route every read through
+  // this getter. `setState` keeps writing the same shape via `updateState`.
+  private get s(): VoiceAssessmentState {
     return this.state as VoiceAssessmentState;
   }
 
-  initialState: VoiceAssessmentState = emptyState();
+  initialState: VoiceAssessmentState = {
+    status: "pending",
+    intentionalEnd: false,
+    startedAt: null,
+    errorMessage: null,
+    updatedAt: toNow(),
+  };
 
   // biome-ignore lint/suspicious/noExplicitAny: env.AI binding has loose typing
   transcriber = new WorkersAIFluxSTT((this.env as any).AI);
   // biome-ignore lint/suspicious/noExplicitAny: env.AI binding has loose typing
   tts = new WorkersAITTS((this.env as any).AI);
 
-  private async hydrateContext(interviewId: string): Promise<VoiceAssessmentContext | null> {
+  // Per-process cached interview context. Cheaper than re-querying every turn,
+  // and harmless if lost on hibernation (re-loaded on next access).
+  private _context: VoiceAssessmentContext | null = null;
+
+  private updateState(patch: Partial<VoiceAssessmentState>) {
+    this.setState({ ...this.s, ...patch, updatedAt: toNow() });
+  }
+
+  private async loadContext(): Promise<VoiceAssessmentContext | null> {
+    if (this._context) return this._context;
+
+    const interviewId = this.name;
+    if (!interviewId) return null;
+
     const db = getDb();
     const interview = await getInterviewContextById(db, { id: interviewId });
-    if (!interview) {
-      return null;
-    }
+    if (!interview) return null;
 
-    const metadata =
-      typeof interview.metadata === "object" && interview.metadata !== null
-        ? (interview.metadata as Record<string, unknown>)
-        : {};
-    const applicationMetadataRaw = metadata.applicationMetadata;
+    // applications.metadata holds the candidate summary fields populated by
+    // pre-eval — same source InterviewAgent.hydrateContextFromDb() reads.
+    const applicationRows = await db
+      .unsafe(`SELECT a.metadata FROM applications a WHERE a.id = $1`, [interview.applicationId])
+      .values();
+
     const applicationMetadata =
-      typeof applicationMetadataRaw === "object" && applicationMetadataRaw !== null
-        ? (applicationMetadataRaw as Record<string, unknown>)
+      typeof applicationRows[0]?.[0] === "object" && applicationRows[0][0] !== null
+        ? (applicationRows[0][0] as Record<string, unknown>)
         : {};
 
-    const candidateSummary =
-      typeof applicationMetadata.candidateSummary === "string"
-        ? applicationMetadata.candidateSummary
+    const candidateSummaryRaw =
+      typeof applicationMetadata.resumeText === "string"
+        ? applicationMetadata.resumeText
         : typeof applicationMetadata.summary === "string"
           ? applicationMetadata.summary
           : buildCandidateProfileSummary(applicationMetadata);
@@ -108,21 +114,25 @@ export class VoiceAssessmentAgent extends VoiceAgent<Env> {
       jobTitle: interview.jobTitle,
       companyName: interview.companyName,
       candidateName: interview.candidateName,
-      candidateSummary: candidateSummary.slice(0, 8000),
+      candidateSummary: candidateSummaryRaw.slice(0, 8000),
     };
 
+    this._context = ctx;
     return ctx;
   }
 
+  /**
+   * Called once when the candidate's panel mounts. Idempotent — creates the
+   * DB row if missing and rehydrates this DO's state from whatever the DB
+   * thinks the latest status is (so a fresh DO restart doesn't show "pending"
+   * for a row that's already "completed").
+   */
   @callable()
-  async initialize(input: { interviewId: string }): Promise<{
-    ok: boolean;
-    status: VoiceAssessmentStatus;
-    error?: string;
-  }> {
-    const ctx = await this.hydrateContext(input.interviewId);
+  async initialize(): Promise<{ ok: true; status: VoiceAssessmentStatus }> {
+    const ctx = await this.loadContext();
     if (!ctx) {
-      return { ok: false, status: "error", error: "Interview not found" };
+      this.updateState({ status: "error", errorMessage: "Interview not found" });
+      return { ok: true, status: "error" };
     }
 
     const db = getDb();
@@ -138,71 +148,57 @@ export class VoiceAssessmentAgent extends VoiceAgent<Env> {
       });
     }
 
-    const status: VoiceAssessmentStatus =
+    const dbStatus: VoiceAssessmentStatus =
       existing?.status === "completed"
         ? "completed"
         : existing?.status === "skipped"
           ? "skipped"
-          : "ready";
+          : existing?.status === "in_progress"
+            ? "in_call"
+            : "pending";
 
-    this.setState({
-      context: ctx,
-      status,
-      pendingAudioKey: null,
-      errorMessage: null,
-      updatedAt: toNow(),
-    });
-
-    return { ok: true, status };
-  }
-
-  override async beforeCallStart(_connection: Connection): Promise<boolean> {
-    if (this.agentState.status === "completed" || this.agentState.status === "skipped") {
-      return false;
+    if (this.s.status !== dbStatus) {
+      this.updateState({ status: dbStatus });
     }
 
-    if (!this.agentState.context) {
-      const interviewId = this.ctx.id.name;
-      if (!interviewId) {
-        return false;
-      }
-      const ctx = await this.hydrateContext(interviewId);
-      if (!ctx) {
-        return false;
-      }
-      this.setState({
-        ...this.agentState,
-        context: ctx,
-        status: "in_progress",
-      });
-    }
-
-    return true;
+    return { ok: true, status: dbStatus };
   }
 
   override async onCallStart(connection: Connection): Promise<void> {
-    if (!this.agentState.context) {
+    const ctx = await this.loadContext();
+    if (!ctx) return;
+
+    // Never restart a call that was already completed or skipped.
+    if (this.s.status === "completed" || this.s.status === "skipped") {
       return;
     }
-    const db = getDb();
-    await markCommunicationAssessmentStarted(db, {
-      interviewId: this.agentState.context.interviewId,
-    });
-    this.setState({
-      ...this.agentState,
-      status: "in_call",
-      updatedAt: toNow(),
-    });
 
-    const ctx = this.agentState.context;
-    await this.speak(
-      connection,
-      `Hi ${ctx.candidateName}! Thanks for doing this quick voice check. I'll ask you a few questions about your experience — just speak naturally.`,
-    );
+    // If state is already "in_call" (e.g. resuming after a refresh), skip the
+    // greeting — the conversation history is preserved by the voice mixin's
+    // SQLite, so the model just continues. Only greet on the first connect.
+    const isResuming = this.s.status === "in_call";
+
+    if (!isResuming) {
+      const db = getDb();
+      await markCommunicationAssessmentStarted(db, { interviewId: ctx.interviewId });
+      this.updateState({
+        status: "in_call",
+        intentionalEnd: false,
+        startedAt: toNow(),
+        errorMessage: null,
+      });
+      await this.speak(
+        connection,
+        `Hi ${ctx.candidateName}! Thanks for staying for this short voice check. I'll ask a few quick questions about your experience — speak as naturally as you would on a real call.`,
+      );
+    } else {
+      // Reset the intent flag so a fresh end-of-call decision can happen.
+      this.updateState({ intentionalEnd: false });
+    }
   }
 
   override async onTurn(transcript: string, onTurnContext: VoiceTurnContext) {
-    const ctx = this.agentState.context;
+    const ctx = await this.loadContext();
     if (!ctx) {
       return "I'm sorry — your session isn't ready. Please end the call and try again.";
     }
@@ -247,7 +243,10 @@ export class VoiceAssessmentAgent extends VoiceAgent<Env> {
     connection: Connection,
   ): ArrayBuffer | null {
     if (text.includes(END_CALL_MARKER)) {
-      // Defer the disconnect by a microtask so the closing audio plays first.
+      // Mark intent BEFORE forceEndCall so onCallEnd can finalize.
+      this.updateState({ intentionalEnd: true });
+      // Defer forceEndCall by a microtask so the closing sentence audio plays
+      // before we cut the connection.
       queueMicrotask(() => {
         try {
           this.forceEndCall(connection);
@@ -259,22 +258,40 @@ export class VoiceAssessmentAgent extends VoiceAgent<Env> {
     return audio;
   }
 
+  /**
+   * Called by the candidate's UI right before `voice.endCall()` to flag this
+   * disconnect as intentional, so onCallEnd finalizes the assessment instead
+   * of treating it as a transient drop.
+   */
+  @callable()
+  async markEndIntent(): Promise<{ ok: true }> {
+    if (this.s.status === "in_call") {
+      this.updateState({ intentionalEnd: true });
+    }
+    return { ok: true };
+  }
+
   override async onCallEnd(_connection: Connection): Promise<void> {
-    const ctx = this.agentState.context;
-    if (!ctx) {
+    const ctx = await this.loadContext();
+    if (!ctx) return;
+
+    if (this.s.status === "completed" || this.s.status === "skipped") return;
+
+    if (!this.s.intentionalEnd) {
+      // Transient drop (refresh, network blip). Leave state "in_call" so the
+      // candidate can reconnect and resume. The voice mixin persists the
+      // transcript in SQLite; conversation continues on next startCall(). The
+      // post-eval workflow's 12h window is the eventual safety net.
+      console.info(
+        "[voice-assessment-agent] connection dropped without end intent; staying in_call for reconnect",
+      );
       return;
     }
 
-    if (this.agentState.status === "completed") {
-      return;
-    }
+    await this.finalize(ctx);
+  }
 
-    this.setState({
-      ...this.agentState,
-      status: "processing",
-      updatedAt: toNow(),
-    });
-
+  private async finalize(ctx: VoiceAssessmentContext): Promise<void> {
     const history = this.getConversationHistory(200);
     const transcriptForPrompt = history
       .map((m) => `${m.role === "assistant" ? "Zero" : ctx.candidateName}: ${m.content}`)
@@ -292,33 +309,24 @@ export class VoiceAssessmentAgent extends VoiceAgent<Env> {
       analysis = await this.runAnalysis(transcriptForPrompt, ctx);
     }
 
-    const audioKey = this.agentState.pendingAudioKey;
-
     try {
       const db = getDb();
       await completeCommunicationAssessment(db, {
         interviewId: ctx.interviewId,
         transcript: transcriptForDb,
         analysis: analysis ?? this.fallbackAnalysis(transcriptForPrompt),
-        audioKey,
+        audioKey: null,
       });
     } catch (error) {
       console.error("[voice-assessment-agent] persist failed:", error);
-      this.setState({
-        ...this.agentState,
+      this.updateState({
         status: "error",
         errorMessage: error instanceof Error ? error.message : String(error),
-        updatedAt: toNow(),
       });
       return;
     }
 
-    this.setState({
-      ...this.agentState,
-      status: "completed",
-      updatedAt: toNow(),
-    });
-
+    this.updateState({ status: "completed", intentionalEnd: false });
     await this.signalPostEval(ctx.interviewId);
   }
 
@@ -378,37 +386,23 @@ export class VoiceAssessmentAgent extends VoiceAgent<Env> {
         payload: { interviewId },
       });
     } catch (error) {
-      // Workflow instance may not exist yet, may already be done, or may have
-      // expired its waitForEvent window. None of these are fatal — the report
-      // workflow re-checks the DB on its own pass.
+      // Workflow instance may not exist (test/dev) or may have already moved
+      // past its waitForEvent window. Both are non-fatal — the workflow
+      // re-checks the DB on its own pass anyway.
       console.warn("[voice-assessment-agent] signalPostEval failed:", error);
     }
   }
 
   @callable()
-  async getStatus(): Promise<{ status: VoiceAssessmentStatus; error: string | null }> {
-    return { status: this.agentState.status, error: this.agentState.errorMessage };
-  }
+  async skip(): Promise<{ ok: true }> {
+    const ctx = await this.loadContext();
+    if (!ctx) return { ok: true };
 
-  @callable()
-  async skip(input: { interviewId: string }): Promise<{ ok: boolean }> {
-    const ctx =
-      this.agentState.context && this.agentState.context.interviewId === input.interviewId
-        ? this.agentState.context
-        : await this.hydrateContext(input.interviewId);
-    if (!ctx) {
-      return { ok: false };
-    }
+    if (this.s.status === "completed" || this.s.status === "skipped") return { ok: true };
 
     const db = getDb();
     await markCommunicationAssessmentSkipped(db, { interviewId: ctx.interviewId });
-    this.setState({
-      ...this.agentState,
-      context: ctx,
-      status: "skipped",
-      updatedAt: toNow(),
-    });
-
+    this.updateState({ status: "skipped" });
     await this.signalPostEval(ctx.interviewId);
     return { ok: true };
   }

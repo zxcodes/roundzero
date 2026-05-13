@@ -30,6 +30,7 @@ declare namespace Cloudflare {
 		POLAR_MODE: string;
 		POLAR_PRODUCT_ID_PRO: string;
 		INTERVIEW_AGENT: DurableObjectNamespace<import("./app/server").InterviewAgent>;
+		VOICE_ASSESSMENT_AGENT: DurableObjectNamespace<import("./app/server").VoiceAssessmentAgent>;
 		PRE_EVALUATION: Workflow<Parameters<import("./app/server").PreEvaluationWorkflow['run']>[0]['payload']>;
 		POST_EVALUATION: Workflow<Parameters<import("./app/server").PostEvaluationWorkflow['run']>[0]['payload']>;
 		BATCH_ORCHESTRATION: Workflow<Parameters<import("./app/server").BatchOrchestrationWorkflow['run']>[0]['payload']>;
