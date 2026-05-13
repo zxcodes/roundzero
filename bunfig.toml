@@ -1,2 +1,2 @@
-# [install]
-# minimumReleaseAge = 86400  # 24 hours in seconds
+[install]
+minimumReleaseAge = 86400  # 24 hours in seconds
