@@ -15,7 +15,6 @@ import {
   getInterviewByApplicationId,
   getInterviewForCandidateById,
   getInterviewsByCandidate,
-  markCommunicationAssessmentSkipped,
   updateInterviewStatus,
 } from "@/features/interviews/queries/queries_sql";
 import { shouldAutoExpireInterview } from "@/features/interviews/shared/expiry";
@@ -23,6 +22,11 @@ import { getReportByApplicationId } from "@/features/reports/queries/queries_sql
 import { getDb } from "@/shared/db";
 import { markInterviewAgentStarted } from "@/shared/interview-agent-client";
 import { authMiddleware } from "@/shared/middleware";
+import {
+  initializeVoiceAssessmentAgent,
+  markVoiceAssessmentEndIntent,
+  skipVoiceAssessmentAgent,
+} from "@/shared/voice-agent-client";
 
 const interviewIdSchema = z.object({
   interviewId: z.string().uuid(),
@@ -404,6 +408,48 @@ export const getMyVoiceAssessment = createServerFn({ method: "GET" })
     };
   });
 
+export const initializeMyVoiceAssessment = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .inputValidator(zodValidator(interviewIdSchema))
+  .handler(async ({ data, context }) => {
+    if (context.user.role !== "candidate") {
+      throw new Error("Only candidates can initialize voice assessments");
+    }
+
+    const db = getDb();
+    const interview = await getInterviewForCandidateById(db, {
+      id: data.interviewId,
+      candidateId: context.userId,
+    });
+    if (!interview) {
+      return { ok: false, status: "error" as const };
+    }
+
+    const result = await initializeVoiceAssessmentAgent(data.interviewId);
+    return { ok: result.ok, status: result.status };
+  });
+
+export const markMyVoiceAssessmentEndIntent = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .inputValidator(zodValidator(interviewIdSchema))
+  .handler(async ({ data, context }) => {
+    if (context.user.role !== "candidate") {
+      throw new Error("Only candidates can end voice assessments");
+    }
+
+    const db = getDb();
+    const interview = await getInterviewForCandidateById(db, {
+      id: data.interviewId,
+      candidateId: context.userId,
+    });
+    if (!interview) {
+      return { ok: false };
+    }
+
+    await markVoiceAssessmentEndIntent(data.interviewId);
+    return { ok: true };
+  });
+
 export const skipMyVoiceAssessment = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(zodValidator(interviewIdSchema))
@@ -421,7 +467,6 @@ export const skipMyVoiceAssessment = createServerFn({ method: "POST" })
       return { ok: false };
     }
 
-    await markCommunicationAssessmentSkipped(db, { interviewId: data.interviewId });
-
+    await skipVoiceAssessmentAgent(data.interviewId);
     return { ok: true };
   });

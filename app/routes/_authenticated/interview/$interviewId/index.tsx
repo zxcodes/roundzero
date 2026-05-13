@@ -1,19 +1,18 @@
 import { Cancel01Icon, CheckmarkCircle02Icon, Loading03Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { useMutation } from "@tanstack/react-query";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { InterviewChat } from "@/features/interviews/components/interview-chat";
+import { VoiceAssessmentPanel } from "@/features/interviews/components/voice-assessment-panel";
 import { useInterviewChat } from "@/features/interviews/hooks/use-interview-chat";
 import {
   cancelMyInterview,
   completeMyInterview,
-  getMyVoiceAssessment,
   startMyInterview,
 } from "@/features/interviews/server/functions";
 import { formatDeadlineLabel, formatTimeLeft } from "@/shared/date";
@@ -213,87 +212,8 @@ function InterviewWorkspaceContent({
           onSend={onSendMessage}
         />
 
-        {isEnded ? <VoiceAssessmentSection interviewId={interview.id} /> : null}
+        {isEnded ? <VoiceAssessmentPanel interviewId={interview.id} /> : null}
       </div>
     </>
-  );
-}
-
-function VoiceAssessmentSection({ interviewId }: { interviewId: string }) {
-  const { data } = useQuery({
-    queryKey: ["voice-assessment", interviewId],
-    queryFn: async () => {
-      const result = await getMyVoiceAssessment({ data: { interviewId } });
-      return result?.assessment ?? null;
-    },
-  });
-
-  if (!data) {
-    return (
-      <div className="border-t border-border/60 p-4 md:p-6">
-        <Card>
-          <CardContent className="flex items-center justify-between gap-4 p-4">
-            <div>
-              <p className="text-sm font-medium">Voice Communication Assessment</p>
-              <p className="text-xs text-muted-foreground">
-                A ~5 minute voice conversation to evaluate communication skills
-              </p>
-            </div>
-            <Button size="sm" asChild>
-              <Link to="/interview/$interviewId/voice-assessment" params={{ interviewId }}>
-                Start
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (data.status === "completed") {
-    return (
-      <div className="border-t border-border/60 p-4 md:p-6">
-        <Card>
-          <CardContent className="flex items-center justify-between gap-4 p-4">
-            <div>
-              <p className="text-sm font-medium">Voice Communication Assessment</p>
-              <p className="text-xs text-success">Completed</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (data.status === "skipped") {
-    return (
-      <div className="border-t border-border/60 p-4 md:p-6">
-        <Card>
-          <CardContent className="flex items-center justify-between gap-4 p-4">
-            <p className="text-sm text-muted-foreground">Voice assessment skipped</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  return (
-    <div className="border-t border-border/60 p-4 md:p-6">
-      <Card>
-        <CardContent className="flex items-center justify-between gap-4 p-4">
-          <div>
-            <p className="text-sm font-medium">Voice Communication Assessment</p>
-            <p className="text-xs text-muted-foreground">
-              {data.status === "pending" ? "Ready to start" : "In progress"}
-            </p>
-          </div>
-          <Button size="sm" asChild>
-            <Link to="/interview/$interviewId/voice-assessment" params={{ interviewId }}>
-              {data.status === "pending" ? "Start" : "Continue"}
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
   );
 }

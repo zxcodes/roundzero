@@ -252,6 +252,58 @@ export function parseReportData(report: {
   };
 }
 
+// ---- Voice communication assessment parsing ----
+
+type VoiceDimension = {
+  score: number;
+  evidence: string[];
+};
+
+type VoiceAnalysis = {
+  clarity: VoiceDimension;
+  articulation: VoiceDimension;
+  conciseness: VoiceDimension;
+  listening: VoiceDimension;
+  confidence: VoiceDimension;
+  overallScore: number;
+  summary: string;
+};
+
+function toVoiceDimension(value: unknown): VoiceDimension {
+  if (!isRecord(value)) return { score: 0, evidence: [] };
+  const evidenceArray = Array.isArray(value.evidence)
+    ? value.evidence.filter((item): item is string => typeof item === "string")
+    : [];
+  return {
+    score: toFiniteScore(value.score),
+    evidence: evidenceArray,
+  };
+}
+
+function parseVoiceAnalysis(value: unknown): VoiceAnalysis | null {
+  if (!isRecord(value)) return null;
+  return {
+    clarity: toVoiceDimension(value.clarity),
+    articulation: toVoiceDimension(value.articulation),
+    conciseness: toVoiceDimension(value.conciseness),
+    listening: toVoiceDimension(value.listening),
+    confidence: toVoiceDimension(value.confidence),
+    overallScore: toFiniteScore(value.overallScore),
+    summary: typeof value.summary === "string" ? value.summary : "",
+  };
+}
+
+const voiceDimensionMeta: Record<
+  keyof Omit<VoiceAnalysis, "overallScore" | "summary">,
+  { label: string }
+> = {
+  clarity: { label: "Clarity" },
+  articulation: { label: "Articulation" },
+  conciseness: { label: "Conciseness" },
+  listening: { label: "Listening" },
+  confidence: { label: "Confidence" },
+};
+
 const isGreetingOrFarewell = (content: string) => {
   const lower = content.toLowerCase().trim();
   const greetings = [
@@ -673,27 +725,36 @@ export function ReportTimeline({
           title="Voice Communication Assessment"
           timestamp={communicationAssessment.completedAt}
         >
-          <Card className="border-border/70">
-            <CardContent className="p-4">
-              <p className="mb-3 text-xs text-muted-foreground">
-                Communication skills assessed via voice conversation.
-              </p>
-              {communicationAssessment.transcript.length > 0 ? (
-                <ScrollArea className="h-48">
-                  <div className="space-y-2 pr-3">
-                    {communicationAssessment.transcript
-                      .filter((m) => m.content.trim().length > 0)
-                      .map((m, i) => (
-                        <p key={i} className="text-xs leading-5">
-                          <span className="font-medium text-foreground">
-                            {m.role === "assistant" ? "Zero" : "Candidate"}:
-                          </span>{" "}
-                          <span className="text-muted-foreground">{m.content}</span>
-                        </p>
-                      ))}
-                  </div>
-                </ScrollArea>
-              ) : null}
+          <VoiceAssessmentReportCard
+            transcript={communicationAssessment.transcript}
+            analysis={communicationAssessment.analysis}
+          />
+        </TimelineNode>
+      ) : communicationAssessment?.status === "skipped" ? (
+        <TimelineNode
+          icon={Mic01Icon}
+          iconClass="text-muted-foreground"
+          dotClassName="ring-border bg-muted/30"
+          title="Voice Communication Assessment"
+          timestamp={communicationAssessment.completedAt}
+        >
+          <Card size="sm" className="border-dashed border-border/60">
+            <CardContent className="py-0 text-xs text-muted-foreground">
+              Candidate chose to skip the voice assessment.
+            </CardContent>
+          </Card>
+        </TimelineNode>
+      ) : communicationAssessment != null ? (
+        <TimelineNode
+          icon={Mic01Icon}
+          iconClass="text-muted-foreground"
+          dotClassName="ring-border bg-muted/30"
+          title="Voice Communication Assessment"
+          timestamp={null}
+        >
+          <Card size="sm" className="border-dashed border-border/60">
+            <CardContent className="py-0 text-xs text-muted-foreground">
+              Voice assessment was not completed within the interview window.
             </CardContent>
           </Card>
         </TimelineNode>
@@ -892,6 +953,119 @@ export function ReportTimeline({
           applicant page.
         </p>
       </TimelineNode>
+    </div>
+  );
+}
+
+function VoiceAssessmentReportCard({
+  transcript,
+  analysis,
+}: {
+  transcript: Array<{ role: string; content: string }>;
+  analysis: unknown;
+}) {
+  const parsed = parseVoiceAnalysis(analysis);
+  const overall = parsed ? Math.round(parsed.overallScore) : 0;
+
+  return (
+    <div className="space-y-4">
+      <Card className="border-border/70">
+        <CardContent className="space-y-5 pt-6">
+          {/* Summary + overall */}
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="max-w-xl space-y-2">
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="gap-1 text-[11px]">
+                  <HugeiconsIcon icon={Mic01Icon} strokeWidth={2} className="size-3" />
+                  Voice-blended communication score
+                </Badge>
+              </div>
+              {parsed?.summary ? (
+                <p className="text-sm leading-6 text-foreground">{parsed.summary}</p>
+              ) : (
+                <p className="text-sm text-muted-foreground">No summary available.</p>
+              )}
+            </div>
+            {parsed ? (
+              <div className="flex size-16 shrink-0 flex-col items-center justify-center rounded-3xl border-2 border-border/70 bg-muted/30">
+                <span className="font-mono text-xl font-semibold leading-none">{overall}</span>
+                <span className="mt-1 text-[9px] font-medium uppercase tracking-wider text-muted-foreground">
+                  / 100
+                </span>
+              </div>
+            ) : null}
+          </div>
+
+          {/* Dimension scores */}
+          {parsed ? (
+            <div className="space-y-3 rounded-3xl border border-border/60 bg-muted/20 p-5">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                Dimension scores
+              </p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {(Object.keys(voiceDimensionMeta) as Array<keyof typeof voiceDimensionMeta>).map(
+                  (key) => {
+                    const dim = parsed[key];
+                    const meta = voiceDimensionMeta[key];
+                    const score = Math.round(dim.score);
+                    return (
+                      <div key={key} className="space-y-1.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-medium">{meta.label}</span>
+                          <span className="font-mono text-xs text-muted-foreground">
+                            {score}/100
+                          </span>
+                        </div>
+                        <div className="h-1.5 overflow-hidden rounded-full bg-background">
+                          <div
+                            className="h-full rounded-full bg-linear-to-r from-brand/70 to-foreground"
+                            style={{ width: `${Math.max(0, Math.min(100, score))}%` }}
+                          />
+                        </div>
+                        {dim.evidence.length > 0 ? (
+                          <ul className="space-y-1 pt-1">
+                            {dim.evidence.map((quote, i) => (
+                              <li
+                                key={i}
+                                className="rounded-md border-l-2 border-border bg-muted/30 px-2.5 py-1 text-xs leading-5 text-muted-foreground"
+                              >
+                                &ldquo;{quote}&rdquo;
+                              </li>
+                            ))}
+                          </ul>
+                        ) : null}
+                      </div>
+                    );
+                  },
+                )}
+              </div>
+            </div>
+          ) : null}
+
+          {/* Transcript */}
+          {transcript.length > 0 ? (
+            <div className="space-y-2">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                Transcript
+              </p>
+              <ScrollArea className="h-48 rounded-xl border border-border/60 bg-muted/15 p-3">
+                <div className="space-y-2 pr-3">
+                  {transcript
+                    .filter((m) => m.content.trim().length > 0)
+                    .map((m, i) => (
+                      <p key={i} className="text-xs leading-5">
+                        <span className="font-medium text-foreground">
+                          {m.role === "assistant" ? "Zero" : "Candidate"}:
+                        </span>{" "}
+                        <span className="text-muted-foreground">{m.content}</span>
+                      </p>
+                    ))}
+                </div>
+              </ScrollArea>
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
     </div>
   );
 }
