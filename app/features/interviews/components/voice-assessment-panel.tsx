@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { LiveWaveform } from "@/features/interviews/components/live-wave-transform";
 import {
   getMyVoiceAssessment,
   getMyVoiceAssessmentTranscript,
@@ -51,10 +52,8 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [clientError, setClientError] = useState<string | null>(null);
 
-  // DO state for completed/skipped end states
   const { status: doStatus, agentError } = useVoiceAssessmentState(interviewId);
 
-  // DB state for initial load + fallback
   const { data: dbData, isPending: dbPending } = useQuery({
     queryKey: ["voice-assessment", interviewId],
     queryFn: async () => {
@@ -68,13 +67,9 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
       ? "in_call"
       : (dbData?.status as VoiceAssessmentStatus | undefined);
 
-  // Prefer DO state for real-time updates, fall back to DB
   const effectiveStatus: VoiceAssessmentStatus | null = doStatus ?? dbStatus ?? null;
   const needsResume = effectiveStatus === "in_call";
 
-  // Voice hook — ALWAYS mounted unconditionally at top level.
-  // The WebSocket warms in the background; startCall() / endCall()
-  // gate the actual voice protocol.
   const voice = useVoiceAgent({
     agent: "VoiceAssessmentAgent",
     name: interviewId,
@@ -102,8 +97,6 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
     },
   });
 
-  // Fetch historical transcript from DO when resuming so the UI shows
-  // the full conversation, not just the current WebSocket session.
   const { data: historicalTranscript } = useQuery({
     queryKey: ["voice-assessment-transcript", interviewId],
     queryFn: async () => {
@@ -116,14 +109,11 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
 
   type ChatMessage = { role: string; text: string };
 
-  // Merge historical (from DO SQLite) + live (from current voice session).
-  // Historical messages use `content`; live messages use `text`.
   const mergedTranscript: ChatMessage[] = [
     ...(historicalTranscript ?? []).map((m) => ({ role: m.role, text: m.content })),
     ...voice.transcript.map((m) => ({ role: m.role, text: m.text })),
   ];
 
-  // Filter out empty assistant turns (they appear while the model is thinking).
   const visibleTranscript = mergedTranscript.filter(
     (msg) => msg.role === "user" || msg.text.trim().length > 0,
   );
@@ -150,7 +140,7 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
 
   if (dbPending || initMutation.isPending) {
     return (
-      <div className="flex items-center justify-center border-t border-border/60 bg-muted/20 p-6">
+      <div className="flex flex-1 items-center justify-center p-6">
         <div className="flex flex-col items-center gap-3">
           <HugeiconsIcon
             icon={Loading03Icon}
@@ -165,8 +155,8 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
 
   if (effectiveStatus === "completed") {
     return (
-      <div className="border-t border-border/60 bg-muted/20 p-4 md:p-6">
-        <Card>
+      <div className="flex flex-1 items-center justify-center p-6">
+        <Card className="w-full max-w-md">
           <CardContent className="flex items-center gap-4 p-4">
             <div className="flex size-12 items-center justify-center rounded-full bg-success/10">
               <HugeiconsIcon icon={Tick01Icon} strokeWidth={2} className="size-6 text-success" />
@@ -183,8 +173,8 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
 
   if (effectiveStatus === "skipped") {
     return (
-      <div className="border-t border-border/60 bg-muted/20 p-4 md:p-6">
-        <Card>
+      <div className="flex flex-1 items-center justify-center p-6">
+        <Card className="w-full max-w-md">
           <CardContent className="flex items-center gap-4 p-4">
             <div className="flex size-12 items-center justify-center rounded-full bg-muted">
               <HugeiconsIcon
@@ -206,6 +196,7 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
   }
 
   const errorMessage = clientError ?? agentError;
+  const isInCall = voice.status !== "idle";
 
   const onStartCall = () => {
     setClientError(null);
@@ -219,7 +210,7 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
     try {
       await endIntentFn({ data: { interviewId } });
     } catch {
-      // non-fatal — endCall below will still fire
+      // non-fatal
     }
     voice.endCall();
   };
@@ -228,10 +219,8 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
     skipMutation.mutate({ data: { interviewId } });
   };
 
-  const isInCall = voice.status !== "idle";
-
   return (
-    <div className="border-t border-border/60 bg-muted/20 p-4 md:p-6">
+    <div className="flex flex-1 flex-col gap-4 overflow-auto p-4 md:p-6">
       <Card>
         <CardContent className="space-y-5 p-4">
           {/* Header */}
@@ -274,7 +263,7 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
             </div>
           ) : null}
 
-          {/* Idle state — ready to start/resume */}
+          {/* Idle state */}
           {!isInCall && !errorMessage ? (
             <div className="flex flex-col items-center gap-4 py-4 text-center">
               <div className="flex size-16 items-center justify-center rounded-full bg-primary/10">
@@ -297,30 +286,19 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
           {/* Active call state */}
           {isInCall ? (
             <div className="space-y-4">
-              {/* Mic viz */}
-              <div className="flex flex-col items-center gap-3 py-2">
-                <div
-                  className="flex size-20 items-center justify-center rounded-full transition-all duration-150"
-                  style={{
-                    backgroundColor:
-                      voice.status === "listening"
-                        ? `hsl(142 76% 36% / ${0.1 + voice.audioLevel * 0.4})`
-                        : "hsl(var(--muted))",
-                    boxShadow:
-                      voice.audioLevel > 0
-                        ? `0 0 24px hsl(142 76% 36% / ${voice.audioLevel * 0.3})`
-                        : "none",
-                  }}
-                >
-                  <HugeiconsIcon
-                    icon={Mic01Icon}
-                    strokeWidth={2}
-                    className={`size-10 transition-colors ${
-                      voice.status === "listening" ? "text-success" : "text-muted-foreground"
-                    }`}
-                  />
-                </div>
-                <p className="text-center text-sm text-muted-foreground">
+              {/* Waveform viz */}
+              <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
+                <LiveWaveform
+                  active={false}
+                  processing={isInCall}
+                  height={80}
+                  barWidth={3}
+                  barGap={2}
+                  mode="static"
+                  fadeEdges={true}
+                  barColor="gray"
+                />
+                <p className="mt-2 text-center text-sm text-muted-foreground">
                   {voice.status === "listening" ? "Listening..." : null}
                   {voice.status === "thinking" ? "Thinking..." : null}
                   {voice.status === "speaking" ? "Speaking..." : null}
