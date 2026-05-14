@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 import { NonRetryableError } from "cloudflare:workflows";
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import type { Sql } from "postgres";
 import { jsx } from "react/jsx-runtime";
 import { Resend } from "resend";
@@ -96,16 +96,16 @@ async function runPostEvalObject(args: {
   const openrouter = getOpenRouter();
   const { model, fallbacks } = getModelChain("post_eval");
 
-  const result = await generateObject({
+  const result = await generateText({
     model: openrouter.chat(model, { plugins: [{ id: "response-healing" }] }),
-    schema: reportSchema,
+    output: Output.object({ schema: reportSchema }),
     system: args.systemPrompt,
     prompt: args.userPrompt,
     ...(fallbacks.length > 0 ? { providerOptions: { openrouter: { models: fallbacks } } } : {}),
   });
 
   return {
-    object: result.object,
+    object: result.output,
     usage: {
       inputTokens: result.usage.inputTokens ?? 0,
       outputTokens: result.usage.outputTokens ?? 0,

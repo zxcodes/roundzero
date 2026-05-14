@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 import { NonRetryableError } from "cloudflare:workflows";
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import mammoth from "mammoth";
 import type { Sql } from "postgres";
 import { extractText, getDocumentProxy } from "unpdf";
@@ -90,16 +90,16 @@ async function runPreEvalObject<T>(args: {
   const openrouter = getOpenRouter();
   const { model, fallbacks } = getModelChain("pre_eval");
 
-  const result = await generateObject({
+  const result = await generateText({
     model: openrouter.chat(model, { plugins: [{ id: "response-healing" }] }),
-    schema: args.schema,
+    output: Output.object({ schema: args.schema }),
     system: args.systemPrompt,
     prompt: args.userPrompt,
     ...(fallbacks.length > 0 ? { providerOptions: { openrouter: { models: fallbacks } } } : {}),
   });
 
   return {
-    object: result.object,
+    object: result.output,
     usage: {
       inputTokens: result.usage.inputTokens ?? 0,
       outputTokens: result.usage.outputTokens ?? 0,
