@@ -13,7 +13,6 @@
 - configure sentry for prod envs.
 - think about entire ai layer arch, it is on-demand right now, check if that's sufficient or we need queues etc?
 - think about using actual tools such as web fetch etc to assess technical skills etc?
-- think about voice recording for communication assessment.
 - align interview sidebar and main app's padding equally on a global level. 
 - think about this entire model: should companies even see applicants as they come? or should we force reports until they arrive? then show applications?
 - company logo doesn't reflect after uploading until I refresh.
@@ -40,6 +39,7 @@
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- think about voice recording for communication assessment.-->
 <!--- remove new stupid gradients everywhere.-->
 <!--- copy agent testing patterns from opencode, pi etc. also see how they harden their prompts.-->
 <!--- strictly make agent ask interview questions from the profile and then from the actual job. right now it's not even close. asks vague questions. check if we're feeding the agent context the right way (better models solve this).-->
