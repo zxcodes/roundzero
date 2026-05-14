@@ -4,7 +4,6 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useAgent } from "agents/react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -21,38 +20,11 @@ import {
 
 type VoiceAssessmentStatus = "pending" | "in_call" | "completed" | "skipped" | "error";
 
-type VoiceAgentState = {
-  status: VoiceAssessmentStatus;
-  intentionalEnd: boolean;
-  startedAt: string | null;
-  errorMessage: string | null;
-  updatedAt: string;
-};
-
-function useVoiceAssessmentState(interviewId: string) {
-  const agent = useAgent<{ get state(): VoiceAgentState }, VoiceAgentState>({
-    agent: "VoiceAssessmentAgent",
-    name: interviewId,
-    onIdentityChange: () => {},
-  });
-
-  const rawState = agent.state;
-  const status: VoiceAssessmentStatus | null =
-    rawState &&
-    typeof rawState.status === "string" &&
-    ["pending", "in_call", "completed", "skipped", "error"].includes(rawState.status)
-      ? rawState.status
-      : null;
-
-  return { status, agentError: rawState?.errorMessage ?? null };
-}
-
 export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
   const router = useRouter();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [clientError, setClientError] = useState<string | null>(null);
-
-  const { status: doStatus, agentError } = useVoiceAssessmentState(interviewId);
+  const [justEnded, setJustEnded] = useState(false);
 
   const { data: dbData, isPending: dbPending } = useQuery({
     queryKey: ["voice-assessment", interviewId],
@@ -62,13 +34,10 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
     },
   });
 
-  const dbStatus: VoiceAssessmentStatus | undefined =
+  const effectiveStatus: VoiceAssessmentStatus | null =
     dbData?.status === "in_progress"
       ? "in_call"
-      : (dbData?.status as VoiceAssessmentStatus | undefined);
-
-  const effectiveStatus: VoiceAssessmentStatus | null = doStatus ?? dbStatus ?? null;
-  const needsResume = effectiveStatus === "in_call";
+      : ((dbData?.status as VoiceAssessmentStatus | undefined) ?? null);
 
   const voice = useVoiceAgent({
     agent: "VoiceAssessmentAgent",
@@ -96,6 +65,8 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
       toast.error(error instanceof Error ? error.message : "Could not skip assessment.");
     },
   });
+
+  const needsResume = effectiveStatus === "in_call" && !justEnded;
 
   const { data: historicalTranscript } = useQuery({
     queryKey: ["voice-assessment-transcript", interviewId],
@@ -137,6 +108,13 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [visibleTranscript]);
+
+  // Reset justEnded when DB confirms the assessment completed
+  useEffect(() => {
+    if (effectiveStatus === "completed" || effectiveStatus === "skipped") {
+      setJustEnded(false);
+    }
+  }, [effectiveStatus]);
 
   if (dbPending || initMutation.isPending) {
     return (
@@ -195,8 +173,9 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
     );
   }
 
-  const errorMessage = clientError ?? agentError;
+  const errorMessage = clientError;
   const isInCall = voice.status !== "idle";
+  const isProcessing = justEnded && !isInCall;
 
   const onStartCall = () => {
     setClientError(null);
@@ -213,6 +192,7 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
       // non-fatal
     }
     voice.endCall();
+    setJustEnded(true);
   };
 
   const onSkip = () => {
@@ -223,7 +203,6 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
     <div className="flex flex-1 flex-col gap-4 overflow-auto p-4 md:p-6">
       <Card>
         <CardContent className="space-y-5 p-4">
-          {/* Header */}
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="flex size-10 items-center justify-center rounded-full bg-primary/10">
@@ -248,7 +227,7 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
             )}
           </div>
 
-          {/* Error state */}
+          {/* Error */}
           {errorMessage ? (
             <div className="flex flex-col items-center gap-4 py-4 text-center">
               <p className="text-sm text-danger">{errorMessage}</p>
@@ -263,8 +242,20 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
             </div>
           ) : null}
 
-          {/* Idle state */}
-          {!isInCall && !errorMessage ? (
+          {/* Processing after end */}
+          {isProcessing ? (
+            <div className="flex flex-col items-center gap-4 py-4 text-center">
+              <HugeiconsIcon
+                icon={Loading03Icon}
+                strokeWidth={2}
+                className="size-8 animate-spin text-muted-foreground"
+              />
+              <p className="text-sm text-muted-foreground">Finalizing results…</p>
+            </div>
+          ) : null}
+
+          {/* Idle — start or resume */}
+          {!isInCall && !errorMessage && !isProcessing ? (
             <div className="flex flex-col items-center gap-4 py-4 text-center">
               <div className="flex size-16 items-center justify-center rounded-full bg-primary/10">
                 <HugeiconsIcon icon={Mic01Icon} strokeWidth={2} className="size-8 text-primary" />
@@ -283,10 +274,9 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
             </div>
           ) : null}
 
-          {/* Active call state */}
+          {/* Active call */}
           {isInCall ? (
             <div className="space-y-4">
-              {/* Waveform viz */}
               <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
                 <LiveWaveform
                   active={false}
@@ -305,7 +295,6 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
                 </p>
               </div>
 
-              {/* Transcript */}
               <ScrollArea
                 ref={scrollRef}
                 className="h-56 rounded-xl border border-border/60 bg-muted/30 p-3"
@@ -317,9 +306,7 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
                         {msg.role === "assistant" ? "Zero" : "You"}:
                       </span>
                       <p
-                        className={`text-sm ${
-                          msg.role === "assistant" ? "text-foreground" : "text-primary"
-                        }`}
+                        className={`text-sm ${msg.role === "assistant" ? "text-foreground" : "text-primary"}`}
                       >
                         {msg.text}
                       </p>
