@@ -38,38 +38,15 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { EmptyInterviewComponent } from "@/features/interviews/components/interview-chat";
 import { InterviewTranscript } from "@/features/interviews/components/interview-transcript";
+import type { ReportData } from "@/features/reports/schemas";
 import { cn } from "@/lib/utils";
 import { formatDateShort, formatDateTimeUtc } from "@/shared/date";
 
-type Recommendation = "strong_yes" | "yes" | "lean_no" | "no";
+type Recommendation = ReportData["recommendation"];
 
-type ReportScores = {
-  communication: number;
-  problemSolving: number;
-  ownership: number;
-  roleFit: number;
-  overall: number;
-};
+type ReportScores = ReportData["scores"];
 
-type ScreeningConcern = "none" | "minor" | "dealbreaker";
-
-type ScreeningAnswer = {
-  question: string;
-  answer: string | null;
-  concern: ScreeningConcern;
-  notes: string;
-};
-
-type ReportData = {
-  summary: string;
-  strengths: string[];
-  weaknesses: string[];
-  insights: string[];
-  evidence: string[];
-  screeningAnswers: ScreeningAnswer[];
-  recommendation: Recommendation;
-  scores: ReportScores;
-};
+type ScreeningConcern = ReportData["screeningAnswers"][number]["concern"];
 
 type TranscriptMessage = {
   role: "assistant" | "candidate";
@@ -155,103 +132,6 @@ const concernMeta: Record<
   },
 };
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function parseJsonb<T>(value: unknown): T | null {
-  if (isRecord(value) || Array.isArray(value)) {
-    return value as T;
-  }
-  return null;
-}
-
-function toStringArray(value: unknown): string[] {
-  const parsed = parseJsonb<unknown[]>(value);
-  if (!Array.isArray(parsed)) {
-    return [];
-  }
-
-  return parsed.filter((item): item is string => typeof item === "string" && item.length > 0);
-}
-
-function toFiniteScore(value: unknown): number {
-  return typeof value === "number" && Number.isFinite(value) ? value : 0;
-}
-
-function toRecommendation(value: unknown): Recommendation {
-  if (value === "strong_yes" || value === "yes" || value === "lean_no" || value === "no") {
-    return value;
-  }
-
-  return "lean_no";
-}
-
-function toScreeningConcern(value: unknown): ScreeningConcern {
-  if (value === "none" || value === "minor" || value === "dealbreaker") {
-    return value;
-  }
-  return "none";
-}
-
-function toScreeningAnswers(value: unknown): ScreeningAnswer[] {
-  const parsed = parseJsonb<unknown[]>(value);
-  if (!Array.isArray(parsed)) {
-    return [];
-  }
-
-  const result: ScreeningAnswer[] = [];
-  for (const item of parsed) {
-    if (!isRecord(item)) {
-      continue;
-    }
-    const question = typeof item.question === "string" ? item.question : "";
-    if (!question) {
-      continue;
-    }
-    const answer =
-      typeof item.answer === "string" && item.answer.trim().length > 0 ? item.answer : null;
-    result.push({
-      question,
-      answer,
-      concern: toScreeningConcern(item.concern),
-      notes: typeof item.notes === "string" ? item.notes : "",
-    });
-  }
-  return result;
-}
-
-export function parseReportData(report: {
-  summary: string;
-  strengths: unknown;
-  weaknesses: unknown;
-  insights: unknown;
-  evidence: unknown;
-  screeningAnswers?: unknown;
-  recommendation: string;
-  scores: unknown;
-}): ReportData {
-  const scoresRecord = parseJsonb<Record<string, unknown>>(report.scores);
-  const scores = scoresRecord ?? {};
-
-  return {
-    summary: report.summary,
-    strengths: toStringArray(report.strengths),
-    weaknesses: toStringArray(report.weaknesses),
-    insights: toStringArray(report.insights),
-    evidence: toStringArray(report.evidence),
-    screeningAnswers: toScreeningAnswers(report.screeningAnswers),
-    recommendation: toRecommendation(report.recommendation),
-    scores: {
-      communication: toFiniteScore(scores.communication),
-      problemSolving: toFiniteScore(scores.problemSolving),
-      ownership: toFiniteScore(scores.ownership),
-      roleFit: toFiniteScore(scores.roleFit),
-      overall: toFiniteScore(scores.overall),
-    },
-  };
-}
-
 // ---- Voice communication assessment parsing ----
 
 type VoiceDimension = {
@@ -269,27 +149,34 @@ type VoiceAnalysis = {
   summary: string;
 };
 
-function toVoiceDimension(value: unknown): VoiceDimension {
-  if (!isRecord(value)) return { score: 0, evidence: [] };
-  const evidenceArray = Array.isArray(value.evidence)
-    ? value.evidence.filter((item): item is string => typeof item === "string")
-    : [];
-  return {
-    score: toFiniteScore(value.score),
-    evidence: evidenceArray,
-  };
-}
-
 function parseVoiceAnalysis(value: unknown): VoiceAnalysis | null {
-  if (!isRecord(value)) return null;
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const record = value as Record<string, unknown>;
+
+  const dim = (key: string): VoiceDimension => {
+    const raw = record[key];
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return { score: 0, evidence: [] };
+    const r = raw as Record<string, unknown>;
+    const evidence = Array.isArray(r.evidence)
+      ? r.evidence.filter((item): item is string => typeof item === "string")
+      : [];
+    return {
+      score: typeof r.score === "number" && Number.isFinite(r.score) ? r.score : 0,
+      evidence,
+    };
+  };
+
   return {
-    clarity: toVoiceDimension(value.clarity),
-    articulation: toVoiceDimension(value.articulation),
-    conciseness: toVoiceDimension(value.conciseness),
-    listening: toVoiceDimension(value.listening),
-    confidence: toVoiceDimension(value.confidence),
-    overallScore: toFiniteScore(value.overallScore),
-    summary: typeof value.summary === "string" ? value.summary : "",
+    clarity: dim("clarity"),
+    articulation: dim("articulation"),
+    conciseness: dim("conciseness"),
+    listening: dim("listening"),
+    confidence: dim("confidence"),
+    overallScore:
+      typeof record.overallScore === "number" && Number.isFinite(record.overallScore)
+        ? record.overallScore
+        : 0,
+    summary: typeof record.summary === "string" ? record.summary : "",
   };
 }
 
@@ -302,21 +189,6 @@ const voiceDimensionMeta: Record<
   conciseness: { label: "Conciseness" },
   listening: { label: "Listening" },
   confidence: { label: "Confidence" },
-};
-
-const isGreetingOrFarewell = (content: string) => {
-  const lower = content.toLowerCase().trim();
-  const greetings = [
-    "hi, i am zero",
-    "hi, i'm zero",
-    "thanks for joining",
-    "your interview responses are captured",
-    "zero is compiling your evaluation",
-    "i will ask focused questions",
-    "we will run a focused interview",
-    "in 2-3 questions, i will quickly evaluate",
-  ];
-  return greetings.some((phrase) => lower.includes(phrase));
 };
 
 const getInitials = (name: string) => {
@@ -377,7 +249,7 @@ export function ReportSnapshotCard({
                 {overall}
               </span>
               <span className="mt-0.5 text-[9px] font-medium uppercase tracking-wider text-muted-foreground">
-                /100
+                / 100
               </span>
             </div>
             <Badge variant="outline" className={cn("font-medium", meta.badge)}>
@@ -563,7 +435,7 @@ export function ReportTimeline({
     createdAt: Date;
   } | null;
   messages: TranscriptMessage[];
-  reportCreatedAt: Date;
+  reportCreatedAt: Date | null;
   communicationAssessment: {
     status: string;
     transcript: Array<{ role: string; content: string }>;
@@ -578,7 +450,6 @@ export function ReportTimeline({
   };
 }) {
   const meta = recommendationMeta[report.recommendation];
-  const substantiveMessages = messages.filter((m) => !isGreetingOrFarewell(m.content));
   const overall = Math.round(report.scores.overall);
 
   const candidate: CandidateSummary = {
@@ -700,11 +571,11 @@ export function ReportTimeline({
                   </Badge>
                   <Badge variant="outline" className="gap-1 text-[11px]">
                     <HugeiconsIcon icon={Message01Icon} strokeWidth={2} className="size-3" />
-                    {substantiveMessages.length} message
-                    {substantiveMessages.length === 1 ? "" : "s"}
+                    {messages.length} message
+                    {messages.length === 1 ? "" : "s"}
                   </Badge>
                 </div>
-                <TranscriptDialog messages={substantiveMessages} candidate={candidate} />
+                <TranscriptDialog messages={messages} candidate={candidate} />
               </div>
             </CardContent>
           </Card>

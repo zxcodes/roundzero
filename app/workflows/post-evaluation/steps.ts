@@ -4,7 +4,6 @@ import { generateObject } from "ai";
 import type { Sql } from "postgres";
 import { jsx } from "react/jsx-runtime";
 import { Resend } from "resend";
-import { z } from "zod";
 import { updateApplicationStatus } from "@/features/applications/queries/queries_sql";
 import { getUserById } from "@/features/auth/queries/queries_sql";
 import {
@@ -19,6 +18,7 @@ import {
   markNotificationEmailSkipped,
 } from "@/features/notifications/queries/queries_sql";
 import { createReport, getReportByInterviewId } from "@/features/reports/queries/queries_sql";
+import { reportSchema } from "@/features/reports/schemas";
 import {
   type CommunicationAssessmentAnalysis,
   communicationAssessmentSchema,
@@ -85,34 +85,7 @@ type InterviewContextState = {
   };
 };
 
-// Zod schema for structured output. `.strict()` enforces `additionalProperties: false`
-// so the model cannot hallucinate extra fields — equivalent to OpenRouter's `strict: true`.
-// https://openrouter.ai/docs/guides/features/structured-outputs
-const reportSchema = z
-  .object({
-    summary: z.string(),
-    strengths: z.array(z.string()),
-    weaknesses: z.array(z.string()),
-    insights: z.array(z.string()),
-    evidence: z.array(z.string()),
-    screeningAnswers: z.array(
-      z.object({
-        question: z.string(),
-        answer: z.string().nullable(),
-        concern: z.enum(["none", "minor", "dealbreaker"]),
-        notes: z.string(),
-      }),
-    ),
-    scores: z.object({
-      communication: z.number().min(0).max(100),
-      problemSolving: z.number().min(0).max(100),
-      ownership: z.number().min(0).max(100),
-      roleFit: z.number().min(0).max(100),
-      overall: z.number().min(0).max(100),
-    }),
-    recommendation: z.enum(["strong_yes", "yes", "lean_no", "no"]),
-  })
-  .strict();
+// reportSchema is imported from @/features/reports/schemas
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
