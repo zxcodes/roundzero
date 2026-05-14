@@ -1,5 +1,6 @@
 ## TODO
 
+- if a model generates some stupid shit in the name of evidence, we need another step to clean that up before writing to db. this applies to everything we're writing to db from a model. should never trust direct model responses.
 - there is no indication after sending a message to the agent (both voice and text).
 - everything on the company side needs to be rethought. the ux isn't there. it's cluttered and messy.
 - need to redefine the landing and product branding: (resumes are outdated, yoe is just a number now, cracked people exist, ai needs to find them, experience is no longer a good metric, etc etc.)
