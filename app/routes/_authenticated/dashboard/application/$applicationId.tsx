@@ -168,38 +168,12 @@ const isTerminalStage = (stage: string): stage is "rejected" | "withdrawn" => {
   return stage === "rejected" || stage === "withdrawn";
 };
 
-const toRecord = (value: unknown): Record<string, unknown> => {
-  if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-    return Object.fromEntries(Object.entries(value));
-  }
-
-  return {};
-};
-
-const getStringValue = (value: unknown) => {
-  if (typeof value === "string" && value.trim().length > 0) {
-    return value.trim();
-  }
-
-  return null;
-};
-
-const getStringArray = (value: unknown) => {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value.filter(
-    (entry): entry is string => typeof entry === "string" && entry.trim().length > 0,
-  );
-};
-
 const getLinks = (value: unknown) => {
-  const record = toRecord(value);
-
+  if (!value || typeof value !== "object" || Array.isArray(value)) return [];
+  const record = value as Record<string, string>;
   return Object.entries(record)
-    .map(([label, entry]) => ({ label, href: getStringValue(entry) }))
-    .filter((entry): entry is { label: string; href: string } => entry.href !== null);
+    .filter(([, href]) => typeof href === "string" && href.length > 0)
+    .map(([label, href]) => ({ label, href }));
 };
 
 const getJobStateLabel = (application: Application) => {
@@ -255,17 +229,22 @@ function CandidateApplicationDetailPage() {
     });
   };
 
-  const metadata = toRecord(application.metadata);
+  const metadata = (application.metadata ?? {}) as {
+    skills?: string[];
+    links?: Record<string, string>;
+    headline?: string | null;
+    bio?: string | null;
+  };
   const currentStage = toApplicationStage(application.status);
   const progressStage = currentStage === "shortlisted" ? "evaluated" : currentStage;
   const meta = getDisplayMeta({
     status: application.status,
     interviewStatus: interview?.status ?? null,
   });
-  const skills = getStringArray(metadata.skills);
+  const skills = metadata.skills ?? [];
   const links = getLinks(metadata.links);
-  const headline = getStringValue(metadata.headline);
-  const bio = getStringValue(metadata.bio);
+  const headline = metadata.headline ?? null;
+  const bio = metadata.bio ?? null;
   const jobStateLabel = getJobStateLabel(application);
   const canWithdraw =
     (application.status === "applied" ||
