@@ -1,12 +1,17 @@
 import { env, WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers";
 import { updateApplicationStatus } from "@/features/applications/queries/queries_sql";
 import { isBatchFullyResolved } from "@/features/batches/server/release";
-import { getInterviewContextById } from "@/features/interviews/queries/queries_sql";
+import {
+  getCommunicationAssessmentByInterviewId,
+  getInterviewContextById,
+} from "@/features/interviews/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { createWorkflowLogger } from "@/shared/logger";
 import {
+  applyVoiceAssessmentToReport,
   generateReport,
   loadExistingReport,
+  loadVoiceAssessment,
   markApplicationEvaluated,
   markApplicationEvaluatedExisting,
   notifyReportReady,
@@ -15,6 +20,12 @@ import {
   readInterviewData,
   sendReportReadyEmail,
 } from "./steps";
+
+// Wait at most 12 hours for the candidate to complete the optional voice
+// communication assessment. After that, the post-evaluation proceeds without
+// it. Aligned with the platform's 12-hour interview-window expectation in the
+// voice-assessment spec.
+const VOICE_ASSESSMENT_WAIT_MS = 12 * 60 * 60 * 1000;
 
 export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluationPayload> {
   async run(event: WorkflowEvent<PostEvaluationPayload>, step: WorkflowStep) {
@@ -45,11 +56,52 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
       );
       applicationId = interviewData.interview.applicationId;
 
-      const reportDraft = await step.do("generate_report", generateReport(interviewData, log));
+      // Optional voice communication assessment. The voice agent signals back
+      // via `instance.sendEvent({ type: "voice_assessment_complete" })` once
+      // it persists results to the DB. If the candidate never starts the
+      // voice call (or it errors), we time out and continue without it.
+      const voiceCommAssessmentPending = await step.do(
+        "check_voice_assessment_pending",
+        async () => {
+          const row = await getCommunicationAssessmentByInterviewId(db, { interviewId });
+          if (!row) return false;
+          return row.status === "pending" || row.status === "in_progress";
+        },
+      );
+
+      if (voiceCommAssessmentPending) {
+        log.info("Waiting for voice assessment to complete (max 12h)");
+        try {
+          await step.waitForEvent("await_voice_assessment", {
+            type: "voice_assessment_complete",
+            timeout: VOICE_ASSESSMENT_WAIT_MS,
+          });
+          log.info("Voice assessment event received");
+        } catch (error) {
+          // Workflow waitForEvent throws on timeout. Proceed without voice data.
+          log.warn(
+            `Voice assessment wait expired or failed: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          );
+        }
+      }
+
+      const voiceAssessment = await step.do(
+        "load_voice_assessment",
+        loadVoiceAssessment(interviewId, db, log),
+      );
+
+      const reportDraft = await step.do(
+        "generate_report",
+        generateReport({ ...interviewData, voiceAssessment }, log),
+      );
+
+      const finalReport = applyVoiceAssessmentToReport(reportDraft, voiceAssessment);
 
       const report = await step.do(
         "persist_report",
-        persistReport(interviewId, interviewData, reportDraft, db, log),
+        persistReport(interviewId, interviewData, finalReport, db, log),
       );
 
       await step.do("mark_application_evaluated_held", markApplicationEvaluated(interviewData, db));
@@ -86,12 +138,12 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
         // No batch — this is a non-batched report (legacy or manual). Send individual notification.
         const notification = await step.do(
           "notify_report_ready",
-          notifyReportReady(interviewData, reportDraft, db, log),
+          notifyReportReady(interviewData, finalReport, db, log),
         );
 
         await step.do(
           "send_report_ready_email",
-          sendReportReadyEmail(interviewData, notification, reportDraft, db, log),
+          sendReportReadyEmail(interviewData, notification, finalReport, db, log),
         );
       }
 

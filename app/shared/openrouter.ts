@@ -35,7 +35,7 @@ export function getOpenRouter(): OpenRouterProvider {
   // AI_GATEWAY_TOKEN is optional — only required when the gateway has
   // "Authenticated Gateway" enabled. Not declared in the worker types so
   // it doesn't have to be set in every environment.
-  const gatewayToken = (env as { AI_GATEWAY_TOKEN?: string }).AI_GATEWAY_TOKEN;
+  const gatewayToken = env.AI_GATEWAY_TOKEN;
 
   const baseURL =
     accountId && gatewayId
@@ -102,6 +102,14 @@ const JOB_CREATION_DEV_CHAIN = [
   "nvidia/nemotron-3-super-120b-a12b:free",
 ] as const;
 
+// Voice assessment runs on a real-time pipeline, so latency matters more than
+// raw quality. Use the fastest free chat models as the primary chain.
+const VOICE_DEV_CHAIN = [
+  "openai/gpt-oss-120b:free",
+  "meta-llama/llama-3.3-70b-instruct:free",
+  "qwen/qwen3-next-80b-a3b-instruct:free",
+] as const;
+
 // Paid frontier models for production.
 const PRE_EVAL_PROD_CHAIN = ["anthropic/claude-haiku-4.5", "anthropic/claude-sonnet-4.5"] as const;
 
@@ -114,13 +122,16 @@ const JOB_CREATION_PROD_CHAIN = [
   "anthropic/claude-haiku-4.5",
 ] as const;
 
-type Task = "pre_eval" | "post_eval" | "interview" | "job_creation";
+const VOICE_PROD_CHAIN = ["anthropic/claude-haiku-4.5", "anthropic/claude-sonnet-4.5"] as const;
+
+type Task = "pre_eval" | "post_eval" | "interview" | "job_creation" | "voice";
 
 const TASK_CHAIN_MAP: Record<Task, { dev: readonly string[]; prod: readonly string[] }> = {
   pre_eval: { dev: PRE_EVAL_DEV_CHAIN, prod: PRE_EVAL_PROD_CHAIN },
   post_eval: { dev: POST_EVAL_DEV_CHAIN, prod: POST_EVAL_PROD_CHAIN },
   interview: { dev: INTERVIEW_DEV_CHAIN, prod: INTERVIEW_PROD_CHAIN },
   job_creation: { dev: JOB_CREATION_DEV_CHAIN, prod: JOB_CREATION_PROD_CHAIN },
+  voice: { dev: VOICE_DEV_CHAIN, prod: VOICE_PROD_CHAIN },
 };
 
 /**

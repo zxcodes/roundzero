@@ -41,7 +41,7 @@ import {
   updateApplicationStatus,
 } from "@/features/applications/server/functions";
 import { getPreEvaluationForApplication } from "@/features/pre-evaluations/server/functions";
-import { parseReportData, ReportSnapshotCard } from "@/features/reports/components/report-cards";
+import { ReportSnapshotCard } from "@/features/reports/components/report-cards";
 import { getCompanyApplicantReportTimeline } from "@/features/reports/server/functions";
 import { formatDate } from "@/shared/date";
 import {
@@ -161,61 +161,6 @@ const stageCopy = {
   },
 } as const;
 
-function toRecord(value: unknown) {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
-}
-
-const getStringValue = (value: unknown) => {
-  return typeof value === "string" && value.length > 0 ? value : null;
-};
-
-const getSnapshotSkills = (value: unknown) => {
-  return Array.isArray(value)
-    ? value.filter((item): item is string => typeof item === "string" && item.length > 0)
-    : [];
-};
-
-const getSnapshotLinks = (value: unknown) => {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return [];
-  }
-
-  return Object.entries(value)
-    .filter(
-      (entry): entry is [string, string] => typeof entry[1] === "string" && entry[1].length > 0,
-    )
-    .map(([key, href]) => ({
-      href,
-      label: key.charAt(0).toUpperCase() + key.slice(1),
-    }));
-};
-
-const getSnapshotWorkHistory = (value: unknown) => {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value
-    .map((entry) => {
-      if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
-        return null;
-      }
-
-      const record = entry as Record<string, unknown>;
-      return {
-        company: typeof record.company === "string" ? record.company : "Unknown company",
-        title: typeof record.title === "string" ? record.title : "Untitled role",
-        startMonth: typeof record.startMonth === "string" ? record.startMonth : null,
-        endMonth: typeof record.endMonth === "string" ? record.endMonth : null,
-        currentlyWorkingHere: record.currentlyWorkingHere === true,
-        description: typeof record.description === "string" ? record.description : null,
-      };
-    })
-    .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
-};
-
 const formatMonthRange = (entry: {
   startMonth: string | null;
   endMonth: string | null;
@@ -278,19 +223,48 @@ function ApplicantReviewPage() {
     },
   });
 
-  const metadata = toRecord(application.metadata);
-  const links = getSnapshotLinks(metadata.links);
-  const skills = getSnapshotSkills(metadata.skills);
-  const workHistory = getSnapshotWorkHistory(metadata.workHistory);
-  const headline = getStringValue(metadata.headline);
-  const bio = getStringValue(metadata.bio);
+  const metadata = (application.metadata ?? {}) as {
+    headline?: string | null;
+    bio?: string | null;
+    skills?: string[];
+    links?: Record<string, string>;
+    workHistory?: Array<{
+      company?: string;
+      title?: string;
+      startMonth?: string | null;
+      endMonth?: string | null;
+      currentlyWorkingHere?: boolean;
+      description?: string | null;
+    }>;
+  };
+
+  const links = metadata.links
+    ? Object.entries(metadata.links).map(([key, href]) => ({
+        href,
+        label: key.charAt(0).toUpperCase() + key.slice(1),
+      }))
+    : [];
+
+  const skills = metadata.skills ?? [];
+  const workHistory = (metadata.workHistory ?? [])
+    .filter((entry): entry is NonNullable<typeof entry> => entry != null)
+    .map((entry) => ({
+      company: entry.company ?? "Unknown company",
+      title: entry.title ?? "Untitled role",
+      startMonth: entry.startMonth ?? null,
+      endMonth: entry.endMonth ?? null,
+      currentlyWorkingHere: entry.currentlyWorkingHere ?? false,
+      description: entry.description ?? null,
+    }));
+  const headline = metadata.headline ?? null;
+  const bio = metadata.bio ?? null;
   const currentStatus = applicationStatusSchema.parse(application.status);
   const currentStageIndex = APPLICATION_STAGES.indexOf(
     currentStatus as (typeof APPLICATION_STAGES)[number],
   );
   const isFailed = currentStatus === "evaluation_failed";
   const meta = stageCopy[currentStatus] ?? stageCopy.applied;
-  const report = reportTimeline?.report ? parseReportData(reportTimeline.report) : null;
+  const report = reportTimeline?.report ?? null;
 
   const onStatusValueChange = async (value: string) => {
     const nextStatus = applicationStatusSchema.parse(value);
