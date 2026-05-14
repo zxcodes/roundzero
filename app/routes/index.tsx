@@ -425,7 +425,7 @@ function InterviewSpread() {
           — Sarah Chen, Senior Backend Engineer
         </p>
 
-        <div className="mt-12 space-y-4 max-w-md">
+        <div className="mt-8 space-y-4 max-w-md">
           <h4
             className="font-serif text-[1.25rem]"
             style={{ color: "var(--ed-ink)", fontWeight: 400 }}
@@ -452,7 +452,7 @@ function InterviewSpread() {
             ))}
           </ul>
 
-          <div className="mt-10 space-y-4 max-w-md">
+          <div className="mt-6 space-y-4 max-w-md">
             <h4
               className="font-serif text-[1.25rem]"
               style={{ color: "var(--ed-ink)", fontWeight: 400 }}
@@ -494,11 +494,13 @@ function InterviewSpread() {
           }}
         >
           <div
-            className="flex items-center justify-between px-5 py-3"
+            className="flex items-start justify-between gap-2 px-5 py-3"
             style={{ borderBottom: "1px solid var(--ed-ink)" }}
           >
-            <SmallCaps>Transcript · Senior Backend Engineer</SmallCaps>
-            <span className="font-mono text-[10px]" style={{ color: "var(--ed-muted)" }}>
+            <SmallCaps className="wrap-break-word max-w-[70%]">
+              Transcript · Senior Backend Engineer
+            </SmallCaps>
+            <span className="font-mono text-[10px] shrink-0" style={{ color: "var(--ed-muted)" }}>
               MIN 18:42
             </span>
           </div>
@@ -531,6 +533,70 @@ function InterviewSpread() {
                 </p>
               </div>
             ))}
+          </div>
+        </div>
+
+        <div
+          className="mt-8 border"
+          style={{
+            borderColor: "var(--ed-ink)",
+            background: "var(--ed-paper-soft)",
+          }}
+        >
+          <div
+            className="flex items-start justify-between gap-2 px-5 py-3"
+            style={{ borderBottom: "1px solid var(--ed-ink)" }}
+          >
+            <SmallCaps className="wrap-break-word max-w-[70%]">Voice assessment · 5 min</SmallCaps>
+            <span className="font-mono text-[10px] shrink-0" style={{ color: "var(--ed-muted)" }}>
+              CLARITY 78
+            </span>
+          </div>
+          <div className="px-5 py-5 space-y-5">
+            <div className="flex items-center gap-px h-12">
+              {[
+                10, 7, 14, 9, 18, 12, 22, 16, 26, 19, 30, 22, 28, 18, 24, 14, 20, 11, 16, 8, 12, 6,
+                8, 4,
+              ].map((h, i) => (
+                <div
+                  key={i}
+                  className="flex-1 rounded-full"
+                  style={{
+                    height: `${h}px`,
+                    background: i > 16 ? "var(--ed-rule)" : "var(--ed-ink)",
+                    opacity: i > 16 ? 0.3 : undefined,
+                  }}
+                />
+              ))}
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 md:grid-cols-5 md:gap-3">
+              {[
+                { label: "Clarity", value: 78 },
+                { label: "Articulation", value: 72 },
+                { label: "Conciseness", value: 65 },
+                { label: "Listening", value: 80 },
+                { label: "Confidence", value: 70 },
+              ].map((dim) => (
+                <div key={dim.label} className="text-center min-w-0">
+                  <span className="font-mono text-[13px]" style={{ color: "var(--ed-ink)" }}>
+                    {dim.value}
+                  </span>
+                  <div className="mt-1 h-0.5 w-full" style={{ background: "var(--ed-rule-hair)" }}>
+                    <div
+                      className="h-full"
+                      style={{ background: "var(--ed-accent)", width: `${dim.value}%` }}
+                    />
+                  </div>
+                  <SmallCaps>{dim.label}</SmallCaps>
+                </div>
+              ))}
+            </div>
+
+            <p className="text-[12px] leading-normal" style={{ color: "var(--ed-muted)" }}>
+              Voice communication is assessed after the text interview and blended into the final
+              communication score (60% voice, 40% text).
+            </p>
           </div>
         </div>
       </div>
@@ -1086,6 +1152,10 @@ const faq = [
   {
     q: "What does a candidate report include?",
     a: "Each report scores candidates across technical depth, communication, and experience credibility. It includes specific strengths, areas of concern, key insights from the interview, and a clear hire / consider / pass recommendation — every score linked to evidence in the actual conversation.",
+  },
+  {
+    q: "Is there a voice component to the interview?",
+    a: "Yes. After the text interview, candidates complete a short ~5 minute voice conversation to assess real-time communication. The voice assessment is blended into the communication score (60% voice, 40% text). The full transcript and per-dimension scores (clarity, articulation, conciseness, listening, confidence) are visible in the report. Candidates can skip the voice check — the report will note it was excluded.",
   },
   {
     q: "Can candidates cheat or use AI to answer?",
