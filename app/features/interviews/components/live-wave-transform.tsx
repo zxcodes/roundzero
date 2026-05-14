@@ -1,16 +1,7 @@
 "use client";
 
 import type * as React from "react";
-import { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 export const LiveWaveform = ({
@@ -436,66 +427,3 @@ export const LiveWaveform = ({
     </div>
   );
 };
-
-export function LiveWaveformCard() {
-  const [active, setActive] = useState(false);
-  const [processing, setProcessing] = useState(true);
-  const [mode, setMode] = useState<"static" | "scrolling">("static");
-
-  const handleToggleActive = () => {
-    setActive(!active);
-    if (!active) {
-      setProcessing(false);
-    }
-  };
-
-  const handleToggleProcessing = () => {
-    setProcessing(!processing);
-    if (!processing) {
-      setActive(false);
-    }
-  };
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Live Audio Waveform</CardTitle>
-        <CardDescription>
-          Real-time microphone input visualization with audio reactivity
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <LiveWaveform
-          active={active}
-          processing={processing}
-          height={80}
-          barWidth={3}
-          barGap={2}
-          mode={mode}
-          fadeEdges={true}
-          barColor="gray"
-          historySize={120}
-        />
-      </CardContent>
-      <CardFooter className="gap-2">
-        <Button size="sm" variant={active ? "default" : "outline"} onClick={handleToggleActive}>
-          {active ? "Stop" : "Start"} Listening
-        </Button>
-        <Button
-          size="sm"
-          variant={processing ? "default" : "outline"}
-          onClick={handleToggleProcessing}
-        >
-          {processing ? "Stop" : "Start"} Processing
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => setMode(mode === "static" ? "scrolling" : "static")}
-        >
-          {mode === "static" ? "Static" : "Scrolling"}
-        </Button>
-      </CardFooter>
-    </Card>
-  );
-}

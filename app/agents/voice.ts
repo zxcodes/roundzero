@@ -37,9 +37,9 @@ type VoiceAssessmentContext = {
   candidateSummary: string;
 };
 
-export type VoiceAssessmentStatus = "pending" | "in_call" | "completed" | "skipped" | "error";
+type VoiceAssessmentStatus = "pending" | "in_call" | "completed" | "skipped" | "error";
 
-export type VoiceAssessmentState = {
+type VoiceAssessmentState = {
   status: VoiceAssessmentStatus;
   // Set true right before an intentional end (agent emitted ##END_CALL##, or
   // candidate clicked End). Drives onCallEnd's decision to finalize vs treat
