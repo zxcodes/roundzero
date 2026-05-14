@@ -1,5 +1,7 @@
 ## TODO
 
+
+- think about connecting relevant profiles to the app (github, dribble etc for better understanding of the candidate, also check if we have any apis we can use to get and analyse the data.)
 - if a model generates some stupid shit in the name of evidence, we need another step to clean that up before writing to db. this applies to everything we're writing to db from a model. should never trust direct model responses. the entire evidence, weakness, strengths needs to be redone in a better way with good insights. it is useless now. basically the entire evaluation block should be post-processed with a new workflow to be useful.
 
 - there is no indication after sending a message to the agent (both voice and text).
