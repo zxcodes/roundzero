@@ -2,7 +2,6 @@
 
 - there is no indication after sending a message to the agent (both voice and text).
 - everything on the company side needs to be rethought. the ux isn't there. it's cluttered and messy.
-- remove new stupid gradients everywhere.
 - need to redefine the landing and product branding: (resumes are outdated, yoe is just a number now, cracked people exist, ai needs to find them, experience is no longer a good metric, etc etc.)
 - if a candidate goes into hold, there is no way for companies to manually invite them to interview because of new batch flow?
 - update landing page messaging to say the time of resumes is over. it's time for real evaluation etc.
@@ -39,6 +38,7 @@
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- remove new stupid gradients everywhere.-->
 <!--- copy agent testing patterns from opencode, pi etc. also see how they harden their prompts.-->
 <!--- strictly make agent ask interview questions from the profile and then from the actual job. right now it's not even close. asks vague questions. check if we're feeding the agent context the right way (better models solve this).-->
 <!--- update seed to include much more data for better agent evaluation with multiple jobs having company questions (relocation, visa, etc etc)-->
