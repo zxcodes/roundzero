@@ -5,7 +5,7 @@ import {
   withVoice,
 } from "@cloudflare/voice";
 import { Agent, type Connection, callable } from "agents";
-import { generateObject, streamText } from "ai";
+import { generateText, Output, streamText } from "ai";
 import {
   completeCommunicationAssessment,
   createCommunicationAssessment,
@@ -343,16 +343,16 @@ export class VoiceAssessmentAgent extends VoiceAgent<Env> {
 
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        const result = await generateObject({
+        const result = await generateText({
           model: openrouter.chat(model, { plugins: [{ id: "response-healing" }] }),
-          schema: communicationAssessmentSchema,
+          output: Output.object({ schema: communicationAssessmentSchema }),
           system: systemPrompt,
           prompt: userPrompt,
           ...(fallbacks.length > 0
             ? { providerOptions: { openrouter: { models: fallbacks } } }
             : {}),
         });
-        return result.object;
+        return result.output;
       } catch (error) {
         console.error(`[voice-assessment-agent] analysis attempt ${attempt + 1} failed:`, error);
       }

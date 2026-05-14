@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import { z } from "zod";
 import { hasActiveSubscription } from "@/features/billing/config";
 import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
@@ -410,15 +410,15 @@ export const generateJobWithAI = createServerFn({ method: "POST" })
     const openrouter = getOpenRouter();
     const { model, fallbacks } = getModelChain("job_creation");
 
-    const result = await generateObject({
+    const result = await generateText({
       model: openrouter.chat(model, { plugins: [{ id: "response-healing" }] }),
-      schema: aiJobGenerationSchema,
+      output: Output.object({ schema: aiJobGenerationSchema }),
       system: SYSTEM_PROMPT,
       prompt: data.prompt,
       ...(fallbacks.length > 0 ? { providerOptions: { openrouter: { models: fallbacks } } } : {}),
     });
 
-    const cleaned = cleanAiJobOutput(result.object);
+    const cleaned = cleanAiJobOutput(result.output);
 
     const validated = jobFieldsSchema.safeParse({
       ...cleaned,
