@@ -4,6 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { InterviewWorkspacePageSkeleton } from "@/components/route-skeletons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -41,6 +42,7 @@ const getErrorMessage = (error: unknown, fallback: string): string => {
 
 export const Route = createFileRoute("/_authenticated/interview/$interviewId/")({
   component: InterviewWorkspacePage,
+  pendingComponent: InterviewWorkspacePageSkeleton,
 });
 
 function InterviewWorkspacePage() {
