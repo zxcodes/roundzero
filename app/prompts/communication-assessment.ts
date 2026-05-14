@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+export const VERSION = "1.0.0";
+
 const dimension = z
   .object({
     score: z.number().min(0).max(100),

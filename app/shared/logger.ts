@@ -117,11 +117,17 @@ export function createWorkflowLogger(workflowName: string, applicationId: string
       write("info", `${colors.green}${stepName} completed${colors.reset}`, data);
     },
 
-    ai: (promptLength: number, responseTokens: number, latencyMs: number) => {
+    ai: (
+      promptLength: number,
+      responseTokens: number,
+      latencyMs: number,
+      promptVersion?: string,
+    ) => {
       write("info", `${colors.magenta}ai-call${colors.reset}`, {
         prompt: promptLength,
         tokens: responseTokens,
         latencyMs,
+        ...(promptVersion ? { promptVersion } : {}),
       });
     },
   };

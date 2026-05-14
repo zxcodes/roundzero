@@ -79,7 +79,9 @@ describe("slop detection prompt construction", () => {
   });
 
   it("treats profile-resume overlap as expected in the system prompt", () => {
-    expect(SLOP_DETECTION_SYSTEM_PROMPT).toContain("Profile and resume overlap is expected.");
-    expect(SLOP_DETECTION_SYSTEM_PROMPT).toContain("Absence is not contradiction.");
+    expect(SLOP_DETECTION_SYSTEM_PROMPT.prompt).toContain(
+      "Profile and resume overlap is expected.",
+    );
+    expect(SLOP_DETECTION_SYSTEM_PROMPT.prompt).toContain("Absence is not contradiction.");
   });
 });
