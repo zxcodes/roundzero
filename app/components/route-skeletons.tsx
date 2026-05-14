@@ -943,6 +943,56 @@ export function DashboardApplicantReviewSkeleton() {
   );
 }
 
+// skeleton for actual interview content.
+export function InterviewWorkspacePageSkeleton() {
+  return (
+    <>
+      <header className="flex shrink-0 flex-col gap-3 border-b border-border/60 bg-card px-4 py-3.5 md:flex-row md:items-center md:justify-between md:px-6 md:py-4">
+        <div className="min-w-0">
+          <div className="mb-1 flex items-center gap-2">
+            <Skeleton className="size-5 shrink-0 rounded" />
+            <Skeleton className="h-5 w-44 md:h-6 md:w-52" />
+            <Skeleton className="h-5 w-14 rounded-md" />
+          </div>
+          <Skeleton className="h-3 w-32 md:h-3.5 md:w-36" />
+          <Skeleton className="mt-1 h-3 w-48 md:w-56" />
+        </div>
+        <div className="flex w-full flex-wrap justify-end gap-2 md:w-auto">
+          <Skeleton className="h-8 w-20 rounded-md" />
+          <Skeleton className="h-8 w-24 rounded-md" />
+        </div>
+      </header>
+
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="min-h-0 flex-1 space-y-4 px-4 py-5 md:px-6 md:py-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className={i % 2 === 0 ? "flex justify-start" : "flex justify-end"}>
+              <div className="w-full max-w-[75%] md:max-w-[60%]">
+                <Skeleton className="mb-1 h-3 w-10" />
+                <Skeleton className="h-9 w-full rounded-[18px]" />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="shrink-0 border-t border-border/60 bg-card px-4 pb-3 pt-3 md:px-6">
+          <div className="flex items-end gap-2 rounded-xl border border-border/70 bg-background px-3 py-2 shadow-sm">
+            <Skeleton className="h-9 flex-1 rounded-lg" />
+            <Skeleton className="size-8 rounded-full" />
+          </div>
+        </div>
+      </div>
+
+      <div className="border-t border-border/60 bg-muted/20 px-4 py-2.5 md:px-6">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-3 w-10" />
+          <Skeleton className="h-3 w-20" />
+        </div>
+      </div>
+    </>
+  );
+}
+
 /**
  * Skeleton for /interview and /interview/$interviewId — interview workspace.
  * Matches: left sessions sidebar + top header + chat transcript + pinned composer.
