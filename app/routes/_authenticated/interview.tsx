@@ -57,7 +57,7 @@ function InterviewWorkspaceLayout() {
         />
         <InterviewSidebar activeInterviewId={activeInterviewId} interviews={interviews} />
         <SidebarInset>
-          <div className="flex h-dvh min-h-0 w-full bg-background p-2 text-foreground">
+          <div className="flex h-dvh min-h-0 w-full bg-background pb-2 pr-2 pt-2 text-foreground">
             <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
               <Outlet />
             </section>
