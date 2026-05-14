@@ -1022,22 +1022,49 @@ function VoiceAssessmentReportCard({
                             style={{ width: `${Math.max(0, Math.min(100, score))}%` }}
                           />
                         </div>
-                        {dim.evidence.length > 0 ? (
-                          <ul className="space-y-1 pt-1">
-                            {dim.evidence.map((quote, i) => (
-                              <li
-                                key={i}
-                                className="rounded-md border-l-2 border-border bg-muted/30 px-2.5 py-1 text-xs leading-5 text-muted-foreground"
-                              >
-                                &ldquo;{quote}&rdquo;
-                              </li>
-                            ))}
-                          </ul>
-                        ) : null}
                       </div>
                     );
                   },
                 )}
+              </div>
+            </div>
+          ) : null}
+
+          {/* Key moments — deduplicated evidence across all dimensions */}
+          {parsed ? (
+            <div className="space-y-2">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                Key moments
+              </p>
+              <div className="space-y-2">
+                {(() => {
+                  const allEvidence = new Set<string>();
+                  (
+                    Object.keys(voiceDimensionMeta) as Array<keyof typeof voiceDimensionMeta>
+                  ).forEach((key) => {
+                    parsed[key].evidence.forEach((quote) => {
+                      if (quote.trim().length > 0) {
+                        allEvidence.add(quote.trim());
+                      }
+                    });
+                  });
+                  const uniqueEvidence = Array.from(allEvidence);
+                  if (uniqueEvidence.length === 0) {
+                    return (
+                      <p className="text-xs text-muted-foreground">
+                        No specific evidence recorded.
+                      </p>
+                    );
+                  }
+                  return uniqueEvidence.map((quote, i) => (
+                    <div
+                      key={i}
+                      className="rounded-md border-l-2 border-border bg-muted/30 px-3 py-2 text-xs leading-5 text-muted-foreground"
+                    >
+                      &ldquo;{quote}&rdquo;
+                    </div>
+                  ));
+                })()}
               </div>
             </div>
           ) : null}

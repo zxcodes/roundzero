@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InterviewChat } from "@/features/interviews/components/interview-chat";
 import { VoiceAssessmentPanel } from "@/features/interviews/components/voice-assessment-panel";
 import { useInterviewChat } from "@/features/interviews/hooks/use-interview-chat";
@@ -203,17 +204,26 @@ function InterviewWorkspaceContent({
         </div>
       ) : null}
 
-      <div className="flex min-h-0 flex-1 flex-col">
-        <InterviewChat
-          messages={chat.messages}
-          canSend={canSend}
-          isEnded={isEnded}
-          isStreaming={chat.isStreaming}
-          onSend={onSendMessage}
-        />
-
-        {isEnded ? <VoiceAssessmentPanel interviewId={interview.id} /> : null}
-      </div>
+      <Tabs defaultValue="chat" className="flex min-h-0 flex-1 flex-col">
+        <TabsList className="mx-4 mt-3 md:mx-6">
+          <TabsTrigger value="chat">Chat</TabsTrigger>
+          <TabsTrigger value="voice" disabled={!isEnded}>
+            Voice
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="chat" className="mt-0 flex min-h-0 flex-1 flex-col">
+          <InterviewChat
+            messages={chat.messages}
+            canSend={canSend}
+            isEnded={isEnded}
+            isStreaming={chat.isStreaming}
+            onSend={onSendMessage}
+          />
+        </TabsContent>
+        <TabsContent value="voice" className="mt-0 flex min-h-0 flex-1 flex-col">
+          <VoiceAssessmentPanel interviewId={interview.id} />
+        </TabsContent>
+      </Tabs>
     </>
   );
 }
