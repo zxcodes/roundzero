@@ -131,22 +131,22 @@ const recommendationTone = (value: string) => {
 
 const recommendationSurfaceTone = (value: string) => {
   if (value === "strong_yes" || value === "strong_hire") {
-    return "from-success/20 via-success/5 to-transparent";
+    return "bg-success/60";
   }
 
   if (value === "yes" || value === "consider") {
-    return "from-info/20 via-info/5 to-transparent";
+    return "bg-info/60";
   }
 
   if (value === "lean_no") {
-    return "from-warning/20 via-warning/5 to-transparent";
+    return "bg-warning/60";
   }
 
   if (value === "no" || value === "not_recommended") {
-    return "from-danger/20 via-danger/5 to-transparent";
+    return "bg-danger/60";
   }
 
-  return "from-muted/30 via-muted/10 to-transparent";
+  return "bg-muted-foreground/30";
 };
 
 const toInitials = (name: string) => {
@@ -217,7 +217,7 @@ function CompanyDashboardSection({ metrics }: { metrics: CompanyMetrics }) {
       </div>
 
       {metrics.activeBatches.length > 0 ? (
-        <Card className="brand-glow border-primary/20 bg-linear-to-br from-card via-card to-primary/5">
+        <Card className="border-primary/20 bg-card">
           <CardHeader>
             <CardTitle>Active Batches</CardTitle>
             <CardDescription>
@@ -394,7 +394,7 @@ function CompanyDashboardSection({ metrics }: { metrics: CompanyMetrics }) {
         </CardContent>
       </Card>
 
-      <Card className="overflow-hidden border-primary/20 bg-linear-to-br from-card via-card to-secondary/30">
+      <Card className="overflow-hidden border-primary/20 bg-card">
         <CardHeader>
           <CardTitle>Released Batches</CardTitle>
           <CardDescription>
@@ -410,7 +410,7 @@ function CompanyDashboardSection({ metrics }: { metrics: CompanyMetrics }) {
                   className="overflow-hidden border-foreground/10 bg-background/80"
                 >
                   <div
-                    className={`h-1 w-full bg-linear-to-r ${recommendationSurfaceTone(report.recommendation)}`}
+                    className={`h-1 w-full ${recommendationSurfaceTone(report.recommendation)}`}
                   />
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between gap-3">

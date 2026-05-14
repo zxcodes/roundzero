@@ -340,9 +340,7 @@ function TimelineNode({
             className={cn("size-4", iconClass ?? "text-foreground")}
           />
         </div>
-        {!isLast ? (
-          <div className="-mt-1 w-px flex-1 bg-linear-to-b from-border via-border to-transparent" />
-        ) : null}
+        {!isLast ? <div className="-mt-1 w-px flex-1 bg-border" /> : null}
       </div>
 
       <div className={cn("min-w-0 flex-1 pb-10", isLast && "pb-0")}>
@@ -717,7 +715,7 @@ export function ReportTimeline({
                         </div>
                         <div className="h-1.5 overflow-hidden rounded-full bg-background">
                           <div
-                            className="h-full rounded-full bg-linear-to-r from-brand/70 to-foreground"
+                            className="h-full rounded-full bg-foreground/80"
                             style={{ width: `${Math.max(0, Math.min(100, score))}%` }}
                           />
                         </div>
@@ -889,7 +887,7 @@ function VoiceAssessmentReportCard({
                         </div>
                         <div className="h-1.5 overflow-hidden rounded-full bg-background">
                           <div
-                            className="h-full rounded-full bg-linear-to-r from-brand/70 to-foreground"
+                            className="h-full rounded-full bg-foreground/80"
                             style={{ width: `${Math.max(0, Math.min(100, score))}%` }}
                           />
                         </div>
