@@ -139,7 +139,7 @@ Replace immediate per-candidate report release with a pool-and-batch system.
 
 ## Phase 8: Candidate-Facing Interview & Status Tracking
 
-- [ ] Dedicated `InterviewInvitationCard` component with estimated time and format info
+- [x] Dedicated `InterviewInvitationCard` component with estimated time and format info
 
 ---
 
@@ -152,9 +152,24 @@ Replace immediate per-candidate report release with a pool-and-batch system.
 - [x] Report views are readable on small screens
 - [x] Track funnel metrics: apply → pre-eval → interview → report
 - [x] Time-to-evaluation per job
+- [x] Mobile experience is usable (responsive Tailwind layouts throughout)
 - [ ] All edge cases handled gracefully
-- [ ] Mobile experience is usable
 - [ ] No production errors in core AI funnel
+
+---
+
+## Phase 10: Voice Communication Assessment
+
+- [x] Voice assessment agent (`app/agents/voice.ts`) with STT/TTS pipeline via `@cloudflare/voice`
+- [x] Inline voice assessment UI as interview workspace tab (replaces separate route)
+- [x] `useVoiceAgent` hook for call state management, `useQuery` for status polling
+- [x] Structured analysis via `generateObject` against `communicationAssessmentSchema`
+- [x] 5 dimension scores (clarity, articulation, conciseness, listening, confidence)
+- [x] Voice analysis rendered in company report with score bars, evidence, and transcript
+- [x] Refresh-resume support (DO persists `in_call` state, `intentionalEnd` flag)
+- [x] Report timeline node with distinct completed / skipped / not-completed states
+- [ ] Landing page voice assessment section (waveform + scores mockup) ✓ added
+- [ ] Candidate-side UI polish for voice transitions and error recovery
 
 ---
 
@@ -181,7 +196,7 @@ Replace immediate per-candidate report release with a pool-and-batch system.
 ## Phase 12 (Post-Release): Landing Page Enhancements
 
 - [ ] Add social proof section (logos, testimonials, or metrics once available)
-- [ ] Add candidate-side value prop (brief section addressing job seekers)
+- [x] Add candidate-side value prop ("For candidates" section in the Interview spread)
 - [ ] Add comparison section (traditional screening vs RoundZero side-by-side)
 
 ---

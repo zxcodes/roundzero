@@ -292,15 +292,52 @@ It only decides:
 
 Use semantic/contextual matching.
 
-## Keep V1 Simple
+## Voice Assessment
+
+A voice communication assessment runs after the text interview.
+
+### Architecture
+
+- `app/agents/voice.ts` — `VoiceAssessmentAgent` extends `withVoice(Agent)` from `@cloudflare/voice`
+- Uses `WorkersAIFluxSTT` (speech-to-text) and `WorkersAITTS` (text-to-speech) via Workers AI
+- One Durable Object instance per interview
+- @callable() RPCs: `initialize`, `markEndIntent`, `getTranscript`, `skip`
+
+### Flow
+
+1. After text interview completes, candidate enters the voice workspace (tab in the interview UI)
+2. `useVoiceAgent` hook manages the voice WebSocket connection and microphone capture
+3. `onTurn` runs the LLM with candidate context and streams responses
+4. On intentional end (candidate clicks End Call or agent emits `##END_CALL##`):
+   - transcript is saved to `communication_assessments`
+   - `generateObject` runs structured analysis against `communicationAssessmentSchema`
+   - post-evaluation workflow receives `voice_assessment_complete` event
+5. Transient disconnects (refresh, network blip) leave state `in_call` — candidate can resume
+
+### Report Integration
+
+- Voice analysis rendered in the company report as a timeline node under "Voice Communication Assessment"
+- 5 dimension scores: clarity, articulation, conciseness, listening, confidence
+- Score blended into `communication` dimension (60% voice, 40% text)
+- Evidence quotes deduplicated into a "Key moments" section
+
+### DB Table
+
+- `communication_assessments` — one row per interview
+- Stores `status`, `transcript` (JSONB), `analysis` (JSONB — per-dimension scores + evidence), `audio_key`
+
+---
+
+## Keep Simple
 
 Build:
 - pre-screening
 - selective AI interviews
 - candidate reports
+- **voice communication assessment**
 
 Skip for now:
-- voice/video
+- video interviews
 - multiple visible agents
 - advanced analytics
 - over-engineered systems

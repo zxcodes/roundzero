@@ -13,6 +13,7 @@ RoundZero is a hiring platform that is being built in two layers:
 
 2. **AI interview and evaluation layer**
    - async structured interviews
+   - **voice communication assessment**
    - multi-pass candidate evaluation
    - explainable reports
    - ranked candidate recommendations
@@ -206,6 +207,7 @@ RoundZero now includes the AI hiring layer on top of the solid platform.
 ### 6.1 AI Interview Mode
 
 - in-app async chat (text-based, no video)
+- optional ~5 minute voice assessment after the text interview
 - preserves context and supports adaptive follow-ups
 - works across time zones without scheduling friction
 
@@ -218,6 +220,16 @@ The AI interview:
 - evaluates communication quality
 - detects inconsistency or vagueness
 - gathers evidence for structured evaluation
+
+### 6.3 Voice Assessment
+
+After the text interview, candidates complete a short voice conversation to evaluate real-time communication:
+
+- ~5 minute voice call, browser-based, no setup required
+- evaluated across 5 dimensions: clarity, articulation, conciseness, listening, confidence
+- blended into the final communication score (60% voice, 40% text)
+- full transcript and dimension scores visible in the company report
+- candidates can skip — the report notes it was excluded
 
 ### 6.3 Evaluation Goals
 
@@ -244,8 +256,8 @@ Company updates status
 
 ```
 Company posts job → Candidate applies → AI interview →
-Evaluation pipeline → Candidate report → Ranking →
-Company reviews top candidates
+Voice assessment → Evaluation pipeline → Candidate report →
+Ranking → Company reviews top candidates
 ```
 
 ---
@@ -326,7 +338,11 @@ Live sections:
 - insights
 - evidence
 - pre-screening to interview to post-evaluation timeline
-- interview transcript (substantive messages only)
+- interview transcript (all standardised messages)
+- voice communication assessment (if completed):
+  - 5 dimension scores (clarity, articulation, conciseness, listening, confidence)
+  - AI summary and evidence highlights
+  - full conversation transcript
 
 The report is readable by a hiring manager without requiring trust in a hidden scoring system.
 
