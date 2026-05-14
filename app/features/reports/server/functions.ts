@@ -2,9 +2,13 @@ import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { getApplicationReviewById } from "@/features/applications/queries/queries_sql";
-import { getInterviewByApplicationId } from "@/features/interviews/queries/queries_sql";
+import {
+  getCommunicationAssessmentByApplicationId,
+  getInterviewByApplicationId,
+} from "@/features/interviews/queries/queries_sql";
 import { getPreEvaluationByApplicationId } from "@/features/pre-evaluations/queries/queries_sql";
 import { getReportByApplicationId } from "@/features/reports/queries/queries_sql";
+import { reportSchema } from "@/features/reports/schemas";
 import { getDb } from "@/shared/db";
 import { getInterviewAgentState } from "@/shared/interview-agent-client";
 import { companyMiddleware } from "@/shared/middleware";
@@ -23,38 +27,19 @@ type InterviewAgentState = {
   messages: InterviewAgentMessage[];
 };
 
-const isInterviewAgentState = (value: unknown): value is InterviewAgentState => {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-
-  const record = value as Record<string, unknown>;
-  if (!Array.isArray(record.messages)) {
-    return false;
-  }
-
-  return record.messages.every((entry) => {
-    if (typeof entry !== "object" || entry === null) {
-      return false;
-    }
-
-    const message = entry as Record<string, unknown>;
-    return (
-      (message.role === "assistant" || message.role === "candidate") &&
-      typeof message.content === "string" &&
-      typeof message.createdAt === "string"
-    );
-  });
-};
-
 const getInterviewStateForCompany = async (interviewId: string) => {
   try {
     const payload = await getInterviewAgentState(interviewId);
-    if (!isInterviewAgentState(payload)) {
+    if (!payload || !Array.isArray((payload as InterviewAgentState).messages)) {
       return null;
     }
-
-    return { messages: payload.messages };
+    const messages = (payload as InterviewAgentState).messages.filter(
+      (m) =>
+        (m.role === "assistant" || m.role === "candidate") &&
+        typeof m.content === "string" &&
+        typeof m.createdAt === "string",
+    );
+    return { messages };
   } catch {
     return null;
   }
@@ -105,7 +90,10 @@ export const getCompanyApplicantReportTimeline = createServerFn({ method: "GET" 
     const preEvaluation = await getPreEvaluationByApplicationId(db, {
       applicationId: data.applicationId,
     });
-    const report = await getReportByApplicationId(db, {
+    const reportRow = await getReportByApplicationId(db, {
+      applicationId: data.applicationId,
+    });
+    const communicationAssessment = await getCommunicationAssessmentByApplicationId(db, {
       applicationId: data.applicationId,
     });
     const interviewState = interview
@@ -118,6 +106,19 @@ export const getCompanyApplicantReportTimeline = createServerFn({ method: "GET" 
       preEvaluation,
       interview,
       interviewState,
-      report,
+      report: reportRow
+        ? (reportSchema.safeParse({
+            summary: reportRow.summary,
+            strengths: reportRow.strengths,
+            weaknesses: reportRow.weaknesses,
+            insights: reportRow.insights,
+            evidence: reportRow.evidence,
+            screeningAnswers: reportRow.screeningAnswers,
+            scores: reportRow.scores,
+            recommendation: reportRow.recommendation,
+          }).data ?? null)
+        : null,
+      reportCreatedAt: reportRow?.createdAt ?? null,
+      communicationAssessment,
     };
   });

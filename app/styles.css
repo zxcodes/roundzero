@@ -404,15 +404,6 @@
     animation: shimmer-scan 1.8s ease-in-out infinite;
   }
 
-  /* Brand highlight — subtle background tint for featured/primary cards */
-  .brand-glow {
-    background: linear-gradient(
-      135deg,
-      color-mix(in oklch, var(--brand) 6%, transparent) 0%,
-      transparent 60%
-    );
-  }
-
   .stagger-1 {
     animation-delay: 50ms;
   }

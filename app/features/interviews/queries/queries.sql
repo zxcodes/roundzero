@@ -128,3 +128,45 @@ JOIN jobs j ON j.id = a.job_id
 WHERE i.status IN ('pending', 'in_progress')
   AND i.metadata ? 'expiresAt'
   AND (i.metadata->>'expiresAt')::timestamptz <= now();
+
+-- name: createCommunicationAssessment :one
+INSERT INTO communication_assessments (interview_id, application_id, status)
+VALUES ($1, $2, $3)
+RETURNING *;
+
+-- name: getCommunicationAssessmentByInterviewId :one
+SELECT *
+FROM communication_assessments
+WHERE interview_id = $1;
+
+-- name: getCommunicationAssessmentByApplicationId :one
+SELECT *
+FROM communication_assessments
+WHERE application_id = $1;
+
+-- name: markCommunicationAssessmentStarted :one
+UPDATE communication_assessments
+SET status = 'in_progress',
+    started_at = COALESCE(started_at, now()),
+    updated_at = now()
+WHERE interview_id = $1
+RETURNING *;
+
+-- name: completeCommunicationAssessment :one
+UPDATE communication_assessments
+SET status = 'completed',
+    transcript = $2,
+    analysis = $3,
+    audio_key = $4,
+    completed_at = now(),
+    updated_at = now()
+WHERE interview_id = $1
+RETURNING *;
+
+-- name: markCommunicationAssessmentSkipped :one
+UPDATE communication_assessments
+SET status = 'skipped',
+    completed_at = now(),
+    updated_at = now()
+WHERE interview_id = $1
+RETURNING *;

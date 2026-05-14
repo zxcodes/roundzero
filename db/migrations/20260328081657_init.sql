@@ -220,4 +220,22 @@ CREATE TABLE reports (
 CREATE INDEX idx_reports_application ON reports(application_id);
 CREATE INDEX idx_reports_released ON reports(released_at) WHERE released_at IS NULL;
 
+-- Communication assessments: voice-call results captured by VoiceAssessmentAgent
+CREATE TABLE communication_assessments (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  interview_id    UUID NOT NULL REFERENCES interviews(id) ON DELETE RESTRICT UNIQUE,
+  application_id  UUID NOT NULL REFERENCES applications(id) ON DELETE RESTRICT,
+  status          TEXT NOT NULL DEFAULT 'pending',
+  audio_key       TEXT,
+  transcript      JSONB NOT NULL DEFAULT '[]',
+  analysis        JSONB,
+  started_at      TIMESTAMPTZ,
+  completed_at    TIMESTAMPTZ,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_comm_assessments_interview ON communication_assessments(interview_id);
+CREATE INDEX idx_comm_assessments_application ON communication_assessments(application_id);
+
 -- migrate:down

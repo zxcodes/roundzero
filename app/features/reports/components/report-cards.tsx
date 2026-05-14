@@ -12,6 +12,7 @@ import {
   FlagIcon,
   HelpCircleIcon,
   Message01Icon,
+  Mic01Icon,
   RankingIcon,
   SparklesIcon,
   Target02Icon,
@@ -37,38 +38,15 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { EmptyInterviewComponent } from "@/features/interviews/components/interview-chat";
 import { InterviewTranscript } from "@/features/interviews/components/interview-transcript";
+import type { ReportData } from "@/features/reports/schemas";
 import { cn } from "@/lib/utils";
 import { formatDateShort, formatDateTimeUtc } from "@/shared/date";
 
-type Recommendation = "strong_yes" | "yes" | "lean_no" | "no";
+type Recommendation = ReportData["recommendation"];
 
-type ReportScores = {
-  communication: number;
-  problemSolving: number;
-  ownership: number;
-  roleFit: number;
-  overall: number;
-};
+type ReportScores = ReportData["scores"];
 
-type ScreeningConcern = "none" | "minor" | "dealbreaker";
-
-type ScreeningAnswer = {
-  question: string;
-  answer: string | null;
-  concern: ScreeningConcern;
-  notes: string;
-};
-
-type ReportData = {
-  summary: string;
-  strengths: string[];
-  weaknesses: string[];
-  insights: string[];
-  evidence: string[];
-  screeningAnswers: ScreeningAnswer[];
-  recommendation: Recommendation;
-  scores: ReportScores;
-};
+type ScreeningConcern = ReportData["screeningAnswers"][number]["concern"];
 
 type TranscriptMessage = {
   role: "assistant" | "candidate";
@@ -154,116 +132,63 @@ const concernMeta: Record<
   },
 };
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
+// ---- Voice communication assessment parsing ----
 
-function parseJsonb<T>(value: unknown): T | null {
-  if (isRecord(value) || Array.isArray(value)) {
-    return value as T;
-  }
-  return null;
-}
+type VoiceDimension = {
+  score: number;
+  evidence: string[];
+};
 
-function toStringArray(value: unknown): string[] {
-  const parsed = parseJsonb<unknown[]>(value);
-  if (!Array.isArray(parsed)) {
-    return [];
-  }
-
-  return parsed.filter((item): item is string => typeof item === "string" && item.length > 0);
-}
-
-function toFiniteScore(value: unknown): number {
-  return typeof value === "number" && Number.isFinite(value) ? value : 0;
-}
-
-function toRecommendation(value: unknown): Recommendation {
-  if (value === "strong_yes" || value === "yes" || value === "lean_no" || value === "no") {
-    return value;
-  }
-
-  return "lean_no";
-}
-
-function toScreeningConcern(value: unknown): ScreeningConcern {
-  if (value === "none" || value === "minor" || value === "dealbreaker") {
-    return value;
-  }
-  return "none";
-}
-
-function toScreeningAnswers(value: unknown): ScreeningAnswer[] {
-  const parsed = parseJsonb<unknown[]>(value);
-  if (!Array.isArray(parsed)) {
-    return [];
-  }
-
-  const result: ScreeningAnswer[] = [];
-  for (const item of parsed) {
-    if (!isRecord(item)) {
-      continue;
-    }
-    const question = typeof item.question === "string" ? item.question : "";
-    if (!question) {
-      continue;
-    }
-    const answer =
-      typeof item.answer === "string" && item.answer.trim().length > 0 ? item.answer : null;
-    result.push({
-      question,
-      answer,
-      concern: toScreeningConcern(item.concern),
-      notes: typeof item.notes === "string" ? item.notes : "",
-    });
-  }
-  return result;
-}
-
-export function parseReportData(report: {
+type VoiceAnalysis = {
+  clarity: VoiceDimension;
+  articulation: VoiceDimension;
+  conciseness: VoiceDimension;
+  listening: VoiceDimension;
+  confidence: VoiceDimension;
+  overallScore: number;
   summary: string;
-  strengths: unknown;
-  weaknesses: unknown;
-  insights: unknown;
-  evidence: unknown;
-  screeningAnswers?: unknown;
-  recommendation: string;
-  scores: unknown;
-}): ReportData {
-  const scoresRecord = parseJsonb<Record<string, unknown>>(report.scores);
-  const scores = scoresRecord ?? {};
+};
+
+function parseVoiceAnalysis(value: unknown): VoiceAnalysis | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const record = value as Record<string, unknown>;
+
+  const dim = (key: string): VoiceDimension => {
+    const raw = record[key];
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return { score: 0, evidence: [] };
+    const r = raw as Record<string, unknown>;
+    const evidence = Array.isArray(r.evidence)
+      ? r.evidence.filter((item): item is string => typeof item === "string")
+      : [];
+    return {
+      score: typeof r.score === "number" && Number.isFinite(r.score) ? r.score : 0,
+      evidence,
+    };
+  };
 
   return {
-    summary: report.summary,
-    strengths: toStringArray(report.strengths),
-    weaknesses: toStringArray(report.weaknesses),
-    insights: toStringArray(report.insights),
-    evidence: toStringArray(report.evidence),
-    screeningAnswers: toScreeningAnswers(report.screeningAnswers),
-    recommendation: toRecommendation(report.recommendation),
-    scores: {
-      communication: toFiniteScore(scores.communication),
-      problemSolving: toFiniteScore(scores.problemSolving),
-      ownership: toFiniteScore(scores.ownership),
-      roleFit: toFiniteScore(scores.roleFit),
-      overall: toFiniteScore(scores.overall),
-    },
+    clarity: dim("clarity"),
+    articulation: dim("articulation"),
+    conciseness: dim("conciseness"),
+    listening: dim("listening"),
+    confidence: dim("confidence"),
+    overallScore:
+      typeof record.overallScore === "number" && Number.isFinite(record.overallScore)
+        ? record.overallScore
+        : 0,
+    summary: typeof record.summary === "string" ? record.summary : "",
   };
 }
 
-const isGreetingOrFarewell = (content: string) => {
-  const lower = content.toLowerCase().trim();
-  const greetings = [
-    "hi, i am zero",
-    "hi, i'm zero",
-    "thanks for joining",
-    "your interview responses are captured",
-    "zero is compiling your evaluation",
-    "i will ask focused questions",
-    "we will run a focused interview",
-    "in 2-3 questions, i will quickly evaluate",
-  ];
-  return greetings.some((phrase) => lower.includes(phrase));
+const voiceDimensionMeta: Record<
+  keyof Omit<VoiceAnalysis, "overallScore" | "summary">,
+  { label: string }
+> = {
+  clarity: { label: "Clarity" },
+  articulation: { label: "Articulation" },
+  conciseness: { label: "Conciseness" },
+  listening: { label: "Listening" },
+  confidence: { label: "Confidence" },
 };
 
 const getInitials = (name: string) => {
@@ -324,7 +249,7 @@ export function ReportSnapshotCard({
                 {overall}
               </span>
               <span className="mt-0.5 text-[9px] font-medium uppercase tracking-wider text-muted-foreground">
-                /100
+                / 100
               </span>
             </div>
             <Badge variant="outline" className={cn("font-medium", meta.badge)}>
@@ -415,9 +340,7 @@ function TimelineNode({
             className={cn("size-4", iconClass ?? "text-foreground")}
           />
         </div>
-        {!isLast ? (
-          <div className="-mt-1 w-px flex-1 bg-linear-to-b from-border via-border to-transparent" />
-        ) : null}
+        {!isLast ? <div className="-mt-1 w-px flex-1 bg-border" /> : null}
       </div>
 
       <div className={cn("min-w-0 flex-1 pb-10", isLast && "pb-0")}>
@@ -462,9 +385,9 @@ function SignalSection({
       </div>
       {items.length > 0 ? (
         <ul className="space-y-2">
-          {items.map((item) => (
+          {items.map((item, index) => (
             <li
-              key={item}
+              key={index}
               className="flex gap-3 rounded-2xl border border-border/60 bg-muted/15 px-4 py-3 text-sm leading-6 text-foreground"
             >
               <span className="mt-2 size-1.5 shrink-0 rounded-full bg-muted-foreground/60" />
@@ -491,6 +414,7 @@ export function ReportTimeline({
   interview,
   messages,
   reportCreatedAt,
+  communicationAssessment,
   application,
 }: {
   report: ReportData;
@@ -509,7 +433,13 @@ export function ReportTimeline({
     createdAt: Date;
   } | null;
   messages: TranscriptMessage[];
-  reportCreatedAt: Date;
+  reportCreatedAt: Date | null;
+  communicationAssessment: {
+    status: string;
+    transcript: Array<{ role: string; content: string }>;
+    analysis: unknown;
+    completedAt: Date | null;
+  } | null;
   application: {
     candidateName: string;
     candidatePicture: string | null;
@@ -518,7 +448,6 @@ export function ReportTimeline({
   };
 }) {
   const meta = recommendationMeta[report.recommendation];
-  const substantiveMessages = messages.filter((m) => !isGreetingOrFarewell(m.content));
   const overall = Math.round(report.scores.overall);
 
   const candidate: CandidateSummary = {
@@ -640,11 +569,11 @@ export function ReportTimeline({
                   </Badge>
                   <Badge variant="outline" className="gap-1 text-[11px]">
                     <HugeiconsIcon icon={Message01Icon} strokeWidth={2} className="size-3" />
-                    {substantiveMessages.length} message
-                    {substantiveMessages.length === 1 ? "" : "s"}
+                    {messages.length} message
+                    {messages.length === 1 ? "" : "s"}
                   </Badge>
                 </div>
-                <TranscriptDialog messages={substantiveMessages} candidate={candidate} />
+                <TranscriptDialog messages={messages} candidate={candidate} />
               </div>
             </CardContent>
           </Card>
@@ -656,6 +585,49 @@ export function ReportTimeline({
           </Card>
         )}
       </TimelineNode>
+
+      {communicationAssessment?.status === "completed" ? (
+        <TimelineNode
+          icon={Mic01Icon}
+          iconClass="text-foreground"
+          dotClassName="ring-2 ring-border"
+          title="Voice Communication Assessment"
+          timestamp={communicationAssessment.completedAt}
+        >
+          <VoiceAssessmentReportCard
+            transcript={communicationAssessment.transcript}
+            analysis={communicationAssessment.analysis}
+          />
+        </TimelineNode>
+      ) : communicationAssessment?.status === "skipped" ? (
+        <TimelineNode
+          icon={Mic01Icon}
+          iconClass="text-muted-foreground"
+          dotClassName="ring-border bg-muted/30"
+          title="Voice Communication Assessment"
+          timestamp={communicationAssessment.completedAt}
+        >
+          <Card size="sm" className="border-dashed border-border/60">
+            <CardContent className="py-0 text-xs text-muted-foreground">
+              Candidate chose to skip the voice assessment.
+            </CardContent>
+          </Card>
+        </TimelineNode>
+      ) : communicationAssessment != null ? (
+        <TimelineNode
+          icon={Mic01Icon}
+          iconClass="text-muted-foreground"
+          dotClassName="ring-border bg-muted/30"
+          title="Voice Communication Assessment"
+          timestamp={null}
+        >
+          <Card size="sm" className="border-dashed border-border/60">
+            <CardContent className="py-0 text-xs text-muted-foreground">
+              Voice assessment was not completed within the interview window.
+            </CardContent>
+          </Card>
+        </TimelineNode>
+      ) : null}
 
       <TimelineNode
         icon={SparklesIcon}
@@ -743,7 +715,7 @@ export function ReportTimeline({
                         </div>
                         <div className="h-1.5 overflow-hidden rounded-full bg-background">
                           <div
-                            className="h-full rounded-full bg-linear-to-r from-brand/70 to-foreground"
+                            className="h-full rounded-full bg-foreground/80"
                             style={{ width: `${Math.max(0, Math.min(100, score))}%` }}
                           />
                         </div>
@@ -850,6 +822,146 @@ export function ReportTimeline({
           applicant page.
         </p>
       </TimelineNode>
+    </div>
+  );
+}
+
+function VoiceAssessmentReportCard({
+  transcript,
+  analysis,
+}: {
+  transcript: Array<{ role: string; content: string }>;
+  analysis: unknown;
+}) {
+  const parsed = parseVoiceAnalysis(analysis);
+  const overall = parsed ? Math.round(parsed.overallScore) : 0;
+
+  return (
+    <div className="space-y-4">
+      <Card className="border-border/70">
+        <CardContent className="space-y-5 pt-6">
+          {/* Summary + overall */}
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="max-w-xl space-y-2">
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="gap-1 text-[11px]">
+                  <HugeiconsIcon icon={Mic01Icon} strokeWidth={2} className="size-3" />
+                  Voice-blended communication score
+                </Badge>
+              </div>
+              {parsed?.summary ? (
+                <p className="text-sm leading-6 text-foreground">{parsed.summary}</p>
+              ) : (
+                <p className="text-sm text-muted-foreground">No summary available.</p>
+              )}
+            </div>
+            {parsed ? (
+              <div className="flex size-16 shrink-0 flex-col items-center justify-center rounded-3xl border-2 border-border/70 bg-muted/30">
+                <span className="font-mono text-xl font-semibold leading-none">{overall}</span>
+                <span className="mt-1 text-[9px] font-medium uppercase tracking-wider text-muted-foreground">
+                  / 100
+                </span>
+              </div>
+            ) : null}
+          </div>
+
+          {/* Dimension scores */}
+          {parsed ? (
+            <div className="space-y-3 rounded-3xl border border-border/60 bg-muted/20 p-5">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                Dimension scores
+              </p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {(Object.keys(voiceDimensionMeta) as Array<keyof typeof voiceDimensionMeta>).map(
+                  (key) => {
+                    const dim = parsed[key];
+                    const meta = voiceDimensionMeta[key];
+                    const score = Math.round(dim.score);
+                    return (
+                      <div key={key} className="space-y-1.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-medium">{meta.label}</span>
+                          <span className="font-mono text-xs text-muted-foreground">
+                            {score}/100
+                          </span>
+                        </div>
+                        <div className="h-1.5 overflow-hidden rounded-full bg-background">
+                          <div
+                            className="h-full rounded-full bg-foreground/80"
+                            style={{ width: `${Math.max(0, Math.min(100, score))}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  },
+                )}
+              </div>
+            </div>
+          ) : null}
+
+          {/* Key moments — deduplicated evidence across all dimensions */}
+          {parsed ? (
+            <div className="space-y-2">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                Key moments
+              </p>
+              <div className="space-y-2">
+                {(() => {
+                  const allEvidence = new Set<string>();
+                  (
+                    Object.keys(voiceDimensionMeta) as Array<keyof typeof voiceDimensionMeta>
+                  ).forEach((key) => {
+                    parsed[key].evidence.forEach((quote) => {
+                      if (quote.trim().length > 0) {
+                        allEvidence.add(quote.trim());
+                      }
+                    });
+                  });
+                  const uniqueEvidence = Array.from(allEvidence);
+                  if (uniqueEvidence.length === 0) {
+                    return (
+                      <p className="text-xs text-muted-foreground">
+                        No specific evidence recorded.
+                      </p>
+                    );
+                  }
+                  return uniqueEvidence.map((quote, i) => (
+                    <div
+                      key={i}
+                      className="rounded-md border-l-2 border-border bg-muted/30 px-3 py-2 text-xs leading-5 text-muted-foreground"
+                    >
+                      &ldquo;{quote}&rdquo;
+                    </div>
+                  ));
+                })()}
+              </div>
+            </div>
+          ) : null}
+
+          {/* Transcript */}
+          {transcript.length > 0 ? (
+            <div className="space-y-2">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                Transcript
+              </p>
+              <ScrollArea className="h-48 rounded-xl border border-border/60 bg-muted/15 p-3">
+                <div className="space-y-2 pr-3">
+                  {transcript
+                    .filter((m) => m.content.trim().length > 0)
+                    .map((m, i) => (
+                      <p key={i} className="text-xs leading-5">
+                        <span className="font-medium text-foreground">
+                          {m.role === "assistant" ? "Zero" : "Candidate"}:
+                        </span>{" "}
+                        <span className="text-muted-foreground">{m.content}</span>
+                      </p>
+                    ))}
+                </div>
+              </ScrollArea>
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -9,7 +9,9 @@ import {
 import {
   cancelInterview,
   completeInterview,
+  createCommunicationAssessment,
   expireInterview,
+  getCommunicationAssessmentByInterviewId,
   getInterviewByApplicationId,
   getInterviewForCandidateById,
   getInterviewsByCandidate,
@@ -20,6 +22,12 @@ import { getReportByApplicationId } from "@/features/reports/queries/queries_sql
 import { getDb } from "@/shared/db";
 import { markInterviewAgentStarted } from "@/shared/interview-agent-client";
 import { authMiddleware } from "@/shared/middleware";
+import {
+  getVoiceAssessmentTranscript,
+  initializeVoiceAssessmentAgent,
+  markVoiceAssessmentEndIntent,
+  skipVoiceAssessmentAgent,
+} from "@/shared/voice-agent-client";
 
 const interviewIdSchema = z.object({
   interviewId: z.string().uuid(),
@@ -273,7 +281,31 @@ export const completeMyInterview = createServerFn({ method: "POST" })
 
     if (!existingReport) {
       try {
-        await env.POST_EVALUATION.create({ params: { interviewId: data.interviewId } });
+        // Pre-create the voice communication assessment row so the post-eval
+        // workflow knows to wait for the candidate's optional voice call.
+        const existingAssessment = await getCommunicationAssessmentByInterviewId(db, {
+          interviewId: data.interviewId,
+        });
+        if (!existingAssessment) {
+          await createCommunicationAssessment(db, {
+            interviewId: data.interviewId,
+            applicationId: effectiveInterview.applicationId,
+            status: "pending",
+          });
+        }
+      } catch (error) {
+        console.error(
+          `[completeMyInterview] Failed to seed communication assessment row for ${data.interviewId}`,
+          error,
+        );
+      }
+
+      try {
+        await env.POST_EVALUATION.create({
+          // Stable id so VoiceAssessmentAgent can resolve this workflow later.
+          id: data.interviewId,
+          params: { interviewId: data.interviewId },
+        });
       } catch (error) {
         console.error(
           `[completeMyInterview] Failed to trigger post-evaluation for ${data.interviewId}`,
@@ -337,4 +369,126 @@ export const getInterviewForApplication = createServerFn({ method: "GET" })
     }
 
     return interview;
+  });
+
+export const getMyVoiceAssessment = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .inputValidator(zodValidator(interviewIdSchema))
+  .handler(async ({ data, context }) => {
+    const db = getDb();
+
+    if (context.user.role !== "candidate") {
+      throw new Error("Only candidates can view voice assessments");
+    }
+
+    const interview = await getInterviewForCandidateById(db, {
+      id: data.interviewId,
+      candidateId: context.userId,
+    });
+
+    if (!interview) {
+      return null;
+    }
+
+    const assessment = await getCommunicationAssessmentByInterviewId(db, {
+      interviewId: data.interviewId,
+    });
+
+    return {
+      interviewId: interview.id,
+      jobTitle: interview.jobTitle,
+      companyName: interview.companyName,
+      interviewStatus: interview.status,
+      assessment: assessment
+        ? {
+            status: assessment.status,
+            startedAt: assessment.startedAt?.toISOString() ?? null,
+            completedAt: assessment.completedAt?.toISOString() ?? null,
+          }
+        : null,
+    };
+  });
+
+export const initializeMyVoiceAssessment = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .inputValidator(zodValidator(interviewIdSchema))
+  .handler(async ({ data, context }) => {
+    if (context.user.role !== "candidate") {
+      throw new Error("Only candidates can initialize voice assessments");
+    }
+
+    const db = getDb();
+    const interview = await getInterviewForCandidateById(db, {
+      id: data.interviewId,
+      candidateId: context.userId,
+    });
+    if (!interview) {
+      return { ok: false, status: "error" as const };
+    }
+
+    const result = await initializeVoiceAssessmentAgent(data.interviewId);
+    return { ok: result.ok, status: result.status };
+  });
+
+export const markMyVoiceAssessmentEndIntent = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .inputValidator(zodValidator(interviewIdSchema))
+  .handler(async ({ data, context }) => {
+    if (context.user.role !== "candidate") {
+      throw new Error("Only candidates can end voice assessments");
+    }
+
+    const db = getDb();
+    const interview = await getInterviewForCandidateById(db, {
+      id: data.interviewId,
+      candidateId: context.userId,
+    });
+    if (!interview) {
+      return { ok: false };
+    }
+
+    await markVoiceAssessmentEndIntent(data.interviewId);
+    return { ok: true };
+  });
+
+export const getMyVoiceAssessmentTranscript = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .inputValidator(zodValidator(interviewIdSchema))
+  .handler(async ({ data, context }) => {
+    if (context.user.role !== "candidate") {
+      throw new Error("Only candidates can view voice assessment transcripts");
+    }
+
+    const db = getDb();
+    const interview = await getInterviewForCandidateById(db, {
+      id: data.interviewId,
+      candidateId: context.userId,
+    });
+    if (!interview) {
+      return { messages: [] as Array<{ role: string; content: string }> };
+    }
+
+    const result = await getVoiceAssessmentTranscript(data.interviewId);
+    return { messages: result.messages };
+  });
+
+export const skipMyVoiceAssessment = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .inputValidator(zodValidator(interviewIdSchema))
+  .handler(async ({ data, context }) => {
+    if (context.user.role !== "candidate") {
+      throw new Error("Only candidates can skip voice assessments");
+    }
+
+    const db = getDb();
+    const interview = await getInterviewForCandidateById(db, {
+      id: data.interviewId,
+      candidateId: context.userId,
+    });
+    if (!interview) {
+      return { ok: false };
+    }
+
+    await skipVoiceAssessmentAgent(data.interviewId);
+    return { ok: true };
   });
