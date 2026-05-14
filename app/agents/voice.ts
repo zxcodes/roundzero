@@ -15,11 +15,11 @@ import {
   markCommunicationAssessmentStarted,
 } from "@/features/interviews/queries/queries_sql";
 import {
-  buildCommunicationAnalysisPrompt,
+  COMMUNICATION_ASSESSMENT_PROMPT,
   type CommunicationAssessmentAnalysis,
   communicationAssessmentSchema,
 } from "@/prompts/communication-assessment";
-import { buildVoiceAssessmentSystemPrompt } from "@/prompts/voice-assessment";
+import { VOICE_ASSESSMENT_PROMPT } from "@/prompts/voice-assessment";
 import { buildCandidateProfileSummary } from "@/shared/ai-candidate-profile";
 import { getDb } from "@/shared/db";
 import { getModelChain, getOpenRouter } from "@/shared/openrouter";
@@ -204,7 +204,7 @@ export class VoiceAssessmentAgent extends VoiceAgent<Env> {
     const openrouter = getOpenRouter();
     const { model, fallbacks } = getModelChain("voice");
 
-    const systemPrompt = buildVoiceAssessmentSystemPrompt({
+    const systemPrompt = VOICE_ASSESSMENT_PROMPT.build({
       jobTitle: ctx.jobTitle,
       companyName: ctx.companyName,
       candidateName: ctx.candidateName,
@@ -334,7 +334,7 @@ export class VoiceAssessmentAgent extends VoiceAgent<Env> {
   ): Promise<CommunicationAssessmentAnalysis | null> {
     const openrouter = getOpenRouter();
     const { model, fallbacks } = getModelChain("post_eval");
-    const { systemPrompt, userPrompt } = buildCommunicationAnalysisPrompt({
+    const { systemPrompt, userPrompt } = COMMUNICATION_ASSESSMENT_PROMPT.build({
       jobTitle: ctx.jobTitle,
       companyName: ctx.companyName,
       candidateName: ctx.candidateName,
