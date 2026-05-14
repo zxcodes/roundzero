@@ -15,6 +15,7 @@ Implemented in the repo today:
 - in-app notifications with Resend-backed email delivery
 - Cloudflare Workflows for pre-evaluation, post-evaluation, and batch orchestration
 - Cloudflare Agents SDK interview runtime
+- Voice assessment agent for real-time communication evaluation
 - AI pre-evaluation, interviews, reports, and ranked batch release flow
 - billing plan config and Polar webhook handling
 
@@ -56,7 +57,7 @@ The app and AI layer run together inside one Cloudflare Worker:
 
 - `app/server.ts` is the Worker entrypoint
 - TanStack Start handles the main app request flow
-- `routeAgentRequest()` handles interview agent routes
+- `routeAgentRequest()` handles interview and voice agent routes
 - Workflow bindings run pre-evaluation, post-evaluation, and batch-orchestration jobs
 - the Worker scheduled handler periodically checks queued applicant pools and launches batches
 - R2 stores resumes and other assets
@@ -174,6 +175,7 @@ High-level responsibilities:
 - `app/workflows/post-evaluation/workflow.ts`
 - `app/workflows/batch-orchestration/workflow.ts`
 - `app/agents/interview.ts`
+- `app/agents/voice.ts`
 
 ---
 
@@ -308,6 +310,16 @@ Architecturally:
   - `batch_id`
   - `metadata`
   - `invited_at`, `started_at`, `completed_at`, `expired_at`, `cancelled_at`
+
+#### `communication_assessments`
+
+- one row per interview
+- stores voice assessment status and results
+- stores:
+  - `status` (`pending`, `in_progress`, `completed`, `skipped`)
+  - `transcript` — full conversation transcript
+  - `analysis` — 5-dimension scores with evidence
+  - `audio_key`
 
 #### `reports`
 
@@ -568,6 +580,20 @@ Current active interview mode:
 
 - `full`
 
+### Voice Assessment Agent
+
+`app/agents/voice.ts` uses `withVoice(Agent)` from `@cloudflare/voice`.
+
+Current behavior:
+
+- one agent instance per interview, keyed by interview ID
+- speech-to-text via `WorkersAIFluxSTT`, text-to-speech via `WorkersAITTS`
+- LLM-driven conversation with candidate-specific context (job title, company, candidate summary)
+- `##END_CALL##` marker triggers agent-initiated call end
+- caller RPCs for `initialize`, `skip`, `markEndIntent`, and `getTranscript`
+- on completion, runs structured analysis via `generateObject` and persists to `communication_assessments`
+- post-evaluation workflow is signalled when the voice assessment completes
+
 ### Post-Evaluation Workflow
 
 Triggered after interview completion. Steps:
@@ -594,6 +620,7 @@ Batch release is a first-class workflow:
 
 - `pre_evaluations`
 - `interviews`
+- `communication_assessments`
 - `reports`
 - `job_batches`
 - applicant and batch notifications
