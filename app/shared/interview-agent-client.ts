@@ -1,8 +1,7 @@
 import { env } from "cloudflare:workers";
-import { getAgentByName } from "agents";
 
 const createAgentStub = async (interviewId: string) => {
-  return await getAgentByName(env.INTERVIEW_AGENT, interviewId);
+  return env.INTERVIEW_AGENT.getByName(interviewId);
 };
 
 export const initializeInterviewAgent = async (interviewId: string) => {
