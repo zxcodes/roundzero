@@ -10,6 +10,7 @@ import {
   countJobsByCompanyAndStatus,
   getJobsWithPipelineByCompanyId,
 } from "@/features/jobs/queries/queries_sql";
+import { getOverallScore } from "@/features/reports/schemas";
 import { getDb } from "@/shared/db";
 import { authMiddleware } from "@/shared/middleware";
 
@@ -108,18 +109,7 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
             continue;
           }
 
-          const reportScores =
-            typeof applicant.reportScores === "object" && applicant.reportScores !== null
-              ? (applicant.reportScores as Record<string, unknown>)
-              : null;
-
-          const overallScoreRaw = reportScores?.overall;
-          const overallScore =
-            typeof overallScoreRaw === "number"
-              ? Math.round(overallScoreRaw)
-              : typeof overallScoreRaw === "string"
-                ? Number.parseInt(overallScoreRaw, 10)
-                : null;
+          const score = getOverallScore(applicant.reportScores);
 
           reportHighlights.push({
             applicationId: applicant.id,
@@ -128,7 +118,7 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
             candidateName: applicant.candidateName,
             candidateEmail: applicant.candidateEmail,
             recommendation: applicant.reportRecommendation ?? "unknown",
-            overallScore: Number.isFinite(overallScore ?? NaN) ? overallScore : null,
+            overallScore: score !== null ? Math.round(score) : null,
           });
         }
       }

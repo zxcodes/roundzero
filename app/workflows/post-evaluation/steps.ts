@@ -4,6 +4,7 @@ import { generateText, Output } from "ai";
 import type { Sql } from "postgres";
 import { jsx } from "react/jsx-runtime";
 import { Resend } from "resend";
+import { z } from "zod";
 import { updateApplicationStatus } from "@/features/applications/queries/queries_sql";
 import { getUserById } from "@/features/auth/queries/queries_sql";
 import {
@@ -170,89 +171,43 @@ function fallbackReportFromText(interviewData: {
   };
 }
 
+const interviewAgentMessageSchema = z.object({
+  role: z.enum(["assistant", "candidate"]),
+  content: z.string(),
+  createdAt: z.string(),
+});
+
 function isInterviewAgentState(value: unknown): value is InterviewAgentState {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-
-  const candidate = value as { messages?: unknown };
-  if (!Array.isArray(candidate.messages)) {
-    return false;
-  }
-
-  return candidate.messages.every((message) => {
-    if (typeof message !== "object" || message === null) {
-      return false;
-    }
-
-    const record = message as Record<string, unknown>;
-    return (
-      (record.role === "assistant" || record.role === "candidate") &&
-      typeof record.content === "string" &&
-      typeof record.createdAt === "string"
-    );
-  });
+  if (typeof value !== "object" || value === null) return false;
+  return z.array(interviewAgentMessageSchema).safeParse((value as { messages?: unknown }).messages)
+    .success;
 }
 
+const interviewContextStateSchema = z.object({
+  jobDescription: z.string().default(""),
+  jobRequirements: z.array(z.string()).default([]),
+  candidateSummary: z.string().default(""),
+  customQuestions: z.array(z.string()).default([]),
+  preEvaluation: z
+    .object({
+      score: z.number().nullable().default(null),
+      missingRequirements: z.array(z.string()).default([]),
+      consistencyScore: z.number().nullable().default(null),
+      authenticityFlags: z.array(z.string()).default([]),
+      authenticityExplanation: z.string().nullable().default(null),
+    })
+    .default({
+      score: null,
+      missingRequirements: [],
+      consistencyScore: null,
+      authenticityFlags: [],
+      authenticityExplanation: null,
+    }),
+});
+
 function parseInterviewContextState(metadata: unknown): InterviewContextState {
-  if (typeof metadata !== "object" || metadata === null) {
-    return {
-      jobDescription: "",
-      jobRequirements: [],
-      candidateSummary: "",
-      customQuestions: [],
-      preEvaluation: {
-        score: null,
-        missingRequirements: [],
-        consistencyScore: null,
-        authenticityFlags: [],
-        authenticityExplanation: null,
-      },
-    };
-  }
-
-  const record = metadata as Record<string, unknown>;
-
-  const jobDescription = typeof record.jobDescription === "string" ? record.jobDescription : "";
-  const jobRequirements = Array.isArray(record.jobRequirements)
-    ? record.jobRequirements.filter(
-        (requirement): requirement is string => typeof requirement === "string",
-      )
-    : [];
-  const candidateSummary =
-    typeof record.candidateSummary === "string" ? record.candidateSummary : "";
-  const customQuestions = Array.isArray(record.customQuestions)
-    ? record.customQuestions.filter((question): question is string => typeof question === "string")
-    : [];
-
-  const preEvaluationRaw =
-    typeof record.preEvaluation === "object" && record.preEvaluation !== null
-      ? (record.preEvaluation as Record<string, unknown>)
-      : {};
-
-  const preEvaluation = {
-    score: typeof preEvaluationRaw.score === "number" ? preEvaluationRaw.score : null,
-    missingRequirements: Array.isArray(preEvaluationRaw.missingRequirements)
-      ? preEvaluationRaw.missingRequirements.filter(
-          (requirement): requirement is string => typeof requirement === "string",
-        )
-      : [],
-    consistencyScore:
-      typeof preEvaluationRaw.consistencyScore === "number"
-        ? preEvaluationRaw.consistencyScore
-        : null,
-    authenticityFlags: Array.isArray(preEvaluationRaw.authenticityFlags)
-      ? preEvaluationRaw.authenticityFlags.filter(
-          (flag): flag is string => typeof flag === "string",
-        )
-      : [],
-    authenticityExplanation:
-      typeof preEvaluationRaw.authenticityExplanation === "string"
-        ? preEvaluationRaw.authenticityExplanation
-        : null,
-  };
-
-  return { jobDescription, jobRequirements, candidateSummary, customQuestions, preEvaluation };
+  const parsed = interviewContextStateSchema.safeParse(metadata);
+  return parsed.success ? parsed.data : interviewContextStateSchema.parse({});
 }
 
 // ─── Steps ─────────────────────────────────────────────────────────────────

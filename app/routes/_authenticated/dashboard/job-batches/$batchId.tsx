@@ -20,6 +20,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { getBatchOverview } from "@/features/batches/server/functions";
+import { getOverallScore } from "@/features/reports/schemas";
 import { formatDateTime } from "@/shared/date";
 import { validateUuidParams } from "@/shared/validation";
 
@@ -80,12 +81,6 @@ const interviewStatusMeta: Record<string, { label: string; className: string }> 
     className: "bg-muted text-muted-foreground",
   },
 };
-
-function getOverallScore(scores: unknown): number | null {
-  if (typeof scores !== "object" || scores === null) return null;
-  const overall = (scores as Record<string, unknown>).overall;
-  return typeof overall === "number" && Number.isFinite(overall) ? overall : null;
-}
 
 function initialsOf(name: string) {
   return name

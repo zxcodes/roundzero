@@ -17,28 +17,27 @@ const applicationIdSchema = z.object({
   applicationId: z.string().uuid(),
 });
 
-type InterviewAgentMessage = {
-  role: "assistant" | "candidate";
-  content: string;
-  createdAt: string;
-};
+const interviewAgentMessageSchema = z.object({
+  role: z.enum(["assistant", "candidate"]),
+  content: z.string(),
+  createdAt: z.string(),
+});
 
-type InterviewAgentState = {
-  messages: InterviewAgentMessage[];
-};
+const interviewMetadataSchema = z.object({
+  candidateSummary: z.string().optional(),
+});
 
 const getInterviewStateForCompany = async (interviewId: string) => {
   try {
     const payload = await getInterviewAgentState(interviewId);
-    if (!payload || !Array.isArray((payload as InterviewAgentState).messages)) {
-      return null;
+    if (!payload || typeof payload !== "object" || !("messages" in payload)) return null;
+    const rawMessages = (payload as { messages: unknown }).messages;
+    if (!Array.isArray(rawMessages)) return null;
+    const messages: { role: "assistant" | "candidate"; content: string; createdAt: string }[] = [];
+    for (const m of rawMessages) {
+      const parsed = interviewAgentMessageSchema.safeParse(m);
+      if (parsed.success) messages.push(parsed.data);
     }
-    const messages = (payload as InterviewAgentState).messages.filter(
-      (m) =>
-        (m.role === "assistant" || m.role === "candidate") &&
-        typeof m.content === "string" &&
-        typeof m.createdAt === "string",
-    );
     return { messages };
   } catch {
     return null;
@@ -48,14 +47,10 @@ const getInterviewStateForCompany = async (interviewId: string) => {
 const getInterviewFallbackTimeline = (
   interview: NonNullable<Awaited<ReturnType<typeof getInterviewByApplicationId>>>,
 ) => {
-  const metadataRecord =
-    typeof interview.metadata === "object" && interview.metadata !== null
-      ? (interview.metadata as Record<string, unknown>)
-      : {};
-
+  const parsed = interviewMetadataSchema.safeParse(interview.metadata);
   const summary =
-    typeof metadataRecord.candidateSummary === "string"
-      ? metadataRecord.candidateSummary
+    parsed.success && parsed.data.candidateSummary
+      ? parsed.data.candidateSummary
       : "Interview completed in agents workspace.";
 
   return {

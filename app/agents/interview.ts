@@ -319,19 +319,20 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
       )
       .values();
 
+    const applicationMetadataSchema = z
+      .object({
+        resumeText: z.string().optional(),
+        summary: z.string().optional(),
+      })
+      .passthrough();
     const applicationMetadata =
-      typeof applicationRows[0]?.[0] === "object" && applicationRows[0][0] !== null
-        ? (applicationRows[0][0] as Record<string, unknown>)
-        : {};
-
+      applicationMetadataSchema.safeParse(applicationRows[0]?.[0] ?? {}).data ?? {};
     const candidateName = typeof applicationRows[0]?.[1] === "string" ? applicationRows[0][1] : "";
 
     const candidateSummaryRaw =
-      typeof applicationMetadata.resumeText === "string"
-        ? applicationMetadata.resumeText
-        : typeof applicationMetadata.summary === "string"
-          ? applicationMetadata.summary
-          : buildCandidateProfileSummary(applicationMetadata);
+      applicationMetadata.resumeText ??
+      applicationMetadata.summary ??
+      buildCandidateProfileSummary(applicationMetadata);
 
     const candidateSummary = candidateSummaryRaw.slice(0, 12000);
 
@@ -353,16 +354,17 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
       .values();
 
     const preRow = preEvaluationRows[0];
-    const slopCheckRecord =
-      typeof preRow?.[3] === "object" && preRow[3] !== null && !Array.isArray(preRow[3])
-        ? (preRow[3] as Record<string, unknown>).slopCheck
-        : null;
-    const slopCheck =
-      typeof slopCheckRecord === "object" &&
-      slopCheckRecord !== null &&
-      !Array.isArray(slopCheckRecord)
-        ? (slopCheckRecord as Record<string, unknown>)
-        : {};
+    const rawResponseSchema = z.object({ slopCheck: z.unknown().optional() }).passthrough();
+    const rawResponse = rawResponseSchema.safeParse(preRow?.[3]);
+    const slopCheckSchema = z
+      .object({
+        redFlags: z.array(z.string()).optional(),
+        explanation: z.string().optional(),
+      })
+      .passthrough();
+    const slopCheck = rawResponse.success
+      ? slopCheckSchema.parse(rawResponse.data.slopCheck ?? {})
+      : {};
 
     const ctx: InterviewContextState = {
       interviewId: context.id,

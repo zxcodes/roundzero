@@ -6,6 +6,7 @@ import {
 } from "@cloudflare/voice";
 import { Agent, type Connection, callable } from "agents";
 import { generateText, Output, streamText } from "ai";
+import { z } from "zod";
 import {
   completeCommunicationAssessment,
   createCommunicationAssessment,
@@ -94,17 +95,19 @@ export class VoiceAssessmentAgent extends VoiceAgent<Env> {
       .unsafe(`SELECT a.metadata FROM applications a WHERE a.id = $1`, [interview.applicationId])
       .values();
 
+    const applicationMetadataSchema = z
+      .object({
+        resumeText: z.string().optional(),
+        summary: z.string().optional(),
+      })
+      .passthrough();
     const applicationMetadata =
-      typeof applicationRows[0]?.[0] === "object" && applicationRows[0][0] !== null
-        ? (applicationRows[0][0] as Record<string, unknown>)
-        : {};
+      applicationMetadataSchema.safeParse(applicationRows[0]?.[0] ?? {}).data ?? {};
 
     const candidateSummaryRaw =
-      typeof applicationMetadata.resumeText === "string"
-        ? applicationMetadata.resumeText
-        : typeof applicationMetadata.summary === "string"
-          ? applicationMetadata.summary
-          : buildCandidateProfileSummary(applicationMetadata);
+      applicationMetadata.resumeText ??
+      applicationMetadata.summary ??
+      buildCandidateProfileSummary(applicationMetadata);
 
     const ctx: VoiceAssessmentContext = {
       interviewId: interview.id,

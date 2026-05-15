@@ -11,6 +11,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import type { getJobApplicants } from "@/features/applications/server/functions";
+import { getOverallScore } from "@/features/reports/schemas";
 
 const recommendationMeta: Record<string, { label: string; className: string }> = {
   strong_yes: {
@@ -30,31 +31,6 @@ const recommendationMeta: Record<string, { label: string; className: string }> =
     className: "border-danger/20 bg-danger/10 text-danger",
   },
 };
-
-function getOverallScore(reportScores: unknown): number | null {
-  if (typeof reportScores === "string") {
-    try {
-      const parsed = JSON.parse(reportScores) as unknown;
-      if (
-        typeof parsed === "object" &&
-        parsed !== null &&
-        "overall" in (parsed as Record<string, unknown>)
-      ) {
-        const score = (parsed as Record<string, unknown>).overall;
-        return typeof score === "number" && Number.isFinite(score) ? score : null;
-      }
-    } catch {
-      return null;
-    }
-  }
-
-  if (typeof reportScores === "object" && reportScores !== null && !Array.isArray(reportScores)) {
-    const score = (reportScores as Record<string, unknown>).overall;
-    return typeof score === "number" && Number.isFinite(score) ? score : null;
-  }
-
-  return null;
-}
 
 export function CompanyJobApplicantsList({
   applicants,

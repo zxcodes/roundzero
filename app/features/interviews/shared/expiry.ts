@@ -1,19 +1,13 @@
+import { z } from "zod";
+
+const metadataSchema = z.object({ expiresAt: z.string().optional() });
+
 export const getInterviewExpiresAt = (metadata: unknown): Date | null => {
-  if (!metadata || typeof metadata !== "object") {
-    return null;
-  }
-
-  const expiresAtValue = (metadata as Record<string, unknown>).expiresAt;
-  if (typeof expiresAtValue !== "string") {
-    return null;
-  }
-
-  const expiresAt = new Date(expiresAtValue);
-  if (Number.isNaN(expiresAt.getTime())) {
-    return null;
-  }
-
-  return expiresAt;
+  const parsed = metadataSchema.safeParse(metadata);
+  if (!parsed.success) return null;
+  if (!parsed.data.expiresAt) return null;
+  const expiresAt = new Date(parsed.data.expiresAt);
+  return Number.isNaN(expiresAt.getTime()) ? null : expiresAt;
 };
 
 export const shouldAutoExpireInterview = (status: string, metadata: unknown): boolean => {
