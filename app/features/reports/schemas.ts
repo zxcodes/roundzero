@@ -1,14 +1,12 @@
 import { z } from "zod";
 
-export const reportScoresSchema = z.object({
+const reportScoresSchema = z.object({
   communication: z.number().min(0).max(100),
   problemSolving: z.number().min(0).max(100),
   ownership: z.number().min(0).max(100),
   roleFit: z.number().min(0).max(100),
   overall: z.number().min(0).max(100),
 });
-
-export type ReportScores = z.infer<typeof reportScoresSchema>;
 
 export const reportSchema = z
   .object({
