@@ -1,4 +1,5 @@
 import type { Sql } from "postgres";
+import { z } from "zod";
 import { getUserById } from "@/features/auth/queries/queries_sql";
 import {
   getCandidateProfileByUserId,
@@ -184,10 +185,10 @@ export const updateApplicationStatusWorkflow = async (
       throw new Error("Failed to create interview invite");
     }
 
-    const metadata =
-      typeof interview.metadata === "object" && interview.metadata !== null
-        ? (interview.metadata as Record<string, unknown>)
-        : {};
+    const metadataSchema = z.object({ expiresAt: z.string().optional() });
+    const parsedMetadata = metadataSchema.safeParse(interview.metadata);
+    const metadata = parsedMetadata.success ? parsedMetadata.data : {};
+    const expiresAtValue = metadata.expiresAt ?? expiresAt;
 
     const payload = notificationPayloadSchemas.interview_invited.parse({
       applicationId: application.id,
@@ -195,7 +196,7 @@ export const updateApplicationStatusWorkflow = async (
       jobId: application.jobId,
       jobTitle: application.jobTitle,
       interviewType: interview.type,
-      expiresAt: typeof metadata.expiresAt === "string" ? metadata.expiresAt : expiresAt,
+      expiresAt: expiresAtValue,
     });
 
     const notification = await createNotification(db, {

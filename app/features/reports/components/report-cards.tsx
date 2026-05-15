@@ -23,6 +23,7 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import { z } from "zod";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,21 @@ import { InterviewTranscript } from "@/features/interviews/components/interview-
 import type { ReportData } from "@/features/reports/schemas";
 import { cn } from "@/lib/utils";
 import { formatDateShort, formatDateTimeUtc } from "@/shared/date";
+
+const voiceDimensionSchema = z.object({
+  score: z.number().default(0),
+  evidence: z.array(z.string()).default([]),
+});
+
+const voiceAnalysisSchema = z.object({
+  clarity: voiceDimensionSchema,
+  articulation: voiceDimensionSchema,
+  conciseness: voiceDimensionSchema,
+  listening: voiceDimensionSchema,
+  confidence: voiceDimensionSchema,
+  overallScore: z.number().default(0),
+  summary: z.string().default(""),
+});
 
 type Recommendation = ReportData["recommendation"];
 
@@ -134,50 +150,11 @@ const concernMeta: Record<
 
 // ---- Voice communication assessment parsing ----
 
-type VoiceDimension = {
-  score: number;
-  evidence: string[];
-};
-
-type VoiceAnalysis = {
-  clarity: VoiceDimension;
-  articulation: VoiceDimension;
-  conciseness: VoiceDimension;
-  listening: VoiceDimension;
-  confidence: VoiceDimension;
-  overallScore: number;
-  summary: string;
-};
+type VoiceAnalysis = z.infer<typeof voiceAnalysisSchema>;
 
 function parseVoiceAnalysis(value: unknown): VoiceAnalysis | null {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  const record = value as Record<string, unknown>;
-
-  const dim = (key: string): VoiceDimension => {
-    const raw = record[key];
-    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return { score: 0, evidence: [] };
-    const r = raw as Record<string, unknown>;
-    const evidence = Array.isArray(r.evidence)
-      ? r.evidence.filter((item): item is string => typeof item === "string")
-      : [];
-    return {
-      score: typeof r.score === "number" && Number.isFinite(r.score) ? r.score : 0,
-      evidence,
-    };
-  };
-
-  return {
-    clarity: dim("clarity"),
-    articulation: dim("articulation"),
-    conciseness: dim("conciseness"),
-    listening: dim("listening"),
-    confidence: dim("confidence"),
-    overallScore:
-      typeof record.overallScore === "number" && Number.isFinite(record.overallScore)
-        ? record.overallScore
-        : 0,
-    summary: typeof record.summary === "string" ? record.summary : "",
-  };
+  const parsed = voiceAnalysisSchema.safeParse(value);
+  return parsed.success ? parsed.data : null;
 }
 
 const voiceDimensionMeta: Record<
@@ -874,7 +851,7 @@ function VoiceAssessmentReportCard({
               <div className="grid gap-4 sm:grid-cols-2">
                 {(Object.keys(voiceDimensionMeta) as Array<keyof typeof voiceDimensionMeta>).map(
                   (key) => {
-                    const dim = parsed[key];
+                    const dim = parsed[key as keyof typeof voiceDimensionMeta];
                     const meta = voiceDimensionMeta[key];
                     const score = Math.round(dim.score);
                     return (
@@ -911,7 +888,7 @@ function VoiceAssessmentReportCard({
                   (
                     Object.keys(voiceDimensionMeta) as Array<keyof typeof voiceDimensionMeta>
                   ).forEach((key) => {
-                    parsed[key].evidence.forEach((quote) => {
+                    parsed[key as keyof typeof voiceDimensionMeta].evidence.forEach((quote) => {
                       if (quote.trim().length > 0) {
                         allEvidence.add(quote.trim());
                       }

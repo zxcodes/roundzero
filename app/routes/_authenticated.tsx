@@ -11,9 +11,8 @@ export const Route = createFileRoute("/_authenticated")({
     }
 
     const isOnboardingRoute = location.pathname.startsWith("/onboarding");
-    const redirectParam = (location.search as Record<string, unknown>)?.redirect as
-      | string
-      | undefined;
+    const redirectParam =
+      "redirect" in location.search ? String(location.search.redirect) : undefined;
     const search = redirectParam ? { redirect: redirectParam } : {};
 
     if (context.isCompany) {

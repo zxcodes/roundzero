@@ -1,109 +1,59 @@
-type CandidateWorkHistoryEntry = {
-  company: string;
-  title: string;
-  startMonth: string | null;
-  endMonth: string | null;
-  currentlyWorkingHere: boolean;
-  description: string | null;
-};
+import { z } from "zod";
 
-type CandidateLinkEntry = {
-  label: string;
-  url: string;
-};
+const workHistoryEntrySchema = z
+  .object({
+    company: z.string().min(1),
+    title: z.string().min(1),
+    startMonth: z.string().nullable().default(null),
+    endMonth: z.string().nullable().default(null),
+    currentlyWorkingHere: z.boolean().default(false),
+    description: z.string().nullable().default(null),
+  })
+  .transform((entry) => ({
+    company: entry.company,
+    title: entry.title,
+    startMonth: entry.startMonth,
+    endMonth: entry.endMonth,
+    currentlyWorkingHere: entry.currentlyWorkingHere,
+    description: entry.description,
+  }));
 
-export type CandidateProfileSnapshot = {
-  headline: string | null;
-  bio: string | null;
-  skills: string[];
-  workHistory: CandidateWorkHistoryEntry[];
-  links: CandidateLinkEntry[];
-};
+const workHistorySchema = z.array(z.unknown()).transform((arr) =>
+  arr.flatMap((entry) => {
+    const parsed = workHistoryEntrySchema.safeParse(entry);
+    return parsed.success ? [parsed.data] : [];
+  }),
+);
 
-const toTrimmedStringOrNull = (value: unknown) => {
-  if (typeof value !== "string") {
-    return null;
-  }
-
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
-};
-
-const toTrimmedStringArray = (value: unknown) => {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value
-    .filter((entry): entry is string => typeof entry === "string")
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.length > 0);
-};
-
-const toWorkHistory = (value: unknown): CandidateWorkHistoryEntry[] => {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value.flatMap((entry) => {
-    if (typeof entry !== "object" || entry === null) {
-      return [];
-    }
-
-    const record = entry as Record<string, unknown>;
-    const company = toTrimmedStringOrNull(record.company);
-    const title = toTrimmedStringOrNull(record.title);
-
-    if (!company || !title) {
-      return [];
-    }
-
-    return [
-      {
-        company,
-        title,
-        startMonth: toTrimmedStringOrNull(record.startMonth),
-        endMonth: toTrimmedStringOrNull(record.endMonth),
-        currentlyWorkingHere: record.currentlyWorkingHere === true,
-        description: toTrimmedStringOrNull(record.description),
-      },
-    ];
-  });
-};
-
-const toLinks = (value: unknown): CandidateLinkEntry[] => {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    return [];
-  }
-
-  return Object.entries(value)
+const linksSchema = z.record(z.string(), z.string()).transform((record) =>
+  Object.entries(record)
     .flatMap(([label, url]) => {
-      const normalizedUrl = toTrimmedStringOrNull(url);
-      return normalizedUrl ? [{ label, url: normalizedUrl }] : [];
+      const trimmed = url.trim();
+      return trimmed.length > 0 ? [{ label, url: trimmed }] : [];
     })
-    .sort((a, b) => a.label.localeCompare(b.label));
-};
+    .sort((a, b) => a.label.localeCompare(b.label)),
+);
+
+const candidateProfileSnapshotSchema = z
+  .object({
+    headline: z.string().nullable().default(null),
+    bio: z.string().nullable().default(null),
+    skills: z.array(z.string()).default([]),
+    workHistory: workHistorySchema.default([]),
+    links: linksSchema,
+  })
+  .catch(() => ({
+    headline: null,
+    bio: null,
+    skills: [],
+    workHistory: [],
+    links: [],
+  }));
+
+export type CandidateProfileSnapshot = z.infer<typeof candidateProfileSnapshotSchema>;
 
 export function parseCandidateProfileSnapshot(candidateMeta: unknown): CandidateProfileSnapshot {
-  if (typeof candidateMeta !== "object" || candidateMeta === null) {
-    return {
-      headline: null,
-      bio: null,
-      skills: [],
-      workHistory: [],
-      links: [],
-    };
-  }
-
-  const record = candidateMeta as Record<string, unknown>;
-
-  return {
-    headline: toTrimmedStringOrNull(record.headline),
-    bio: toTrimmedStringOrNull(record.bio),
-    skills: toTrimmedStringArray(record.skills),
-    workHistory: toWorkHistory(record.workHistory),
-    links: toLinks(record.links),
-  };
+  return candidateProfileSnapshotSchema.parse(candidateMeta);
 }
 
 export function buildCandidateProfilePromptPayload(candidateMeta: unknown) {

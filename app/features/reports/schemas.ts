@@ -1,5 +1,15 @@
 import { z } from "zod";
 
+export const reportScoresSchema = z.object({
+  communication: z.number().min(0).max(100),
+  problemSolving: z.number().min(0).max(100),
+  ownership: z.number().min(0).max(100),
+  roleFit: z.number().min(0).max(100),
+  overall: z.number().min(0).max(100),
+});
+
+export type ReportScores = z.infer<typeof reportScoresSchema>;
+
 export const reportSchema = z
   .object({
     summary: z.string(),
@@ -15,15 +25,14 @@ export const reportSchema = z
         notes: z.string(),
       }),
     ),
-    scores: z.object({
-      communication: z.number().min(0).max(100),
-      problemSolving: z.number().min(0).max(100),
-      ownership: z.number().min(0).max(100),
-      roleFit: z.number().min(0).max(100),
-      overall: z.number().min(0).max(100),
-    }),
+    scores: reportScoresSchema,
     recommendation: z.enum(["strong_yes", "yes", "lean_no", "no"]),
   })
   .strict();
 
 export type ReportData = z.infer<typeof reportSchema>;
+
+export function getOverallScore(scores: unknown): number | null {
+  const parsed = reportScoresSchema.safeParse(scores);
+  return parsed.success ? parsed.data.overall : null;
+}
