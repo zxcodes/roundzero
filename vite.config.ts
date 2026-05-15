@@ -13,9 +13,7 @@ const config = defineConfig({
     devtools(),
     cloudflare({ viteEnvironment: { name: "ssr" } }),
     tailwindcss(),
-    tanstackStart({
-      srcDirectory: "app",
-    }),
+    tanstackStart({ srcDirectory: "app" }),
     viteReact(),
     babel({ presets: [reactCompilerPreset(), decoratorPreset({ version: "2023-11" })] }),
   ],

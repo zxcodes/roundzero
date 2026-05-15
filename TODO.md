@@ -164,6 +164,7 @@
 - check about data retention & allowing people to delete accounts.
 - planetscale for db?
 - analytics? stretch? or just have a basic admin dashboard with stats (should be good enough for the start).
+- enable min release age in prod.
 
 
 
