@@ -174,7 +174,7 @@ export function readApplicationData(
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
   return async () => {
-    log.step("read", "Loading application from DB");
+    log.step("load_application", "Loading application from DB");
     const db = getDb();
     const application = await getApplicationById(db, { id: applicationId });
     if (!application) {
@@ -189,7 +189,7 @@ export function readApplicationData(
       throw new NonRetryableError(`Job not found: ${application.jobId}`);
     }
 
-    log.result("read", {
+    log.result("load_application", {
       jobTitle: job.title,
       jobId: job.id,
       resumeKey: application.resumeKey,
@@ -205,7 +205,7 @@ export function fetchAndExtractResume(
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
   return async () => {
-    log.step("resume", "Fetching from R2 and extracting text");
+    log.step("extract_resume", "Fetching from R2 and extracting text");
     if (!resumeKey) {
       throw new Error(`Application has no resume: ${applicationId}`);
     }
@@ -225,7 +225,7 @@ export function fetchAndExtractResume(
     const bytes = new Uint8Array(arrayBuffer);
     log.info(`Resume format: ${contentType}, size: ${bytes.length} bytes`);
     const text = await extractResumeText(bytes, contentType);
-    log.result("resume", { chars: text.length, words: text.split(/\s+/).length });
+    log.result("extract_resume", { chars: text.length, words: text.split(/\s+/).length });
     return text;
   };
 }
@@ -236,7 +236,7 @@ export function classifyJobType(
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
   return async () => {
-    log.step("classify", "Classifying job type for role-specific evaluation");
+    log.step("classify_job", "Classifying job type for role-specific evaluation");
     const prompt = JSON.stringify({
       jobTitle,
       jobDescription,
@@ -257,7 +257,7 @@ export function classifyJobType(
       };
 
       log.ai(prompt.length, usage.outputTokens, latency, CLASSIFY_JOB_SYSTEM_PROMPT.version);
-      log.result("classify", {
+      log.result("classify_job", {
         roleType: result.roleType,
         reasoning: result.reasoning,
       });
@@ -279,7 +279,7 @@ export function detectSlop(
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
   return async (): Promise<SlopCheckResult> => {
-    log.step("slop", "Running consistency check: profile vs resume");
+    log.step("check_consistency", "Running consistency check: profile vs resume");
     const prompt = buildSlopDetectionPrompt(candidateMeta, resumeText);
 
     const startTime = Date.now();
@@ -298,7 +298,7 @@ export function detectSlop(
       };
 
       log.ai(prompt.length, usage.outputTokens, latency, SLOP_DETECTION_SYSTEM_PROMPT.version);
-      log.result("slop", {
+      log.result("check_consistency", {
         consistencyScore: result.consistencyScore,
         redFlags: result.redFlags.length,
         explanation: result.explanation,
@@ -330,7 +330,7 @@ export function runAiPreEvaluation(
     result: PreEvaluationResult;
     rawResponse: RawPreEvaluationModelResponse | { error: string };
   }> => {
-    log.step("ai", "Calling OpenRouter for pre-evaluation");
+    log.step("evaluate", "Calling OpenRouter for pre-evaluation");
     const promptMeta = getPromptForRoleType(roleType);
     const systemPrompt = promptMeta.prompt;
     const promptVersion = promptMeta.version;
@@ -353,7 +353,7 @@ export function runAiPreEvaluation(
       };
 
       log.ai(userPrompt.length, usage.outputTokens, latency, promptVersion);
-      log.result("ai", {
+      log.result("evaluate", {
         score: result.score,
         confidence: result.confidence,
         modelNextStep: result.modelNextStep,
@@ -389,7 +389,7 @@ export function writePreEvaluation(
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
   return async () => {
-    log.step("write", "Saving pre-evaluation to DB");
+    log.step("save_pre_eval", "Saving pre-evaluation to DB");
     const db = getDb();
     await db.begin(async (tx) => {
       const transaction = tx as unknown as Sql;
@@ -422,7 +422,7 @@ export function writePreEvaluation(
       });
     });
 
-    log.result("write", {
+    log.result("save_pre_eval", {
       status: "pre_screening",
       consistencyScore: slopCheck.consistencyScore,
     });
