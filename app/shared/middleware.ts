@@ -1,7 +1,6 @@
 import { createMiddleware } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { getUserById } from "@/features/auth/queries/queries_sql";
-import { hasActiveSubscription } from "@/features/billing/config";
 import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { type SessionData, sessionConfig } from "@/shared/session";
@@ -42,23 +41,4 @@ export const companyMiddleware = createMiddleware()
     }
 
     return next({ context: { company } });
-  });
-
-/**
- * Requires an active paid subscription (pro or enterprise).
- * Use for server functions that gate paid-only features.
- */
-export const requireSubscription = createMiddleware()
-  .middleware([companyMiddleware])
-  .server(async ({ next, context }) => {
-    if (
-      !hasActiveSubscription({
-        subscriptionPlan: context.company.subscriptionPlan,
-        subscriptionStatus: context.company.subscriptionStatus,
-      })
-    ) {
-      throw new Error("This feature requires a Pro subscription.");
-    }
-
-    return next();
   });
