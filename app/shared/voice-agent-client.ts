@@ -1,5 +1,4 @@
 import { env } from "cloudflare:workers";
-import { getAgentByName } from "agents";
 
 type VoiceAgentStub = {
   initialize(): Promise<{ ok: true; status: string }>;
@@ -9,11 +8,7 @@ type VoiceAgentStub = {
 };
 
 const createVoiceAgentStub = async (interviewId: string): Promise<VoiceAgentStub> => {
-  return (await getAgentByName(
-    // biome-ignore lint/suspicious/noExplicitAny: binding not fully typed until wrangler types is rerun
-    env.VOICE_ASSESSMENT_AGENT as any,
-    interviewId,
-  )) as unknown as VoiceAgentStub;
+  return env.VOICE_ASSESSMENT_AGENT.getByName(interviewId);
 };
 
 export const initializeVoiceAssessmentAgent = async (interviewId: string) => {
