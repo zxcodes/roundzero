@@ -25,7 +25,9 @@ import { buildCandidateProfileSummary } from "@/shared/ai-candidate-profile";
 import { getDb } from "@/shared/db";
 import { getModelChain, getOpenRouter } from "@/shared/openrouter";
 
-const VoiceAgent = withVoice(Agent, { audioFormat: "mp3", historyLimit: 30 });
+// `opus` keeps payloads small and is decoded with lower latency than `mp3`
+// in modern browsers — meaningful for real-time voice.
+const VoiceAgent = withVoice(Agent, { audioFormat: "opus", historyLimit: 30 });
 
 const END_CALL_MARKER = "##END_CALL##";
 
@@ -74,6 +76,12 @@ export class VoiceAssessmentAgent extends VoiceAgent<Env> {
   // Per-process cached interview context. Cheaper than re-querying every turn,
   // and harmless if lost on hibernation (re-loaded on next access).
   private _context: VoiceAssessmentContext | null = null;
+
+  // Per-connection flag: set in beforeSynthesize when the LLM emits the
+  // end-call marker, consumed in afterSynthesize so we can fire forceEndCall
+  // *after* the closing audio is synthesized — even though beforeSynthesize
+  // strips the marker out of the speakable text.
+  private _endRequestedFor = new Set<string>();
 
   private updateState(patch: Partial<VoiceAssessmentState>) {
     this.setState({ ...this.s, ...patch, updatedAt: toNow() });
@@ -214,10 +222,12 @@ export class VoiceAssessmentAgent extends VoiceAgent<Env> {
       candidateSummary: ctx.candidateSummary,
     });
 
+    const turnStart = Date.now();
+
     try {
       const result = streamText({
         model: openrouter.chat(model),
-        temperature: 0.5,
+        temperature: 0.4,
         maxOutputTokens: 200,
         system: systemPrompt,
         abortSignal: onTurnContext.signal,
@@ -229,6 +239,18 @@ export class VoiceAssessmentAgent extends VoiceAgent<Env> {
           { role: "user", content: transcript },
         ],
         ...(fallbacks.length > 0 ? { providerOptions: { openrouter: { models: fallbacks } } } : {}),
+        onFinish: ({ usage, finishReason }) => {
+          // Coarse per-turn LLM latency for production observability. Pair
+          // with VoicePipelineMetrics on the client for full pipeline view.
+          console.info("[voice-assessment-agent] turn metrics", {
+            interviewId: ctx.interviewId,
+            model,
+            llmMs: Date.now() - turnStart,
+            inputTokens: usage?.inputTokens,
+            outputTokens: usage?.outputTokens,
+            finishReason,
+          });
+        },
       });
 
       return result.textStream;
@@ -238,16 +260,30 @@ export class VoiceAssessmentAgent extends VoiceAgent<Env> {
     }
   }
 
+  /**
+   * Strip the `##END_CALL##` control marker from text before TTS so the
+   * candidate never hears it spoken aloud. We also flip a per-connection
+   * flag so `afterSynthesize` knows to end the call once the audio for
+   * this sentence is queued for delivery.
+   */
+  override beforeSynthesize(text: string, connection: Connection): string {
+    if (text.includes(END_CALL_MARKER)) {
+      this._endRequestedFor.add(connection.id);
+    }
+    return text.replaceAll(END_CALL_MARKER, "").trim();
+  }
+
   override afterSynthesize(
     audio: ArrayBuffer | null,
-    text: string,
+    _text: string,
     connection: Connection,
   ): ArrayBuffer | null {
-    if (text.includes(END_CALL_MARKER)) {
+    if (this._endRequestedFor.has(connection.id)) {
+      this._endRequestedFor.delete(connection.id);
       // Mark intent BEFORE forceEndCall so onCallEnd can finalize.
       this.updateState({ intentionalEnd: true });
-      // Defer forceEndCall by a microtask so the closing sentence audio plays
-      // before we cut the connection.
+      // Defer forceEndCall by a microtask so the closing sentence audio is
+      // queued for delivery before we cut the connection.
       queueMicrotask(() => {
         try {
           this.forceEndCall(connection);
@@ -272,9 +308,13 @@ export class VoiceAssessmentAgent extends VoiceAgent<Env> {
     return { ok: true };
   }
 
-  override async onCallEnd(_connection: Connection): Promise<void> {
+  override async onCallEnd(connection: Connection): Promise<void> {
     const ctx = await this.loadContext();
     if (!ctx) return;
+
+    // Always clean up the per-connection flag so a transient drop doesn't
+    // leave a stale entry that fires on a future reconnect.
+    this._endRequestedFor.delete(connection.id);
 
     if (this.s.status === "completed" || this.s.status === "skipped") return;
 
@@ -283,13 +323,23 @@ export class VoiceAssessmentAgent extends VoiceAgent<Env> {
       // candidate can reconnect and resume. The voice mixin persists the
       // transcript in SQLite; conversation continues on next startCall(). The
       // post-eval workflow's 12h window is the eventual safety net.
-      console.info(
-        "[voice-assessment-agent] connection dropped without end intent; staying in_call for reconnect",
-      );
+      console.info("[voice-assessment-agent] call dropped (transient)", {
+        interviewId: ctx.interviewId,
+        startedAt: this.s.startedAt,
+        durationMs: this.s.startedAt ? Date.now() - new Date(this.s.startedAt).getTime() : null,
+      });
       return;
     }
 
+    const finishStart = Date.now();
     await this.finalize(ctx);
+    console.info("[voice-assessment-agent] call finalized", {
+      interviewId: ctx.interviewId,
+      startedAt: this.s.startedAt,
+      durationMs: this.s.startedAt ? Date.now() - new Date(this.s.startedAt).getTime() : null,
+      finalizeMs: Date.now() - finishStart,
+      turns: this.getConversationHistory(200).length,
+    });
   }
 
   private async finalize(ctx: VoiceAssessmentContext): Promise<void> {
