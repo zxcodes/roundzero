@@ -138,18 +138,19 @@ const readUiMessageText = (message: UIMessage) => {
     return "";
   }
 
+  const getToolName = (part: unknown) => (part as { toolName: string }).toolName;
+  const getOutput = (part: unknown) => (part as { output: unknown }).output;
+
   return message.parts
     .map((part) => {
       if (part.type === "text" && typeof part.text === "string") {
         return part.text;
       }
       if (part.type === "tool-call") {
-        const toolCall = part as unknown as { toolName: string };
-        return `[tool: ${toolCall.toolName}]`;
+        return `[tool: ${getToolName(part)}]`;
       }
       if (part.type === "tool-result") {
-        const toolResult = part as unknown as { toolName: string; output: unknown };
-        return `[tool result: ${toolResult.toolName} = ${JSON.stringify(toolResult.output)}]`;
+        return `[tool result: ${getToolName(part)} = ${JSON.stringify(getOutput(part))}]`;
       }
       return "";
     })
