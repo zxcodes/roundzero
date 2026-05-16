@@ -7,7 +7,7 @@ import {
   Tick01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
@@ -29,6 +29,7 @@ type ChatMessage = { role: string; text: string };
 
 export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const transcriptEndRef = useRef<HTMLDivElement>(null);
   const autoResumedRef = useRef(false);
   const [clientError, setClientError] = useState<string | null>(null);
@@ -70,6 +71,7 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
     mutationFn: skipFn,
     onSuccess: async () => {
       toast.success("Voice assessment skipped.");
+      queryClient.invalidateQueries({ queryKey: ["voice-assessment", interviewId] });
       await router.invalidate();
     },
     onError: (error) => {
@@ -323,14 +325,10 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
       </div>
 
       {/* Transcript surface — same shape as the chat ScrollArea */}
-      <ScrollArea className="min-h-0 flex-1">
-        {visibleTranscript.length === 0 && !interim ? (
-          <VoiceEmptyState
-            reconnecting={reconnecting}
-            finalising={finalising}
-            error={clientError}
-          />
-        ) : (
+      {visibleTranscript.length === 0 && !interim ? (
+        <VoiceEmptyState reconnecting={reconnecting} finalising={finalising} error={clientError} />
+      ) : (
+        <ScrollArea className="min-h-0 flex-1">
           <div className="space-y-7 px-5 py-6 md:px-7 md:py-7">
             {visibleTranscript.map((msg, i) => {
               const isCandidate = msg.role === "user";
@@ -390,8 +388,8 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
 
             <div ref={transcriptEndRef} className="h-1" />
           </div>
-        )}
-      </ScrollArea>
+        </ScrollArea>
+      )}
 
       {/* Footer — composer-equivalent for the voice surface */}
       <div className="shrink-0 border-t border-border/50 bg-card px-4 py-4 md:px-6 md:py-5">
