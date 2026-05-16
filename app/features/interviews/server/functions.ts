@@ -270,11 +270,6 @@ export const completeMyInterview = createServerFn({ method: "POST" })
       return null;
     }
 
-    await updateApplicationStatus(db, {
-      id: effectiveInterview.applicationId,
-      status: "evaluated",
-    });
-
     const existingReport = await getReportByApplicationId(db, {
       applicationId: effectiveInterview.applicationId,
     });

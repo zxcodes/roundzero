@@ -126,8 +126,8 @@ describe("isValidTransition", () => {
     expect(isValidTransition("evaluated", "rejected")).toBe(true);
   });
 
-  it("rejects direct pre_screening → interview_invited (must go through queued_for_batch)", () => {
-    expect(isValidTransition("pre_screening", "interview_invited")).toBe(false);
+  it("allows pre_screening → interview_invited for manual company invites", () => {
+    expect(isValidTransition("pre_screening", "interview_invited")).toBe(true);
   });
 
   it("rejects backward transitions", () => {

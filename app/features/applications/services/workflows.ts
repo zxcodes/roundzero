@@ -27,6 +27,16 @@ import {
   updateApplicationStatus as updateApplicationStatusQuery,
 } from "../queries/queries_sql";
 
+interface PreEvaluationTriggerResult {
+  workflowInstanceId: string;
+}
+
+function isPreEvaluationTriggerResult(value: unknown): value is PreEvaluationTriggerResult {
+  if (typeof value !== "object" || value === null) return false;
+  const record = value as Record<string, unknown>;
+  return typeof record.workflowInstanceId === "string";
+}
+
 export const applyToJobWorkflow = async (
   db: Sql,
   input: {
@@ -34,10 +44,9 @@ export const applyToJobWorkflow = async (
     jobId: string;
   },
   options?: {
-    sendNotificationEmail?: NotificationEmailSender;
     triggerPreEvaluation?: (
       applicationId: string,
-    ) => Promise<{ workflowInstanceId: string } | undefined>;
+    ) => Promise<PreEvaluationTriggerResult | undefined>;
   },
 ) => {
   await db.unsafe(closeExpiredJobsQuery);
@@ -107,7 +116,7 @@ export const applyToJobWorkflow = async (
   let workflowInstanceId: string | null = null;
   if (options?.triggerPreEvaluation) {
     const result = await options.triggerPreEvaluation(application.id);
-    if (result && typeof result === "object" && "workflowInstanceId" in result) {
+    if (result && isPreEvaluationTriggerResult(result)) {
       workflowInstanceId = result.workflowInstanceId;
     }
   }
@@ -124,6 +133,7 @@ export const updateApplicationStatusWorkflow = async (
   },
   options?: {
     sendNotificationEmail?: NotificationEmailSender;
+    initializeInterviewAgent?: (interviewId: string) => Promise<unknown>;
   },
 ) => {
   const application = await getApplicationById(db, {
@@ -183,6 +193,14 @@ export const updateApplicationStatusWorkflow = async (
 
     if (!interview) {
       throw new Error("Failed to create interview invite");
+    }
+
+    if (options?.initializeInterviewAgent) {
+      try {
+        await options.initializeInterviewAgent(interview.id);
+      } catch (error) {
+        console.error(`Failed to initialize interview agent for ${interview.id}`, error);
+      }
     }
 
     const metadataSchema = z.object({ expiresAt: z.string().optional() });

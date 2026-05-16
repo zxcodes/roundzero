@@ -110,9 +110,9 @@ const stageCopy = {
     dot: "bg-info",
   },
   pre_screening: {
-    badge: "Pre-screening",
-    tone: "border-pending/20 bg-pending/10 text-pending",
-    dot: "bg-pending",
+    badge: "On hold",
+    tone: "border-warning/20 bg-warning/10 text-warning",
+    dot: "bg-warning",
   },
   queued_for_batch: {
     badge: "Queued",

@@ -2,6 +2,7 @@ import {
   ArrowLeft01Icon,
   Briefcase01Icon,
   Clock01Icon,
+  HourglassIcon,
   RankingIcon,
   UserGroupIcon,
 } from "@hugeicons/core-free-icons";
@@ -62,7 +63,9 @@ export const Route = createFileRoute("/_authenticated/dashboard/job-applicants/$
 
 function JobApplicantsPage() {
   const { job, applicants, funnel, activeBatch } = Route.useLoaderData();
-  const [activeTab, setActiveTab] = useState<"released" | "active" | "queued">("released");
+  const [activeTab, setActiveTab] = useState<"released" | "active" | "queued" | "pending">(
+    "released",
+  );
 
   const released = applicants.filter(
     (a: (typeof applicants)[number]) => a.reportReleasedAt !== null,
@@ -75,6 +78,9 @@ function JobApplicantsPage() {
   );
   const queued = applicants.filter(
     (a: (typeof applicants)[number]) => a.status === "queued_for_batch",
+  );
+  const pending = applicants.filter(
+    (a: (typeof applicants)[number]) => a.status === "pre_screening",
   );
 
   return (
@@ -190,14 +196,31 @@ function JobApplicantsPage() {
             {queued.length}
           </Badge>
         </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("pending")}
+          className={`flex items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
+            activeTab === "pending"
+              ? "border-primary text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <HugeiconsIcon icon={HourglassIcon} strokeWidth={2} className="size-4" />
+          Pending
+          <Badge variant="secondary" className="font-mono text-[10px]">
+            {pending.length}
+          </Badge>
+        </button>
       </div>
 
       {activeTab === "released" ? (
         <CompanyJobApplicantsList applicants={released} />
       ) : activeTab === "active" ? (
         <ActiveBatchPanel applicants={active} batchId={activeBatch?.id ?? null} />
-      ) : (
+      ) : activeTab === "queued" ? (
         <QueuedPanel count={queued.length} />
+      ) : (
+        <CompanyJobApplicantsList applicants={pending} />
       )}
     </div>
   );

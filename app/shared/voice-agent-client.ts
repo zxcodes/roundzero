@@ -1,4 +1,5 @@
 import { env } from "cloudflare:workers";
+import { getAgentByName } from "agents";
 
 type VoiceAgentStub = {
   initialize(): Promise<{ ok: true; status: string }>;
@@ -8,7 +9,7 @@ type VoiceAgentStub = {
 };
 
 const createVoiceAgentStub = async (interviewId: string): Promise<VoiceAgentStub> => {
-  return env.VOICE_ASSESSMENT_AGENT.getByName(interviewId);
+  return await getAgentByName(env.VOICE_ASSESSMENT_AGENT, interviewId);
 };
 
 export const initializeVoiceAssessmentAgent = async (interviewId: string) => {
