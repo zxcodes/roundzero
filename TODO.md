@@ -9,7 +9,6 @@
 - there is no indication after sending a message to the agent (both voice and text).
 - everything on the company side needs to be rethought. the ux isn't there. it's cluttered and messy.
 - need to redefine the landing and product branding: (resumes are outdated, yoe is just a number now, cracked people exist, ai needs to find them, experience is no longer a good metric, etc etc.)
-- if a candidate goes into hold, there is no way for companies to manually invite them to interview because of new batch flow?
 - update landing page messaging to say the time of resumes is over. it's time for real evaluation etc.
 - shortlisting/rejecting actions should nicely accessible on top of each report for easy auctioning. right now they're buried under drop downs.
 - validate open router models using their api key in prod ci so we detect non existent models beforehand.
@@ -43,6 +42,7 @@
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- if a candidate goes into hold, there is no way for companies to manually invite them to interview because of new batch flow?-->
 <!--- the pre-eval and all prompts need to be hardened in such a way that they won't reject a an applicant just because they don't have x years of experience or because they don't have x keywords in their profile. it should decide that based on the actual work mentioned in the candidate's work history and should not act like an ats parser.-->
 <!--- think about voice recording for communication assessment.-->
 <!--- remove new stupid gradients everywhere.-->
