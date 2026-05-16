@@ -144,10 +144,12 @@ export const getApplicationsByJobQuery = `-- name: getApplicationsByJob :many
 SELECT a.id, a.job_id, a.candidate_id, a.resume_key, a.metadata, a.status, a.created_at, a.updated_at,
        u.name AS candidate_name, u.email AS candidate_email, u.picture AS candidate_picture,
        r.id AS report_id, r.recommendation AS report_recommendation, r.scores AS report_scores,
-       r.released_at AS report_released_at
+       r.released_at AS report_released_at,
+       pe.score AS pre_evaluation_score
 FROM applications a
 JOIN users u ON u.id = a.candidate_id AND u.deleted_at IS NULL
 LEFT JOIN reports r ON r.application_id = a.id
+LEFT JOIN pre_evaluations pe ON pe.application_id = a.id
 WHERE a.job_id = $1
 ORDER BY (r.released_at IS NOT NULL) DESC, COALESCE((r.scores->>'overall')::numeric, 0) DESC, a.created_at DESC`;
 
@@ -171,6 +173,7 @@ export interface getApplicationsByJobRow {
     reportRecommendation: string | null;
     reportScores: any | null;
     reportReleasedAt: Date | null;
+    preEvaluationScore: number | null;
 }
 
 export async function getApplicationsByJob(sql: Sql, args: getApplicationsByJobArgs): Promise<getApplicationsByJobRow[]> {
@@ -189,7 +192,8 @@ export async function getApplicationsByJob(sql: Sql, args: getApplicationsByJobA
         reportId: row[11],
         reportRecommendation: row[12],
         reportScores: row[13],
-        reportReleasedAt: row[14]
+        reportReleasedAt: row[14],
+        preEvaluationScore: row[15]
     }));
 }
 

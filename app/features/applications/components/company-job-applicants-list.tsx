@@ -32,6 +32,23 @@ const recommendationMeta: Record<string, { label: string; className: string }> =
   },
 };
 
+function statusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    applied: "Applied",
+    pre_screening: "On hold",
+    queued_for_batch: "Queued",
+    interview_invited: "Interview invited",
+    interview_in_progress: "Interview in progress",
+    evaluated_held: "Evaluation complete",
+    evaluated: "Evaluated",
+    shortlisted: "Shortlisted",
+    rejected: "Rejected",
+    withdrawn: "Withdrawn",
+    evaluation_failed: "Evaluation failed",
+  };
+  return labels[status] ?? status;
+}
+
 export function CompanyJobApplicantsList({
   applicants,
 }: {
@@ -111,11 +128,19 @@ export function CompanyJobApplicantsList({
                     {applicant.candidateName}
                   </span>
                   <Badge variant="outline" className="text-[11px]">
-                    {applicant.status}
+                    {statusLabel(applicant.status)}
                   </Badge>
                   {isEvaluated && recMeta ? (
                     <Badge variant="outline" className={recMeta.className}>
                       {recMeta.label}
+                    </Badge>
+                  ) : null}
+                  {applicant.status === "pre_screening" && applicant.preEvaluationScore != null ? (
+                    <Badge
+                      variant="outline"
+                      className="border-warning/20 bg-warning/10 text-warning text-[11px]"
+                    >
+                      AI screened
                     </Badge>
                   ) : null}
                 </div>
@@ -129,6 +154,15 @@ export function CompanyJobApplicantsList({
                     <div className="flex size-10 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10">
                       <span className="font-mono text-sm font-semibold text-primary">
                         {Math.round(score)}
+                      </span>
+                    </div>
+                  </div>
+                ) : applicant.status === "pre_screening" && applicant.preEvaluationScore != null ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Pre-screen</span>
+                    <div className="flex size-10 items-center justify-center rounded-2xl border border-warning/15 bg-warning/10">
+                      <span className="font-mono text-sm font-semibold text-warning">
+                        {applicant.preEvaluationScore}
                       </span>
                     </div>
                   </div>

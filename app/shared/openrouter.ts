@@ -80,6 +80,7 @@ export function getOpenRouter(): OpenRouterProvider {
 // Pre-eval and post-eval need models that support structured outputs
 // (response_format or structured_outputs parameter).
 const PRE_EVAL_DEV_CHAIN = [
+  "meta-llama/llama-3.3-70b-instruct:free",
   "qwen/qwen3-next-80b-a3b-instruct:free",
   "nvidia/nemotron-3-super-120b-a12b:free",
 ] as const;
@@ -122,7 +123,16 @@ const JOB_CREATION_PROD_CHAIN = [
   "anthropic/claude-haiku-4.5",
 ] as const;
 
-const VOICE_PROD_CHAIN = ["anthropic/claude-haiku-4.5", "anthropic/claude-sonnet-4.5"] as const;
+// Voice runs in a real-time pipeline. Optimise for time-to-first-token over
+// frontier reasoning quality — at 4–6 short turns capped at 200 tokens, the
+// quality delta between Llama-70b-on-Groq and Claude Haiku is imperceptible,
+// but the latency delta (sub-200ms vs ~600–1000ms TTFT) is huge in a voice UX.
+// Claude Haiku stays as the quality safety net at the end of the chain.
+const VOICE_PROD_CHAIN = [
+  "groq/llama-3.3-70b-versatile",
+  "google/gemini-2.5-flash",
+  "anthropic/claude-haiku-4.5",
+] as const;
 
 type Task = "pre_eval" | "post_eval" | "interview" | "job_creation" | "voice";
 

@@ -72,7 +72,7 @@
     "@babel/core": "^7.29.0",
     "@babel/plugin-proposal-decorators": "^7.29.0",
     "@biomejs/biome": "2.4.15",
-    "@cloudflare/vite-plugin": "^1.37.0",
+    "@cloudflare/vite-plugin": "^1.37.1",
     "@rolldown/plugin-babel": "^0.2.3",
     "@tanstack/devtools-vite": "^0.7.0",
     "@tanstack/react-devtools": "^0.10.5",
@@ -83,16 +83,16 @@
     "@types/node": "^25.8.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@typescript/native-preview": "7.0.0-dev.20260514.1",
+    "@typescript/native-preview": "7.0.0-dev.20260515.1",
     "@vitejs/plugin-react": "^6.0.2",
     "babel-plugin-react-compiler": "^1.0.0",
     "dbmate": "^2.33.0",
     "husky": "^9.1.7",
     "jsdom": "^29.1.1",
-    "knip": "^6.13.1",
+    "knip": "^6.14.0",
     "typescript": "^6.0.3",
     "vite": "^8.0.13",
     "vitest": "^4.1.6",
-    "wrangler": "^4.91.0"
+    "wrangler": "^4.92.0"
   }
 }

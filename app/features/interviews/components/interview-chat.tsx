@@ -1,4 +1,9 @@
-import { ArrowUp01Icon, BubbleChatIcon } from "@hugeicons/core-free-icons";
+import {
+  ArrowUp01Icon,
+  BubbleChatIcon,
+  Loading03Icon,
+  Mic01Icon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
@@ -16,6 +21,13 @@ type InterviewChatProps = {
   canSend: boolean;
   isEnded: boolean;
   isStreaming: boolean;
+  /**
+   * Optional callback rendered as the primary CTA in the ended-state footer.
+   * When provided, candidates are nudged toward the voice assessment instead
+   * of being pushed away to applications.
+   */
+  onContinueToVoice?: () => void;
+  voiceCtaLabel?: string;
   onSend: (content: string) => Promise<void>;
 };
 
@@ -24,6 +36,8 @@ export function InterviewChat({
   canSend,
   isEnded,
   isStreaming,
+  onContinueToVoice,
+  voiceCtaLabel,
   onSend,
 }: InterviewChatProps) {
   const [content, setContent] = useState("");
@@ -107,9 +121,16 @@ export function InterviewChat({
     event.preventDefault();
   };
 
+  const lastMessage = messages[messages.length - 1];
+  // Show typing dots while we're waiting for the model to start streaming
+  // text, OR mid-stream if no assistant text has arrived yet. We rely on the
+  // fact that `useInterviewChat` filters empty assistant parts out, so the
+  // last visible message stays "candidate" until the first token shows up.
+  const isAwaitingAssistant = isStreaming && (!lastMessage || lastMessage.role !== "assistant");
+
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-muted/30">
-      {!messages.length ? (
+      {!messages.length && !isAwaitingAssistant ? (
         <EmptyInterviewComponent
           description="Press start when you are ready."
           title="Your interview with Zero starts here"
@@ -117,18 +138,44 @@ export function InterviewChat({
       ) : (
         <ScrollArea ref={transcriptRef} className="min-h-0 flex-1">
           <InterviewTranscript messages={messages} userLabel="You" />
+          {isAwaitingAssistant ? <ThinkingBubble label="Zero is thinking" /> : null}
           <div ref={transcriptEndRef} className="h-1" />
         </ScrollArea>
       )}
 
       {isEnded ? (
         <div className="shrink-0 border-t border-border/50 bg-card px-5 py-4 md:px-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-muted-foreground">This interview has ended.</p>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/dashboard/applications">Back to applications</Link>
-            </Button>
-          </div>
+          {onContinueToVoice ? (
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                  <HugeiconsIcon icon={Mic01Icon} strokeWidth={2} className="size-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">One last step</p>
+                  <p className="text-xs text-muted-foreground">
+                    A quick ~5 minute voice check to round out your evaluation.
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/dashboard/applications">Back to applications</Link>
+                </Button>
+                <Button size="sm" onClick={onContinueToVoice}>
+                  <HugeiconsIcon icon={Mic01Icon} strokeWidth={2} className="size-4" />
+                  {voiceCtaLabel ?? "Start voice assessment"}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-muted-foreground">This interview has ended.</p>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/dashboard/applications">Back to applications</Link>
+              </Button>
+            </div>
+          )}
         </div>
       ) : (
         <div className="shrink-0 bg-card px-4 pb-4 pt-3 md:px-6 md:pb-5">
@@ -138,7 +185,13 @@ export function InterviewChat({
               value={content}
               onChange={onComposerChange}
               onKeyDown={onComposerKeyDown}
-              placeholder={canSend ? "Write your answer..." : "Start the interview to answer"}
+              placeholder={
+                isStreaming
+                  ? "Zero is thinking..."
+                  : canSend
+                    ? "Write your answer..."
+                    : "Start the interview to answer"
+              }
               disabled={!canSend}
               className="field-sizing-content max-h-44 min-h-10 flex-1 resize-none overflow-y-auto border-0 bg-transparent px-1 py-2 text-sm leading-6 text-foreground placeholder:text-muted-foreground focus-visible:border-transparent focus-visible:ring-0"
               rows={1}
@@ -151,12 +204,41 @@ export function InterviewChat({
               onClick={onSubmit}
               disabled={!canSend || isStreaming || content.trim().length === 0}
             >
-              <HugeiconsIcon icon={ArrowUp01Icon} strokeWidth={2.2} className="size-4" />
+              {isStreaming ? (
+                <HugeiconsIcon
+                  icon={Loading03Icon}
+                  strokeWidth={2.2}
+                  className="size-4 animate-spin"
+                />
+              ) : (
+                <HugeiconsIcon icon={ArrowUp01Icon} strokeWidth={2.2} className="size-4" />
+              )}
               <span className="sr-only">Send message</span>
             </Button>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function ThinkingBubble({ label }: { label: string }) {
+  return (
+    <div className="flex justify-start px-5 pb-2 md:px-7" aria-live="polite">
+      <div className="max-w-[86%] md:max-w-[66%]">
+        <p className="mb-1 px-1 text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground/90">
+          Zero
+        </p>
+        <div className="flex items-center gap-2 rounded-2xl border border-border/70 bg-background/95 px-4 py-3 text-sm leading-6 text-muted-foreground shadow-sm ring-1 ring-border/35">
+          <span className="sr-only">{label}</span>
+          <span className="inline-flex items-end gap-1" aria-hidden="true">
+            <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground/60 [animation-delay:-0.3s]" />
+            <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground/60 [animation-delay:-0.15s]" />
+            <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground/60" />
+          </span>
+          <span className="text-xs text-muted-foreground/80">{label}…</span>
+        </div>
+      </div>
     </div>
   );
 }
