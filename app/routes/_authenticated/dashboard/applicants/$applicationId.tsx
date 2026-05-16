@@ -2,6 +2,7 @@ import {
   ArrowLeft01Icon,
   ArrowRight01Icon,
   Calendar01Icon,
+  CheckmarkCircle02Icon,
   File02Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -311,6 +312,32 @@ function ApplicantReviewPage() {
           </Link>
         </Button>
         <div className="flex gap-2">
+          {allowedStatuses.some((s) => s.value === "shortlisted") &&
+          currentStatus !== "shortlisted" ? (
+            <Button
+              size="sm"
+              className="bg-success text-success-foreground hover:bg-success/90 shadow-sm shadow-success/20"
+              disabled={updateStatusMutation.isPending}
+              onClick={async () => {
+                await updateStatusMutation.mutateAsync({
+                  data: { applicationId: application.id, status: "shortlisted" },
+                });
+              }}
+            >
+              <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-4" />
+              Shortlist
+            </Button>
+          ) : null}
+          {allowedStatuses.some((s) => s.value === "rejected") && currentStatus !== "rejected" ? (
+            <Button
+              size="sm"
+              variant="destructive"
+              disabled={updateStatusMutation.isPending}
+              onClick={() => setPendingStatus("rejected")}
+            >
+              Reject
+            </Button>
+          ) : null}
           {previousApplicant ? (
             <Button variant="outline" size="sm" asChild>
               <Link
