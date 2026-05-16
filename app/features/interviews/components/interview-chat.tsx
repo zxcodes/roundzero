@@ -21,6 +21,7 @@ type InterviewChatProps = {
   canSend: boolean;
   isEnded: boolean;
   isStreaming: boolean;
+  isWaiting: boolean;
   /**
    * Optional callback rendered as the primary CTA in the ended-state footer.
    * When provided, candidates are nudged toward the voice assessment instead
@@ -36,6 +37,7 @@ export function InterviewChat({
   canSend,
   isEnded,
   isStreaming,
+  isWaiting,
   onContinueToVoice,
   voiceCtaLabel,
   onSend,
@@ -93,7 +95,7 @@ export function InterviewChat({
 
   const onSubmit = () => {
     const trimmed = content.trim();
-    if (!trimmed || !canSend || isStreaming) {
+    if (!trimmed || !canSend || isStreaming || isWaiting) {
       return;
     }
 
@@ -126,7 +128,8 @@ export function InterviewChat({
   // text, OR mid-stream if no assistant text has arrived yet. We rely on the
   // fact that `useInterviewChat` filters empty assistant parts out, so the
   // last visible message stays "candidate" until the first token shows up.
-  const isAwaitingAssistant = isStreaming && (!lastMessage || lastMessage.role !== "assistant");
+  const isAwaitingAssistant =
+    (isWaiting || isStreaming) && (!lastMessage || lastMessage.role !== "assistant");
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-muted/30">
@@ -186,7 +189,7 @@ export function InterviewChat({
               onChange={onComposerChange}
               onKeyDown={onComposerKeyDown}
               placeholder={canSend ? "Write your answer..." : "Start the interview to answer"}
-              disabled={!canSend}
+              disabled={!canSend || isWaiting}
               className="field-sizing-content max-h-44 min-h-10 flex-1 resize-none overflow-y-auto border-0 bg-transparent px-1 py-2 text-sm leading-6 text-foreground placeholder:text-muted-foreground focus-visible:border-transparent focus-visible:ring-0"
               rows={1}
             />
@@ -196,9 +199,9 @@ export function InterviewChat({
               className="mb-0.5 size-9 shrink-0 rounded-full bg-brand text-brand-foreground shadow-sm transition-transform hover:scale-[1.02] hover:bg-brand/90 active:scale-[0.98] disabled:scale-100 disabled:bg-muted disabled:text-muted-foreground"
               onMouseDown={onSendMouseDown}
               onClick={onSubmit}
-              disabled={!canSend || isStreaming || content.trim().length === 0}
+              disabled={!canSend || isStreaming || isWaiting || content.trim().length === 0}
             >
-              {isStreaming ? (
+              {isStreaming || isWaiting ? (
                 <HugeiconsIcon
                   icon={Loading03Icon}
                   strokeWidth={2.2}
@@ -223,7 +226,7 @@ function ThinkingBubble() {
         <p className="mb-1 px-1 text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground/90">
           Zero
         </p>
-        <div className="flex items-center gap-2 rounded-2xl border border-border/70 bg-background/95 px-4 py-3 text-sm leading-6 text-muted-foreground shadow-sm ring-1 ring-border/35">
+        <div className="flex items-center justify-center rounded-2xl border border-border/70 bg-background/95 px-4 py-3 text-sm leading-6 text-muted-foreground shadow-sm ring-1 ring-border/35">
           <span className="sr-only">Awaiting response</span>
           <span className="inline-flex items-end gap-1" aria-hidden="true">
             <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground/60 [animation-delay:-0.3s]" />
