@@ -276,7 +276,7 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
                     ? voice.status === "listening"
                       ? "Listening…"
                       : voice.status === "thinking"
-                        ? "Zero is thinking…"
+                        ? "Thinking…"
                         : voice.status === "speaking"
                           ? "Zero is speaking…"
                           : "Connecting…"
