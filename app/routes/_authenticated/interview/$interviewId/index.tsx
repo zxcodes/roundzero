@@ -287,6 +287,7 @@ function InterviewWorkspaceContent({
             canSend={canSend}
             isEnded={isEnded}
             isStreaming={chat.isStreaming}
+            isWaiting={chat.status === "submitted"}
             onSend={onSendMessage}
             onContinueToVoice={onContinueToVoice}
             voiceCtaLabel={voiceCtaLabel}
