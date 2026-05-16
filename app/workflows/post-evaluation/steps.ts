@@ -114,62 +114,10 @@ async function runPostEvalObject(args: {
   };
 }
 
-function fallbackReportFromText(interviewData: {
-  interview: {
-    jobTitle: string;
-    candidateName: string;
-  };
-  contextState: InterviewContextState;
-  transcript: string;
-}): ReportModelResponse {
-  const transcriptLower = interviewData.transcript.toLowerCase();
-
-  const communication = transcriptLower.includes("because") ? 72 : 65;
-  const problemSolving = transcriptLower.includes("trade-off") ? 74 : 66;
-  const ownership =
-    transcriptLower.includes("i led") || transcriptLower.includes("i owned") ? 76 : 68;
-  const roleFit = 70;
-  const overall = Math.round((communication + problemSolving + ownership + roleFit) / 4);
-
-  const screeningAnswers: ScreeningAnswer[] = interviewData.contextState.customQuestions.map(
-    (question) => ({
-      question,
-      answer: null,
-      concern: "none",
-      notes: "Automatic fallback could not extract a structured answer from the transcript.",
-    }),
-  );
-
-  return {
-    summary: `${interviewData.interview.candidateName} completed a structured interview for ${interviewData.interview.jobTitle}. The transcript provides enough signal for a directional recommendation, but should be reviewed alongside resume and application context.`,
-    strengths: [
-      "Provided concrete examples from prior work",
-      "Communicated clearly and stayed on topic",
-      "Demonstrated ownership in execution narratives",
-    ],
-    weaknesses: [
-      "Limited depth on measurable outcomes in some answers",
-      "Could provide stronger trade-off reasoning under constraints",
-    ],
-    insights: [
-      "Candidate appears comfortable with role-relevant workflows",
-      "Further probing could focus on ambiguity handling and prioritization",
-    ],
-    evidence: [
-      "Interview transcript captured candidate-led examples",
-      "Responses referenced implementation details and decision context",
-    ],
-    screeningAnswers,
-    scores: {
-      communication,
-      problemSolving,
-      ownership,
-      roleFit,
-      overall,
-    },
-    recommendation: overall >= 75 ? "yes" : "lean_no",
-  };
-}
+// NOTE: there is no fake-content fallback for report generation. If the model
+// chain fails, we surface the failure and let the workflow's outer catch mark
+// the application as `evaluation_failed`. Persisting hardcoded platitudes as
+// if they were real evaluation output is worse than admitting failure.
 
 const interviewAgentMessageSchema = z.object({
   role: z.enum(["assistant", "candidate"]),
@@ -409,21 +357,13 @@ export function generateReport(
       transcript: interviewData.transcript.slice(0, 15000),
     });
 
-    try {
-      const { object: report, usage } = await runPostEvalObject({
-        systemPrompt,
-        userPrompt,
-      });
+    const { object: report, usage } = await runPostEvalObject({
+      systemPrompt,
+      userPrompt,
+    });
 
-      log.ai(userPrompt.length, usage.outputTokens, 0);
-      return report;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      log.warn(
-        `OpenRouter report generation failed: ${message}. Using deterministic fallback report.`,
-      );
-      return fallbackReportFromText(interviewData);
-    }
+    log.ai(userPrompt.length, usage.outputTokens, 0);
+    return report;
   };
 }
 

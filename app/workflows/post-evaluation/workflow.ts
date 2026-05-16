@@ -7,6 +7,7 @@ import {
 } from "@/features/interviews/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { createWorkflowLogger } from "@/shared/logger";
+import { refineReport } from "./refine";
 import {
   applyVoiceAssessmentToReport,
   generateReport,
@@ -97,7 +98,16 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
         generateReport({ ...interviewData, voiceAssessment }, log),
       );
 
-      const finalReport = applyVoiceAssessmentToReport(reportDraft, voiceAssessment);
+      const refinedDraft = await step.do("refine_report", async () =>
+        refineReport({
+          draft: reportDraft,
+          transcript: interviewData.transcript,
+          customQuestions: interviewData.contextState.customQuestions,
+          log,
+        }),
+      );
+
+      const finalReport = applyVoiceAssessmentToReport(refinedDraft, voiceAssessment);
 
       const report = await step.do(
         "persist_report",
