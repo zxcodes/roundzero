@@ -8,7 +8,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "@tanstack/react-router";
+import { Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -200,6 +200,11 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
         iconBg="bg-success/10"
         title="Voice assessment complete"
         description="Your results are included in the report."
+        actions={
+          <Button size="sm" variant="outline" asChild>
+            <Link to="/dashboard/applications">Back to applications</Link>
+          </Button>
+        }
       />
     );
   }
@@ -217,6 +222,11 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
         iconBg="bg-muted"
         title="Voice assessment skipped"
         description="Your report is based on the text interview only."
+        actions={
+          <Button size="sm" variant="outline" asChild>
+            <Link to="/dashboard/applications">Back to applications</Link>
+          </Button>
+        }
       />
     );
   }
@@ -570,11 +580,13 @@ function CompletedState({
   iconBg,
   title,
   description,
+  actions,
 }: {
   icon: React.ReactNode;
   iconBg: string;
   title: string;
   description: string;
+  actions?: React.ReactNode;
 }) {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-muted/30">
@@ -587,6 +599,7 @@ function CompletedState({
             <p className="text-sm font-medium">{title}</p>
             <p className="text-xs text-muted-foreground">{description}</p>
           </div>
+          {actions ? <div className="flex items-center gap-2 pt-1">{actions}</div> : null}
         </div>
       </div>
     </div>
