@@ -41,6 +41,10 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
       const result = await getMyVoiceAssessment({ data: { interviewId } });
       return result?.assessment ?? null;
     },
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      return status === "completed" || status === "skipped" ? false : 2000;
+    },
   });
 
   const effectiveStatus: VoiceAssessmentStatus | null =
