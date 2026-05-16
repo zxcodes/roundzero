@@ -138,7 +138,7 @@ export function InterviewChat({
       ) : (
         <ScrollArea ref={transcriptRef} className="min-h-0 flex-1">
           <InterviewTranscript messages={messages} userLabel="You" />
-          {isAwaitingAssistant ? <ThinkingBubble label="Zero is thinking" /> : null}
+          {isAwaitingAssistant ? <ThinkingBubble /> : null}
           <div ref={transcriptEndRef} className="h-1" />
         </ScrollArea>
       )}
@@ -185,13 +185,7 @@ export function InterviewChat({
               value={content}
               onChange={onComposerChange}
               onKeyDown={onComposerKeyDown}
-              placeholder={
-                isStreaming
-                  ? "Zero is thinking..."
-                  : canSend
-                    ? "Write your answer..."
-                    : "Start the interview to answer"
-              }
+              placeholder={canSend ? "Write your answer..." : "Start the interview to answer"}
               disabled={!canSend}
               className="field-sizing-content max-h-44 min-h-10 flex-1 resize-none overflow-y-auto border-0 bg-transparent px-1 py-2 text-sm leading-6 text-foreground placeholder:text-muted-foreground focus-visible:border-transparent focus-visible:ring-0"
               rows={1}
@@ -222,7 +216,7 @@ export function InterviewChat({
   );
 }
 
-function ThinkingBubble({ label }: { label: string }) {
+function ThinkingBubble() {
   return (
     <div className="flex justify-start px-5 pb-2 md:px-7" aria-live="polite">
       <div className="max-w-[86%] md:max-w-[66%]">
@@ -230,13 +224,12 @@ function ThinkingBubble({ label }: { label: string }) {
           Zero
         </p>
         <div className="flex items-center gap-2 rounded-2xl border border-border/70 bg-background/95 px-4 py-3 text-sm leading-6 text-muted-foreground shadow-sm ring-1 ring-border/35">
-          <span className="sr-only">{label}</span>
+          <span className="sr-only">Awaiting response</span>
           <span className="inline-flex items-end gap-1" aria-hidden="true">
             <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground/60 [animation-delay:-0.3s]" />
             <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground/60 [animation-delay:-0.15s]" />
             <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground/60" />
           </span>
-          <span className="text-xs text-muted-foreground/80">{label}…</span>
         </div>
       </div>
     </div>
