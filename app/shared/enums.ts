@@ -57,7 +57,7 @@ export const notificationTypeSchema = z.enum([
  */
 export const APPLICATION_STATUS_TRANSITIONS: Record<ApplicationStatus, ApplicationStatus[]> = {
   applied: ["pre_screening", "rejected", "withdrawn"],
-  pre_screening: ["queued_for_batch", "rejected", "withdrawn"],
+  pre_screening: ["queued_for_batch", "interview_invited", "rejected", "withdrawn"],
   queued_for_batch: ["interview_invited", "rejected", "withdrawn"],
   interview_invited: ["interview_in_progress", "rejected", "withdrawn"],
   interview_in_progress: ["evaluated_held", "rejected", "withdrawn"],

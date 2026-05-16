@@ -172,7 +172,7 @@ describe("application status transitions", () => {
     expect(updated!.status).toBe("interview_invited");
   });
 
-  it("pre_screening → interview_invited is invalid (must go through queued_for_batch)", async () => {
+  it("pre_screening → interview_invited is valid for manual company invites", async () => {
     const { company } = await seedCompany();
     const candidate = await seedUser({ role: "candidate" });
     const job = await makeOpenJob(company.id);
@@ -185,7 +185,7 @@ describe("application status transitions", () => {
     });
     await updateApplicationStatus(sql, { id: app!.id, status: "pre_screening" });
 
-    expect(isValidTransition("pre_screening", "interview_invited")).toBe(false);
+    expect(isValidTransition("pre_screening", "interview_invited")).toBe(true);
   });
 
   it("rejected is terminal — DB still allows update but business logic blocks it", async () => {
