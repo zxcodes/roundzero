@@ -24,6 +24,7 @@ import { VOICE_ASSESSMENT_PROMPT } from "@/prompts/voice-assessment";
 import { buildCandidateProfileSummary } from "@/shared/ai-candidate-profile";
 import { getDb } from "@/shared/db";
 import { getModelChain, getOpenRouter } from "@/shared/openrouter";
+import { refineCommunicationAnalysis } from "@/workflows/post-evaluation/refine";
 
 // `opus` keeps payloads small and is decoded with lower latency than `mp3`
 // in modern browsers — meaningful for real-time voice.
@@ -357,7 +358,8 @@ export class VoiceAssessmentAgent extends VoiceAgent<Env> {
 
     let analysis: CommunicationAssessmentAnalysis | null = null;
     if (transcriptForPrompt.length > 0) {
-      analysis = await this.runAnalysis(transcriptForPrompt, ctx);
+      const raw = await this.runAnalysis(transcriptForPrompt, ctx);
+      analysis = raw ? refineCommunicationAnalysis(raw, transcriptForPrompt) : null;
     }
 
     try {
@@ -365,7 +367,11 @@ export class VoiceAssessmentAgent extends VoiceAgent<Env> {
       await completeCommunicationAssessment(db, {
         interviewId: ctx.interviewId,
         transcript: transcriptForDb,
-        analysis: analysis ?? this.fallbackAnalysis(transcriptForPrompt),
+        // Persist `null` analysis when the model failed or the refinement
+        // pass stripped everything as ungrounded. The post-eval workflow's
+        // `loadVoiceAssessment` treats a null analysis as "no voice signal"
+        // and skips blending it — much better than persisting fake scores.
+        analysis,
         audioKey: null,
       });
     } catch (error) {
@@ -411,22 +417,6 @@ export class VoiceAssessmentAgent extends VoiceAgent<Env> {
       }
     }
     return null;
-  }
-
-  private fallbackAnalysis(transcript: string): CommunicationAssessmentAnalysis {
-    const wordCount = transcript.split(/\s+/).filter(Boolean).length;
-    const baseline = wordCount === 0 ? 50 : Math.min(70, 40 + Math.floor(wordCount / 25));
-    const dim = (note: string) => ({ score: baseline, evidence: [note] });
-    return {
-      clarity: dim("Heuristic fallback: structured-output analysis was unavailable."),
-      articulation: dim("Heuristic fallback: structured-output analysis was unavailable."),
-      conciseness: dim("Heuristic fallback: structured-output analysis was unavailable."),
-      listening: dim("Heuristic fallback: structured-output analysis was unavailable."),
-      confidence: dim("Heuristic fallback: structured-output analysis was unavailable."),
-      overallScore: baseline,
-      summary:
-        "Communication analysis fell back to heuristic scoring after the structured analysis call failed. Treat these scores as low-confidence and review the transcript directly.",
-    };
   }
 
   private async signalPostEval(interviewId: string): Promise<void> {

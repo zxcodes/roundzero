@@ -29,12 +29,16 @@ import { LEADERSHIP_EVAL_SYSTEM_PROMPT } from "@/prompts/evaluate/leadership";
 import { OPERATIONS_EVAL_SYSTEM_PROMPT } from "@/prompts/evaluate/operations";
 import { TECHNICAL_EVAL_SYSTEM_PROMPT } from "@/prompts/evaluate/technical";
 import { SLOP_DETECTION_SYSTEM_PROMPT } from "@/prompts/slop-detection";
-import { buildCandidateProfilePromptPayload } from "@/shared/ai-candidate-profile";
+import {
+  buildCandidateProfilePromptPayload,
+  buildCandidateProfileSummary,
+} from "@/shared/ai-candidate-profile";
 import { getDb } from "@/shared/db";
 import type { createWorkflowLogger } from "@/shared/logger";
 import { notificationPayloadSchemas } from "@/shared/notifications-config";
 import { getModelChain, getOpenRouter } from "@/shared/openrouter";
 import { buildSlopDetectionPrompt, shouldInviteFromDeterministicRules } from "./policy";
+import { refinePreEvaluationResult, refineSlopCheck } from "./refine";
 
 export type PreEvaluationPayload = {
   applicationId: string;
@@ -291,11 +295,16 @@ export function detectSlop(
       });
       const latency = Date.now() - startTime;
 
-      const result = {
-        consistencyScore: Math.max(0, Math.min(100, Math.round(raw.consistencyScore))),
-        redFlags: raw.redFlags.filter((r: string) => typeof r === "string"),
-        explanation: raw.explanation,
-      };
+      const profileText = buildCandidateProfileSummary(candidateMeta);
+      const result = refineSlopCheck(
+        {
+          consistencyScore: Math.max(0, Math.min(100, Math.round(raw.consistencyScore))),
+          redFlags: raw.redFlags.filter((r: string) => typeof r === "string"),
+          explanation: raw.explanation,
+        },
+        resumeText,
+        profileText,
+      );
 
       log.ai(prompt.length, usage.outputTokens, latency, SLOP_DETECTION_SYSTEM_PROMPT.version);
       log.result("check_consistency", {
@@ -345,12 +354,16 @@ export function runAiPreEvaluation(
       });
       const latency = Date.now() - startTime;
 
-      const result: PreEvaluationResult = {
-        score: Math.max(0, Math.min(100, Math.round(raw.score))),
-        missingRequirements: raw.missingRequirements.filter((r: string) => typeof r === "string"),
-        confidence: raw.confidence,
-        modelNextStep: raw.nextStep,
-      };
+      const result: PreEvaluationResult = refinePreEvaluationResult(
+        {
+          score: Math.max(0, Math.min(100, Math.round(raw.score))),
+          missingRequirements: raw.missingRequirements.filter((r: string) => typeof r === "string"),
+          confidence: raw.confidence,
+          modelNextStep: raw.nextStep,
+        },
+        resumeText,
+        Array.isArray(job.requirements) ? job.requirements : [],
+      );
 
       log.ai(userPrompt.length, usage.outputTokens, latency, promptVersion);
       log.result("evaluate", {
