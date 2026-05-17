@@ -223,6 +223,8 @@ CREATE TABLE public.pre_evaluations (
     next_step text NOT NULL,
     consistency_score integer,
     raw_response jsonb,
+    model text,
+    prompt_version text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     CONSTRAINT pre_evaluations_consistency_score_check CHECK (((consistency_score >= 0) AND (consistency_score <= 100))),
     CONSTRAINT pre_evaluations_score_check CHECK (((score >= 0) AND (score <= 100)))
@@ -245,6 +247,9 @@ CREATE TABLE public.reports (
     screening_answers jsonb DEFAULT '[]'::jsonb NOT NULL,
     scores jsonb NOT NULL,
     recommendation text NOT NULL,
+    model text,
+    prompt_version text,
+    refine_version text,
     released_at timestamp with time zone,
     created_at timestamp with time zone DEFAULT now() NOT NULL
 );

@@ -90,6 +90,13 @@ const POST_EVAL_DEV_CHAIN = [
   "nvidia/nemotron-3-super-120b-a12b:free",
 ] as const;
 
+// Audit chain uses a different model family than post_eval generator to catch biases
+// If post_eval uses Claude-based models, audit uses Llama-based models, and vice versa
+const POST_EVAL_AUDIT_DEV_CHAIN = [
+  "meta-llama/llama-3.3-70b-instruct:free",
+  "openai/gpt-oss-120b:free",
+] as const;
+
 const INTERVIEW_DEV_CHAIN = [
   "meta-llama/llama-3.3-70b-instruct:free",
   "openai/gpt-oss-120b:free",
@@ -116,6 +123,13 @@ const PRE_EVAL_PROD_CHAIN = ["anthropic/claude-haiku-4.5", "anthropic/claude-son
 
 const POST_EVAL_PROD_CHAIN = ["anthropic/claude-sonnet-4.5", "anthropic/claude-opus-4.5"] as const;
 
+// Audit chain uses a different model family than post_eval generator to catch biases
+// If post_eval uses Claude-based models, audit uses Llama-based models, and vice versa
+const POST_EVAL_AUDIT_PROD_CHAIN = [
+  "meta-llama/llama-3.3-70b-instruct",
+  "nvidia/nemotron-3-super-120b",
+] as const;
+
 const INTERVIEW_PROD_CHAIN = ["anthropic/claude-haiku-4.5", "anthropic/claude-sonnet-4.5"] as const;
 
 const JOB_CREATION_PROD_CHAIN = [
@@ -134,11 +148,12 @@ const VOICE_PROD_CHAIN = [
   "anthropic/claude-haiku-4.5",
 ] as const;
 
-type Task = "pre_eval" | "post_eval" | "interview" | "job_creation" | "voice";
+type Task = "pre_eval" | "post_eval" | "post_eval_audit" | "interview" | "job_creation" | "voice";
 
 const TASK_CHAIN_MAP: Record<Task, { dev: readonly string[]; prod: readonly string[] }> = {
   pre_eval: { dev: PRE_EVAL_DEV_CHAIN, prod: PRE_EVAL_PROD_CHAIN },
   post_eval: { dev: POST_EVAL_DEV_CHAIN, prod: POST_EVAL_PROD_CHAIN },
+  post_eval_audit: { dev: POST_EVAL_AUDIT_DEV_CHAIN, prod: POST_EVAL_AUDIT_PROD_CHAIN },
   interview: { dev: INTERVIEW_DEV_CHAIN, prod: INTERVIEW_PROD_CHAIN },
   job_creation: { dev: JOB_CREATION_DEV_CHAIN, prod: JOB_CREATION_PROD_CHAIN },
   voice: { dev: VOICE_DEV_CHAIN, prod: VOICE_PROD_CHAIN },

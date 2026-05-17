@@ -429,13 +429,7 @@ function ApplicantReviewPage() {
       {report ? <ReportSnapshotCard report={report} applicationId={application.id} /> : null}
 
       {preEvaluation ? (
-        <Card
-          className={
-            report
-              ? "border-border/40 bg-muted/20"
-              : "border border-primary/10 bg-[radial-gradient(circle_at_top_left,var(--color-primary)/10,transparent_32%),var(--color-card)] shadow-lg shadow-primary/5"
-          }
-        >
+        <Card>
           <CardContent className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>

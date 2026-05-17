@@ -3,7 +3,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link, redirect, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -34,6 +34,7 @@ function NewJobPage() {
   const companyName = context.company?.name ?? "";
   const isPaid = context.subscription?.isActive ?? false;
   const [draft, setDraft] = useState<JobFormData | null>(null);
+  const formRef = useRef<HTMLDivElement>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<JobTemplate | null>(null);
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
 
@@ -59,6 +60,9 @@ function NewJobPage() {
 
   const onApplyDraft = (data: JobFormData) => {
     setDraft(data);
+    requestAnimationFrame(() => {
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   };
 
   const onDiscardDraft = () => {
@@ -111,7 +115,7 @@ function NewJobPage() {
         onSelect={onSelectTemplate}
       />
 
-      <Card className="animate-fade-in stagger-1">
+      <Card ref={formRef} className="animate-fade-in stagger-1">
         <CardContent className="pt-6">
           <JobForm
             key={selectedTemplate ? `template-${selectedTemplate.id}` : draft ? "draft" : "empty"}

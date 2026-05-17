@@ -56,7 +56,7 @@ export function InterviewInvitationCard({
   };
 
   return (
-    <Card className="border border-brand/10 shadow-lg shadow-brand/10">
+    <Card>
       <CardContent className="space-y-3">
         <div className="flex flex-wrap items-center gap-2">
           <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={2} className="size-5 text-primary" />
