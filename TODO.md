@@ -1,6 +1,7 @@
 ## TODO
 
 
+- prevent people from using diff resumes/profiles for diff jobs. we can use snapshots to compare and decide if we wanna hold them in pre-eval itself.
 - some of the empty states are bad (no interviews one)
 - fix shadcn card comp, has too much top and bottom padding.
 - think about connecting relevant profiles to the app (github, dribble etc for better understanding of the candidate, also check if we have any apis we can use to get and analyse the data.)
