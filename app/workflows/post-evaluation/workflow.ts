@@ -55,6 +55,24 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
         "read_interview_data",
         readInterviewData(interviewId, db, log),
       );
+      if (interviewData.kind === "insufficient_signal") {
+        applicationId = interviewData.interview?.applicationId ?? null;
+        log.warn(
+          `Post-evaluation skipped due to insufficient interview signal: ${interviewData.reason}`,
+        );
+        await step.do(
+          "mark_application_evaluation_failed_insufficient_signal",
+          { retries: { limit: 3, delay: "5 seconds", backoff: "exponential" } },
+          async () => {
+            if (!applicationId) return;
+            await updateApplicationStatus(db, {
+              id: applicationId,
+              status: "evaluation_failed",
+            });
+          },
+        );
+        return { interviewId, status: "insufficient_signal" as const };
+      }
       applicationId = interviewData.interview.applicationId;
 
       // Optional voice communication assessment. The voice agent signals back
@@ -93,7 +111,7 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
         loadVoiceAssessment(interviewId, db, log),
       );
 
-      const reportDraft = await step.do(
+      const { report: reportDraft, model } = await step.do(
         "generate_report",
         generateReport({ ...interviewData, voiceAssessment }, log),
       );
@@ -102,6 +120,8 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
         refineReport({
           draft: reportDraft,
           transcript: interviewData.transcript,
+          messages: interviewData.messages,
+          screeningCoverage: interviewData.screeningCoverage,
           customQuestions: interviewData.contextState.customQuestions,
           log,
         }),
@@ -111,7 +131,7 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
 
       const report = await step.do(
         "persist_report",
-        persistReport(interviewId, interviewData, finalReport, db, log),
+        persistReport(interviewId, interviewData, finalReport, model, db, log),
       );
 
       await step.do("mark_application_evaluated_held", markApplicationEvaluated(interviewData, db));

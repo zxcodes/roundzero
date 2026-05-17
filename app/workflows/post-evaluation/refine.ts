@@ -26,7 +26,15 @@ import {
   type CommunicationAssessmentAnalysis,
   communicationAssessmentSchema,
 } from "@/prompts/communication-assessment";
-import { clampScore, cleanBullets, filterAnchored, recomputeOverall } from "@/shared/ai-refine";
+import {
+  auditScreeningCoverage,
+  clampScore,
+  cleanBullets,
+  filterAnchored,
+  LIMITS,
+  recomputeOverall,
+  type TranscriptMessage,
+} from "@/shared/ai-refine";
 import type { createWorkflowLogger } from "@/shared/logger";
 import { getModelChain, getOpenRouter } from "@/shared/openrouter";
 
@@ -88,6 +96,8 @@ function deterministicReportPass(
   draft: ReportDraft,
   transcript: string,
   customQuestions: string[],
+  messages: ReadonlyArray<TranscriptMessage> = [],
+  screeningCoverage: Record<number, "answered" | "skipped"> = {},
 ): ReportDraft {
   const strengths = cleanBullets(draft.strengths, { cap: MAX_STRENGTHS });
   const weaknesses = cleanBullets(draft.weaknesses, { cap: MAX_WEAKNESSES });
@@ -115,15 +125,27 @@ function deterministicReportPass(
       answeredByQuestion.set(entry.question.trim().toLowerCase(), entry);
     }
   }
-  const screeningAnswers: ScreeningAnswer[] = customQuestions.map((question) => {
+
+  // Audit coverage against the actual transcript. If the model claimed an
+  // answer for a question that never appears in any assistant turn, downgrade
+  // it to "not asked" — the interview agent self-reports coverage and can
+  // lie about it.
+  const transcriptCovered = auditScreeningCoverage(customQuestions, messages);
+  const coveredByAgent = Object.keys(screeningCoverage).length;
+  const coveredByAudit = transcriptCovered.size;
+
+  const screeningAnswers: ScreeningAnswer[] = customQuestions.map((question, idx) => {
     const key = question.trim().toLowerCase();
     const match = answeredByQuestion.get(key);
-    if (!match) {
+    const questionWasActuallyAsked = transcriptCovered.has(idx + 1) || messages.length === 0;
+    if (!match || !questionWasActuallyAsked) {
       return {
         question,
         answer: null,
         concern: "none",
-        notes: "Not asked or not answered during the interview.",
+        notes: questionWasActuallyAsked
+          ? "Not answered during the interview."
+          : "Question was never asked by the interviewer — flagged by transcript audit.",
       };
     }
     const concern: ScreeningConcern =
@@ -175,11 +197,20 @@ function deterministicReportPass(
       ? draft.summary.trim().slice(0, 1500)
       : "The transcript did not produce enough signal for a confident written summary. Review the raw transcript before deciding.";
 
+  const coverageDeltaInsight =
+    customQuestions.length > 0
+      ? `Screening coverage audit: agent marked ${coveredByAgent}/${customQuestions.length} covered; transcript audit found ${coveredByAudit}/${customQuestions.length} asked.`
+      : null;
+  const finalInsights = cleanBullets(
+    coverageDeltaInsight == null ? insights : [...insights, coverageDeltaInsight],
+    { cap: MAX_INSIGHTS },
+  );
+
   return {
     summary,
     strengths,
     weaknesses,
-    insights,
+    insights: finalInsights,
     evidence,
     screeningAnswers,
     scores: {
@@ -217,15 +248,17 @@ async function runLlmAudit(args: {
   transcript: string;
   customQuestions: string[];
   log: ReturnType<typeof createWorkflowLogger>;
+  messages?: ReadonlyArray<TranscriptMessage>;
 }): Promise<AuditOutput | null> {
   const openrouter = getOpenRouter();
-  const { model, fallbacks } = getModelChain("post_eval");
+  // Use a separate model chain for audit to catch biases in the generator
+  const { model, fallbacks } = getModelChain("post_eval_audit");
 
   const userPrompt = JSON.stringify({
     instructions:
       "Audit the draft report. Drop anything not grounded in the transcript. Rewrite kept items to be tighter and specific. Preserve required screening questions verbatim.",
     requiredScreeningQuestions: args.customQuestions,
-    transcript: args.transcript.slice(0, 15000),
+    transcript: args.transcript.slice(0, LIMITS.TRANSCRIPT),
     draft: {
       summary: args.draft.summary,
       strengths: args.draft.strengths,
@@ -266,14 +299,23 @@ export async function refineReport(args: {
   transcript: string;
   customQuestions: string[];
   log: ReturnType<typeof createWorkflowLogger>;
+  messages?: ReadonlyArray<TranscriptMessage>;
+  screeningCoverage?: Record<number, "answered" | "skipped">;
 }): Promise<ReportDraft> {
-  const deterministic = deterministicReportPass(args.draft, args.transcript, args.customQuestions);
+  const deterministic = deterministicReportPass(
+    args.draft,
+    args.transcript,
+    args.customQuestions,
+    args.messages,
+    args.screeningCoverage,
+  );
 
   const audit = await runLlmAudit({
     draft: deterministic,
     transcript: args.transcript,
     customQuestions: args.customQuestions,
     log: args.log,
+    messages: args.messages,
   });
 
   if (!audit) {
