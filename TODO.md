@@ -1,7 +1,7 @@
 ## TODO
 
 
-- prevent people from using diff resumes/profiles for diff jobs. we can use snapshots to compare and decide if we wanna hold them in pre-eval itself.
+- prevent people from using diff resumes/profiles for diff jobs. we can use snapshots to compare and decide if we wanna hold them in pre-eval itself. not exactly prevent, it should just act as a guardrail in the background.
 - some of the empty states are bad (no interviews one)
 - fix shadcn card comp, has too much top and bottom padding.
 - think about connecting relevant profiles to the app (github, dribble etc for better understanding of the candidate, also check if we have any apis we can use to get and analyse the data.)
@@ -9,21 +9,17 @@
 - everything on the company side needs to be rethought. the ux isn't there. it's cluttered and messy.
 - need to redefine the landing and product branding: (resumes are outdated, yoe is just a number now, cracked people exist, ai needs to find them, experience is no longer a good metric, etc etc.)
 - update landing page messaging to say the time of resumes is over. it's time for real evaluation etc.
-- shortlisting/rejecting actions should nicely accessible on top of each report for easy auctioning. right now they're buried under drop downs.
 - validate open router models using their api key in prod ci so we detect non existent models beforehand.
 - we need to detect if agent messes up the interview and give candidate another chance with good ui feedback. 
 - configure sentry for prod envs.
-- think about entire ai layer arch, it is on-demand right now, check if that's sufficient or we need queues etc?
 - think about using actual tools such as web fetch etc to assess technical skills etc?
 - align interview sidebar and main app's padding equally on a global level. 
-- think about this entire model: should companies even see applicants as they come? or should we force reports until they arrive? then show applications?
 - company logo doesn't reflect after uploading until I refresh.
 - the landing page has fake metrics (first report 3 min etc, think how valid they're or replace them with actual claims).
 - the landing page needs to show major cost savings for the company while showing great benefits, compared to all the mainstream platforms based on real and accurate pricing as per today.
 - think about sub agents that can actually be useful for candidate profile research in the bg and provide context to main agent.
 - need to hugely improve on messaging such as (dont worry about ai generated answers from candidates, we have guard rails, and how much human effort it eliminates by talking to multiple candidates and clearing a lot of things such as salary expectations, relocation, etc which would waste a lot of human time otherwise)
 - detect failures in the whole pipeline and give candidates or companies an option to retry. make as failure proof as possible. specifically in model responses. 
-- in post eval add another slop check to review interview transcript
 - some company email reports are really bad and some are entirely missing for some flows. they have zero styling. review every single resend email template and align with rest of the app.
 - in post eval, refine the scores using the actual agent conv and add it to the final report.
 - think about how previous evaluations and candidate profiles affect future score. helps with fabrication since we will have the candidate's work history and helps us maintain a consistent score when they apply to diff jobs.
@@ -41,6 +37,10 @@
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- in post eval add another slop check to review interview transcript-->
+<!--- think about entire ai layer arch, it is on-demand right now, check if that's sufficient or we need queues etc?-->
+<!--- think about this entire model: should companies even see applicants as they come? or should we force reports until they arrive? then show applications?-->
+<!--- shortlisting/rejecting actions should nicely accessible on top of each report for easy auctioning. right now they're buried under drop downs.-->
 <!--- if a model generates some stupid shit in the name of evidence, we need another step to clean that up before writing to db. this applies to everything we're writing to db from a model. should never trust direct model responses. the entire evidence, weakness, strengths needs to be redone in a better way with good insights. it is useless now. basically the entire evaluation block should be post-processed with a new workflow to be useful.-->
 <!--- there is no indication after sending a message to the agent (both voice and text).-->
 <!--- if a candidate goes into hold, there is no way for companies to manually invite them to interview because of new batch flow?-->
