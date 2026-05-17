@@ -120,10 +120,8 @@ export function refineSlopCheck(
         ? "Authenticity concerns flagged — see redFlags for grounded examples."
         : "No authenticity concerns detected.";
 
-  // Cross-field consistency enforcement: if redFlags is empty and consistency
-  // score is high, the explanation must not claim authenticity concerns.
-  // This prevents the model from contradicting itself (e.g., redFlags: [] but
-  // explanation: "candidate fabricated 5 years of experience").
+  // Cross-field consistency enforcement: if no grounded red flags remain and
+  // the model still claims high consistency, explanation must not allege fraud.
   if (grounded.length === 0 && consistencyScore !== null && consistencyScore >= 80) {
     explanation = "No authenticity concerns detected.";
   }

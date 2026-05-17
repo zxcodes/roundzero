@@ -41,7 +41,20 @@ import { getModelChain, getOpenRouter } from "@/shared/openrouter";
 // Prompt versions for tracking which prompt was used for each report
 const POST_EVAL_PROMPT_VERSION = "1.0.0";
 const REFINE_PROMPT_VERSION = "1.0.0";
-const MIN_SCREENING_COVERAGE = 1;
+
+/**
+ * Minimum number of company screening questions that must be referenced by
+ * the interviewer in the transcript for the interview to be considered
+ * "real enough" to produce a report. Scales with the number of supplied
+ * questions so a 1-question role doesn't auto-pass and a 6-question role
+ * isn't gated by a single hit.
+ *
+ * Ratio: 50% of required questions, with floor of 1 and ceiling of 3.
+ */
+export function requiredScreeningCoverage(questionCount: number): number {
+  if (questionCount === 0) return 0;
+  return Math.max(1, Math.min(3, Math.ceil(questionCount / 2)));
+}
 
 export type PostEvaluationPayload = {
   interviewId: string;
@@ -266,8 +279,7 @@ export function readInterviewData(
       contextState.customQuestions,
       messages,
     );
-    const minScreeningCoverage =
-      contextState.customQuestions.length > 0 ? MIN_SCREENING_COVERAGE : 0;
+    const minScreeningCoverage = requiredScreeningCoverage(contextState.customQuestions.length);
     if (coveredScreeningQuestions.size < minScreeningCoverage) {
       return {
         kind: "insufficient_signal",
@@ -683,21 +695,12 @@ export function applyVoiceAssessmentToReport(
     voice.listening.evidence.length +
     voice.confidence.evidence.length;
 
-  // Dynamic voice weight based on signal quality:
-  // - 0-2 evidence pieces: 20% weight (low confidence)
-  // - 3-5 evidence pieces: 40% weight (medium confidence)
-  // - 6-8 evidence pieces: 60% weight (high confidence)
-  // - 9+ evidence pieces: 70% weight (very high confidence)
-  let voiceWeight: number;
-  if (totalEvidence <= 2) {
-    voiceWeight = 0.2;
-  } else if (totalEvidence <= 5) {
-    voiceWeight = 0.4;
-  } else if (totalEvidence <= 8) {
-    voiceWeight = 0.6;
-  } else {
-    voiceWeight = 0.7;
-  }
+  // Continuous voice weight as a function of grounded-evidence count.
+  // - 0 evidence  → 15% weight (the voice analysis is essentially uncorroborated)
+  // - 10 evidence → 70% weight (cap, matches the original 60/40 spec ceiling)
+  // Smooth curve avoids cliff-jumps at bucket boundaries (e.g. 5→6 evidence
+  // used to jump from 40% to 60%).
+  const voiceWeight = Math.min(0.7, 0.15 + totalEvidence * 0.055);
   const textWeight = 1 - voiceWeight;
 
   const blended = Math.round(
