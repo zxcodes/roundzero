@@ -1,9 +1,9 @@
 import { Sql } from "postgres";
 
 export const createPreEvaluationQuery = `-- name: createPreEvaluation :one
-INSERT INTO pre_evaluations (application_id, score, missing_requirements, confidence, next_step, consistency_score, raw_response)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
-RETURNING id, application_id, score, missing_requirements, confidence, next_step, consistency_score, raw_response, created_at`;
+INSERT INTO pre_evaluations (application_id, score, missing_requirements, confidence, next_step, consistency_score, raw_response, model, prompt_version)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+RETURNING id, application_id, score, missing_requirements, confidence, next_step, consistency_score, raw_response, model, prompt_version, created_at`;
 
 export interface createPreEvaluationArgs {
     applicationId: string;
@@ -13,6 +13,8 @@ export interface createPreEvaluationArgs {
     nextStep: string;
     consistencyScore: number | null;
     rawResponse: any | null;
+    model: string | null;
+    promptVersion: string | null;
 }
 
 export interface createPreEvaluationRow {
@@ -24,11 +26,13 @@ export interface createPreEvaluationRow {
     nextStep: string;
     consistencyScore: number | null;
     rawResponse: any | null;
+    model: string | null;
+    promptVersion: string | null;
     createdAt: Date;
 }
 
 export async function createPreEvaluation(sql: Sql, args: createPreEvaluationArgs): Promise<createPreEvaluationRow | null> {
-    const rows = await sql.unsafe(createPreEvaluationQuery, [args.applicationId, args.score, args.missingRequirements, args.confidence, args.nextStep, args.consistencyScore, args.rawResponse]).values();
+    const rows = await sql.unsafe(createPreEvaluationQuery, [args.applicationId, args.score, args.missingRequirements, args.confidence, args.nextStep, args.consistencyScore, args.rawResponse, args.model, args.promptVersion]).values();
     if (rows.length !== 1) {
         return null;
     }
@@ -42,12 +46,14 @@ export async function createPreEvaluation(sql: Sql, args: createPreEvaluationArg
         nextStep: row[5],
         consistencyScore: row[6],
         rawResponse: row[7],
-        createdAt: row[8]
+        model: row[8],
+        promptVersion: row[9],
+        createdAt: row[10]
     };
 }
 
 export const getPreEvaluationByApplicationIdQuery = `-- name: getPreEvaluationByApplicationId :one
-SELECT id, application_id, score, missing_requirements, confidence, next_step, consistency_score, raw_response, created_at
+SELECT id, application_id, score, missing_requirements, confidence, next_step, consistency_score, raw_response, model, prompt_version, created_at
 FROM pre_evaluations
 WHERE application_id = $1`;
 
@@ -64,6 +70,8 @@ export interface getPreEvaluationByApplicationIdRow {
     nextStep: string;
     consistencyScore: number | null;
     rawResponse: any | null;
+    model: string | null;
+    promptVersion: string | null;
     createdAt: Date;
 }
 
@@ -82,7 +90,9 @@ export async function getPreEvaluationByApplicationId(sql: Sql, args: getPreEval
         nextStep: row[5],
         consistencyScore: row[6],
         rawResponse: row[7],
-        createdAt: row[8]
+        model: row[8],
+        promptVersion: row[9],
+        createdAt: row[10]
     };
 }
 
