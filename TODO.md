@@ -2,10 +2,7 @@
 
 
 - prevent people from using diff resumes/profiles for diff jobs. we can use snapshots to compare and decide if we wanna hold them in pre-eval itself. not exactly prevent, it should just act as a guardrail in the background.
-- some of the empty states are bad (no interviews one)
-- fix shadcn card comp, has too much top and bottom padding.
 - think about connecting relevant profiles to the app (github, dribble etc for better understanding of the candidate, also check if we have any apis we can use to get and analyse the data.)
-
 - everything on the company side needs to be rethought. the ux isn't there. it's cluttered and messy.
 - need to redefine the landing and product branding: (resumes are outdated, yoe is just a number now, cracked people exist, ai needs to find them, experience is no longer a good metric, etc etc.)
 - update landing page messaging to say the time of resumes is over. it's time for real evaluation etc.
@@ -36,6 +33,7 @@
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- fix shadcn card comp, has too much top and bottom padding.-->
 <!--- in post eval add another slop check to review interview transcript-->
 <!--- think about entire ai layer arch, it is on-demand right now, check if that's sufficient or we need queues etc?-->
 <!--- think about this entire model: should companies even see applicants as they come? or should we force reports until they arrive? then show applications?-->
