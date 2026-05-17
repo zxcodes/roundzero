@@ -11,7 +11,6 @@
 - update landing page messaging to say the time of resumes is over. it's time for real evaluation etc.
 - validate open router models using their api key in prod ci so we detect non existent models beforehand.
 - we need to detect if agent messes up the interview and give candidate another chance with good ui feedback. 
-- configure sentry for prod envs.
 - think about using actual tools such as web fetch etc to assess technical skills etc?
 - align interview sidebar and main app's padding equally on a global level. 
 - company logo doesn't reflect after uploading until I refresh.
