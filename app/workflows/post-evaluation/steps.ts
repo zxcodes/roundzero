@@ -24,10 +24,37 @@ import {
   type CommunicationAssessmentAnalysis,
   communicationAssessmentSchema,
 } from "@/prompts/communication-assessment";
+import {
+  auditScreeningCoverage,
+  getModelDateContext,
+  LIMITS,
+  moderateTranscript,
+  sanitizeTranscriptMessages,
+  type TranscriptMessage,
+  transcriptHasEnoughSignal,
+} from "@/shared/ai-refine";
 import { getInterviewAgentState } from "@/shared/interview-agent-client";
 import type { createWorkflowLogger } from "@/shared/logger";
 import { notificationPayloadSchemas } from "@/shared/notifications-config";
 import { getModelChain, getOpenRouter } from "@/shared/openrouter";
+
+// Prompt versions for tracking which prompt was used for each report
+const POST_EVAL_PROMPT_VERSION = "1.0.0";
+const REFINE_PROMPT_VERSION = "1.0.0";
+
+/**
+ * Minimum number of company screening questions that must be referenced by
+ * the interviewer in the transcript for the interview to be considered
+ * "real enough" to produce a report. Scales with the number of supplied
+ * questions so a 1-question role doesn't auto-pass and a 6-question role
+ * isn't gated by a single hit.
+ *
+ * Ratio: 50% of required questions, with floor of 1 and ceiling of 3.
+ */
+export function requiredScreeningCoverage(questionCount: number): number {
+  if (questionCount === 0) return 0;
+  return Math.max(1, Math.min(3, Math.ceil(questionCount / 2)));
+}
 
 export type PostEvaluationPayload = {
   interviewId: string;
@@ -70,6 +97,7 @@ type InterviewAgentState = {
     interviewId: string;
   };
   messages: InterviewAgentMessage[];
+  screeningCoverage: Record<number, "answered" | "skipped">;
 };
 
 type InterviewContextState = {
@@ -86,14 +114,34 @@ type InterviewContextState = {
   };
 };
 
+type InterviewSignalStatus = { ok: true } | { ok: false; reason: string };
+
+type ReadInterviewDataResult =
+  | {
+      kind: "ready";
+      interview: NonNullable<Awaited<ReturnType<typeof getInterviewContextById>>>;
+      transcript: string;
+      messages: TranscriptMessage[];
+      screeningCoverage: Record<number, "answered" | "skipped">;
+      moderation: { quality: "normal" | "low"; reason?: string };
+      contextState: InterviewContextState;
+    }
+  | {
+      kind: "insufficient_signal";
+      interview: NonNullable<Awaited<ReturnType<typeof getInterviewContextById>>>;
+      contextState: InterviewContextState;
+      reason: string;
+    };
+
 // reportSchema is imported from @/features/reports/schemas
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
-async function runPostEvalObject(args: {
-  systemPrompt: string;
-  userPrompt: string;
-}): Promise<{ object: ReportModelResponse; usage: { inputTokens: number; outputTokens: number } }> {
+async function runPostEvalObject(args: { systemPrompt: string; userPrompt: string }): Promise<{
+  object: ReportModelResponse;
+  usage: { inputTokens: number; outputTokens: number };
+  model: string;
+}> {
   const openrouter = getOpenRouter();
   const { model, fallbacks } = getModelChain("post_eval");
 
@@ -111,65 +159,14 @@ async function runPostEvalObject(args: {
       inputTokens: result.usage.inputTokens ?? 0,
       outputTokens: result.usage.outputTokens ?? 0,
     },
+    model,
   };
 }
 
-function fallbackReportFromText(interviewData: {
-  interview: {
-    jobTitle: string;
-    candidateName: string;
-  };
-  contextState: InterviewContextState;
-  transcript: string;
-}): ReportModelResponse {
-  const transcriptLower = interviewData.transcript.toLowerCase();
-
-  const communication = transcriptLower.includes("because") ? 72 : 65;
-  const problemSolving = transcriptLower.includes("trade-off") ? 74 : 66;
-  const ownership =
-    transcriptLower.includes("i led") || transcriptLower.includes("i owned") ? 76 : 68;
-  const roleFit = 70;
-  const overall = Math.round((communication + problemSolving + ownership + roleFit) / 4);
-
-  const screeningAnswers: ScreeningAnswer[] = interviewData.contextState.customQuestions.map(
-    (question) => ({
-      question,
-      answer: null,
-      concern: "none",
-      notes: "Automatic fallback could not extract a structured answer from the transcript.",
-    }),
-  );
-
-  return {
-    summary: `${interviewData.interview.candidateName} completed a structured interview for ${interviewData.interview.jobTitle}. The transcript provides enough signal for a directional recommendation, but should be reviewed alongside resume and application context.`,
-    strengths: [
-      "Provided concrete examples from prior work",
-      "Communicated clearly and stayed on topic",
-      "Demonstrated ownership in execution narratives",
-    ],
-    weaknesses: [
-      "Limited depth on measurable outcomes in some answers",
-      "Could provide stronger trade-off reasoning under constraints",
-    ],
-    insights: [
-      "Candidate appears comfortable with role-relevant workflows",
-      "Further probing could focus on ambiguity handling and prioritization",
-    ],
-    evidence: [
-      "Interview transcript captured candidate-led examples",
-      "Responses referenced implementation details and decision context",
-    ],
-    screeningAnswers,
-    scores: {
-      communication,
-      problemSolving,
-      ownership,
-      roleFit,
-      overall,
-    },
-    recommendation: overall >= 75 ? "yes" : "lean_no",
-  };
-}
+// NOTE: there is no fake-content fallback for report generation. If the model
+// chain fails, we surface the failure and let the workflow's outer catch mark
+// the application as `evaluation_failed`. Persisting hardcoded platitudes as
+// if they were real evaluation output is worse than admitting failure.
 
 const interviewAgentMessageSchema = z.object({
   role: z.enum(["assistant", "candidate"]),
@@ -242,7 +239,7 @@ export function readInterviewData(
   db: Sql,
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
-  return async () => {
+  return async (): Promise<ReadInterviewDataResult> => {
     log.info("Reading interview context and transcript");
 
     const interview = await getInterviewContextById(db, { id: interviewId });
@@ -257,22 +254,63 @@ export function readInterviewData(
       throw new Error(`Interview agent returned invalid state for ${interviewId}`);
     }
 
-    const agentState = stateCandidate;
-    const transcript = Array.isArray(agentState.messages)
-      ? agentState.messages
-          .map(
-            (message: InterviewAgentMessage) => `${message.role.toUpperCase()}: ${message.content}`,
-          )
-          .join("\n\n")
-      : "";
+    const messages: TranscriptMessage[] = sanitizeTranscriptMessages(
+      Array.isArray(stateCandidate.messages)
+        ? stateCandidate.messages.map((m: InterviewAgentMessage) => ({
+            role: m.role,
+            content: m.content,
+          }))
+        : [],
+    );
 
-    if (!transcript.trim()) {
-      throw new Error(`Interview transcript is empty for interview ${interviewId}`);
+    // Short-circuit empty / one-sided / trivial transcripts. Better to mark
+    // the application `evaluation_failed` than to fabricate a report from
+    // essentially no signal.
+    const signal: InterviewSignalStatus = transcriptHasEnoughSignal(messages);
+    if (!signal.ok) {
+      return {
+        kind: "insufficient_signal",
+        interview,
+        contextState,
+        reason: signal.reason,
+      };
+    }
+    const coveredScreeningQuestions = auditScreeningCoverage(
+      contextState.customQuestions,
+      messages,
+    );
+    const minScreeningCoverage = requiredScreeningCoverage(contextState.customQuestions.length);
+    if (coveredScreeningQuestions.size < minScreeningCoverage) {
+      return {
+        kind: "insufficient_signal",
+        interview,
+        contextState,
+        reason: `covered ${coveredScreeningQuestions.size}/${contextState.customQuestions.length} required screening question(s); need at least ${minScreeningCoverage}`,
+      };
     }
 
+    // Content moderation: check for abusive, spammy, or pathological content
+    const moderation = moderateTranscript(messages);
+    if (moderation.quality === "low") {
+      log.warn(
+        `Interview transcript quality check failed for ${interviewId}: ${moderation.reason}`,
+      );
+    }
+
+    // Use structured "Role: text" join for the prompt sites that still need a
+    // single string blob. Sanitization already removed role-marker leaks from
+    // candidate messages, so this join is safe to feed to the LLM.
+    const transcript = messages
+      .map((m) => `${m.role === "assistant" ? "Interviewer" : "Candidate"}: ${m.content}`)
+      .join("\n\n");
+
     return {
+      kind: "ready",
       interview,
       transcript,
+      messages,
+      screeningCoverage: stateCandidate.screeningCoverage ?? {},
+      moderation,
       contextState,
     };
   };
@@ -286,6 +324,8 @@ export function generateReport(
       candidateName: string;
     };
     transcript: string;
+    screeningCoverage: Record<number, "answered" | "skipped">;
+    moderation: { quality: "normal" | "low"; reason?: string };
     contextState: InterviewContextState;
     voiceAssessment?: CommunicationAssessmentAnalysis | null;
   },
@@ -295,6 +335,7 @@ export function generateReport(
     log.info("Generating structured interview report with OpenRouter");
 
     const customQuestions = interviewData.contextState.customQuestions;
+    const agentCoveredCount = Object.keys(interviewData.screeningCoverage).length;
     const customQuestionsBlock =
       customQuestions.length > 0
         ? customQuestions.map((q, i) => `  ${i + 1}. ${q}`).join("\n")
@@ -326,7 +367,7 @@ export function generateReport(
       "You MUST respond with a single JSON object containing exactly the fields specified below. Do NOT include any text outside the JSON object. No markdown, no explanations, no preamble.",
       "",
       "# Current Date",
-      `Current date: ${new Date().toISOString().split("T")[0]}. Use this when evaluating recency, timeline plausibility, or "currently working" entries.`,
+      `Current date: ${getModelDateContext()}. Use this when evaluating recency, timeline plausibility, or "currently working" entries.`,
       "",
       "# Mission",
       "Produce a fair, sharp, evidence-grounded interview report from the supplied interview transcript and context. Your job is to surface signal — both strengths and concerns — that materially helps the hiring team decide.",
@@ -405,25 +446,26 @@ export function generateReport(
         authenticityFlags: authenticityFlagsBlock,
       },
       voiceCommunicationSignal: voiceSignal,
+      interviewQuality: interviewData.moderation.quality,
+      screeningCoverageSignal: {
+        coveredByAgent: agentCoveredCount,
+        totalRequired: customQuestions.length,
+      },
       requiredScreeningQuestions: customQuestionsBlock,
-      transcript: interviewData.transcript.slice(0, 15000),
+      transcript: interviewData.transcript.slice(0, LIMITS.TRANSCRIPT),
     });
 
-    try {
-      const { object: report, usage } = await runPostEvalObject({
-        systemPrompt,
-        userPrompt,
-      });
+    const {
+      object: report,
+      usage,
+      model,
+    } = await runPostEvalObject({
+      systemPrompt,
+      userPrompt,
+    });
 
-      log.ai(userPrompt.length, usage.outputTokens, 0);
-      return report;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      log.warn(
-        `OpenRouter report generation failed: ${message}. Using deterministic fallback report.`,
-      );
-      return fallbackReportFromText(interviewData);
-    }
+    log.ai(userPrompt.length, usage.outputTokens, 0);
+    return { report, model };
   };
 }
 
@@ -433,6 +475,7 @@ export function persistReport(
     interview: { applicationId: string };
   },
   reportDraft: ReportModelResponse,
+  model: string,
   db: Sql,
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
@@ -453,6 +496,9 @@ export function persistReport(
         screeningAnswers: reportDraft.screeningAnswers,
         scores: reportDraft.scores,
         recommendation: reportDraft.recommendation,
+        model,
+        promptVersion: POST_EVAL_PROMPT_VERSION,
+        refineVersion: REFINE_PROMPT_VERSION,
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -629,8 +675,8 @@ export function loadVoiceAssessment(
 
 /**
  * Blend the voice communication score into the report's text-derived score.
- * Voice is weighted 60%, text 40% (per the voice-assessment spec). When no
- * voice assessment is present, the text score is returned unchanged.
+ * Voice weight depends on signal quality (evidence count). When no voice
+ * assessment is present, the text score is returned unchanged.
  */
 export function applyVoiceAssessmentToReport(
   report: ReportModelResponse,
@@ -640,7 +686,26 @@ export function applyVoiceAssessmentToReport(
     return report;
   }
 
-  const blended = Math.round(report.scores.communication * 0.4 + voice.overallScore * 0.6);
+  // Calculate signal quality based on total evidence count across all dimensions
+  // More evidence = higher confidence in the voice assessment
+  const totalEvidence =
+    voice.clarity.evidence.length +
+    voice.articulation.evidence.length +
+    voice.conciseness.evidence.length +
+    voice.listening.evidence.length +
+    voice.confidence.evidence.length;
+
+  // Continuous voice weight as a function of grounded-evidence count.
+  // - 0 evidence  → 15% weight (the voice analysis is essentially uncorroborated)
+  // - 10 evidence → 70% weight (cap, matches the original 60/40 spec ceiling)
+  // Smooth curve avoids cliff-jumps at bucket boundaries (e.g. 5→6 evidence
+  // used to jump from 40% to 60%).
+  const voiceWeight = Math.min(0.7, 0.15 + totalEvidence * 0.055);
+  const textWeight = 1 - voiceWeight;
+
+  const blended = Math.round(
+    report.scores.communication * textWeight + voice.overallScore * voiceWeight,
+  );
 
   return {
     ...report,
