@@ -392,6 +392,38 @@ function cleanAiJobOutput(output: Record<string, unknown>): Record<string, unkno
     }
   }
 
+  // Sanity check: cap array lengths to prevent model from generating excessive lists
+  const MAX_REQUIREMENTS = 12;
+  const MAX_INTERVIEW_QUESTIONS = 12;
+  if (Array.isArray(cleaned.requirements) && cleaned.requirements.length > MAX_REQUIREMENTS) {
+    cleaned.requirements = cleaned.requirements.slice(0, MAX_REQUIREMENTS);
+  }
+  if (
+    Array.isArray(cleaned.interviewQuestions) &&
+    cleaned.interviewQuestions.length > MAX_INTERVIEW_QUESTIONS
+  ) {
+    cleaned.interviewQuestions = cleaned.interviewQuestions.slice(0, MAX_INTERVIEW_QUESTIONS);
+  }
+
+  // Sanity check: cap salary fields to prevent unrealistic values
+  const MAX_SALARY = 1000000; // $1M upper bound
+  if (typeof cleaned.salaryMin === "number" && cleaned.salaryMin > MAX_SALARY) {
+    cleaned.salaryMin = MAX_SALARY;
+  }
+  if (typeof cleaned.salaryMax === "number" && cleaned.salaryMax > MAX_SALARY) {
+    cleaned.salaryMax = MAX_SALARY;
+  }
+
+  // Sanity check: cap team size and headcount to realistic values
+  const MAX_TEAM_SIZE = 1000;
+  const MAX_HEADCOUNT = 1000;
+  if (typeof cleaned.teamSize === "number" && cleaned.teamSize > MAX_TEAM_SIZE) {
+    cleaned.teamSize = MAX_TEAM_SIZE;
+  }
+  if (typeof cleaned.headcount === "number" && cleaned.headcount > MAX_HEADCOUNT) {
+    cleaned.headcount = MAX_HEADCOUNT;
+  }
+
   return cleaned;
 }
 
