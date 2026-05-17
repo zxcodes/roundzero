@@ -195,6 +195,8 @@ CREATE TABLE pre_evaluations (
   next_step             TEXT NOT NULL,
   consistency_score     INTEGER CHECK (consistency_score >= 0 AND consistency_score <= 100),
   raw_response          JSONB,
+  model                 TEXT,
+  prompt_version        TEXT,
   created_at            TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -213,6 +215,9 @@ CREATE TABLE reports (
   screening_answers JSONB NOT NULL DEFAULT '[]',
   scores          JSONB NOT NULL,
   recommendation  TEXT NOT NULL,
+  model           TEXT,
+  prompt_version  TEXT,
+  refine_version  TEXT,
   released_at     TIMESTAMPTZ,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
