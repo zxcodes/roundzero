@@ -22,6 +22,7 @@ import {
 } from "@/prompts/communication-assessment";
 import { VOICE_ASSESSMENT_PROMPT } from "@/prompts/voice-assessment";
 import { buildCandidateProfileSummary } from "@/shared/ai-candidate-profile";
+import { LIMITS, sanitizeUntrustedText } from "@/shared/ai-refine";
 import { getDb } from "@/shared/db";
 import { getModelChain, getOpenRouter } from "@/shared/openrouter";
 import { refineCommunicationAnalysis } from "@/workflows/post-evaluation/refine";
@@ -124,7 +125,7 @@ export class VoiceAssessmentAgent extends VoiceAgent<Env> {
       jobTitle: interview.jobTitle,
       companyName: interview.companyName,
       candidateName: interview.candidateName,
-      candidateSummary: candidateSummaryRaw.slice(0, 8000),
+      candidateSummary: sanitizeUntrustedText(candidateSummaryRaw, LIMITS.CANDIDATE_SUMMARY),
     };
 
     this._context = ctx;

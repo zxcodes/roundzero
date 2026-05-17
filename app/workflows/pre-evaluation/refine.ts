@@ -108,17 +108,25 @@ export function refineSlopCheck(
   });
 
   const explanationRaw = typeof raw.explanation === "string" ? raw.explanation.trim() : "";
-  const explanation =
+  const consistencyScore =
+    typeof raw.consistencyScore === "number" && Number.isFinite(raw.consistencyScore)
+      ? clampScore(raw.consistencyScore)
+      : null;
+
+  let explanation =
     explanationRaw.length >= 12
       ? explanationRaw.slice(0, MAX_EXPLANATION_CHARS)
       : grounded.length > 0
         ? "Authenticity concerns flagged — see redFlags for grounded examples."
         : "No authenticity concerns detected.";
 
-  const consistencyScore =
-    typeof raw.consistencyScore === "number" && Number.isFinite(raw.consistencyScore)
-      ? clampScore(raw.consistencyScore)
-      : null;
+  // Cross-field consistency enforcement: if redFlags is empty and consistency
+  // score is high, the explanation must not claim authenticity concerns.
+  // This prevents the model from contradicting itself (e.g., redFlags: [] but
+  // explanation: "candidate fabricated 5 years of experience").
+  if (grounded.length === 0 && consistencyScore !== null && consistencyScore >= 80) {
+    explanation = "No authenticity concerns detected.";
+  }
 
   return {
     consistencyScore,

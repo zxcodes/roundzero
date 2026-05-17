@@ -24,10 +24,24 @@ import {
   type CommunicationAssessmentAnalysis,
   communicationAssessmentSchema,
 } from "@/prompts/communication-assessment";
+import {
+  auditScreeningCoverage,
+  getModelDateContext,
+  LIMITS,
+  moderateTranscript,
+  sanitizeTranscriptMessages,
+  type TranscriptMessage,
+  transcriptHasEnoughSignal,
+} from "@/shared/ai-refine";
 import { getInterviewAgentState } from "@/shared/interview-agent-client";
 import type { createWorkflowLogger } from "@/shared/logger";
 import { notificationPayloadSchemas } from "@/shared/notifications-config";
 import { getModelChain, getOpenRouter } from "@/shared/openrouter";
+
+// Prompt versions for tracking which prompt was used for each report
+const POST_EVAL_PROMPT_VERSION = "1.0.0";
+const REFINE_PROMPT_VERSION = "1.0.0";
+const MIN_SCREENING_COVERAGE = 1;
 
 export type PostEvaluationPayload = {
   interviewId: string;
@@ -70,6 +84,7 @@ type InterviewAgentState = {
     interviewId: string;
   };
   messages: InterviewAgentMessage[];
+  screeningCoverage: Record<number, "answered" | "skipped">;
 };
 
 type InterviewContextState = {
@@ -86,14 +101,34 @@ type InterviewContextState = {
   };
 };
 
+type InterviewSignalStatus = { ok: true } | { ok: false; reason: string };
+
+type ReadInterviewDataResult =
+  | {
+      kind: "ready";
+      interview: NonNullable<Awaited<ReturnType<typeof getInterviewContextById>>>;
+      transcript: string;
+      messages: TranscriptMessage[];
+      screeningCoverage: Record<number, "answered" | "skipped">;
+      moderation: { quality: "normal" | "low"; reason?: string };
+      contextState: InterviewContextState;
+    }
+  | {
+      kind: "insufficient_signal";
+      interview: NonNullable<Awaited<ReturnType<typeof getInterviewContextById>>>;
+      contextState: InterviewContextState;
+      reason: string;
+    };
+
 // reportSchema is imported from @/features/reports/schemas
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
-async function runPostEvalObject(args: {
-  systemPrompt: string;
-  userPrompt: string;
-}): Promise<{ object: ReportModelResponse; usage: { inputTokens: number; outputTokens: number } }> {
+async function runPostEvalObject(args: { systemPrompt: string; userPrompt: string }): Promise<{
+  object: ReportModelResponse;
+  usage: { inputTokens: number; outputTokens: number };
+  model: string;
+}> {
   const openrouter = getOpenRouter();
   const { model, fallbacks } = getModelChain("post_eval");
 
@@ -111,6 +146,7 @@ async function runPostEvalObject(args: {
       inputTokens: result.usage.inputTokens ?? 0,
       outputTokens: result.usage.outputTokens ?? 0,
     },
+    model,
   };
 }
 
@@ -190,7 +226,7 @@ export function readInterviewData(
   db: Sql,
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
-  return async () => {
+  return async (): Promise<ReadInterviewDataResult> => {
     log.info("Reading interview context and transcript");
 
     const interview = await getInterviewContextById(db, { id: interviewId });
@@ -205,22 +241,64 @@ export function readInterviewData(
       throw new Error(`Interview agent returned invalid state for ${interviewId}`);
     }
 
-    const agentState = stateCandidate;
-    const transcript = Array.isArray(agentState.messages)
-      ? agentState.messages
-          .map(
-            (message: InterviewAgentMessage) => `${message.role.toUpperCase()}: ${message.content}`,
-          )
-          .join("\n\n")
-      : "";
+    const messages: TranscriptMessage[] = sanitizeTranscriptMessages(
+      Array.isArray(stateCandidate.messages)
+        ? stateCandidate.messages.map((m: InterviewAgentMessage) => ({
+            role: m.role,
+            content: m.content,
+          }))
+        : [],
+    );
 
-    if (!transcript.trim()) {
-      throw new Error(`Interview transcript is empty for interview ${interviewId}`);
+    // Short-circuit empty / one-sided / trivial transcripts. Better to mark
+    // the application `evaluation_failed` than to fabricate a report from
+    // essentially no signal.
+    const signal: InterviewSignalStatus = transcriptHasEnoughSignal(messages);
+    if (!signal.ok) {
+      return {
+        kind: "insufficient_signal",
+        interview,
+        contextState,
+        reason: signal.reason,
+      };
+    }
+    const coveredScreeningQuestions = auditScreeningCoverage(
+      contextState.customQuestions,
+      messages,
+    );
+    const minScreeningCoverage =
+      contextState.customQuestions.length > 0 ? MIN_SCREENING_COVERAGE : 0;
+    if (coveredScreeningQuestions.size < minScreeningCoverage) {
+      return {
+        kind: "insufficient_signal",
+        interview,
+        contextState,
+        reason: `covered ${coveredScreeningQuestions.size}/${contextState.customQuestions.length} required screening question(s); need at least ${minScreeningCoverage}`,
+      };
     }
 
+    // Content moderation: check for abusive, spammy, or pathological content
+    const moderation = moderateTranscript(messages);
+    if (moderation.quality === "low") {
+      log.warn(
+        `Interview transcript quality check failed for ${interviewId}: ${moderation.reason}`,
+      );
+    }
+
+    // Use structured "Role: text" join for the prompt sites that still need a
+    // single string blob. Sanitization already removed role-marker leaks from
+    // candidate messages, so this join is safe to feed to the LLM.
+    const transcript = messages
+      .map((m) => `${m.role === "assistant" ? "Interviewer" : "Candidate"}: ${m.content}`)
+      .join("\n\n");
+
     return {
+      kind: "ready",
       interview,
       transcript,
+      messages,
+      screeningCoverage: stateCandidate.screeningCoverage ?? {},
+      moderation,
       contextState,
     };
   };
@@ -234,6 +312,8 @@ export function generateReport(
       candidateName: string;
     };
     transcript: string;
+    screeningCoverage: Record<number, "answered" | "skipped">;
+    moderation: { quality: "normal" | "low"; reason?: string };
     contextState: InterviewContextState;
     voiceAssessment?: CommunicationAssessmentAnalysis | null;
   },
@@ -243,6 +323,7 @@ export function generateReport(
     log.info("Generating structured interview report with OpenRouter");
 
     const customQuestions = interviewData.contextState.customQuestions;
+    const agentCoveredCount = Object.keys(interviewData.screeningCoverage).length;
     const customQuestionsBlock =
       customQuestions.length > 0
         ? customQuestions.map((q, i) => `  ${i + 1}. ${q}`).join("\n")
@@ -274,7 +355,7 @@ export function generateReport(
       "You MUST respond with a single JSON object containing exactly the fields specified below. Do NOT include any text outside the JSON object. No markdown, no explanations, no preamble.",
       "",
       "# Current Date",
-      `Current date: ${new Date().toISOString().split("T")[0]}. Use this when evaluating recency, timeline plausibility, or "currently working" entries.`,
+      `Current date: ${getModelDateContext()}. Use this when evaluating recency, timeline plausibility, or "currently working" entries.`,
       "",
       "# Mission",
       "Produce a fair, sharp, evidence-grounded interview report from the supplied interview transcript and context. Your job is to surface signal — both strengths and concerns — that materially helps the hiring team decide.",
@@ -353,17 +434,26 @@ export function generateReport(
         authenticityFlags: authenticityFlagsBlock,
       },
       voiceCommunicationSignal: voiceSignal,
+      interviewQuality: interviewData.moderation.quality,
+      screeningCoverageSignal: {
+        coveredByAgent: agentCoveredCount,
+        totalRequired: customQuestions.length,
+      },
       requiredScreeningQuestions: customQuestionsBlock,
-      transcript: interviewData.transcript.slice(0, 15000),
+      transcript: interviewData.transcript.slice(0, LIMITS.TRANSCRIPT),
     });
 
-    const { object: report, usage } = await runPostEvalObject({
+    const {
+      object: report,
+      usage,
+      model,
+    } = await runPostEvalObject({
       systemPrompt,
       userPrompt,
     });
 
     log.ai(userPrompt.length, usage.outputTokens, 0);
-    return report;
+    return { report, model };
   };
 }
 
@@ -373,6 +463,7 @@ export function persistReport(
     interview: { applicationId: string };
   },
   reportDraft: ReportModelResponse,
+  model: string,
   db: Sql,
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
@@ -393,6 +484,9 @@ export function persistReport(
         screeningAnswers: reportDraft.screeningAnswers,
         scores: reportDraft.scores,
         recommendation: reportDraft.recommendation,
+        model,
+        promptVersion: POST_EVAL_PROMPT_VERSION,
+        refineVersion: REFINE_PROMPT_VERSION,
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -569,8 +663,8 @@ export function loadVoiceAssessment(
 
 /**
  * Blend the voice communication score into the report's text-derived score.
- * Voice is weighted 60%, text 40% (per the voice-assessment spec). When no
- * voice assessment is present, the text score is returned unchanged.
+ * Voice weight depends on signal quality (evidence count). When no voice
+ * assessment is present, the text score is returned unchanged.
  */
 export function applyVoiceAssessmentToReport(
   report: ReportModelResponse,
@@ -580,7 +674,35 @@ export function applyVoiceAssessmentToReport(
     return report;
   }
 
-  const blended = Math.round(report.scores.communication * 0.4 + voice.overallScore * 0.6);
+  // Calculate signal quality based on total evidence count across all dimensions
+  // More evidence = higher confidence in the voice assessment
+  const totalEvidence =
+    voice.clarity.evidence.length +
+    voice.articulation.evidence.length +
+    voice.conciseness.evidence.length +
+    voice.listening.evidence.length +
+    voice.confidence.evidence.length;
+
+  // Dynamic voice weight based on signal quality:
+  // - 0-2 evidence pieces: 20% weight (low confidence)
+  // - 3-5 evidence pieces: 40% weight (medium confidence)
+  // - 6-8 evidence pieces: 60% weight (high confidence)
+  // - 9+ evidence pieces: 70% weight (very high confidence)
+  let voiceWeight: number;
+  if (totalEvidence <= 2) {
+    voiceWeight = 0.2;
+  } else if (totalEvidence <= 5) {
+    voiceWeight = 0.4;
+  } else if (totalEvidence <= 8) {
+    voiceWeight = 0.6;
+  } else {
+    voiceWeight = 0.7;
+  }
+  const textWeight = 1 - voiceWeight;
+
+  const blended = Math.round(
+    report.scores.communication * textWeight + voice.overallScore * voiceWeight,
+  );
 
   return {
     ...report,
