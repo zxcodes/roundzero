@@ -5,7 +5,6 @@
 - some of the empty states are bad (no interviews one)
 - fix shadcn card comp, has too much top and bottom padding.
 - think about connecting relevant profiles to the app (github, dribble etc for better understanding of the candidate, also check if we have any apis we can use to get and analyse the data.)
-- if a model generates some stupid shit in the name of evidence, we need another step to clean that up before writing to db. this applies to everything we're writing to db from a model. should never trust direct model responses. the entire evidence, weakness, strengths needs to be redone in a better way with good insights. it is useless now. basically the entire evaluation block should be post-processed with a new workflow to be useful.
 
 - everything on the company side needs to be rethought. the ux isn't there. it's cluttered and messy.
 - need to redefine the landing and product branding: (resumes are outdated, yoe is just a number now, cracked people exist, ai needs to find them, experience is no longer a good metric, etc etc.)
@@ -42,6 +41,7 @@
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- if a model generates some stupid shit in the name of evidence, we need another step to clean that up before writing to db. this applies to everything we're writing to db from a model. should never trust direct model responses. the entire evidence, weakness, strengths needs to be redone in a better way with good insights. it is useless now. basically the entire evaluation block should be post-processed with a new workflow to be useful.-->
 <!--- there is no indication after sending a message to the agent (both voice and text).-->
 <!--- if a candidate goes into hold, there is no way for companies to manually invite them to interview because of new batch flow?-->
 <!--- the pre-eval and all prompts need to be hardened in such a way that they won't reject a an applicant just because they don't have x years of experience or because they don't have x keywords in their profile. it should decide that based on the actual work mentioned in the candidate's work history and should not act like an ats parser.-->
