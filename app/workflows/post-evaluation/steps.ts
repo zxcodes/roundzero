@@ -51,7 +51,7 @@ const REFINE_PROMPT_VERSION = "1.0.0";
  *
  * Ratio: 50% of required questions, with floor of 1 and ceiling of 3.
  */
-export function requiredScreeningCoverage(questionCount: number): number {
+function requiredScreeningCoverage(questionCount: number): number {
   if (questionCount === 0) return 0;
   return Math.max(1, Math.min(3, Math.ceil(questionCount / 2)));
 }
