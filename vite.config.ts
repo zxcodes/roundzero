@@ -25,14 +25,10 @@ export default config;
 // This is required because somehow vite 8 has issues with decorators.
 function decoratorPreset(options: Record<string, unknown>) {
   return {
-    preset: () => ({
-      plugins: [["@babel/plugin-proposal-decorators", options]],
-    }),
+    preset: () => ({ plugins: [["@babel/plugin-proposal-decorators", options]] }),
     rolldown: {
       // Only run this transform if the file contains a decorator.
-      filter: {
-        code: "@",
-      },
+      filter: { code: "@" },
     },
   };
 }
