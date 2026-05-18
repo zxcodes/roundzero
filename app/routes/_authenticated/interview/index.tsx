@@ -34,8 +34,8 @@ function InterviewIndexPage() {
     <div className="flex min-h-0 flex-1 items-center justify-center p-6">
       <Empty>
         <EmptyHeader>
-          <EmptyMedia>
-            <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={2} className="size-5" />
+          <EmptyMedia variant="icon">
+            <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={2} />
           </EmptyMedia>
           <EmptyTitle>No interview sessions yet</EmptyTitle>
           <EmptyDescription>Active and past interviews will appear here.</EmptyDescription>

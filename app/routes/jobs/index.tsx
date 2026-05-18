@@ -268,7 +268,7 @@ function JobsPage() {
             <Empty className="border">
               <EmptyHeader>
                 <EmptyMedia variant="icon">
-                  <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={1.5} />
+                  <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} />
                 </EmptyMedia>
                 <EmptyTitle>No jobs found</EmptyTitle>
                 <EmptyDescription>Try adjusting your search or filters.</EmptyDescription>

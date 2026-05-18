@@ -175,7 +175,7 @@ function CompaniesPage() {
             <Empty className="border">
               <EmptyHeader>
                 <EmptyMedia variant="icon">
-                  <HugeiconsIcon icon={Building01Icon} strokeWidth={1.5} />
+                  <HugeiconsIcon icon={Building01Icon} strokeWidth={2} />
                 </EmptyMedia>
                 <EmptyTitle>No companies found</EmptyTitle>
                 <EmptyDescription>Try adjusting your search or filters.</EmptyDescription>

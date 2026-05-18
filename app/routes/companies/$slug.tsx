@@ -209,7 +209,7 @@ function CompanyProfilePage() {
                 <Empty className="border">
                   <EmptyHeader>
                     <EmptyMedia variant="icon">
-                      <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={1.5} />
+                      <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} />
                     </EmptyMedia>
                     <EmptyTitle>No open positions</EmptyTitle>
                     <EmptyDescription>Check back later for new opportunities.</EmptyDescription>
