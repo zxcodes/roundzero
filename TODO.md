@@ -169,9 +169,8 @@
 
 ## Future Stuff (Not included in initial release)
 
-- let people connect their github so we can fetch their contribution graph. (adds to the overall result and we can also show it in detailed report view)
 <!--- add save job feature for candidates. -->
-- companies might need api access to list jobs? iframes? too much for now? think about it.
+<!--- companies might need api access to list jobs? iframes? too much for now? think about it.-->
 <!--- think more about company questions (gender, race etc the other platforms ask.) (AGENT-OFFLOAD)-->
 <!--- improve work experience fields, add skills, site location etc etc. (AGENT-OFFLOAD)-->
 
