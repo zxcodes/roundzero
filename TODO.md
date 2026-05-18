@@ -9,7 +9,6 @@
 - validate open router models using their api key in prod ci so we detect non existent models beforehand.
 - we need to detect if agent messes up the interview and give candidate another chance with good ui feedback. 
 - think about using actual tools such as web fetch etc to assess technical skills etc?
-- align interview sidebar and main app's padding equally on a global level. 
 - company logo doesn't reflect after uploading until I refresh.
 - the landing page has fake metrics (first report 3 min etc, think how valid they're or replace them with actual claims).
 - the landing page needs to show major cost savings for the company while showing great benefits, compared to all the mainstream platforms based on real and accurate pricing as per today.
@@ -33,6 +32,7 @@
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- align interview sidebar and main app's padding equally on a global level. -->
 <!--- fix shadcn card comp, has too much top and bottom padding.-->
 <!--- in post eval add another slop check to review interview transcript-->
 <!--- think about entire ai layer arch, it is on-demand right now, check if that's sufficient or we need queues etc?-->
