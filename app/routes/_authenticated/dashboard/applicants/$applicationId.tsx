@@ -27,7 +27,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Empty, EmptyDescription } from "@/components/ui/empty";
 import {
   Select,
   SelectContent,
@@ -48,6 +47,8 @@ import { formatDate } from "@/shared/date";
 import {
   APPLICATION_STATUS_TRANSITIONS,
   type ApplicationStatus,
+  applicationStatusLabels,
+  applicationStatusMeta,
   applicationStatusSchema,
 } from "@/shared/enums";
 import { base64ToBlob } from "@/shared/resume";
@@ -79,88 +80,43 @@ export const Route = createFileRoute("/_authenticated/dashboard/applicants/$appl
   component: ApplicantReviewPage,
 });
 
-const APPLICATION_STAGES = [
-  "applied",
-  "pre_screening",
-  "queued_for_batch",
-  "interview_invited",
-  "interview_in_progress",
-  "evaluated_held",
-  "evaluated",
-  "shortlisted",
-  "rejected",
-] as const;
+// Compact 5-step stepper. Sub-states fold into a parent step.
+type StepperStep = {
+  key: "applied" | "screening" | "interview" | "evaluated" | "decision";
+  label: string;
+};
 
-const STATUS_OPTIONS: { value: ApplicationStatus; label: string }[] = [
-  { value: "applied", label: "Applied" },
-  { value: "pre_screening", label: "Pre-screening" },
-  { value: "queued_for_batch", label: "Queued for evaluation" },
-  { value: "interview_invited", label: "Interview invited" },
-  { value: "interview_in_progress", label: "Interview in progress" },
-  { value: "evaluated_held", label: "Evaluation complete" },
-  { value: "evaluated", label: "Evaluated" },
-  { value: "shortlisted", label: "Shortlisted" },
-  { value: "rejected", label: "Rejected" },
-  { value: "evaluation_failed", label: "Evaluation failed" },
+const stepperSteps: StepperStep[] = [
+  { key: "applied", label: "Applied" },
+  { key: "screening", label: "Screening" },
+  { key: "interview", label: "Interview" },
+  { key: "evaluated", label: "Evaluated" },
+  { key: "decision", label: "Decision" },
 ];
 
-const stageCopy = {
-  applied: {
-    badge: "Applied",
-    tone: "border-info/20 bg-info/10 text-info",
-    dot: "bg-info",
-  },
-  pre_screening: {
-    badge: "On hold",
-    tone: "border-warning/20 bg-warning/10 text-warning",
-    dot: "bg-warning",
-  },
-  queued_for_batch: {
-    badge: "Queued",
-    tone: "border-pending/20 bg-pending/10 text-pending",
-    dot: "bg-pending",
-  },
-  interview_invited: {
-    badge: "Interview invited",
-    tone: "border-active/20 bg-active/10 text-active",
-    dot: "bg-active",
-  },
-  interview_in_progress: {
-    badge: "Interview in progress",
-    tone: "border-warning/20 bg-warning/10 text-warning",
-    dot: "bg-warning",
-  },
-  evaluated_held: {
-    badge: "Evaluation complete",
-    tone: "border-success/20 bg-success/10 text-success",
-    dot: "bg-success",
-  },
-  evaluated: {
-    badge: "Evaluated",
-    tone: "border-success/20 bg-success/10 text-success",
-    dot: "bg-success",
-  },
-  shortlisted: {
-    badge: "Shortlisted",
-    tone: "border-progress/20 bg-progress/10 text-progress",
-    dot: "bg-progress",
-  },
-  rejected: {
-    badge: "Rejected",
-    tone: "border-danger/20 bg-danger/10 text-danger",
-    dot: "bg-danger",
-  },
-  withdrawn: {
-    badge: "Withdrawn",
-    tone: "bg-muted text-muted-foreground",
-    dot: "bg-muted-foreground/50",
-  },
-  evaluation_failed: {
-    badge: "Evaluation failed",
-    tone: "border-danger/20 bg-danger/10 text-danger",
-    dot: "bg-danger",
-  },
-} as const;
+function statusToStepIndex(status: ApplicationStatus): number {
+  switch (status) {
+    case "applied":
+      return 0;
+    case "pre_screening":
+    case "queued_for_batch":
+      return 1;
+    case "interview_invited":
+    case "interview_in_progress":
+      return 2;
+    case "evaluated_held":
+    case "evaluated":
+      return 3;
+    case "shortlisted":
+    case "rejected":
+      return 4;
+    case "withdrawn":
+    case "evaluation_failed":
+      return -1;
+    default:
+      return 0;
+  }
+}
 
 const formatMonthRange = (entry: {
   startMonth: string | null;
@@ -260,15 +216,25 @@ function ApplicantReviewPage() {
   const headline = metadata.headline ?? null;
   const bio = metadata.bio ?? null;
   const currentStatus = applicationStatusSchema.parse(application.status);
-  const currentStageIndex = APPLICATION_STAGES.indexOf(
-    currentStatus as (typeof APPLICATION_STAGES)[number],
-  );
   const isFailed = currentStatus === "evaluation_failed";
-  const meta = stageCopy[currentStatus] ?? stageCopy.applied;
+  const isWithdrawn = currentStatus === "withdrawn";
+  const currentStepIndex = statusToStepIndex(currentStatus);
+  const statusTone = applicationStatusMeta[currentStatus];
   const report = reportTimeline?.report ?? null;
+
+  const allowedTransitions = APPLICATION_STATUS_TRANSITIONS[currentStatus] ?? [];
+  const canShortlist =
+    allowedTransitions.includes("shortlisted") && currentStatus !== "shortlisted";
+  const canReject = allowedTransitions.includes("rejected") && currentStatus !== "rejected";
+
+  const allowedStatusOptions: ApplicationStatus[] = [
+    currentStatus,
+    ...allowedTransitions.filter((s) => s !== currentStatus),
+  ];
 
   const onStatusValueChange = async (value: string) => {
     const nextStatus = applicationStatusSchema.parse(value);
+    if (nextStatus === currentStatus) return;
     if (nextStatus === "rejected" && currentStatus !== "rejected") {
       setPendingStatus(nextStatus);
       return;
@@ -279,6 +245,14 @@ function ApplicantReviewPage() {
     });
   };
 
+  const onShortlist = async () => {
+    await updateStatusMutation.mutateAsync({
+      data: { applicationId: application.id, status: "shortlisted" },
+    });
+  };
+
+  const onRejectClick = () => setPendingStatus("rejected");
+
   const onResumeView = async () => {
     await resumeDownloadMutation.mutateAsync({
       data: { applicationId: application.id },
@@ -286,58 +260,24 @@ function ApplicantReviewPage() {
   };
 
   const onRejectConfirm = async () => {
-    if (!pendingStatus) {
-      return;
-    }
-
+    if (!pendingStatus) return;
     await updateStatusMutation.mutateAsync({
       data: { applicationId: application.id, status: pendingStatus },
     });
     setPendingStatus(null);
   };
 
-  const allowedStatuses = STATUS_OPTIONS.filter(
-    (status) =>
-      status.value === currentStatus ||
-      APPLICATION_STATUS_TRANSITIONS[currentStatus]?.includes(status.value),
-  );
-
   return (
     <div className="animate-fade-in space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      {/* Top breadcrumb / nav row */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <Button variant="ghost" size="sm" asChild className="-ml-2">
           <Link to="/dashboard/jobs/$jobId" params={{ jobId: application.jobId }}>
             <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
             Back to role
           </Link>
         </Button>
-        <div className="flex gap-2">
-          {allowedStatuses.some((s) => s.value === "shortlisted") &&
-          currentStatus !== "shortlisted" ? (
-            <Button
-              size="sm"
-              className="bg-success text-success-foreground hover:bg-success/90 shadow-sm shadow-success/20"
-              disabled={updateStatusMutation.isPending}
-              onClick={async () => {
-                await updateStatusMutation.mutateAsync({
-                  data: { applicationId: application.id, status: "shortlisted" },
-                });
-              }}
-            >
-              <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-4" />
-              Shortlist
-            </Button>
-          ) : null}
-          {allowedStatuses.some((s) => s.value === "rejected") && currentStatus !== "rejected" ? (
-            <Button
-              size="sm"
-              variant="destructive"
-              disabled={updateStatusMutation.isPending}
-              onClick={() => setPendingStatus("rejected")}
-            >
-              Reject
-            </Button>
-          ) : null}
+        <div className="flex items-center gap-1">
           {previousApplicant ? (
             <Button variant="outline" size="sm" asChild>
               <Link
@@ -363,173 +303,121 @@ function ApplicantReviewPage() {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-start gap-4">
-        <Avatar className="size-14 ring-4 ring-background">
-          <AvatarImage
-            src={application.candidatePicture ?? undefined}
-            alt={application.candidateName}
-          />
-          <AvatarFallback>{getInitials(application.candidateName)}</AvatarFallback>
-        </Avatar>
-        <div className="min-w-0 flex-1 space-y-2">
-          <h2 className="text-2xl font-bold tracking-tight">{application.candidateName}</h2>
-          <p className="text-sm text-muted-foreground">
-            Reviewing for <span className="font-medium">{application.jobTitle}</span>
-          </p>
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge className={meta.tone}>{meta.badge}</Badge>
-            <Badge variant="outline" className="gap-1 font-mono text-[11px]">
-              <HugeiconsIcon icon={Calendar01Icon} strokeWidth={2} className="size-3" />
-              Applied {formatDate(application.createdAt)}
-            </Badge>
-          </div>
-        </div>
-      </div>
-
-      <Card size="sm">
-        <CardContent className="space-y-2 py-0">
-          <div className="flex flex-wrap gap-2">
-            {APPLICATION_STAGES.map((stage) => {
-              const isCurrent = !isFailed && stage === currentStatus;
-              const isCompleted =
-                !isFailed &&
-                APPLICATION_STAGES.indexOf(stage) < currentStageIndex &&
-                currentStatus !== "rejected";
-              const stageMeta = stageCopy[stage];
-
-              return (
-                <div key={stage} className="flex items-center gap-2">
-                  <div
-                    className={`size-2 rounded-full ${isCurrent ? stageMeta.dot : isCompleted ? "bg-primary" : "bg-muted-foreground/30"}`}
-                  />
-                  <span
-                    className={`text-xs font-medium ${isCurrent ? "text-foreground" : isCompleted ? "text-muted-foreground" : "text-muted-foreground/60"}`}
-                  >
-                    {stageMeta.badge}
-                  </span>
-                </div>
-              );
-            })}
-            {isFailed ? (
-              <div className="flex items-center gap-2">
-                <div className="size-2 rounded-full bg-danger" />
-                <span className="text-xs font-medium text-danger">Evaluation failed</span>
-              </div>
-            ) : null}
-          </div>
-          <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-            <span>Contact: {application.candidateEmail}</span>
-            {application.createdAt !== application.updatedAt ? (
-              <span>Updated {formatDate(application.updatedAt)}</span>
-            ) : null}
-          </div>
-        </CardContent>
-      </Card>
-
-      {report ? <ReportSnapshotCard report={report} applicationId={application.id} /> : null}
-
-      {preEvaluation ? (
-        <Card>
-          <CardContent className="space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-muted-foreground">
-                  Pre-screening
-                </p>
-                <h3 className="mt-1 text-base font-semibold tracking-tight">
-                  Profile score: {preEvaluation.score}/100
-                </h3>
-              </div>
-              <Badge variant="outline" className="text-[11px]">
-                {preEvaluation.confidence}
-              </Badge>
-            </div>
-            {preEvaluation.missingRequirements.length > 0 ? (
+      {/* Two-column layout: content + sticky decision panel */}
+      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+        <div className="space-y-6 min-w-0">
+          {/* Candidate header */}
+          <div className="flex flex-wrap items-start gap-4">
+            <Avatar className="size-14 ring-4 ring-background">
+              <AvatarImage
+                src={application.candidatePicture ?? undefined}
+                alt={application.candidateName}
+              />
+              <AvatarFallback>{getInitials(application.candidateName)}</AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1 space-y-2">
+              <h2 className="text-2xl font-bold tracking-tight">{application.candidateName}</h2>
               <p className="text-sm text-muted-foreground">
-                {preEvaluation.missingRequirements.length} gap
-                {preEvaluation.missingRequirements.length === 1 ? "" : "s"} detected
+                Reviewing for <span className="font-medium">{application.jobTitle}</span>
               </p>
-            ) : (
-              <p className="text-sm text-success">All key requirements matched</p>
-            )}
-          </CardContent>
-        </Card>
-      ) : (
-        <Card className="border border-dashed border-border/70">
-          <CardContent className="py-6 text-center text-sm text-muted-foreground">
-            Pre-evaluation is in progress. Results will appear here once Zero finishes screening.
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="flex flex-wrap gap-2">
-        {allowedStatuses.length > 1 ? (
-          <div className="space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">Move application to</p>
-            <Select
-              value={currentStatus}
-              onValueChange={onStatusValueChange}
-              disabled={updateStatusMutation.isPending}
-            >
-              <SelectTrigger className="w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {allowedStatuses.map((status) => (
-                  <SelectItem key={status.value} value={status.value}>
-                    {status.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="outline" className={statusTone.badge}>
+                  {applicationStatusLabels[currentStatus]}
+                </Badge>
+                <Badge variant="outline" className="gap-1 font-mono text-[11px]">
+                  <HugeiconsIcon icon={Calendar01Icon} strokeWidth={2} className="size-3" />
+                  Applied {formatDate(application.createdAt)}
+                </Badge>
+              </div>
+            </div>
           </div>
-        ) : null}
 
-        {application.resumeKey ? (
-          <div className="flex items-end">
-            <Button
-              variant="outline"
-              onClick={onResumeView}
-              disabled={resumeDownloadMutation.isPending}
-            >
-              <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-4" />
-              {resumeDownloadMutation.isPending ? "Opening…" : "View resume"}
-            </Button>
-          </div>
-        ) : null}
+          {/* Compact 5-step stepper */}
+          <CompactStepper
+            currentIndex={currentStepIndex}
+            isFailed={isFailed}
+            isWithdrawn={isWithdrawn}
+            isRejected={currentStatus === "rejected"}
+          />
 
-        <div className="flex items-end">
-          <Button variant="outline" asChild>
-            <Link to="/dashboard/jobs/$jobId" params={{ jobId: application.jobId }}>
-              Open job details
-            </Link>
-          </Button>
+          {/* Report (if any) */}
+          {report ? <ReportSnapshotCard report={report} applicationId={application.id} /> : null}
+
+          {/* Pre-evaluation card — only when there's no full report yet */}
+          {!report && preEvaluation ? (
+            <Card>
+              <CardContent className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-muted-foreground">
+                      Pre-screening
+                    </p>
+                    <h3 className="mt-1 text-base font-semibold tracking-tight">
+                      Profile score: {preEvaluation.score}/100
+                    </h3>
+                  </div>
+                  <Badge variant="outline" className="text-[11px]">
+                    {preEvaluation.confidence}
+                  </Badge>
+                </div>
+                {preEvaluation.missingRequirements.length > 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    {preEvaluation.missingRequirements.length} gap
+                    {preEvaluation.missingRequirements.length === 1 ? "" : "s"} detected
+                  </p>
+                ) : (
+                  <p className="text-sm text-success">All key requirements matched</p>
+                )}
+              </CardContent>
+            </Card>
+          ) : null}
+
+          {!report && !preEvaluation ? (
+            <Card className="border border-dashed border-border/70">
+              <CardContent className="py-6 text-center text-sm text-muted-foreground">
+                Pre-evaluation is in progress. Results will appear here once Zero finishes
+                screening.
+              </CardContent>
+            </Card>
+          ) : null}
+
+          {/* Profile snapshot */}
+          <SubmittedProfileSnapshot
+            headline={headline}
+            bio={bio}
+            skills={skills}
+            links={links}
+            workHistory={workHistory}
+            hasResume={Boolean(application.resumeKey)}
+            headerExtra={
+              preEvaluation && !report ? (
+                <Badge variant="outline" className="font-mono text-[11px]">
+                  Score: {preEvaluation.score}/100
+                </Badge>
+              ) : null
+            }
+            formatMonthRange={formatMonthRange}
+          />
         </div>
+
+        {/* Decision panel (sticky on large screens) */}
+        <aside className="lg:sticky lg:top-6 lg:self-start">
+          <DecisionPanel
+            currentStatus={currentStatus}
+            canShortlist={canShortlist}
+            canReject={canReject}
+            isPending={updateStatusMutation.isPending}
+            onShortlist={onShortlist}
+            onReject={onRejectClick}
+            allowedStatuses={allowedStatusOptions}
+            onStatusChange={onStatusValueChange}
+            hasResume={Boolean(application.resumeKey)}
+            onResumeView={onResumeView}
+            resumeLoading={resumeDownloadMutation.isPending}
+            candidateEmail={application.candidateEmail}
+          />
+        </aside>
       </div>
-
-      <Empty className="border">
-        <EmptyDescription>
-          This page shows the candidate snapshot attached at apply time and any available evaluation
-          output.
-        </EmptyDescription>
-      </Empty>
-
-      <SubmittedProfileSnapshot
-        headline={headline}
-        bio={bio}
-        skills={skills}
-        links={links}
-        workHistory={workHistory}
-        hasResume={Boolean(application.resumeKey)}
-        headerExtra={
-          preEvaluation ? (
-            <Badge variant="outline" className="font-mono text-[11px]">
-              Score: {preEvaluation.score}/100
-            </Badge>
-          ) : null
-        }
-        formatMonthRange={formatMonthRange}
-      />
 
       <AlertDialog open={pendingStatus !== null} onOpenChange={() => setPendingStatus(null)}>
         <AlertDialogContent>
@@ -546,6 +434,179 @@ function ApplicantReviewPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+function CompactStepper({
+  currentIndex,
+  isFailed,
+  isWithdrawn,
+  isRejected,
+}: {
+  currentIndex: number;
+  isFailed: boolean;
+  isWithdrawn: boolean;
+  isRejected: boolean;
+}) {
+  return (
+    <Card size="sm" className="border-border/60">
+      <CardContent className="py-3">
+        <div className="flex items-center">
+          {stepperSteps.map((step, i) => {
+            const isCurrent = !isFailed && !isWithdrawn && i === currentIndex;
+            const isCompleted = !isFailed && !isWithdrawn && i < currentIndex;
+            const isLast = i === stepperSteps.length - 1;
+            // On "decision" step, color reflects shortlisted (primary) vs rejected (danger)
+            const dotClass = isFailed
+              ? "bg-danger"
+              : isWithdrawn
+                ? "bg-muted-foreground/30"
+                : isCurrent
+                  ? i === 4 && isRejected
+                    ? "bg-danger"
+                    : "bg-primary"
+                  : isCompleted
+                    ? "bg-primary/60"
+                    : "bg-muted-foreground/25";
+
+            return (
+              <div key={step.key} className="flex flex-1 items-center last:flex-none">
+                <div className="flex flex-col items-center gap-1.5">
+                  <div className={`size-2.5 rounded-full ${dotClass}`} aria-hidden />
+                  <span
+                    className={`text-[11px] font-medium ${
+                      isCurrent
+                        ? "text-foreground"
+                        : isCompleted
+                          ? "text-muted-foreground"
+                          : "text-muted-foreground/60"
+                    }`}
+                  >
+                    {step.label}
+                  </span>
+                </div>
+                {!isLast ? (
+                  <div
+                    className={`mx-2 h-px flex-1 ${isCompleted ? "bg-primary/40" : "bg-border/60"}`}
+                  />
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+        {isFailed ? (
+          <p className="mt-2 text-center text-[11px] font-medium text-danger">
+            Evaluation failed — manual review required.
+          </p>
+        ) : null}
+        {isWithdrawn ? (
+          <p className="mt-2 text-center text-[11px] font-medium text-muted-foreground">
+            Candidate withdrew their application.
+          </p>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+function DecisionPanel({
+  currentStatus,
+  canShortlist,
+  canReject,
+  isPending,
+  onShortlist,
+  onReject,
+  allowedStatuses,
+  onStatusChange,
+  hasResume,
+  onResumeView,
+  resumeLoading,
+  candidateEmail,
+}: {
+  currentStatus: ApplicationStatus;
+  canShortlist: boolean;
+  canReject: boolean;
+  isPending: boolean;
+  onShortlist: () => void | Promise<void>;
+  onReject: () => void;
+  allowedStatuses: ApplicationStatus[];
+  onStatusChange: (value: string) => void | Promise<void>;
+  hasResume: boolean;
+  onResumeView: () => void | Promise<void>;
+  resumeLoading: boolean;
+  candidateEmail: string;
+}) {
+  const tone = applicationStatusMeta[currentStatus];
+
+  return (
+    <div className="space-y-3 rounded-xl border border-border/60 bg-card p-4">
+      <div>
+        <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+          Decision
+        </p>
+        <div className="mt-1.5">
+          <Badge variant="outline" className={tone.badge}>
+            {applicationStatusLabels[currentStatus]}
+          </Badge>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        {canShortlist ? (
+          <Button
+            className="w-full bg-success text-success-foreground hover:bg-success/90 shadow-sm shadow-success/20"
+            disabled={isPending}
+            onClick={onShortlist}
+          >
+            <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-4" />
+            Shortlist
+          </Button>
+        ) : null}
+        {canReject ? (
+          <Button variant="destructive" className="w-full" disabled={isPending} onClick={onReject}>
+            Reject
+          </Button>
+        ) : null}
+      </div>
+
+      {allowedStatuses.length > 1 ? (
+        <div className="space-y-1.5 border-t border-border/50 pt-3">
+          <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            Move to
+          </p>
+          <Select value={currentStatus} onValueChange={onStatusChange} disabled={isPending}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {allowedStatuses.map((status) => (
+                <SelectItem key={status} value={status}>
+                  {applicationStatusLabels[status]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      ) : null}
+
+      <div className="space-y-2 border-t border-border/50 pt-3">
+        {hasResume ? (
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={onResumeView}
+            disabled={resumeLoading}
+          >
+            <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-4" />
+            {resumeLoading ? "Opening…" : "View resume"}
+          </Button>
+        ) : null}
+        <div className="text-[11px] text-muted-foreground">
+          <p className="font-medium uppercase tracking-wide">Contact</p>
+          <p className="mt-0.5 truncate font-mono text-xs text-foreground">{candidateEmail}</p>
+        </div>
+      </div>
     </div>
   );
 }

@@ -12,42 +12,15 @@ import {
 } from "@/components/ui/empty";
 import type { getJobApplicants } from "@/features/applications/server/functions";
 import { getOverallScore } from "@/features/reports/schemas";
-
-const recommendationMeta: Record<string, { label: string; className: string }> = {
-  strong_yes: {
-    label: "Strong yes",
-    className: "border-success/20 bg-success/10 text-success",
-  },
-  yes: {
-    label: "Yes",
-    className: "border-info/20 bg-info/10 text-info",
-  },
-  lean_no: {
-    label: "Lean no",
-    className: "border-warning/20 bg-warning/10 text-warning",
-  },
-  no: {
-    label: "No",
-    className: "border-danger/20 bg-danger/10 text-danger",
-  },
-};
-
-function statusLabel(status: string): string {
-  const labels: Record<string, string> = {
-    applied: "Applied",
-    pre_screening: "On hold",
-    queued_for_batch: "Queued",
-    interview_invited: "Interview invited",
-    interview_in_progress: "Interview in progress",
-    evaluated_held: "Evaluation complete",
-    evaluated: "Evaluated",
-    shortlisted: "Shortlisted",
-    rejected: "Rejected",
-    withdrawn: "Withdrawn",
-    evaluation_failed: "Evaluation failed",
-  };
-  return labels[status] ?? status;
-}
+import {
+  type ApplicationStatus,
+  applicationStatusLabels,
+  applicationStatusMeta,
+  type Recommendation,
+  recommendationBadgeTone,
+  recommendationLabels,
+  recommendationSchema,
+} from "@/shared/enums";
 
 export function CompanyJobApplicantsList({
   applicants,
@@ -94,9 +67,11 @@ export function CompanyJobApplicantsList({
       <div className="divide-y divide-border/50">
         {applicants.map((applicant) => {
           const score = getOverallScore(applicant.reportScores);
-          const recommendation = applicant.reportRecommendation ?? "";
-          const recMeta = recommendationMeta[recommendation];
+          const parsedRec = recommendationSchema.safeParse(applicant.reportRecommendation);
+          const recommendation: Recommendation | null = parsedRec.success ? parsedRec.data : null;
           const isEvaluated = applicant.reportId !== null;
+          const status = applicant.status as ApplicationStatus;
+          const statusTone = applicationStatusMeta[status];
 
           return (
             <Link
@@ -127,12 +102,12 @@ export function CompanyJobApplicantsList({
                   <span className="truncate text-sm font-medium group-hover:text-primary">
                     {applicant.candidateName}
                   </span>
-                  <Badge variant="outline" className="text-[11px]">
-                    {statusLabel(applicant.status)}
+                  <Badge variant="outline" className={statusTone?.badge ?? ""}>
+                    {applicationStatusLabels[status] ?? status}
                   </Badge>
-                  {isEvaluated && recMeta ? (
-                    <Badge variant="outline" className={recMeta.className}>
-                      {recMeta.label}
+                  {isEvaluated && recommendation ? (
+                    <Badge variant="outline" className={recommendationBadgeTone[recommendation]}>
+                      {recommendationLabels[recommendation]}
                     </Badge>
                   ) : null}
                   {applicant.status === "pre_screening" && applicant.preEvaluationScore != null ? (
