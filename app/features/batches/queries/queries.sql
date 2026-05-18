@@ -3,11 +3,6 @@ INSERT INTO job_batches (job_id, status, target_size)
 VALUES ($1, 'forming', $2)
 RETURNING id, job_id, status, target_size, created_at, launched_at, released_at;
 
--- name: getBatchById :one
-SELECT id, job_id, status, target_size, created_at, launched_at, released_at
-FROM job_batches
-WHERE id = $1;
-
 -- name: getActiveBatchForJob :one
 SELECT id, job_id, status, target_size, created_at, launched_at, released_at
 FROM job_batches
@@ -36,19 +31,6 @@ SET status = $2,
 WHERE id = $1
 RETURNING id, job_id, status, target_size, created_at, launched_at, released_at;
 
--- name: getBatchesForJob :many
-SELECT id, job_id, status, target_size, created_at, launched_at, released_at
-FROM job_batches
-WHERE job_id = $1
-ORDER BY created_at DESC;
-
--- name: getBatchProgress :one
-SELECT
-  COUNT(*) FILTER (WHERE i.status IN ('completed', 'expired', 'cancelled'))::int AS resolved_count,
-  COUNT(*)::int AS total_count
-FROM interviews i
-WHERE i.batch_id = $1;
-
 -- name: getPoolCandidatesForJob :many
 SELECT
   a.id,
@@ -62,18 +44,6 @@ LEFT JOIN pre_evaluations pe ON pe.application_id = a.id
 WHERE a.job_id = $1
   AND a.status = 'queued_for_batch'
 ORDER BY pe.score DESC NULLS LAST, a.created_at ASC;
-
--- name: addApplicationToPool :exec
-UPDATE applications
-SET status = 'queued_for_batch',
-    updated_at = now()
-WHERE id = $1;
-
--- name: launchBatchInterviews :exec
-UPDATE interviews
-SET status = 'pending',
-    invited_at = now()
-WHERE batch_id = $1;
 
 -- name: getHeldReportsForBatch :many
 SELECT
@@ -121,49 +91,11 @@ WHERE id IN (
     AND a.status = 'evaluated_held'
 );
 
--- name: getReleasedReportsForJob :many
-SELECT
-  r.id,
-  r.application_id,
-  r.summary,
-  r.strengths,
-  r.weaknesses,
-  r.insights,
-  r.evidence,
-  r.screening_answers,
-  r.scores,
-  r.recommendation,
-  r.released_at,
-  r.created_at,
-  u.name AS candidate_name,
-  u.picture AS candidate_picture
-FROM reports r
-JOIN applications a ON a.id = r.application_id
-JOIN users u ON u.id = a.candidate_id
-WHERE a.job_id = $1
-  AND r.released_at IS NOT NULL
-ORDER BY r.released_at DESC;
-
 -- name: assignInterviewToBatch :exec
 UPDATE interviews
 SET batch_id = $2,
     updated_at = now()
 WHERE id = $1;
-
--- name: getBatchInterviews :many
-SELECT
-  i.id,
-  i.application_id,
-  i.batch_id,
-  i.type,
-  i.status,
-  i.invited_at,
-  i.started_at,
-  i.completed_at,
-  i.expired_at,
-  i.cancelled_at
-FROM interviews i
-WHERE i.batch_id = $1;
 
 -- name: getBatchDetail :one
 SELECT
@@ -180,12 +112,6 @@ FROM job_batches jb
 JOIN jobs j ON j.id = jb.job_id
 JOIN companies c ON c.id = j.company_id
 WHERE jb.id = $1;
-
--- name: countReleasedReportsByJob :one
-SELECT COUNT(*)::int AS count
-FROM reports r
-JOIN applications a ON a.id = r.application_id
-WHERE a.job_id = $1 AND r.released_at IS NOT NULL;
 
 -- name: getBatchForUpdate :one
 SELECT id, job_id, status

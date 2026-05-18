@@ -48,13 +48,6 @@ WHERE id = $12
   AND owner_id = $13
 RETURNING *;
 
--- name: updateCompanyLogoByOwnerId :one
-UPDATE companies
-SET logo_key = $1,
-    updated_at = now()
-WHERE owner_id = $2
-RETURNING *;
-
 -- name: getAllCompanies :many
 SELECT c.*,
        (SELECT count(*)::int FROM jobs j WHERE j.company_id = c.id AND j.status = 'open' AND j.archived_at IS NULL) AS open_job_count
