@@ -37,42 +37,6 @@ export async function createBatch(sql: Sql, args: createBatchArgs): Promise<crea
     };
 }
 
-export const getBatchByIdQuery = `-- name: getBatchById :one
-SELECT id, job_id, status, target_size, created_at, launched_at, released_at
-FROM job_batches
-WHERE id = $1`;
-
-export interface getBatchByIdArgs {
-    id: string;
-}
-
-export interface getBatchByIdRow {
-    id: string;
-    jobId: string;
-    status: string;
-    targetSize: number;
-    createdAt: Date;
-    launchedAt: Date | null;
-    releasedAt: Date | null;
-}
-
-export async function getBatchById(sql: Sql, args: getBatchByIdArgs): Promise<getBatchByIdRow | null> {
-    const rows = await sql.unsafe(getBatchByIdQuery, [args.id]).values();
-    if (rows.length !== 1) {
-        return null;
-    }
-    const row = rows[0];
-    return {
-        id: row[0],
-        jobId: row[1],
-        status: row[2],
-        targetSize: row[3],
-        createdAt: row[4],
-        launchedAt: row[5],
-        releasedAt: row[6]
-    };
-}
-
 export const getActiveBatchForJobQuery = `-- name: getActiveBatchForJob :one
 SELECT id, job_id, status, target_size, created_at, launched_at, released_at
 FROM job_batches
@@ -223,66 +187,6 @@ export async function updateBatchStatus(sql: Sql, args: updateBatchStatusArgs): 
     };
 }
 
-export const getBatchesForJobQuery = `-- name: getBatchesForJob :many
-SELECT id, job_id, status, target_size, created_at, launched_at, released_at
-FROM job_batches
-WHERE job_id = $1
-ORDER BY created_at DESC`;
-
-export interface getBatchesForJobArgs {
-    jobId: string;
-}
-
-export interface getBatchesForJobRow {
-    id: string;
-    jobId: string;
-    status: string;
-    targetSize: number;
-    createdAt: Date;
-    launchedAt: Date | null;
-    releasedAt: Date | null;
-}
-
-export async function getBatchesForJob(sql: Sql, args: getBatchesForJobArgs): Promise<getBatchesForJobRow[]> {
-    return (await sql.unsafe(getBatchesForJobQuery, [args.jobId]).values()).map(row => ({
-        id: row[0],
-        jobId: row[1],
-        status: row[2],
-        targetSize: row[3],
-        createdAt: row[4],
-        launchedAt: row[5],
-        releasedAt: row[6]
-    }));
-}
-
-export const getBatchProgressQuery = `-- name: getBatchProgress :one
-SELECT
-  COUNT(*) FILTER (WHERE i.status IN ('completed', 'expired', 'cancelled'))::int AS resolved_count,
-  COUNT(*)::int AS total_count
-FROM interviews i
-WHERE i.batch_id = $1`;
-
-export interface getBatchProgressArgs {
-    batchId: string | null;
-}
-
-export interface getBatchProgressRow {
-    resolvedCount: number;
-    totalCount: number;
-}
-
-export async function getBatchProgress(sql: Sql, args: getBatchProgressArgs): Promise<getBatchProgressRow | null> {
-    const rows = await sql.unsafe(getBatchProgressQuery, [args.batchId]).values();
-    if (rows.length !== 1) {
-        return null;
-    }
-    const row = rows[0];
-    return {
-        resolvedCount: row[0],
-        totalCount: row[1]
-    };
-}
-
 export const getPoolCandidatesForJobQuery = `-- name: getPoolCandidatesForJob :many
 SELECT
   a.id,
@@ -319,34 +223,6 @@ export async function getPoolCandidatesForJob(sql: Sql, args: getPoolCandidatesF
         createdAt: row[4],
         preEvaluationScore: row[5]
     }));
-}
-
-export const addApplicationToPoolQuery = `-- name: addApplicationToPool :exec
-UPDATE applications
-SET status = 'queued_for_batch',
-    updated_at = now()
-WHERE id = $1`;
-
-export interface addApplicationToPoolArgs {
-    id: string;
-}
-
-export async function addApplicationToPool(sql: Sql, args: addApplicationToPoolArgs): Promise<void> {
-    await sql.unsafe(addApplicationToPoolQuery, [args.id]);
-}
-
-export const launchBatchInterviewsQuery = `-- name: launchBatchInterviews :exec
-UPDATE interviews
-SET status = 'pending',
-    invited_at = now()
-WHERE batch_id = $1`;
-
-export interface launchBatchInterviewsArgs {
-    batchId: string | null;
-}
-
-export async function launchBatchInterviews(sql: Sql, args: launchBatchInterviewsArgs): Promise<void> {
-    await sql.unsafe(launchBatchInterviewsQuery, [args.batchId]);
 }
 
 export const getHeldReportsForBatchQuery = `-- name: getHeldReportsForBatch :many
@@ -449,69 +325,6 @@ export async function releaseBatchApplications(sql: Sql, args: releaseBatchAppli
     await sql.unsafe(releaseBatchApplicationsQuery, [args.batchId]);
 }
 
-export const getReleasedReportsForJobQuery = `-- name: getReleasedReportsForJob :many
-SELECT
-  r.id,
-  r.application_id,
-  r.summary,
-  r.strengths,
-  r.weaknesses,
-  r.insights,
-  r.evidence,
-  r.screening_answers,
-  r.scores,
-  r.recommendation,
-  r.released_at,
-  r.created_at,
-  u.name AS candidate_name,
-  u.picture AS candidate_picture
-FROM reports r
-JOIN applications a ON a.id = r.application_id
-JOIN users u ON u.id = a.candidate_id
-WHERE a.job_id = $1
-  AND r.released_at IS NOT NULL
-ORDER BY r.released_at DESC`;
-
-export interface getReleasedReportsForJobArgs {
-    jobId: string;
-}
-
-export interface getReleasedReportsForJobRow {
-    id: string;
-    applicationId: string;
-    summary: string;
-    strengths: any;
-    weaknesses: any;
-    insights: any;
-    evidence: any;
-    screeningAnswers: any;
-    scores: any;
-    recommendation: string;
-    releasedAt: Date | null;
-    createdAt: Date;
-    candidateName: string;
-    candidatePicture: string | null;
-}
-
-export async function getReleasedReportsForJob(sql: Sql, args: getReleasedReportsForJobArgs): Promise<getReleasedReportsForJobRow[]> {
-    return (await sql.unsafe(getReleasedReportsForJobQuery, [args.jobId]).values()).map(row => ({
-        id: row[0],
-        applicationId: row[1],
-        summary: row[2],
-        strengths: row[3],
-        weaknesses: row[4],
-        insights: row[5],
-        evidence: row[6],
-        screeningAnswers: row[7],
-        scores: row[8],
-        recommendation: row[9],
-        releasedAt: row[10],
-        createdAt: row[11],
-        candidateName: row[12],
-        candidatePicture: row[13]
-    }));
-}
-
 export const assignInterviewToBatchQuery = `-- name: assignInterviewToBatch :exec
 UPDATE interviews
 SET batch_id = $2,
@@ -525,53 +338,6 @@ export interface assignInterviewToBatchArgs {
 
 export async function assignInterviewToBatch(sql: Sql, args: assignInterviewToBatchArgs): Promise<void> {
     await sql.unsafe(assignInterviewToBatchQuery, [args.id, args.batchId]);
-}
-
-export const getBatchInterviewsQuery = `-- name: getBatchInterviews :many
-SELECT
-  i.id,
-  i.application_id,
-  i.batch_id,
-  i.type,
-  i.status,
-  i.invited_at,
-  i.started_at,
-  i.completed_at,
-  i.expired_at,
-  i.cancelled_at
-FROM interviews i
-WHERE i.batch_id = $1`;
-
-export interface getBatchInterviewsArgs {
-    batchId: string | null;
-}
-
-export interface getBatchInterviewsRow {
-    id: string;
-    applicationId: string;
-    batchId: string | null;
-    type: string;
-    status: string;
-    invitedAt: Date | null;
-    startedAt: Date | null;
-    completedAt: Date | null;
-    expiredAt: Date | null;
-    cancelledAt: Date | null;
-}
-
-export async function getBatchInterviews(sql: Sql, args: getBatchInterviewsArgs): Promise<getBatchInterviewsRow[]> {
-    return (await sql.unsafe(getBatchInterviewsQuery, [args.batchId]).values()).map(row => ({
-        id: row[0],
-        applicationId: row[1],
-        batchId: row[2],
-        type: row[3],
-        status: row[4],
-        invitedAt: row[5],
-        startedAt: row[6],
-        completedAt: row[7],
-        expiredAt: row[8],
-        cancelledAt: row[9]
-    }));
 }
 
 export const getBatchDetailQuery = `-- name: getBatchDetail :one
@@ -622,31 +388,6 @@ export async function getBatchDetail(sql: Sql, args: getBatchDetailArgs): Promis
         releasedAt: row[6],
         jobTitle: row[7],
         companyName: row[8]
-    };
-}
-
-export const countReleasedReportsByJobQuery = `-- name: countReleasedReportsByJob :one
-SELECT COUNT(*)::int AS count
-FROM reports r
-JOIN applications a ON a.id = r.application_id
-WHERE a.job_id = $1 AND r.released_at IS NOT NULL`;
-
-export interface countReleasedReportsByJobArgs {
-    jobId: string;
-}
-
-export interface countReleasedReportsByJobRow {
-    count: number;
-}
-
-export async function countReleasedReportsByJob(sql: Sql, args: countReleasedReportsByJobArgs): Promise<countReleasedReportsByJobRow | null> {
-    const rows = await sql.unsafe(countReleasedReportsByJobQuery, [args.jobId]).values();
-    if (rows.length !== 1) {
-        return null;
-    }
-    const row = rows[0];
-    return {
-        count: row[0]
     };
 }
 

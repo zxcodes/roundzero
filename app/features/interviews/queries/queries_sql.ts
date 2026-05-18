@@ -111,58 +111,6 @@ export async function getInterviewByApplicationId(sql: Sql, args: getInterviewBy
     };
 }
 
-export const getInterviewByIdQuery = `-- name: getInterviewById :one
-SELECT id, application_id, batch_id, agent_id, type, metadata, status, invited_at, started_at, completed_at, expired_at, cancelled_at, cancellation_reason, created_at, updated_at
-FROM interviews
-WHERE id = $1`;
-
-export interface getInterviewByIdArgs {
-    id: string;
-}
-
-export interface getInterviewByIdRow {
-    id: string;
-    applicationId: string;
-    batchId: string | null;
-    agentId: string | null;
-    type: string;
-    metadata: any;
-    status: string;
-    invitedAt: Date | null;
-    startedAt: Date | null;
-    completedAt: Date | null;
-    expiredAt: Date | null;
-    cancelledAt: Date | null;
-    cancellationReason: string | null;
-    createdAt: Date;
-    updatedAt: Date;
-}
-
-export async function getInterviewById(sql: Sql, args: getInterviewByIdArgs): Promise<getInterviewByIdRow | null> {
-    const rows = await sql.unsafe(getInterviewByIdQuery, [args.id]).values();
-    if (rows.length !== 1) {
-        return null;
-    }
-    const row = rows[0];
-    return {
-        id: row[0],
-        applicationId: row[1],
-        batchId: row[2],
-        agentId: row[3],
-        type: row[4],
-        metadata: row[5],
-        status: row[6],
-        invitedAt: row[7],
-        startedAt: row[8],
-        completedAt: row[9],
-        expiredAt: row[10],
-        cancelledAt: row[11],
-        cancellationReason: row[12],
-        createdAt: row[13],
-        updatedAt: row[14]
-    };
-}
-
 export const getInterviewForCandidateByIdQuery = `-- name: getInterviewForCandidateById :one
 SELECT i.id, i.application_id, i.agent_id, i.type, i.metadata, i.status, i.invited_at, i.started_at, i.completed_at,
        i.expired_at, i.cancelled_at, i.cancellation_reason, i.created_at, i.updated_at,
@@ -591,31 +539,6 @@ export async function getInterviewContextById(sql: Sql, args: getInterviewContex
     };
 }
 
-export const countInterviewSlotsUsedByJobQuery = `-- name: countInterviewSlotsUsedByJob :one
-SELECT count(*)::int AS count
-FROM interviews i
-JOIN applications a ON a.id = i.application_id
-WHERE a.job_id = $1`;
-
-export interface countInterviewSlotsUsedByJobArgs {
-    jobId: string;
-}
-
-export interface countInterviewSlotsUsedByJobRow {
-    count: number;
-}
-
-export async function countInterviewSlotsUsedByJob(sql: Sql, args: countInterviewSlotsUsedByJobArgs): Promise<countInterviewSlotsUsedByJobRow | null> {
-    const rows = await sql.unsafe(countInterviewSlotsUsedByJobQuery, [args.jobId]).values();
-    if (rows.length !== 1) {
-        return null;
-    }
-    const row = rows[0];
-    return {
-        count: row[0]
-    };
-}
-
 export const countActiveInterviewSlotsByJobQuery = `-- name: countActiveInterviewSlotsByJob :one
 SELECT count(*)::int AS count
 FROM interviews i
@@ -640,81 +563,6 @@ export async function countActiveInterviewSlotsByJob(sql: Sql, args: countActive
     return {
         count: row[0]
     };
-}
-
-export const getBestBackfillCandidateByJobQuery = `-- name: getBestBackfillCandidateByJob :one
-SELECT a.id AS application_id,
-       a.candidate_id,
-       pe.next_step,
-       pe.score
-FROM applications a
-JOIN pre_evaluations pe ON pe.application_id = a.id
-JOIN users u ON u.id = a.candidate_id AND u.deleted_at IS NULL
-WHERE a.job_id = $1
-  AND a.status = 'pre_screening'
-  AND pe.next_step = 'interview_invited'
-  AND NOT EXISTS (
-    SELECT 1
-    FROM interviews i
-    WHERE i.application_id = a.id
-  )
-ORDER BY pe.score DESC, pe.created_at ASC
-LIMIT 1`;
-
-export interface getBestBackfillCandidateByJobArgs {
-    jobId: string;
-}
-
-export interface getBestBackfillCandidateByJobRow {
-    applicationId: string;
-    candidateId: string;
-    nextStep: string;
-    score: number;
-}
-
-export async function getBestBackfillCandidateByJob(sql: Sql, args: getBestBackfillCandidateByJobArgs): Promise<getBestBackfillCandidateByJobRow | null> {
-    const rows = await sql.unsafe(getBestBackfillCandidateByJobQuery, [args.jobId]).values();
-    if (rows.length !== 1) {
-        return null;
-    }
-    const row = rows[0];
-    return {
-        applicationId: row[0],
-        candidateId: row[1],
-        nextStep: row[2],
-        score: row[3]
-    };
-}
-
-export const getInterviewsPastDeadlineQuery = `-- name: getInterviewsPastDeadline :many
-SELECT i.id,
-       i.application_id,
-       a.candidate_id,
-       a.job_id,
-       j.title AS job_title
-FROM interviews i
-JOIN applications a ON a.id = i.application_id
-JOIN jobs j ON j.id = a.job_id
-WHERE i.status IN ('pending', 'in_progress')
-  AND i.metadata ? 'expiresAt'
-  AND (i.metadata->>'expiresAt')::timestamptz <= now()`;
-
-export interface getInterviewsPastDeadlineRow {
-    id: string;
-    applicationId: string;
-    candidateId: string;
-    jobId: string;
-    jobTitle: string;
-}
-
-export async function getInterviewsPastDeadline(sql: Sql): Promise<getInterviewsPastDeadlineRow[]> {
-    return (await sql.unsafe(getInterviewsPastDeadlineQuery, []).values()).map(row => ({
-        id: row[0],
-        applicationId: row[1],
-        candidateId: row[2],
-        jobId: row[3],
-        jobTitle: row[4]
-    }));
 }
 
 export const createCommunicationAssessmentQuery = `-- name: createCommunicationAssessment :one
