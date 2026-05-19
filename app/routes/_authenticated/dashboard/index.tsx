@@ -401,7 +401,26 @@ function RolesOverview({ roles }: { roles: RoleHealth[] }) {
 
 function RecentReleasesCard({ reports }: { reports: ReportHighlight[] }) {
   if (reports.length === 0) {
-    return null;
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Recent releases</CardTitle>
+          <CardDescription className="text-xs">
+            Top-scoring evaluations across your roles.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Empty className="border border-dashed border-border/60">
+            <EmptyHeader>
+              <EmptyTitle>No released evaluations yet</EmptyTitle>
+              <EmptyDescription>
+                Reports will appear here after active interview batches are released.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        </CardContent>
+      </Card>
+    );
   }
   return (
     <Card>
@@ -533,20 +552,28 @@ function ActiveBatchesStrip({ batches }: { batches: ActiveBatch[] }) {
 function CompanyDashboardSection({ metrics }: { metrics: CompanyMetrics }) {
   const actions = buildActionQueue(metrics);
   const openRoles = metrics.roleHealth;
+  const hasRecentReleases = metrics.reportHighlights.length > 0;
 
   return (
     <div className="space-y-6">
       <CompanyHeaderStats metrics={metrics} />
       <ActionQueueCard actions={actions} />
       <ActiveBatchesStrip batches={metrics.activeBatches} />
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <RolesOverview roles={openRoles} />
+      {hasRecentReleases ? (
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <RolesOverview roles={openRoles} />
+          </div>
+          <div className="lg:col-span-1">
+            <RecentReleasesCard reports={metrics.reportHighlights} />
+          </div>
         </div>
-        <div className="lg:col-span-1">
+      ) : (
+        <div className="space-y-6">
+          <RolesOverview roles={openRoles} />
           <RecentReleasesCard reports={metrics.reportHighlights} />
         </div>
-      </div>
+      )}
     </div>
   );
 }
