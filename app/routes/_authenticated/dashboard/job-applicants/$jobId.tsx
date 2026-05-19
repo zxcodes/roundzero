@@ -1,8 +1,6 @@
 import {
   ArrowLeft01Icon,
   Briefcase01Icon,
-  Clock01Icon,
-  HourglassIcon,
   RankingIcon,
   UserGroupIcon,
 } from "@hugeicons/core-free-icons";
@@ -13,28 +11,21 @@ import { DashboardJobApplicantsSkeleton } from "@/components/route-skeletons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CompanyJobApplicantsList } from "@/features/applications/components/company-job-applicants-list";
-import { getJobApplicants, getJobFunnelMetrics } from "@/features/applications/server/functions";
+import { getJobApplicants } from "@/features/applications/server/functions";
 import { getActiveBatchForJobServer } from "@/features/batches/server/functions";
 import { getJob } from "@/features/jobs/server/functions";
 import { validateUuidParams } from "@/shared/validation";
 
 type JobDetail = NonNullable<Awaited<ReturnType<typeof getJob>>>;
-type FunnelMetrics = NonNullable<Awaited<ReturnType<typeof getJobFunnelMetrics>>>;
-
-const funnelStages: {
-  key: keyof Omit<FunnelMetrics, "avgHoursToEvaluation" | "total">;
-  label: string;
-}[] = [
-  { key: "applied", label: "Applied" },
-  { key: "preScreening", label: "Pre-screening" },
-  { key: "queuedForBatch", label: "Queued" },
-  { key: "interviewInvited", label: "Invited" },
-  { key: "interviewInProgress", label: "In progress" },
-  { key: "evaluatedHeld", label: "Held" },
-  { key: "evaluated", label: "Evaluated" },
-  { key: "shortlisted", label: "Shortlisted" },
-];
 
 export const Route = createFileRoute("/_authenticated/dashboard/job-applicants/$jobId")({
   beforeLoad: ({ context, params }) => {
@@ -50,38 +41,67 @@ export const Route = createFileRoute("/_authenticated/dashboard/job-applicants/$
     }
     const job: JobDetail = jobResult;
 
-    const [applicants, funnel, activeBatch] = await Promise.all([
+    const [applicants, activeBatch] = await Promise.all([
       getJobApplicants({ data: { jobId: params.jobId } }),
-      getJobFunnelMetrics({ data: { jobId: params.jobId } }),
       getActiveBatchForJobServer({ data: { jobId: params.jobId } }),
     ]);
-    return { job, applicants, funnel, activeBatch };
+    return { job, applicants, activeBatch };
   },
   pendingComponent: DashboardJobApplicantsSkeleton,
   component: JobApplicantsPage,
 });
 
-function JobApplicantsPage() {
-  const { job, applicants, funnel, activeBatch } = Route.useLoaderData();
-  const [activeTab, setActiveTab] = useState<"released" | "active" | "queued" | "pending">(
-    "released",
-  );
+type ApplicantsView = "ready" | "all";
+type ApplicantsFilter =
+  | "all"
+  | "screening"
+  | "queued"
+  | "active_interview"
+  | "awaiting_decision"
+  | "shortlisted"
+  | "rejected"
+  | "withdrawn"
+  | "evaluation_failed";
 
-  const released = applicants.filter(
+function JobApplicantsPage() {
+  const { job, applicants, activeBatch } = Route.useLoaderData();
+  const [view, setView] = useState<ApplicantsView>("ready");
+  const [filter, setFilter] = useState<ApplicantsFilter>("all");
+
+  const onViewChange = (value: string) => {
+    setView(value as ApplicantsView);
+  };
+
+  const readyForDecisionApplicants = applicants.filter(
     (a: (typeof applicants)[number]) => a.reportReleasedAt !== null,
   );
-  const active = applicants.filter(
+  const activeInterviewApplicants = applicants.filter(
     (a: (typeof applicants)[number]) =>
       a.status === "interview_invited" ||
       a.status === "interview_in_progress" ||
       a.status === "evaluated_held",
   );
-  const queued = applicants.filter(
-    (a: (typeof applicants)[number]) => a.status === "queued_for_batch",
-  );
-  const pending = applicants.filter(
-    (a: (typeof applicants)[number]) => a.status === "pre_screening",
-  );
+  const screeningApplicants = applicants.filter((a: (typeof applicants)[number]) => {
+    return a.status === "pre_screening";
+  });
+
+  const filteredApplicants = applicants.filter((a: (typeof applicants)[number]) => {
+    if (filter === "all") return true;
+    if (filter === "screening") return a.status === "pre_screening";
+    if (filter === "queued") return a.status === "queued_for_batch";
+    if (filter === "active_interview") {
+      return (
+        a.status === "interview_invited" ||
+        a.status === "interview_in_progress" ||
+        a.status === "evaluated_held"
+      );
+    }
+    if (filter === "awaiting_decision") return a.status === "evaluated";
+    if (filter === "shortlisted") return a.status === "shortlisted";
+    if (filter === "rejected") return a.status === "rejected";
+    if (filter === "withdrawn") return a.status === "withdrawn";
+    return a.status === "evaluation_failed";
+  });
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -111,117 +131,97 @@ function JobApplicantsPage() {
         </p>
       </div>
 
-      {funnel.total > 0 ? (
+      <div className="grid gap-3 sm:grid-cols-3">
         <Card size="sm" className="border-border/60">
-          <CardContent className="space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                Application funnel
-              </p>
-              {funnel.avgHoursToEvaluation !== null ? (
-                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                  <HugeiconsIcon icon={Clock01Icon} strokeWidth={2} className="size-3" />
-                  avg. {funnel.avgHoursToEvaluation}h to evaluation
-                </div>
-              ) : null}
-            </div>
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-              {funnelStages.map((stage) => {
-                const count = funnel[stage.key];
-                const isZero = count === 0;
-                return (
-                  <div
-                    key={stage.key}
-                    className={`rounded-xl border px-3 py-2.5 text-center ${isZero ? "border-border/40 bg-muted/20" : "border-border/60 bg-card"}`}
-                  >
-                    <p
-                      className={`font-mono text-lg font-semibold leading-none ${isZero ? "text-muted-foreground/40" : "text-foreground"}`}
-                    >
-                      {count}
-                    </p>
-                    <p className="mt-1 text-[10px] font-medium text-muted-foreground">
-                      {stage.label}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
+          <CardContent className="py-3">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+              Total
+            </p>
+            <p className="mt-1 font-mono text-xl font-semibold">{applicants.length}</p>
+          </CardContent>
+        </Card>
+        <Card size="sm" className="border-border/60">
+          <CardContent className="py-3">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+              Ready for decision
+            </p>
+            <p className="mt-1 font-mono text-xl font-semibold">
+              {readyForDecisionApplicants.length}
+            </p>
+          </CardContent>
+        </Card>
+        <Card size="sm" className="border-border/60">
+          <CardContent className="py-3">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+              Active interview
+            </p>
+            <p className="mt-1 font-mono text-xl font-semibold">
+              {activeInterviewApplicants.length}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Tabs value={view} onValueChange={onViewChange}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <TabsList>
+            <TabsTrigger value="ready" className="gap-2">
+              <HugeiconsIcon icon={RankingIcon} strokeWidth={2} className="size-4" />
+              Ready for decision
+              <Badge variant="secondary" className="font-mono text-[10px]">
+                {readyForDecisionApplicants.length}
+              </Badge>
+            </TabsTrigger>
+            <TabsTrigger value="all" className="gap-2">
+              <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} className="size-4" />
+              All applicants
+              <Badge variant="secondary" className="font-mono text-[10px]">
+                {applicants.length}
+              </Badge>
+            </TabsTrigger>
+          </TabsList>
+
+          {view === "all" ? (
+            <Select value={filter} onValueChange={(value) => setFilter(value as ApplicantsFilter)}>
+              <SelectTrigger className="w-[210px]">
+                <SelectValue placeholder="Filter status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="screening">Screening</SelectItem>
+                <SelectItem value="queued">Queued</SelectItem>
+                <SelectItem value="active_interview">Active interview</SelectItem>
+                <SelectItem value="awaiting_decision">Awaiting decision</SelectItem>
+                <SelectItem value="shortlisted">Shortlisted</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+                <SelectItem value="withdrawn">Withdrawn</SelectItem>
+                <SelectItem value="evaluation_failed">Evaluation failed</SelectItem>
+              </SelectContent>
+            </Select>
+          ) : null}
+        </div>
+      </Tabs>
+
+      {view === "ready" ? (
+        <CompanyJobApplicantsList applicants={readyForDecisionApplicants} />
+      ) : (
+        <CompanyJobApplicantsList applicants={filteredApplicants} />
+      )}
+
+      {view === "all" && activeInterviewApplicants.length > 0 ? (
+        <ActiveBatchPanel
+          applicants={activeInterviewApplicants}
+          batchId={activeBatch?.id ?? null}
+        />
+      ) : null}
+
+      {view === "all" && filter === "screening" && screeningApplicants.length === 0 ? (
+        <Card className="border-dashed border-border/60">
+          <CardContent className="py-6">
+            <p className="text-sm text-muted-foreground">No applicants in screening right now.</p>
           </CardContent>
         </Card>
       ) : null}
-
-      <div className="flex gap-2 border-b border-border/50">
-        <button
-          type="button"
-          onClick={() => setActiveTab("released")}
-          className={`flex items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
-            activeTab === "released"
-              ? "border-primary text-foreground"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <HugeiconsIcon icon={RankingIcon} strokeWidth={2} className="size-4" />
-          Released
-          <Badge variant="secondary" className="font-mono text-[10px]">
-            {released.length}
-          </Badge>
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("active")}
-          className={`flex items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
-            activeTab === "active"
-              ? "border-primary text-foreground"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <HugeiconsIcon icon={Clock01Icon} strokeWidth={2} className="size-4" />
-          Active Batch
-          <Badge variant="secondary" className="font-mono text-[10px]">
-            {active.length}
-          </Badge>
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("queued")}
-          className={`flex items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
-            activeTab === "queued"
-              ? "border-primary text-foreground"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} className="size-4" />
-          Queued
-          <Badge variant="secondary" className="font-mono text-[10px]">
-            {queued.length}
-          </Badge>
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("pending")}
-          className={`flex items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
-            activeTab === "pending"
-              ? "border-primary text-foreground"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <HugeiconsIcon icon={HourglassIcon} strokeWidth={2} className="size-4" />
-          Pending
-          <Badge variant="secondary" className="font-mono text-[10px]">
-            {pending.length}
-          </Badge>
-        </button>
-      </div>
-
-      {activeTab === "released" ? (
-        <CompanyJobApplicantsList applicants={released} />
-      ) : activeTab === "active" ? (
-        <ActiveBatchPanel applicants={active} batchId={activeBatch?.id ?? null} />
-      ) : activeTab === "queued" ? (
-        <QueuedPanel count={queued.length} />
-      ) : (
-        <CompanyJobApplicantsList applicants={pending} />
-      )}
     </div>
   );
 }
@@ -281,34 +281,5 @@ function ActiveBatchPanel({
 
       <CompanyJobApplicantsList applicants={applicants} />
     </div>
-  );
-}
-
-function QueuedPanel({ count }: { count: number }) {
-  if (count === 0) {
-    return (
-      <Card className="border-dashed border-border/60">
-        <CardContent className="py-8 text-center">
-          <p className="text-sm text-muted-foreground">No candidates queued.</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Strong-fit candidates will appear here before the next batch launches.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <Card className="border-border/60">
-      <CardContent className="py-6">
-        <p className="text-sm font-medium">
-          {count} candidate{count === 1 ? "" : "s"} queued
-        </p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Candidates are queued for the next evaluation batch. Scores and names will be visible
-          after the batch releases.
-        </p>
-      </CardContent>
-    </Card>
   );
 }

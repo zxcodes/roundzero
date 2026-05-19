@@ -578,6 +578,27 @@ export function DashboardJobApplicantsSkeleton() {
         <Skeleton className="h-4 w-72" />
       </div>
 
+      {/* Summary cards */}
+      <div className="grid gap-3 sm:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Card key={i} size="sm" className="border-border/60">
+            <CardContent className="py-3">
+              <Skeleton className="h-3 w-20" />
+              <Skeleton className="mt-2 h-7 w-12" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* View switch + filter */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex gap-2">
+          <Skeleton className="h-9 w-40 rounded-md" />
+          <Skeleton className="h-9 w-36 rounded-md" />
+        </div>
+        <Skeleton className="h-9 w-44 rounded-md" />
+      </div>
+
       {/* Applicant list — clickable cards */}
       <div className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
