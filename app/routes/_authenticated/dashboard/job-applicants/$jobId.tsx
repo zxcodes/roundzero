@@ -251,39 +251,36 @@ function ActiveBatchPanel({
   const invited = applicants.filter((a) => a.status === "interview_invited").length;
 
   return (
-    <Card className="border-border/60">
-      <CardContent className="space-y-4 py-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium">Batch in progress</p>
-            <p className="text-xs text-muted-foreground">
-              {completed} of {applicants.length} completed
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="font-mono text-[10px]">
-              {inProgress} in progress · {invited} invited
-            </Badge>
+    <div className="space-y-4">
+      <Card size="sm" className="border-border/60">
+        <CardContent className="space-y-3 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium">Batch in progress</p>
+              <p className="text-xs text-muted-foreground">
+                {completed} of {applicants.length} completed · {inProgress} in progress · {invited}{" "}
+                invited
+              </p>
+            </div>
             {batchId ? (
               <Button variant="outline" size="sm" asChild>
                 <Link to="/dashboard/job-batches/$batchId" params={{ batchId }}>
-                  View batch
+                  Open batch
                 </Link>
               </Button>
             ) : null}
           </div>
-        </div>
-        <div className="h-2 overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full rounded-full bg-primary transition-all"
-            style={{ width: `${(completed / applicants.length) * 100}%` }}
-          />
-        </div>
-        <p className="text-xs text-muted-foreground">
-          Reports will release when all candidates respond or when the batch window closes.
-        </p>
-      </CardContent>
-    </Card>
+          <div className="h-2 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-primary transition-all"
+              style={{ width: `${(completed / applicants.length) * 100}%` }}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <CompanyJobApplicantsList applicants={applicants} />
+    </div>
   );
 }
 
