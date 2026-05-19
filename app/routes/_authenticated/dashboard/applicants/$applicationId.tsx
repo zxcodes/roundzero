@@ -555,7 +555,7 @@ function DecisionPanel({
       <div className="space-y-2">
         {canShortlist ? (
           <Button
-            className="w-full bg-success text-success-foreground hover:bg-success/90 shadow-sm shadow-success/20"
+            className="w-full bg-success text-success-foreground hover:bg-success/90"
             disabled={isPending}
             onClick={onShortlist}
           >
