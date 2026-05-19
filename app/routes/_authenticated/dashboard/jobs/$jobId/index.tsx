@@ -4,8 +4,10 @@ import {
   ArrowRight01Icon,
   Clock01Icon,
   Edit02Icon,
+  EyeIcon,
   Location01Icon,
   MoneyBag02Icon,
+  MoreVerticalCircle01Icon,
   RankingIcon,
   Rocket01Icon,
   UserGroupIcon,
@@ -14,6 +16,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
 import { toast } from "sonner";
 import { DashboardJobDetailSkeleton } from "@/components/route-skeletons";
 import {
@@ -25,11 +28,17 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Empty,
   EmptyDescription,
@@ -102,7 +111,13 @@ function JobDetailPage() {
         </div>
       </div>
 
-      {isCompany ? <CompanyActions job={job} requirements={requirements} /> : null}
+      {isCompany ? (
+        <CompanyActions
+          job={job}
+          requirements={requirements}
+          applicantCount={data.type === "company" ? data.applicants.length : 0}
+        />
+      ) : null}
 
       {/* Main content — two-column on large screens */}
       <div className="grid gap-5 lg:grid-cols-3">
@@ -383,8 +398,18 @@ function ApplicantsSummaryCard({
   );
 }
 
-function CompanyActions({ job, requirements }: { job: JobDetail; requirements: string[] }) {
+function CompanyActions({
+  job,
+  requirements,
+  applicantCount,
+}: {
+  job: JobDetail;
+  requirements: string[];
+  applicantCount: number;
+}) {
   const router = useRouter();
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [archiveOpen, setArchiveOpen] = useState(false);
 
   const publishJobFn = useServerFn(publishJob);
   const publishJobMutation = useMutation({
@@ -418,75 +443,114 @@ function CompanyActions({ job, requirements }: { job: JobDetail; requirements: s
   const onArchive = async () => {
     await archiveJobMutation.mutateAsync({ data: { id: job.id } });
   };
-  const isArchived = job.status === "closed" && job.archivedAt;
 
-  // Archived jobs are read-only
+  const onOpenPreview = () => setPreviewOpen(true);
+  const onOpenArchive = () => setArchiveOpen(true);
+
+  const previewData = {
+    title: job.title,
+    description: job.description,
+    requirements,
+    companyName: job.companyName ?? "",
+    location: job.location,
+    workplaceType: job.workplaceType,
+    employmentType: job.employmentType,
+    experienceLevel: job.experienceLevel,
+    salaryMin: job.salaryMin,
+    salaryMax: job.salaryMax,
+    salaryCurrency: job.salaryCurrency,
+    teamSize: job.teamSize,
+    headcount: job.headcount,
+  };
+
+  const isArchived = job.status === "closed" && job.archivedAt;
+  const isDraft = job.status === "draft";
+
+  // Archived jobs are read-only — just "View applicants".
   if (isArchived) {
     return (
-      <div className="flex gap-2">
-        <Button variant="outline" size="sm" asChild>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button asChild>
           <Link to="/dashboard/job-applicants/$jobId" params={{ jobId: job.id }}>
             <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} className="size-3.5" />
-            View applicants
+            View applicants ({applicantCount})
           </Link>
         </Button>
-        <Button variant="outline" size="sm" disabled title="Archived jobs cannot be edited">
-          <HugeiconsIcon icon={Edit02Icon} strokeWidth={2} className="size-3.5" />
-          Archived
+        <Button variant="outline" size="sm" onClick={onOpenPreview}>
+          <HugeiconsIcon icon={EyeIcon} strokeWidth={2} className="size-3.5" />
+          Preview
         </Button>
+        <JobPreviewDialog
+          data={previewData}
+          open={previewOpen}
+          onOpenChange={setPreviewOpen}
+          showDefaultTrigger={false}
+        />
       </div>
     );
   }
 
   return (
-    <div className="flex gap-2">
-      <Button variant="outline" size="sm" asChild>
-        <Link to="/dashboard/job-applicants/$jobId" params={{ jobId: job.id }}>
-          <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} className="size-3.5" />
-          View applicants
-        </Link>
-      </Button>
-      {job.status === "draft" ? (
-        <Button
-          variant="default"
-          size="sm"
-          onClick={onPublish}
-          disabled={publishJobMutation.isPending}
-        >
-          <HugeiconsIcon icon={Rocket01Icon} strokeWidth={2} className="size-3.5" />
-          {publishJobMutation.isPending ? "Publishing..." : "Publish"}
+    <div className="flex flex-wrap items-center gap-2">
+      {isDraft ? (
+        <>
+          <Button onClick={onPublish} disabled={publishJobMutation.isPending}>
+            <HugeiconsIcon icon={Rocket01Icon} strokeWidth={2} className="size-3.5" />
+            {publishJobMutation.isPending ? "Publishing..." : "Publish"}
+          </Button>
+          <Button variant="outline" asChild>
+            <Link to="/dashboard/job-applicants/$jobId" params={{ jobId: job.id }}>
+              <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} className="size-3.5" />
+              View applicants ({applicantCount})
+            </Link>
+          </Button>
+        </>
+      ) : (
+        <Button asChild>
+          <Link to="/dashboard/job-applicants/$jobId" params={{ jobId: job.id }}>
+            <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} className="size-3.5" />
+            View applicants ({applicantCount})
+          </Link>
         </Button>
-      ) : null}
-      <JobPreviewDialog
-        data={{
-          title: job.title,
-          description: job.description,
-          requirements,
-          companyName: job.companyName ?? "",
-          location: job.location,
-          workplaceType: job.workplaceType,
-          employmentType: job.employmentType,
-          experienceLevel: job.experienceLevel,
-          salaryMin: job.salaryMin,
-          salaryMax: job.salaryMax,
-          salaryCurrency: job.salaryCurrency,
-          teamSize: job.teamSize,
-          headcount: job.headcount,
-        }}
-      />
-      <Button variant="outline" size="sm" asChild>
-        <Link to="/dashboard/jobs/$jobId/edit" params={{ jobId: job.id }}>
-          <HugeiconsIcon icon={Edit02Icon} strokeWidth={2} className="size-3.5" />
-          Edit
-        </Link>
-      </Button>
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button variant="outline" size="sm" disabled={archiveJobMutation.isPending}>
+      )}
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="icon" aria-label="More actions">
+            <HugeiconsIcon icon={MoreVerticalCircle01Icon} strokeWidth={2} className="size-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onSelect={onOpenPreview}>
+            <HugeiconsIcon icon={EyeIcon} strokeWidth={2} className="size-3.5" />
+            Preview
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/dashboard/jobs/$jobId/edit" params={{ jobId: job.id }}>
+              <HugeiconsIcon icon={Edit02Icon} strokeWidth={2} className="size-3.5" />
+              Edit
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            variant="destructive"
+            onSelect={onOpenArchive}
+            disabled={archiveJobMutation.isPending}
+          >
             <HugeiconsIcon icon={Archive01Icon} strokeWidth={2} className="size-3.5" />
             {archiveJobMutation.isPending ? "Archiving..." : "Archive"}
-          </Button>
-        </AlertDialogTrigger>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <JobPreviewDialog
+        data={previewData}
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        showDefaultTrigger={false}
+      />
+
+      <AlertDialog open={archiveOpen} onOpenChange={setArchiveOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Archive this job?</AlertDialogTitle>
