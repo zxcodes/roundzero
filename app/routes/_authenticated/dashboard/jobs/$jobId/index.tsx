@@ -2,6 +2,7 @@ import {
   Archive01Icon,
   ArrowLeft01Icon,
   ArrowRight01Icon,
+  Briefcase01Icon,
   Clock01Icon,
   Edit02Icon,
   EyeIcon,
@@ -119,6 +120,19 @@ function JobDetailPage() {
         />
       ) : null}
 
+      {isCompany ? (
+        <ApplicantsSummaryCard
+          jobId={job.id}
+          applicantsCount={data.applicants.length}
+          evaluatedCount={
+            data.type === "company"
+              ? data.applicants.filter((a: { reportId: string | null }) => a.reportId !== null)
+                  .length
+              : 0
+          }
+        />
+      ) : null}
+
       {/* Main content — two-column on large screens */}
       <div className="grid gap-5 lg:grid-cols-3">
         {/* Left column — description + requirements */}
@@ -148,19 +162,6 @@ function JobDetailPage() {
                 </ul>
               </CardContent>
             </Card>
-          ) : null}
-
-          {isCompany ? (
-            <ApplicantsSummaryCard
-              jobId={job.id}
-              applicantsCount={data.applicants.length}
-              evaluatedCount={
-                data.type === "company"
-                  ? data.applicants.filter((a: { reportId: string | null }) => a.reportId !== null)
-                      .length
-                  : 0
-              }
-            />
           ) : null}
         </div>
 
@@ -194,12 +195,11 @@ function JobDetailPage() {
 
               {job.employmentType ? (
                 <div className="flex items-center gap-3">
-                  <Badge
-                    variant="outline"
-                    className="size-5 p-0 flex items-center justify-center text-[10px] font-bold shrink-0 rounded"
-                  >
-                    E
-                  </Badge>
+                  <HugeiconsIcon
+                    icon={Briefcase01Icon}
+                    strokeWidth={2}
+                    className="size-4 shrink-0 text-muted-foreground"
+                  />
                   <p className="text-sm">
                     {employmentTypeLabels[job.employmentType as EmploymentType]}
                   </p>
@@ -208,12 +208,11 @@ function JobDetailPage() {
 
               {job.experienceLevel ? (
                 <div className="flex items-center gap-3">
-                  <Badge
-                    variant="outline"
-                    className="size-5 p-0 flex items-center justify-center text-[10px] font-bold shrink-0 rounded"
-                  >
-                    L
-                  </Badge>
+                  <HugeiconsIcon
+                    icon={RankingIcon}
+                    strokeWidth={2}
+                    className="size-4 shrink-0 text-muted-foreground"
+                  />
                   <p className="text-sm">
                     {experienceLevelLabels[job.experienceLevel as ExperienceLevel]}
                   </p>
