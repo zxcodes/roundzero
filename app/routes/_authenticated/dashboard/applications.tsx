@@ -261,7 +261,7 @@ function ApplicationListCard({
 
   return (
     <Card size="sm" className={className}>
-      <CardContent className="py-0">
+      <CardContent>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="min-w-0 flex-1 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
@@ -271,7 +271,7 @@ function ApplicationListCard({
               <Badge variant="outline" className="font-mono text-[11px]">
                 {getJobStateLabel(application)}
               </Badge>
-              <Badge className={statusMeta.tone}>{statusMeta.badge}</Badge>
+              <Badge className={`${statusMeta.tone} text-[11px]`}>{statusMeta.badge}</Badge>
             </div>
 
             <div className="space-y-1">
@@ -294,7 +294,7 @@ function ApplicationListCard({
               to="/dashboard/application/$applicationId"
               params={{ applicationId: application.id }}
             >
-              View details
+              View application
             </Link>
           </Button>
         </div>

@@ -3,7 +3,6 @@
 
 - prevent people from using diff resumes/profiles for diff jobs. we can use snapshots to compare and decide if we wanna hold them in pre-eval itself. not exactly prevent, it should just act as a guardrail in the background.
 - think about connecting relevant profiles to the app (github, dribble etc for better understanding of the candidate, also check if we have any apis we can use to get and analyse the data.)
-- everything on the company side needs to be rethought. the ux isn't there. it's cluttered and messy.
 - need to redefine the landing and product branding: (resumes are outdated, yoe is just a number now, cracked people exist, ai needs to find them, experience is no longer a good metric, etc etc.)
 - update landing page messaging to say the time of resumes is over. it's time for real evaluation etc.
 - validate open router models using their api key in prod ci so we detect non existent models beforehand.
@@ -30,6 +29,7 @@
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- everything on the company side needs to be rethought. the ux isn't there. it's cluttered and messy.-->
 <!--- in post eval, refine the scores using the actual agent conv and add it to the final report.-->
 <!--- some company email reports are really bad and some are entirely missing for some flows. they have zero styling. review every single resend email template and align with rest of the app.-->
 <!--- align interview sidebar and main app's padding equally on a global level. -->
