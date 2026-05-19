@@ -12,7 +12,7 @@ import { createFileRoute, Link, notFound, redirect, useRouter } from "@tanstack/
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { DashboardApplicantReviewSkeleton } from "@/components/route-skeletons";
+import { DashboardApplicantReportSkeleton } from "@/components/route-skeletons";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -70,7 +70,7 @@ export const Route = createFileRoute("/_authenticated/dashboard/applicant-report
     }
     return data;
   },
-  pendingComponent: DashboardApplicantReviewSkeleton,
+  pendingComponent: DashboardApplicantReportSkeleton,
   component: ApplicantAiReportPage,
 });
 

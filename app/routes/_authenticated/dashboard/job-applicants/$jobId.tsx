@@ -23,9 +23,15 @@ import { CompanyJobApplicantsList } from "@/features/applications/components/com
 import { getJobApplicants } from "@/features/applications/server/functions";
 import { getActiveBatchForJobServer } from "@/features/batches/server/functions";
 import { getJob } from "@/features/jobs/server/functions";
+import type { JobStatus } from "@/shared/enums";
 import { validateUuidParams } from "@/shared/validation";
 
 type JobDetail = NonNullable<Awaited<ReturnType<typeof getJob>>>;
+const jobStatusLabels = {
+  draft: "Draft",
+  open: "Open",
+  closed: "Closed",
+} as const;
 
 export const Route = createFileRoute("/_authenticated/dashboard/job-applicants/$jobId")({
   beforeLoad: ({ context, params }) => {
@@ -70,6 +76,9 @@ function JobApplicantsPage() {
 
   const onViewChange = (value: string) => {
     setView(value as ApplicantsView);
+  };
+  const onFilterChange = (value: string) => {
+    setFilter(value as ApplicantsFilter);
   };
 
   const readyForDecisionApplicants = applicants.filter(
@@ -117,9 +126,9 @@ function JobApplicantsPage() {
             <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} className="size-3" />
             {applicants.length} applicant{applicants.length !== 1 ? "s" : ""}
           </Badge>
-          <Badge variant="outline" className="gap-1 text-[11px] capitalize">
+          <Badge variant="outline" className="gap-1 text-[11px]">
             <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} className="size-3" />
-            {job.status}
+            {jobStatusLabels[job.status as JobStatus]}
           </Badge>
         </div>
       </div>
@@ -134,15 +143,15 @@ function JobApplicantsPage() {
       <div className="grid gap-3 sm:grid-cols-3">
         <Card size="sm" className="border-border/60">
           <CardContent className="py-3">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-              Total
+            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+              Total applicants
             </p>
             <p className="mt-1 font-mono text-xl font-semibold">{applicants.length}</p>
           </CardContent>
         </Card>
         <Card size="sm" className="border-border/60">
           <CardContent className="py-3">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
               Ready for decision
             </p>
             <p className="mt-1 font-mono text-xl font-semibold">
@@ -152,7 +161,7 @@ function JobApplicantsPage() {
         </Card>
         <Card size="sm" className="border-border/60">
           <CardContent className="py-3">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
               Active interview
             </p>
             <p className="mt-1 font-mono text-xl font-semibold">
@@ -168,21 +177,21 @@ function JobApplicantsPage() {
             <TabsTrigger value="ready" className="gap-2">
               <HugeiconsIcon icon={RankingIcon} strokeWidth={2} className="size-4" />
               Ready for decision
-              <Badge variant="secondary" className="font-mono text-[10px]">
+              <Badge variant="secondary" className="font-mono text-[11px]">
                 {readyForDecisionApplicants.length}
               </Badge>
             </TabsTrigger>
             <TabsTrigger value="all" className="gap-2">
               <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} className="size-4" />
               All applicants
-              <Badge variant="secondary" className="font-mono text-[10px]">
+              <Badge variant="secondary" className="font-mono text-[11px]">
                 {applicants.length}
               </Badge>
             </TabsTrigger>
           </TabsList>
 
           {view === "all" ? (
-            <Select value={filter} onValueChange={(value) => setFilter(value as ApplicantsFilter)}>
+            <Select value={filter} onValueChange={onFilterChange}>
               <SelectTrigger className="w-[210px]">
                 <SelectValue placeholder="Filter status" />
               </SelectTrigger>
@@ -217,7 +226,7 @@ function JobApplicantsPage() {
 
       {view === "all" && filter === "screening" && screeningApplicants.length === 0 ? (
         <Card className="border-dashed border-border/60">
-          <CardContent className="py-6">
+          <CardContent className="py-6 text-center">
             <p className="text-sm text-muted-foreground">No applicants in screening right now.</p>
           </CardContent>
         </Card>
@@ -236,7 +245,7 @@ function ActiveBatchPanel({
   if (applicants.length === 0) {
     return (
       <Card className="border-dashed border-border/60">
-        <CardContent className="py-8 text-center">
+        <CardContent className="py-6 text-center">
           <p className="text-sm text-muted-foreground">No active batch right now.</p>
           <p className="mt-1 text-xs text-muted-foreground">
             Candidates will appear here when a batch is launched.

@@ -277,7 +277,7 @@ function ApplicantReviewPage() {
             Back to role
           </Link>
         </Button>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           {previousApplicant ? (
             <Button variant="outline" size="sm" asChild>
               <Link
@@ -349,7 +349,7 @@ function ApplicantReviewPage() {
               <CardContent className="space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-muted-foreground">
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
                       Pre-screening
                     </p>
                     <h3 className="mt-1 text-base font-semibold tracking-tight">
