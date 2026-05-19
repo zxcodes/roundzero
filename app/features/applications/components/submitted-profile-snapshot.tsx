@@ -51,7 +51,7 @@ function SubmittedProfileSnapshot({
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
-          Submitted profile
+          Submitted Profile
         </p>
         {headerExtra}
       </div>

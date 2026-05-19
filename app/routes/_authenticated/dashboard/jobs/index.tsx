@@ -204,36 +204,11 @@ function CompanyJobsList({
 
   return (
     <div className="animate-fade-in space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Jobs</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Manage your job postings and track applicants.
-          </p>
-        </div>
-        {atLimit ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button disabled>
-                <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-4" />
-                Post a job
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>You've reached the 3 active job limit on the free plan</p>
-            </TooltipContent>
-          </Tooltip>
-        ) : (
-          <Button
-            asChild
-            className="bg-brand text-brand-foreground hover:bg-brand/90 shadow-sm shadow-brand/20"
-          >
-            <Link to="/dashboard/jobs/new">
-              <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-4" />
-              Post a job
-            </Link>
-          </Button>
-        )}
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight">Jobs</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Manage your job postings and track applicants.
+        </p>
       </div>
 
       {atLimit ? (

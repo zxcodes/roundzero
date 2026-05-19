@@ -22,6 +22,12 @@ import {
 import { getBatchOverview } from "@/features/batches/server/functions";
 import { getOverallScore } from "@/features/reports/schemas";
 import { formatDateTime } from "@/shared/date";
+import {
+  type Recommendation,
+  recommendationBadgeTone,
+  recommendationLabels,
+  recommendationSchema,
+} from "@/shared/enums";
 import { validateUuidParams } from "@/shared/validation";
 
 export const Route = createFileRoute("/_authenticated/dashboard/job-batches/$batchId")({
@@ -39,25 +45,6 @@ export const Route = createFileRoute("/_authenticated/dashboard/job-batches/$bat
   pendingComponent: BatchDetailSkeleton,
   component: BatchDetailPage,
 });
-
-const recommendationMeta: Record<string, { label: string; className: string }> = {
-  strong_yes: {
-    label: "Strong yes",
-    className: "border-success/20 bg-success/10 text-success",
-  },
-  yes: {
-    label: "Yes",
-    className: "border-info/20 bg-info/10 text-info",
-  },
-  lean_no: {
-    label: "Lean no",
-    className: "border-warning/20 bg-warning/10 text-warning",
-  },
-  no: {
-    label: "No",
-    className: "border-danger/20 bg-danger/10 text-danger",
-  },
-};
 
 const interviewStatusMeta: Record<string, { label: string; className: string }> = {
   pending: {
@@ -99,6 +86,21 @@ function BatchDetailPage() {
   const reportedAppIds = new Set(reports.map((r) => r.applicationId));
   const noReportInterviews = interviews.filter((i) => !reportedAppIds.has(i.applicationId));
 
+  // Summary stats — what someone scanning a batch actually wants.
+  const scoresWithValue = reports
+    .map((r) => getOverallScore(r.scores))
+    .filter((n): n is number => n !== null);
+  const avgScore =
+    scoresWithValue.length > 0
+      ? Math.round(scoresWithValue.reduce((a, b) => a + b, 0) / scoresWithValue.length)
+      : null;
+  const recCounts = reports.reduce<Record<string, number>>((acc, r) => {
+    acc[r.recommendation] = (acc[r.recommendation] ?? 0) + 1;
+    return acc;
+  }, {});
+  const topRecOrder: Recommendation[] = ["strong_yes", "yes", "lean_no", "no"];
+  const topRec = topRecOrder.find((r) => (recCounts[r] ?? 0) > 0) ?? null;
+
   return (
     <div className="animate-fade-in space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -137,36 +139,48 @@ function BatchDetailPage() {
         </Badge>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Card>
-          <CardContent className="space-y-1 py-4">
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-              Created
-            </p>
-            <p className="text-sm font-medium">{formatDateTime(batch.createdAt)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="space-y-1 py-4">
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-              Launched
-            </p>
-            <p className="text-sm font-medium">
-              {batch.launchedAt ? formatDateTime(batch.launchedAt) : "Not launched"}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="space-y-1 py-4">
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-              Released
-            </p>
-            <p className="text-sm font-medium">
-              {batch.releasedAt ? formatDateTime(batch.releasedAt) : "Not released"}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <Card size="sm" className="border-border/60">
+        <CardContent className="flex flex-wrap items-center gap-x-6 gap-y-3 py-3 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-muted-foreground">Reports</span>
+            <span className="font-mono text-sm font-semibold">
+              {reports.length}/{batch.targetSize}
+            </span>
+          </div>
+          {avgScore !== null ? (
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-muted-foreground">Avg score</span>
+              <span className="font-mono text-sm font-semibold">{avgScore}</span>
+            </div>
+          ) : null}
+          {topRec ? (
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-muted-foreground">Top signal</span>
+              <Badge variant="outline" className={recommendationBadgeTone[topRec]}>
+                {recommendationLabels[topRec]} ({recCounts[topRec]})
+              </Badge>
+            </div>
+          ) : null}
+          <div className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-1 text-muted-foreground">
+            <span>
+              <span className="font-semibold">Created</span>{" "}
+              <span className="font-mono">{formatDateTime(batch.createdAt)}</span>
+            </span>
+            <span>
+              <span className="font-semibold">Launched</span>{" "}
+              <span className="font-mono">
+                {batch.launchedAt ? formatDateTime(batch.launchedAt) : "—"}
+              </span>
+            </span>
+            <span>
+              <span className="font-semibold">Released</span>{" "}
+              <span className="font-mono">
+                {batch.releasedAt ? formatDateTime(batch.releasedAt) : "—"}
+              </span>
+            </span>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -197,7 +211,8 @@ function BatchDetailPage() {
             <div className="divide-y divide-border/50">
               {reports.map((report, index) => {
                 const score = getOverallScore(report.scores);
-                const recMeta = recommendationMeta[report.recommendation];
+                const parsedRec = recommendationSchema.safeParse(report.recommendation);
+                const rec = parsedRec.success ? parsedRec.data : null;
                 const interview = interviewMap.get(report.applicationId);
                 const intMeta = interview ? interviewStatusMeta[interview.interviewStatus] : null;
 
@@ -223,9 +238,9 @@ function BatchDetailPage() {
                         <span className="truncate text-sm font-medium group-hover:text-primary">
                           {report.candidateName}
                         </span>
-                        {recMeta ? (
-                          <Badge variant="outline" className={recMeta.className}>
-                            {recMeta.label}
+                        {rec ? (
+                          <Badge variant="outline" className={recommendationBadgeTone[rec]}>
+                            {recommendationLabels[rec]}
                           </Badge>
                         ) : null}
                         {intMeta ? (

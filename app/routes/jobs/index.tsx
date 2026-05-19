@@ -348,7 +348,7 @@ function JobCard({ job, className }: { job: JobFromLoader; className?: string })
 
           {/* Description */}
           {job.description ? (
-            <p className="line-clamp-2 flex-1 text-[13px] leading-relaxed text-muted-foreground">
+            <p className="line-clamp-2 flex-1 text-sm leading-relaxed text-muted-foreground">
               {job.description}
             </p>
           ) : null}

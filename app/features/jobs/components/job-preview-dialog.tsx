@@ -39,17 +39,32 @@ interface JobPreviewData {
   headcount: number | null;
 }
 
-export function JobPreviewDialog({ data }: { data: JobPreviewData }) {
+export function JobPreviewDialog({
+  data,
+  open,
+  onOpenChange,
+  showDefaultTrigger = true,
+}: {
+  data: JobPreviewData;
+  /** Controlled open state. When provided, the parent owns visibility. */
+  open?: boolean;
+  /** Called when the dialog wants to change open state. */
+  onOpenChange?: (open: boolean) => void;
+  /** Set to false to hide the built-in "Preview" trigger button. */
+  showDefaultTrigger?: boolean;
+}) {
   const salary = formatSalaryFull(data.salaryMin, data.salaryMax, data.salaryCurrency);
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button type="button" variant="outline" size="sm">
-          <HugeiconsIcon icon={ViewIcon} strokeWidth={2} className="size-3.5" />
-          Preview
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {showDefaultTrigger ? (
+        <DialogTrigger asChild>
+          <Button type="button" variant="outline" size="sm">
+            <HugeiconsIcon icon={ViewIcon} strokeWidth={2} className="size-3.5" />
+            Preview
+          </Button>
+        </DialogTrigger>
+      ) : null}
       <DialogContent className="sm:max-w-2xl p-0 gap-0">
         <DialogHeader className="px-6 pt-6">
           <DialogTitle>Job preview</DialogTitle>

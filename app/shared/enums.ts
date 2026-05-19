@@ -156,3 +156,110 @@ export const salaryCurrencyLabels: Record<SalaryCurrency, string> = {
 };
 
 export const MAX_COMPANY_DESCRIPTION_LENGTH = 5000;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Application status — single source of truth for labels & tone classes.
+// Used across dashboard, applicants list, applicant detail, batches, and
+// candidate side. Do NOT redefine these in components.
+
+export const applicationStatusLabels: Record<ApplicationStatus, string> = {
+  applied: "Applied",
+  pre_screening: "Screening",
+  queued_for_batch: "Queued",
+  interview_invited: "Invited",
+  interview_in_progress: "Interviewing",
+  evaluated_held: "Held",
+  evaluated: "Awaiting decision",
+  shortlisted: "Shortlisted",
+  rejected: "Rejected",
+  withdrawn: "Withdrawn",
+  evaluation_failed: "Eval failed",
+};
+
+export type ApplicationStatusTone = {
+  /** Tailwind classes for a Badge background + border + text. */
+  badge: string;
+  /** Tailwind classes for a small status dot. */
+  dot: string;
+};
+
+export const applicationStatusMeta: Record<ApplicationStatus, ApplicationStatusTone> = {
+  applied: {
+    badge: "border-info/20 bg-info/10 text-info",
+    dot: "bg-info",
+  },
+  pre_screening: {
+    badge: "border-warning/20 bg-warning/10 text-warning",
+    dot: "bg-warning",
+  },
+  queued_for_batch: {
+    badge: "border-pending/20 bg-pending/10 text-pending",
+    dot: "bg-pending",
+  },
+  interview_invited: {
+    badge: "border-active/20 bg-active/10 text-active",
+    dot: "bg-active",
+  },
+  interview_in_progress: {
+    badge: "border-warning/20 bg-warning/10 text-warning",
+    dot: "bg-warning",
+  },
+  evaluated_held: {
+    badge: "border-muted-foreground/20 bg-muted/40 text-muted-foreground",
+    dot: "bg-muted-foreground/50",
+  },
+  evaluated: {
+    badge: "border-success/20 bg-success/10 text-success",
+    dot: "bg-success",
+  },
+  shortlisted: {
+    badge: "border-progress/20 bg-progress/10 text-progress",
+    dot: "bg-progress",
+  },
+  rejected: {
+    badge: "border-danger/20 bg-danger/10 text-danger",
+    dot: "bg-danger",
+  },
+  withdrawn: {
+    badge: "bg-muted text-muted-foreground",
+    dot: "bg-muted-foreground/50",
+  },
+  evaluation_failed: {
+    badge: "border-danger/20 bg-danger/10 text-danger",
+    dot: "bg-danger",
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Recommendation (output of evaluation reports) — labels & tone.
+
+export const recommendationSchema = z.enum(["strong_yes", "yes", "lean_no", "no"]);
+export type Recommendation = z.infer<typeof recommendationSchema>;
+
+export const recommendationLabels: Record<Recommendation, string> = {
+  strong_yes: "Strong yes",
+  yes: "Yes",
+  lean_no: "Lean no",
+  no: "No",
+};
+
+export const recommendationBadgeTone: Record<Recommendation, string> = {
+  strong_yes: "border-success/20 bg-success/10 text-success",
+  yes: "border-info/20 bg-info/10 text-info",
+  lean_no: "border-warning/20 bg-warning/10 text-warning",
+  no: "border-danger/20 bg-danger/10 text-danger",
+};
+
+export const recommendationSurfaceTone: Record<Recommendation, string> = {
+  strong_yes: "bg-success/60",
+  yes: "bg-info/60",
+  lean_no: "bg-warning/60",
+  no: "bg-danger/60",
+};
+
+/** Safe accessor for a possibly-unknown recommendation string. */
+export const formatRecommendation = (value: string | null | undefined): string => {
+  if (!value) return "Unknown";
+  const parsed = recommendationSchema.safeParse(value);
+  return parsed.success ? recommendationLabels[parsed.data] : "Unknown";
+};

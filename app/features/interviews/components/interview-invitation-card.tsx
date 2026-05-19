@@ -57,7 +57,7 @@ export function InterviewInvitationCard({
 
   return (
     <Card>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-4">
         <div className="flex flex-wrap items-center gap-2">
           <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={2} className="size-5 text-primary" />
           <p className="text-sm font-medium">RoundZero interview</p>
@@ -89,7 +89,7 @@ export function InterviewInvitationCard({
         </p>
 
         {status === "pending" && timeLeft && deadline ? (
-          <div className="rounded-md border border-warning/20 bg-warning/10 px-2.5 py-2 text-xs text-warning">
+          <div className="rounded-md border border-warning/20 bg-warning/10 px-3 py-2.5 text-xs text-warning">
             <p className="font-medium">{timeLeft}</p>
             <p className="mt-0.5">Deadline: {deadline}</p>
           </div>
