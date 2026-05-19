@@ -480,7 +480,7 @@ function CompanyHeaderStats({ metrics }: { metrics: CompanyMetrics }) {
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {items.map((item) => (
         <div key={item.label} className="rounded-xl border border-border/60 bg-card px-4 py-3">
-          <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+          <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
             {item.label}
           </p>
           <p className="mt-1 font-mono text-2xl font-semibold tracking-tight">{item.value}</p>

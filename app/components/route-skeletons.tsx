@@ -335,14 +335,17 @@ export function CompanyDetailSkeleton() {
                     <CardContent className="flex items-center gap-4">
                       <div className="min-w-0 flex-1 space-y-1.5">
                         <Skeleton className="h-4 w-3/5" />
-                        <div className="flex gap-3">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                           <Skeleton className="h-3 w-20" />
                           <Skeleton className="h-3 w-16" />
                           <Skeleton className="h-3 w-14" />
+                          <Skeleton className="h-3 w-24" />
                         </div>
                       </div>
-                      <Skeleton className="h-5 w-16 shrink-0 rounded-full" />
-                      <Skeleton className="size-4 shrink-0" />
+                      <div className="flex shrink-0 items-center gap-1.5">
+                        <Skeleton className="h-5 w-16 rounded-full" />
+                        <Skeleton className="size-4" />
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
@@ -641,7 +644,7 @@ export function DashboardIndexSkeleton() {
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="rounded-xl border border-border/60 bg-card px-4 py-3">
             <Skeleton className="h-3 w-24" />
-            <Skeleton className="mt-1.5 h-7 w-16" />
+            <Skeleton className="mt-1 h-7 w-16" />
           </div>
         ))}
       </div>
@@ -665,6 +668,30 @@ export function DashboardIndexSkeleton() {
               </div>
             ))}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Active batches strip */}
+      <Card className="border-warning/25 bg-warning/5">
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-5 w-8 rounded-full" />
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <div
+              key={i}
+              className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-background px-3 py-2"
+            >
+              <div className="min-w-0">
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="mt-1 h-3 w-32" />
+              </div>
+              <Skeleton className="h-8 w-16" />
+            </div>
+          ))}
         </CardContent>
       </Card>
 
@@ -788,17 +815,18 @@ export function DashboardApplicationsSkeleton() {
       <div className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
           <Card key={i} size="sm">
-            <CardContent className="py-0">
+            <CardContent>
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="min-w-0 flex-1 space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <Skeleton className="h-3 w-24" />
                     <Skeleton className="h-5 w-16 rounded-full" />
                     <Skeleton className="h-5 w-20 rounded-full" />
+                    <Skeleton className="h-5 w-24 rounded-full" />
                   </div>
                   <div className="space-y-1">
                     <Skeleton className="h-5 w-48" />
-                    <Skeleton className="h-3.5 w-40" />
+                    <Skeleton className="h-3.5 w-56" />
                   </div>
                   <div className="flex gap-4">
                     <Skeleton className="h-3 w-28" />
@@ -840,18 +868,23 @@ export function DashboardApplicationDetailSkeleton() {
         <Skeleton className="h-4 w-28" />
       </div>
 
-      {/* Status pipeline card */}
-      <div className="space-y-2 rounded-2xl border border-border/70 p-5">
-        <div className="flex gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
+      {/* Status pipeline */}
+      <div className="space-y-3">
+        <div className="flex gap-8">
+          {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="flex items-center gap-2">
-              <Skeleton className="size-2 rounded-full" />
+              <Skeleton className="size-1.5 rounded-full" />
               <Skeleton className="h-3.5 w-16" />
             </div>
           ))}
         </div>
-        <Skeleton className="h-4 w-72" />
-        <Skeleton className="h-3 w-80" />
+        <Skeleton className="h-5 w-40 rounded-full" />
+        <Card size="sm">
+          <CardContent className="space-y-1 py-0">
+            <Skeleton className="h-4 w-72" />
+            <Skeleton className="h-3 w-80" />
+          </CardContent>
+        </Card>
       </div>
 
       {/* Action buttons */}
@@ -954,6 +987,59 @@ export function DashboardApplicantReviewSkeleton() {
   );
 }
 
+/**
+ * Skeleton for /dashboard/applicant-reports/$applicationId — applicant full report page.
+ * Matches: back action + compact header/action row + report timeline card.
+ */
+export function DashboardApplicantReportSkeleton() {
+  return (
+    <div className="animate-fade-in space-y-8">
+      <div className="flex flex-wrap items-center gap-2">
+        <Skeleton className="h-8 w-28 rounded-md" />
+      </div>
+
+      <div className="rounded-4xl border border-border/70 bg-card px-4 py-4 shadow-sm md:px-6 md:py-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0 space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Skeleton className="size-9 rounded-xl" />
+              <Skeleton className="h-8 w-52" />
+              <Skeleton className="h-5 w-24 rounded-full" />
+              <Skeleton className="h-5 w-16 rounded-full" />
+            </div>
+            <Skeleton className="h-4 w-72" />
+            <Skeleton className="h-3 w-48" />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Skeleton className="h-9 w-24 rounded-md" />
+            <Skeleton className="h-9 w-20 rounded-md" />
+            <Skeleton className="h-9 w-44 rounded-md" />
+            <Skeleton className="h-9 w-36 rounded-md" />
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-4xl border border-border/60 bg-card/40 px-4 py-4 md:px-6 md:py-6">
+        <div className="space-y-4">
+          <Skeleton className="h-6 w-56" />
+          <Skeleton className="h-4 w-80" />
+          <div className="space-y-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Card key={i}>
+                <CardContent className="py-0">
+                  <Skeleton className="h-4 w-48" />
+                  <Skeleton className="mt-2 h-3 w-full" />
+                  <Skeleton className="mt-1.5 h-3 w-[92%]" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // skeleton for actual interview content.
 export function InterviewWorkspacePageSkeleton() {
   return (
@@ -978,7 +1064,7 @@ export function InterviewWorkspacePageSkeleton() {
         <div className="min-h-0 flex-1 space-y-4 px-4 py-5 md:px-6 md:py-6">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className={i % 2 === 0 ? "flex justify-start" : "flex justify-end"}>
-              <div className="w-full max-w-[75%] md:max-w-[60%]">
+              <div className="w-full max-w-[60%] md:max-w-[50%]">
                 <Skeleton className="mb-1 h-3 w-10" />
                 <Skeleton className="h-9 w-full rounded-[18px]" />
               </div>
