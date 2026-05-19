@@ -323,7 +323,7 @@ function PrivacyPage() {
 
           <div className="h-px w-full mt-16 mb-8" style={{ background: "var(--ed-rule)" }} />
           <div className="flex items-center gap-4 text-[13px]" style={{ color: "var(--ed-muted)" }}>
-            <Link to="/tos" className="underline hover:text-[var(--ed-ink)] transition-colors">
+            <Link to="/tos" className="underline hover:text-(--ed-ink) transition-colors">
               Terms of Service
             </Link>
             <span>·</span>
