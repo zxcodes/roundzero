@@ -106,6 +106,12 @@ Always consult both before making design decisions or implementing features.
 - **After every change, run `bun run check` to verify linter and typechecking pass.**
 - `bash setup-db.sh setup_pg` — create dev+test DBs | `bash setup-db.sh reset_pg` — reset both | `bash setup-db.sh rm_pg` — remove
 
+## Git Commit Message Rules
+
+- Do **not** append AI/tool attribution footers to commit messages.
+- Keep commit messages clean and focused on the change summary only.
+- Do not add generated-by/co-authored-by/signature boilerplate unless the user explicitly asks for a specific footer.
+
 ## Cloudflare Platform Rules
 
 - **Always use the Cloudflare documentation MCP** (`cloudflare_search_cloudflare_documentation`) for any question about Workers, Workflows, Durable Objects, R2, AI, or bindings. Do not rely on pre-trained knowledge — the platform changes frequently.
