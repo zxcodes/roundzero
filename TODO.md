@@ -1,6 +1,6 @@
 ## TODO
 
-
+- why do we even need two sources of candidate work history? it's redundant. resume should be enough. 
 - prevent people from using diff resumes/profiles for diff jobs. we can use snapshots to compare and decide if we wanna hold them in pre-eval itself. not exactly prevent, it should just act as a guardrail in the background.
 - think about connecting relevant profiles to the app (github, dribble etc for better understanding of the candidate, also check if we have any apis we can use to get and analyse the data.)
 - need to redefine the landing and product branding: (resumes are outdated, yoe is just a number now, cracked people exist, ai needs to find them, experience is no longer a good metric, etc etc.)
