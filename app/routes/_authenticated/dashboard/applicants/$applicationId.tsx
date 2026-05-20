@@ -486,7 +486,12 @@ function ApplicationStatusSection({
             ) : null}
             <div className="text-[11px] text-muted-foreground">
               <p className="font-medium uppercase tracking-wide">Contact</p>
-              <p className="mt-0.5 truncate font-mono text-xs text-foreground">{candidateEmail}</p>
+              <a
+                href={`mailto:${candidateEmail}`}
+                className="mt-0.5 truncate font-mono text-xs text-foreground hover:underline"
+              >
+                {candidateEmail}
+              </a>
             </div>
           </div>
         </div>
