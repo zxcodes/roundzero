@@ -1,6 +1,7 @@
 ## TODO
 
 
+- in pre eval, profile vs resume consistency check is prob redundant now? check and remove.
 - the voice interview experience is still not good enough. check using better models (dedicated for voice) and see.
 - need to redefine the landing and product branding: (resumes are outdated, yoe is just a number now, cracked people exist, ai needs to find them, experience is no longer a good metric, etc etc.)
 - update landing page messaging to say the time of resumes is over. it's time for real evaluation etc.
