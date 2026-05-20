@@ -31,7 +31,7 @@ import {
   sanitizeUntrustedText,
 } from "@/shared/ai-refine";
 import { getDb } from "@/shared/db";
-import { getInterviewModelChain, getOpenRouter } from "@/shared/openrouter";
+import { createChatModel } from "@/shared/openrouter";
 import { buildInterviewPromptMessages } from "./interview-pruning";
 
 type InterviewSessionStatus = "pending" | "in_progress" | "completed" | "cancelled" | "expired";
@@ -513,15 +513,12 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
       return { greeted: false };
     }
 
-    const openrouter = getOpenRouter();
-    const { model, fallbacks } = getInterviewModelChain();
     const result = await generateText({
-      model: openrouter.chat(model),
+      model: createChatModel("interview"),
       temperature: 0.3,
       system: this.buildSystemPrompt(),
       prompt: `Open the interview. Greet ${this.state.context.candidateName || "the candidate"} warmly by name, reference one specific resume detail that connects to this role, then ask your first focused interview question. Plain conversational English only.`,
       maxOutputTokens: 150,
-      ...(fallbacks.length > 0 ? { providerOptions: { openrouter: { models: fallbacks } } } : {}),
     });
 
     const greeting = result.text.trim();
@@ -605,9 +602,6 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
       return new Response("Interview already completed", { status: 400 });
     }
 
-    const openrouter = getOpenRouter();
-    const { model, fallbacks } = getInterviewModelChain();
-
     const latestCandidateMessage = [...this.messages].reverse().find((m) => m.role === "user");
     const latestCandidateText = latestCandidateMessage
       ? readUiMessageText(latestCandidateMessage)
@@ -625,7 +619,7 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
 
     try {
       const result = streamText({
-        model: openrouter.chat(model),
+        model: createChatModel("interview"),
         temperature: 0.3,
         maxOutputTokens: 150,
         system: systemPrompt,
@@ -643,7 +637,6 @@ export class InterviewAgent extends AIChatAgent<Env, InterviewAgentState> {
         },
         onFinish,
         stopWhen: [stepCountIs(5), hasToolCall("end_interview")],
-        ...(fallbacks.length > 0 ? { providerOptions: { openrouter: { models: fallbacks } } } : {}),
         tools: {
           check_resume_gap: tool({
             description:

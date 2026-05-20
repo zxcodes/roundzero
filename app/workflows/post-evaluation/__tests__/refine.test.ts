@@ -9,8 +9,8 @@ vi.mock("ai", () => ({
 }));
 
 vi.mock("@/shared/openrouter", () => ({
+  createChatModel: () => ({}),
   getModelChain: () => ({ model: "test-model", fallbacks: [] }),
-  getOpenRouter: () => ({ chat: () => ({}) }),
 }));
 
 describe("refineReport", () => {
