@@ -94,19 +94,3 @@ FROM applications a
 JOIN jobs j ON j.id = a.job_id
 WHERE a.candidate_id = $1
   AND j.archived_at IS NULL;
-
--- name: getJobApplicationFunnel :many
-SELECT status, count(*)::int AS count
-FROM applications
-WHERE job_id = $1
-GROUP BY status
-ORDER BY count DESC;
-
--- name: getJobAverageTimeToEvaluation :one
-SELECT COALESCE(
-  EXTRACT(EPOCH FROM avg(r.created_at - a.created_at)) / 3600,
-  0
-)::numeric(10,1) AS avg_hours
-FROM applications a
-JOIN reports r ON r.application_id = a.id
-WHERE a.job_id = $1;
