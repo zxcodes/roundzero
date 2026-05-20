@@ -37,7 +37,7 @@ import { getModelDateContext, LIMITS, sanitizeUntrustedText } from "@/shared/ai-
 import { getDb } from "@/shared/db";
 import type { createWorkflowLogger } from "@/shared/logger";
 import { notificationPayloadSchemas } from "@/shared/notifications-config";
-import { getModelChain, getOpenRouter } from "@/shared/openrouter";
+import { createChatModel, getModelChain } from "@/shared/openrouter";
 import { buildSlopDetectionPrompt, shouldInviteFromDeterministicRules } from "./policy";
 import { refinePreEvaluationResult, refineSlopCheck } from "./refine";
 
@@ -92,15 +92,13 @@ async function runPreEvalObject<T>(args: {
   userPrompt: string;
   schema: z.ZodSchema<T>;
 }): Promise<{ object: T; usage: { inputTokens: number; outputTokens: number }; model: string }> {
-  const openrouter = getOpenRouter();
-  const { model, fallbacks } = getModelChain("pre_eval");
+  const { model } = getModelChain("pre_eval");
 
   const result = await generateText({
-    model: openrouter.chat(model, { plugins: [{ id: "response-healing" }] }),
+    model: createChatModel("pre_eval", { plugins: [{ id: "response-healing" }] }),
     output: Output.object({ schema: args.schema }),
     system: args.systemPrompt,
     prompt: args.userPrompt,
-    ...(fallbacks.length > 0 ? { providerOptions: { openrouter: { models: fallbacks } } } : {}),
   });
 
   return {

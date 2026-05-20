@@ -36,7 +36,7 @@ import {
 import { getInterviewAgentState } from "@/shared/interview-agent-client";
 import type { createWorkflowLogger } from "@/shared/logger";
 import { notificationPayloadSchemas } from "@/shared/notifications-config";
-import { getModelChain, getOpenRouter } from "@/shared/openrouter";
+import { createChatModel, getModelChain } from "@/shared/openrouter";
 
 // Prompt versions for tracking which prompt was used for each report
 const POST_EVAL_PROMPT_VERSION = "1.0.0";
@@ -142,15 +142,13 @@ async function runPostEvalObject(args: { systemPrompt: string; userPrompt: strin
   usage: { inputTokens: number; outputTokens: number };
   model: string;
 }> {
-  const openrouter = getOpenRouter();
-  const { model, fallbacks } = getModelChain("post_eval");
+  const { model } = getModelChain("post_eval");
 
   const result = await generateText({
-    model: openrouter.chat(model, { plugins: [{ id: "response-healing" }] }),
+    model: createChatModel("post_eval", { plugins: [{ id: "response-healing" }] }),
     output: Output.object({ schema: reportSchema }),
     system: args.systemPrompt,
     prompt: args.userPrompt,
-    ...(fallbacks.length > 0 ? { providerOptions: { openrouter: { models: fallbacks } } } : {}),
   });
 
   return {

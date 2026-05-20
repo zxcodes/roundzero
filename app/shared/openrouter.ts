@@ -1,5 +1,6 @@
 import { env } from "cloudflare:workers";
 import { createOpenRouter, type OpenRouterProvider } from "@openrouter/ai-sdk-provider";
+import { isProd, isStaging } from "./env.app";
 
 // Single cached provider instance per Worker isolate.
 let cachedProvider: OpenRouterProvider | null = null;
@@ -63,120 +64,90 @@ export function getOpenRouter(): OpenRouterProvider {
 
 // ─── Model Chains ───────────────────────────────────────────────────────────
 //
-// Model selection is code-level, not infra-level. Change these typed arrays in
-// code when you want to switch models. No env vars.
+// Model selection is code-level, not infra-level. Change these arrays in code
+// when you want to switch models. No env vars.
 //
-// Each chain is ordered: [primary, fallback1, fallback2, ...]. The primary is
-// passed to `openrouter.chat(model)`. The rest are passed as
-// `providerOptions.openrouter.models` so OpenRouter auto-failovers on errors.
+// Each chain is ordered: [primary, fallback1, ...]. The primary is passed to
+// `openrouter.chat(model)`. The rest are passed as `models` in the chat settings
+// so OpenRouter auto-failovers on errors (429, downtime, moderation refusal).
+//
 // The `models` array must NOT include the primary (per OpenRouter docs).
-//
-// Dev / staging / test all use the free chains. Only production uses the paid
-// chains. This prevents burning credits during local iteration.
 //
 // https://openrouter.ai/docs/guides/routing/model-fallbacks
 
-// Free models for non-production environments (dev, staging, test).
-// Pre-eval and post-eval need models that support structured outputs
-// (response_format or structured_outputs parameter).
-const PRE_EVAL_DEV_CHAIN = [
-  "meta-llama/llama-3.3-70b-instruct:free",
-  "qwen/qwen3-next-80b-a3b-instruct:free",
-  "nvidia/nemotron-3-super-120b-a12b:free",
-] as const;
-
-const POST_EVAL_DEV_CHAIN = [
-  "qwen/qwen3-next-80b-a3b-instruct:free",
-  "nvidia/nemotron-3-super-120b-a12b:free",
-] as const;
-
-// Audit chain uses a different model family than post_eval generator to catch biases
-// If post_eval uses Claude-based models, audit uses Llama-based models, and vice versa
-const POST_EVAL_AUDIT_DEV_CHAIN = [
-  "meta-llama/llama-3.3-70b-instruct:free",
-  "openai/gpt-oss-120b:free",
-] as const;
-
-const INTERVIEW_DEV_CHAIN = [
-  "meta-llama/llama-3.3-70b-instruct:free",
-  "openai/gpt-oss-120b:free",
-  "qwen/qwen3-next-80b-a3b-instruct:free",
-  "nvidia/nemotron-3-nano-30b-a3b:free",
-] as const;
-
-const JOB_CREATION_DEV_CHAIN = [
-  "qwen/qwen3-next-80b-a3b-instruct:free",
-  "meta-llama/llama-3.3-70b-instruct:free",
-  "nvidia/nemotron-3-super-120b-a12b:free",
-] as const;
-
-// Voice assessment runs on a real-time pipeline, so latency matters more than
-// raw quality. Use the fastest free chat models as the primary chain.
-const VOICE_DEV_CHAIN = [
-  "openai/gpt-oss-120b:free",
-  "meta-llama/llama-3.3-70b-instruct:free",
-  "qwen/qwen3-next-80b-a3b-instruct:free",
-] as const;
-
-// Paid frontier models for production.
-const PRE_EVAL_PROD_CHAIN = ["anthropic/claude-haiku-4.5", "anthropic/claude-sonnet-4.5"] as const;
-
-const POST_EVAL_PROD_CHAIN = ["anthropic/claude-sonnet-4.5", "anthropic/claude-opus-4.5"] as const;
-
-// Audit chain uses a different model family than post_eval generator to catch biases
-// If post_eval uses Claude-based models, audit uses Llama-based models, and vice versa
-const POST_EVAL_AUDIT_PROD_CHAIN = [
-  "meta-llama/llama-3.3-70b-instruct",
-  "nvidia/nemotron-3-super-120b",
-] as const;
-
-const INTERVIEW_PROD_CHAIN = ["anthropic/claude-haiku-4.5", "anthropic/claude-sonnet-4.5"] as const;
-
-const JOB_CREATION_PROD_CHAIN = [
-  "anthropic/claude-sonnet-4.5",
-  "anthropic/claude-haiku-4.5",
-] as const;
-
-// Voice runs in a real-time pipeline. Optimise for time-to-first-token over
-// frontier reasoning quality — at 4–6 short turns capped at 200 tokens, the
-// quality delta between Llama-70b-on-Groq and Claude Haiku is imperceptible,
-// but the latency delta (sub-200ms vs ~600–1000ms TTFT) is huge in a voice UX.
-// Claude Haiku stays as the quality safety net at the end of the chain.
-const VOICE_PROD_CHAIN = [
-  "groq/llama-3.3-70b-versatile",
-  "google/gemini-2.5-flash",
-  "anthropic/claude-haiku-4.5",
-] as const;
-
 type Task = "pre_eval" | "post_eval" | "post_eval_audit" | "interview" | "job_creation" | "voice";
 
-const TASK_CHAIN_MAP: Record<Task, { dev: readonly string[]; prod: readonly string[] }> = {
-  pre_eval: { dev: PRE_EVAL_DEV_CHAIN, prod: PRE_EVAL_PROD_CHAIN },
-  post_eval: { dev: POST_EVAL_DEV_CHAIN, prod: POST_EVAL_PROD_CHAIN },
-  post_eval_audit: { dev: POST_EVAL_AUDIT_DEV_CHAIN, prod: POST_EVAL_AUDIT_PROD_CHAIN },
-  interview: { dev: INTERVIEW_DEV_CHAIN, prod: INTERVIEW_PROD_CHAIN },
-  job_creation: { dev: JOB_CREATION_DEV_CHAIN, prod: JOB_CREATION_PROD_CHAIN },
-  voice: { dev: VOICE_DEV_CHAIN, prod: VOICE_PROD_CHAIN },
+const MODEL_CHAINS: Record<
+  Task,
+  { dev: readonly string[]; staging: readonly string[]; prod: readonly string[] }
+> = {
+  pre_eval: {
+    dev: ["openrouter/free", "meta-llama/llama-3.3-70b-instruct:free"],
+    staging: ["google/gemini-2.5-flash", "anthropic/claude-haiku-4.5"],
+    prod: ["anthropic/claude-haiku-4.5", "anthropic/claude-sonnet-4.5"],
+  },
+  post_eval: {
+    dev: ["openrouter/free", "qwen/qwen3-next-80b-a3b-instruct:free"],
+    staging: ["anthropic/claude-haiku-4.5", "google/gemini-2.5-flash"],
+    prod: ["anthropic/claude-sonnet-4.5", "anthropic/claude-opus-4.5"],
+  },
+  // Audit uses a different model family than post_eval to catch biases.
+  post_eval_audit: {
+    dev: ["openrouter/free", "meta-llama/llama-3.3-70b-instruct:free"],
+    staging: ["meta-llama/llama-3.3-70b-instruct", "google/gemini-2.5-flash"],
+    prod: ["meta-llama/llama-3.3-70b-instruct", "nvidia/nemotron-3-super-120b"],
+  },
+  interview: {
+    dev: ["openrouter/free", "meta-llama/llama-3.3-70b-instruct:free"],
+    staging: ["google/gemini-2.5-flash", "anthropic/claude-haiku-4.5"],
+    prod: ["anthropic/claude-haiku-4.5", "anthropic/claude-sonnet-4.5"],
+  },
+  job_creation: {
+    dev: ["openrouter/free", "meta-llama/llama-3.3-70b-instruct:free"],
+    staging: ["google/gemini-2.5-flash", "anthropic/claude-haiku-4.5"],
+    prod: ["anthropic/claude-sonnet-4.5", "anthropic/claude-haiku-4.5"],
+  },
+  // Voice runs in a real-time pipeline. Optimise for time-to-first-token over
+  // frontier reasoning quality — at 4–6 short turns capped at 200 tokens, the
+  // quality delta between Llama-70b-on-Groq and Claude Haiku is imperceptible,
+  // but the latency delta (sub-200ms vs ~600–1000ms TTFT) is huge in a voice UX.
+  voice: {
+    dev: ["openrouter/free", "meta-llama/llama-3.3-70b-instruct:free"],
+    staging: ["google/gemini-2.5-flash", "anthropic/claude-haiku-4.5"],
+    prod: ["groq/llama-3.3-70b-versatile", "google/gemini-2.5-flash", "anthropic/claude-haiku-4.5"],
+  },
 };
 
 /**
- * Returns the model chain for a given AI task in the current environment.
+ * Returns the primary model id and fallback list for a given AI task.
  *
- * `model`  — primary model id (pass to `openrouter.chat(model)`).
- * `fallbacks` — ordered list of fallback models tried by OpenRouter when the
- *   primary errors (429, downtime, moderation refusal). Must NOT include the
- *   primary model.
+ * `model`      — primary model id.
+ * `fallbacks`  — ordered list of fallback models tried by OpenRouter when the
+ *                primary errors. Must NOT include the primary model.
  */
 export function getModelChain(task: Task): { model: string; fallbacks: string[] } {
-  const isProd = env.NODE_ENV === "production";
-  const chain = TASK_CHAIN_MAP[task][isProd ? "prod" : "dev"];
+  const env = isProd ? "prod" : isStaging ? "staging" : "dev";
+  const chain = MODEL_CHAINS[task][env];
   return { model: chain[0], fallbacks: chain.slice(1) };
 }
 
 /**
- * Backward-compatible alias for the interview agent.
- * Delegates to `getModelChain("interview")`.
+ * Returns a pre-configured Vercel AI SDK language model for the given task,
+ * with the OpenRouter fallback chain baked into the model settings.
+ *
+ * Use this instead of calling `openrouter.chat()` directly — it wires up the
+ * `models` fallback array correctly (as a chat setting, not providerOptions).
+ *
+ * `plugins` — optional Response Healing or other OpenRouter plugins.
  */
-export function getInterviewModelChain(): { model: string; fallbacks: string[] } {
-  return getModelChain("interview");
+export function createChatModel(
+  task: Task,
+  options?: { plugins?: Array<{ id: "response-healing" }> },
+): ReturnType<ReturnType<typeof getOpenRouter>["chat"]> {
+  const openrouter = getOpenRouter();
+  const { model, fallbacks } = getModelChain(task);
+  return openrouter.chat(model, {
+    ...(fallbacks.length > 0 ? { models: fallbacks } : {}),
+    ...options,
+  });
 }

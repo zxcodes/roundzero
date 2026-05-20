@@ -24,4 +24,5 @@ const envSchema = z.object({
 export const appEnv = envSchema.parse(process.env);
 
 export const isDev = appEnv.NODE_ENV === "development";
+export const isStaging = appEnv.NODE_ENV === "staging";
 export const isProd = appEnv.NODE_ENV === "production";

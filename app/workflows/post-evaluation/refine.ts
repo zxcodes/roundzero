@@ -36,7 +36,7 @@ import {
   type TranscriptMessage,
 } from "@/shared/ai-refine";
 import type { createWorkflowLogger } from "@/shared/logger";
-import { getModelChain, getOpenRouter } from "@/shared/openrouter";
+import { createChatModel } from "@/shared/openrouter";
 
 type ScreeningConcern = "none" | "minor" | "dealbreaker";
 
@@ -250,10 +250,6 @@ async function runLlmAudit(args: {
   log: ReturnType<typeof createWorkflowLogger>;
   messages?: ReadonlyArray<TranscriptMessage>;
 }): Promise<AuditOutput | null> {
-  const openrouter = getOpenRouter();
-  // Use a separate model chain for audit to catch biases in the generator
-  const { model, fallbacks } = getModelChain("post_eval_audit");
-
   const userPrompt = JSON.stringify({
     instructions:
       "Audit the draft report. Drop anything not grounded in the transcript. Rewrite kept items to be tighter and specific. Preserve required screening questions verbatim.",
@@ -271,11 +267,10 @@ async function runLlmAudit(args: {
 
   try {
     const result = await generateText({
-      model: openrouter.chat(model, { plugins: [{ id: "response-healing" }] }),
+      model: createChatModel("post_eval_audit", { plugins: [{ id: "response-healing" }] }),
       output: Output.object({ schema: auditSchema }),
       system: AUDIT_SYSTEM_PROMPT,
       prompt: userPrompt,
-      ...(fallbacks.length > 0 ? { providerOptions: { openrouter: { models: fallbacks } } } : {}),
     });
     args.log.ai(userPrompt.length, result.usage.outputTokens ?? 0, 0, "report-audit-1.0");
     return result.output;

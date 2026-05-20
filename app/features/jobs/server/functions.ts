@@ -7,7 +7,7 @@ import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
 import { createNotification } from "@/features/notifications/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
-import { getModelChain, getOpenRouter } from "@/shared/openrouter";
+import { createChatModel } from "@/shared/openrouter";
 import {
   archiveJob as archiveJobQuery,
   closeExpiredJobsQuery,
@@ -439,15 +439,11 @@ export const generateJobWithAI = createServerFn({ method: "POST" })
       throw new Error("AI job creation is available on Pro. Upgrade to unlock this feature.");
     }
 
-    const openrouter = getOpenRouter();
-    const { model, fallbacks } = getModelChain("job_creation");
-
     const result = await generateText({
-      model: openrouter.chat(model, { plugins: [{ id: "response-healing" }] }),
+      model: createChatModel("job_creation", { plugins: [{ id: "response-healing" }] }),
       output: Output.object({ schema: aiJobGenerationSchema }),
       system: SYSTEM_PROMPT,
       prompt: data.prompt,
-      ...(fallbacks.length > 0 ? { providerOptions: { openrouter: { models: fallbacks } } } : {}),
     });
 
     const cleaned = cleanAiJobOutput(result.output);

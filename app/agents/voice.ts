@@ -24,7 +24,7 @@ import { VOICE_ASSESSMENT_PROMPT } from "@/prompts/voice-assessment";
 import { buildCandidateProfileSummary } from "@/shared/ai-candidate-profile";
 import { LIMITS, sanitizeUntrustedText } from "@/shared/ai-refine";
 import { getDb } from "@/shared/db";
-import { getModelChain, getOpenRouter } from "@/shared/openrouter";
+import { createChatModel, getModelChain } from "@/shared/openrouter";
 import { refineCommunicationAnalysis } from "@/workflows/post-evaluation/refine";
 
 // `opus` keeps payloads small and is decoded with lower latency than `mp3`
@@ -214,8 +214,7 @@ export class VoiceAssessmentAgent extends VoiceAgent<Env> {
       return "I'm sorry — your session isn't ready. Please end the call and try again.";
     }
 
-    const openrouter = getOpenRouter();
-    const { model, fallbacks } = getModelChain("voice");
+    const { model } = getModelChain("voice");
 
     const systemPrompt = VOICE_ASSESSMENT_PROMPT.build({
       jobTitle: ctx.jobTitle,
@@ -228,7 +227,7 @@ export class VoiceAssessmentAgent extends VoiceAgent<Env> {
 
     try {
       const result = streamText({
-        model: openrouter.chat(model),
+        model: createChatModel("voice"),
         temperature: 0.4,
         maxOutputTokens: 200,
         system: systemPrompt,
@@ -240,7 +239,6 @@ export class VoiceAssessmentAgent extends VoiceAgent<Env> {
           })),
           { role: "user", content: transcript },
         ],
-        ...(fallbacks.length > 0 ? { providerOptions: { openrouter: { models: fallbacks } } } : {}),
         onFinish: ({ usage, finishReason }) => {
           // Coarse per-turn LLM latency for production observability. Pair
           // with VoicePipelineMetrics on the client for full pipeline view.
@@ -392,8 +390,6 @@ export class VoiceAssessmentAgent extends VoiceAgent<Env> {
     transcript: string,
     ctx: VoiceAssessmentContext,
   ): Promise<CommunicationAssessmentAnalysis | null> {
-    const openrouter = getOpenRouter();
-    const { model, fallbacks } = getModelChain("post_eval");
     const { systemPrompt, userPrompt } = COMMUNICATION_ASSESSMENT_PROMPT.build({
       jobTitle: ctx.jobTitle,
       companyName: ctx.companyName,
@@ -404,13 +400,10 @@ export class VoiceAssessmentAgent extends VoiceAgent<Env> {
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
         const result = await generateText({
-          model: openrouter.chat(model, { plugins: [{ id: "response-healing" }] }),
+          model: createChatModel("post_eval", { plugins: [{ id: "response-healing" }] }),
           output: Output.object({ schema: communicationAssessmentSchema }),
           system: systemPrompt,
           prompt: userPrompt,
-          ...(fallbacks.length > 0
-            ? { providerOptions: { openrouter: { models: fallbacks } } }
-            : {}),
         });
         return result.output;
       } catch (error) {
