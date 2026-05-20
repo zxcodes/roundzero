@@ -233,7 +233,6 @@ function CandidateApplicationDetailPage() {
     skills?: string[];
     links?: Record<string, string>;
     headline?: string | null;
-    bio?: string | null;
   };
   const currentStage = toApplicationStage(application.status);
   const progressStage = currentStage === "shortlisted" ? "evaluated" : currentStage;
@@ -244,7 +243,6 @@ function CandidateApplicationDetailPage() {
   const skills = metadata.skills ?? [];
   const links = getLinks(metadata.links);
   const headline = metadata.headline ?? null;
-  const bio = metadata.bio ?? null;
   const jobStateLabel = getJobStateLabel(application);
   const canWithdraw =
     (application.status === "applied" ||
@@ -422,10 +420,8 @@ function CandidateApplicationDetailPage() {
 
       <SubmittedProfileSnapshot
         headline={headline}
-        bio={bio}
         skills={skills}
         links={links}
-        workHistory={[]}
         hasResume={Boolean(application.resumeKey)}
       />
     </div>

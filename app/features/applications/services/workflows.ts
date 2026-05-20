@@ -1,10 +1,7 @@
 import type { Sql } from "postgres";
 import { z } from "zod";
 import { getUserById } from "@/features/auth/queries/queries_sql";
-import {
-  getCandidateProfileByUserId,
-  getCandidateWorkHistoryByProfileId,
-} from "@/features/candidates/queries/queries_sql";
+import { getCandidateProfileByUserId } from "@/features/candidates/queries/queries_sql";
 import { getCompanyById, getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
 import {
   createInterview,
@@ -80,26 +77,13 @@ export const applyToJobWorkflow = async (
     throw new Error("Add your resume to your profile before applying");
   }
 
-  const workHistory = await getCandidateWorkHistoryByProfileId(db, {
-    candidateProfileId: profile.id,
-  });
-
   const application = await createApplicationQuery(db, {
     jobId: input.jobId,
     candidateId: input.userId,
     resumeKey: profile.resumeKey,
     metadata: {
       headline: profile.headline,
-      bio: profile.bio,
       skills: profile.skills,
-      workHistory: workHistory.map((entry) => ({
-        company: entry.company,
-        title: entry.title,
-        startMonth: entry.startMonth,
-        endMonth: entry.endMonth,
-        currentlyWorkingHere: entry.currentlyWorkingHere,
-        description: entry.description,
-      })),
       links: profile.links,
     },
     status: "applied",

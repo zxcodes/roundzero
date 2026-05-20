@@ -45,7 +45,6 @@ export const cleanTestData = async () => {
       notifications,
       applications,
       jobs,
-      candidate_work_history,
       candidate_profiles,
       companies,
       users
