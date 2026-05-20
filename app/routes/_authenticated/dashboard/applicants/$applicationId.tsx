@@ -9,7 +9,6 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link, notFound, redirect, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { format } from "date-fns";
 import { useState } from "react";
 import { toast } from "sonner";
 import { DashboardApplicantReviewSkeleton } from "@/components/route-skeletons";
@@ -118,27 +117,6 @@ function statusToStepIndex(status: ApplicationStatus): number {
   }
 }
 
-const formatMonthRange = (entry: {
-  startMonth: string | null;
-  endMonth: string | null;
-  currentlyWorkingHere: boolean;
-}) => {
-  const start = entry.startMonth ? formatMonth(entry.startMonth) : "Unknown start";
-  const end = entry.currentlyWorkingHere
-    ? "Present"
-    : entry.endMonth
-      ? formatMonth(entry.endMonth)
-      : "Unknown end";
-
-  return `${start} – ${end}`;
-};
-
-const formatMonth = (value: string) => {
-  const [year, month] = value.split("-").map(Number);
-  const date = new Date(year, (month || 1) - 1, 1);
-  return format(date, "MMM yyyy");
-};
-
 const getInitials = (name: string) => {
   return name
     .split(" ")
@@ -182,17 +160,8 @@ function ApplicantReviewPage() {
 
   const metadata = (application.metadata ?? {}) as {
     headline?: string | null;
-    bio?: string | null;
     skills?: string[];
     links?: Record<string, string>;
-    workHistory?: Array<{
-      company?: string;
-      title?: string;
-      startMonth?: string | null;
-      endMonth?: string | null;
-      currentlyWorkingHere?: boolean;
-      description?: string | null;
-    }>;
   };
 
   const links = metadata.links
@@ -203,18 +172,7 @@ function ApplicantReviewPage() {
     : [];
 
   const skills = metadata.skills ?? [];
-  const workHistory = (metadata.workHistory ?? [])
-    .filter((entry): entry is NonNullable<typeof entry> => entry != null)
-    .map((entry) => ({
-      company: entry.company ?? "Unknown company",
-      title: entry.title ?? "Untitled role",
-      startMonth: entry.startMonth ?? null,
-      endMonth: entry.endMonth ?? null,
-      currentlyWorkingHere: entry.currentlyWorkingHere ?? false,
-      description: entry.description ?? null,
-    }));
   const headline = metadata.headline ?? null;
-  const bio = metadata.bio ?? null;
   const currentStatus = applicationStatusSchema.parse(application.status);
   const isFailed = currentStatus === "evaluation_failed";
   const isWithdrawn = currentStatus === "withdrawn";
@@ -384,10 +342,8 @@ function ApplicantReviewPage() {
           {/* Profile snapshot */}
           <SubmittedProfileSnapshot
             headline={headline}
-            bio={bio}
             skills={skills}
             links={links}
-            workHistory={workHistory}
             hasResume={Boolean(application.resumeKey)}
             headerExtra={
               preEvaluation && !report ? (
@@ -396,7 +352,6 @@ function ApplicantReviewPage() {
                 </Badge>
               ) : null
             }
-            formatMonthRange={formatMonthRange}
           />
         </div>
 

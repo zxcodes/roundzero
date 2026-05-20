@@ -371,16 +371,15 @@ async function seedForCandidate(user: DevUser) {
   const RESUME_KEY =
     "resumes/8e32773d-d9d8-4eb7-997f-d91a3c8d52d9/a2a64299-e9c3-4294-b929-9099b2d6757a--mohammed-farmaan.pdf";
 
-  const result = await sql`
+  await sql`
     INSERT INTO candidate_profiles (
       id, user_id, onboarding_completed_at, headline, resume_key, resume_updated_at,
-      bio, skills, links
+      skills, links
     )
     VALUES (
       ${makeUuidFromSeed(`seed-me-profile-${user.id}`)}, ${user.id}, now(),
       ${"Software Engineer · TypeScript · React · Node.js · Cloudflare Workers"},
       ${RESUME_KEY}, now(),
-      ${"I've spent the last four years building products at startups, starting as a frontend engineer and evolving into a full-stack engineer comfortable across the entire stack. I ship with intention. Code quality, developer experience, and user experience all matter. I've built real-time chat systems, financial platforms, Web3 applications, and cleaned up massive codebases. Each project has made me a better engineer. I don't just work on features. I work on products that users love."},
       ${sql.json([
         "TypeScript",
         "Python",
@@ -414,111 +413,12 @@ async function seedForCandidate(user: DevUser) {
     SET headline = EXCLUDED.headline,
         resume_key = EXCLUDED.resume_key,
         resume_updated_at = now(),
-        bio = EXCLUDED.bio,
         skills = EXCLUDED.skills,
         links = EXCLUDED.links,
         onboarding_completed_at = now(),
         updated_at = now()
-    RETURNING id
   `;
-
-  const actualProfileId = result[0]!.id;
   console.log("  Candidate profile created");
-
-  // Detailed, achievement-oriented work history (most recent first)
-  const workEntries = [
-    {
-      company: "Cashflowy - A financial AI Book Keeping Software",
-      title: "Software Engineer",
-      start: "2026-01",
-      end: "2026-03",
-      current: false,
-      description: [
-        "Fixed the frontend React codebase within the first two weeks of joining.",
-        "Replaced all manual data fetching inside useEffect hooks with a fully OpenAPI-generated, type-safe React Query client using Hey API.",
-        "Migrated from a broken ESLint setup to a fully functional Biome setup with stricter rules. The entire codebase now lints and formats under 2s.",
-        "Fixed the broken typechecker and all the type errors in the app: 'tsc --noEmit' now returns zero type errors.",
-        "Deleted over 4k unused LOC using Knip.",
-      ].join("\n\n"),
-    },
-    {
-      company: "Warez Corp (formerly Soulbound TV)",
-      title: "Software Engineer",
-      start: "2024-06",
-      end: "2026-01",
-      current: false,
-      description: [
-        "soulbound.tv — A live streaming platform for gamers that bridges Web2 and Web3 using React Router v7 Framework Mode (formerly Remix).",
-        "Built the primary user-facing real-time chat for the platform that supports mentions, stickers, and message reactions using WebSockets paired with Cloudflare's Durable Objects for persistent storage.",
-        "Added React Compiler to the app, which drastically improved performance by reducing the number of re-renders and eliminated the need for manual memoization.",
-        "Took care of technical debt and deleted over 12k lines of code using Knip.",
-        "mojihealth.com — A comprehensive, insurance-backed therapy marketplace platform built with fullstack Bun, React, Inngest, and Postgres.",
-        "purps.tv — A Web3 perps live trading and competition platform built on Hyperliquid.",
-      ].join("\n\n"),
-    },
-    {
-      company: "Klynk",
-      title: "Software Engineer",
-      start: "2024-04",
-      end: "2024-06",
-      current: false,
-      description: [
-        "Worked on the primary React Native app that manages their smart appliances and fixed a significant number of bugs in a short period of time.",
-        "Provided a detailed plan outlining why they should migrate from React Native CLI to Expo to improve the app's long-term performance, maintainability, and code quality.",
-      ].join("\n\n"),
-    },
-    {
-      company: "Honc - India's Car Owners' App",
-      title: "Frontend Engineer",
-      start: "2023-06",
-      end: "2023-12",
-      current: false,
-      description: [
-        "Mentored new interns while introducing the team to improved patterns and refining the frontend codebase for all mobile and web applications.",
-        "Built an Instagram & LinkedIn-like comments section with features for mentioning users, replying to comments, and editing comments.",
-        "Built a video caching solution to optimize video playback within the Honc App.",
-      ].join("\n\n"),
-    },
-    {
-      company: "Zelp Soft Pvt. Ltd.",
-      title: "Frontend Engineer",
-      start: "2021-10",
-      end: "2023-02",
-      current: false,
-      description: [
-        "Started my career here, focused on building UI with React and React Native.",
-        "Designed modules, components, pages, worked with REST APIs, and implemented custom MapViews using Google Maps.",
-      ].join("\n\n"),
-    },
-    {
-      company: "Engineering Dropout",
-      title: "Self-taught Software Engineer",
-      start: "2017-01",
-      end: "2021-10",
-      current: false,
-      description: [
-        "Dropped out to pursue software engineering full-time. Everything I know, I learned by building things and shipping code.",
-      ].join("\n\n"),
-    },
-  ];
-
-  await sql`DELETE FROM candidate_work_history WHERE candidate_profile_id = ${actualProfileId}`;
-
-  for (let i = 0; i < workEntries.length; i++) {
-    const entry = workEntries[i]!;
-    await sql`
-      INSERT INTO candidate_work_history (
-        id, candidate_profile_id, company, title, start_month, end_month,
-        currently_working_here, description, sort_order
-      )
-      VALUES (
-        ${makeUuidFromSeed(`seed-me-work-${user.id}-${i}`)},
-        ${actualProfileId}, ${entry.company}, ${entry.title}, ${entry.start}, ${entry.end},
-        ${entry.current}, ${entry.description}, ${i}
-      )
-    `;
-  }
-  console.log("  Work history created");
 }
 
 // ─── Main ───────────────────────────────────────────────────────

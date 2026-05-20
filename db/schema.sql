@@ -46,28 +46,8 @@ CREATE TABLE public.candidate_profiles (
     headline text,
     resume_key text,
     resume_updated_at timestamp with time zone,
-    bio text,
     skills jsonb DEFAULT '[]'::jsonb,
     links jsonb DEFAULT '{}'::jsonb,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-
---
--- Name: candidate_work_history; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.candidate_work_history (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    candidate_profile_id uuid NOT NULL,
-    company text NOT NULL,
-    title text NOT NULL,
-    start_month text NOT NULL,
-    end_month text,
-    currently_working_here boolean DEFAULT false NOT NULL,
-    description text,
-    sort_order integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -314,14 +294,6 @@ ALTER TABLE ONLY public.candidate_profiles
 
 
 --
--- Name: candidate_work_history candidate_work_history_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.candidate_work_history
-    ADD CONSTRAINT candidate_work_history_pkey PRIMARY KEY (id);
-
-
---
 -- Name: communication_assessments communication_assessments_interview_id_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -460,13 +432,6 @@ CREATE INDEX idx_applications_job ON public.applications USING btree (job_id);
 --
 
 CREATE INDEX idx_candidate_profiles_user ON public.candidate_profiles USING btree (user_id);
-
-
---
--- Name: idx_candidate_work_history_profile; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_candidate_work_history_profile ON public.candidate_work_history USING btree (candidate_profile_id, sort_order);
 
 
 --
@@ -610,14 +575,6 @@ ALTER TABLE ONLY public.applications
 
 ALTER TABLE ONLY public.candidate_profiles
     ADD CONSTRAINT candidate_profiles_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE RESTRICT;
-
-
---
--- Name: candidate_work_history candidate_work_history_candidate_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.candidate_work_history
-    ADD CONSTRAINT candidate_work_history_candidate_profile_id_fkey FOREIGN KEY (candidate_profile_id) REFERENCES public.candidate_profiles(id) ON DELETE RESTRICT;
 
 
 --
