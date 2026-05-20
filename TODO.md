@@ -1,6 +1,7 @@
 ## TODO
 
 
+- add a cron to detect failed workflows in the entire ai layer? and then it should update their statuses accordingly.
 - ready for decision shows no applications even if applications are evaluated.
 - in pre eval, profile vs resume consistency check is prob redundant now? check and remove.
 - the voice interview experience is still not good enough. check using better models (dedicated for voice) and see.
