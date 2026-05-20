@@ -1,7 +1,6 @@
 ## TODO
 
-- why do we even need two sources of candidate work history? it's redundant. resume should be enough. 
-- prevent people from using diff resumes/profiles for diff jobs. we can use snapshots to compare and decide if we wanna hold them in pre-eval itself. not exactly prevent, it should just act as a guardrail in the background.
+
 - think about connecting relevant profiles to the app (github, dribble etc for better understanding of the candidate, also check if we have any apis we can use to get and analyse the data.)
 - need to redefine the landing and product branding: (resumes are outdated, yoe is just a number now, cracked people exist, ai needs to find them, experience is no longer a good metric, etc etc.)
 - update landing page messaging to say the time of resumes is over. it's time for real evaluation etc.
@@ -28,6 +27,7 @@
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- why do we even need two sources of candidate work history? it's redundant. resume should be enough. -->
 <!--- think about showing pre eval report to companies bc the whole point is showing them tailored reports in the end. so instead of immediately showing them, show it only when the full reports are actually generated? think. fine for local dev bc we need to check the scores etc etc. -->
 <!--- everything on the company side needs to be rethought. the ux isn't there. it's cluttered and messy.-->
 <!--- in post eval, refine the scores using the actual agent conv and add it to the final report.-->
@@ -169,6 +169,7 @@
 
 
 ## Future Stuff (Not included in initial release)
+- prevent people from using diff resumes/profiles for diff jobs. we can use snapshots to compare and decide if we wanna hold them in pre-eval itself. not exactly prevent, it should just act as a guardrail in the background.
 
 <!--- add save job feature for candidates. -->
 <!--- companies might need api access to list jobs? iframes? too much for now? think about it.-->
