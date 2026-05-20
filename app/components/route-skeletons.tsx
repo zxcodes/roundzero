@@ -752,6 +752,11 @@ export function DashboardIndexSkeleton() {
  * Skeleton for /dashboard/settings — settings form with card sections.
  */
 export function DashboardSettingsSkeleton() {
+  const { isCompany } = useRouteContext({ from: "/_authenticated/dashboard/settings" });
+  return isCompany ? <CompanyDashboardSettingsSkeleton /> : <CandidateDashboardSettingsSkeleton />;
+}
+
+function CandidateDashboardSettingsSkeleton() {
   return (
     <div className="animate-fade-in space-y-6 pb-28">
       <div>
@@ -760,7 +765,59 @@ export function DashboardSettingsSkeleton() {
       </div>
 
       <div className="space-y-6">
-        {Array.from({ length: 3 }).map((_, i) => (
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-5 w-36" />
+            <Skeleton className="h-3.5 w-64" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Skeleton className="h-9 w-full" />
+            <Skeleton className="h-9 w-full" />
+            <Skeleton className="h-24 w-full" />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-5 w-24" />
+            <Skeleton className="h-3.5 w-72" />
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Skeleton className="h-9 w-full" />
+            <div className="flex flex-wrap gap-1.5">
+              <Skeleton className="h-6 w-16 rounded-full" />
+              <Skeleton className="h-6 w-20 rounded-full" />
+              <Skeleton className="h-6 w-14 rounded-full" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-5 w-20" />
+            <Skeleton className="h-3.5 w-72" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Skeleton className="h-9 w-full" />
+            <Skeleton className="h-9 w-full" />
+            <Skeleton className="h-9 w-full" />
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function CompanyDashboardSettingsSkeleton() {
+  return (
+    <div className="animate-fade-in space-y-6 pb-28">
+      <div>
+        <Skeleton className="h-8 w-40" />
+        <Skeleton className="mt-1 h-4 w-96 max-w-full" />
+      </div>
+
+      <div className="space-y-6">
+        {Array.from({ length: 5 }).map((_, i) => (
           <Card key={i}>
             <CardHeader>
               <Skeleton className="h-5 w-36" />

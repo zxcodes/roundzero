@@ -35,22 +35,11 @@ describe("pre-evaluation routing rules", () => {
 });
 
 describe("slop detection prompt construction", () => {
-  it("includes full structured profile context, not just headline and skills", () => {
+  it("includes structured profile context with skills and links", () => {
     const prompt = buildSlopDetectionPrompt(
       {
         headline: "Platform Engineer",
-        bio: "Built internal tooling.",
         skills: ["TypeScript", "Postgres"],
-        workHistory: [
-          {
-            company: "Acme",
-            title: "Engineer",
-            startMonth: "2022-01",
-            endMonth: "2024-01",
-            currentlyWorkingHere: false,
-            description: "Built hiring systems.",
-          },
-        ],
         links: {
           github: "https://github.com/example",
         },
@@ -60,21 +49,10 @@ describe("slop detection prompt construction", () => {
 
     const parsed = JSON.parse(prompt) as {
       profileMetadata: {
-        workHistory: Array<{ company: string; title: string }>;
         links: string[];
       };
     };
 
-    expect(parsed.profileMetadata.workHistory).toEqual([
-      {
-        company: "Acme",
-        title: "Engineer",
-        startMonth: "2022-01",
-        endMonth: "2024-01",
-        currentlyWorkingHere: false,
-        description: "Built hiring systems.",
-      },
-    ]);
     expect(parsed.profileMetadata.links).toEqual(["github: https://github.com/example"]);
   });
 

@@ -70,9 +70,9 @@ function PrivacyPage() {
             </p>
             <p>
               <strong style={{ color: "var(--ed-ink)" }}>Candidate Profile Data:</strong> Candidates
-              may provide headline, bio, skills, work history, external links, and upload a resume.
-              This information is used to create your profile and is shared with companies when you
-              apply to their job postings.
+              may provide headline, skills, external links, and upload a resume. This information is
+              used to create your profile and is shared with companies when you apply to their job
+              postings.
             </p>
             <p>
               <strong style={{ color: "var(--ed-ink)" }}>Company Profile Data:</strong> Companies
