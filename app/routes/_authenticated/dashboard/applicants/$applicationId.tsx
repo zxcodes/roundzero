@@ -2,7 +2,6 @@ import {
   ArrowLeft01Icon,
   ArrowRight01Icon,
   Calendar01Icon,
-  CheckmarkCircle02Icon,
   File02Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -177,7 +176,6 @@ function ApplicantReviewPage() {
   const isFailed = currentStatus === "evaluation_failed";
   const isWithdrawn = currentStatus === "withdrawn";
   const currentStepIndex = statusToStepIndex(currentStatus);
-  const statusTone = applicationStatusMeta[currentStatus];
   const report = reportTimeline?.report ?? null;
 
   const allowedTransitions = APPLICATION_STATUS_TRANSITIONS[currentStatus] ?? [];
@@ -276,15 +274,6 @@ function ApplicantReviewPage() {
             <p className="text-sm text-muted-foreground">
               Reviewing for <span className="font-medium">{application.jobTitle}</span>
             </p>
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline" className={statusTone.badge}>
-                {applicationStatusLabels[currentStatus]}
-              </Badge>
-              <Badge variant="outline" className="gap-1 font-mono text-[11px]">
-                <HugeiconsIcon icon={Calendar01Icon} strokeWidth={2} className="size-3" />
-                Applied {formatDate(application.createdAt)}
-              </Badge>
-            </div>
           </div>
         </div>
 
@@ -301,6 +290,7 @@ function ApplicantReviewPage() {
           onResumeView={onResumeView}
           resumeLoading={resumeDownloadMutation.isPending}
           candidateEmail={application.candidateEmail}
+          createdAt={application.createdAt}
           currentIndex={currentStepIndex}
           isFailed={isFailed}
           isWithdrawn={isWithdrawn}
@@ -399,6 +389,7 @@ function ApplicationStatusSection({
   isFailed,
   isWithdrawn,
   isRejected,
+  createdAt,
 }: {
   currentStatus: ApplicationStatus;
   canShortlist: boolean;
@@ -412,6 +403,7 @@ function ApplicationStatusSection({
   onResumeView: () => void | Promise<void>;
   resumeLoading: boolean;
   candidateEmail: string;
+  createdAt: Date;
   currentIndex: number;
   isFailed: boolean;
   isWithdrawn: boolean;
@@ -427,31 +419,34 @@ function ApplicationStatusSection({
             <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
               Application status
             </p>
-            <Badge variant="outline" className={tone.badge}>
-              {applicationStatusLabels[currentStatus]}
-            </Badge>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <Badge variant="outline" className={tone.badge}>
+                {applicationStatusLabels[currentStatus]}
+              </Badge>
+              <Badge variant="outline" className="gap-1 font-mono text-[11px]">
+                <HugeiconsIcon icon={Calendar01Icon} strokeWidth={2} className="size-3" />
+                Applied {formatDate(createdAt)}
+              </Badge>
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {canShortlist ? (
-              <Button
-                className="bg-success/80 text-success-foreground hover:bg-success/90"
-                disabled={isPending}
-                onClick={onShortlist}
-              >
-                <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-4" />
-                Shortlist
+            {hasResume ? (
+              <Button variant="outline" onClick={onResumeView} disabled={resumeLoading}>
+                <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-4" />
+                {resumeLoading ? "Opening…" : "View resume"}
               </Button>
             ) : null}
+
             {canReject ? (
               <Button variant="destructive" disabled={isPending} onClick={onReject}>
                 Reject
               </Button>
             ) : null}
-            {hasResume ? (
-              <Button variant="outline" onClick={onResumeView} disabled={resumeLoading}>
-                <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-4" />
-                {resumeLoading ? "Opening…" : "View resume"}
+
+            {canShortlist ? (
+              <Button disabled={isPending} onClick={onShortlist}>
+                Shortlist
               </Button>
             ) : null}
           </div>
