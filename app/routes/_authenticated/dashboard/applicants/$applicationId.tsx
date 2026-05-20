@@ -261,117 +261,106 @@ function ApplicantReviewPage() {
         </div>
       </div>
 
-      {/* Two-column layout: content + sticky decision panel */}
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-        <div className="space-y-6 min-w-0">
-          {/* Candidate header */}
-          <div className="flex flex-wrap items-start gap-4">
-            <Avatar className="size-14 ring-4 ring-background">
-              <AvatarImage
-                src={application.candidatePicture ?? undefined}
-                alt={application.candidateName}
-              />
-              <AvatarFallback>{getInitials(application.candidateName)}</AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 flex-1 space-y-2">
-              <h2 className="text-2xl font-bold tracking-tight">{application.candidateName}</h2>
-              <p className="text-sm text-muted-foreground">
-                Reviewing for <span className="font-medium">{application.jobTitle}</span>
-              </p>
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="outline" className={statusTone.badge}>
-                  {applicationStatusLabels[currentStatus]}
-                </Badge>
-                <Badge variant="outline" className="gap-1 font-mono text-[11px]">
-                  <HugeiconsIcon icon={Calendar01Icon} strokeWidth={2} className="size-3" />
-                  Applied {formatDate(application.createdAt)}
-                </Badge>
-              </div>
+      <div className="space-y-6 min-w-0">
+        {/* Candidate header */}
+        <div className="flex flex-wrap items-start gap-4">
+          <Avatar className="size-14 ring-4 ring-background">
+            <AvatarImage
+              src={application.candidatePicture ?? undefined}
+              alt={application.candidateName}
+            />
+            <AvatarFallback>{getInitials(application.candidateName)}</AvatarFallback>
+          </Avatar>
+          <div className="min-w-0 flex-1 space-y-2">
+            <h2 className="text-2xl font-bold tracking-tight">{application.candidateName}</h2>
+            <p className="text-sm text-muted-foreground">
+              Reviewing for <span className="font-medium">{application.jobTitle}</span>
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline" className={statusTone.badge}>
+                {applicationStatusLabels[currentStatus]}
+              </Badge>
+              <Badge variant="outline" className="gap-1 font-mono text-[11px]">
+                <HugeiconsIcon icon={Calendar01Icon} strokeWidth={2} className="size-3" />
+                Applied {formatDate(application.createdAt)}
+              </Badge>
             </div>
           </div>
-
-          {/* Compact 5-step stepper */}
-          <CompactStepper
-            currentIndex={currentStepIndex}
-            isFailed={isFailed}
-            isWithdrawn={isWithdrawn}
-            isRejected={currentStatus === "rejected"}
-          />
-
-          {/* Report (if any) */}
-          {report ? <ReportSnapshotCard report={report} applicationId={application.id} /> : null}
-
-          {/* Pre-evaluation card — only when there's no full report yet */}
-          {!report && preEvaluation ? (
-            <Card>
-              <CardContent className="space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-                      Pre-screening
-                    </p>
-                    <h3 className="mt-1 text-base font-semibold tracking-tight">
-                      Profile score: {preEvaluation.score}/100
-                    </h3>
-                  </div>
-                  <Badge variant="outline" className="text-[11px]">
-                    {preEvaluation.confidence}
-                  </Badge>
-                </div>
-                {preEvaluation.missingRequirements.length > 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    {preEvaluation.missingRequirements.length} gap
-                    {preEvaluation.missingRequirements.length === 1 ? "" : "s"} detected
-                  </p>
-                ) : (
-                  <p className="text-sm text-success">All key requirements matched</p>
-                )}
-              </CardContent>
-            </Card>
-          ) : null}
-
-          {!report && !preEvaluation ? (
-            <Card className="border border-dashed border-border/70">
-              <CardContent className="py-6 text-center text-sm text-muted-foreground">
-                Pre-evaluation is in progress. Results will appear here once Zero finishes
-                screening.
-              </CardContent>
-            </Card>
-          ) : null}
-
-          {/* Profile snapshot */}
-          <SubmittedProfileSnapshot
-            headline={headline}
-            skills={skills}
-            links={links}
-            hasResume={Boolean(application.resumeKey)}
-            headerExtra={
-              preEvaluation && !report ? (
-                <Badge variant="outline" className="font-mono text-[11px]">
-                  Score: {preEvaluation.score}/100
-                </Badge>
-              ) : null
-            }
-          />
         </div>
 
-        {/* Decision panel (sticky on large screens) */}
-        <aside className="lg:sticky lg:top-6 lg:self-start">
-          <DecisionPanel
-            currentStatus={currentStatus}
-            canShortlist={canShortlist}
-            canReject={canReject}
-            isPending={updateStatusMutation.isPending}
-            onShortlist={onShortlist}
-            onReject={onRejectClick}
-            allowedStatuses={allowedStatusOptions}
-            onStatusChange={onStatusValueChange}
-            hasResume={Boolean(application.resumeKey)}
-            onResumeView={onResumeView}
-            resumeLoading={resumeDownloadMutation.isPending}
-            candidateEmail={application.candidateEmail}
-          />
-        </aside>
+        <ApplicationStatusSection
+          currentStatus={currentStatus}
+          canShortlist={canShortlist}
+          canReject={canReject}
+          isPending={updateStatusMutation.isPending}
+          onShortlist={onShortlist}
+          onReject={onRejectClick}
+          allowedStatuses={allowedStatusOptions}
+          onStatusChange={onStatusValueChange}
+          hasResume={Boolean(application.resumeKey)}
+          onResumeView={onResumeView}
+          resumeLoading={resumeDownloadMutation.isPending}
+          candidateEmail={application.candidateEmail}
+          currentIndex={currentStepIndex}
+          isFailed={isFailed}
+          isWithdrawn={isWithdrawn}
+          isRejected={currentStatus === "rejected"}
+        />
+
+        {/* Report (if any) */}
+        {report ? <ReportSnapshotCard report={report} applicationId={application.id} /> : null}
+
+        {/* Pre-evaluation card — only when there's no full report yet */}
+        {!report && preEvaluation ? (
+          <Card>
+            <CardContent className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+                    Pre-screening
+                  </p>
+                  <h3 className="mt-1 text-base font-semibold tracking-tight">
+                    Profile score: {preEvaluation.score}/100
+                  </h3>
+                </div>
+                <Badge variant="outline" className="text-[11px]">
+                  {preEvaluation.confidence}
+                </Badge>
+              </div>
+              {preEvaluation.missingRequirements.length > 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  {preEvaluation.missingRequirements.length} gap
+                  {preEvaluation.missingRequirements.length === 1 ? "" : "s"} detected
+                </p>
+              ) : (
+                <p className="text-sm text-success">All key requirements matched</p>
+              )}
+            </CardContent>
+          </Card>
+        ) : null}
+
+        {!report && !preEvaluation ? (
+          <Card className="border border-dashed border-border/70">
+            <CardContent className="py-6 text-center text-sm text-muted-foreground">
+              Pre-evaluation is in progress. Results will appear here once Zero finishes screening.
+            </CardContent>
+          </Card>
+        ) : null}
+
+        {/* Profile snapshot */}
+        <SubmittedProfileSnapshot
+          headline={headline}
+          skills={skills}
+          links={links}
+          hasResume={Boolean(application.resumeKey)}
+          headerExtra={
+            preEvaluation && !report ? (
+              <Badge variant="outline" className="font-mono text-[11px]">
+                Score: {preEvaluation.score}/100
+              </Badge>
+            ) : null
+          }
+        />
       </div>
 
       <AlertDialog open={pendingStatus !== null} onOpenChange={() => setPendingStatus(null)}>
@@ -393,79 +382,7 @@ function ApplicantReviewPage() {
   );
 }
 
-function CompactStepper({
-  currentIndex,
-  isFailed,
-  isWithdrawn,
-  isRejected,
-}: {
-  currentIndex: number;
-  isFailed: boolean;
-  isWithdrawn: boolean;
-  isRejected: boolean;
-}) {
-  return (
-    <Card size="sm" className="border-border/60">
-      <CardContent className="py-3">
-        <div className="flex items-center">
-          {stepperSteps.map((step, i) => {
-            const isCurrent = !isFailed && !isWithdrawn && i === currentIndex;
-            const isCompleted = !isFailed && !isWithdrawn && i < currentIndex;
-            const isLast = i === stepperSteps.length - 1;
-            // On "decision" step, color reflects shortlisted (primary) vs rejected (danger)
-            const dotClass = isFailed
-              ? "bg-danger"
-              : isWithdrawn
-                ? "bg-muted-foreground/30"
-                : isCurrent
-                  ? i === 4 && isRejected
-                    ? "bg-danger"
-                    : "bg-primary"
-                  : isCompleted
-                    ? "bg-primary/60"
-                    : "bg-muted-foreground/25";
-
-            return (
-              <div key={step.key} className="flex flex-1 items-center last:flex-none">
-                <div className="flex flex-col items-center gap-1.5">
-                  <div className={`size-2.5 rounded-full ${dotClass}`} aria-hidden />
-                  <span
-                    className={`text-[11px] font-medium ${
-                      isCurrent
-                        ? "text-foreground"
-                        : isCompleted
-                          ? "text-muted-foreground"
-                          : "text-muted-foreground/60"
-                    }`}
-                  >
-                    {step.label}
-                  </span>
-                </div>
-                {!isLast ? (
-                  <div
-                    className={`mx-2 h-px flex-1 ${isCompleted ? "bg-primary/40" : "bg-border/60"}`}
-                  />
-                ) : null}
-              </div>
-            );
-          })}
-        </div>
-        {isFailed ? (
-          <p className="mt-2 text-center text-[11px] font-medium text-danger">
-            Evaluation failed — manual review required.
-          </p>
-        ) : null}
-        {isWithdrawn ? (
-          <p className="mt-2 text-center text-[11px] font-medium text-muted-foreground">
-            Candidate withdrew their application.
-          </p>
-        ) : null}
-      </CardContent>
-    </Card>
-  );
-}
-
-function DecisionPanel({
+function ApplicationStatusSection({
   currentStatus,
   canShortlist,
   canReject,
@@ -478,6 +395,10 @@ function DecisionPanel({
   onResumeView,
   resumeLoading,
   candidateEmail,
+  currentIndex,
+  isFailed,
+  isWithdrawn,
+  isRejected,
 }: {
   currentStatus: ApplicationStatus;
   canShortlist: boolean;
@@ -491,77 +412,157 @@ function DecisionPanel({
   onResumeView: () => void | Promise<void>;
   resumeLoading: boolean;
   candidateEmail: string;
+  currentIndex: number;
+  isFailed: boolean;
+  isWithdrawn: boolean;
+  isRejected: boolean;
 }) {
   const tone = applicationStatusMeta[currentStatus];
 
   return (
-    <div className="space-y-3 rounded-xl border border-border/60 bg-card p-4">
-      <div>
-        <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-          Decision
-        </p>
-        <div className="mt-1.5">
-          <Badge variant="outline" className={tone.badge}>
-            {applicationStatusLabels[currentStatus]}
-          </Badge>
-        </div>
-      </div>
+    <Card size="sm" className="border-border/60">
+      <CardContent className="space-y-4 py-4">
+        <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div className="space-y-1.5">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+              Application status
+            </p>
+            <Badge variant="outline" className={tone.badge}>
+              {applicationStatusLabels[currentStatus]}
+            </Badge>
+          </div>
 
-      <div className="space-y-2">
-        {canShortlist ? (
-          <Button
-            className="w-full bg-success/80 text-success-foreground hover:bg-success/90"
-            disabled={isPending}
-            onClick={onShortlist}
-          >
-            <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-4" />
-            Shortlist
-          </Button>
-        ) : null}
-        {canReject ? (
-          <Button variant="destructive" className="w-full" disabled={isPending} onClick={onReject}>
-            Reject
-          </Button>
-        ) : null}
-      </div>
-
-      {allowedStatuses.length > 1 ? (
-        <div className="space-y-1.5 border-t border-border/50 pt-3">
-          <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-            Move to
-          </p>
-          <Select value={currentStatus} onValueChange={onStatusChange} disabled={isPending}>
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {allowedStatuses.map((status) => (
-                <SelectItem key={status} value={status}>
-                  {applicationStatusLabels[status]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-wrap items-center gap-2">
+            {canShortlist ? (
+              <Button
+                className="bg-success/80 text-success-foreground hover:bg-success/90"
+                disabled={isPending}
+                onClick={onShortlist}
+              >
+                <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-4" />
+                Shortlist
+              </Button>
+            ) : null}
+            {canReject ? (
+              <Button variant="destructive" disabled={isPending} onClick={onReject}>
+                Reject
+              </Button>
+            ) : null}
+            {hasResume ? (
+              <Button variant="outline" onClick={onResumeView} disabled={resumeLoading}>
+                <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-4" />
+                {resumeLoading ? "Opening…" : "View resume"}
+              </Button>
+            ) : null}
+          </div>
         </div>
+
+        <div className="grid gap-3 border-y border-border/50 py-3 lg:grid-cols-[minmax(0,1fr)_280px]">
+          <CompactStepper
+            currentIndex={currentIndex}
+            isFailed={isFailed}
+            isWithdrawn={isWithdrawn}
+            isRejected={isRejected}
+          />
+          <div className="space-y-2 lg:border-l lg:border-border/50 lg:pl-3">
+            {allowedStatuses.length > 1 ? (
+              <div className="space-y-1.5">
+                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  Move to
+                </p>
+                <Select value={currentStatus} onValueChange={onStatusChange} disabled={isPending}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allowedStatuses.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {applicationStatusLabels[status]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : null}
+            <div className="text-[11px] text-muted-foreground">
+              <p className="font-medium uppercase tracking-wide">Contact</p>
+              <p className="mt-0.5 truncate font-mono text-xs text-foreground">{candidateEmail}</p>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function CompactStepper({
+  currentIndex,
+  isFailed,
+  isWithdrawn,
+  isRejected,
+}: {
+  currentIndex: number;
+  isFailed: boolean;
+  isWithdrawn: boolean;
+  isRejected: boolean;
+}) {
+  const progressWidth = currentIndex > 0 ? `${currentIndex * 20}%` : "0%";
+  const progressTone = currentIndex === 4 && isRejected ? "bg-danger/60" : "bg-primary/50";
+
+  return (
+    <div className="relative w-full self-center">
+      <div className="pointer-events-none absolute left-[10%] right-[10%] top-1.25 h-px bg-border/60" />
+      {!isFailed && !isWithdrawn ? (
+        <div
+          className={`pointer-events-none absolute left-[10%] top-1.25 h-px ${progressTone}`}
+          style={{ width: progressWidth }}
+        />
       ) : null}
+      <div className="relative z-10 grid grid-cols-5 gap-0">
+        {stepperSteps.map((step, i) => {
+          const isCurrent = !isFailed && !isWithdrawn && i === currentIndex;
+          const isCompleted = !isFailed && !isWithdrawn && i < currentIndex;
+          // On "decision" step, color reflects shortlisted (primary) vs rejected (danger)
+          const dotClass = isFailed
+            ? "bg-danger"
+            : isWithdrawn
+              ? "bg-muted"
+              : isCurrent
+                ? i === 4 && isRejected
+                  ? "bg-danger"
+                  : "bg-primary"
+                : isCompleted
+                  ? "bg-primary"
+                  : "bg-muted";
 
-      <div className="space-y-2 border-t border-border/50 pt-3">
-        {hasResume ? (
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={onResumeView}
-            disabled={resumeLoading}
-          >
-            <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-4" />
-            {resumeLoading ? "Opening…" : "View resume"}
-          </Button>
-        ) : null}
-        <div className="text-[11px] text-muted-foreground">
-          <p className="font-medium uppercase tracking-wide">Contact</p>
-          <p className="mt-0.5 truncate font-mono text-xs text-foreground">{candidateEmail}</p>
-        </div>
+          return (
+            <div key={step.key} className="flex flex-col items-center gap-1.5">
+              <div className={`size-2.5 rounded-full ${dotClass}`} aria-hidden />
+              <span
+                className={`text-[11px] font-medium ${
+                  isCurrent
+                    ? "text-foreground"
+                    : isCompleted
+                      ? "text-muted-foreground"
+                      : "text-muted-foreground/60"
+                }`}
+              >
+                {step.label}
+              </span>
+            </div>
+          );
+        })}
       </div>
+      {isFailed ? (
+        <p className="mt-2 text-center text-[11px] font-medium text-danger">
+          Evaluation failed — manual review required.
+        </p>
+      ) : null}
+      {isWithdrawn ? (
+        <p className="mt-2 text-center text-[11px] font-medium text-muted-foreground">
+          Candidate withdrew their application.
+        </p>
+      ) : null}
     </div>
   );
 }
