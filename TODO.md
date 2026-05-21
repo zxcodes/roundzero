@@ -1,7 +1,7 @@
 ## TODO
 
 
-- add a cron to detect failed workflows in the entire ai layer? and then it should update their statuses accordingly.
+- add a cron to detect failed workflows (evaluation_failed) in the entire ai layer? and then it should update their statuses accordingly.
 - ready for decision shows no applications even if applications are evaluated.
 - the voice interview experience is still not good enough. check using better models (dedicated for voice) and see.
 - need to redefine the landing and product branding: (resumes are outdated, yoe is just a number now, cracked people exist, ai needs to find them, experience is no longer a good metric, etc etc.)
