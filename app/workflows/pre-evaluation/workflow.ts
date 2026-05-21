@@ -35,10 +35,7 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
         classifyJobType(applicationData.job.title, applicationData.job.description, log),
       );
 
-      const slopCheck = await step.do(
-        "detect_slop",
-        detectSlop(applicationData.application.metadata ?? {}, resumeText, log),
-      );
+      const slopCheck = await step.do("check_resume_authenticity", detectSlop(resumeText, log));
 
       const aiResult = await step.do(
         "run_ai_pre_evaluation",

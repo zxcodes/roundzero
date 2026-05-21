@@ -3,7 +3,6 @@
 
 - add a cron to detect failed workflows in the entire ai layer? and then it should update their statuses accordingly.
 - ready for decision shows no applications even if applications are evaluated.
-- in pre eval, profile vs resume consistency check is prob redundant now? check and remove.
 - the voice interview experience is still not good enough. check using better models (dedicated for voice) and see.
 - need to redefine the landing and product branding: (resumes are outdated, yoe is just a number now, cracked people exist, ai needs to find them, experience is no longer a good metric, etc etc.)
 - update landing page messaging to say the time of resumes is over. it's time for real evaluation etc.
@@ -30,6 +29,7 @@
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- in pre eval, profile vs resume consistency check is prob redundant now? check and remove.-->
 <!--- think about connecting relevant profiles to the app (github, dribble etc for better understanding of the candidate, also check if we have any apis we can use to get and analyse the data.)-->
 <!--- why do we even need two sources of candidate work history? it's redundant. resume should be enough. -->
 <!--- think about showing pre eval report to companies bc the whole point is showing them tailored reports in the end. so instead of immediately showing them, show it only when the full reports are actually generated? think. fine for local dev bc we need to check the scores etc etc. -->

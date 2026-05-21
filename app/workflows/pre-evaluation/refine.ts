@@ -1,14 +1,15 @@
 /**
  * Pre-evaluation refinement.
  *
- * The pre-eval model emits `missingRequirements` and a slop-check produces
- * `redFlags` + `explanation`. Both can contain hallucinated requirements that
- * the resume actually covered, generic boilerplate, or duplicates.
+ * The pre-eval model emits `missingRequirements` and a resume-authenticity
+ * check produces `redFlags` + `explanation`. Both can contain hallucinated
+ * requirements that the resume actually covered, generic boilerplate, or
+ * duplicates.
  *
  * This deterministic pass cleans them before they hit the DB:
  *   - normalize whitespace, dedupe, length filter, drop platitudes
  *   - drop `missingRequirements` that are clearly satisfied by the resume
- *   - drop `redFlags` that have no anchor in either the resume or the profile
+ *   - drop `redFlags` that have no anchor in the resume text
  *   - clamp/round scores
  *
  * No second LLM call is needed at this stage — pre-eval volume is high and
@@ -95,14 +96,13 @@ export function refineSlopCheck(
     explanation: string;
   },
   resumeText: string,
-  profileText: string,
 ): RefinedSlopCheck {
   const cleaned = cleanBullets(raw.redFlags, {
     cap: MAX_RED_FLAGS,
     minWords: 3,
     maxChars: 280,
   });
-  const grounded = filterAnchored(cleaned, [resumeText, profileText], {
+  const grounded = filterAnchored(cleaned, [resumeText], {
     minRun: 3,
     minOverlap: 0.4,
   });
