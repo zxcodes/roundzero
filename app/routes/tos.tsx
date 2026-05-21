@@ -3,7 +3,15 @@ import { PublicFooter, PublicHeader } from "@/components/public-layout";
 
 export const Route = createFileRoute("/tos")({
   head: () => ({
-    meta: [{ title: "Terms of Service | RoundZero" }],
+    meta: [
+      { title: "Terms of Service | RoundZero" },
+      {
+        name: "description",
+        content:
+          "RoundZero Terms of Service — the terms governing your use of our AI-driven hiring platform and interview services.",
+      },
+    ],
+    links: [{ rel: "canonical", href: "https://roundzero.dev/tos" }],
   }),
   component: TermsPage,
 });
