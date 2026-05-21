@@ -57,8 +57,24 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         content: "RoundZero",
       },
       {
+        property: "og:image",
+        content: "https://roundzero.dev/og-default.jpeg",
+      },
+      {
+        property: "og:image:width",
+        content: "1200",
+      },
+      {
+        property: "og:image:height",
+        content: "630",
+      },
+      {
         name: "twitter:card",
         content: "summary_large_image",
+      },
+      {
+        name: "twitter:image",
+        content: "https://roundzero.dev/og-default.jpeg",
       },
       {
         name: "twitter:title",
