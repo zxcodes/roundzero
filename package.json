@@ -23,7 +23,7 @@
     "cron": "curl http://localhost:3000/cdn-cgi/handler/scheduled"
   },
   "dependencies": {
-    "@cloudflare/ai-chat": "^0.7.0",
+    "@cloudflare/ai-chat": "^0.7.1",
     "@cloudflare/voice": "^0.2.0",
     "@fontsource-variable/fraunces": "^5.2.9",
     "@fontsource-variable/geist": "^5.2.9",
@@ -80,8 +80,8 @@
     "@tanstack/react-query-devtools": "^5.100.11",
     "@types/babel__core": "^7.20.5",
     "@types/bun": "^1.3.14",
-    "@types/node": "^25.9.0",
-    "@types/react": "^19.2.14",
+    "@types/node": "^25.9.1",
+    "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",
     "@typescript/native-preview": "7.0.0-dev.20260519.1",
     "@vitejs/plugin-react": "^6.0.2",
