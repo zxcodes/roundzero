@@ -224,7 +224,7 @@ Replace immediate per-candidate report release with a pool-and-batch system.
 - [x] Per-route OG meta tags on dynamic pages
 - [x] JSON-LD structured data: `JobPosting` on job detail pages
 - [x] JSON-LD structured data: `Organization` on company detail pages
-- [ ] Static OG image (`public/og-default.png`, 1200×630) — needs design asset
+- [x] Static OG image (`public/og-default.jpeg`) + `og:image`/`twitter:image` meta tags
 - [ ] Set up Google Search Console and submit sitemap
 - [ ] Monitor index coverage after sitemap submission
 - [ ] Add breadcrumb structured data to job and company pages
