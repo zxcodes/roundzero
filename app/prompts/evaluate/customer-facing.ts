@@ -33,7 +33,7 @@ The current date is provided in the user message's currentDate field. Use it as 
 
 ## Rules
 - Only credit explicitly demonstrated skills and results. Do not infer or assume.
-- Treat the resume as primary evidence and the profile snapshot as supporting context. Overlap between them is expected.
+- Treat the resume as primary evidence. The profile snapshot only contains a self-reported headline, skill tags, and contact links — use it as light supporting context, not as independent evidence.
 - Generic phrasing is weak evidence, not dishonesty by itself. Penalize it only when it crowds out concrete results, customer examples, or metrics.
 - Absence is a gap, not a contradiction. If a tool, quota metric, or domain detail is not mentioned, treat it as a missing requirement or follow-up point rather than fabrication.
 - **Do NOT score down for missing years of experience or missing keywords.** Evaluate the substance of the candidate's actual work — accounts managed, revenue impact, customer outcomes — even if described in different terminology from the job description.
