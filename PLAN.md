@@ -214,6 +214,23 @@ Replace immediate per-candidate report release with a pool-and-batch system.
 
 ---
 
+## Phase 13: SEO Foundations
+
+- [x] Add `Sitemap:` directive to `robots.txt` pointing to `/sitemap.xml`
+- [x] Dynamic XML sitemap route (`/sitemap.xml`) with all open jobs + companies
+- [x] Self-referencing canonical URLs on every public route
+- [x] Per-route meta descriptions for all public pages (including dynamic job/company pages)
+- [x] Missing OG tags: `og:site_name`, `og:description`, `og:url`
+- [x] Per-route OG meta tags on dynamic pages
+- [x] JSON-LD structured data: `JobPosting` on job detail pages
+- [x] JSON-LD structured data: `Organization` on company detail pages
+- [ ] Static OG image (`public/og-default.png`, 1200×630) — needs design asset
+- [ ] Set up Google Search Console and submit sitemap
+- [ ] Monitor index coverage after sitemap submission
+- [ ] Add breadcrumb structured data to job and company pages
+
+---
+
 ## One-Line Definition
 
 > RoundZero deeply evaluates the right candidates, not every candidate.

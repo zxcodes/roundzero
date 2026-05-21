@@ -53,7 +53,24 @@ export const Route = createFileRoute("/companies/")({
   search: { middlewares: [stripSearchParams(searchDefaults)] },
   loaderDeps: ({ search }) => search,
   head: () => ({
-    meta: [{ title: "Browse Companies | RoundZero" }],
+    meta: [
+      { title: "Browse Companies | RoundZero" },
+      {
+        name: "description",
+        content:
+          "Explore companies hiring on RoundZero. Find the right culture, stack, and role for you. Browse team profiles, open positions, and more.",
+      },
+      {
+        property: "og:url",
+        content: "https://roundzero.dev/companies",
+      },
+    ],
+    links: [
+      {
+        rel: "canonical",
+        href: "https://roundzero.dev/companies",
+      },
+    ],
   }),
   loader: async ({ deps }) => {
     const result = await getAllCompaniesPaginated({

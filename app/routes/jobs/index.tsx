@@ -79,7 +79,24 @@ export const Route = createFileRoute("/jobs/")({
   search: { middlewares: [stripSearchParams(searchDefaults)] },
   loaderDeps: ({ search }) => search,
   head: () => ({
-    meta: [{ title: "Browse Jobs | RoundZero" }],
+    meta: [
+      { title: "Browse Jobs | RoundZero" },
+      {
+        name: "description",
+        content:
+          "Browse open positions from companies hiring on RoundZero. Apply with one click and interview on your schedule with AI-driven evaluations.",
+      },
+      {
+        property: "og:url",
+        content: "https://roundzero.dev/jobs",
+      },
+    ],
+    links: [
+      {
+        rel: "canonical",
+        href: "https://roundzero.dev/jobs",
+      },
+    ],
   }),
   loader: async ({ deps }) => {
     const result = await getOpenJobsPaginated({

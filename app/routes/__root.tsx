@@ -44,8 +44,17 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         content: "RoundZero | Replace Your First Interview Round with AI",
       },
       {
+        property: "og:description",
+        content:
+          "Run AI-driven first-round interviews and get ranked candidates with structured evaluation reports.",
+      },
+      {
         property: "og:type",
         content: "website",
+      },
+      {
+        property: "og:site_name",
+        content: "RoundZero",
       },
       {
         name: "twitter:card",

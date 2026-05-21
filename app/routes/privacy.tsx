@@ -3,7 +3,15 @@ import { PublicFooter, PublicHeader } from "@/components/public-layout";
 
 export const Route = createFileRoute("/privacy")({
   head: () => ({
-    meta: [{ title: "Privacy Policy | RoundZero" }],
+    meta: [
+      { title: "Privacy Policy | RoundZero" },
+      {
+        name: "description",
+        content:
+          "RoundZero Privacy Policy — how we collect, use, store, and share your personal information when you use our hiring platform and AI interview services.",
+      },
+    ],
+    links: [{ rel: "canonical", href: "https://roundzero.dev/privacy" }],
   }),
   component: PrivacyPage,
 });
