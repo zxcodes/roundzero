@@ -29,16 +29,13 @@ import { LEADERSHIP_EVAL_SYSTEM_PROMPT } from "@/prompts/evaluate/leadership";
 import { OPERATIONS_EVAL_SYSTEM_PROMPT } from "@/prompts/evaluate/operations";
 import { TECHNICAL_EVAL_SYSTEM_PROMPT } from "@/prompts/evaluate/technical";
 import { SLOP_DETECTION_SYSTEM_PROMPT } from "@/prompts/slop-detection";
-import {
-  buildCandidateProfilePromptPayload,
-  buildCandidateProfileSummary,
-} from "@/shared/ai-candidate-profile";
+import { buildCandidateProfilePromptPayload } from "@/shared/ai-candidate-profile";
 import { getModelDateContext, LIMITS, sanitizeUntrustedText } from "@/shared/ai-refine";
 import { getDb } from "@/shared/db";
 import type { createWorkflowLogger } from "@/shared/logger";
 import { notificationPayloadSchemas } from "@/shared/notifications-config";
 import { createChatModel, getModelChain } from "@/shared/openrouter";
-import { buildSlopDetectionPrompt, shouldInviteFromDeterministicRules } from "./policy";
+import { buildResumeAuthenticityPrompt, shouldInviteFromDeterministicRules } from "./policy";
 import { refinePreEvaluationResult, refineSlopCheck } from "./refine";
 
 export type PreEvaluationPayload = {
@@ -278,14 +275,10 @@ export function classifyJobType(
   };
 }
 
-export function detectSlop(
-  candidateMeta: Record<string, unknown>,
-  resumeText: string,
-  log: ReturnType<typeof createWorkflowLogger>,
-) {
+export function detectSlop(resumeText: string, log: ReturnType<typeof createWorkflowLogger>) {
   return async (): Promise<SlopCheckResult> => {
-    log.step("check_consistency", "Running consistency check: profile vs resume");
-    const prompt = buildSlopDetectionPrompt(candidateMeta, resumeText);
+    log.step("check_authenticity", "Running resume authenticity check");
+    const prompt = buildResumeAuthenticityPrompt(resumeText);
 
     const startTime = Date.now();
     try {
@@ -296,7 +289,6 @@ export function detectSlop(
       });
       const latency = Date.now() - startTime;
 
-      const profileText = buildCandidateProfileSummary(candidateMeta);
       const result = refineSlopCheck(
         {
           consistencyScore: Math.max(0, Math.min(100, Math.round(raw.consistencyScore))),
@@ -304,11 +296,10 @@ export function detectSlop(
           explanation: raw.explanation,
         },
         resumeText,
-        profileText,
       );
 
       log.ai(prompt.length, usage.outputTokens, latency, SLOP_DETECTION_SYSTEM_PROMPT.version);
-      log.result("check_consistency", {
+      log.result("check_authenticity", {
         consistencyScore: result.consistencyScore,
         redFlags: result.redFlags.length,
         explanation: result.explanation,
@@ -318,7 +309,7 @@ export function detectSlop(
       const latency = Date.now() - startTime;
       log.ai(prompt.length, 0, latency, SLOP_DETECTION_SYSTEM_PROMPT.version);
       log.warn(
-        `Slop detection fallback: ${error instanceof Error ? error.message : String(error)}`,
+        `Resume authenticity check fallback: ${error instanceof Error ? error.message : String(error)}`,
       );
       return {
         consistencyScore: null,
