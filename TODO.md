@@ -16,6 +16,7 @@
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- history disappears if I refresh and I speak. keeps disconnecting in between. starts recording as soon as I refresh the page. the voice recording animation and the placeholder text that is shown before a message is committed doesn't seem to be in sync. overall it sucks.-->
 <!--- think about sub agents that can actually be useful for candidate profile research in the bg and provide context to main agent.-->
 <!--- ready for decision shows no applications even if applications are evaluated. (not a bug, check later)-->
 <!--- company dashboard needs a big overhaul. graphs, charts, recent reports, etc (overhaul done but still sucks.)-->
