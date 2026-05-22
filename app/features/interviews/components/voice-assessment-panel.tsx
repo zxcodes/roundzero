@@ -27,10 +27,25 @@ type VoiceAssessmentStatus = "pending" | "in_call" | "completed" | "skipped" | "
 
 type ChatMessage = { role: string; text: string };
 
+// Normalises a transcript line for dedup comparison. We strip whitespace and
+// lowercase so a server-replayed line and the same line emitted live count as
+// the same message — without this, refresh+reconnect would double-render the
+// last turn.
+const normMessage = (m: ChatMessage): string =>
+  `${m.role}:${m.text.replace(/\s+/g, " ").trim().toLowerCase()}`;
+
 export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const transcriptEndRef = useRef<HTMLDivElement>(null);
+  // Tracks whether the candidate has clicked "Start"/"Resume" during this
+  // tab session. Auto-reconnect after a transient WS drop is only allowed
+  // when this is true — a cold refresh should always require a user gesture
+  // (browser autoplay + mic permission policies prefer it).
+  const sessionStartedRef = useRef(false);
+  // Per-session guard so we don't fire `startCall()` from the auto-resume
+  // effect more than once per disconnect. Reset whenever the WS transport
+  // reconnects, so a second drop can still auto-resume.
   const autoResumedRef = useRef(false);
   const [clientError, setClientError] = useState<string | null>(null);
   const [justEnded, setJustEnded] = useState(false);
@@ -84,31 +99,43 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
   });
 
   const isInCall = voice.status !== "idle";
-  const needsResume = effectiveStatus === "in_call" && !justEnded && !isInCall;
 
+  // Always fetch the persisted transcript whenever the DB says we're mid-call.
+  // This data is the source of truth for the conversation so far; live messages
+  // arriving on the WS are appended on top via the merge below.
   const { data: historicalTranscript } = useQuery({
     queryKey: ["voice-assessment-transcript", interviewId],
     queryFn: async () => {
       const result = await getMyVoiceAssessmentTranscript({ data: { interviewId } });
       return result.messages;
     },
-    enabled: needsResume,
-    staleTime: Number.POSITIVE_INFINITY,
+    enabled: effectiveStatus === "in_call",
+    // We don't need to poll — when a new turn lands, the live WS pushes it.
+    // We only want to (re)load on mount / after a long absence.
+    staleTime: 30_000,
   });
 
   const liveTranscript: ChatMessage[] = voice.transcript.map((m) => ({
     role: m.role,
     text: m.text,
   }));
-  // Show server-persisted history before the live channel has any messages,
-  // then switch to the live channel once the resumed conversation is flowing.
-  // This avoids double-rendering the same message during reconnect.
-  const baseTranscript: ChatMessage[] =
-    liveTranscript.length === 0
-      ? (historicalTranscript ?? []).map((m) => ({ role: m.role, text: m.content }))
-      : liveTranscript;
 
-  const visibleTranscript = baseTranscript.filter(
+  // Merge: historical (DB-persisted) first, then any live messages that
+  // aren't already in history. Dedup by normalised (role,text) so a turn the
+  // server replays on reconnect is shown once. This keeps the full
+  // conversation visible across refreshes and drops — the old swap logic
+  // wiped history the moment a single live message arrived.
+  const historicalChat: ChatMessage[] = (historicalTranscript ?? []).map((m) => ({
+    role: m.role,
+    text: m.content,
+  }));
+  const historicalKeys = new Set(historicalChat.map(normMessage));
+  const mergedTranscript: ChatMessage[] = [
+    ...historicalChat,
+    ...liveTranscript.filter((m) => !historicalKeys.has(normMessage(m))),
+  ];
+
+  const visibleTranscript = mergedTranscript.filter(
     (msg) => msg.role === "user" || msg.text.trim().length > 0,
   );
 
@@ -134,14 +161,27 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
     if (effectiveStatus === "completed" || effectiveStatus === "skipped") {
       setJustEnded(false);
       autoResumedRef.current = false;
+      sessionStartedRef.current = false;
     }
   }, [effectiveStatus]);
 
-  // Auto-resume: when the DB says we're "in_call" but the WS is still idle
-  // (e.g. transient drop, refresh), kick startCall once instead of forcing
-  // the candidate to manually click Resume. This matches the way the chat
-  // panel silently rehydrates after a refresh.
+  // Reset the per-drop auto-resume guard each time the underlying WS
+  // reconnects, so a *new* transient drop can trigger auto-resume again. The
+  // old code never reset this on a reconnect, so the second drop would leave
+  // the call stuck until the user clicked Resume manually.
   useEffect(() => {
+    if (voice.connected) {
+      autoResumedRef.current = false;
+    }
+  }, [voice.connected]);
+
+  // Auto-resume: ONLY if the candidate already started a call in this tab
+  // session (i.e. the WS dropped mid-call), the DB says we're still in_call,
+  // and the WS has reconnected. We deliberately do NOT auto-call startCall()
+  // on a cold refresh — that would request the mic without a user gesture,
+  // which is hostile UX and fails under strict browser autoplay policies.
+  useEffect(() => {
+    if (!sessionStartedRef.current) return;
     if (
       effectiveStatus === "in_call" &&
       voice.status === "idle" &&
@@ -169,6 +209,7 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
 
   const onStartCall = () => {
     setClientError(null);
+    sessionStartedRef.current = true;
     autoResumedRef.current = true;
     voice.startCall().catch(() => {
       autoResumedRef.current = false;
@@ -252,10 +293,24 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
 
   // ---------- Active workspace ----------
 
-  const reconnecting = effectiveStatus === "in_call" && !isInCall && !clientError && !justEnded;
+  // "Reconnecting" is only meaningful while the WS transport is actively
+  // bouncing — once it's reconnected we either auto-resume (in-session drop)
+  // or show the Resume button (cold refresh). We never want a permanent
+  // "Reconnecting..." UI for a user who simply hasn't clicked Resume yet.
+  const reconnecting =
+    effectiveStatus === "in_call" && !voice.connected && !clientError && !justEnded;
+  // "Needs resume" means the DB has us mid-call but the WS is idle: this is
+  // the cold-refresh case after the WS is back up. Drives the "Resume call"
+  // copy on the start screen.
+  const needsResume = effectiveStatus === "in_call" && voice.connected && !isInCall && !justEnded;
   const finalising = justEnded && !isInCall;
   const showStartScreen = !isInCall && !finalising && !reconnecting;
-  const interim = voice.interimTranscript?.trim() ?? "";
+  // Only surface the interim speech bubble while the agent is actively
+  // listening — this keeps it visually in sync with the waveform bars, which
+  // also only run their "listening" animation in this state. Showing interim
+  // text while the bars are flat (thinking/speaking) was the de-sync the
+  // candidate noticed.
+  const interim = voice.status === "listening" ? (voice.interimTranscript?.trim() ?? "") : "";
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-muted/30">
@@ -346,9 +401,12 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
           <div className="space-y-7 px-5 py-6 md:px-7 md:py-7">
             {visibleTranscript.map((msg, i) => {
               const isCandidate = msg.role === "user";
+              // Stable key: position in the merged transcript + a short
+              // role/length fingerprint. Index alone is fine because the
+              // merge order is append-only (historical first, then live).
               return (
                 <div
-                  key={`${msg.role}-${i}-${msg.text.slice(0, 16)}`}
+                  key={`${i}-${msg.role}-${msg.text.length}`}
                   className={isCandidate ? "flex justify-end" : "flex justify-start"}
                 >
                   <div className="max-w-[86%] md:max-w-[66%]">
@@ -465,11 +523,32 @@ function ActiveCallFooter({
   // 14 bars driven by audioLevel + a phase offset so they don't all move in
   // lockstep. While "thinking" or "speaking", we drive a gentle idle pulse so
   // the candidate sees the panel is alive.
+  //
+  // The previous implementation read `Date.now()` inside render with no
+  // animation loop, so the "idle" pulse only re-evaluated when some other
+  // prop changed — making the bars look stuck. Drive a `tick` from
+  // requestAnimationFrame so the waveform is continuously alive while the
+  // call is active.
   const bars = Array.from({ length: 14 });
-  const t = Date.now() / 200;
+  const [tick, setTick] = useState(0);
+
+  useEffect(() => {
+    let raf = 0;
+    const loop = () => {
+      setTick((n) => (n + 1) % 1_000_000);
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  const t = tick / 6; // ~10 oscillations/sec at 60fps
 
   return (
-    <div className="flex items-end justify-center gap-1 py-1" aria-hidden="true">
+    // Fixed-height container so per-frame bar height changes don't reflow
+    // the surrounding footer (and therefore the chat above it). Max bar
+    // height is 40px; +8px vertical padding rounds up to h-12.
+    <div className="flex h-12 items-end justify-center gap-1 py-1" aria-hidden="true">
       {bars.map((_, i) => {
         const idle = (Math.sin(t + i * 0.6) + 1) / 2; // 0..1
         const active =
@@ -485,7 +564,7 @@ function ActiveCallFooter({
           <span
             key={i}
             className={cn(
-              "w-1 rounded-full transition-[height,background-color] duration-100",
+              "w-1 rounded-full transition-[background-color] duration-100",
               status === "listening"
                 ? "bg-success"
                 : status === "speaking"

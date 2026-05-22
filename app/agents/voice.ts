@@ -29,7 +29,12 @@ import { refineCommunicationAnalysis } from "@/workflows/post-evaluation/refine"
 
 // `opus` keeps payloads small and is decoded with lower latency than `mp3`
 // in modern browsers — meaningful for real-time voice.
-const VoiceAgent = withVoice(Agent, { audioFormat: "opus", historyLimit: 30 });
+//
+// `historyLimit: 20` keeps per-turn LLM inputs small. With ~70-150 tokens per
+// turn and the JSON-schema response format we apply for post-eval, 20 turns
+// is the sweet spot for time-to-first-token on Llama-70b/Claude-Haiku and
+// well clear of the AI Gateway's per-request output budgets.
+const VoiceAgent = withVoice(Agent, { audioFormat: "opus", historyLimit: 20 });
 
 const END_CALL_MARKER = "##END_CALL##";
 
@@ -229,7 +234,11 @@ export class VoiceAssessmentAgent extends VoiceAgent<Env> {
       const result = streamText({
         model: createChatModel("voice"),
         temperature: 0.4,
-        maxOutputTokens: 200,
+        // Voice turns are short — but the previous cap of 200 was triggering
+        // `finishReason: "length"` mid-sentence on several turns. 320 leaves
+        // headroom for a 2–3 sentence acknowledgement + follow-up without
+        // hurting time-to-first-token (streaming starts immediately).
+        maxOutputTokens: 320,
         system: systemPrompt,
         abortSignal: onTurnContext.signal,
         messages: [
@@ -397,17 +406,38 @@ export class VoiceAssessmentAgent extends VoiceAgent<Env> {
       transcript,
     });
 
-    for (let attempt = 0; attempt < 2; attempt++) {
+    const MAX_ATTEMPTS = 3;
+    // Per-attempt timeout — Cloudflare AI Gateway returns 504 if the upstream
+    // model hangs past ~30s. We bound here too so a stalled retry can't keep
+    // the call open indefinitely.
+    const PER_ATTEMPT_TIMEOUT_MS = 45_000;
+
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), PER_ATTEMPT_TIMEOUT_MS);
       try {
         const result = await generateText({
           model: createChatModel("post_eval", { plugins: [{ id: "response-healing" }] }),
           output: Output.object({ schema: communicationAssessmentSchema }),
           system: systemPrompt,
           prompt: userPrompt,
+          // The JSON-schema reply needs room — without this the model can hit
+          // the default ceiling mid-object and the parse fails. 1200 tokens
+          // covers the schema with healthy margin.
+          maxOutputTokens: 1200,
+          abortSignal: controller.signal,
         });
         return result.output;
       } catch (error) {
         console.error(`[voice-assessment-agent] analysis attempt ${attempt + 1} failed:`, error);
+        // Exponential backoff between attempts to ride out transient 504s
+        // from the AI Gateway / upstream provider. Skip on the final attempt.
+        if (attempt < MAX_ATTEMPTS - 1) {
+          const delay = 1_000 * 2 ** attempt; // 1s, 2s
+          await new Promise((resolve) => setTimeout(resolve, delay));
+        }
+      } finally {
+        clearTimeout(timer);
       }
     }
     return null;
