@@ -1,6 +1,7 @@
 ## TODO
 
 
+- we need a polished report like a nice beautiful report instead of what we have right now. full report can still exist for everything that happened but the actual report should be very nice, evidence backed, nicely summarized, and we should be able to cycle thru each batch with next and prev buttons.
 - add a cron to detect failed workflows (evaluation_failed) in the entire ai layer? and then it should update their statuses accordingly.
 - ready for decision shows no applications even if applications are evaluated.
 - the voice interview experience is still not good enough. check using better models (dedicated for voice) and see.
