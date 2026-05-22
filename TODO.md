@@ -6,7 +6,6 @@
 - the voice interview experience is still not good enough. check using better models (dedicated for voice) and see.
 - validate open router models using their api key in prod ci so we detect non existent models beforehand.
 - we need to detect if agent messes up the interview and give candidate another chance with good ui feedback. 
-- think about using actual tools such as web fetch etc to assess technical skills etc?
 - company logo doesn't reflect after uploading until I refresh.
 - think about sub agents that can actually be useful for candidate profile research in the bg and provide context to main agent.
 - need to hugely improve on messaging such as (dont worry about ai generated answers from candidates, we have guard rails, and how much human effort it eliminates by talking to multiple candidates and clearing a lot of things such as salary expectations, relocation, etc which would waste a lot of human time otherwise)
@@ -23,6 +22,7 @@
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- think about using actual tools such as web fetch etc to assess technical skills etc?-->
 <!--- you just post a job and you will be notified with the reports. (include in landing page messaging)-->
 <!--- need to redefine the landing and product branding: (resumes are outdated, yoe is just a number now, cracked people exist, ai needs to find them, experience is no longer a good metric, etc etc.)-->
 <!--- update landing page messaging to say the time of resumes is over. it's time for real evaluation etc.-->
