@@ -39,7 +39,7 @@ export const Route = createFileRoute("/")({
   component: HomePage,
 });
 
-const ISSUE_LABEL = "Vol. 01 · Spring 2026 · On Hiring";
+const ISSUE_LABEL = "The Time of Résumés is Over · Vol. 01 · Spring 2026";
 
 function HomePage() {
   return (
@@ -65,6 +65,7 @@ function HomePage() {
         </Chapter>
         <Chapter roman="V" title="Pricing, plainly stated" kicker="Subscriptions">
           <PricingTable />
+          <CostComparison />
         </Chapter>
         <Chapter roman="VI" title="Frequently asked" kicker="Correspondence">
           <Faq />
@@ -169,11 +170,11 @@ function Hero() {
                 className="font-serif text-[17px] leading-normal"
                 style={{ color: "var(--ed-ink)" }}
               >
-                Run AI interviews before you ever speak to a candidate. Get ranked, evaluated
-                candidates instead of resumes.
+                Post a job, get ranked reports. No résumés to sift through.
               </p>
               <p className="text-[13px] leading-normal" style={{ color: "var(--ed-muted)" }}>
-                Candidates use AI to apply. RoundZero uses AI to evaluate.
+                The time of résumés is over. Candidates use AI to apply — RoundZero uses AI to
+                evaluate. Cut through the noise. Beat AI with AI.
               </p>
               <div className="flex flex-col gap-2 pt-1">
                 <EditorialButton to="/company/login" primary>
@@ -207,10 +208,11 @@ function Hero() {
               >
                 T
               </span>
-              he hiring funnel still starts with resumes — a weak signal that’s easy to game.
-              RoundZero moves real evaluation to the top of the funnel. Instead of filtering
-              candidates by what they claim, it evaluates how they think, communicate, and solve
-              problems. What follows is how that works.
+              he hiring funnel still starts with résumés — a weak signal that's easy to game. Years
+              of experience is a proxy, not a measurement. Great engineers can look average on
+              paper, and weak candidates can fabricate their way past ATS filters. RoundZero cuts
+              through the noise. It evaluates how candidates actually think, not what they claim in
+              a document. What follows is how that works.
             </p>
           </div>
         </div>
@@ -266,9 +268,9 @@ function EditorialButton({
 // ───────────────────────────────────────────────────────────────────────────
 const tickerStats = [
   { label: "Skip", value: "Resume screening" },
-  { label: "Reduce", value: "Low-signal interviews" },
+  { label: "Cut through", value: "ATS noise" },
   { label: "Evaluate", value: "How candidates think" },
-  { label: "Focus", value: "Only high-quality candidates" },
+  { label: "Get", value: "Ranked reports, not files" },
 ];
 
 function Ticker() {
@@ -349,23 +351,23 @@ function Chapter({
 const steps = [
   {
     n: "01",
-    title: "Candidates apply normally.",
-    body: "Candidates submit their application and resume just like any other platform. No new tools to learn, no extra steps.",
+    title: "You post a job.",
+    body: "Describe the role. RoundZero handles the rest. No ATS setup, no keyword filters, no manual screening.",
   },
   {
     n: "02",
-    title: "RoundZero runs the interview.",
-    body: "Each candidate completes a short AI-driven interview tailored to the role. No scheduling, no video calls, no calendar tetris.",
+    title: "Candidates apply.",
+    body: "Applicants submit and go — RoundZero takes over. Pre-evaluation runs immediately for every applicant.",
   },
   {
     n: "03",
-    title: "Top candidates are deeply evaluated.",
-    body: "You get ranked candidates with clear strengths, weaknesses, and reasoning.",
+    title: "Ranked reports roll in.",
+    body: "Strong candidates are interviewed by Zero, then you get ranked reports with scores, strengths, and evidence. You're notified the moment they're ready.",
   },
   {
     n: "04",
     title: "Focus on the best.",
-    body: "Your team reviews only the top-ranked candidates. Every score links to evidence in the actual conversation.",
+    body: "Review only the top-ranked candidates. Every score links to real conversation — no more guessing.",
   },
 ];
 
@@ -1151,6 +1153,100 @@ function PricingTable() {
             )}
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// Cost comparison
+// ───────────────────────────────────────────────────────────────────────────
+const costPlatforms = [
+  {
+    name: "LinkedIn Recruiter",
+    cost: "$10,800+",
+    per: "/ year",
+    note: "Per-seat license, 150 InMails/mo",
+  },
+  {
+    name: "Indeed Sponsored",
+    cost: "~$150+",
+    per: "/ mo",
+    note: "Per-job daily budget, no fixed fee",
+  },
+  {
+    name: "Greenhouse",
+    cost: "$6,500+",
+    per: "/ year",
+    note: "ATS license, no evaluation included",
+  },
+  { name: "RoundZero Pro", cost: "$149", per: "/ month", note: "Unlimited jobs, deep evaluations" },
+];
+
+function CostComparison() {
+  return (
+    <div className="mt-20 pt-12" style={{ borderTop: "1px solid var(--ed-rule)" }}>
+      <div className="grid grid-cols-12 gap-x-6 gap-y-8">
+        <div className="col-span-12 lg:col-span-5">
+          <SmallCaps>Cost comparison</SmallCaps>
+          <h3
+            className="font-serif text-[clamp(1.5rem,2.8vw,2.4rem)] leading-[1.05] mt-4"
+            style={{ color: "var(--ed-ink)", fontWeight: 400 }}
+          >
+            Replace a $50,000 recruiting budget with a subscription.
+          </h3>
+          <p className="mt-4 text-[14.5px] leading-[1.6]" style={{ color: "var(--ed-muted)" }}>
+            Traditional hiring platforms charge per job, per seat, or per placement — and still
+            leave you with résumés to screen. RoundZero replaces the entire first round with a flat
+            fee that includes evaluation.
+          </p>
+        </div>
+        <div className="col-span-12 lg:col-span-7">
+          <div className="border" style={{ borderColor: "var(--ed-ink)" }}>
+            <div
+              className="grid grid-cols-12 px-5 py-3 text-[10.5px] uppercase"
+              style={{
+                borderBottom: "1px solid var(--ed-ink)",
+                color: "var(--ed-muted)",
+                letterSpacing: "0.18em",
+                fontFamily: "var(--font-mono)",
+              }}
+            >
+              <span className="col-span-5">Platform</span>
+              <span className="col-span-3">Cost</span>
+              <span className="col-span-4">Notes</span>
+            </div>
+            {costPlatforms.map((p) => (
+              <div
+                key={p.name}
+                className="grid grid-cols-12 px-5 py-4 items-baseline"
+                style={{ borderBottom: "1px solid var(--ed-rule-hair)" }}
+              >
+                <span
+                  className="col-span-5 font-serif text-[15px]"
+                  style={{ color: "var(--ed-ink)", fontWeight: 400 }}
+                >
+                  {p.name}
+                </span>
+                <span
+                  className="col-span-3 font-mono text-[14px]"
+                  style={{
+                    color: p.name === "RoundZero Pro" ? "var(--ed-ink)" : "var(--ed-muted)",
+                  }}
+                >
+                  {p.cost}
+                  <span className="font-editorial text-[11px]" style={{ fontStyle: "italic" }}>
+                    {" "}
+                    {p.per}
+                  </span>
+                </span>
+                <span className="col-span-4 text-[12.5px]" style={{ color: "var(--ed-muted)" }}>
+                  {p.note}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

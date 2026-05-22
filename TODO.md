@@ -4,23 +4,17 @@
 - add a cron to detect failed workflows (evaluation_failed) in the entire ai layer? and then it should update their statuses accordingly.
 - ready for decision shows no applications even if applications are evaluated.
 - the voice interview experience is still not good enough. check using better models (dedicated for voice) and see.
-- need to redefine the landing and product branding: (resumes are outdated, yoe is just a number now, cracked people exist, ai needs to find them, experience is no longer a good metric, etc etc.)
-- update landing page messaging to say the time of resumes is over. it's time for real evaluation etc.
 - validate open router models using their api key in prod ci so we detect non existent models beforehand.
 - we need to detect if agent messes up the interview and give candidate another chance with good ui feedback. 
 - think about using actual tools such as web fetch etc to assess technical skills etc?
 - company logo doesn't reflect after uploading until I refresh.
-- the landing page has fake metrics (first report 3 min etc, think how valid they're or replace them with actual claims).
-- the landing page needs to show major cost savings for the company while showing great benefits, compared to all the mainstream platforms based on real and accurate pricing as per today.
 - think about sub agents that can actually be useful for candidate profile research in the bg and provide context to main agent.
 - need to hugely improve on messaging such as (dont worry about ai generated answers from candidates, we have guard rails, and how much human effort it eliminates by talking to multiple candidates and clearing a lot of things such as salary expectations, relocation, etc which would waste a lot of human time otherwise)
 - detect failures in the whole pipeline and give candidates or companies an option to retry. make as failure proof as possible. specifically in model responses. 
 - think about how previous evaluations and candidate profiles affect future score. helps with fabrication since we will have the candidate's work history and helps us maintain a consistent score when they apply to diff jobs.
 - think more about the duration from first report to last report generation bc it will depend on the candidate. think if we need to add an expiry or something and pass it to the next candidate?
-- you just post a job and you will be notified with the reports. (include in landing page messaging)
 - check all resend templates for all notifications exist, if they link to proper paths etc.
 - company dashboard needs a big overhaul. graphs, charts, recent reports, etc (overhaul done but still sucks.)
-
 - check for leaking info in api calls (emails, ids etc)
 - think about pricing (per job flat fee, or monthly, etc. something that suits a hiring platform. subscription based might not work for this kind of platforms.)
 - for company full report, they should also see what they did in the chat, detecting ai responses, pasting, etc.
@@ -29,6 +23,11 @@
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- you just post a job and you will be notified with the reports. (include in landing page messaging)-->
+<!--- need to redefine the landing and product branding: (resumes are outdated, yoe is just a number now, cracked people exist, ai needs to find them, experience is no longer a good metric, etc etc.)-->
+<!--- update landing page messaging to say the time of resumes is over. it's time for real evaluation etc.-->
+<!--- the landing page has fake metrics (first report 3 min etc, think how valid they're or replace them with actual claims).-->
+<!--- the landing page needs to show major cost savings for the company while showing great benefits, compared to all the mainstream platforms based on real and accurate pricing as per today.-->
 <!--- in pre eval, profile vs resume consistency check is prob redundant now? check and remove.-->
 <!--- think about connecting relevant profiles to the app (github, dribble etc for better understanding of the candidate, also check if we have any apis we can use to get and analyse the data.)-->
 <!--- why do we even need two sources of candidate work history? it's redundant. resume should be enough. -->
