@@ -3,24 +3,22 @@
 
 - we need a polished report like a nice beautiful report instead of what we have right now. full report can still exist for everything that happened but the actual report should be very nice, evidence backed, nicely summarized, and we should be able to cycle thru each batch with next and prev buttons.
 - add a cron to detect failed workflows (evaluation_failed) in the entire ai layer? and then it should update their statuses accordingly.
-- ready for decision shows no applications even if applications are evaluated.
 - the voice interview experience is still not good enough. check using better models (dedicated for voice) and see.
 - validate open router models using their api key in prod ci so we detect non existent models beforehand.
-- we need to detect if agent messes up the interview and give candidate another chance with good ui feedback. 
 - company logo doesn't reflect after uploading until I refresh.
-- think about sub agents that can actually be useful for candidate profile research in the bg and provide context to main agent.
 - detect failures in the whole pipeline and give candidates or companies an option to retry. make as failure proof as possible. specifically in model responses. 
-- think more about the duration from first report to last report generation bc it will depend on the candidate. think if we need to add an expiry or something and pass it to the next candidate?
+- think more about the duration from first report to last report generation bc it will depend on the candidate. think if we need to add an expiry or something and pass it to the next candidate? (BATCH WORKFLOW TEST)
 - check all resend templates for all notifications exist, if they link to proper paths etc.
-- company dashboard needs a big overhaul. graphs, charts, recent reports, etc (overhaul done but still sucks.)
 - check for leaking info in api calls (emails, ids etc)
-- think about pricing (per job flat fee, or monthly, etc. something that suits a hiring platform. subscription based might not work for this kind of platforms.)
 - for company full report, they should also see what they did in the chat, detecting ai responses, pasting, etc.
 - add a feedback option for people or requesting features etc.
 - add score breakdown. 
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- think about sub agents that can actually be useful for candidate profile research in the bg and provide context to main agent.-->
+<!--- ready for decision shows no applications even if applications are evaluated. (not a bug, check later)-->
+<!--- company dashboard needs a big overhaul. graphs, charts, recent reports, etc (overhaul done but still sucks.)-->
 <!--- think about how previous evaluations and candidate profiles affect future score. helps with fabrication since we will have the candidate's work history and helps us maintain a consistent score when they apply to diff jobs.-->
 <!--- need to hugely improve on messaging such as (dont worry about ai generated answers from candidates, we have guard rails, and how much human effort it eliminates by talking to multiple candidates and clearing a lot of things such as salary expectations, relocation, etc which would waste a lot of human time otherwise)-->
 <!--- think about using actual tools such as web fetch etc to assess technical skills etc?-->
@@ -174,6 +172,7 @@
 
 ## Future Stuff (Not included in initial release)
 - prevent people from using diff resumes/profiles for diff jobs. we can use snapshots to compare and decide if we wanna hold them in pre-eval itself. not exactly prevent, it should just act as a guardrail in the background.
+- think about pricing (per job flat fee, or monthly, etc. something that suits a hiring platform. subscription based might not work for this kind of platforms.)
 
 <!--- add save job feature for candidates. -->
 <!--- companies might need api access to list jobs? iframes? too much for now? think about it.-->
