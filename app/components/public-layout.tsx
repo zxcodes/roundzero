@@ -46,7 +46,7 @@ export function PublicHeader({ editorial }: { editorial?: boolean }) {
                 className="hidden text-muted-foreground sm:inline-flex rounded-none"
                 asChild
               >
-                <Link to="/company/login">For employers</Link>
+                <Link to="/company/login">For companies</Link>
               </Button>
               <Button
                 variant="ghost"
@@ -79,7 +79,7 @@ export function PublicHeader({ editorial }: { editorial?: boolean }) {
                     to="/company/login"
                     activeProps={{ className: "text-foreground bg-accent" }}
                   >
-                    For Employers
+                    For Companies
                   </Link>
                 </Button>
                 <Button
