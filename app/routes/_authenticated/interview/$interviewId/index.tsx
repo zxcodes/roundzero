@@ -1,7 +1,7 @@
 import { Cancel01Icon, CheckmarkCircle02Icon, Loading03Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { ClientOnly, createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -53,7 +53,9 @@ function InterviewWorkspacePage() {
   const { interview, expiresAt } = ParentRoute.useLoaderData();
 
   return (
-    <InterviewWorkspaceContent key={interview.id} interview={interview} expiresAt={expiresAt} />
+    <ClientOnly>
+      <InterviewWorkspaceContent key={interview.id} interview={interview} expiresAt={expiresAt} />
+    </ClientOnly>
   );
 }
 function InterviewWorkspaceContent({
