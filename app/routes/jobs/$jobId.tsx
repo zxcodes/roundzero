@@ -29,6 +29,84 @@ import { employmentTypeLabels, experienceLevelLabels, workplaceTypeLabels } from
 import { formatSalaryFull } from "@/shared/format";
 import { validateUuidParams } from "@/shared/validation";
 
+type JobDetail = NonNullable<Awaited<ReturnType<typeof getPublicJobById>>>;
+
+const employmentTypeToSchema = (type: string): string => {
+  const map: Record<string, string> = {
+    full_time: "FULL_TIME",
+    part_time: "PART_TIME",
+    contract: "CONTRACTOR",
+    internship: "INTERN",
+  };
+  return map[type] ?? "OTHER";
+};
+
+function jobMeta(job: JobDetail | null) {
+  if (!job) return [];
+
+  const location = job.location ? ` — ${job.location}` : "";
+  const ogDescription = `${job.title} at ${job.companyName}${location}. Apply with one click.`;
+
+  return [
+    {
+      name: "description",
+      content: `${job.title} at ${job.companyName}${location}. Apply with one click and get an AI-driven interview on your schedule.`,
+    },
+    { property: "og:description", content: ogDescription },
+    { property: "og:url", content: `https://roundzero.dev/jobs/${job.id}` },
+    { name: "twitter:description", content: ogDescription },
+  ];
+}
+
+function jobLinks(job: JobDetail | null) {
+  if (!job) return [];
+  return [{ rel: "canonical" as const, href: `https://roundzero.dev/jobs/${job.id}` }];
+}
+
+function jobScripts(job: JobDetail | null) {
+  if (!job) return [];
+
+  const schema: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "JobPosting",
+    title: job.title,
+    description: job.description,
+    hiringOrganization: { "@type": "Organization", name: job.companyName },
+    datePosted: job.createdAt,
+  };
+
+  if (job.employmentType) {
+    schema.employmentType = employmentTypeToSchema(job.employmentType);
+  }
+  if (job.location) {
+    schema.jobLocation = {
+      "@type": "Place",
+      address: { "@type": "PostalAddress", addressLocality: job.location },
+    };
+  }
+  if (job.salaryMin || job.salaryMax) {
+    schema.baseSalary = {
+      "@type": "MonetaryAmount",
+      currency: job.salaryCurrency,
+      value:
+        job.salaryMin && job.salaryMax
+          ? { "@type": "QuantitativeValue", minValue: job.salaryMin, maxValue: job.salaryMax }
+          : { "@type": "QuantitativeValue", value: job.salaryMin ?? job.salaryMax },
+    };
+  }
+  if (job.expiresAt) {
+    schema.validThrough = job.expiresAt;
+  }
+  if (Array.isArray(job.requirements) && job.requirements.length > 0) {
+    schema.skills = job.requirements;
+  }
+  if (job.workplaceType === "remote") {
+    schema.applicantLocationRequirements = "Any";
+  }
+
+  return [{ type: "application/ld+json" as const, children: JSON.stringify(schema) }];
+}
+
 export const Route = createFileRoute("/jobs/$jobId")({
   beforeLoad: ({ params }) => {
     validateUuidParams({ jobId: params.jobId });
@@ -49,15 +127,21 @@ export const Route = createFileRoute("/jobs/$jobId")({
 
     return { type: "other" as const, job };
   },
-  head: ({ loaderData }) => ({
-    meta: [
-      {
-        title: loaderData?.job
-          ? `${loaderData.job.title} at ${loaderData.job.companyName} | RoundZero`
-          : "Job Not Found | RoundZero",
-      },
-    ],
-  }),
+  head: ({ loaderData }) => {
+    const job = loaderData?.job ?? null;
+    return {
+      meta: [
+        {
+          title: job
+            ? `${job.title} at ${job.companyName} | RoundZero`
+            : "Job Not Found | RoundZero",
+        },
+        ...jobMeta(job),
+      ],
+      links: jobLinks(job),
+      scripts: jobScripts(job),
+    };
+  },
   pendingComponent: JobDetailSkeleton,
   component: JobDetailPage,
 });

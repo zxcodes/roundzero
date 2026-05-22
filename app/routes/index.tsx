@@ -19,6 +19,21 @@ export const Route = createFileRoute("/")({
       {
         title: "RoundZero | Replace Your First Interview Round with AI",
       },
+      {
+        name: "description",
+        content:
+          "Run AI-driven first-round interviews and get ranked candidates with structured evaluation reports. Skip resume screening — evaluate how candidates actually think.",
+      },
+      {
+        property: "og:url",
+        content: "https://roundzero.dev/",
+      },
+    ],
+    links: [
+      {
+        rel: "canonical",
+        href: "https://roundzero.dev/",
+      },
     ],
   }),
   component: HomePage,
