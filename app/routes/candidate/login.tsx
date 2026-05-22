@@ -30,7 +30,15 @@ export const Route = createFileRoute("/candidate/login")({
     }
   },
   head: () => ({
-    meta: [{ title: "Sign In as Candidate | RoundZero" }],
+    meta: [
+      { title: "Sign In as Candidate | RoundZero" },
+      {
+        name: "description",
+        content:
+          "Sign in to RoundZero as a candidate. Browse jobs, apply with one click, and interview on your schedule. Skip the resume black hole.",
+      },
+    ],
+    links: [{ rel: "canonical", href: "https://roundzero.dev/candidate/login" }],
   }),
   component: CandidateLoginPage,
 });

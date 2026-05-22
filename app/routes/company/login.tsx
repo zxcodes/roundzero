@@ -30,7 +30,15 @@ export const Route = createFileRoute("/company/login")({
     }
   },
   head: () => ({
-    meta: [{ title: "Sign In as Employer | RoundZero" }],
+    meta: [
+      { title: "Sign In as Employer | RoundZero" },
+      {
+        name: "description",
+        content:
+          "Sign in to RoundZero as an employer. Post jobs, run AI-driven interviews, and get ranked candidates with structured evaluation reports.",
+      },
+    ],
+    links: [{ rel: "canonical", href: "https://roundzero.dev/company/login" }],
   }),
   component: CompanyLoginPage,
 });
