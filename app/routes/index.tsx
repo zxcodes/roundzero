@@ -357,7 +357,7 @@ const steps = [
   {
     n: "02",
     title: "Candidates apply.",
-    body: "Applicants submit and go — RoundZero takes over. Pre-evaluation runs immediately for every applicant.",
+    body: "Applicants submit and go — RoundZero takes over. Pre-evaluation runs immediately. Zero handles salary, relocation, visa, and other screening so your team doesn't have to.",
   },
   {
     n: "03",
@@ -1270,7 +1270,7 @@ const faq = [
   },
   {
     q: "Can candidates cheat or use AI to answer?",
-    a: "The interview is adaptive. It follows up on vague answers, asks for specifics about claimed experience, and cross-references responses against the résumé. The system evaluates consistency, depth, and context — not just correctness. Copied or AI-generated answers are flagged because they lack the context-specific details that real experience produces.",
+    a: "Built-in guardrails catch AI-generated answers before they reach your report. The interview is adaptive — it follows up on vague answers, asks for specifics about claimed experience, and cross-references every response against the candidate's résumé. The system evaluates consistency, depth, and context, not just correctness. Answers that a model could have written are flagged automatically because they lack the context-specific details that genuine experience produces.",
   },
   {
     q: "How long before I see results?",
@@ -1298,7 +1298,7 @@ const faq = [
   },
   {
     q: "How is RoundZero different from other AI hiring platforms?",
-    a: "Most platforms rely on video interviews or resume screening. RoundZero uses adaptive chat-based interviews — Zero follows up on vague answers, cross-references claims, and adjusts questions based on the role and candidate responses. You get rich, context-specific insights that catch inconsistencies and validate genuine experience. No scheduling friction, no video anxiety, and candidates show who they really are.",
+    a: "Most platforms rely on video interviews or resume screening — both consume hours of human time per candidate. RoundZero uses adaptive chat-based interviews that run on your behalf. Zero handles salary expectations, relocation preferences, visa requirements, and other screening criteria so your team only speaks to the right candidates. The interview follows up on vague answers, cross-references claims, and adjusts questions based on the role. You get rich, context-specific insights that catch inconsistencies and validate genuine experience. No scheduling friction, no video anxiety.",
   },
 ];
 
