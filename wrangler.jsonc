@@ -58,10 +58,6 @@
   "durable_objects": {
     "bindings": [
       {
-        "name": "INTERVIEW_AGENT",
-        "class_name": "InterviewAgent"
-      },
-      {
         "name": "VOICE_ASSESSMENT_AGENT",
         "class_name": "VoiceAssessmentAgent"
       }
@@ -75,6 +71,10 @@
     {
       "tag": "v2",
       "new_sqlite_classes": ["VoiceAssessmentAgent"]
+    },
+    {
+      "tag": "v3",
+      "deleted_classes": ["InterviewAgent"]
     }
   ],
   "triggers": {

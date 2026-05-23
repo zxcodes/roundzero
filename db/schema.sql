@@ -105,6 +105,34 @@ CREATE TABLE public.companies (
 
 
 --
+-- Name: interview_messages; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.interview_messages (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    interview_id uuid NOT NULL,
+    role text NOT NULL,
+    content text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    "position" bigint NOT NULL
+);
+
+
+--
+-- Name: interview_messages_position_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+ALTER TABLE public.interview_messages ALTER COLUMN "position" ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.interview_messages_position_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
 -- Name: interviews; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -326,6 +354,14 @@ ALTER TABLE ONLY public.companies
 
 
 --
+-- Name: interview_messages interview_messages_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.interview_messages
+    ADD CONSTRAINT interview_messages_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: interviews interviews_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -460,6 +496,13 @@ CREATE INDEX idx_companies_owner ON public.companies USING btree (owner_id);
 --
 
 CREATE UNIQUE INDEX idx_companies_polar_customer ON public.companies USING btree (polar_customer_id) WHERE (polar_customer_id IS NOT NULL);
+
+
+--
+-- Name: idx_interview_messages_interview_position; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_interview_messages_interview_position ON public.interview_messages USING btree (interview_id, "position");
 
 
 --
@@ -599,6 +642,14 @@ ALTER TABLE ONLY public.communication_assessments
 
 ALTER TABLE ONLY public.companies
     ADD CONSTRAINT companies_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES public.users(id) ON DELETE RESTRICT;
+
+
+--
+-- Name: interview_messages interview_messages_interview_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.interview_messages
+    ADD CONSTRAINT interview_messages_interview_id_fkey FOREIGN KEY (interview_id) REFERENCES public.interviews(id) ON DELETE RESTRICT;
 
 
 --

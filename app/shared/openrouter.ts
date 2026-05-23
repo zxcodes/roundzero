@@ -77,10 +77,7 @@ export function getOpenRouter(): OpenRouterProvider {
 
 type Task = "pre_eval" | "post_eval" | "post_eval_audit" | "interview" | "job_creation" | "voice";
 
-const MODEL_CHAINS: Record<
-  Task,
-  { dev: readonly string[]; staging: readonly string[]; prod: readonly string[] }
-> = {
+const MODEL_CHAINS = {
   pre_eval: {
     dev: ["openrouter/free", "meta-llama/llama-3.3-70b-instruct:free"],
     staging: ["google/gemini-2.5-flash", "anthropic/claude-haiku-4.5"],
@@ -98,7 +95,7 @@ const MODEL_CHAINS: Record<
     prod: ["meta-llama/llama-3.3-70b-instruct", "nvidia/nemotron-3-super-120b"],
   },
   interview: {
-    dev: ["openrouter/free", "meta-llama/llama-3.3-70b-instruct:free"],
+    dev: ["meta-llama/llama-3.3-70b-instruct:free", "google/gemini-2.5-flash"],
     staging: ["google/gemini-2.5-flash", "anthropic/claude-haiku-4.5"],
     prod: ["anthropic/claude-haiku-4.5", "anthropic/claude-sonnet-4.5"],
   },
@@ -116,7 +113,10 @@ const MODEL_CHAINS: Record<
     staging: ["google/gemini-2.5-flash", "anthropic/claude-haiku-4.5"],
     prod: ["groq/llama-3.3-70b-versatile", "google/gemini-2.5-flash", "anthropic/claude-haiku-4.5"],
   },
-};
+} as const satisfies Record<
+  Task,
+  { dev: readonly string[]; staging: readonly string[]; prod: readonly string[] }
+>;
 
 /**
  * Returns the primary model id and fallback list for a given AI task.
@@ -125,10 +125,22 @@ const MODEL_CHAINS: Record<
  * `fallbacks`  — ordered list of fallback models tried by OpenRouter when the
  *                primary errors. Must NOT include the primary model.
  */
-export function getModelChain(task: Task): { model: string; fallbacks: string[] } {
+export function getModelChain<TTask extends Task>(
+  task: TTask,
+): {
+  model:
+    | (typeof MODEL_CHAINS)[TTask]["dev"][number]
+    | (typeof MODEL_CHAINS)[TTask]["staging"][number]
+    | (typeof MODEL_CHAINS)[TTask]["prod"][number];
+  fallbacks: Array<
+    | (typeof MODEL_CHAINS)[TTask]["dev"][number]
+    | (typeof MODEL_CHAINS)[TTask]["staging"][number]
+    | (typeof MODEL_CHAINS)[TTask]["prod"][number]
+  >;
+} {
   const env = isProd ? "prod" : isStaging ? "staging" : "dev";
   const chain = MODEL_CHAINS[task][env];
-  return { model: chain[0], fallbacks: chain.slice(1) };
+  return { model: chain[0], fallbacks: [...chain.slice(1)] };
 }
 
 /**

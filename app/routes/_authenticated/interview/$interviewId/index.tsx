@@ -50,23 +50,30 @@ export const Route = createFileRoute("/_authenticated/interview/$interviewId/")(
 });
 
 function InterviewWorkspacePage() {
-  const { interview, expiresAt } = ParentRoute.useLoaderData();
+  const { interview, expiresAt, initialMessages } = ParentRoute.useLoaderData();
 
   return (
     <ClientOnly>
-      <InterviewWorkspaceContent key={interview.id} interview={interview} expiresAt={expiresAt} />
+      <InterviewWorkspaceContent
+        key={interview.id}
+        interview={interview}
+        expiresAt={expiresAt}
+        initialMessages={initialMessages}
+      />
     </ClientOnly>
   );
 }
 function InterviewWorkspaceContent({
   interview,
   expiresAt,
+  initialMessages,
 }: {
   interview: InterviewDetail;
   expiresAt: string | null;
+  initialMessages: ReturnType<typeof ParentRoute.useLoaderData>["initialMessages"];
 }) {
   const router = useRouter();
-  const chat = useInterviewChat(interview.id);
+  const chat = useInterviewChat(interview.id, initialMessages);
   const agentSessionStatus = chat.sessionStatus;
   const effectiveStatus =
     interview.status === "in_progress" && agentSessionStatus && agentSessionStatus !== "in_progress"
@@ -180,11 +187,12 @@ function InterviewWorkspaceContent({
   };
 
   const onSendMessage = async (content: string) => {
-    await chat.sendMessage({
-      role: "user",
-      parts: [{ type: "text", text: content }],
-    });
-    await router.invalidate();
+    try {
+      await chat.sendMessage(content);
+      await router.invalidate();
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Could not send your answer. Please try again."));
+    }
   };
 
   return (

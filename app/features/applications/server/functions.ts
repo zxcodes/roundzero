@@ -6,7 +6,6 @@ import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
 import { getJobById } from "@/features/jobs/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { applicationStatusSchema } from "@/shared/enums";
-import { initializeInterviewAgent } from "@/shared/interview-agent-client";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
 import { arrayBufferToBase64 } from "@/shared/resume";
 import {
@@ -126,15 +125,11 @@ export const updateApplicationStatus = createServerFn({ method: "POST" })
   .inputValidator(zodValidator(updateStatusSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
-    return await updateApplicationStatusWorkflow(
-      db,
-      {
-        userId: context.userId,
-        applicationId: data.applicationId,
-        status: data.status,
-      },
-      { initializeInterviewAgent },
-    );
+    return await updateApplicationStatusWorkflow(db, {
+      userId: context.userId,
+      applicationId: data.applicationId,
+      status: data.status,
+    });
   });
 
 export const withdrawApplication = createServerFn({ method: "POST" })
