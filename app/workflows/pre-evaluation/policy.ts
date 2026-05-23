@@ -11,10 +11,13 @@ export function shouldInviteFromDeterministicRules(args: {
   if (args.score < 50) {
     return false;
   }
-  if (args.modelNextStep === "hold") {
-    return false;
+  if (args.modelNextStep === "interview_invited") {
+    return true;
   }
-  return true;
+  if (args.score >= 75 && (args.consistencyScore == null || args.consistencyScore >= 70)) {
+    return true;
+  }
+  return false;
 }
 
 export function buildResumeAuthenticityPrompt(resumeText: string): string {

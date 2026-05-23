@@ -13,10 +13,20 @@ describe("pre-evaluation routing rules", () => {
     ).toBe(true);
   });
 
-  it("blocks candidates the model explicitly marked as hold", () => {
+  it("allows strong resumes through even when the model returned hold", () => {
     expect(
       shouldInviteFromDeterministicRules({
-        score: 78,
+        score: 83,
+        consistencyScore: 92,
+        modelNextStep: "hold",
+      }),
+    ).toBe(true);
+  });
+
+  it("still blocks weak resumes the model marked as hold", () => {
+    expect(
+      shouldInviteFromDeterministicRules({
+        score: 62,
         consistencyScore: 92,
         modelNextStep: "hold",
       }),
@@ -29,6 +39,16 @@ describe("pre-evaluation routing rules", () => {
         score: 82,
         consistencyScore: 12,
         modelNextStep: "interview_invited",
+      }),
+    ).toBe(false);
+  });
+
+  it("blocks low-consistency hold cases even with a strong score", () => {
+    expect(
+      shouldInviteFromDeterministicRules({
+        score: 83,
+        consistencyScore: 40,
+        modelNextStep: "hold",
       }),
     ).toBe(false);
   });
