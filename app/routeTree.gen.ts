@@ -19,6 +19,7 @@ import { Route as JobsJobIdRouteImport } from './routes/jobs/$jobId'
 import { Route as CompanyLoginRouteImport } from './routes/company/login'
 import { Route as CompaniesSlugRouteImport } from './routes/companies/$slug'
 import { Route as CandidateLoginRouteImport } from './routes/candidate/login'
+import { Route as ApiInterviewChatRouteImport } from './routes/api.interview-chat'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedInterviewRouteImport } from './routes/_authenticated/interview'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -89,6 +90,11 @@ const CompaniesSlugRoute = CompaniesSlugRouteImport.update({
 const CandidateLoginRoute = CandidateLoginRouteImport.update({
   id: '/candidate/login',
   path: '/candidate/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiInterviewChatRoute = ApiInterviewChatRouteImport.update({
+  id: '/api/interview-chat',
+  path: '/api/interview-chat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
@@ -228,6 +234,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/interview': typeof AuthenticatedInterviewRouteWithChildren
   '/onboarding': typeof AuthenticatedOnboardingRouteWithChildren
+  '/api/interview-chat': typeof ApiInterviewChatRoute
   '/candidate/login': typeof CandidateLoginRoute
   '/companies/$slug': typeof CompaniesSlugRoute
   '/company/login': typeof CompanyLoginRoute
@@ -259,6 +266,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/tos': typeof TosRoute
   '/onboarding': typeof AuthenticatedOnboardingRouteWithChildren
+  '/api/interview-chat': typeof ApiInterviewChatRoute
   '/candidate/login': typeof CandidateLoginRoute
   '/companies/$slug': typeof CompaniesSlugRoute
   '/company/login': typeof CompanyLoginRoute
@@ -292,6 +300,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/_authenticated/interview': typeof AuthenticatedInterviewRouteWithChildren
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRouteWithChildren
+  '/api/interview-chat': typeof ApiInterviewChatRoute
   '/candidate/login': typeof CandidateLoginRoute
   '/companies/$slug': typeof CompaniesSlugRoute
   '/company/login': typeof CompanyLoginRoute
@@ -327,6 +336,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/interview'
     | '/onboarding'
+    | '/api/interview-chat'
     | '/candidate/login'
     | '/companies/$slug'
     | '/company/login'
@@ -358,6 +368,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/tos'
     | '/onboarding'
+    | '/api/interview-chat'
     | '/candidate/login'
     | '/companies/$slug'
     | '/company/login'
@@ -390,6 +401,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/interview'
     | '/_authenticated/onboarding'
+    | '/api/interview-chat'
     | '/candidate/login'
     | '/companies/$slug'
     | '/company/login'
@@ -422,6 +434,7 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   PrivacyRoute: typeof PrivacyRoute
   TosRoute: typeof TosRoute
+  ApiInterviewChatRoute: typeof ApiInterviewChatRoute
   CandidateLoginRoute: typeof CandidateLoginRoute
   CompaniesSlugRoute: typeof CompaniesSlugRoute
   CompanyLoginRoute: typeof CompanyLoginRoute
@@ -500,6 +513,13 @@ declare module '@tanstack/react-router' {
       path: '/candidate/login'
       fullPath: '/candidate/login'
       preLoaderRoute: typeof CandidateLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/interview-chat': {
+      id: '/api/interview-chat'
+      path: '/api/interview-chat'
+      fullPath: '/api/interview-chat'
+      preLoaderRoute: typeof ApiInterviewChatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/onboarding': {
@@ -790,6 +810,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   PrivacyRoute: PrivacyRoute,
   TosRoute: TosRoute,
+  ApiInterviewChatRoute: ApiInterviewChatRoute,
   CandidateLoginRoute: CandidateLoginRoute,
   CompaniesSlugRoute: CompaniesSlugRoute,
   CompanyLoginRoute: CompanyLoginRoute,

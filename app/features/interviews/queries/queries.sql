@@ -64,6 +64,13 @@ SET status = 'cancelled',
 WHERE id = $1
 RETURNING *;
 
+-- name: updateInterviewMetadata :one
+UPDATE interviews
+SET metadata = $2,
+    updated_at = now()
+WHERE id = $1
+RETURNING *;
+
 -- name: getInterviewContextById :one
 SELECT i.id, i.application_id, i.batch_id, i.agent_id, i.type, i.metadata, i.status, i.invited_at, i.started_at, i.completed_at,
        i.expired_at, i.cancelled_at, i.cancellation_reason, i.created_at, i.updated_at,
@@ -127,3 +134,14 @@ SET status = 'skipped',
     updated_at = now()
 WHERE interview_id = $1
 RETURNING *;
+
+-- name: createInterviewMessage :one
+INSERT INTO interview_messages (interview_id, role, content)
+VALUES ($1, $2, $3)
+RETURNING id, interview_id, role, content, created_at, position;
+
+-- name: getInterviewMessagesByInterviewId :many
+SELECT id, interview_id, role, content, created_at, position
+FROM interview_messages
+WHERE interview_id = $1
+ORDER BY position ASC;

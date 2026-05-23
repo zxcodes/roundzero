@@ -167,6 +167,18 @@ CREATE TABLE interviews (
 CREATE INDEX idx_interviews_application ON interviews(application_id);
 CREATE INDEX idx_interviews_batch ON interviews(batch_id);
 
+CREATE TABLE interview_messages (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  interview_id  UUID NOT NULL REFERENCES interviews(id) ON DELETE RESTRICT,
+  role          TEXT NOT NULL,
+  content       TEXT NOT NULL,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  position      BIGINT GENERATED ALWAYS AS IDENTITY
+);
+
+CREATE INDEX idx_interview_messages_interview_position
+  ON interview_messages(interview_id, position);
+
 -- Pre-evaluations: lightweight AI pre-screening results
 CREATE TABLE pre_evaluations (
   id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),

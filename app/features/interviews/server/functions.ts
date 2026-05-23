@@ -1,4 +1,6 @@
 import { env } from "cloudflare:workers";
+import { chat } from "@tanstack/ai";
+import { createOpenRouterText } from "@tanstack/ai-openrouter";
 import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
@@ -10,18 +12,25 @@ import {
   cancelInterview,
   completeInterview,
   createCommunicationAssessment,
+  createInterviewMessage,
   expireInterview,
   getCommunicationAssessmentByInterviewId,
   getInterviewByApplicationId,
+  getInterviewContextById,
   getInterviewForCandidateById,
+  getInterviewMessagesByInterviewId,
   getInterviewsByCandidate,
   updateInterviewStatus,
 } from "@/features/interviews/queries/queries_sql";
 import { shouldAutoExpireInterview } from "@/features/interviews/shared/expiry";
+import {
+  buildInterviewSystemPrompt,
+  ensureInterviewRuntimeMetadata,
+} from "@/features/interviews/shared/runtime";
 import { getReportByApplicationId } from "@/features/reports/queries/queries_sql";
 import { getDb } from "@/shared/db";
-import { markInterviewAgentStarted } from "@/shared/interview-agent-client";
 import { authMiddleware } from "@/shared/middleware";
+import { getModelChain } from "@/shared/openrouter";
 import {
   getVoiceAssessmentTranscript,
   initializeVoiceAssessmentAgent,
@@ -86,6 +95,42 @@ export const getMyInterview = createServerFn({ method: "GET" })
     return interview;
   });
 
+export const getMyInterviewMessages = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .inputValidator(zodValidator(interviewIdSchema))
+  .handler(async ({ data, context }) => {
+    const db = getDb();
+
+    if (context.user.role !== "candidate") {
+      throw new Error("Only candidates can view interviews");
+    }
+
+    const interview = await getInterviewForCandidateById(db, {
+      id: data.interviewId,
+      candidateId: context.userId,
+    });
+
+    if (!interview) {
+      return null;
+    }
+
+    const expired = await expireInterviewIfNeeded({ db, interview });
+    const messages = await getInterviewMessagesByInterviewId(db, {
+      interviewId: data.interviewId,
+    });
+
+    return {
+      status: expired.interview.status,
+      messages: messages
+        .filter((message) => message.role === "assistant" || message.role === "candidate")
+        .map((message) => ({
+          id: message.id,
+          role: message.role === "assistant" ? "assistant" : "candidate",
+          content: message.content,
+        })),
+    };
+  });
+
 export const getMyInterviews = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
@@ -148,27 +193,79 @@ export const startMyInterview = createServerFn({ method: "POST" })
       throw new Error("Interview is no longer available");
     }
 
-    const updated = await updateInterviewStatus(db, {
-      id: data.interviewId,
-      status: "in_progress",
-    });
+    const updated =
+      effectiveInterview.status === "in_progress"
+        ? effectiveInterview
+        : await updateInterviewStatus(db, {
+            id: data.interviewId,
+            status: "in_progress",
+          });
 
     if (!updated) {
       return null;
     }
 
-    await updateApplicationStatus(db, {
-      id: effectiveInterview.applicationId,
-      status: "interview_in_progress",
+    if (effectiveInterview.status !== "in_progress") {
+      await updateApplicationStatus(db, {
+        id: effectiveInterview.applicationId,
+        status: "interview_in_progress",
+      });
+    }
+
+    const interviewContext = await getInterviewContextById(db, { id: data.interviewId });
+    if (!interviewContext) {
+      return null;
+    }
+
+    const metadata = await ensureInterviewRuntimeMetadata(db, interviewContext);
+    const contextState = metadata.contextState;
+    if (!contextState) {
+      throw new Error("Interview context is unavailable");
+    }
+
+    const existingMessages = await getInterviewMessagesByInterviewId(db, {
+      interviewId: data.interviewId,
     });
 
-    try {
-      await markInterviewAgentStarted(data.interviewId);
-    } catch (error) {
-      console.error(
-        `[startMyInterview] Failed to sync agent start state for ${data.interviewId}`,
-        error,
-      );
+    if (!existingMessages.some((message) => message.role === "assistant")) {
+      const { model, fallbacks } = getModelChain("interview");
+      const greeting = await chat({
+        adapter: createOpenRouterText(model, env.OPENROUTER_API_KEY, {
+          httpReferer: env.APP_URL ?? "https://roundzero.dev",
+          appTitle: "RoundZero",
+        }),
+        messages: [
+          {
+            role: "user",
+            content: `Open the interview. Greet ${contextState.candidateName || "the candidate"} warmly by name, reference one specific resume detail that connects to this role, then ask your first focused interview question. Plain conversational English only.`,
+          },
+        ],
+        systemPrompts: [
+          buildInterviewSystemPrompt({
+            contextState,
+            screeningCoverage: metadata.screeningCoverage ?? {},
+            assistantTurnCount: existingMessages.filter((message) => message.role === "assistant")
+              .length,
+            maxQuestions: 5,
+          }),
+        ],
+        temperature: 0.3,
+        maxTokens: 150,
+        modelOptions: {
+          ...(fallbacks.length > 0 ? { models: fallbacks } : {}),
+          parallelToolCalls: false,
+        },
+        stream: false,
+      });
+
+      const content = greeting.trim();
+      if (content.length > 0) {
+        await createInterviewMessage(db, {
+          interviewId: data.interviewId,
+          role: "assistant",
+          content,
+        });
+      }
     }
 
     return {

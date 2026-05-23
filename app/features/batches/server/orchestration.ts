@@ -12,11 +12,12 @@ import {
 import {
   createInterview,
   getInterviewByApplicationId,
+  getInterviewContextById,
 } from "@/features/interviews/queries/queries_sql";
+import { ensureInterviewRuntimeMetadata } from "@/features/interviews/shared/runtime";
 import { getJobById } from "@/features/jobs/queries/queries_sql";
 import { createNotification } from "@/features/notifications/queries/queries_sql";
 import { getDb } from "@/shared/db";
-import { initializeInterviewAgent } from "@/shared/interview-agent-client";
 import { notificationPayloadSchemas } from "@/shared/notifications-config";
 import { sendBatchDigestEmail } from "./email";
 import { type BatchReleaseSummary, releaseBatch } from "./release";
@@ -112,6 +113,13 @@ export async function checkAndLaunchBatch(jobId: string): Promise<PoolCheckResul
         continue;
       }
 
+      const interviewContext = await getInterviewContextById(transaction, {
+        id: interview.id,
+      });
+      if (interviewContext) {
+        await ensureInterviewRuntimeMetadata(transaction, interviewContext);
+      }
+
       await assignInterviewToBatch(transaction, {
         id: interview.id,
         batchId: batch.id,
@@ -142,8 +150,6 @@ export async function checkAndLaunchBatch(jobId: string): Promise<PoolCheckResul
       if (!interview) {
         continue;
       }
-
-      await initializeInterviewAgent(interview.id);
 
       const payload = notificationPayloadSchemas.interview_invited.parse({
         applicationId: candidate.id,

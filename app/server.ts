@@ -4,7 +4,6 @@ import { checkAndLaunchBatch } from "./features/batches/server/orchestration";
 import { handlePolarWebhook } from "./features/billing/webhook";
 import { getDb } from "./shared/db";
 
-export { InterviewAgent } from "./agents/interview";
 export { VoiceAssessmentAgent } from "./agents/voice";
 export { BatchOrchestrationWorkflow } from "./workflows/batch-orchestration/workflow";
 export { PostEvaluationWorkflow } from "./workflows/post-evaluation/workflow";

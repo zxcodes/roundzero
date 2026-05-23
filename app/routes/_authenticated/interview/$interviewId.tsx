@@ -1,6 +1,6 @@
 import { createFileRoute, notFound, Outlet, redirect } from "@tanstack/react-router";
 import { InterviewContentSkeleton } from "@/components/route-skeletons";
-import { getMyInterview } from "@/features/interviews/server/functions";
+import { getMyInterview, getMyInterviewMessages } from "@/features/interviews/server/functions";
 import { getInterviewExpiresAt } from "@/features/interviews/shared/expiry";
 import { validateUuidParams } from "@/shared/validation";
 
@@ -17,9 +17,16 @@ export const Route = createFileRoute("/_authenticated/interview/$interviewId")({
     if (!interview) {
       throw notFound();
     }
+    const chatState = await getMyInterviewMessages({
+      data: { interviewId: params.interviewId },
+    });
+    if (!chatState) {
+      throw notFound();
+    }
     return {
       interview,
       expiresAt: getInterviewExpiresAt(interview.metadata)?.toISOString() ?? null,
+      initialMessages: chatState.messages,
     };
   },
   pendingComponent: InterviewContentSkeleton,
