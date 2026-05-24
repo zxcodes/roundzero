@@ -19,7 +19,8 @@ import { Route as JobsJobIdRouteImport } from './routes/jobs/$jobId'
 import { Route as CompanyLoginRouteImport } from './routes/company/login'
 import { Route as CompaniesSlugRouteImport } from './routes/companies/$slug'
 import { Route as CandidateLoginRouteImport } from './routes/candidate/login'
-import { Route as ApiInterviewChatRouteImport } from './routes/api.interview-chat'
+import { Route as ApiVoiceWebhookRouteImport } from './routes/api/voice-webhook'
+import { Route as ApiInterviewChatRouteImport } from './routes/api/interview-chat'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedInterviewRouteImport } from './routes/_authenticated/interview'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -90,6 +91,11 @@ const CompaniesSlugRoute = CompaniesSlugRouteImport.update({
 const CandidateLoginRoute = CandidateLoginRouteImport.update({
   id: '/candidate/login',
   path: '/candidate/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiVoiceWebhookRoute = ApiVoiceWebhookRouteImport.update({
+  id: '/api/voice-webhook',
+  path: '/api/voice-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiInterviewChatRoute = ApiInterviewChatRouteImport.update({
@@ -235,6 +241,7 @@ export interface FileRoutesByFullPath {
   '/interview': typeof AuthenticatedInterviewRouteWithChildren
   '/onboarding': typeof AuthenticatedOnboardingRouteWithChildren
   '/api/interview-chat': typeof ApiInterviewChatRoute
+  '/api/voice-webhook': typeof ApiVoiceWebhookRoute
   '/candidate/login': typeof CandidateLoginRoute
   '/companies/$slug': typeof CompaniesSlugRoute
   '/company/login': typeof CompanyLoginRoute
@@ -267,6 +274,7 @@ export interface FileRoutesByTo {
   '/tos': typeof TosRoute
   '/onboarding': typeof AuthenticatedOnboardingRouteWithChildren
   '/api/interview-chat': typeof ApiInterviewChatRoute
+  '/api/voice-webhook': typeof ApiVoiceWebhookRoute
   '/candidate/login': typeof CandidateLoginRoute
   '/companies/$slug': typeof CompaniesSlugRoute
   '/company/login': typeof CompanyLoginRoute
@@ -301,6 +309,7 @@ export interface FileRoutesById {
   '/_authenticated/interview': typeof AuthenticatedInterviewRouteWithChildren
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRouteWithChildren
   '/api/interview-chat': typeof ApiInterviewChatRoute
+  '/api/voice-webhook': typeof ApiVoiceWebhookRoute
   '/candidate/login': typeof CandidateLoginRoute
   '/companies/$slug': typeof CompaniesSlugRoute
   '/company/login': typeof CompanyLoginRoute
@@ -337,6 +346,7 @@ export interface FileRouteTypes {
     | '/interview'
     | '/onboarding'
     | '/api/interview-chat'
+    | '/api/voice-webhook'
     | '/candidate/login'
     | '/companies/$slug'
     | '/company/login'
@@ -369,6 +379,7 @@ export interface FileRouteTypes {
     | '/tos'
     | '/onboarding'
     | '/api/interview-chat'
+    | '/api/voice-webhook'
     | '/candidate/login'
     | '/companies/$slug'
     | '/company/login'
@@ -402,6 +413,7 @@ export interface FileRouteTypes {
     | '/_authenticated/interview'
     | '/_authenticated/onboarding'
     | '/api/interview-chat'
+    | '/api/voice-webhook'
     | '/candidate/login'
     | '/companies/$slug'
     | '/company/login'
@@ -435,6 +447,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   TosRoute: typeof TosRoute
   ApiInterviewChatRoute: typeof ApiInterviewChatRoute
+  ApiVoiceWebhookRoute: typeof ApiVoiceWebhookRoute
   CandidateLoginRoute: typeof CandidateLoginRoute
   CompaniesSlugRoute: typeof CompaniesSlugRoute
   CompanyLoginRoute: typeof CompanyLoginRoute
@@ -513,6 +526,13 @@ declare module '@tanstack/react-router' {
       path: '/candidate/login'
       fullPath: '/candidate/login'
       preLoaderRoute: typeof CandidateLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/voice-webhook': {
+      id: '/api/voice-webhook'
+      path: '/api/voice-webhook'
+      fullPath: '/api/voice-webhook'
+      preLoaderRoute: typeof ApiVoiceWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/interview-chat': {
@@ -811,6 +831,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   TosRoute: TosRoute,
   ApiInterviewChatRoute: ApiInterviewChatRoute,
+  ApiVoiceWebhookRoute: ApiVoiceWebhookRoute,
   CandidateLoginRoute: CandidateLoginRoute,
   CompaniesSlugRoute: CompaniesSlugRoute,
   CompanyLoginRoute: CompanyLoginRoute,
