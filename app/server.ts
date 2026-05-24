@@ -1,10 +1,8 @@
 import handler from "@tanstack/react-start/server-entry";
-import { routeAgentRequest } from "agents";
 import { checkAndLaunchBatch } from "./features/batches/server/orchestration";
 import { handlePolarWebhook } from "./features/billing/webhook";
 import { getDb } from "./shared/db";
 
-export { VoiceAssessmentAgent } from "./agents/voice";
 export { BatchOrchestrationWorkflow } from "./workflows/batch-orchestration/workflow";
 export { PostEvaluationWorkflow } from "./workflows/post-evaluation/workflow";
 export { PreEvaluationWorkflow } from "./workflows/pre-evaluation/workflow";
@@ -39,9 +37,6 @@ export default {
     if (url.pathname === "/api/polar/webhook" && request.method === "POST") {
       return handlePolarWebhook(request);
     }
-
-    const agentResponse = await routeAgentRequest(request, env);
-    if (agentResponse) return agentResponse;
 
     const assetResponse = await serveAsset(request, env);
     if (assetResponse) return assetResponse;

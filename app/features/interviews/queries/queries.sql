@@ -108,10 +108,27 @@ SELECT *
 FROM communication_assessments
 WHERE application_id = $1;
 
--- name: markCommunicationAssessmentStarted :one
+-- name: getCommunicationAssessmentByProviderConversationId :one
+SELECT *
+FROM communication_assessments
+WHERE provider_conversation_id = $1;
+
+-- name: getCommunicationAssessmentByProviderSessionId :one
+SELECT *
+FROM communication_assessments
+WHERE provider_session_id = $1;
+
+-- name: registerCommunicationAssessmentSession :one
 UPDATE communication_assessments
-SET status = 'in_progress',
-    started_at = COALESCE(started_at, now()),
+SET provider_session_id = $2,
+    provider_conversation_id = NULL,
+    updated_at = now()
+WHERE interview_id = $1
+RETURNING *;
+
+-- name: registerCommunicationAssessmentConversation :one
+UPDATE communication_assessments
+SET provider_conversation_id = $2,
     updated_at = now()
 WHERE interview_id = $1
 RETURNING *;
@@ -125,6 +142,8 @@ SET status = 'completed',
     completed_at = now(),
     updated_at = now()
 WHERE interview_id = $1
+  AND status != 'completed'
+  AND status != 'skipped'
 RETURNING *;
 
 -- name: markCommunicationAssessmentSkipped :one

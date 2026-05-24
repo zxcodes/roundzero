@@ -63,6 +63,8 @@ CREATE TABLE public.communication_assessments (
     application_id uuid NOT NULL,
     status text DEFAULT 'pending'::text NOT NULL,
     audio_key text,
+    provider_session_id text,
+    provider_conversation_id text,
     transcript jsonb DEFAULT '[]'::jsonb NOT NULL,
     analysis jsonb,
     started_at timestamp with time zone,
@@ -482,6 +484,20 @@ CREATE INDEX idx_comm_assessments_application ON public.communication_assessment
 --
 
 CREATE INDEX idx_comm_assessments_interview ON public.communication_assessments USING btree (interview_id);
+
+
+--
+-- Name: idx_comm_assessments_provider_conversation; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_comm_assessments_provider_conversation ON public.communication_assessments USING btree (provider_conversation_id) WHERE (provider_conversation_id IS NOT NULL);
+
+
+--
+-- Name: idx_comm_assessments_provider_session; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_comm_assessments_provider_session ON public.communication_assessments USING btree (provider_session_id) WHERE (provider_session_id IS NOT NULL);
 
 
 --

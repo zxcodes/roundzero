@@ -4,7 +4,6 @@
 interface __BaseEnv_Env {
 	RESUMES: R2Bucket;
 	HYPERDRIVE: Hyperdrive;
-	AI: Ai;
 	NODE_ENV: string;
 	DATABASE_URL: string;
 	TEST_DATABASE_URL: string;
@@ -25,7 +24,9 @@ interface __BaseEnv_Env {
 	POLAR_WEBHOOK_SECRET: string;
 	POLAR_MODE: string;
 	POLAR_PRODUCT_ID_PRO: string;
-	VOICE_ASSESSMENT_AGENT: DurableObjectNamespace<import("./app/server").VoiceAssessmentAgent>;
+	ELEVENLABS_API_KEY: string;
+	ELEVENLABS_AGENT_ID: string;
+	ELEVENLABS_WEBHOOK_SECRET: string;
 	PRE_EVALUATION: Workflow<Parameters<import("./app/server").PreEvaluationWorkflow['run']>[0]['payload']>;
 	POST_EVALUATION: Workflow<Parameters<import("./app/server").PostEvaluationWorkflow['run']>[0]['payload']>;
 	BATCH_ORCHESTRATION: Workflow<Parameters<import("./app/server").BatchOrchestrationWorkflow['run']>[0]['payload']>;
@@ -33,7 +34,7 @@ interface __BaseEnv_Env {
 declare namespace Cloudflare {
 	interface GlobalProps {
 		mainModule: typeof import("./app/server");
-		durableNamespaces: "VoiceAssessmentAgent";
+		durableNamespaces: never;
 	}
 	interface Env extends __BaseEnv_Env {}
 }
@@ -42,7 +43,7 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "NODE_ENV" | "DATABASE_URL" | "TEST_DATABASE_URL" | "SESSION_SECRET" | "VITE_GOOGLE_CLIENT_ID" | "VITE_APP_URL" | "VITE_EDGE_WORKER_URL" | "APP_URL" | "VITE_PUBLIC_ASSET_BASE_URL" | "RESEND_API_KEY" | "RESEND_FROM_EMAIL" | "CLOUDFLARE_ACCOUNT_ID" | "AI_GATEWAY_ID" | "OPENROUTER_API_KEY" | "INTERVIEW_MODEL" | "AI_GATEWAY_TOKEN" | "POLAR_ACCESS_TOKEN" | "POLAR_WEBHOOK_SECRET" | "POLAR_MODE" | "POLAR_PRODUCT_ID_PRO">> {}
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "NODE_ENV" | "DATABASE_URL" | "TEST_DATABASE_URL" | "SESSION_SECRET" | "VITE_GOOGLE_CLIENT_ID" | "VITE_APP_URL" | "VITE_EDGE_WORKER_URL" | "APP_URL" | "VITE_PUBLIC_ASSET_BASE_URL" | "RESEND_API_KEY" | "RESEND_FROM_EMAIL" | "CLOUDFLARE_ACCOUNT_ID" | "AI_GATEWAY_ID" | "OPENROUTER_API_KEY" | "INTERVIEW_MODEL" | "AI_GATEWAY_TOKEN" | "POLAR_ACCESS_TOKEN" | "POLAR_WEBHOOK_SECRET" | "POLAR_MODE" | "POLAR_PRODUCT_ID_PRO" | "ELEVENLABS_API_KEY" | "ELEVENLABS_AGENT_ID" | "ELEVENLABS_WEBHOOK_SECRET">> {}
 }
 
 // Begin runtime types

@@ -1,4 +1,6 @@
 import { env } from "cloudflare:workers";
+import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
+import type { RealtimeToken } from "@tanstack/ai";
 import { chat } from "@tanstack/ai";
 import { createOpenRouterText } from "@tanstack/ai-openrouter";
 import { createServerFn } from "@tanstack/react-start";
@@ -20,8 +22,15 @@ import {
   getInterviewForCandidateById,
   getInterviewMessagesByInterviewId,
   getInterviewsByCandidate,
+  markCommunicationAssessmentSkipped,
+  registerCommunicationAssessmentConversation,
+  registerCommunicationAssessmentSession,
   updateInterviewStatus,
 } from "@/features/interviews/queries/queries_sql";
+import {
+  finalizeVoiceAssessmentFromTranscript,
+  signalVoiceAssessmentComplete,
+} from "@/features/interviews/server/voice-assessment";
 import { shouldAutoExpireInterview } from "@/features/interviews/shared/expiry";
 import {
   buildInterviewSystemPrompt,
@@ -31,12 +40,6 @@ import { getReportByApplicationId } from "@/features/reports/queries/queries_sql
 import { getDb } from "@/shared/db";
 import { authMiddleware } from "@/shared/middleware";
 import { getModelChain } from "@/shared/openrouter";
-import {
-  getVoiceAssessmentTranscript,
-  initializeVoiceAssessmentAgent,
-  markVoiceAssessmentEndIntent,
-  skipVoiceAssessmentAgent,
-} from "@/shared/voice-agent-client";
 
 const interviewIdSchema = z.object({
   interviewId: z.string().uuid(),
@@ -394,7 +397,7 @@ export const completeMyInterview = createServerFn({ method: "POST" })
 
       try {
         await env.POST_EVALUATION.create({
-          // Stable id so VoiceAssessmentAgent can resolve this workflow later.
+          // Stable id so completeMyVoiceAssessment can signal this workflow.
           id: data.interviewId,
           params: { interviewId: data.interviewId },
         });
@@ -501,12 +504,33 @@ export const getMyVoiceAssessment = createServerFn({ method: "GET" })
     };
   });
 
-export const initializeMyVoiceAssessment = createServerFn({ method: "POST" })
+const voiceTranscriptMessageSchema = z.object({
+  role: z.enum(["assistant", "user", "candidate"]),
+  content: z.string().trim().min(1),
+});
+
+const completeVoiceAssessmentSchema = z.object({
+  interviewId: z.string().uuid(),
+  messages: z.array(voiceTranscriptMessageSchema).max(500),
+});
+
+const registerVoiceAssessmentSessionSchema = z.object({
+  interviewId: z.string().uuid(),
+  conversationId: z.string().trim().min(1),
+});
+
+export const getMyVoiceToken = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(zodValidator(interviewIdSchema))
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data, context }): Promise<RealtimeToken> => {
     if (context.user.role !== "candidate") {
-      throw new Error("Only candidates can initialize voice assessments");
+      throw new Error("Only candidates can start voice assessments");
+    }
+
+    const apiKey = env.ELEVENLABS_API_KEY;
+    const agentId = env.ELEVENLABS_AGENT_ID;
+    if (!apiKey || !agentId) {
+      throw new Error("Voice assessment is not configured");
     }
 
     const db = getDb();
@@ -515,33 +539,59 @@ export const initializeMyVoiceAssessment = createServerFn({ method: "POST" })
       candidateId: context.userId,
     });
     if (!interview) {
-      return { ok: false, status: "error" as const };
+      throw new Error("Interview not found");
+    }
+    if (interview.status !== "completed") {
+      throw new Error("Voice assessment is not available yet");
     }
 
-    const result = await initializeVoiceAssessmentAgent(data.interviewId);
-    return { ok: result.ok, status: result.status };
-  });
-
-export const markMyVoiceAssessmentEndIntent = createServerFn({ method: "POST" })
-  .middleware([authMiddleware])
-  .inputValidator(zodValidator(interviewIdSchema))
-  .handler(async ({ data, context }) => {
-    if (context.user.role !== "candidate") {
-      throw new Error("Only candidates can end voice assessments");
-    }
-
-    const db = getDb();
-    const interview = await getInterviewForCandidateById(db, {
-      id: data.interviewId,
-      candidateId: context.userId,
+    const existing = await getCommunicationAssessmentByInterviewId(db, {
+      interviewId: interview.id,
     });
-    if (!interview) {
-      return { ok: false };
+    if (existing?.status === "completed" || existing?.status === "skipped") {
+      throw new Error("Voice assessment is already complete");
     }
 
-    await markVoiceAssessmentEndIntent(data.interviewId);
-    return { ok: true };
+    if (!existing) {
+      await createCommunicationAssessment(db, {
+        interviewId: interview.id,
+        applicationId: interview.applicationId,
+        status: "pending",
+      });
+    }
+
+    const providerSessionId = crypto.randomUUID();
+    await registerCommunicationAssessmentSession(db, {
+      interviewId: interview.id,
+      providerSessionId,
+    });
+
+    const client = new ElevenLabsClient({ apiKey });
+    const tokenResponse = await client.conversationalAi.conversations.getSignedUrl({
+      agentId,
+    });
+
+    return {
+      provider: "elevenlabs",
+      token: tokenResponse.signedUrl,
+      expiresAt: Date.now() + 30 * 60 * 1000,
+      config: {
+        providerOptions: {
+          agentId,
+          userId: providerSessionId,
+        },
+      },
+    };
   });
+
+const voiceTranscriptDbSchema = z
+  .array(
+    z.object({
+      role: z.string(),
+      content: z.string(),
+    }),
+  )
+  .catch([]);
 
 export const getMyVoiceAssessmentTranscript = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
@@ -560,8 +610,11 @@ export const getMyVoiceAssessmentTranscript = createServerFn({ method: "GET" })
       return { messages: [] as Array<{ role: string; content: string }> };
     }
 
-    const result = await getVoiceAssessmentTranscript(data.interviewId);
-    return { messages: result.messages };
+    const assessment = await getCommunicationAssessmentByInterviewId(db, {
+      interviewId: data.interviewId,
+    });
+    const parsed = voiceTranscriptDbSchema.safeParse(assessment?.transcript ?? []);
+    return { messages: parsed.success ? parsed.data : [] };
   });
 
 export const skipMyVoiceAssessment = createServerFn({ method: "POST" })
@@ -581,6 +634,95 @@ export const skipMyVoiceAssessment = createServerFn({ method: "POST" })
       return { ok: false };
     }
 
-    await skipVoiceAssessmentAgent(data.interviewId);
+    const existing = await getCommunicationAssessmentByInterviewId(db, {
+      interviewId: data.interviewId,
+    });
+    if (existing?.status === "completed" || existing?.status === "skipped") {
+      return { ok: true };
+    }
+    if (!existing) {
+      await createCommunicationAssessment(db, {
+        interviewId: data.interviewId,
+        applicationId: interview.applicationId,
+        status: "pending",
+      });
+    }
+
+    await markCommunicationAssessmentSkipped(db, { interviewId: data.interviewId });
+    await signalVoiceAssessmentComplete(data.interviewId);
     return { ok: true };
+  });
+
+export const registerMyVoiceAssessmentSession = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .inputValidator(zodValidator(registerVoiceAssessmentSessionSchema))
+  .handler(async ({ data, context }) => {
+    if (context.user.role !== "candidate") {
+      throw new Error("Only candidates can start voice assessments");
+    }
+
+    const db = getDb();
+    const interview = await getInterviewForCandidateById(db, {
+      id: data.interviewId,
+      candidateId: context.userId,
+    });
+    if (!interview) {
+      return { ok: false };
+    }
+
+    const existing = await getCommunicationAssessmentByInterviewId(db, {
+      interviewId: data.interviewId,
+    });
+    if (!existing || existing.status === "completed" || existing.status === "skipped") {
+      return { ok: false };
+    }
+
+    await registerCommunicationAssessmentConversation(db, {
+      interviewId: data.interviewId,
+      providerConversationId: data.conversationId,
+    });
+
+    return { ok: true };
+  });
+
+export const completeMyVoiceAssessment = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .inputValidator(zodValidator(completeVoiceAssessmentSchema))
+  .handler(async ({ data, context }) => {
+    if (context.user.role !== "candidate") {
+      throw new Error("Only candidates can complete voice assessments");
+    }
+
+    const db = getDb();
+    const interview = await getInterviewForCandidateById(db, {
+      id: data.interviewId,
+      candidateId: context.userId,
+    });
+    if (!interview) {
+      return { ok: false };
+    }
+
+    const existing = await getCommunicationAssessmentByInterviewId(db, {
+      interviewId: data.interviewId,
+    });
+    if (existing?.status === "completed" || existing?.status === "skipped") {
+      return { ok: true };
+    }
+    if (!existing) {
+      await createCommunicationAssessment(db, {
+        interviewId: data.interviewId,
+        applicationId: interview.applicationId,
+        status: "pending",
+      });
+    }
+
+    const completed = await finalizeVoiceAssessmentFromTranscript({
+      db,
+      interviewId: data.interviewId,
+      messages: data.messages.map((message) => ({
+        role: message.role === "assistant" ? "assistant" : "candidate",
+        content: message.content,
+      })),
+    });
+    return { ok: completed };
   });

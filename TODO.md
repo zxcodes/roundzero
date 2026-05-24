@@ -1,5 +1,6 @@
 ## TODO
 
+- update relevant docs. almost every doc is stale.
 - swap the entire interview flow (voice & text) from cf to something else better.
 - full report page sucks. flashes twice on refresh, the evidence section has huge gaps between sections. overall sucks 10/10.
 - greeting no longer works in text interview (An RPC result was not disposed properly. One of the RPC calls you made expects you to call dispose() on the return value, but you didn't do so. You cannot rely on the garbage collector for this because it may take arbitrarily long before actually collecting unreachable objects.) have to manually send a message.
