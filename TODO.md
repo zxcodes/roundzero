@@ -1,5 +1,6 @@
 ## TODO
 
+- the thinking indicator is useless. it is not based on the actual llm-wait-show flow.
 - update relevant docs. almost every doc is stale.
 - swap the entire interview flow (voice & text) from cf to something else better.
 - full report page sucks. flashes twice on refresh, the evidence section has huge gaps between sections. overall sucks 10/10.
