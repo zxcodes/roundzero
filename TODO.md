@@ -1,5 +1,7 @@
 ## TODO
 
+- ffs greeting still doesn't work ugh.
+- the ui doesnt reflect the state if an agent ends the interview. (also needs to check if it works when I hit submit?)
 - the thinking indicator is useless. it is not based on the actual llm-wait-show flow.
 - update relevant docs. almost every doc is stale.
 - swap the entire interview flow (voice & text) from cf to something else better.
