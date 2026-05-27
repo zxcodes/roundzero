@@ -156,6 +156,7 @@
 
 
 ## Agent & AI Stuff
+- send periodic job recommendations to candidates (matches) based on their profile and put it behind a paywall.
 <!--- add guard rails during agent conv, detect short and uninterested answers, detect screenshots, detect ai responses, detect if text was copied, and detect if answers don't align with normal conv tone and more. basically ai beating ai. - this will be another step in post-evaluation.-->
 <!--- show suggested skills based on job description.-->
 <!--- gatekeep ai features using paywall.-->
