@@ -10,7 +10,7 @@ const applicationMetadataSchema = z
     resumeText: z.string().optional(),
     summary: z.string().optional(),
   })
-  .passthrough();
+  .loose();
 
 export type VoiceAssessmentContext = {
   interviewId: string;

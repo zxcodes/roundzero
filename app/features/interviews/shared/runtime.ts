@@ -16,20 +16,20 @@ const applicationMetadataSchema = z
     resumeText: z.string().optional(),
     summary: z.string().optional(),
   })
-  .passthrough();
+  .loose();
 
 const rawResponseSchema = z
   .object({
     slopCheck: z.unknown().optional(),
   })
-  .passthrough();
+  .loose();
 
 const slopCheckSchema = z
   .object({
     redFlags: z.array(z.string()).optional(),
     explanation: z.string().optional(),
   })
-  .passthrough();
+  .loose();
 
 export const screeningCoverageSchema = z.record(z.string(), z.enum(["answered", "skipped"]));
 
@@ -60,7 +60,7 @@ export const interviewMetadataSchema = z
     contextState: interviewContextStateSchema.optional(),
     screeningCoverage: screeningCoverageSchema.optional(),
   })
-  .passthrough();
+  .loose();
 
 export type ScreeningCoverage = z.infer<typeof screeningCoverageSchema>;
 export type InterviewContextState = z.infer<typeof interviewContextStateSchema>;

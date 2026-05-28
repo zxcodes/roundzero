@@ -36,8 +36,8 @@ const elevenLabsTranscriptEventSchema = z.object({
 
 export const elevenLabsWebhookEventSchema = z.discriminatedUnion("type", [
   elevenLabsTranscriptEventSchema,
-  z.object({ type: z.literal("post_call_audio") }).passthrough(),
-  z.object({ type: z.literal("call_initiation_failure") }).passthrough(),
+  z.object({ type: z.literal("post_call_audio") }).loose(),
+  z.object({ type: z.literal("call_initiation_failure") }).loose(),
 ]);
 
 export type VoiceTranscriptMessage = {
