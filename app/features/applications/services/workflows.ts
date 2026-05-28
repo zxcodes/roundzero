@@ -51,7 +51,7 @@ export const applyToJobWorkflow = async (
   await db.unsafe(closeExpiredJobsQuery);
 
   const user = await getUserById(db, { id: input.userId });
-  if (!user || user.role !== "candidate") {
+  if (user?.role !== "candidate") {
     throw new Error("Only candidates can apply to jobs");
   }
 
@@ -261,7 +261,7 @@ export const withdrawApplicationWorkflow = async (
   },
 ) => {
   const user = await getUserById(db, { id: input.userId });
-  if (!user || user.role !== "candidate") {
+  if (user?.role !== "candidate") {
     throw new Error("Only candidates can withdraw applications");
   }
 
