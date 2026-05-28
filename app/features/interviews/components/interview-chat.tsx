@@ -128,8 +128,7 @@ export function InterviewChat({
   // text, OR mid-stream if no assistant text has arrived yet. We rely on the
   // fact that `useInterviewChat` filters empty assistant parts out, so the
   // last visible message stays "candidate" until the first token shows up.
-  const isAwaitingAssistant =
-    (isWaiting || isStreaming) && (!lastMessage || lastMessage.role !== "assistant");
+  const isAwaitingAssistant = (isWaiting || isStreaming) && lastMessage?.role !== "assistant";
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-muted/30">

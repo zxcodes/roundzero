@@ -594,7 +594,7 @@ export function loadVoiceAssessment(
 ) {
   return async (): Promise<CommunicationAssessmentAnalysis | null> => {
     const row = await getCommunicationAssessmentByInterviewId(db, { interviewId });
-    if (!row || row.status !== "completed" || !row.analysis) {
+    if (row?.status !== "completed" || !row.analysis) {
       log.info(`No completed voice assessment for interview ${interviewId}`);
       return null;
     }
