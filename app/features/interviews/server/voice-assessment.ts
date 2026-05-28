@@ -53,7 +53,7 @@ export function getVoiceWebhookClient(): ElevenLabsClient {
 
 export async function parseElevenLabsWebhookEvent(request: Request) {
   const rawBody = await request.text();
-  const secret = env.ELEVENLABS_WEBHOOK_SECRET?.trim();
+  const secret = env.ELEVENLABS_WEBHOOK_SECRET;
 
   if (!secret) {
     const parsed = JSON.parse(rawBody);
