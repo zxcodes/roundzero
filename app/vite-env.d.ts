@@ -9,3 +9,8 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+declare module "*.wasm" {
+  const content: WebAssembly.Module;
+  export default content;
+}
