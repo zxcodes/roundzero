@@ -125,7 +125,10 @@ function InterviewWorkspaceContent({
   };
 
   const canSend = interview.status === "in_progress";
-  const isEnded = interview.status === "completed" || interview.status === "cancelled";
+  const isEnded =
+    interview.status === "completed" ||
+    interview.status === "cancelled" ||
+    interview.status === "expired";
   const isCompleted = interview.status === "completed";
   const isStarting = isPending && startMutation.isPending;
   const isSubmitting = isInProgress && completeMutation.isPending;
@@ -295,6 +298,7 @@ function InterviewWorkspaceContent({
             messages={chat.messages}
             canSend={canSend}
             isEnded={isEnded}
+            isExpired={interview.status === "expired"}
             isStreaming={chat.isStreaming}
             isThinking={chat.isThinking}
             onSend={onSendMessage}
