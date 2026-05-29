@@ -1,12 +1,8 @@
 ## TODO
 
-- ffs greeting still doesn't work ugh.
-- the ui doesnt reflect the state if an agent ends the interview. (also needs to check if it works when I hit submit?)
-- the thinking indicator is useless. it is not based on the actual llm-wait-show flow.
 - update relevant docs. almost every doc is stale.
 - swap the entire interview flow (voice & text) from cf to something else better.
 - full report page sucks. flashes twice on refresh, the evidence section has huge gaps between sections. overall sucks 10/10.
-- greeting no longer works in text interview (An RPC result was not disposed properly. One of the RPC calls you made expects you to call dispose() on the return value, but you didn't do so. You cannot rely on the garbage collector for this because it may take arbitrarily long before actually collecting unreachable objects.) have to manually send a message.
 - we need a polished report like a nice beautiful report instead of what we have right now. full report can still exist for everything that happened but the actual report should be very nice, evidence backed, nicely summarized, and we should be able to cycle thru each batch with next and prev buttons.
 - add a cron to detect failed workflows (evaluation_failed) in the entire ai layer? and then it should update their statuses accordingly.
 - the voice interview experience is still not good enough. check using better models (dedicated for voice) and see.

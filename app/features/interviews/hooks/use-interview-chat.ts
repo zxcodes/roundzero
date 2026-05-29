@@ -59,11 +59,23 @@ export function useInterviewChat(interviewId: string, initialMessages: InitialIn
     });
   }
 
+  // Per @tanstack/ai chat-experience skill, `status` is the source of truth
+  // for the model lifecycle: 'ready' → 'submitted' → 'streaming' → 'ready'.
+  // The thinking indicator is visible while we are waiting for the first
+  // text chunk (covers "submitted" plus the "streaming during tool calls"
+  // gap where the assistant message exists but has no visible text yet).
+  const lastAssistantMessage = [...chat.messages].reverse().find((m) => m.role === "assistant");
+  const lastAssistantHasText = lastAssistantMessage
+    ? readMessageText(lastAssistantMessage).length > 0
+    : false;
+  const isThinking =
+    chat.status === "submitted" || (chat.status === "streaming" && !lastAssistantHasText);
+
   return {
     messages,
     sendMessage: chat.sendMessage,
     status: chat.status,
     isStreaming: chat.status === "streaming",
-    sessionStatus: null,
+    isThinking,
   };
 }
