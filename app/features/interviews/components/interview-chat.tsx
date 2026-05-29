@@ -20,6 +20,7 @@ type InterviewChatProps = {
   }>;
   canSend: boolean;
   isEnded: boolean;
+  isExpired: boolean;
   isStreaming: boolean;
   /**
    * True while the model is between turns — sent but no visible text yet
@@ -41,6 +42,7 @@ export function InterviewChat({
   messages,
   canSend,
   isEnded,
+  isExpired,
   isStreaming,
   isThinking,
   onContinueToVoice,
@@ -131,10 +133,17 @@ export function InterviewChat({
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-muted/30">
       {!messages.length && !isThinking ? (
-        <EmptyInterviewComponent
-          description="Press start when you are ready."
-          title="Your interview with Zero starts here"
-        />
+        isExpired ? (
+          <EmptyInterviewComponent
+            description="This interview window has closed."
+            title="Interview expired"
+          />
+        ) : (
+          <EmptyInterviewComponent
+            description="Press start when you are ready."
+            title="Your interview with Zero starts here"
+          />
+        )
       ) : (
         <ScrollArea ref={transcriptRef} className="min-h-0 flex-1">
           <InterviewTranscript messages={messages} userLabel="You" />
@@ -170,7 +179,9 @@ export function InterviewChat({
             </div>
           ) : (
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm text-muted-foreground">This interview has ended.</p>
+              <p className="text-sm text-muted-foreground">
+                {isExpired ? "This interview has expired." : "This interview has ended."}
+              </p>
               <Button variant="outline" size="sm" asChild>
                 <Link to="/dashboard/applications">Back to applications</Link>
               </Button>
