@@ -117,70 +117,43 @@ This is a product branding decision, not a model name. The underlying agent clas
 
 ---
 
-# Interview Agent Implementation
+# Text Interview Implementation
 
-The interview agent is implemented using the **Cloudflare Agents SDK** (`agents`, `@cloudflare/ai-chat`, `workers-ai-provider`):
+The text interview uses **TanStack AI** (`@tanstack/ai`) with **OpenRouter** (`@tanstack/ai-openrouter`) via server functions — no WebSockets, no streaming, no persistent agent runtime.
 
-- `AIChatAgent` class handles message history, streaming, and WebSocket transport
-- `streamText()` from the AI SDK v5 streams tokens in real-time to the candidate
-- `convertToModelMessages()` converts agent message history into LLM-ready format
-- Tools allow the agent to evaluate answers, check resume gaps, and decide when to end
-- System prompt is injected with job description, candidate summary, and pre-eval context
-- Session state (status, scores, metadata) persisted via `this.setState()` / `this.state`
+## Flow
 
-This replaces the previous raw Durable Object + Workers AI approach that lacked streaming, tools, and conversational memory.
+1. Candidate clicks "Start" → `startMyInterview` server function prepares context and generates the first greeting via `chat()` from `@tanstack/ai`
+2. Candidate types a message → client calls a server function that appends the message to `interview_messages`
+3. Server calls OpenRouter via `chat()` with full message history + system prompt → appends response to `interview_messages`
+4. The LLM drives the conversation — it decides when the interview is complete and responds accordingly
+5. Candidate or system marks interview complete → `completeMyInterview` triggers the post-evaluation workflow
 
-## Agent Tools
+## System Prompt
 
-The agent has three server-side tools it can call during the conversation:
+Built by `buildInterviewSystemPrompt()` in `app/features/interviews/shared/runtime.ts`. Injected with:
 
-### `evaluate_answer`
-- **Input:** `{ relevance: number, depth: number, clarity: number }`
-- **Action:** Stores running evaluation scores in agent state
-- **When called:** After each candidate answer, the LLM self-evaluates
+- Job description, requirements, custom questions
+- Candidate summary (resume text, profile)
+- Pre-evaluation results (score, missing requirements, authenticity flags)
+- Screening coverage state (which requirements have been addressed)
+- Turn count and max questions
 
-### `check_resume_gap`
-- **Input:** `{ claim: string }`
-- **Action:** Queries the candidate summary to verify a specific claim
-- **When called:** When the candidate mentions a project, skill, or company the agent wants to verify
+## Model Selection
 
-### `end_interview`
-- **Input:** `{ reason: string }`
-- **Action:** Sets status to `completed`, triggers post-evaluation workflow
-- **When called:** When the LLM decides sufficient signal has been gathered (no hardcoded limit)
+Uses the `"interview"` chain from `app/shared/openrouter.ts`. Currently:
+- Dev: `meta-llama/llama-3.3-70b-instruct:free` / fallback `google/gemini-2.5-flash`
+- Staging: `google/gemini-2.5-flash` / fallback `anthropic/claude-haiku-4.5`
+- Prod: `anthropic/claude-haiku-4.5` / fallback `anthropic/claude-sonnet-4.5`
 
-## Agent Lifecycle
+No agent-side tool calls. The LLM receives all context in the system prompt and generates plain-text responses. Evaluation is performed post-hoc by the post-evaluation workflow.
 
-### `onStart()`
-- Ensures expiry scheduling for active sessions
-- Schedules 48-hour expiry alarm: `this.schedule(48h, "expireInterview", undefined, { idempotent: true })`
+## Interview State
 
-### `onChatMessage()`
-- Streams response via `streamText()` with full message history
-- LLM can call tools mid-conversation
-- State syncs to client via WebSocket automatically
-- Uses `stepCountIs(...)` stop control for bounded tool-call loops
-
-### `expireInterview()`
-- Called by scheduled alarm after 48 hours
-- Sets status to `expired` if not completed/cancelled
-- Persists interview status update to Postgres
-
-### `triggerPostEvaluation()`
-- Called by `end_interview` tool
-- Triggers post-evaluation workflow with `this.runWorkflow("POST_EVALUATION", { interviewId })`
-
-## Session State
-
-Current implementation persists interview session metadata in agent state via `this.setState()`:
-
-- status (`pending`, `in_progress`, `completed`, `cancelled`, `expired`)
-- question counters (`askedQuestions`, `maxQuestions`)
-- running evaluation aggregates
-- timestamps (`startedAt`, `completedAt`, `cancelledAt`, `updatedAt`)
-- normalized interview context (job/candidate/pre-eval)
-
-Conversation messages are persisted by `AIChatAgent` automatically.
+State is stored in the database:
+- `interviews` table — status lifecycle (`pending`, `in_progress`, `completed`, `expired`, `cancelled`)
+- `interview_messages` table — full transcript per interview
+- `interviews.metadata` — JSONB with expiry timestamp, pre-evaluation score, context state, screening coverage
 
 ---
 
@@ -294,25 +267,28 @@ Use semantic/contextual matching.
 
 ## Voice Assessment
 
-A voice communication assessment runs after the text interview.
+A voice communication assessment runs after the text interview using **ElevenLabs Conversational AI**.
 
 ### Architecture
 
-- `app/agents/voice.ts` — `VoiceAssessmentAgent` extends `withVoice(Agent)` from `@cloudflare/voice`
-- Uses `WorkersAIFluxSTT` (speech-to-text) and `WorkersAITTS` (text-to-speech) via Workers AI
-- One Durable Object instance per interview
-- @callable() RPCs: `initialize`, `markEndIntent`, `getTranscript`, `skip`
+- ElevenLabs handles all voice processing (STT, LLM, TTS) as a managed service
+- `getMyVoiceToken` server function generates a signed URL via `@elevenlabs/elevenlabs-js`
+- Client connects via `@elevenlabs/client` `Conversation.startSession({ signedUrl, dynamicVariables })`
+- Agent system prompt and voice personality are configured in the ElevenLabs dashboard
+- Candidate/job context injected via `dynamicVariables` (`candidate_name`, `job_title`, `company_name`, `candidate_summary`)
+- Transcript analysis runs server-side via OpenRouter `generateObject` when the call ends
 
 ### Flow
 
-1. After text interview completes, candidate enters the voice workspace (tab in the interview UI)
-2. `useVoiceAgent` hook manages the voice WebSocket connection and microphone capture
-3. `onTurn` runs the LLM with candidate context and streams responses
-4. On intentional end (candidate clicks End Call or agent emits `##END_CALL##`):
-   - transcript is saved to `communication_assessments`
+1. After text interview completes, candidate enters the voice tab in the interview UI
+2. Client calls `getMyVoiceToken` to get a signed ElevenLabs session URL
+3. `@elevenlabs/client` connects via WebSocket — voice conversation begins immediately
+4. Candidate speaks, agent responds — all audio/LLM handled by ElevenLabs
+5. On end (candidate clicks End Call or agent calls `end_call` tool):
+   - Transcript is fetched from ElevenLabs API
    - `generateObject` runs structured analysis against `communicationAssessmentSchema`
-   - post-evaluation workflow receives `voice_assessment_complete` event
-5. Transient disconnects (refresh, network blip) leave state `in_call` — candidate can resume
+   - Results saved to `communication_assessments`
+   - Post-evaluation workflow receives `voice_assessment_complete` event
 
 ### Report Integration
 
@@ -338,7 +314,7 @@ Build:
 
 Skip for now:
 - video interviews
-- multiple visible agents
+- multiple visible agents (the ElevenLabs voice agent IS the agent — no custom agent code)
 - advanced analytics
 - over-engineered systems
 
