@@ -1,11 +1,8 @@
 ## TODO
 
-- update relevant docs. almost every doc is stale.
-- swap the entire interview flow (voice & text) from cf to something else better.
 - full report page sucks. flashes twice on refresh, the evidence section has huge gaps between sections. overall sucks 10/10.
 - we need a polished report like a nice beautiful report instead of what we have right now. full report can still exist for everything that happened but the actual report should be very nice, evidence backed, nicely summarized, and we should be able to cycle thru each batch with next and prev buttons.
 - add a cron to detect failed workflows (evaluation_failed) in the entire ai layer? and then it should update their statuses accordingly.
-- the voice interview experience is still not good enough. check using better models (dedicated for voice) and see.
 - validate open router models using their api key in prod ci so we detect non existent models beforehand.
 - company logo doesn't reflect after uploading until I refresh.
 - detect failures in the whole pipeline and give candidates or companies an option to retry. make as failure proof as possible. specifically in model responses. 
@@ -18,6 +15,9 @@
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- the voice interview experience is still not good enough. check using better models (dedicated for voice) and see.-->
+<!--- update relevant docs. almost every doc is stale.-->
+<!--- swap the entire interview flow (voice & text) from cf to something else better.-->
 <!--- history disappears if I refresh and I speak. keeps disconnecting in between. starts recording as soon as I refresh the page. the voice recording animation and the placeholder text that is shown before a message is committed doesn't seem to be in sync. overall it sucks.-->
 <!--- think about sub agents that can actually be useful for candidate profile research in the bg and provide context to main agent.-->
 <!--- ready for decision shows no applications even if applications are evaluated. (not a bug, check later)-->
