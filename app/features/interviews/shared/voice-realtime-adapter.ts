@@ -1,3 +1,4 @@
+import type { PartialOptions } from "@elevenlabs/client";
 import { Conversation } from "@elevenlabs/client";
 import type { AnyClientTool, RealtimeMessage, RealtimeToken } from "@tanstack/ai";
 import type { RealtimeAdapter, RealtimeConnection } from "@tanstack/ai-client";
@@ -65,7 +66,7 @@ async function createConnection(
 
   const providerOptions = (token.config?.providerOptions ?? {}) as ProviderOptions;
 
-  const sessionOptions = {
+  const sessionOptions: PartialOptions = {
     signedUrl: token.token,
     ...(providerOptions.userId ? { userId: providerOptions.userId } : {}),
     ...(providerOptions.dynamicVariables
@@ -111,12 +112,7 @@ async function createConnection(
     },
   };
 
-  let conversation: Conversation | null = await Conversation.startSession(
-    // The SDK's startSession signature is a discriminated union; cast through
-    // unknown to satisfy strict TS without losing the overload safety we get
-    // from constructing sessionOptions inline above.
-    sessionOptions as unknown as Parameters<typeof Conversation.startSession>[0],
-  );
+  let conversation: Conversation | null = await Conversation.startSession(sessionOptions);
 
   const connection: RealtimeConnection = {
     async disconnect() {
