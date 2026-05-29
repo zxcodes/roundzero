@@ -167,6 +167,18 @@ CREATE TABLE interviews (
 CREATE INDEX idx_interviews_application ON interviews(application_id);
 CREATE INDEX idx_interviews_batch ON interviews(batch_id);
 
+CREATE TABLE interview_messages (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  interview_id  UUID NOT NULL REFERENCES interviews(id) ON DELETE RESTRICT,
+  role          TEXT NOT NULL,
+  content       TEXT NOT NULL,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  position      BIGINT GENERATED ALWAYS AS IDENTITY
+);
+
+CREATE INDEX idx_interview_messages_interview_position
+  ON interview_messages(interview_id, position);
+
 -- Pre-evaluations: lightweight AI pre-screening results
 CREATE TABLE pre_evaluations (
   id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -214,6 +226,8 @@ CREATE TABLE communication_assessments (
   application_id  UUID NOT NULL REFERENCES applications(id) ON DELETE RESTRICT,
   status          TEXT NOT NULL DEFAULT 'pending',
   audio_key       TEXT,
+  provider_session_id TEXT,
+  provider_conversation_id TEXT,
   transcript      JSONB NOT NULL DEFAULT '[]',
   analysis        JSONB,
   started_at      TIMESTAMPTZ,
@@ -224,5 +238,11 @@ CREATE TABLE communication_assessments (
 
 CREATE INDEX idx_comm_assessments_interview ON communication_assessments(interview_id);
 CREATE INDEX idx_comm_assessments_application ON communication_assessments(application_id);
+CREATE UNIQUE INDEX idx_comm_assessments_provider_session
+  ON communication_assessments(provider_session_id)
+  WHERE provider_session_id IS NOT NULL;
+CREATE UNIQUE INDEX idx_comm_assessments_provider_conversation
+  ON communication_assessments(provider_conversation_id)
+  WHERE provider_conversation_id IS NOT NULL;
 
 -- migrate:down

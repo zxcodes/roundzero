@@ -463,6 +463,61 @@ export async function cancelInterview(sql: Sql, args: cancelInterviewArgs): Prom
     };
 }
 
+export const updateInterviewMetadataQuery = `-- name: updateInterviewMetadata :one
+UPDATE interviews
+SET metadata = $2,
+    updated_at = now()
+WHERE id = $1
+RETURNING id, application_id, batch_id, agent_id, type, metadata, status, invited_at, started_at, completed_at, expired_at, cancelled_at, cancellation_reason, created_at, updated_at`;
+
+export interface updateInterviewMetadataArgs {
+    id: string;
+    metadata: any;
+}
+
+export interface updateInterviewMetadataRow {
+    id: string;
+    applicationId: string;
+    batchId: string | null;
+    agentId: string | null;
+    type: string;
+    metadata: any;
+    status: string;
+    invitedAt: Date | null;
+    startedAt: Date | null;
+    completedAt: Date | null;
+    expiredAt: Date | null;
+    cancelledAt: Date | null;
+    cancellationReason: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export async function updateInterviewMetadata(sql: Sql, args: updateInterviewMetadataArgs): Promise<updateInterviewMetadataRow | null> {
+    const rows = await sql.unsafe(updateInterviewMetadataQuery, [args.id, args.metadata]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        applicationId: row[1],
+        batchId: row[2],
+        agentId: row[3],
+        type: row[4],
+        metadata: row[5],
+        status: row[6],
+        invitedAt: row[7],
+        startedAt: row[8],
+        completedAt: row[9],
+        expiredAt: row[10],
+        cancelledAt: row[11],
+        cancellationReason: row[12],
+        createdAt: row[13],
+        updatedAt: row[14]
+    };
+}
+
 export const getInterviewContextByIdQuery = `-- name: getInterviewContextById :one
 SELECT i.id, i.application_id, i.batch_id, i.agent_id, i.type, i.metadata, i.status, i.invited_at, i.started_at, i.completed_at,
        i.expired_at, i.cancelled_at, i.cancellation_reason, i.created_at, i.updated_at,
@@ -568,7 +623,7 @@ export async function countActiveInterviewSlotsByJob(sql: Sql, args: countActive
 export const createCommunicationAssessmentQuery = `-- name: createCommunicationAssessment :one
 INSERT INTO communication_assessments (interview_id, application_id, status)
 VALUES ($1, $2, $3)
-RETURNING id, interview_id, application_id, status, audio_key, transcript, analysis, started_at, completed_at, created_at, updated_at`;
+RETURNING id, interview_id, application_id, status, audio_key, provider_session_id, provider_conversation_id, transcript, analysis, started_at, completed_at, created_at, updated_at`;
 
 export interface createCommunicationAssessmentArgs {
     interviewId: string;
@@ -582,6 +637,8 @@ export interface createCommunicationAssessmentRow {
     applicationId: string;
     status: string;
     audioKey: string | null;
+    providerSessionId: string | null;
+    providerConversationId: string | null;
     transcript: any;
     analysis: any | null;
     startedAt: Date | null;
@@ -602,17 +659,19 @@ export async function createCommunicationAssessment(sql: Sql, args: createCommun
         applicationId: row[2],
         status: row[3],
         audioKey: row[4],
-        transcript: row[5],
-        analysis: row[6],
-        startedAt: row[7],
-        completedAt: row[8],
-        createdAt: row[9],
-        updatedAt: row[10]
+        providerSessionId: row[5],
+        providerConversationId: row[6],
+        transcript: row[7],
+        analysis: row[8],
+        startedAt: row[9],
+        completedAt: row[10],
+        createdAt: row[11],
+        updatedAt: row[12]
     };
 }
 
 export const getCommunicationAssessmentByInterviewIdQuery = `-- name: getCommunicationAssessmentByInterviewId :one
-SELECT id, interview_id, application_id, status, audio_key, transcript, analysis, started_at, completed_at, created_at, updated_at
+SELECT id, interview_id, application_id, status, audio_key, provider_session_id, provider_conversation_id, transcript, analysis, started_at, completed_at, created_at, updated_at
 FROM communication_assessments
 WHERE interview_id = $1`;
 
@@ -626,6 +685,8 @@ export interface getCommunicationAssessmentByInterviewIdRow {
     applicationId: string;
     status: string;
     audioKey: string | null;
+    providerSessionId: string | null;
+    providerConversationId: string | null;
     transcript: any;
     analysis: any | null;
     startedAt: Date | null;
@@ -646,17 +707,19 @@ export async function getCommunicationAssessmentByInterviewId(sql: Sql, args: ge
         applicationId: row[2],
         status: row[3],
         audioKey: row[4],
-        transcript: row[5],
-        analysis: row[6],
-        startedAt: row[7],
-        completedAt: row[8],
-        createdAt: row[9],
-        updatedAt: row[10]
+        providerSessionId: row[5],
+        providerConversationId: row[6],
+        transcript: row[7],
+        analysis: row[8],
+        startedAt: row[9],
+        completedAt: row[10],
+        createdAt: row[11],
+        updatedAt: row[12]
     };
 }
 
 export const getCommunicationAssessmentByApplicationIdQuery = `-- name: getCommunicationAssessmentByApplicationId :one
-SELECT id, interview_id, application_id, status, audio_key, transcript, analysis, started_at, completed_at, created_at, updated_at
+SELECT id, interview_id, application_id, status, audio_key, provider_session_id, provider_conversation_id, transcript, analysis, started_at, completed_at, created_at, updated_at
 FROM communication_assessments
 WHERE application_id = $1`;
 
@@ -670,6 +733,8 @@ export interface getCommunicationAssessmentByApplicationIdRow {
     applicationId: string;
     status: string;
     audioKey: string | null;
+    providerSessionId: string | null;
+    providerConversationId: string | null;
     transcript: any;
     analysis: any | null;
     startedAt: Date | null;
@@ -690,33 +755,34 @@ export async function getCommunicationAssessmentByApplicationId(sql: Sql, args: 
         applicationId: row[2],
         status: row[3],
         audioKey: row[4],
-        transcript: row[5],
-        analysis: row[6],
-        startedAt: row[7],
-        completedAt: row[8],
-        createdAt: row[9],
-        updatedAt: row[10]
+        providerSessionId: row[5],
+        providerConversationId: row[6],
+        transcript: row[7],
+        analysis: row[8],
+        startedAt: row[9],
+        completedAt: row[10],
+        createdAt: row[11],
+        updatedAt: row[12]
     };
 }
 
-export const markCommunicationAssessmentStartedQuery = `-- name: markCommunicationAssessmentStarted :one
-UPDATE communication_assessments
-SET status = 'in_progress',
-    started_at = COALESCE(started_at, now()),
-    updated_at = now()
-WHERE interview_id = $1
-RETURNING id, interview_id, application_id, status, audio_key, transcript, analysis, started_at, completed_at, created_at, updated_at`;
+export const getCommunicationAssessmentByProviderConversationIdQuery = `-- name: getCommunicationAssessmentByProviderConversationId :one
+SELECT id, interview_id, application_id, status, audio_key, provider_session_id, provider_conversation_id, transcript, analysis, started_at, completed_at, created_at, updated_at
+FROM communication_assessments
+WHERE provider_conversation_id = $1`;
 
-export interface markCommunicationAssessmentStartedArgs {
-    interviewId: string;
+export interface getCommunicationAssessmentByProviderConversationIdArgs {
+    providerConversationId: string | null;
 }
 
-export interface markCommunicationAssessmentStartedRow {
+export interface getCommunicationAssessmentByProviderConversationIdRow {
     id: string;
     interviewId: string;
     applicationId: string;
     status: string;
     audioKey: string | null;
+    providerSessionId: string | null;
+    providerConversationId: string | null;
     transcript: any;
     analysis: any | null;
     startedAt: Date | null;
@@ -725,8 +791,8 @@ export interface markCommunicationAssessmentStartedRow {
     updatedAt: Date;
 }
 
-export async function markCommunicationAssessmentStarted(sql: Sql, args: markCommunicationAssessmentStartedArgs): Promise<markCommunicationAssessmentStartedRow | null> {
-    const rows = await sql.unsafe(markCommunicationAssessmentStartedQuery, [args.interviewId]).values();
+export async function getCommunicationAssessmentByProviderConversationId(sql: Sql, args: getCommunicationAssessmentByProviderConversationIdArgs): Promise<getCommunicationAssessmentByProviderConversationIdRow | null> {
+    const rows = await sql.unsafe(getCommunicationAssessmentByProviderConversationIdQuery, [args.providerConversationId]).values();
     if (rows.length !== 1) {
         return null;
     }
@@ -737,12 +803,165 @@ export async function markCommunicationAssessmentStarted(sql: Sql, args: markCom
         applicationId: row[2],
         status: row[3],
         audioKey: row[4],
-        transcript: row[5],
-        analysis: row[6],
-        startedAt: row[7],
-        completedAt: row[8],
-        createdAt: row[9],
-        updatedAt: row[10]
+        providerSessionId: row[5],
+        providerConversationId: row[6],
+        transcript: row[7],
+        analysis: row[8],
+        startedAt: row[9],
+        completedAt: row[10],
+        createdAt: row[11],
+        updatedAt: row[12]
+    };
+}
+
+export const getCommunicationAssessmentByProviderSessionIdQuery = `-- name: getCommunicationAssessmentByProviderSessionId :one
+SELECT id, interview_id, application_id, status, audio_key, provider_session_id, provider_conversation_id, transcript, analysis, started_at, completed_at, created_at, updated_at
+FROM communication_assessments
+WHERE provider_session_id = $1`;
+
+export interface getCommunicationAssessmentByProviderSessionIdArgs {
+    providerSessionId: string | null;
+}
+
+export interface getCommunicationAssessmentByProviderSessionIdRow {
+    id: string;
+    interviewId: string;
+    applicationId: string;
+    status: string;
+    audioKey: string | null;
+    providerSessionId: string | null;
+    providerConversationId: string | null;
+    transcript: any;
+    analysis: any | null;
+    startedAt: Date | null;
+    completedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export async function getCommunicationAssessmentByProviderSessionId(sql: Sql, args: getCommunicationAssessmentByProviderSessionIdArgs): Promise<getCommunicationAssessmentByProviderSessionIdRow | null> {
+    const rows = await sql.unsafe(getCommunicationAssessmentByProviderSessionIdQuery, [args.providerSessionId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        interviewId: row[1],
+        applicationId: row[2],
+        status: row[3],
+        audioKey: row[4],
+        providerSessionId: row[5],
+        providerConversationId: row[6],
+        transcript: row[7],
+        analysis: row[8],
+        startedAt: row[9],
+        completedAt: row[10],
+        createdAt: row[11],
+        updatedAt: row[12]
+    };
+}
+
+export const registerCommunicationAssessmentSessionQuery = `-- name: registerCommunicationAssessmentSession :one
+UPDATE communication_assessments
+SET provider_session_id = $2,
+    provider_conversation_id = NULL,
+    updated_at = now()
+WHERE interview_id = $1
+RETURNING id, interview_id, application_id, status, audio_key, provider_session_id, provider_conversation_id, transcript, analysis, started_at, completed_at, created_at, updated_at`;
+
+export interface registerCommunicationAssessmentSessionArgs {
+    interviewId: string;
+    providerSessionId: string | null;
+}
+
+export interface registerCommunicationAssessmentSessionRow {
+    id: string;
+    interviewId: string;
+    applicationId: string;
+    status: string;
+    audioKey: string | null;
+    providerSessionId: string | null;
+    providerConversationId: string | null;
+    transcript: any;
+    analysis: any | null;
+    startedAt: Date | null;
+    completedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export async function registerCommunicationAssessmentSession(sql: Sql, args: registerCommunicationAssessmentSessionArgs): Promise<registerCommunicationAssessmentSessionRow | null> {
+    const rows = await sql.unsafe(registerCommunicationAssessmentSessionQuery, [args.interviewId, args.providerSessionId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        interviewId: row[1],
+        applicationId: row[2],
+        status: row[3],
+        audioKey: row[4],
+        providerSessionId: row[5],
+        providerConversationId: row[6],
+        transcript: row[7],
+        analysis: row[8],
+        startedAt: row[9],
+        completedAt: row[10],
+        createdAt: row[11],
+        updatedAt: row[12]
+    };
+}
+
+export const registerCommunicationAssessmentConversationQuery = `-- name: registerCommunicationAssessmentConversation :one
+UPDATE communication_assessments
+SET provider_conversation_id = $2,
+    updated_at = now()
+WHERE interview_id = $1
+RETURNING id, interview_id, application_id, status, audio_key, provider_session_id, provider_conversation_id, transcript, analysis, started_at, completed_at, created_at, updated_at`;
+
+export interface registerCommunicationAssessmentConversationArgs {
+    interviewId: string;
+    providerConversationId: string | null;
+}
+
+export interface registerCommunicationAssessmentConversationRow {
+    id: string;
+    interviewId: string;
+    applicationId: string;
+    status: string;
+    audioKey: string | null;
+    providerSessionId: string | null;
+    providerConversationId: string | null;
+    transcript: any;
+    analysis: any | null;
+    startedAt: Date | null;
+    completedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export async function registerCommunicationAssessmentConversation(sql: Sql, args: registerCommunicationAssessmentConversationArgs): Promise<registerCommunicationAssessmentConversationRow | null> {
+    const rows = await sql.unsafe(registerCommunicationAssessmentConversationQuery, [args.interviewId, args.providerConversationId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        interviewId: row[1],
+        applicationId: row[2],
+        status: row[3],
+        audioKey: row[4],
+        providerSessionId: row[5],
+        providerConversationId: row[6],
+        transcript: row[7],
+        analysis: row[8],
+        startedAt: row[9],
+        completedAt: row[10],
+        createdAt: row[11],
+        updatedAt: row[12]
     };
 }
 
@@ -755,7 +974,9 @@ SET status = 'completed',
     completed_at = now(),
     updated_at = now()
 WHERE interview_id = $1
-RETURNING id, interview_id, application_id, status, audio_key, transcript, analysis, started_at, completed_at, created_at, updated_at`;
+  AND status != 'completed'
+  AND status != 'skipped'
+RETURNING id, interview_id, application_id, status, audio_key, provider_session_id, provider_conversation_id, transcript, analysis, started_at, completed_at, created_at, updated_at`;
 
 export interface completeCommunicationAssessmentArgs {
     interviewId: string;
@@ -770,6 +991,8 @@ export interface completeCommunicationAssessmentRow {
     applicationId: string;
     status: string;
     audioKey: string | null;
+    providerSessionId: string | null;
+    providerConversationId: string | null;
     transcript: any;
     analysis: any | null;
     startedAt: Date | null;
@@ -790,12 +1013,14 @@ export async function completeCommunicationAssessment(sql: Sql, args: completeCo
         applicationId: row[2],
         status: row[3],
         audioKey: row[4],
-        transcript: row[5],
-        analysis: row[6],
-        startedAt: row[7],
-        completedAt: row[8],
-        createdAt: row[9],
-        updatedAt: row[10]
+        providerSessionId: row[5],
+        providerConversationId: row[6],
+        transcript: row[7],
+        analysis: row[8],
+        startedAt: row[9],
+        completedAt: row[10],
+        createdAt: row[11],
+        updatedAt: row[12]
     };
 }
 
@@ -805,7 +1030,7 @@ SET status = 'skipped',
     completed_at = now(),
     updated_at = now()
 WHERE interview_id = $1
-RETURNING id, interview_id, application_id, status, audio_key, transcript, analysis, started_at, completed_at, created_at, updated_at`;
+RETURNING id, interview_id, application_id, status, audio_key, provider_session_id, provider_conversation_id, transcript, analysis, started_at, completed_at, created_at, updated_at`;
 
 export interface markCommunicationAssessmentSkippedArgs {
     interviewId: string;
@@ -817,6 +1042,8 @@ export interface markCommunicationAssessmentSkippedRow {
     applicationId: string;
     status: string;
     audioKey: string | null;
+    providerSessionId: string | null;
+    providerConversationId: string | null;
     transcript: any;
     analysis: any | null;
     startedAt: Date | null;
@@ -837,12 +1064,80 @@ export async function markCommunicationAssessmentSkipped(sql: Sql, args: markCom
         applicationId: row[2],
         status: row[3],
         audioKey: row[4],
-        transcript: row[5],
-        analysis: row[6],
-        startedAt: row[7],
-        completedAt: row[8],
-        createdAt: row[9],
-        updatedAt: row[10]
+        providerSessionId: row[5],
+        providerConversationId: row[6],
+        transcript: row[7],
+        analysis: row[8],
+        startedAt: row[9],
+        completedAt: row[10],
+        createdAt: row[11],
+        updatedAt: row[12]
     };
+}
+
+export const createInterviewMessageQuery = `-- name: createInterviewMessage :one
+INSERT INTO interview_messages (interview_id, role, content)
+VALUES ($1, $2, $3)
+RETURNING id, interview_id, role, content, created_at, position`;
+
+export interface createInterviewMessageArgs {
+    interviewId: string;
+    role: string;
+    content: string;
+}
+
+export interface createInterviewMessageRow {
+    id: string;
+    interviewId: string;
+    role: string;
+    content: string;
+    createdAt: Date;
+    position: string | null;
+}
+
+export async function createInterviewMessage(sql: Sql, args: createInterviewMessageArgs): Promise<createInterviewMessageRow | null> {
+    const rows = await sql.unsafe(createInterviewMessageQuery, [args.interviewId, args.role, args.content]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        interviewId: row[1],
+        role: row[2],
+        content: row[3],
+        createdAt: row[4],
+        position: row[5]
+    };
+}
+
+export const getInterviewMessagesByInterviewIdQuery = `-- name: getInterviewMessagesByInterviewId :many
+SELECT id, interview_id, role, content, created_at, position
+FROM interview_messages
+WHERE interview_id = $1
+ORDER BY position ASC`;
+
+export interface getInterviewMessagesByInterviewIdArgs {
+    interviewId: string;
+}
+
+export interface getInterviewMessagesByInterviewIdRow {
+    id: string;
+    interviewId: string;
+    role: string;
+    content: string;
+    createdAt: Date;
+    position: string | null;
+}
+
+export async function getInterviewMessagesByInterviewId(sql: Sql, args: getInterviewMessagesByInterviewIdArgs): Promise<getInterviewMessagesByInterviewIdRow[]> {
+    return (await sql.unsafe(getInterviewMessagesByInterviewIdQuery, [args.interviewId]).values()).map(row => ({
+        id: row[0],
+        interviewId: row[1],
+        role: row[2],
+        content: row[3],
+        createdAt: row[4],
+        position: row[5]
+    }));
 }
 

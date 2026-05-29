@@ -64,6 +64,13 @@ SET status = 'cancelled',
 WHERE id = $1
 RETURNING *;
 
+-- name: updateInterviewMetadata :one
+UPDATE interviews
+SET metadata = $2,
+    updated_at = now()
+WHERE id = $1
+RETURNING *;
+
 -- name: getInterviewContextById :one
 SELECT i.id, i.application_id, i.batch_id, i.agent_id, i.type, i.metadata, i.status, i.invited_at, i.started_at, i.completed_at,
        i.expired_at, i.cancelled_at, i.cancellation_reason, i.created_at, i.updated_at,
@@ -101,10 +108,27 @@ SELECT *
 FROM communication_assessments
 WHERE application_id = $1;
 
--- name: markCommunicationAssessmentStarted :one
+-- name: getCommunicationAssessmentByProviderConversationId :one
+SELECT *
+FROM communication_assessments
+WHERE provider_conversation_id = $1;
+
+-- name: getCommunicationAssessmentByProviderSessionId :one
+SELECT *
+FROM communication_assessments
+WHERE provider_session_id = $1;
+
+-- name: registerCommunicationAssessmentSession :one
 UPDATE communication_assessments
-SET status = 'in_progress',
-    started_at = COALESCE(started_at, now()),
+SET provider_session_id = $2,
+    provider_conversation_id = NULL,
+    updated_at = now()
+WHERE interview_id = $1
+RETURNING *;
+
+-- name: registerCommunicationAssessmentConversation :one
+UPDATE communication_assessments
+SET provider_conversation_id = $2,
     updated_at = now()
 WHERE interview_id = $1
 RETURNING *;
@@ -118,6 +142,8 @@ SET status = 'completed',
     completed_at = now(),
     updated_at = now()
 WHERE interview_id = $1
+  AND status != 'completed'
+  AND status != 'skipped'
 RETURNING *;
 
 -- name: markCommunicationAssessmentSkipped :one
@@ -127,3 +153,14 @@ SET status = 'skipped',
     updated_at = now()
 WHERE interview_id = $1
 RETURNING *;
+
+-- name: createInterviewMessage :one
+INSERT INTO interview_messages (interview_id, role, content)
+VALUES ($1, $2, $3)
+RETURNING id, interview_id, role, content, created_at, position;
+
+-- name: getInterviewMessagesByInterviewId :many
+SELECT id, interview_id, role, content, created_at, position
+FROM interview_messages
+WHERE interview_id = $1
+ORDER BY position ASC;

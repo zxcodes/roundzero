@@ -21,6 +21,7 @@
 
 import { generateText, Output } from "ai";
 import { z } from "zod";
+import type { ScreeningCoverage } from "@/features/interviews/shared/runtime";
 import { reportSchema } from "@/features/reports/schemas";
 import {
   type CommunicationAssessmentAnalysis,
@@ -97,7 +98,7 @@ function deterministicReportPass(
   transcript: string,
   customQuestions: string[],
   messages: ReadonlyArray<TranscriptMessage> = [],
-  screeningCoverage: Record<number, "answered" | "skipped"> = {},
+  screeningCoverage: ScreeningCoverage = {},
 ): ReportDraft {
   const strengths = cleanBullets(draft.strengths, { cap: MAX_STRENGTHS });
   const weaknesses = cleanBullets(draft.weaknesses, { cap: MAX_WEAKNESSES });
@@ -295,7 +296,7 @@ export async function refineReport(args: {
   customQuestions: string[];
   log: ReturnType<typeof createWorkflowLogger>;
   messages?: ReadonlyArray<TranscriptMessage>;
-  screeningCoverage?: Record<number, "answered" | "skipped">;
+  screeningCoverage?: ScreeningCoverage;
 }): Promise<ReportDraft> {
   const deterministic = deterministicReportPass(
     args.draft,

@@ -16,7 +16,8 @@
   },
   "vars": {
     // Cloudflare AI Gateway routing for OpenRouter.
-    // Secrets (OPENROUTER_API_KEY, AI_GATEWAY_TOKEN) live in `.dev.vars`
+    // Secrets (OPENROUTER_API_KEY, AI_GATEWAY_TOKEN, ELEVENLABS_API_KEY,
+    // ELEVENLABS_AGENT_ID, ELEVENLABS_WEBHOOK_SECRET) live in `.dev.vars`
     // locally and `wrangler secret put` in prod.
     // Docs: https://developers.cloudflare.com/ai-gateway/usage/providers/openrouter/
     "CLOUDFLARE_ACCOUNT_ID": "5634bacd1c09247fdaa26ef02fbcf6ef",
@@ -35,9 +36,6 @@
       "bucket_name": "roundzero-assets"
     }
   ],
-  "ai": {
-    "binding": "AI"
-  },
   "workflows": [
     {
       "name": "pre-evaluation",
@@ -53,28 +51,6 @@
       "name": "batch-orchestration",
       "binding": "BATCH_ORCHESTRATION",
       "class_name": "BatchOrchestrationWorkflow"
-    }
-  ],
-  "durable_objects": {
-    "bindings": [
-      {
-        "name": "INTERVIEW_AGENT",
-        "class_name": "InterviewAgent"
-      },
-      {
-        "name": "VOICE_ASSESSMENT_AGENT",
-        "class_name": "VoiceAssessmentAgent"
-      }
-    ]
-  },
-  "migrations": [
-    {
-      "tag": "v1",
-      "new_sqlite_classes": ["InterviewAgent"]
-    },
-    {
-      "tag": "v2",
-      "new_sqlite_classes": ["VoiceAssessmentAgent"]
     }
   ],
   "triggers": {

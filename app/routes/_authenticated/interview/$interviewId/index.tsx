@@ -50,31 +50,37 @@ export const Route = createFileRoute("/_authenticated/interview/$interviewId/")(
 });
 
 function InterviewWorkspacePage() {
-  const { interview, expiresAt } = ParentRoute.useLoaderData();
+  const { interview, expiresAt, initialMessages } = ParentRoute.useLoaderData();
 
   return (
     <ClientOnly>
-      <InterviewWorkspaceContent key={interview.id} interview={interview} expiresAt={expiresAt} />
+      {/* Remount on status transitions so useChat re-reads `initialMessages`
+          after the server seeds the greeting (pending → in_progress) and
+          after the agent calls end_interview (in_progress → completed).
+          useChat consumes initialMessages on mount only. */}
+      <InterviewWorkspaceContent
+        key={`${interview.id}:${interview.status}`}
+        interview={interview}
+        expiresAt={expiresAt}
+        initialMessages={initialMessages}
+      />
     </ClientOnly>
   );
 }
 function InterviewWorkspaceContent({
   interview,
   expiresAt,
+  initialMessages,
 }: {
   interview: InterviewDetail;
   expiresAt: string | null;
+  initialMessages: ReturnType<typeof ParentRoute.useLoaderData>["initialMessages"];
 }) {
   const router = useRouter();
-  const chat = useInterviewChat(interview.id);
-  const agentSessionStatus = chat.sessionStatus;
-  const effectiveStatus =
-    interview.status === "in_progress" && agentSessionStatus && agentSessionStatus !== "in_progress"
-      ? agentSessionStatus
-      : interview.status;
+  const chat = useInterviewChat(interview.id, initialMessages);
 
-  const isPending = effectiveStatus === "pending";
-  const isInProgress = effectiveStatus === "in_progress";
+  const isPending = interview.status === "pending";
+  const isInProgress = interview.status === "in_progress";
 
   const startInterviewFn = useServerFn(startMyInterview);
   const cancelInterviewFn = useServerFn(cancelMyInterview);
@@ -113,14 +119,17 @@ function InterviewWorkspaceContent({
     },
   });
 
-  const status = statusConfig[effectiveStatus] ?? {
-    label: effectiveStatus,
+  const status = statusConfig[interview.status] ?? {
+    label: interview.status,
     tone: "bg-muted text-muted-foreground",
   };
 
-  const canSend = effectiveStatus === "in_progress";
-  const isEnded = effectiveStatus === "completed" || effectiveStatus === "cancelled";
-  const isCompleted = effectiveStatus === "completed";
+  const canSend = interview.status === "in_progress";
+  const isEnded =
+    interview.status === "completed" ||
+    interview.status === "cancelled" ||
+    interview.status === "expired";
+  const isCompleted = interview.status === "completed";
   const isStarting = isPending && startMutation.isPending;
   const isSubmitting = isInProgress && completeMutation.isPending;
   const deadline = formatDeadlineLabel(expiresAt);
@@ -180,11 +189,12 @@ function InterviewWorkspaceContent({
   };
 
   const onSendMessage = async (content: string) => {
-    await chat.sendMessage({
-      role: "user",
-      parts: [{ type: "text", text: content }],
-    });
-    await router.invalidate();
+    try {
+      await chat.sendMessage(content);
+      await router.invalidate();
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Could not send your answer. Please try again."));
+    }
   };
 
   return (
@@ -288,8 +298,9 @@ function InterviewWorkspaceContent({
             messages={chat.messages}
             canSend={canSend}
             isEnded={isEnded}
+            isExpired={interview.status === "expired"}
             isStreaming={chat.isStreaming}
-            isWaiting={chat.status === "submitted"}
+            isThinking={chat.isThinking}
             onSend={onSendMessage}
             onContinueToVoice={onContinueToVoice}
             voiceCtaLabel={voiceCtaLabel}
