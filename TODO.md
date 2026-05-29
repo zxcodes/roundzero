@@ -7,7 +7,7 @@
 - company logo doesn't reflect after uploading until I refresh.
 - detect failures in the whole pipeline and give candidates or companies an option to retry. make as failure proof as possible. specifically in model responses. 
 - think more about the duration from first report to last report generation bc it will depend on the candidate. think if we need to add an expiry or something and pass it to the next candidate? (BATCH WORKFLOW TEST)
-- check all resend templates for all notifications exist, if they link to proper paths etc.
+- check all resend templates for all notifications exist, if they link to proper paths etc. (I see no_lean in report, also rn individual reports are being sent? see if batch report template exists and also need to test it manually.)
 - check for leaking info in api calls (emails, ids etc)
 - for company full report, they should also see what they did in the chat, detecting ai responses, pasting, etc.
 - add a feedback option for people or requesting features etc.
