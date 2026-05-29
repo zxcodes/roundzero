@@ -27,6 +27,7 @@ export function voiceRealtimeAdapter(options?: {
 type ProviderOptions = {
   agentId?: string;
   userId?: string;
+  dynamicVariables?: Record<string, string | number | boolean>;
 };
 
 async function createConnection(
@@ -67,6 +68,9 @@ async function createConnection(
   const sessionOptions = {
     signedUrl: token.token,
     ...(providerOptions.userId ? { userId: providerOptions.userId } : {}),
+    ...(providerOptions.dynamicVariables
+      ? { dynamicVariables: providerOptions.dynamicVariables }
+      : {}),
     ...(Object.keys(clientTools).length > 0 ? { clientTools } : {}),
     onConnect: ({ conversationId }: { conversationId?: string }) => {
       emit("status_change", { status: "connected" });

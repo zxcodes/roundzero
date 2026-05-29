@@ -75,7 +75,7 @@ export function getOpenRouter(): OpenRouterProvider {
 //
 // https://openrouter.ai/docs/guides/routing/model-fallbacks
 
-type Task = "pre_eval" | "post_eval" | "post_eval_audit" | "interview" | "job_creation" | "voice";
+type Task = "pre_eval" | "post_eval" | "post_eval_audit" | "interview" | "job_creation";
 
 const MODEL_CHAINS = {
   pre_eval: {
@@ -103,15 +103,6 @@ const MODEL_CHAINS = {
     dev: ["openrouter/free", "meta-llama/llama-3.3-70b-instruct:free"],
     staging: ["google/gemini-2.5-flash", "anthropic/claude-haiku-4.5"],
     prod: ["anthropic/claude-sonnet-4.5", "anthropic/claude-haiku-4.5"],
-  },
-  // Voice runs in a real-time pipeline. Optimise for time-to-first-token over
-  // frontier reasoning quality — at 4–6 short turns capped at 200 tokens, the
-  // quality delta between Llama-70b-on-Groq and Claude Haiku is imperceptible,
-  // but the latency delta (sub-200ms vs ~600–1000ms TTFT) is huge in a voice UX.
-  voice: {
-    dev: ["openrouter/free", "meta-llama/llama-3.3-70b-instruct:free"],
-    staging: ["google/gemini-2.5-flash", "anthropic/claude-haiku-4.5"],
-    prod: ["groq/llama-3.3-70b-versatile", "google/gemini-2.5-flash", "anthropic/claude-haiku-4.5"],
   },
 } as const satisfies Record<
   Task,

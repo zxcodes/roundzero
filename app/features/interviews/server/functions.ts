@@ -36,6 +36,7 @@ import {
   buildInterviewSystemPrompt,
   ensureInterviewRuntimeMetadata,
 } from "@/features/interviews/shared/runtime";
+import { loadVoiceAssessmentContext } from "@/features/interviews/shared/voice-runtime";
 import { getReportByApplicationId } from "@/features/reports/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { authMiddleware } from "@/shared/middleware";
@@ -571,6 +572,17 @@ export const getMyVoiceToken = createServerFn({ method: "POST" })
       });
     }
 
+    // Load candidate/job context so the ElevenLabs agent can personalise
+    // the conversation (addressed by dynamic variables in its system prompt).
+    const contextInterview = await getInterviewContextById(db, { id: interview.id });
+    let candidateName = "";
+    let candidateSummary = "";
+    if (contextInterview) {
+      const ctx = await loadVoiceAssessmentContext(db, contextInterview);
+      candidateName = ctx.candidateName;
+      candidateSummary = ctx.candidateSummary;
+    }
+
     const client = new ElevenLabsClient({ apiKey });
     const tokenResponse = await client.conversationalAi.conversations.getSignedUrl({
       agentId,
@@ -584,6 +596,12 @@ export const getMyVoiceToken = createServerFn({ method: "POST" })
         providerOptions: {
           agentId,
           userId: providerSessionId,
+          dynamicVariables: {
+            candidate_name: candidateName,
+            job_title: interview.jobTitle,
+            company_name: interview.companyName,
+            candidate_summary: candidateSummary,
+          },
         },
       },
     };
