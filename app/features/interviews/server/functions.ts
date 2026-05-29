@@ -560,11 +560,16 @@ export const getMyVoiceToken = createServerFn({ method: "POST" })
       });
     }
 
-    const providerSessionId = crypto.randomUUID();
-    await registerCommunicationAssessmentSession(db, {
-      interviewId: interview.id,
-      providerSessionId,
-    });
+    // Reuse the existing session id when present so a token refetch during an
+    // active call does not unlink an in-flight provider_conversation_id.
+    let providerSessionId = existing?.providerSessionId ?? null;
+    if (!providerSessionId) {
+      providerSessionId = crypto.randomUUID();
+      await registerCommunicationAssessmentSession(db, {
+        interviewId: interview.id,
+        providerSessionId,
+      });
+    }
 
     const client = new ElevenLabsClient({ apiKey });
     const tokenResponse = await client.conversationalAi.conversations.getSignedUrl({
