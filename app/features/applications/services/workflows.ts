@@ -6,7 +6,9 @@ import { getCompanyById, getCompanyByOwnerId } from "@/features/companies/querie
 import {
   createInterview,
   getInterviewByApplicationId,
+  getInterviewContextById,
 } from "@/features/interviews/queries/queries_sql";
+import { ensureInterviewRuntimeMetadata } from "@/features/interviews/shared/runtime";
 import { closeExpiredJobsQuery, getJobById } from "@/features/jobs/queries/queries_sql";
 import { notificationPayloadSchemas } from "@/features/notifications/config";
 import { createNotification } from "@/features/notifications/queries/queries_sql";
@@ -49,7 +51,7 @@ export const applyToJobWorkflow = async (
   await db.unsafe(closeExpiredJobsQuery);
 
   const user = await getUserById(db, { id: input.userId });
-  if (!user || user.role !== "candidate") {
+  if (user?.role !== "candidate") {
     throw new Error("Only candidates can apply to jobs");
   }
 
@@ -117,7 +119,6 @@ export const updateApplicationStatusWorkflow = async (
   },
   options?: {
     sendNotificationEmail?: NotificationEmailSender;
-    initializeInterviewAgent?: (interviewId: string) => Promise<unknown>;
   },
 ) => {
   const application = await getApplicationById(db, {
@@ -179,13 +180,12 @@ export const updateApplicationStatusWorkflow = async (
       throw new Error("Failed to create interview invite");
     }
 
-    if (options?.initializeInterviewAgent) {
-      try {
-        await options.initializeInterviewAgent(interview.id);
-      } catch (error) {
-        console.error(`Failed to initialize interview agent for ${interview.id}`, error);
-      }
+    const interviewContext = await getInterviewContextById(db, { id: interview.id });
+    if (!interviewContext) {
+      throw new Error("Failed to load interview context");
     }
+
+    await ensureInterviewRuntimeMetadata(db, interviewContext);
 
     const metadataSchema = z.object({ expiresAt: z.string().optional() });
     const parsedMetadata = metadataSchema.safeParse(interview.metadata);
@@ -261,7 +261,7 @@ export const withdrawApplicationWorkflow = async (
   },
 ) => {
   const user = await getUserById(db, { id: input.userId });
-  if (!user || user.role !== "candidate") {
+  if (user?.role !== "candidate") {
     throw new Error("Only candidates can withdraw applications");
   }
 

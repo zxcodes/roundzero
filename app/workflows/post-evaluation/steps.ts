@@ -4,13 +4,18 @@ import { generateText, Output } from "ai";
 import type { Sql } from "postgres";
 import { jsx } from "react/jsx-runtime";
 import { Resend } from "resend";
-import { z } from "zod";
 import { updateApplicationStatus } from "@/features/applications/queries/queries_sql";
 import { getUserById } from "@/features/auth/queries/queries_sql";
 import {
   getCommunicationAssessmentByInterviewId,
   getInterviewContextById,
+  getInterviewMessagesByInterviewId,
 } from "@/features/interviews/queries/queries_sql";
+import {
+  ensureInterviewRuntimeMetadata,
+  type InterviewContextState,
+  type ScreeningCoverage,
+} from "@/features/interviews/shared/runtime";
 import { ReportReadyEmailTemplate } from "@/features/notifications/components/report-ready-email-template";
 import {
   createNotification,
@@ -33,7 +38,6 @@ import {
   type TranscriptMessage,
   transcriptHasEnoughSignal,
 } from "@/shared/ai-refine";
-import { getInterviewAgentState } from "@/shared/interview-agent-client";
 import type { createWorkflowLogger } from "@/shared/logger";
 import { notificationPayloadSchemas } from "@/shared/notifications-config";
 import { createChatModel, getModelChain } from "@/shared/openrouter";
@@ -86,34 +90,6 @@ type ReportModelResponse = {
   recommendation: "strong_yes" | "yes" | "lean_no" | "no";
 };
 
-type InterviewAgentMessage = {
-  role: "assistant" | "candidate";
-  content: string;
-  createdAt: string;
-};
-
-type InterviewAgentState = {
-  session: {
-    interviewId: string;
-  };
-  messages: InterviewAgentMessage[];
-  screeningCoverage: Record<number, "answered" | "skipped">;
-};
-
-type InterviewContextState = {
-  jobDescription: string;
-  jobRequirements: string[];
-  candidateSummary: string;
-  customQuestions: string[];
-  preEvaluation: {
-    score: number | null;
-    missingRequirements: string[];
-    consistencyScore: number | null;
-    authenticityFlags: string[];
-    authenticityExplanation: string | null;
-  };
-};
-
 type InterviewSignalStatus = { ok: true } | { ok: false; reason: string };
 
 type ReadInterviewDataResult =
@@ -122,7 +98,7 @@ type ReadInterviewDataResult =
       interview: NonNullable<Awaited<ReturnType<typeof getInterviewContextById>>>;
       transcript: string;
       messages: TranscriptMessage[];
-      screeningCoverage: Record<number, "answered" | "skipped">;
+      screeningCoverage: ScreeningCoverage;
       moderation: { quality: "normal" | "low"; reason?: string };
       contextState: InterviewContextState;
     }
@@ -166,45 +142,6 @@ async function runPostEvalObject(args: { systemPrompt: string; userPrompt: strin
 // the application as `evaluation_failed`. Persisting hardcoded platitudes as
 // if they were real evaluation output is worse than admitting failure.
 
-const interviewAgentMessageSchema = z.object({
-  role: z.enum(["assistant", "candidate"]),
-  content: z.string(),
-  createdAt: z.string(),
-});
-
-function isInterviewAgentState(value: unknown): value is InterviewAgentState {
-  if (typeof value !== "object" || value === null) return false;
-  return z.array(interviewAgentMessageSchema).safeParse((value as { messages?: unknown }).messages)
-    .success;
-}
-
-const interviewContextStateSchema = z.object({
-  jobDescription: z.string().default(""),
-  jobRequirements: z.array(z.string()).default([]),
-  candidateSummary: z.string().default(""),
-  customQuestions: z.array(z.string()).default([]),
-  preEvaluation: z
-    .object({
-      score: z.number().nullable().default(null),
-      missingRequirements: z.array(z.string()).default([]),
-      consistencyScore: z.number().nullable().default(null),
-      authenticityFlags: z.array(z.string()).default([]),
-      authenticityExplanation: z.string().nullable().default(null),
-    })
-    .default({
-      score: null,
-      missingRequirements: [],
-      consistencyScore: null,
-      authenticityFlags: [],
-      authenticityExplanation: null,
-    }),
-});
-
-function parseInterviewContextState(metadata: unknown): InterviewContextState {
-  const parsed = interviewContextStateSchema.safeParse(metadata);
-  return parsed.success ? parsed.data : interviewContextStateSchema.parse({});
-}
-
 // ─── Steps ─────────────────────────────────────────────────────────────────
 
 export function loadExistingReport(
@@ -245,20 +182,22 @@ export function readInterviewData(
       throw new NonRetryableError(`Interview not found: ${interviewId}`);
     }
 
-    const contextState = parseInterviewContextState(interview.metadata);
-
-    const stateCandidate = await getInterviewAgentState(interviewId);
-    if (!isInterviewAgentState(stateCandidate)) {
-      throw new Error(`Interview agent returned invalid state for ${interviewId}`);
+    const metadata = await ensureInterviewRuntimeMetadata(db, interview);
+    const contextState = metadata.contextState;
+    if (!contextState) {
+      throw new Error(`Interview metadata is missing context for ${interviewId}`);
     }
 
+    const storedMessages = await getInterviewMessagesByInterviewId(db, {
+      interviewId,
+    });
     const messages: TranscriptMessage[] = sanitizeTranscriptMessages(
-      Array.isArray(stateCandidate.messages)
-        ? stateCandidate.messages.map((m: InterviewAgentMessage) => ({
-            role: m.role,
-            content: m.content,
-          }))
-        : [],
+      storedMessages
+        .filter((message) => message.role === "assistant" || message.role === "candidate")
+        .map((message) => ({
+          role: message.role === "assistant" ? "assistant" : "candidate",
+          content: message.content,
+        })),
     );
 
     // Short-circuit empty / one-sided / trivial transcripts. Better to mark
@@ -307,7 +246,7 @@ export function readInterviewData(
       interview,
       transcript,
       messages,
-      screeningCoverage: stateCandidate.screeningCoverage ?? {},
+      screeningCoverage: metadata.screeningCoverage ?? {},
       moderation,
       contextState,
     };
@@ -322,7 +261,7 @@ export function generateReport(
       candidateName: string;
     };
     transcript: string;
-    screeningCoverage: Record<number, "answered" | "skipped">;
+    screeningCoverage: ScreeningCoverage;
     moderation: { quality: "normal" | "low"; reason?: string };
     contextState: InterviewContextState;
     voiceAssessment?: CommunicationAssessmentAnalysis | null;
@@ -655,7 +594,7 @@ export function loadVoiceAssessment(
 ) {
   return async (): Promise<CommunicationAssessmentAnalysis | null> => {
     const row = await getCommunicationAssessmentByInterviewId(db, { interviewId });
-    if (!row || row.status !== "completed" || !row.analysis) {
+    if (row?.status !== "completed" || !row.analysis) {
       log.info(`No completed voice assessment for interview ${interviewId}`);
       return null;
     }

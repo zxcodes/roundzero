@@ -20,8 +20,14 @@ type InterviewChatProps = {
   }>;
   canSend: boolean;
   isEnded: boolean;
+  isExpired: boolean;
   isStreaming: boolean;
-  isWaiting: boolean;
+  /**
+   * True while the model is between turns — sent but no visible text yet
+   * (status `submitted`, or `streaming` with only tool-call parts so far).
+   * Drives the typing indicator and locks the composer.
+   */
+  isThinking: boolean;
   /**
    * Optional callback rendered as the primary CTA in the ended-state footer.
    * When provided, candidates are nudged toward the voice assessment instead
@@ -36,8 +42,9 @@ export function InterviewChat({
   messages,
   canSend,
   isEnded,
+  isExpired,
   isStreaming,
-  isWaiting,
+  isThinking,
   onContinueToVoice,
   voiceCtaLabel,
   onSend,
@@ -95,7 +102,7 @@ export function InterviewChat({
 
   const onSubmit = () => {
     const trimmed = content.trim();
-    if (!trimmed || !canSend || isStreaming || isWaiting) {
+    if (!trimmed || !canSend || isStreaming || isThinking) {
       return;
     }
 
@@ -123,25 +130,24 @@ export function InterviewChat({
     event.preventDefault();
   };
 
-  const lastMessage = messages[messages.length - 1];
-  // Show typing dots while we're waiting for the model to start streaming
-  // text, OR mid-stream if no assistant text has arrived yet. We rely on the
-  // fact that `useInterviewChat` filters empty assistant parts out, so the
-  // last visible message stays "candidate" until the first token shows up.
-  const isAwaitingAssistant =
-    (isWaiting || isStreaming) && (!lastMessage || lastMessage.role !== "assistant");
-
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-muted/30">
-      {!messages.length && !isAwaitingAssistant ? (
-        <EmptyInterviewComponent
-          description="Press start when you are ready."
-          title="Your interview with Zero starts here"
-        />
+      {!messages.length && !isThinking ? (
+        isExpired ? (
+          <EmptyInterviewComponent
+            description="This interview window has closed."
+            title="Interview expired"
+          />
+        ) : (
+          <EmptyInterviewComponent
+            description="Press start when you are ready."
+            title="Your interview with Zero starts here"
+          />
+        )
       ) : (
         <ScrollArea ref={transcriptRef} className="min-h-0 flex-1">
           <InterviewTranscript messages={messages} userLabel="You" />
-          {isAwaitingAssistant ? <ThinkingBubble /> : null}
+          {isThinking ? <ThinkingBubble /> : null}
           <div ref={transcriptEndRef} className="h-1" />
         </ScrollArea>
       )}
@@ -173,7 +179,9 @@ export function InterviewChat({
             </div>
           ) : (
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm text-muted-foreground">This interview has ended.</p>
+              <p className="text-sm text-muted-foreground">
+                {isExpired ? "This interview has expired." : "This interview has ended."}
+              </p>
               <Button variant="outline" size="sm" asChild>
                 <Link to="/dashboard/applications">Back to applications</Link>
               </Button>
@@ -189,7 +197,7 @@ export function InterviewChat({
               onChange={onComposerChange}
               onKeyDown={onComposerKeyDown}
               placeholder={canSend ? "Write your answer..." : "Start the interview to answer"}
-              disabled={!canSend || isWaiting}
+              disabled={!canSend || isThinking}
               className="field-sizing-content max-h-44 min-h-10 flex-1 resize-none overflow-y-auto border-0 bg-transparent px-1 py-2 text-sm leading-6 text-foreground placeholder:text-muted-foreground focus-visible:border-transparent focus-visible:ring-0"
               rows={1}
             />
@@ -199,9 +207,9 @@ export function InterviewChat({
               className="mb-0.5 size-9 shrink-0 rounded-full bg-brand text-brand-foreground shadow-sm transition-transform hover:scale-[1.02] hover:bg-brand/90 active:scale-[0.98] disabled:scale-100 disabled:bg-muted disabled:text-muted-foreground"
               onMouseDown={onSendMouseDown}
               onClick={onSubmit}
-              disabled={!canSend || isStreaming || isWaiting || content.trim().length === 0}
+              disabled={!canSend || isStreaming || isThinking || content.trim().length === 0}
             >
-              {isStreaming || isWaiting ? (
+              {isStreaming || isThinking ? (
                 <HugeiconsIcon
                   icon={Loading03Icon}
                   strokeWidth={2.2}

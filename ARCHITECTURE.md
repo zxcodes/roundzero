@@ -33,7 +33,7 @@ Important current constraints:
 | --- | --- |
 | Framework | TanStack Start, React 19, Vite 8 |
 | Runtime | Cloudflare Worker |
-| AI Runtime | Cloudflare Workflows, Durable Objects / Agents SDK |
+| AI Runtime | Cloudflare Workflows |
 | Database | Postgres |
 | Local DB | Docker Postgres containers (`rz_pg_dev`, `rz_pg_test`) |
 | Deployed DB Access | Hyperdrive binding in `wrangler.jsonc` |
@@ -57,7 +57,6 @@ The app and AI layer run together inside one Cloudflare Worker:
 
 - `app/server.ts` is the Worker entrypoint
 - TanStack Start handles the main app request flow
-- `routeAgentRequest()` handles interview and voice agent routes
 - Workflow bindings run pre-evaluation, post-evaluation, and batch-orchestration jobs
 - the Worker scheduled handler periodically checks queued applicant pools and launches batches
 - R2 stores resumes and other assets
@@ -71,7 +70,6 @@ Why this shape:
 ### Current `app/server.ts` responsibilities
 
 - serve the main TanStack Start app
-- route Agents SDK requests
 - handle the Polar billing webhook
 - serve local/public asset reads under `/api/assets/:key`
 - run scheduled batch pool checks
@@ -174,8 +172,6 @@ High-level responsibilities:
 - `app/workflows/post-evaluation/steps.ts`
 - `app/workflows/post-evaluation/workflow.ts`
 - `app/workflows/batch-orchestration/workflow.ts`
-- `app/agents/interview.ts`
-- `app/agents/voice.ts`
 
 ---
 
@@ -188,7 +184,6 @@ app/
 ├── components/
 ├── shared/
 ├── lib/
-├── agents/
 ├── workflows/
 ├── server.ts
 ├── router.tsx
@@ -560,39 +555,33 @@ Triggered from the application flow. Steps:
 8. persist `pre_evaluations`
 9. decide whether to hold or queue for batch
 
-### Interview Agent
+### Text Interview
 
-`app/agents/interview.ts` uses `AIChatAgent`.
+The interview uses TanStack server functions with `@tanstack/ai` + `@tanstack/ai-openrouter`:
 
-Current behavior:
+- `startMyInterview` prepares the interview context (job, candidate, pre-eval data) and generates the first greeting via OpenRouter
+- `getMyInterview` returns interview status + metadata
+- `getMyInterviewMessages` returns the message transcript
+- The client sends messages via server functions, and the server calls OpenRouter with the full message history to generate the next assistant response
+- The system prompt (`buildInterviewSystemPrompt`) includes the job description, candidate summary, pre-evaluation context, and screening coverage state
+- Model selection uses the `"interview"` chain from `app/shared/openrouter.ts` with fallbacks for reliability
+- Message history is persisted in the `interview_messages` table
+- Post-evaluation workflow is triggered server-side when the interview is marked complete
 
-- one agent instance per interview
-- token streaming to the candidate
-- job context + candidate summary hydrated from DB/application snapshot
-- internal tool calls for:
-  - `evaluate_answer`
-  - `check_resume_gap`
-  - `record_screening_coverage`
-  - `end_interview`
-- post-evaluation workflow is triggered from the agent when the interview ends
+The chat uses request-response server function calls with OpenRouter's non-streaming `chat()` API.
 
-Current active interview mode:
+### Voice Assessment
 
-- `full`
+The voice assessment uses ElevenLabs' Conversational AI:
 
-### Voice Assessment Agent
+- ElevenLabs handles all voice processing (STT, LLM, TTS) as a managed service
+- `getMyVoiceToken` generates a signed URL via the ElevenLabs REST API (`@elevenlabs/elevenlabs-js`) for client-side session initiation
+- Candidate/job context is injected via ElevenLabs `dynamicVariables` (`candidate_name`, `job_title`, `company_name`, `candidate_summary`)
+- The client connects via `@elevenlabs/client` `Conversation.startSession()` using the signed URL
+- `completeMyVoiceAssessment` fetches the ElevenLabs transcript, runs structured analysis via OpenRouter, and persists to `communication_assessments`
+- Post-evaluation workflow is signalled when the voice assessment completes
 
-`app/agents/voice.ts` uses `withVoice(Agent)` from `@cloudflare/voice`.
-
-Current behavior:
-
-- one agent instance per interview, keyed by interview ID
-- speech-to-text via `WorkersAIFluxSTT`, text-to-speech via `WorkersAITTS`
-- LLM-driven conversation with candidate-specific context (job title, company, candidate summary)
-- `##END_CALL##` marker triggers agent-initiated call end
-- caller RPCs for `initialize`, `skip`, `markEndIntent`, and `getTranscript`
-- on completion, runs structured analysis via `generateObject` and persists to `communication_assessments`
-- post-evaluation workflow is signalled when the voice assessment completes
+The agent's system prompt and voice personality are configured in the ElevenLabs dashboard.
 
 ### Post-Evaluation Workflow
 
@@ -663,4 +652,4 @@ See `PLAN.md` for the full build plan. Based on the current architecture, likely
 | Notifications | DB-first in-app records + Resend | durable record first, email second |
 | Auth | Google OAuth + cookie session | sufficient for current scope |
 | AI orchestration | Cloudflare Workflows | durable multi-step execution |
-| Interview runtime | Agents SDK `AIChatAgent` | stateful streaming interview agent |
+| Interview runtime | TanStack server functions + OpenRouter | request-response chat via server functions |

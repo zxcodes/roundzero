@@ -5,58 +5,31 @@ import { getApplicationReviewById } from "@/features/applications/queries/querie
 import {
   getCommunicationAssessmentByApplicationId,
   getInterviewByApplicationId,
+  getInterviewMessagesByInterviewId,
 } from "@/features/interviews/queries/queries_sql";
+import { parseInterviewMetadata } from "@/features/interviews/shared/runtime";
 import { getPreEvaluationByApplicationId } from "@/features/pre-evaluations/queries/queries_sql";
 import { getReportByApplicationId } from "@/features/reports/queries/queries_sql";
 import { reportSchema } from "@/features/reports/schemas";
 import { getDb } from "@/shared/db";
-import { getInterviewAgentState } from "@/shared/interview-agent-client";
 import { companyMiddleware } from "@/shared/middleware";
 
 const applicationIdSchema = z.object({
   applicationId: z.string().uuid(),
 });
 
-const interviewAgentMessageSchema = z.object({
-  role: z.enum(["assistant", "candidate"]),
-  content: z.string(),
-  createdAt: z.string(),
-});
-
-const interviewMetadataSchema = z.object({
-  candidateSummary: z.string().optional(),
-});
-
-const getInterviewStateForCompany = async (interviewId: string) => {
-  try {
-    const payload = await getInterviewAgentState(interviewId);
-    if (!payload || typeof payload !== "object" || !("messages" in payload)) return null;
-    const rawMessages = (payload as { messages: unknown }).messages;
-    if (!Array.isArray(rawMessages)) return null;
-    const messages: { role: "assistant" | "candidate"; content: string; createdAt: string }[] = [];
-    for (const m of rawMessages) {
-      const parsed = interviewAgentMessageSchema.safeParse(m);
-      if (parsed.success) messages.push(parsed.data);
-    }
-    return { messages };
-  } catch {
-    return null;
-  }
-};
-
 const getInterviewFallbackTimeline = (
   interview: NonNullable<Awaited<ReturnType<typeof getInterviewByApplicationId>>>,
 ) => {
-  const parsed = interviewMetadataSchema.safeParse(interview.metadata);
+  const metadata = parseInterviewMetadata(interview.metadata);
   const summary =
-    parsed.success && parsed.data.candidateSummary
-      ? parsed.data.candidateSummary
-      : "Interview completed in agents workspace.";
+    metadata.contextState?.candidateSummary ?? "Interview completed in chat workspace.";
+  const role: "assistant" | "candidate" = "assistant";
 
   return {
     messages: [
       {
-        role: "assistant" as const,
+        role,
         content: summary,
         createdAt: interview.updatedAt.toISOString(),
       },
@@ -91,10 +64,27 @@ export const getCompanyApplicantReportTimeline = createServerFn({ method: "GET" 
     const communicationAssessment = await getCommunicationAssessmentByApplicationId(db, {
       applicationId: data.applicationId,
     });
-    const interviewState = interview
-      ? ((await getInterviewStateForCompany(interview.id)) ??
-        getInterviewFallbackTimeline(interview))
-      : null;
+    const interviewMessages = interview
+      ? await getInterviewMessagesByInterviewId(db, {
+          interviewId: interview.id,
+        })
+      : [];
+    const interviewState =
+      interview && interviewMessages.length > 0
+        ? {
+            messages: interviewMessages.map((message) => {
+              const role: "assistant" | "candidate" =
+                message.role === "assistant" ? "assistant" : "candidate";
+              return {
+                role,
+                content: message.content,
+                createdAt: message.createdAt.toISOString(),
+              };
+            }),
+          }
+        : interview
+          ? getInterviewFallbackTimeline(interview)
+          : null;
 
     return {
       application,
