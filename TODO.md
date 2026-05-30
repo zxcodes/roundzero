@@ -1,7 +1,6 @@
 ## TODO
 
-- full report page sucks. flashes twice on refresh, the evidence section has huge gaps between sections. overall sucks 10/10.
-- we need a polished report for easy review by company instead of what we have right now. additionally full report can still exist for everything that happened but the actual report should be very nice, evidence backed, nicely summarized, and we should be able to cycle thru each batch with next and prev buttons.
+
 - add a cron to detect failed workflows (evaluation_failed) in the entire ai layer? and then it should update their statuses accordingly.
 - validate open router models using their api key in prod ci so we detect non existent models beforehand.
 - company logo doesn't reflect after uploading until I refresh.
@@ -15,6 +14,8 @@
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- full report page sucks. flashes twice on refresh, the evidence section has huge gaps between sections. overall sucks 10/10.
+- we need a polished report for easy review by company instead of what we have right now. additionally full report can still exist for everything that happened but the actual report should be very nice, evidence backed, nicely summarized, and we should be able to cycle thru each batch with next and prev buttons. (DONE — polished summary at /applicant-reports/$id with batch prev/next, audit timeline at /applicant-reports/$id/full. Fixed double-fade flash. Removed dead submitted-profile snapshot.)-->
 <!--- the voice interview experience is still not good enough. check using better models (dedicated for voice) and see.-->
 <!--- update relevant docs. almost every doc is stale.-->
 <!--- swap the entire interview flow (voice & text) from cf to something else better.-->

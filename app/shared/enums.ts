@@ -256,10 +256,3 @@ export const recommendationSurfaceTone: Record<Recommendation, string> = {
   lean_no: "bg-warning/60",
   no: "bg-danger/60",
 };
-
-/** Safe accessor for a possibly-unknown recommendation string. */
-export const formatRecommendation = (value: string | null | undefined): string => {
-  if (!value) return "Unknown";
-  const parsed = recommendationSchema.safeParse(value);
-  return parsed.success ? recommendationLabels[parsed.data] : "Unknown";
-};

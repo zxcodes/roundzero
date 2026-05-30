@@ -11,14 +11,13 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import type { getJobApplicants } from "@/features/applications/server/functions";
+import { ScorePill } from "@/features/reports/components/score-pill";
 import { getOverallScore } from "@/features/reports/schemas";
 import {
   type ApplicationStatus,
   applicationStatusLabels,
   applicationStatusMeta,
   type Recommendation,
-  recommendationBadgeTone,
-  recommendationLabels,
   recommendationSchema,
 } from "@/shared/enums";
 
@@ -105,43 +104,23 @@ export function CompanyJobApplicantsList({
                   <Badge variant="outline" className={statusTone?.badge ?? ""}>
                     {applicationStatusLabels[status] ?? status}
                   </Badge>
-                  {isEvaluated && recommendation ? (
-                    <Badge variant="outline" className={recommendationBadgeTone[recommendation]}>
-                      {recommendationLabels[recommendation]}
-                    </Badge>
-                  ) : null}
                   {applicant.status === "pre_screening" && applicant.preEvaluationScore != null ? (
                     <Badge
                       variant="outline"
                       className="border-warning/20 bg-warning/10 text-warning text-[11px]"
                     >
-                      AI screened
+                      AI screened {applicant.preEvaluationScore}/100
                     </Badge>
                   ) : null}
                 </div>
                 <p className="truncate text-xs text-muted-foreground">{applicant.candidateEmail}</p>
               </div>
 
-              <div className="flex items-center justify-between gap-4 md:justify-end">
-                {score !== null ? (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">Score</span>
-                    <div className="flex size-10 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10">
-                      <span className="font-mono text-sm font-semibold text-primary">
-                        {Math.round(score)}
-                      </span>
-                    </div>
-                  </div>
-                ) : applicant.status === "pre_screening" && applicant.preEvaluationScore != null ? (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">Pre-screen</span>
-                    <div className="flex size-10 items-center justify-center rounded-2xl border border-warning/15 bg-warning/10">
-                      <span className="font-mono text-sm font-semibold text-warning">
-                        {applicant.preEvaluationScore}
-                      </span>
-                    </div>
-                  </div>
-                ) : (
+              <div className="flex items-center justify-end">
+                {isEvaluated ? (
+                  <ScorePill score={score} recommendation={recommendation} size="default" />
+                ) : applicant.status === "pre_screening" &&
+                  applicant.preEvaluationScore != null ? null : (
                   <span className="text-xs text-muted-foreground">Pending evaluation</span>
                 )}
               </div>

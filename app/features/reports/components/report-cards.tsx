@@ -39,6 +39,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { EmptyInterviewComponent } from "@/features/interviews/components/interview-chat";
 import { InterviewTranscript } from "@/features/interviews/components/interview-transcript";
+import { ScorePill } from "@/features/reports/components/score-pill";
 import type { ReportData } from "@/features/reports/schemas";
 import { cn } from "@/lib/utils";
 import { formatDateShort, formatDateTimeUtc } from "@/shared/date";
@@ -189,9 +190,6 @@ export function ReportSnapshotCard({
   report: ReportData;
   applicationId: string;
 }) {
-  const meta = recommendationMeta[report.recommendation];
-  const overall = Math.round(report.scores.overall);
-
   return (
     <Card className="border-border/70 bg-card">
       <CardContent className="space-y-5 pt-6">
@@ -214,25 +212,11 @@ export function ReportSnapshotCard({
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div
-              className={cn(
-                "flex size-16 flex-col items-center justify-center rounded-2xl border-2",
-                meta.scoreRing,
-                report.recommendation === "strong_yes" ? "border-brand/30 bg-brand/5" : "",
-              )}
-            >
-              <span className={cn("font-mono text-xl font-semibold leading-none", meta.scoreText)}>
-                {overall}
-              </span>
-              <span className="mt-0.5 text-[9px] font-medium uppercase tracking-wider text-muted-foreground">
-                / 100
-              </span>
-            </div>
-            <Badge variant="outline" className={cn("font-medium", meta.badge)}>
-              {meta.label}
-            </Badge>
-          </div>
+          <ScorePill
+            score={report.scores.overall}
+            recommendation={report.recommendation}
+            size="lg"
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
@@ -320,8 +304,8 @@ function TimelineNode({
         {!isLast ? <div className="-mt-1 w-px flex-1 bg-border" /> : null}
       </div>
 
-      <div className={cn("min-w-0 flex-1 pb-10", isLast && "pb-0")}>
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-4">
+      <div className={cn("min-w-0 flex-1 pb-6", isLast && "pb-0")}>
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-3">
           <h4 className="text-base font-semibold tracking-tight">{title}</h4>
           <span className="font-mono text-[11px] text-muted-foreground">
             {formatDateTimeUtc(timestamp)}
@@ -425,7 +409,6 @@ export function ReportTimeline({
   };
 }) {
   const meta = recommendationMeta[report.recommendation];
-  const overall = Math.round(report.scores.overall);
 
   const candidate: CandidateSummary = {
     name: application.candidateName,
@@ -626,31 +609,17 @@ export function ReportTimeline({
                         className="size-3.5 text-muted-foreground"
                       />
                     </div>
-                    <Badge variant="outline" className={cn("font-medium", meta.badge)}>
-                      {meta.label}
-                    </Badge>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
+                      Recommendation & score
+                    </p>
                   </div>
                   <p className="text-sm leading-6 text-foreground">{report.summary}</p>
                 </div>
-                <div
-                  className={cn(
-                    "flex size-16 shrink-0 flex-col items-center justify-center rounded-3xl border-2 md:size-20",
-                    meta.scoreRing,
-                    report.recommendation === "strong_yes" ? "border-brand/30 bg-brand/5" : "",
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "font-mono text-xl font-semibold leading-none md:text-2xl",
-                      meta.scoreText,
-                    )}
-                  >
-                    {overall}
-                  </span>
-                  <span className="mt-1 text-[9px] font-medium uppercase tracking-wider text-muted-foreground">
-                    / 100
-                  </span>
-                </div>
+                <ScorePill
+                  score={report.scores.overall}
+                  recommendation={report.recommendation}
+                  size="lg"
+                />
               </div>
 
               <div className="space-y-3 rounded-3xl border border-border/60 bg-muted/20 p-5">

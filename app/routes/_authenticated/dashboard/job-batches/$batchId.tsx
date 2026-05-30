@@ -20,6 +20,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { getBatchOverview } from "@/features/batches/server/functions";
+import { ScorePill } from "@/features/reports/components/score-pill";
 import { getOverallScore } from "@/features/reports/schemas";
 import { formatDateTime } from "@/shared/date";
 import {
@@ -238,11 +239,6 @@ function BatchDetailPage() {
                         <span className="truncate text-sm font-medium group-hover:text-primary">
                           {report.candidateName}
                         </span>
-                        {rec ? (
-                          <Badge variant="outline" className={recommendationBadgeTone[rec]}>
-                            {recommendationLabels[rec]}
-                          </Badge>
-                        ) : null}
                         {intMeta ? (
                           <Badge variant="outline" className={intMeta.className}>
                             {intMeta.label}
@@ -251,14 +247,7 @@ function BatchDetailPage() {
                       </div>
                       <p className="line-clamp-1 text-xs text-muted-foreground">{report.summary}</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">Score</span>
-                      <div className="flex size-10 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10">
-                        <span className="font-mono text-sm font-semibold text-primary">
-                          {score !== null ? Math.round(score) : "—"}
-                        </span>
-                      </div>
-                    </div>
+                    <ScorePill score={score} recommendation={rec} size="default" />
                   </Link>
                 );
               })}
