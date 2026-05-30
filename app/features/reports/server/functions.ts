@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { getApplicationReviewById } from "@/features/applications/queries/queries_sql";
+import { getReportsByBatchId } from "@/features/batches/queries/queries_sql";
 import {
   getCommunicationAssessmentByApplicationId,
   getInterviewByApplicationId,
@@ -86,6 +87,32 @@ export const getCompanyApplicantReportTimeline = createServerFn({ method: "GET" 
           ? getInterviewFallbackTimeline(interview)
           : null;
 
+    // Batch navigation — prev/next reports inside the same batch, ranked by score.
+    let batchNavigation: {
+      batchId: string;
+      position: number;
+      total: number;
+      previousApplicationId: string | null;
+      nextApplicationId: string | null;
+    } | null = null;
+    if (interview?.batchId) {
+      const batchReports = await getReportsByBatchId(db, { batchId: interview.batchId });
+      const currentIndex = batchReports.findIndex((r) => r.applicationId === data.applicationId);
+      if (currentIndex >= 0) {
+        batchNavigation = {
+          batchId: interview.batchId,
+          position: currentIndex + 1,
+          total: batchReports.length,
+          previousApplicationId:
+            currentIndex > 0 ? batchReports[currentIndex - 1].applicationId : null,
+          nextApplicationId:
+            currentIndex < batchReports.length - 1
+              ? batchReports[currentIndex + 1].applicationId
+              : null,
+        };
+      }
+    }
+
     return {
       application,
       preEvaluation,
@@ -105,5 +132,6 @@ export const getCompanyApplicantReportTimeline = createServerFn({ method: "GET" 
         : null,
       reportCreatedAt: reportRow?.createdAt ?? null,
       communicationAssessment,
+      batchNavigation,
     };
   });

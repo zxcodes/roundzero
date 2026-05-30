@@ -32,7 +32,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { SubmittedProfileSnapshot } from "@/features/applications/components/submitted-profile-snapshot";
 import {
   getApplicationResume,
   getCompanyApplicantReview,
@@ -157,21 +156,6 @@ function ApplicantReviewPage() {
     },
   });
 
-  const metadata = (application.metadata ?? {}) as {
-    headline?: string | null;
-    skills?: string[];
-    links?: Record<string, string>;
-  };
-
-  const links = metadata.links
-    ? Object.entries(metadata.links).map(([key, href]) => ({
-        href,
-        label: key.charAt(0).toUpperCase() + key.slice(1),
-      }))
-    : [];
-
-  const skills = metadata.skills ?? [];
-  const headline = metadata.headline ?? null;
   const currentStatus = applicationStatusSchema.parse(application.status);
   const isFailed = currentStatus === "evaluation_failed";
   const isWithdrawn = currentStatus === "withdrawn";
@@ -336,21 +320,6 @@ function ApplicantReviewPage() {
             </CardContent>
           </Card>
         ) : null}
-
-        {/* Profile snapshot */}
-        <SubmittedProfileSnapshot
-          headline={headline}
-          skills={skills}
-          links={links}
-          hasResume={Boolean(application.resumeKey)}
-          headerExtra={
-            preEvaluation && !report ? (
-              <Badge variant="outline" className="font-mono text-[11px]">
-                Score: {preEvaluation.score}/100
-              </Badge>
-            ) : null
-          }
-        />
       </div>
 
       <AlertDialog open={pendingStatus !== null} onOpenChange={() => setPendingStatus(null)}>

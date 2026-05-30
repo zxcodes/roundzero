@@ -24,7 +24,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { SubmittedProfileSnapshot } from "@/features/applications/components/submitted-profile-snapshot";
 import {
   getApplicationResume,
   getMyApplicationDetail,
@@ -168,14 +167,6 @@ const isTerminalStage = (stage: string): stage is "rejected" | "withdrawn" => {
   return stage === "rejected" || stage === "withdrawn";
 };
 
-const getLinks = (value: unknown) => {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return [];
-  const record = value as Record<string, string>;
-  return Object.entries(record)
-    .filter(([, href]) => typeof href === "string" && href.length > 0)
-    .map(([label, href]) => ({ label, href }));
-};
-
 const getJobStateLabel = (application: Application) => {
   if (application.companyOwnerDeleted) {
     return "Account deleted";
@@ -229,20 +220,12 @@ function CandidateApplicationDetailPage() {
     });
   };
 
-  const metadata = (application.metadata ?? {}) as {
-    skills?: string[];
-    links?: Record<string, string>;
-    headline?: string | null;
-  };
   const currentStage = toApplicationStage(application.status);
   const progressStage = currentStage === "shortlisted" ? "evaluated" : currentStage;
   const meta = getDisplayMeta({
     status: application.status,
     interviewStatus: interview?.status ?? null,
   });
-  const skills = metadata.skills ?? [];
-  const links = getLinks(metadata.links);
-  const headline = metadata.headline ?? null;
   const jobStateLabel = getJobStateLabel(application);
   const canWithdraw =
     (application.status === "applied" ||
@@ -347,7 +330,7 @@ function CandidateApplicationDetailPage() {
             </p>
             <p className="text-xs text-muted-foreground">
               {application.companyOwnerDeleted
-                ? "The company account has been deleted. You can still view your submitted profile snapshot below."
+                ? "The company account has been deleted. This application is no longer moving forward."
                 : meta.nextStep}
             </p>
           </CardContent>
@@ -417,13 +400,6 @@ function CandidateApplicationDetailPage() {
           </AlertDialog>
         ) : null}
       </div>
-
-      <SubmittedProfileSnapshot
-        headline={headline}
-        skills={skills}
-        links={links}
-        hasResume={Boolean(application.resumeKey)}
-      />
     </div>
   );
 }

@@ -22,12 +22,8 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { getDashboardMetrics } from "@/features/dashboard/server/functions";
-import {
-  formatRecommendation,
-  recommendationBadgeTone,
-  recommendationSchema,
-  recommendationSurfaceTone,
-} from "@/shared/enums";
+import { ScorePill } from "@/features/reports/components/score-pill";
+import { recommendationSchema, recommendationSurfaceTone } from "@/shared/enums";
 
 type DashboardMetrics = Awaited<ReturnType<typeof getDashboardMetrics>>;
 type CompanyMetrics = Extract<DashboardMetrics, { type: "company" }>;
@@ -439,9 +435,7 @@ function RecentReleasesCard({ reports }: { reports: ReportHighlight[] }) {
         <ul className="divide-y divide-border/50">
           {reports.slice(0, 4).map((report) => {
             const parsedRec = recommendationSchema.safeParse(report.recommendation);
-            const recClass = parsedRec.success
-              ? recommendationBadgeTone[parsedRec.data]
-              : "border-muted bg-muted/30 text-muted-foreground";
+            const recommendation = parsedRec.success ? parsedRec.data : null;
             const surfaceClass = parsedRec.success
               ? recommendationSurfaceTone[parsedRec.data]
               : "bg-muted-foreground/30";
@@ -458,15 +452,11 @@ function RecentReleasesCard({ reports }: { reports: ReportHighlight[] }) {
                   <p className="truncate text-xs text-muted-foreground">{report.jobTitle}</p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                  <Badge variant="outline" className={recClass}>
-                    {formatRecommendation(report.recommendation)}
-                  </Badge>
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <span>Score</span>
-                    <span className="font-mono text-sm font-semibold text-foreground">
-                      {report.overallScore ?? "—"}
-                    </span>
-                  </div>
+                  <ScorePill
+                    score={report.overallScore}
+                    recommendation={recommendation}
+                    size="default"
+                  />
                   <Button variant="ghost" size="sm" asChild>
                     <Link
                       to="/dashboard/applicant-reports/$applicationId"

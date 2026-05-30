@@ -38,6 +38,7 @@ import {
   updateApplicationStatus,
 } from "@/features/applications/server/functions";
 import { ReportTimeline } from "@/features/reports/components/report-cards";
+import { ScorePill } from "@/features/reports/components/score-pill";
 import { getOverallScore } from "@/features/reports/schemas";
 import { getCompanyApplicantReportTimeline } from "@/features/reports/server/functions";
 import { formatDateTime } from "@/shared/date";
@@ -47,14 +48,14 @@ import {
   applicationStatusLabels,
   applicationStatusMeta,
   applicationStatusSchema,
-  recommendationBadgeTone,
-  recommendationLabels,
   recommendationSchema,
 } from "@/shared/enums";
 import { base64ToBlob } from "@/shared/resume";
 import { validateUuidParams } from "@/shared/validation";
 
-export const Route = createFileRoute("/_authenticated/dashboard/applicant-reports/$applicationId")({
+export const Route = createFileRoute(
+  "/_authenticated/dashboard/applicant-reports/$applicationId/full",
+)({
   beforeLoad: ({ context, params }) => {
     if (!context.isCompany) {
       throw redirect({ to: "/dashboard" });
@@ -173,15 +174,15 @@ function ApplicantAiReportPage() {
     const isEvalFailed = application.status === "evaluation_failed";
 
     return (
-      <div className="animate-fade-in space-y-6">
+      <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Button variant="ghost" size="sm" asChild className="-ml-2">
             <Link
-              to="/dashboard/applicants/$applicationId"
+              to="/dashboard/applicant-reports/$applicationId"
               params={{ applicationId: application.id }}
             >
               <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
-              Applicant detail
+              Report summary
             </Link>
           </Button>
         </div>
@@ -232,17 +233,31 @@ function ApplicantAiReportPage() {
   const recommendation = parsedRecommendation.success ? parsedRecommendation.data : null;
 
   return (
-    <div className="animate-fade-in space-y-8">
+    <div className="space-y-8">
       <div className="flex flex-wrap items-center gap-3">
         <Button variant="ghost" size="sm" asChild className="-ml-2">
           <Link
-            to="/dashboard/applicants/$applicationId"
+            to="/dashboard/applicant-reports/$applicationId"
             params={{ applicationId: application.id }}
           >
             <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
-            Applicant detail
+            Report summary
           </Link>
         </Button>
+      </div>
+
+      <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-3 text-xs text-muted-foreground">
+        This is the full audit timeline — every step Zero took to evaluate{" "}
+        <span className="font-medium text-foreground">{application.candidateName}</span>. For a
+        polished, evidence-backed view, head back to the{" "}
+        <Link
+          to="/dashboard/applicant-reports/$applicationId"
+          params={{ applicationId: application.id }}
+          className="font-medium text-foreground underline-offset-4 hover:underline"
+        >
+          report summary
+        </Link>
+        .
       </div>
 
       <div className="rounded-4xl border border-border/70 bg-card px-4 py-4 shadow-sm md:px-6 md:py-6">
@@ -260,16 +275,7 @@ function ApplicantAiReportPage() {
               <Badge variant="outline" className={statusTone.badge}>
                 {applicationStatusLabels[currentStatus]}
               </Badge>
-              {score !== null ? (
-                <Badge variant="secondary" className="font-mono text-[11px]">
-                  {score}/100
-                </Badge>
-              ) : null}
-              {recommendation ? (
-                <Badge variant="outline" className={recommendationBadgeTone[recommendation]}>
-                  {recommendationLabels[recommendation]}
-                </Badge>
-              ) : null}
+              <ScorePill score={score} recommendation={recommendation} size="default" />
             </div>
             <p className="text-sm text-muted-foreground">
               Post-interview report for{" "}
