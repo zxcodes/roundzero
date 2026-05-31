@@ -1,6 +1,7 @@
 ## TODO
 
 
+- if pre-eval fails for some reason, the manual review doesn't let me move the application to interview invited or other states. it only allows me to reject/withdraw.
 - add a cron to detect failed workflows (evaluation_failed) in the entire ai layer? and then it should update their statuses accordingly.
 - validate open router models using their api key in prod ci so we detect non existent models beforehand.
 - company logo doesn't reflect after uploading until I refresh.
