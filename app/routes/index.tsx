@@ -955,14 +955,14 @@ function PricingTable() {
                       {t.price}
                     </span>
                     <span
-                      className="font-editorial text-[13px]"
+                      className="font-editorial text-[13px] font-medium"
                       style={{ color: "var(--ed-muted)", fontStyle: "italic" }}
                     >
                       / {t.period}
                     </span>
                   </div>
                   <p
-                    className="max-w-[26ch] text-[13px] leading-normal"
+                    className="max-w-[26ch] text-[13px] leading-normal font-medium"
                     style={{ color: "var(--ed-muted)" }}
                   >
                     {t.description}
