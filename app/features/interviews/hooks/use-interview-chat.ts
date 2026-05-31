@@ -59,23 +59,25 @@ export function useInterviewChat(interviewId: string, initialMessages: InitialIn
     });
   }
 
-  // Per @tanstack/ai chat-experience skill, `status` is the source of truth
-  // for the model lifecycle: 'ready' → 'submitted' → 'streaming' → 'ready'.
-  // The thinking indicator is visible while we are waiting for the first
-  // text chunk (covers "submitted" plus the "streaming during tool calls"
-  // gap where the assistant message exists but has no visible text yet).
-  const lastAssistantMessage = [...chat.messages].reverse().find((m) => m.role === "assistant");
-  const lastAssistantHasText = lastAssistantMessage
-    ? readMessageText(lastAssistantMessage).length > 0
-    : false;
-  const isThinking =
-    chat.status === "submitted" || (chat.status === "streaming" && !lastAssistantHasText);
+  // The thinking indicator must stay visible from the moment we send a
+  // message until the assistant's *current turn* starts emitting visible
+  // text. We can't rely on `chat.status` alone: in agent loops with
+  // server-side tools, TanStack flips `status` back to 'ready' after each
+  // RUN_FINISHED — including the tool-call iteration that precedes the
+  // text response — so `status === 'ready'` does NOT mean the turn is
+  // done. The only signal that covers the whole turn (submit → tool
+  // calls → tool execution → text stream → finish) is `chat.isLoading`,
+  // which the client only clears in the `finally` of `streamResponse`.
+  const lastMessage = chat.messages[chat.messages.length - 1];
+  const currentTurnHasAssistantText =
+    lastMessage?.role === "assistant" && readMessageText(lastMessage).length > 0;
+  const isThinking = chat.isLoading && !currentTurnHasAssistantText;
 
   return {
     messages,
     sendMessage: chat.sendMessage,
     status: chat.status,
-    isStreaming: chat.status === "streaming",
+    isStreaming: chat.isLoading,
     isThinking,
   };
 }
