@@ -1,6 +1,7 @@
 ## TODO
 
 
+- the final report should be based on the candidate's response to each and every question. like it should be a deciding factor.
 - check what should happen if an interview is expired while being in progress.
 - if pre-eval fails for some reason, the manual review doesn't let me move the application to interview invited or other states. it only allows me to reject/withdraw.
 - add a cron to detect failed workflows (evaluation_failed) in the entire ai layer? and then it should update their statuses accordingly.
