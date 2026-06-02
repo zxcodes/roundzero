@@ -66,7 +66,10 @@ export const APPLICATION_STATUS_TRANSITIONS: Record<ApplicationStatus, Applicati
   shortlisted: ["rejected"],
   rejected: [],
   withdrawn: [],
-  evaluation_failed: ["rejected", "withdrawn"],
+  // AI evaluation crashed (pre- or post-eval). Companies can manually push
+  // the application forward to interview_invited as a recovery path so a
+  // failed automated screen does not strand the candidate.
+  evaluation_failed: ["interview_invited", "rejected", "withdrawn"],
 };
 
 /** Returns true if the transition from `current` to `next` is valid. */

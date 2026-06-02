@@ -3,10 +3,10 @@
 
 - the final report should be based on the candidate's response to each and every question. like it should be a deciding factor.
 - check what should happen if an interview is expired while being in progress.
-- if pre-eval fails for some reason, the manual review doesn't let me move the application to interview invited or other states. it only allows me to reject/withdraw.
+<!--- if pre-eval fails for some reason, the manual review doesn't let me move the application to interview invited or other states. it only allows me to reject/withdraw. (DONE — added interview_invited to evaluation_failed transitions in enums.ts; existing workflow already handles the side-effects.)-->
 - add a cron to detect failed workflows (evaluation_failed) in the entire ai layer? and then it should update their statuses accordingly.
 - validate open router models using their api key in prod ci so we detect non existent models beforehand.
-- company logo doesn't reflect after uploading until I refresh.
+<!--- company logo doesn't reflect after uploading until I refresh. (DONE — root cause was form.reset() reverting to stale defaults because TanStack Form skips defaultValue updates when isTouched=true. Fixed in both company-settings and candidate-settings by resetting with form.state.values as the new baseline.)-->
 - detect failures in the whole pipeline and give candidates or companies an option to retry. make as failure proof as possible. specifically in model responses. 
 - think more about the duration from first report to last report generation bc it will depend on the candidate. think if we need to add an expiry or something and pass it to the next candidate? (BATCH WORKFLOW TEST)
 - check all resend templates for all notifications exist, if they link to proper paths etc. (I see no_lean in report, also rn individual reports are being sent? see if batch report template exists and also need to test it manually.)

@@ -136,6 +136,15 @@ describe("isValidTransition", () => {
     expect(isValidTransition("rejected", "applied")).toBe(false);
   });
 
+  it("allows manual recovery from evaluation_failed to interview_invited", () => {
+    // Pre-eval / post-eval crashes leave the application in evaluation_failed.
+    // Companies must be able to push the candidate forward manually instead
+    // of being forced to reject them.
+    expect(isValidTransition("evaluation_failed", "interview_invited")).toBe(true);
+    expect(isValidTransition("evaluation_failed", "rejected")).toBe(true);
+    expect(isValidTransition("evaluation_failed", "withdrawn")).toBe(true);
+  });
+
   it("rejects skipping steps", () => {
     expect(isValidTransition("applied", "evaluated")).toBe(false);
   });

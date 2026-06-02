@@ -614,6 +614,26 @@ describe("evaluation_failed status", () => {
     expect(rejected!.status).toBe("rejected");
   });
 
+  it("allows manual recovery from evaluation_failed to interview_invited", async () => {
+    const { company } = await seedCompany();
+    const candidate = await seedUser({ role: "candidate" });
+    const job = await makeOpenJob(company.id);
+    const app = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: {},
+      status: "evaluation_failed",
+    });
+
+    const recovered = await updateApplicationStatus(sql, {
+      id: app!.id,
+      status: "interview_invited",
+    });
+    expect(recovered).not.toBeNull();
+    expect(recovered!.status).toBe("interview_invited");
+  });
+
   it("surfaces evaluation_failed in candidate application list", async () => {
     const { company } = await seedCompany();
     const candidate = await seedUser({ role: "candidate" });

@@ -54,7 +54,12 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
     mutationFn: updateProfileFn,
     onSuccess: async () => {
       await router.invalidate();
-      form.reset();
+      // Lock the just-submitted values in as the new baseline. Plain
+      // `form.reset()` would revert to the stale defaults captured on mount
+      // (TanStack Form ignores new defaultValues once `isTouched` is true —
+      // see FormApi#update), which would make resume/profile changes appear
+      // to disappear until a manual refresh.
+      form.reset(form.state.values);
     },
     onError: () => {
       toast.error("Failed to save changes.");
