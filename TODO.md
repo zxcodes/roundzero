@@ -11,7 +11,7 @@
 - think more about the duration from first report to last report generation bc it will depend on the candidate. think if we need to add an expiry or something and pass it to the next candidate? (BATCH WORKFLOW TEST)
 - check all resend templates for all notifications exist, if they link to proper paths etc. (I see no_lean in report, also rn individual reports are being sent? see if batch report template exists and also need to test it manually.)
 - check for leaking info in api calls (emails, ids etc)
-- for company full report, they should also see what they did in the chat, detecting ai responses, pasting, etc.
+- for company full report, they should also see what they did in the chat, detecting ai responses (should maybe see something like: potential ai written answer?)
 - add a feedback option for people or requesting features etc.
 - add score breakdown. 
 - add a really good resume and candidate test suite to pass thru the ai.
