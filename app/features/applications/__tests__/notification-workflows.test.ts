@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { getInterviewByApplicationId } from "@/features/interviews/queries/queries_sql";
 import { getNotificationsByUser } from "@/features/notifications/queries/queries_sql";
 import {
   getTestDb,
@@ -248,5 +249,49 @@ describe("application notification workflows", () => {
       companyName: "Orbit",
       status: "rejected",
     });
+  });
+
+  it("recovers an evaluation_failed application by manually inviting to interview", async () => {
+    const { company, owner } = await seedCompany({ name: "Helios" });
+    const candidate = await seedUser({ role: "candidate" });
+    const { job } = await seedJob({
+      companyId: company.id,
+      title: "Backend Engineer",
+      status: "open",
+    });
+    const application = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id, "recovery-resume.pdf"),
+      metadata: {},
+      status: "evaluation_failed",
+    });
+    expect(application).not.toBeNull();
+    if (!application) return;
+
+    await updateApplicationStatusWorkflow(
+      sql,
+      {
+        userId: owner.id,
+        applicationId: application.id,
+        status: "interview_invited",
+      },
+      {
+        sendNotificationEmail: async () => {
+          throw new Error("Resend rejected request");
+        },
+      },
+    );
+
+    const interview = await getInterviewByApplicationId(sql, { applicationId: application.id });
+    expect(interview).not.toBeNull();
+    expect(interview!.status).toBe("pending");
+
+    const notifications = await getNotificationsByUser(sql, {
+      userId: candidate.id,
+      limit: "10",
+    });
+    expect(notifications).toHaveLength(1);
+    expect(notifications[0].type).toBe("interview_invited");
   });
 });
