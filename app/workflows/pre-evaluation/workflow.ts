@@ -1,4 +1,9 @@
-import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers";
+import {
+  WorkflowEntrypoint,
+  type WorkflowEvent,
+  type WorkflowStep,
+  type WorkflowStepConfig,
+} from "cloudflare:workers";
 import { updateApplicationStatus } from "@/features/applications/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { createWorkflowLogger } from "@/shared/logger";
@@ -15,6 +20,12 @@ import {
 
 export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluationPayload> {
   async run(event: WorkflowEvent<PreEvaluationPayload>, step: WorkflowStep) {
+    const STEP_RETRY_CONFIG: WorkflowStepConfig["retries"] = {
+      limit: 3,
+      delay: "10 seconds",
+      backoff: "exponential",
+    };
+
     const { applicationId } = event.payload;
     const log = createWorkflowLogger("pre-eval", applicationId);
     log.info("Starting pre-evaluation workflow");
@@ -32,13 +43,28 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
 
       const jobClassification = await step.do(
         "classify_job_type",
+        {
+          timeout: "3 minutes",
+          retries: STEP_RETRY_CONFIG,
+        },
         classifyJobType(applicationData.job.title, applicationData.job.description, log),
       );
 
-      const slopCheck = await step.do("check_resume_authenticity", detectSlop(resumeText, log));
+      const slopCheck = await step.do(
+        "check_resume_authenticity",
+        {
+          timeout: "5 minutes",
+          retries: STEP_RETRY_CONFIG,
+        },
+        detectSlop(resumeText, log),
+      );
 
       const aiResult = await step.do(
         "run_ai_pre_evaluation",
+        {
+          timeout: "15 minutes",
+          retries: STEP_RETRY_CONFIG,
+        },
         runAiPreEvaluation(
           {
             title: applicationData.job.title,
