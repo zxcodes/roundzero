@@ -94,3 +94,39 @@ FROM applications a
 JOIN jobs j ON j.id = a.job_id
 WHERE a.candidate_id = $1
   AND j.archived_at IS NULL;
+
+-- name: claimApplicationForRetry :one
+-- Atomic claim used by the AI-eval retry path (cron sweep + manual retry).
+-- The row is only updated when the application is still in `evaluation_failed`
+-- AND the per-application retry counter is below the supplied cap (cap NULL =
+-- uncapped, used by manual retries). Returning zero rows means another claim
+-- has already won the race or the cap was hit.
+UPDATE applications
+SET status = sqlc.arg('nextStatus')::text,
+    metadata = COALESCE(metadata, '{}'::jsonb) || jsonb_build_object(
+      'evalRetryCount', COALESCE((metadata->>'evalRetryCount')::int, 0) + 1,
+      'evalLastRetryAt', to_jsonb(now()),
+      'evalLastRetryKind', sqlc.arg('retryKind')::text,
+      'evalLastRetrySource', sqlc.arg('retrySource')::text
+    ),
+    updated_at = now()
+WHERE id = sqlc.arg('id')
+  AND status = 'evaluation_failed'
+  AND (
+    sqlc.narg('cap')::int IS NULL
+    OR COALESCE((metadata->>'evalRetryCount')::int, 0) < sqlc.narg('cap')::int
+  )
+RETURNING id, job_id, candidate_id, resume_key, metadata, status, created_at, updated_at;
+
+-- name: listStaleEvaluationFailedApplications :many
+-- Used by the scheduled handler to pick up applications that have been sitting
+-- in `evaluation_failed` past the cool-down window and have not yet exhausted
+-- the auto-retry cap. The cool-down is encoded in the query rather than passed
+-- in because there is no caller that needs a different value.
+SELECT id
+FROM applications
+WHERE status = 'evaluation_failed'
+  AND updated_at < NOW() - INTERVAL '15 minutes'
+  AND COALESCE((metadata->>'evalRetryCount')::int, 0) < sqlc.arg('cap')::int
+ORDER BY updated_at ASC
+LIMIT sqlc.arg('rowLimit')::int;

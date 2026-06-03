@@ -4,9 +4,9 @@
 - voice interview still doesnt end the call on its own. and even after the interview, if I refresh, the entire session is lost. it just gets back to square one."start assessment" perhaps we should have a manual submit similar to text interview?
 - the final report should be based on the candidate's response to each and every question. like it should be a deciding factor.
 - check what should happen if an interview is expired while being in progress.
-- add a cron to detect failed workflows (evaluation_failed) in the entire ai layer? and then it should update their statuses accordingly.
+<!--- add a cron to detect failed workflows (evaluation_failed) in the entire ai layer? and then it should update their statuses accordingly. (DONE — new EvalRetryWorkflow runs every 30 min, sweeps applications stranded in evaluation_failed past the 15 min cool-down, capped at 3 auto-retries via metadata.evalRetryCount. Re-triggers PRE_EVALUATION or restarts POST_EVALUATION via get/status/restart.)-->
 - validate open router models using their api key in prod ci so we detect non existent models beforehand.
-- detect failures in the whole pipeline and give candidates or companies an option to retry. make as failure proof as possible. specifically in model responses. 
+<!--- detect failures in the whole pipeline and give candidates or companies an option to retry. make as failure proof as possible. specifically in model responses. (DONE — "Retry evaluation" button on the applicant detail page for evaluation_failed apps (manual = uncapped). Backed by retryApplicationEvaluation server fn + shared retryEvaluation service. Same path the cron uses.)-->
 - think more about the duration from first report to last report generation bc it will depend on the candidate. think if we need to add an expiry or something and pass it to the next candidate? (BATCH WORKFLOW TEST)
 - check all resend templates for all notifications exist, if they link to proper paths etc. (I see no_lean in report, also rn individual reports are being sent? see if batch report template exists and also need to test it manually.)
 - check for leaking info in api calls (emails, ids etc)
