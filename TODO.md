@@ -4,9 +4,7 @@
 - voice interview still doesnt end the call on its own. and even after the interview, if I refresh, the entire session is lost. it just gets back to square one."start assessment" perhaps we should have a manual submit similar to text interview?
 - the final report should be based on the candidate's response to each and every question. like it should be a deciding factor.
 - check what should happen if an interview is expired while being in progress.
-<!--- add a cron to detect failed workflows (evaluation_failed) in the entire ai layer? and then it should update their statuses accordingly. (DONE — new EvalRetryWorkflow runs every 30 min, sweeps applications stranded in evaluation_failed past the 15 min cool-down, capped at 3 auto-retries via metadata.evalRetryCount. Re-triggers PRE_EVALUATION or restarts POST_EVALUATION via get/status/restart.)-->
 - validate open router models using their api key in prod ci so we detect non existent models beforehand.
-<!--- detect failures in the whole pipeline and give candidates or companies an option to retry. make as failure proof as possible. specifically in model responses. (DONE — "Retry evaluation" button on the applicant detail page for evaluation_failed apps (manual = uncapped). Backed by retryApplicationEvaluation server fn + shared retryEvaluation service. Same path the cron uses.)-->
 - think more about the duration from first report to last report generation bc it will depend on the candidate. think if we need to add an expiry or something and pass it to the next candidate? (BATCH WORKFLOW TEST)
 - check all resend templates for all notifications exist, if they link to proper paths etc. (I see no_lean in report, also rn individual reports are being sent? see if batch report template exists and also need to test it manually.)
 - check for leaking info in api calls (emails, ids etc)
@@ -16,6 +14,8 @@
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- detect failures in the whole pipeline and give candidates or companies an option to retry. make as failure proof as possible. specifically in model responses. (DONE — "Retry evaluation" button on the applicant detail page for evaluation_failed apps (manual = uncapped). Backed by retryApplicationEvaluation server fn + shared retryEvaluation service. Same path the cron uses.)-->
+<!--- add a cron to detect failed workflows (evaluation_failed) in the entire ai layer? and then it should update their statuses accordingly. (DONE — new EvalRetryWorkflow runs every 30 min, sweeps applications stranded in evaluation_failed past the 15 min cool-down, capped at 3 auto-retries via metadata.evalRetryCount. Re-triggers PRE_EVALUATION or restarts POST_EVALUATION via get/status/restart.)-->
 <!--- if pre-eval fails for some reason, the manual review doesn't let me move the application to interview invited or other states. it only allows me to reject/withdraw. (DONE — added interview_invited to evaluation_failed transitions in enums.ts; existing workflow already handles the side-effects.)-->
 <!--- company logo doesn't reflect after uploading until I refresh. (DONE — root cause was form.reset() reverting to stale defaults because TanStack Form skips defaultValue updates when isTouched=true. Fixed in both company-settings and candidate-settings by resetting with form.state.values as the new baseline.)-->
 <!--- full report page sucks. flashes twice on refresh, the evidence section has huge gaps between sections. overall sucks 10/10.
