@@ -439,3 +439,82 @@ export async function countApplicationsByCandidate(sql: Sql, args: countApplicat
     };
 }
 
+export const claimApplicationForRetryQuery = `-- name: claimApplicationForRetry :one
+UPDATE applications
+SET status = $1::text,
+    metadata = COALESCE(metadata, '{}'::jsonb) || jsonb_build_object(
+      'evalRetryCount', COALESCE((metadata->>'evalRetryCount')::int, 0) + 1,
+      'evalLastRetryAt', to_jsonb(now()),
+      'evalLastRetryKind', $2::text,
+      'evalLastRetrySource', $3::text
+    ),
+    updated_at = now()
+WHERE id = $4
+  AND status = 'evaluation_failed'
+  AND (
+    $5::int IS NULL
+    OR COALESCE((metadata->>'evalRetryCount')::int, 0) < $5::int
+  )
+RETURNING id, job_id, candidate_id, resume_key, metadata, status, created_at, updated_at`;
+
+export interface claimApplicationForRetryArgs {
+    nextstatus: string;
+    retrykind: string;
+    retrysource: string;
+    id: string;
+    cap: number | null;
+}
+
+export interface claimApplicationForRetryRow {
+    id: string;
+    jobId: string;
+    candidateId: string;
+    resumeKey: string | null;
+    metadata: any;
+    status: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export async function claimApplicationForRetry(sql: Sql, args: claimApplicationForRetryArgs): Promise<claimApplicationForRetryRow | null> {
+    const rows = await sql.unsafe(claimApplicationForRetryQuery, [args.nextstatus, args.retrykind, args.retrysource, args.id, args.cap]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        jobId: row[1],
+        candidateId: row[2],
+        resumeKey: row[3],
+        metadata: row[4],
+        status: row[5],
+        createdAt: row[6],
+        updatedAt: row[7]
+    };
+}
+
+export const listStaleEvaluationFailedApplicationsQuery = `-- name: listStaleEvaluationFailedApplications :many
+SELECT id
+FROM applications
+WHERE status = 'evaluation_failed'
+  AND updated_at < NOW() - INTERVAL '15 minutes'
+  AND COALESCE((metadata->>'evalRetryCount')::int, 0) < $1::int
+ORDER BY updated_at ASC
+LIMIT $2::int`;
+
+export interface listStaleEvaluationFailedApplicationsArgs {
+    cap: number;
+    rowlimit: number;
+}
+
+export interface listStaleEvaluationFailedApplicationsRow {
+    id: string;
+}
+
+export async function listStaleEvaluationFailedApplications(sql: Sql, args: listStaleEvaluationFailedApplicationsArgs): Promise<listStaleEvaluationFailedApplicationsRow[]> {
+    return (await sql.unsafe(listStaleEvaluationFailedApplicationsQuery, [args.cap, args.rowlimit]).values()).map(row => ({
+        id: row[0]
+    }));
+}
+

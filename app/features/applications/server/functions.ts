@@ -15,6 +15,7 @@ import {
   getApplicationsByCandidate,
   getApplicationsByJob,
 } from "../queries/queries_sql";
+import { retryEvaluation } from "../services/retry";
 import {
   applyToJobWorkflow,
   updateApplicationStatusWorkflow,
@@ -141,6 +142,35 @@ export const withdrawApplication = createServerFn({ method: "POST" })
       userId: context.userId,
       applicationId: data.applicationId,
     });
+  });
+
+export const retryApplicationEvaluation = createServerFn({ method: "POST" })
+  .middleware([companyMiddleware])
+  .inputValidator(zodValidator(applicationIdSchema))
+  .handler(async ({ data, context }) => {
+    const db = getDb();
+
+    // Authorize: the company must own the job the application is for.
+    const review = await getApplicationReviewById(db, { id: data.applicationId });
+    if (!review) {
+      return null;
+    }
+    if (review.companyId !== context.company.id) {
+      throw new Error("Not authorized to retry evaluation for this application");
+    }
+    if (review.status !== "evaluation_failed") {
+      throw new Error(
+        `Cannot retry evaluation — application is in "${review.status}", not evaluation_failed`,
+      );
+    }
+
+    // Manual retries are not capped — the operator made the call.
+    return await retryEvaluation(
+      db,
+      data.applicationId,
+      { preEvaluation: env.PRE_EVALUATION, postEvaluation: env.POST_EVALUATION },
+      { cap: null, source: "manual" },
+    );
   });
 
 export const hasApplied = createServerFn({ method: "GET" })

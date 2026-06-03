@@ -3,6 +3,7 @@ import { handlePolarWebhook } from "./features/billing/webhook";
 import { getDb } from "./shared/db";
 
 export { BatchOrchestrationWorkflow } from "./workflows/batch-orchestration/workflow";
+export { EvalRetryWorkflow } from "./workflows/eval-retry/workflow";
 export { PoolCheckWorkflow } from "./workflows/pool-check/workflow";
 export { PostEvaluationWorkflow } from "./workflows/post-evaluation/workflow";
 export { PreEvaluationWorkflow } from "./workflows/pre-evaluation/workflow";

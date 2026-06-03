@@ -35,6 +35,7 @@ import {
 import {
   getApplicationResume,
   getCompanyApplicantReview,
+  retryApplicationEvaluation,
   updateApplicationStatus,
 } from "@/features/applications/server/functions";
 import { getPreEvaluationForApplication } from "@/features/pre-evaluations/server/functions";
@@ -132,6 +133,7 @@ function ApplicantReviewPage() {
 
   const updateStatusFn = useServerFn(updateApplicationStatus);
   const getResumeFn = useServerFn(getApplicationResume);
+  const retryEvaluationFn = useServerFn(retryApplicationEvaluation);
 
   const updateStatusMutation = useMutation({
     mutationFn: updateStatusFn,
@@ -141,6 +143,29 @@ function ApplicantReviewPage() {
     },
     onError: (error) => {
       toast.error(error.message || "Failed to update status. Please try again.");
+    },
+  });
+
+  const retryEvaluationMutation = useMutation({
+    mutationFn: retryEvaluationFn,
+    onSuccess: async (result) => {
+      if (!result) {
+        toast.error("Application no longer exists.");
+        return;
+      }
+      if (result.kind === "skipped") {
+        toast.message("Retry skipped", { description: result.reason });
+        return;
+      }
+      toast.success(
+        result.kind === "pre_eval"
+          ? "Re-running pre-evaluation"
+          : `Re-running post-evaluation (${result.action})`,
+      );
+      await router.invalidate();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to retry evaluation. Please try again.");
     },
   });
 
@@ -192,6 +217,12 @@ function ApplicantReviewPage() {
   };
 
   const onRejectClick = () => setPendingStatus("rejected");
+
+  const onRetryEvaluation = async () => {
+    await retryEvaluationMutation.mutateAsync({
+      data: { applicationId: application.id },
+    });
+  };
 
   const onResumeView = async () => {
     await resumeDownloadMutation.mutateAsync({
@@ -268,6 +299,8 @@ function ApplicantReviewPage() {
           isPending={updateStatusMutation.isPending}
           onShortlist={onShortlist}
           onReject={onRejectClick}
+          onRetryEvaluation={onRetryEvaluation}
+          retryEvaluationPending={retryEvaluationMutation.isPending}
           allowedStatuses={allowedStatusOptions}
           onStatusChange={onStatusValueChange}
           hasResume={Boolean(application.resumeKey)}
@@ -348,6 +381,8 @@ function ApplicationStatusSection({
   isPending,
   onShortlist,
   onReject,
+  onRetryEvaluation,
+  retryEvaluationPending,
   allowedStatuses,
   onStatusChange,
   hasResume,
@@ -366,6 +401,8 @@ function ApplicationStatusSection({
   isPending: boolean;
   onShortlist: () => void | Promise<void>;
   onReject: () => void;
+  onRetryEvaluation: () => void | Promise<void>;
+  retryEvaluationPending: boolean;
   allowedStatuses: ApplicationStatus[];
   onStatusChange: (value: string) => void | Promise<void>;
   hasResume: boolean;
@@ -404,6 +441,16 @@ function ApplicationStatusSection({
               <Button variant="outline" onClick={onResumeView} disabled={resumeLoading}>
                 <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-4" />
                 {resumeLoading ? "Opening…" : "View resume"}
+              </Button>
+            ) : null}
+
+            {isFailed ? (
+              <Button
+                variant="outline"
+                disabled={retryEvaluationPending}
+                onClick={onRetryEvaluation}
+              >
+                {retryEvaluationPending ? "Retrying…" : "Retry evaluation"}
               </Button>
             ) : null}
 

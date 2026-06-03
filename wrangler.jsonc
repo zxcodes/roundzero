@@ -57,6 +57,16 @@
       "binding": "POOL_CHECK",
       "class_name": "PoolCheckWorkflow",
       "schedules": ["0 */6 * * *"]
+    },
+    {
+      // Sweeps applications stranded in `evaluation_failed` (15 min cool-down,
+      // capped at EVAL_RETRY_AUTO_CAP attempts). Faster cadence than the pool
+      // check because a hung pre/post-eval blocks a single candidate's whole
+      // application and we want to recover quickly.
+      "name": "eval-retry",
+      "binding": "EVAL_RETRY",
+      "class_name": "EvalRetryWorkflow",
+      "schedules": ["*/30 * * * *"]
     }
   ]
 }
