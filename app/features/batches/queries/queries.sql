@@ -31,6 +31,13 @@ SET status = $2,
 WHERE id = $1
 RETURNING id, job_id, status, target_size, created_at, launched_at, released_at;
 
+-- name: getJobsWithQueuedCandidates :many
+SELECT DISTINCT j.id
+FROM jobs j
+JOIN applications a ON a.job_id = j.id
+WHERE a.status = 'queued_for_batch'
+  AND j.status = 'open';
+
 -- name: getPoolCandidatesForJob :many
 SELECT
   a.id,
