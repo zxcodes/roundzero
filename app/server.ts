@@ -1,9 +1,9 @@
 import handler from "@tanstack/react-start/server-entry";
-import { checkAndLaunchBatch } from "./features/batches/server/orchestration";
 import { handlePolarWebhook } from "./features/billing/webhook";
 import { getDb } from "./shared/db";
 
 export { BatchOrchestrationWorkflow } from "./workflows/batch-orchestration/workflow";
+export { PoolCheckWorkflow } from "./workflows/pool-check/workflow";
 export { PostEvaluationWorkflow } from "./workflows/post-evaluation/workflow";
 export { PreEvaluationWorkflow } from "./workflows/pre-evaluation/workflow";
 
@@ -69,30 +69,6 @@ ${companies.map((c) => `  <url><loc>${siteUrl}/companies/${c.slug}</loc><lastmod
       request,
       env,
       ctx,
-    );
-  },
-
-  async scheduled(
-    _controller: ScheduledController,
-    _env: Env,
-    ctx: ExecutionContext,
-  ): Promise<void> {
-    ctx.waitUntil(
-      (async () => {
-        const sql = getDb();
-        // Find all jobs with candidates queued_for_batch
-        const jobs = await sql`
-          SELECT DISTINCT j.id
-          FROM jobs j
-          JOIN applications a ON a.job_id = j.id
-          WHERE a.status = 'queued_for_batch'
-            AND j.status = 'open'
-        `;
-        for (const job of jobs) {
-          const jobId = job.id as string;
-          await checkAndLaunchBatch(jobId);
-        }
-      })(),
     );
   },
 };

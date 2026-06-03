@@ -51,9 +51,12 @@
       "name": "batch-orchestration",
       "binding": "BATCH_ORCHESTRATION",
       "class_name": "BatchOrchestrationWorkflow"
+    },
+    {
+      "name": "pool-check",
+      "binding": "POOL_CHECK",
+      "class_name": "PoolCheckWorkflow",
+      "schedules": ["0 */6 * * *"]
     }
-  ],
-  "triggers": {
-    "crons": ["0 */6 * * *"]
-  }
+  ]
 }

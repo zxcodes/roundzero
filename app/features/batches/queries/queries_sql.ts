@@ -187,6 +187,23 @@ export async function updateBatchStatus(sql: Sql, args: updateBatchStatusArgs): 
     };
 }
 
+export const getJobsWithQueuedCandidatesQuery = `-- name: getJobsWithQueuedCandidates :many
+SELECT DISTINCT j.id
+FROM jobs j
+JOIN applications a ON a.job_id = j.id
+WHERE a.status = 'queued_for_batch'
+  AND j.status = 'open'`;
+
+export interface getJobsWithQueuedCandidatesRow {
+    id: string;
+}
+
+export async function getJobsWithQueuedCandidates(sql: Sql): Promise<getJobsWithQueuedCandidatesRow[]> {
+    return (await sql.unsafe(getJobsWithQueuedCandidatesQuery, []).values()).map(row => ({
+        id: row[0]
+    }));
+}
+
 export const getPoolCandidatesForJobQuery = `-- name: getPoolCandidatesForJob :many
 SELECT
   a.id,
