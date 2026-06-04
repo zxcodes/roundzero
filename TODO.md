@@ -3,7 +3,7 @@
 
 - voice interview still doesnt end the call on its own. and even after the interview, if I refresh, the entire session is lost. it just gets back to square one."start assessment" perhaps we should have a manual submit similar to text interview?
 - the final report should be based on the candidate's response to each and every question. like it should be a deciding factor.
-- check what should happen if an interview is expired while being in progress.
+<!--- check what should happen if an interview is expired while being in progress. (DONE — client now arms a setTimeout against expiresAt and invalidates the route at the deadline so the UI flips to expired without a refresh; server-side expireInterviewIfDue helper also fires post-evaluation for in_progress interviews so the partial transcript becomes a report (or insufficient_signal) instead of being dropped. Helper reused by the chat API + getMyInterview/Messages.)-->
 - validate open router models using their api key in prod ci so we detect non existent models beforehand.
 - think more about the duration from first report to last report generation bc it will depend on the candidate. think if we need to add an expiry or something and pass it to the next candidate? (BATCH WORKFLOW TEST)
 - check all resend templates for all notifications exist, if they link to proper paths etc. (I see no_lean in report, also rn individual reports are being sent? see if batch report template exists and also need to test it manually.)

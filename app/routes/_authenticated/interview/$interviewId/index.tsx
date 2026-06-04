@@ -135,6 +135,27 @@ function InterviewWorkspaceContent({
   const deadline = formatDeadlineLabel(expiresAt);
   const timeLeft = formatTimeLeft(expiresAt);
 
+  // Auto-detect mid-session expiry. Without this the candidate could sit on
+  // the page past `expiresAt`, keep typing, and only learn the interview is
+  // dead when the next POST returns 400. Invalidating the route at the
+  // deadline lets the server-side loader flip the interview to `expired`
+  // (and trigger post-eval on any partial transcript), then the UI rerenders
+  // with the proper expired-state composer + footer.
+  useEffect(() => {
+    if (!expiresAt) return;
+    if (interview.status !== "pending" && interview.status !== "in_progress") return;
+
+    const msUntilExpiry = new Date(expiresAt).getTime() - Date.now();
+    // 1s buffer so the server clock has rolled past `expiresAt` by the time
+    // the loader re-runs; otherwise `shouldAutoExpireInterview` may still
+    // return false and the route will look unchanged on invalidation.
+    const handle = setTimeout(() => {
+      void router.invalidate();
+    }, Math.max(0, msUntilExpiry) + 1000);
+
+    return () => clearTimeout(handle);
+  }, [expiresAt, interview.status, router]);
+
   const [activeTab, setActiveTab] = useState<"chat" | "voice">("chat");
   const hasAutoSwitchedRef = useRef(false);
 

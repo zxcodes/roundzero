@@ -16,14 +16,13 @@ import {
   completeInterview,
   createCommunicationAssessment,
   createInterviewMessage,
-  expireInterview,
   getCommunicationAssessmentByInterviewId,
   getInterviewContextById,
   getInterviewForCandidateById,
   getInterviewMessagesByInterviewId,
   updateInterviewMetadata,
 } from "@/features/interviews/queries/queries_sql";
-import { shouldAutoExpireInterview } from "@/features/interviews/shared/expiry";
+import { expireInterviewIfDue } from "@/features/interviews/server/expire";
 import {
   buildInterviewSystemPrompt,
   ensureInterviewRuntimeMetadata,
@@ -124,8 +123,12 @@ export const Route = createFileRoute("/api/interview-chat")({
           return new Response("Interview not found", { status: 404 });
         }
 
-        if (shouldAutoExpireInterview(interview.status, interview.metadata)) {
-          await expireInterview(db, { id: interview.id });
+        const expired = await expireInterviewIfDue({
+          db,
+          interview,
+          postEvaluation: env.POST_EVALUATION,
+        });
+        if (expired.expiredNow) {
           return new Response("Interview has expired", { status: 400 });
         }
 
