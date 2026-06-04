@@ -20,7 +20,7 @@
     "setup": "bun run setup.ts",
     "prepare": "husky",
     "listen": "polar listen http://localhost:3000/api/polar/webhook",
-    "cron": "bun wrangler workflows trigger pool-check --local --port 3000"
+    "cron": "bun wrangler workflows trigger pool-check --local --port 3000 && bun wrangler workflows trigger eval-retry --local --port 3000"
   },
   "dependencies": {
     "@elevenlabs/client": "^1.9.0",
