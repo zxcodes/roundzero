@@ -15,7 +15,6 @@ import {
   completeInterview,
   createCommunicationAssessment,
   createInterviewMessage,
-  expireInterview,
   getCommunicationAssessmentByInterviewId,
   getInterviewByApplicationId,
   getInterviewContextById,
@@ -27,11 +26,11 @@ import {
   registerCommunicationAssessmentSession,
   updateInterviewStatus,
 } from "@/features/interviews/queries/queries_sql";
+import { expireInterviewIfDue } from "@/features/interviews/server/expire";
 import {
   finalizeVoiceAssessmentFromTranscript,
   signalVoiceAssessmentComplete,
 } from "@/features/interviews/server/voice-assessment";
-import { shouldAutoExpireInterview } from "@/features/interviews/shared/expiry";
 import {
   buildInterviewSystemPrompt,
   ensureInterviewRuntimeMetadata,
@@ -56,21 +55,15 @@ type ExpirableInterview = {
   jobTitle: string;
 };
 
-const expireInterviewIfNeeded = async <T extends ExpirableInterview>(input: {
+const expireInterviewIfNeeded = <T extends ExpirableInterview>(input: {
   db: ReturnType<typeof getDb>;
   interview: T;
-}) => {
-  if (!shouldAutoExpireInterview(input.interview.status, input.interview.metadata)) {
-    return { interview: input.interview, expiredNow: false };
-  }
-
-  await expireInterview(input.db, { id: input.interview.id });
-
-  return {
-    interview: { ...input.interview, status: "expired" as const },
-    expiredNow: true,
-  };
-};
+}) =>
+  expireInterviewIfDue({
+    db: input.db,
+    interview: input.interview,
+    postEvaluation: env.POST_EVALUATION,
+  });
 
 export const getMyInterview = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
@@ -150,14 +143,9 @@ export const getMyInterviews = createServerFn({ method: "GET" })
 
     return await Promise.all(
       interviews.map(async (interview) => {
-        if (!shouldAutoExpireInterview(interview.status, interview.metadata)) {
-          return interview;
-        }
-
-        const expired = await expireInterviewIfNeeded({
-          db,
-          interview,
-        });
+        // The helper internally short-circuits when the interview is not due
+        // for expiry, so no extra guard is needed.
+        const expired = await expireInterviewIfNeeded({ db, interview });
         return expired.interview;
       }),
     );
