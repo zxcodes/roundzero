@@ -38,6 +38,7 @@ import {
   type TranscriptMessage,
   transcriptHasEnoughSignal,
 } from "@/shared/ai-refine";
+import type { Recommendation } from "@/shared/enums";
 import type { createWorkflowLogger } from "@/shared/logger";
 import { notificationPayloadSchemas } from "@/shared/notifications-config";
 import { createChatModel, getModelChain } from "@/shared/openrouter";
@@ -510,7 +511,7 @@ export function sendReportReadyEmail(
     };
   },
   notification: { id: string } | null,
-  reportDraft: { scores: { overall: number }; recommendation: string },
+  reportDraft: { scores: { overall: number }; recommendation: Recommendation },
   db: Sql,
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
