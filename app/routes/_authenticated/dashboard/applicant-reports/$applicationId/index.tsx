@@ -643,10 +643,10 @@ function BreadcrumbRow({
                   Previous
                 </Link>
               ) : (
-                <span>
+                <>
                   <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
                   Previous
-                </span>
+                </>
               )}
             </Button>
             <span className="font-mono text-[11px] text-muted-foreground">
@@ -667,10 +667,10 @@ function BreadcrumbRow({
                   <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-4" />
                 </Link>
               ) : (
-                <span>
+                <>
                   Next
                   <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-4" />
-                </span>
+                </>
               )}
             </Button>
             <Button asChild variant="ghost" size="sm">
