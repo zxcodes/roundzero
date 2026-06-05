@@ -1,6 +1,7 @@
 ## TODO
 
 
+- think about the auth. should it be possible for people to create company and candidate acc with same email?
 - check if everything a company sees (application statues) are accurate at each step. (applied, failed eval, interviewing, interviewed, etc, all lifecycle events.)
 - voice interview still doesnt end the call on its own. and even after the interview, if I refresh, the entire session is lost. it just gets back to square one."start assessment" perhaps we should have a manual submit similar to text interview?
 - the final report should be based on the candidate's response to each and every question. like it should be a deciding factor.
