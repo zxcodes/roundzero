@@ -6,7 +6,7 @@
 - the final report should be based on the candidate's response to each and every question. like it should be a deciding factor.
 - think more about the duration from first report to last report generation bc it will depend on the candidate. think if we need to add an expiry or something and pass it to the next candidate? (BATCH WORKFLOW TEST)
 - for company full report, they should also see what they did in the chat, detecting ai responses (should maybe see something like: potential ai written answer?)
-- add a feedback option for people or requesting features etc.
+- add a feedback option for people or requesting features etc (global? context aware? can trigger anywhere and it will automatically include the context?).
 - add score breakdown. 
 - add a really good resume and candidate test suite to pass thru the ai.
 
