@@ -308,7 +308,7 @@ function ApplicantAiReportPage() {
               onValueChange={onStatusSelectValueChange}
               disabled={updateStatusMutation.isPending}
             >
-              <SelectTrigger className="w-[190px]">
+              <SelectTrigger className="w-47.5">
                 <SelectValue placeholder="Move to status" />
               </SelectTrigger>
               <SelectContent>
