@@ -3,6 +3,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
+import { getActiveInterviewsByJob } from "@/features/interviews/queries/queries_sql";
+import { expireInterviewIfDue } from "@/features/interviews/server/expire";
 import { getJobById } from "@/features/jobs/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { applicationStatusSchema } from "@/shared/enums";
@@ -116,6 +118,22 @@ export const getJobApplicants = createServerFn({ method: "GET" })
     if (!job || job.companyId !== company.id) {
       throw new Error("Job not found or not authorized");
     }
+
+    const activeInterviews = await getActiveInterviewsByJob(db, { jobId: data.jobId });
+    await Promise.all(
+      activeInterviews.map((interview) =>
+        expireInterviewIfDue({
+          db,
+          interview: {
+            id: interview.id,
+            applicationId: interview.applicationId,
+            status: interview.status,
+            expiresAt: interview.expiresAt,
+          },
+          postEvaluation: env.POST_EVALUATION,
+        }),
+      ),
+    );
 
     const applicants = await getApplicationsByJob(db, { jobId: data.jobId });
     return applicants;

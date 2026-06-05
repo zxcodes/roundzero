@@ -1,9 +1,14 @@
 import type { Sql } from "postgres";
+import {
+  getApplicationById,
+  updateApplicationStatus,
+} from "@/features/applications/queries/queries_sql";
 import { expireInterview } from "@/features/interviews/queries/queries_sql";
 import { shouldAutoExpireInterview } from "@/features/interviews/shared/expiry";
 
 export type ExpirableInterview = {
   id: string;
+  applicationId: string;
   status: string;
   expiresAt: Date | string | null;
 };
@@ -36,6 +41,14 @@ export const expireInterviewIfDue = async <T extends ExpirableInterview>(input: 
 
   const wasInProgress = input.interview.status === "in_progress";
   await expireInterview(input.db, { id: input.interview.id });
+
+  const application = await getApplicationById(input.db, { id: input.interview.applicationId });
+  if (application && application.status !== "rejected" && application.status !== "withdrawn") {
+    await updateApplicationStatus(input.db, {
+      id: input.interview.applicationId,
+      status: "pre_screening",
+    });
+  }
 
   let postEvalTriggered = false;
   if (wasInProgress && input.postEvaluation) {

@@ -6,7 +6,9 @@ RETURNING *;
 -- name: getInterviewByApplicationId :one
 SELECT *
 FROM interviews
-WHERE application_id = $1;
+WHERE application_id = $1
+ORDER BY created_at DESC
+LIMIT 1;
 
 -- name: getInterviewForCandidateById :one
 -- Candidate-facing projection. Deliberately excludes interviews.metadata and
@@ -39,7 +41,9 @@ JOIN applications a ON a.id = i.application_id
 JOIN jobs j ON j.id = a.job_id
 JOIN companies c ON c.id = j.company_id
 WHERE a.id = $1
-  AND a.candidate_id = $2;
+  AND a.candidate_id = $2
+ORDER BY i.created_at DESC
+LIMIT 1;
 
 -- name: getInterviewsByCandidate :many
 -- Candidate-facing projection; see getInterviewForCandidateById for why
@@ -55,6 +59,28 @@ JOIN jobs j ON j.id = a.job_id
 JOIN companies c ON c.id = j.company_id
 WHERE a.candidate_id = $1
 ORDER BY i.updated_at DESC;
+
+-- name: getActiveInterviewsByJob :many
+SELECT i.id, i.application_id, i.status, i.metadata->>'expiresAt' AS expires_at
+FROM interviews i
+JOIN applications a ON a.id = i.application_id
+WHERE a.job_id = $1
+  AND i.status IN ('pending', 'in_progress')
+ORDER BY i.created_at DESC;
+
+-- name: resetInterviewInvite :one
+UPDATE interviews
+SET metadata = COALESCE(metadata, '{}'::jsonb) || $2,
+    status = 'pending',
+    invited_at = $3,
+    started_at = NULL,
+    completed_at = NULL,
+    expired_at = NULL,
+    cancelled_at = NULL,
+    cancellation_reason = NULL,
+    updated_at = now()
+WHERE id = $1
+RETURNING *;
 
 -- name: updateInterviewStatus :one
 UPDATE interviews

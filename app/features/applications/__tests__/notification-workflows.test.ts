@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { getInterviewByApplicationId } from "@/features/interviews/queries/queries_sql";
+import {
+  createInterview,
+  getInterviewByApplicationId,
+} from "@/features/interviews/queries/queries_sql";
 import { getNotificationsByUser } from "@/features/notifications/queries/queries_sql";
 import {
   getTestDb,
@@ -293,5 +296,58 @@ describe("application notification workflows", () => {
     });
     expect(notifications).toHaveLength(1);
     expect(notifications[0].type).toBe("interview_invited");
+  });
+
+  it("creates a fresh interview when re-inviting after an expired interview", async () => {
+    const { company, owner } = await seedCompany({ name: "Revive" });
+    const candidate = await seedUser({ role: "candidate" });
+    const { job } = await seedJob({
+      companyId: company.id,
+      title: "Staff Engineer",
+      status: "open",
+    });
+    const application = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id, "staff.pdf"),
+      metadata: {},
+      status: "evaluation_failed",
+    });
+    expect(application).not.toBeNull();
+    if (!application) return;
+
+    const expiredInterview = await createInterview(sql, {
+      applicationId: application.id,
+      agentId: null,
+      type: "full",
+      metadata: { expiresAt: new Date(Date.now() - 60_000).toISOString() },
+      status: "expired",
+      invitedAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      startedAt: null,
+      completedAt: null,
+    });
+    expect(expiredInterview).not.toBeNull();
+    if (!expiredInterview) return;
+
+    await updateApplicationStatusWorkflow(
+      sql,
+      {
+        userId: owner.id,
+        applicationId: application.id,
+        status: "interview_invited",
+      },
+      {
+        sendNotificationEmail: async () => {
+          throw new Error("Resend rejected request");
+        },
+      },
+    );
+
+    const latestInterview = await getInterviewByApplicationId(sql, {
+      applicationId: application.id,
+    });
+    expect(latestInterview).not.toBeNull();
+    expect(latestInterview!.id).not.toBe(expiredInterview.id);
+    expect(latestInterview!.status).toBe("pending");
   });
 });

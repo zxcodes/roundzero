@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createApplication } from "@/features/applications/queries/queries_sql";
+import { createApplication, getApplicationById } from "@/features/applications/queries/queries_sql";
 import {
   createInterview,
   getInterviewContextById,
@@ -53,13 +53,17 @@ const makePostEvalBinding = () => {
 
 describe("expireInterviewIfDue", () => {
   it("does nothing when the interview has no expiry", async () => {
-    const { interview } = await seedInterview({ status: "in_progress", expiresAt: null });
+    const { interview, applicationId } = await seedInterview({
+      status: "in_progress",
+      expiresAt: null,
+    });
     const { binding, create } = makePostEvalBinding();
 
     const result = await expireInterviewIfDue({
       db: sql,
       interview: {
         id: interview.id,
+        applicationId,
         status: interview.status,
         expiresAt: interview.metadata?.expiresAt ?? null,
       },
@@ -75,7 +79,7 @@ describe("expireInterviewIfDue", () => {
   });
 
   it("does nothing when the deadline is still in the future", async () => {
-    const { interview } = await seedInterview({
+    const { interview, applicationId } = await seedInterview({
       status: "in_progress",
       expiresAt: new Date(Date.now() + 60 * 60 * 1000),
     });
@@ -85,6 +89,7 @@ describe("expireInterviewIfDue", () => {
       db: sql,
       interview: {
         id: interview.id,
+        applicationId,
         status: interview.status,
         expiresAt: interview.metadata?.expiresAt ?? null,
       },
@@ -96,7 +101,7 @@ describe("expireInterviewIfDue", () => {
   });
 
   it("expires a pending interview without triggering post-eval (no transcript to evaluate)", async () => {
-    const { interview } = await seedInterview({
+    const { interview, applicationId } = await seedInterview({
       status: "pending",
       expiresAt: new Date(Date.now() - 60 * 1000),
     });
@@ -106,6 +111,7 @@ describe("expireInterviewIfDue", () => {
       db: sql,
       interview: {
         id: interview.id,
+        applicationId,
         status: interview.status,
         expiresAt: interview.metadata?.expiresAt ?? null,
       },
@@ -118,10 +124,12 @@ describe("expireInterviewIfDue", () => {
 
     const reloaded = await getInterviewContextById(sql, { id: interview.id });
     expect(reloaded?.status).toBe("expired");
+    const application = await getApplicationById(sql, { id: applicationId });
+    expect(application?.status).toBe("pre_screening");
   });
 
   it("expires an in_progress interview AND triggers post-eval so partial transcript becomes a report", async () => {
-    const { interview } = await seedInterview({
+    const { interview, applicationId } = await seedInterview({
       status: "in_progress",
       expiresAt: new Date(Date.now() - 60 * 1000),
     });
@@ -131,6 +139,7 @@ describe("expireInterviewIfDue", () => {
       db: sql,
       interview: {
         id: interview.id,
+        applicationId,
         status: interview.status,
         expiresAt: interview.metadata?.expiresAt ?? null,
       },
@@ -146,10 +155,12 @@ describe("expireInterviewIfDue", () => {
 
     const reloaded = await getInterviewContextById(sql, { id: interview.id });
     expect(reloaded?.status).toBe("expired");
+    const application = await getApplicationById(sql, { id: applicationId });
+    expect(application?.status).toBe("pre_screening");
   });
 
   it("still marks expired even if post-eval trigger throws (best-effort side effect)", async () => {
-    const { interview } = await seedInterview({
+    const { interview, applicationId } = await seedInterview({
       status: "in_progress",
       expiresAt: new Date(Date.now() - 60 * 1000),
     });
@@ -162,6 +173,7 @@ describe("expireInterviewIfDue", () => {
       db: sql,
       interview: {
         id: interview.id,
+        applicationId,
         status: interview.status,
         expiresAt: interview.metadata?.expiresAt ?? null,
       },
@@ -173,10 +185,12 @@ describe("expireInterviewIfDue", () => {
 
     const reloaded = await getInterviewContextById(sql, { id: interview.id });
     expect(reloaded?.status).toBe("expired");
+    const application = await getApplicationById(sql, { id: applicationId });
+    expect(application?.status).toBe("pre_screening");
   });
 
   it("skips the post-eval side effect entirely when the binding is null", async () => {
-    const { interview } = await seedInterview({
+    const { interview, applicationId } = await seedInterview({
       status: "in_progress",
       expiresAt: new Date(Date.now() - 60 * 1000),
     });
@@ -185,6 +199,7 @@ describe("expireInterviewIfDue", () => {
       db: sql,
       interview: {
         id: interview.id,
+        applicationId,
         status: interview.status,
         expiresAt: interview.metadata?.expiresAt ?? null,
       },
@@ -196,5 +211,7 @@ describe("expireInterviewIfDue", () => {
 
     const reloaded = await getInterviewContextById(sql, { id: interview.id });
     expect(reloaded?.status).toBe("expired");
+    const application = await getApplicationById(sql, { id: applicationId });
+    expect(application?.status).toBe("pre_screening");
   });
 });
