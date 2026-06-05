@@ -269,13 +269,13 @@ export const Route = createFileRoute("/api/interview-chat")({
               return { completed: true, reason };
             }),
           ],
-          temperature: 0.3,
-          maxTokens: 150,
           abortController,
           agentLoopStrategy: maxIterations(5),
           modelOptions: {
             ...(fallbacks.length > 0 ? { models: fallbacks } : {}),
             parallelToolCalls: false,
+            temperature: 0.3,
+            maxCompletionTokens: 150,
           },
           middleware: [
             {

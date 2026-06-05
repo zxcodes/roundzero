@@ -226,11 +226,11 @@ export const startMyInterview = createServerFn({ method: "POST" })
             maxQuestions: 5,
           }),
         ],
-        temperature: 0.3,
-        maxTokens: 150,
         modelOptions: {
           ...(fallbacks.length > 0 ? { models: fallbacks } : {}),
           parallelToolCalls: false,
+          temperature: 0.3,
+          maxCompletionTokens: 150,
         },
         stream: false,
       });

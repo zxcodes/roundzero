@@ -65,7 +65,8 @@ export function getOpenRouter(): OpenRouterProvider {
 // ─── Model Chains ───────────────────────────────────────────────────────────
 //
 // Model selection is code-level, not infra-level. Change these arrays in code
-// when you want to switch models. No env vars.
+// when you want to switch models. LOCAL_DEV_PAID_MODEL overrides the dev
+// default (openrouter/free) for local debugging with a paid model.
 //
 // Each chain is ordered: [primary, fallback1, ...]. The primary is passed to
 // `openrouter.chat(model)`. The rest are passed as `models` in the chat settings
@@ -79,18 +80,18 @@ type Task = "pre_eval" | "post_eval" | "post_eval_audit" | "interview" | "job_cr
 
 const MODEL_CHAINS = {
   pre_eval: {
-    dev: ["openrouter/free", "meta-llama/llama-3.3-70b-instruct:free"],
+    dev: ["openrouter/free"],
     staging: ["google/gemini-2.5-flash", "anthropic/claude-haiku-4.5"],
     prod: ["anthropic/claude-haiku-4.5", "anthropic/claude-sonnet-4.5"],
   },
   post_eval: {
-    dev: ["openrouter/free", "qwen/qwen3-next-80b-a3b-instruct:free"],
+    dev: ["openrouter/free"],
     staging: ["anthropic/claude-haiku-4.5", "google/gemini-2.5-flash"],
     prod: ["anthropic/claude-sonnet-4.5", "anthropic/claude-opus-4.5"],
   },
   // Audit uses a different model family than post_eval to catch biases.
   post_eval_audit: {
-    dev: ["openrouter/free", "meta-llama/llama-3.3-70b-instruct:free"],
+    dev: ["openrouter/free"],
     staging: ["meta-llama/llama-3.3-70b-instruct", "google/gemini-2.5-flash"],
     prod: ["meta-llama/llama-3.3-70b-instruct", "nvidia/nemotron-3-super-120b"],
   },
@@ -100,7 +101,7 @@ const MODEL_CHAINS = {
     prod: ["anthropic/claude-haiku-4.5", "anthropic/claude-sonnet-4.5"],
   },
   job_creation: {
-    dev: ["openrouter/free", "meta-llama/llama-3.3-70b-instruct:free"],
+    dev: ["openrouter/free"],
     staging: ["google/gemini-2.5-flash", "anthropic/claude-haiku-4.5"],
     prod: ["anthropic/claude-sonnet-4.5", "anthropic/claude-haiku-4.5"],
   },
