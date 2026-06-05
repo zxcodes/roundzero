@@ -6,18 +6,15 @@ import { createOpenRouterText } from "@tanstack/ai-openrouter";
 import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
-import {
-  getApplicationById,
-  updateApplicationStatus,
-} from "@/features/applications/queries/queries_sql";
+import { updateApplicationStatus } from "@/features/applications/queries/queries_sql";
 import {
   cancelInterview,
   completeInterview,
   createCommunicationAssessment,
   createInterviewMessage,
   getCommunicationAssessmentByInterviewId,
-  getInterviewByApplicationId,
   getInterviewContextById,
+  getInterviewForCandidateByApplicationId,
   getInterviewForCandidateById,
   getInterviewMessagesByInterviewId,
   getInterviewsByCandidate,
@@ -26,7 +23,7 @@ import {
   registerCommunicationAssessmentSession,
   updateInterviewStatus,
 } from "@/features/interviews/queries/queries_sql";
-import { expireInterviewIfDue } from "@/features/interviews/server/expire";
+import { type ExpirableInterview, expireInterviewIfDue } from "@/features/interviews/server/expire";
 import {
   finalizeVoiceAssessmentFromTranscript,
   signalVoiceAssessmentComplete,
@@ -44,16 +41,6 @@ import { getModelChain } from "@/shared/openrouter";
 const interviewIdSchema = z.object({
   interviewId: z.string().uuid(),
 });
-
-type ExpirableInterview = {
-  id: string;
-  applicationId: string;
-  status: string;
-  metadata: unknown;
-  candidateId: string;
-  jobId: string;
-  jobTitle: string;
-};
 
 const expireInterviewIfNeeded = <T extends ExpirableInterview>(input: {
   db: ReturnType<typeof getDb>;
@@ -185,19 +172,17 @@ export const startMyInterview = createServerFn({ method: "POST" })
       throw new Error("Interview is no longer available");
     }
 
-    const updated =
-      effectiveInterview.status === "in_progress"
-        ? effectiveInterview
-        : await updateInterviewStatus(db, {
-            id: data.interviewId,
-            status: "in_progress",
-          });
+    const wasAlreadyActive = effectiveInterview.status === "in_progress";
 
-    if (!updated) {
-      return null;
-    }
+    if (!wasAlreadyActive) {
+      const updated = await updateInterviewStatus(db, {
+        id: data.interviewId,
+        status: "in_progress",
+      });
+      if (!updated) {
+        return null;
+      }
 
-    if (effectiveInterview.status !== "in_progress") {
       await updateApplicationStatus(db, {
         id: effectiveInterview.applicationId,
         status: "interview_in_progress",
@@ -260,10 +245,13 @@ export const startMyInterview = createServerFn({ method: "POST" })
       }
     }
 
-    return {
-      ...updated,
-      candidateId: effectiveInterview.candidateId,
-    };
+    if (wasAlreadyActive) {
+      return effectiveInterview;
+    }
+    return await getInterviewForCandidateById(db, {
+      id: data.interviewId,
+      candidateId: context.userId,
+    });
   });
 
 export const cancelMyInterview = createServerFn({ method: "POST" })
@@ -314,10 +302,10 @@ export const cancelMyInterview = createServerFn({ method: "POST" })
       status: "withdrawn",
     });
 
-    return {
-      ...updated,
-      candidateId: effectiveInterview.candidateId,
-    };
+    return await getInterviewForCandidateById(db, {
+      id: data.interviewId,
+      candidateId: context.userId,
+    });
   });
 
 export const completeMyInterview = createServerFn({ method: "POST" })
@@ -398,10 +386,10 @@ export const completeMyInterview = createServerFn({ method: "POST" })
       }
     }
 
-    return {
-      ...updated,
-      candidateId: effectiveInterview.candidateId,
-    };
+    return await getInterviewForCandidateById(db, {
+      id: data.interviewId,
+      candidateId: context.userId,
+    });
   });
 
 export const getInterviewForApplication = createServerFn({ method: "GET" })
@@ -420,34 +408,16 @@ export const getInterviewForApplication = createServerFn({ method: "GET" })
       throw new Error("Only candidates can view interviews");
     }
 
-    const application = await getApplicationById(db, { id: data.applicationId });
-    if (!application) {
-      return null;
-    }
-
-    if (application.candidateId !== context.userId) {
-      throw new Error("Not authorized to view this interview");
-    }
-
-    const interview = await getInterviewByApplicationId(db, {
-      applicationId: data.applicationId,
+    const interview = await getInterviewForCandidateByApplicationId(db, {
+      id: data.applicationId,
+      candidateId: context.userId,
     });
 
     if (!interview) {
       return null;
     }
 
-    const expired = await expireInterviewIfNeeded({
-      db,
-      interview: {
-        ...interview,
-        candidateId: context.userId,
-        applicationStatus: application.status,
-        jobId: application.jobId,
-        jobTitle: application.jobTitle,
-        companyName: application.companyName,
-      },
-    });
+    const expired = await expireInterviewIfNeeded({ db, interview });
     if (expired.expiredNow) {
       return expired.interview;
     }

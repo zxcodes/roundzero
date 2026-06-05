@@ -21,7 +21,7 @@ type InterviewInvitationCardProps = {
   interviewId: string;
   interviewType: string;
   status: string;
-  expiresAt?: Date | null;
+  expiresAt?: Date | string | null;
 };
 
 export function InterviewInvitationCard({

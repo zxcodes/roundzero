@@ -5,7 +5,6 @@ import { InterviewWorkspaceSkeleton } from "@/components/route-skeletons";
 import { SidebarInset, SidebarProvider, useSidebar } from "@/components/ui/sidebar";
 import { InterviewSidebar } from "@/features/interviews/components/interview-sidebar";
 import { getMyInterviews } from "@/features/interviews/server/functions";
-import { getInterviewExpiresAt } from "@/features/interviews/shared/expiry";
 import { useCommandPaletteShortcut } from "@/hooks/use-command-palette-shortcut";
 
 export const Route = createFileRoute("/_authenticated/interview")({
@@ -16,12 +15,7 @@ export const Route = createFileRoute("/_authenticated/interview")({
   },
   loader: async () => {
     const interviews = await getMyInterviews();
-    return {
-      interviews: interviews.map((interview) => ({
-        ...interview,
-        expiresAt: getInterviewExpiresAt(interview.metadata)?.toISOString() ?? null,
-      })),
-    };
+    return { interviews };
   },
   pendingComponent: InterviewWorkspaceSkeleton,
   component: InterviewWorkspaceLayout,

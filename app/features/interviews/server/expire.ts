@@ -5,7 +5,7 @@ import { shouldAutoExpireInterview } from "@/features/interviews/shared/expiry";
 export type ExpirableInterview = {
   id: string;
   status: string;
-  metadata: unknown;
+  expiresAt: Date | string | null;
 };
 
 export type ExpireInterviewResult<T extends ExpirableInterview> = {
@@ -30,7 +30,7 @@ export const expireInterviewIfDue = async <T extends ExpirableInterview>(input: 
   interview: T;
   postEvaluation: Workflow<{ interviewId: string }> | null;
 }): Promise<ExpireInterviewResult<T>> => {
-  if (!shouldAutoExpireInterview(input.interview.status, input.interview.metadata)) {
+  if (!shouldAutoExpireInterview(input.interview.status, input.interview.expiresAt)) {
     return { interview: input.interview, expiredNow: false, postEvalTriggered: false };
   }
 

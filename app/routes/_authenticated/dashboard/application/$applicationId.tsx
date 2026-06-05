@@ -31,7 +31,6 @@ import {
 } from "@/features/applications/server/functions";
 import { InterviewInvitationCard } from "@/features/interviews/components/interview-invitation-card";
 import { getInterviewForApplication } from "@/features/interviews/server/functions";
-import { getInterviewExpiresAt } from "@/features/interviews/shared/expiry";
 import { formatDate, formatDateShort } from "@/shared/date";
 import { base64ToBlob } from "@/shared/resume";
 import { validateUuidParams } from "@/shared/validation";
@@ -234,7 +233,7 @@ function CandidateApplicationDetailPage() {
     !application.companyOwnerDeleted;
 
   const hasInterview = interview !== null;
-  const interviewExpiresAt = interview ? getInterviewExpiresAt(interview.metadata) : null;
+  const interviewExpiresAt = interview?.expiresAt ?? null;
 
   const onResumeView = async () => {
     await resumeDownloadMutation.mutateAsync({
