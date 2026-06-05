@@ -10,6 +10,7 @@
     "cf-typegen": "wrangler types",
     "test": "vitest run",
     "sqlgen": "sqlc generate",
+    "db:reset": "bash db/reset.sh",
     "db:seed": "bun run seed.ts",
     "db:seed:me": "bun ./db/seed/seed-me.ts",
     "db:seed:dashboard": "bun ./db/seed/seed-dashboard-company.ts",
