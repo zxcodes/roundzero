@@ -351,7 +351,7 @@ function ApplicantReportSummaryPage() {
               onValueChange={onStatusValueChange}
               disabled={updateStatusMutation.isPending}
             >
-              <SelectTrigger className="w-[200px]">
+              <SelectTrigger className="w-50">
                 <SelectValue placeholder="Move to status" />
               </SelectTrigger>
               <SelectContent>
