@@ -12,7 +12,6 @@ export const EVAL_RETRY_AUTO_CAP = 3;
 /** Maximum number of applications the cron will pick up per tick. */
 export const EVAL_RETRY_SWEEP_LIMIT = 25;
 
-export type EvalRetryKind = "pre_eval" | "post_eval";
 export type EvalRetrySource = "cron" | "manual";
 
 /**

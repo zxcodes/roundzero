@@ -1,7 +1,6 @@
 import { createFileRoute, notFound, Outlet, redirect } from "@tanstack/react-router";
 import { InterviewContentSkeleton } from "@/components/route-skeletons";
 import { getMyInterview, getMyInterviewMessages } from "@/features/interviews/server/functions";
-import { getInterviewExpiresAt } from "@/features/interviews/shared/expiry";
 import { validateUuidParams } from "@/shared/validation";
 
 export const Route = createFileRoute("/_authenticated/interview/$interviewId")({
@@ -25,7 +24,7 @@ export const Route = createFileRoute("/_authenticated/interview/$interviewId")({
     }
     return {
       interview,
-      expiresAt: getInterviewExpiresAt(interview.metadata)?.toISOString() ?? null,
+      expiresAt: interview.expiresAt,
       initialMessages: chatState.messages,
     };
   },

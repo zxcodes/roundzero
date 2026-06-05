@@ -58,7 +58,11 @@ describe("expireInterviewIfDue", () => {
 
     const result = await expireInterviewIfDue({
       db: sql,
-      interview: { id: interview.id, status: interview.status, metadata: interview.metadata },
+      interview: {
+        id: interview.id,
+        status: interview.status,
+        expiresAt: interview.metadata?.expiresAt ?? null,
+      },
       postEvaluation: binding,
     });
 
@@ -79,7 +83,11 @@ describe("expireInterviewIfDue", () => {
 
     const result = await expireInterviewIfDue({
       db: sql,
-      interview: { id: interview.id, status: interview.status, metadata: interview.metadata },
+      interview: {
+        id: interview.id,
+        status: interview.status,
+        expiresAt: interview.metadata?.expiresAt ?? null,
+      },
       postEvaluation: binding,
     });
 
@@ -96,7 +104,11 @@ describe("expireInterviewIfDue", () => {
 
     const result = await expireInterviewIfDue({
       db: sql,
-      interview: { id: interview.id, status: interview.status, metadata: interview.metadata },
+      interview: {
+        id: interview.id,
+        status: interview.status,
+        expiresAt: interview.metadata?.expiresAt ?? null,
+      },
       postEvaluation: binding,
     });
 
@@ -117,7 +129,11 @@ describe("expireInterviewIfDue", () => {
 
     const result = await expireInterviewIfDue({
       db: sql,
-      interview: { id: interview.id, status: interview.status, metadata: interview.metadata },
+      interview: {
+        id: interview.id,
+        status: interview.status,
+        expiresAt: interview.metadata?.expiresAt ?? null,
+      },
       postEvaluation: binding,
     });
 
@@ -144,7 +160,11 @@ describe("expireInterviewIfDue", () => {
 
     const result = await expireInterviewIfDue({
       db: sql,
-      interview: { id: interview.id, status: interview.status, metadata: interview.metadata },
+      interview: {
+        id: interview.id,
+        status: interview.status,
+        expiresAt: interview.metadata?.expiresAt ?? null,
+      },
       postEvaluation: binding,
     });
 
@@ -163,7 +183,11 @@ describe("expireInterviewIfDue", () => {
 
     const result = await expireInterviewIfDue({
       db: sql,
-      interview: { id: interview.id, status: interview.status, metadata: interview.metadata },
+      interview: {
+        id: interview.id,
+        status: interview.status,
+        expiresAt: interview.metadata?.expiresAt ?? null,
+      },
       postEvaluation: null,
     });
 

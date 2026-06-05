@@ -9,8 +9,14 @@ FROM interviews
 WHERE application_id = $1;
 
 -- name: getInterviewForCandidateById :one
-SELECT i.id, i.application_id, i.agent_id, i.type, i.metadata, i.status, i.invited_at, i.started_at, i.completed_at,
+-- Candidate-facing projection. Deliberately excludes interviews.metadata and
+-- agent_id: metadata holds the AI runtime context (system-prompt inputs, the
+-- company's screening questions, the candidate's pre-eval authenticity flags +
+-- internal scores) which must never reach the candidate. Only the expiry
+-- deadline is surfaced, as expires_at.
+SELECT i.id, i.application_id, i.type, i.status, i.invited_at, i.started_at, i.completed_at,
        i.expired_at, i.cancelled_at, i.cancellation_reason, i.created_at, i.updated_at,
+       i.metadata->>'expiresAt' AS expires_at,
        a.candidate_id, a.status AS application_status,
        a.job_id, j.title AS job_title, c.name AS company_name
 FROM interviews i
@@ -20,9 +26,27 @@ JOIN companies c ON c.id = j.company_id
 WHERE i.id = $1
   AND a.candidate_id = $2;
 
--- name: getInterviewsByCandidate :many
-SELECT i.id, i.application_id, i.agent_id, i.type, i.metadata, i.status, i.invited_at, i.started_at, i.completed_at,
+-- name: getInterviewForCandidateByApplicationId :one
+-- Same candidate-safe projection as getInterviewForCandidateById, keyed by the
+-- application instead of the interview id.
+SELECT i.id, i.application_id, i.type, i.status, i.invited_at, i.started_at, i.completed_at,
        i.expired_at, i.cancelled_at, i.cancellation_reason, i.created_at, i.updated_at,
+       i.metadata->>'expiresAt' AS expires_at,
+       a.candidate_id, a.status AS application_status,
+       a.job_id, j.title AS job_title, c.name AS company_name
+FROM interviews i
+JOIN applications a ON a.id = i.application_id
+JOIN jobs j ON j.id = a.job_id
+JOIN companies c ON c.id = j.company_id
+WHERE a.id = $1
+  AND a.candidate_id = $2;
+
+-- name: getInterviewsByCandidate :many
+-- Candidate-facing projection; see getInterviewForCandidateById for why
+-- metadata/agent_id are excluded.
+SELECT i.id, i.application_id, i.type, i.status, i.invited_at, i.started_at, i.completed_at,
+       i.expired_at, i.cancelled_at, i.cancellation_reason, i.created_at, i.updated_at,
+       i.metadata->>'expiresAt' AS expires_at,
        a.candidate_id, a.status AS application_status,
        a.job_id, j.title AS job_title, c.name AS company_name
 FROM interviews i
