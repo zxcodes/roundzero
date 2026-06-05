@@ -361,7 +361,7 @@ export function generateReport(
           },
           summary: interviewData.voiceAssessment.summary,
         }
-      : "(not completed — base communication score on the text transcript only)";
+      : "(not completed — the candidate did not complete the voice communication assessment. Set communication score to 0 to indicate it was not assessed.)";
 
     const userPrompt = JSON.stringify({
       instructions:
@@ -621,7 +621,13 @@ export function applyVoiceAssessmentToReport(
   voice: CommunicationAssessmentAnalysis | null,
 ): ReportModelResponse {
   if (!voice) {
-    return report;
+    return {
+      ...report,
+      scores: {
+        ...report.scores,
+        communication: 0,
+      },
+    };
   }
 
   // Calculate signal quality based on total evidence count across all dimensions
