@@ -67,7 +67,9 @@ export async function createReport(sql: Sql, args: createReportArgs): Promise<cr
 export const getReportByApplicationIdQuery = `-- name: getReportByApplicationId :one
 SELECT id, interview_id, application_id, summary, strengths, weaknesses, insights, evidence, screening_answers, scores, recommendation, model, prompt_version, refine_version, created_at
 FROM reports
-WHERE application_id = $1`;
+WHERE application_id = $1
+ORDER BY created_at DESC
+LIMIT 1`;
 
 export interface getReportByApplicationIdArgs {
     applicationId: string;
@@ -93,6 +95,61 @@ export interface getReportByApplicationIdRow {
 
 export async function getReportByApplicationId(sql: Sql, args: getReportByApplicationIdArgs): Promise<getReportByApplicationIdRow | null> {
     const rows = await sql.unsafe(getReportByApplicationIdQuery, [args.applicationId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        interviewId: row[1],
+        applicationId: row[2],
+        summary: row[3],
+        strengths: row[4],
+        weaknesses: row[5],
+        insights: row[6],
+        evidence: row[7],
+        screeningAnswers: row[8],
+        scores: row[9],
+        recommendation: row[10],
+        model: row[11],
+        promptVersion: row[12],
+        refineVersion: row[13],
+        createdAt: row[14]
+    };
+}
+
+export const getReleasedReportByApplicationIdQuery = `-- name: getReleasedReportByApplicationId :one
+SELECT id, interview_id, application_id, summary, strengths, weaknesses, insights, evidence, screening_answers, scores, recommendation, model, prompt_version, refine_version, created_at
+FROM reports
+WHERE application_id = $1
+  AND released_at IS NOT NULL
+ORDER BY released_at DESC, created_at DESC
+LIMIT 1`;
+
+export interface getReleasedReportByApplicationIdArgs {
+    applicationId: string;
+}
+
+export interface getReleasedReportByApplicationIdRow {
+    id: string;
+    interviewId: string;
+    applicationId: string;
+    summary: string;
+    strengths: any;
+    weaknesses: any;
+    insights: any;
+    evidence: any;
+    screeningAnswers: any;
+    scores: any;
+    recommendation: string;
+    model: string | null;
+    promptVersion: string | null;
+    refineVersion: string | null;
+    createdAt: Date;
+}
+
+export async function getReleasedReportByApplicationId(sql: Sql, args: getReleasedReportByApplicationIdArgs): Promise<getReleasedReportByApplicationIdRow | null> {
+    const rows = await sql.unsafe(getReleasedReportByApplicationIdQuery, [args.applicationId]).values();
     if (rows.length !== 1) {
         return null;
     }

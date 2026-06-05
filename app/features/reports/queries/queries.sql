@@ -6,11 +6,20 @@ RETURNING id, interview_id, application_id, summary, strengths, weaknesses, insi
 -- name: getReportByApplicationId :one
 SELECT id, interview_id, application_id, summary, strengths, weaknesses, insights, evidence, screening_answers, scores, recommendation, model, prompt_version, refine_version, created_at
 FROM reports
-WHERE application_id = $1;
+WHERE application_id = $1
+ORDER BY created_at DESC
+LIMIT 1;
+
+-- name: getReleasedReportByApplicationId :one
+SELECT id, interview_id, application_id, summary, strengths, weaknesses, insights, evidence, screening_answers, scores, recommendation, model, prompt_version, refine_version, created_at
+FROM reports
+WHERE application_id = $1
+  AND released_at IS NOT NULL
+ORDER BY released_at DESC, created_at DESC
+LIMIT 1;
 
 -- name: getReportByInterviewId :one
 SELECT id, interview_id, application_id, summary, strengths, weaknesses, insights, evidence, screening_answers, scores, recommendation, model, prompt_version, refine_version, created_at
 FROM reports
 WHERE interview_id = $1;
-
 

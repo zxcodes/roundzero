@@ -1,3 +1,4 @@
+import { env } from "cloudflare:workers";
 import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
@@ -8,9 +9,10 @@ import {
   getInterviewByApplicationId,
   getInterviewMessagesByInterviewId,
 } from "@/features/interviews/queries/queries_sql";
+import { expireInterviewIfDue } from "@/features/interviews/server/expire";
 import { parseInterviewMetadata } from "@/features/interviews/shared/runtime";
 import { getPreEvaluationByApplicationId } from "@/features/pre-evaluations/queries/queries_sql";
-import { getReportByApplicationId } from "@/features/reports/queries/queries_sql";
+import { getReleasedReportByApplicationId } from "@/features/reports/queries/queries_sql";
 import { reportSchema } from "@/features/reports/schemas";
 import { getDb } from "@/shared/db";
 import { companyMiddleware } from "@/shared/middleware";
@@ -53,13 +55,28 @@ export const getCompanyApplicantReportTimeline = createServerFn({ method: "GET" 
       throw new Error("Not authorized to view this applicant");
     }
 
-    const interview = await getInterviewByApplicationId(db, {
+    let interview = await getInterviewByApplicationId(db, {
       applicationId: data.applicationId,
     });
+    if (interview) {
+      await expireInterviewIfDue({
+        db,
+        interview: {
+          id: interview.id,
+          applicationId: interview.applicationId,
+          status: interview.status,
+          expiresAt: interview.metadata?.expiresAt ?? null,
+        },
+        postEvaluation: env.POST_EVALUATION,
+      });
+      interview = await getInterviewByApplicationId(db, {
+        applicationId: data.applicationId,
+      });
+    }
     const preEvaluation = await getPreEvaluationByApplicationId(db, {
       applicationId: data.applicationId,
     });
-    const reportRow = await getReportByApplicationId(db, {
+    const reportRow = await getReleasedReportByApplicationId(db, {
       applicationId: data.applicationId,
     });
     const communicationAssessment = await getCommunicationAssessmentByApplicationId(db, {

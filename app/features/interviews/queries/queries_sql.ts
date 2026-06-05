@@ -62,7 +62,9 @@ export async function createInterview(sql: Sql, args: createInterviewArgs): Prom
 export const getInterviewByApplicationIdQuery = `-- name: getInterviewByApplicationId :one
 SELECT id, application_id, batch_id, agent_id, type, metadata, status, invited_at, started_at, completed_at, expired_at, cancelled_at, cancellation_reason, created_at, updated_at
 FROM interviews
-WHERE application_id = $1`;
+WHERE application_id = $1
+ORDER BY created_at DESC
+LIMIT 1`;
 
 export interface getInterviewByApplicationIdArgs {
     applicationId: string;
@@ -189,7 +191,9 @@ JOIN applications a ON a.id = i.application_id
 JOIN jobs j ON j.id = a.job_id
 JOIN companies c ON c.id = j.company_id
 WHERE a.id = $1
-  AND a.candidate_id = $2`;
+  AND a.candidate_id = $2
+ORDER BY i.created_at DESC
+LIMIT 1`;
 
 export interface getInterviewForCandidateByApplicationIdArgs {
     id: string;
@@ -304,6 +308,97 @@ export async function getInterviewsByCandidate(sql: Sql, args: getInterviewsByCa
         jobTitle: row[16],
         companyName: row[17]
     }));
+}
+
+export const getActiveInterviewsByJobQuery = `-- name: getActiveInterviewsByJob :many
+SELECT i.id, i.application_id, i.status, i.metadata->>'expiresAt' AS expires_at
+FROM interviews i
+JOIN applications a ON a.id = i.application_id
+WHERE a.job_id = $1
+  AND i.status IN ('pending', 'in_progress')
+ORDER BY i.created_at DESC`;
+
+export interface getActiveInterviewsByJobArgs {
+    jobId: string;
+}
+
+export interface getActiveInterviewsByJobRow {
+    id: string;
+    applicationId: string;
+    status: string;
+    expiresAt: string | null;
+}
+
+export async function getActiveInterviewsByJob(sql: Sql, args: getActiveInterviewsByJobArgs): Promise<getActiveInterviewsByJobRow[]> {
+    return (await sql.unsafe(getActiveInterviewsByJobQuery, [args.jobId]).values()).map(row => ({
+        id: row[0],
+        applicationId: row[1],
+        status: row[2],
+        expiresAt: row[3]
+    }));
+}
+
+export const resetInterviewInviteQuery = `-- name: resetInterviewInvite :one
+UPDATE interviews
+SET metadata = COALESCE(metadata, '{}'::jsonb) || $2,
+    status = 'pending',
+    invited_at = $3,
+    started_at = NULL,
+    completed_at = NULL,
+    expired_at = NULL,
+    cancelled_at = NULL,
+    cancellation_reason = NULL,
+    updated_at = now()
+WHERE id = $1
+RETURNING id, application_id, batch_id, agent_id, type, metadata, status, invited_at, started_at, completed_at, expired_at, cancelled_at, cancellation_reason, created_at, updated_at`;
+
+export interface resetInterviewInviteArgs {
+    id: string;
+    metadata: any;
+    invitedAt: Date | null;
+}
+
+export interface resetInterviewInviteRow {
+    id: string;
+    applicationId: string;
+    batchId: string | null;
+    agentId: string | null;
+    type: string;
+    metadata: any;
+    status: string;
+    invitedAt: Date | null;
+    startedAt: Date | null;
+    completedAt: Date | null;
+    expiredAt: Date | null;
+    cancelledAt: Date | null;
+    cancellationReason: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export async function resetInterviewInvite(sql: Sql, args: resetInterviewInviteArgs): Promise<resetInterviewInviteRow | null> {
+    const rows = await sql.unsafe(resetInterviewInviteQuery, [args.id, args.metadata, args.invitedAt]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        applicationId: row[1],
+        batchId: row[2],
+        agentId: row[3],
+        type: row[4],
+        metadata: row[5],
+        status: row[6],
+        invitedAt: row[7],
+        startedAt: row[8],
+        completedAt: row[9],
+        expiredAt: row[10],
+        cancelledAt: row[11],
+        cancellationReason: row[12],
+        createdAt: row[13],
+        updatedAt: row[14]
+    };
 }
 
 export const updateInterviewStatusQuery = `-- name: updateInterviewStatus :one

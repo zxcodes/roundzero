@@ -289,6 +289,80 @@ describe("getApplicationsByJob", () => {
     expect(apps).toHaveLength(1);
     expect(apps[0].candidateName).toBe("Active");
   });
+
+  it("hides held reports until they are released", async () => {
+    const { company } = await seedCompany();
+    const candidate = await seedUser({ name: "Held Report", role: "candidate" });
+    const job = await makeOpenJob(company.id);
+
+    const application = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: {},
+      status: "evaluated_held",
+    });
+    expect(application).not.toBeNull();
+    if (!application) {
+      return;
+    }
+
+    const interview = await createInterview(sql, {
+      applicationId: application.id,
+      agentId: null,
+      type: "full",
+      metadata: {},
+      status: "completed",
+      invitedAt: new Date(),
+      startedAt: new Date(),
+      completedAt: new Date(),
+    });
+    expect(interview).not.toBeNull();
+    if (!interview) {
+      return;
+    }
+
+    await sql`
+      INSERT INTO reports (
+        interview_id,
+        application_id,
+        summary,
+        strengths,
+        weaknesses,
+        insights,
+        evidence,
+        screening_answers,
+        scores,
+        recommendation,
+        model,
+        prompt_version,
+        refine_version,
+        created_at
+      )
+      VALUES (
+        ${interview.id},
+        ${application.id},
+        'Held summary',
+        '[]'::jsonb,
+        '[]'::jsonb,
+        '[]'::jsonb,
+        '[]'::jsonb,
+        '[]'::jsonb,
+        '{"communication":70,"problemSolving":71,"ownership":72,"roleFit":73,"overall":74}'::jsonb,
+        'yes',
+        'test-model',
+        '1.0.0',
+        '1.0.0',
+        now()
+      )
+    `;
+
+    const apps = await getApplicationsByJob(sql, { jobId: job.id });
+    expect(apps).toHaveLength(1);
+    expect(apps[0].status).toBe("evaluated_held");
+    expect(apps[0].reportId).toBeNull();
+    expect(apps[0].reportReleasedAt).toBeNull();
+  });
 });
 
 describe("getApplicationsByCandidate", () => {

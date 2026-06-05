@@ -7,6 +7,7 @@ import {
   createInterview,
   getInterviewByApplicationId,
   getInterviewContextById,
+  resetInterviewInvite,
 } from "@/features/interviews/queries/queries_sql";
 import { ensureInterviewRuntimeMetadata } from "@/features/interviews/shared/runtime";
 import { closeExpiredJobsQuery, getJobById } from "@/features/jobs/queries/queries_sql";
@@ -163,18 +164,27 @@ export const updateApplicationStatusWorkflow = async (
 
     const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString();
 
+    const inviteMetadata = { preEvaluationScore: latestPreEvaluation?.score ?? null, expiresAt };
+    const invitedAt = new Date();
+
     const interview =
-      existingInterview ??
-      (await createInterview(db, {
-        applicationId: application.id,
-        agentId: null,
-        type: "full",
-        metadata: { preEvaluationScore: latestPreEvaluation?.score ?? null, expiresAt },
-        status: "pending",
-        invitedAt: new Date(),
-        startedAt: null,
-        completedAt: null,
-      }));
+      existingInterview &&
+      (existingInterview.status === "pending" || existingInterview.status === "in_progress")
+        ? await resetInterviewInvite(db, {
+            id: existingInterview.id,
+            metadata: inviteMetadata,
+            invitedAt,
+          })
+        : await createInterview(db, {
+            applicationId: application.id,
+            agentId: null,
+            type: "full",
+            metadata: inviteMetadata,
+            status: "pending",
+            invitedAt,
+            startedAt: null,
+            completedAt: null,
+          });
 
     if (!interview) {
       throw new Error("Failed to create interview invite");
