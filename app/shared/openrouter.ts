@@ -80,28 +80,28 @@ type Task = "pre_eval" | "post_eval" | "post_eval_audit" | "interview" | "job_cr
 
 const MODEL_CHAINS = {
   pre_eval: {
-    dev: ["deepseek/deepseek-v4-flash"],
+    dev: ["openrouter/free"],
     staging: ["google/gemini-2.5-flash", "anthropic/claude-haiku-4.5"],
     prod: ["anthropic/claude-haiku-4.5", "anthropic/claude-sonnet-4.5"],
   },
   post_eval: {
-    dev: ["deepseek/deepseek-v4-flash"],
+    dev: ["openrouter/free"],
     staging: ["anthropic/claude-haiku-4.5", "google/gemini-2.5-flash"],
     prod: ["anthropic/claude-sonnet-4.5", "anthropic/claude-opus-4.5"],
   },
   // Audit uses a different model family than post_eval to catch biases.
   post_eval_audit: {
-    dev: ["deepseek/deepseek-v4-flash"],
+    dev: ["openrouter/free"],
     staging: ["meta-llama/llama-3.3-70b-instruct", "google/gemini-2.5-flash"],
     prod: ["meta-llama/llama-3.3-70b-instruct", "nvidia/nemotron-3-super-120b"],
   },
   interview: {
-    dev: ["deepseek/deepseek-v4-flash", "google/gemini-2.5-flash"],
+    dev: ["meta-llama/llama-3.3-70b-instruct:free", "google/gemini-2.5-flash"],
     staging: ["google/gemini-2.5-flash", "anthropic/claude-haiku-4.5"],
     prod: ["anthropic/claude-haiku-4.5", "anthropic/claude-sonnet-4.5"],
   },
   job_creation: {
-    dev: ["deepseek/deepseek-v4-flash"],
+    dev: ["openrouter/free"],
     staging: ["google/gemini-2.5-flash", "anthropic/claude-haiku-4.5"],
     prod: ["anthropic/claude-sonnet-4.5", "anthropic/claude-haiku-4.5"],
   },
