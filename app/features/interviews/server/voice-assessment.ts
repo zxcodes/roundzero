@@ -1,5 +1,4 @@
 import { env } from "cloudflare:workers";
-import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 import { generateText, Output } from "ai";
 import { z } from "zod";
 import {
@@ -45,10 +44,45 @@ export type VoiceTranscriptMessage = {
   content: string;
 };
 
-export function getVoiceWebhookClient(): ElevenLabsClient {
-  return new ElevenLabsClient({
-    apiKey: env.ELEVENLABS_API_KEY || undefined,
-  });
+async function verifyElevenLabsSignature(
+  rawBody: string,
+  sigHeader: string,
+  secret: string,
+): Promise<unknown> {
+  const parts = sigHeader.split(",");
+  const timestamp = parts.find((p) => p.startsWith("t="))?.slice(2);
+  const signature = parts.find((p) => p.startsWith("v0="));
+
+  if (!timestamp || !signature) {
+    throw new Error("No signature hash found with expected scheme v0");
+  }
+
+  const reqTimestamp = Number(timestamp) * 1000;
+  if (reqTimestamp < Date.now() - 30 * 60 * 1000) {
+    throw new Error("Timestamp outside the tolerance zone");
+  }
+
+  const enc = new TextEncoder();
+  const cryptoKey = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", cryptoKey, enc.encode(`${timestamp}.${rawBody}`));
+
+  const digest =
+    "v0=" +
+    Array.from(new Uint8Array(sig))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+
+  if (signature !== digest) {
+    throw new Error("Signature hash does not match");
+  }
+
+  return JSON.parse(rawBody);
 }
 
 export async function parseElevenLabsWebhookEvent(request: Request) {
@@ -65,11 +99,7 @@ export async function parseElevenLabsWebhookEvent(request: Request) {
     throw new Error("Missing elevenlabs-signature header");
   }
 
-  const verified = await getVoiceWebhookClient().webhooks.constructEvent(
-    rawBody,
-    signature,
-    secret,
-  );
+  const verified = await verifyElevenLabsSignature(rawBody, signature, secret);
   return elevenLabsWebhookEventSchema.parse(verified);
 }
 
