@@ -748,6 +748,9 @@ export function JobForm({
       <Separator />
 
       <div className="space-y-4">
+        <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
+          Requirements <span className="text-destructive">*</span>
+        </p>
         <form.Field name="requirements" mode="array">
           {(reqField) => {
             const onRequirementInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -770,10 +773,11 @@ export function JobForm({
             const onRemoveRequirement = (index: number) => reqField.removeValue(index);
 
             return (
-              <Field>
-                <FieldLabel>
-                  Requirements <span className="text-destructive">*</span>
-                </FieldLabel>
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  Skills, experience, and qualifications candidates need for this role. The AI uses
+                  these to screen résumés and guide the interview.
+                </p>
                 <div className="flex gap-2">
                   <Input
                     placeholder="e.g. 3+ years React experience"
@@ -817,7 +821,7 @@ export function JobForm({
                     })}
                   </ul>
                 ) : null}
-              </Field>
+              </div>
             );
           }}
         </form.Field>
