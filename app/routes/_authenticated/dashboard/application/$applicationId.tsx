@@ -242,7 +242,7 @@ function CandidateApplicationDetailPage() {
   };
 
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="space-y-6">
       <Button variant="ghost" size="sm" asChild className="-ml-2">
         <Link to="/dashboard/applications">
           <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />

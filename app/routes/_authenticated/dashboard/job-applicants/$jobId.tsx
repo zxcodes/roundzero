@@ -113,7 +113,7 @@ function JobApplicantsPage() {
   });
 
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Button variant="ghost" size="sm" asChild className="-ml-2">
           <Link to="/dashboard/jobs/$jobId" params={{ jobId: job.id }}>

@@ -81,7 +81,7 @@ export function AiJobCreator({ isPaid, onApply, onDiscard }: AiJobCreatorProps) 
   const isGenerating = generateMutation.isPending;
 
   return (
-    <Card className="animate-fade-in border-primary/20 bg-primary/5">
+    <Card className="border-primary/20 bg-primary/5">
       <CardHeader>
         <div className="flex items-center gap-2">
           <HugeiconsIcon icon={AiMagicIcon} strokeWidth={2} className="size-5 text-primary" />

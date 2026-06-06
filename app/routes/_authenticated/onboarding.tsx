@@ -19,7 +19,7 @@ function OnboardingLayout() {
           </Link>
         </div>
 
-        <div className="animate-fade-in-up">
+        <div>
           <Outlet />
         </div>
       </div>

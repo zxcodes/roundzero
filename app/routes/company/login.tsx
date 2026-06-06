@@ -126,7 +126,7 @@ function CompanyLoginPage() {
       <div className="relative flex min-h-svh items-start justify-center p-6 pt-16 lg:min-h-0 lg:items-center lg:p-10 lg:pt-10">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--color-primary)/4%,transparent_70%)]" />
 
-        <div className="animate-fade-in relative w-full max-w-sm space-y-8">
+        <div className="relative w-full max-w-sm space-y-8">
           {/* Mobile logo */}
           <div className="flex justify-center lg:hidden">
             <Link to="/" className="flex items-center gap-2">

@@ -76,7 +76,7 @@ function NewJobPage() {
   };
 
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" className="shrink-0" asChild>
           <Link to="/dashboard/jobs">
@@ -115,7 +115,7 @@ function NewJobPage() {
         onSelect={onSelectTemplate}
       />
 
-      <Card ref={formRef} className="animate-fade-in stagger-1">
+      <Card ref={formRef} className="stagger-1">
         <CardContent className="pt-6">
           <JobForm
             key={selectedTemplate ? `template-${selectedTemplate.id}` : draft ? "draft" : "empty"}

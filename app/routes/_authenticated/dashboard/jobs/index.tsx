@@ -203,7 +203,7 @@ function CompanyJobsList({
   };
 
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Jobs</h2>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -572,7 +572,7 @@ function CandidateJobsList({ data }: { data: Awaited<ReturnType<typeof getOpenJo
   };
 
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Browse Jobs</h2>
         <p className="mt-1 text-sm text-muted-foreground">Find open positions and apply.</p>
@@ -688,7 +688,7 @@ function CandidateJobsList({ data }: { data: Awaited<ReturnType<typeof getOpenJo
                 key={job.id}
                 to="/dashboard/jobs/$jobId"
                 params={{ jobId: job.id }}
-                className={`animate-fade-in stagger-${Math.min(i + 1, 6)}`}
+                className={`stagger-${Math.min(i + 1, 6)}`}
               >
                 <Card className="group h-full ring-foreground/5 transition-all duration-200 hover:ring-primary/30 hover:shadow-md hover:shadow-primary/5">
                   <CardContent className="flex h-full flex-col space-y-3">

@@ -133,7 +133,7 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
   };
 
   return (
-    <div className="animate-fade-in space-y-6 pb-28">
+    <div className="space-y-6 pb-28">
       <form.Subscribe
         selector={(state) => ({ isDirty: state.isDirty, isSubmitting: state.isSubmitting })}
       >

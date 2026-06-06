@@ -52,7 +52,7 @@ function InterviewWorkspaceLayout() {
   });
 
   return (
-    <div className="animate-fade-in">
+    <div>
       <SidebarProvider
         style={
           {

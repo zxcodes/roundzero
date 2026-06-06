@@ -176,7 +176,7 @@ function MyApplicationsPage() {
   const metrics = buildMetrics(applications);
 
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="space-y-1">
           <h2 className="text-2xl font-bold tracking-tight">My Applications</h2>
@@ -214,7 +214,7 @@ function MyApplicationsPage() {
         <>
           <div className="grid gap-3 md:grid-cols-3">
             {metrics.map((metric, index) => (
-              <Card key={metric.label} size="sm" className={`animate-fade-in stagger-${index + 1}`}>
+              <Card key={metric.label} size="sm" className={`stagger-${index + 1}`}>
                 <CardHeader className="gap-2">
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
@@ -240,7 +240,7 @@ function MyApplicationsPage() {
               <ApplicationListCard
                 key={application.id}
                 application={application}
-                className={`animate-fade-in stagger-${Math.min(index + 1, 5)}`}
+                className={`stagger-${Math.min(index + 1, 5)}`}
               />
             ))}
           </div>
