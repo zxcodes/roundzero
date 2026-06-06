@@ -1,8 +1,7 @@
 import { env } from "cloudflare:workers";
 import { NonRetryableError } from "cloudflare:workflows";
-import init, { LiteParse } from "@llamaindex/liteparse-wasm";
-import liteparseWasm from "@llamaindex/liteparse-wasm/liteparse_wasm_bg.wasm";
 import { generateText, Output } from "ai";
+import { DocuText } from "docutext";
 import mammoth from "mammoth";
 import type { Sql } from "postgres";
 import { z } from "zod";
@@ -109,25 +108,10 @@ async function runPreEvalObject<T>(args: {
   };
 }
 
-let wasmInited = false;
-
-async function ensureWasmInit(): Promise<void> {
-  if (!wasmInited) {
-    await init({ module_or_path: liteparseWasm });
-    wasmInited = true;
-  }
-}
-
 async function extractResumeText(bytes: Uint8Array, contentType: string): Promise<string> {
   if (contentType === "application/pdf") {
-    await ensureWasmInit();
-    const parser = new LiteParse({ ocrEnabled: false });
-    try {
-      const result = await parser.parse(bytes);
-      return result.text;
-    } finally {
-      parser.free();
-    }
+    const doc = DocuText.fromBuffer(bytes);
+    return doc.text;
   }
 
   if (contentType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
