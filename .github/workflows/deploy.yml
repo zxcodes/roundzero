@@ -11,7 +11,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+    environment: staging
     steps:
       - uses: actions/checkout@v4
 
@@ -47,6 +47,6 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Build and deploy
-        run: vite build && wrangler deploy --env ${{ github.ref_name == 'main' && 'production' || 'staging' }} --secrets-file .env.ci
+        run: bun run build && bunx wrangler deploy --env staging --secrets-file .env.ci
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
