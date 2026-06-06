@@ -1,6 +1,7 @@
 ## TODO
 
 
+- the text interview or voice interview don't ask questions based on the actual resume at all. they just seem to add job desc specific questions.
 - harden the final summary prompt to be extremely strict and judge every single response from the user. here's an example:
  
   Candidate consistently failed to implement the requested features across multiple tasks, submitting unrelated console output instead of functional solutions. Every submission violated problem constraints (no I/O) and received rubric scores of 0 for lacking required implementations.
