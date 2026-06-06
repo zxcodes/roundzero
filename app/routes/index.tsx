@@ -1286,11 +1286,11 @@ const faq = [
   },
   {
     q: "Can I customise what the AI evaluates?",
-    a: "Yes — on Pro and Enterprise plans, you define custom evaluation criteria. The AI uses your job requirements, interview questions, and weighting preferences.",
+    a: "Yes — on Pro and Enterprise plans, you define custom evaluation criteria. The AI uses your job requirements, screening questions, and weighting preferences.",
   },
   {
     q: "What is AI job creation?",
-    a: "Describe a role in plain language — 'Senior React engineer, remote, $120-160k' — and our AI builds a complete job posting with title, description, requirements, salary, interview questions, and more. You review the draft, edit anything, then publish. Available on Pro and Enterprise.",
+    a: "Describe a role in plain language — 'Senior React engineer, remote, $120-160k' — and our AI builds a complete job posting with title, description, requirements, salary, screening questions, and more. You review the draft, edit anything, then publish. Available on Pro and Enterprise.",
   },
   {
     q: "Does RoundZero only work for technical roles?",

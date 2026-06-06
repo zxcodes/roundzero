@@ -24,7 +24,7 @@ const makeApplication = async () => {
       title,
       description,
       requirements,
-      interview_questions,
+      screening_questions,
       status,
       final_report_target
     )

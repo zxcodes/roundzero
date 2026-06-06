@@ -1,6 +1,6 @@
 \restrict dbmate
 
--- Dumped from database version 18.4 (72c6e7c)
+-- Dumped from database version 18.3 (Debian 18.3-1.pgdg13+1)
 -- Dumped by pg_dump version 18.3 (Homebrew)
 
 SET statement_timeout = 0;
@@ -182,7 +182,7 @@ CREATE TABLE public.jobs (
     title text NOT NULL,
     description text NOT NULL,
     requirements jsonb DEFAULT '[]'::jsonb NOT NULL,
-    interview_questions jsonb DEFAULT '[]'::jsonb NOT NULL,
+    screening_questions jsonb DEFAULT '[]'::jsonb CONSTRAINT jobs_interview_questions_not_null NOT NULL,
     status text DEFAULT 'draft'::text NOT NULL,
     location text,
     workplace_type text,
@@ -744,4 +744,5 @@ ALTER TABLE ONLY public.reports
 --
 
 INSERT INTO public.schema_migrations (version) VALUES
-    ('20260328081657');
+    ('20260328081657'),
+    ('20260606171616');
