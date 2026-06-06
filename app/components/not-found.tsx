@@ -5,7 +5,7 @@ export function NotFound() {
   const router = useRouter();
 
   return (
-    <div className="animate-fade-in-up flex min-h-svh flex-col items-center justify-center gap-6 p-6 text-center">
+    <div className="flex min-h-svh flex-col items-center justify-center gap-6 p-6 text-center">
       <div className="flex flex-col gap-1.5">
         <p className="font-mono text-7xl font-bold tracking-tighter text-brand/40">404</p>
         <h2 className="font-heading text-lg font-medium tracking-tight">Page not found</h2>

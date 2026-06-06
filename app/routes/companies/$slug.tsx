@@ -151,7 +151,7 @@ function CompanyProfilePage() {
               All companies
             </Link>
 
-            <div className="animate-fade-in mt-8 flex flex-col gap-6 sm:flex-row sm:items-start">
+            <div className="mt-8 flex flex-col gap-6 sm:flex-row sm:items-start">
               <Avatar className="size-16 rounded-xl">
                 {logoUrl ? <AvatarImage src={logoUrl} alt={company.name} /> : null}
                 <AvatarFallback className="rounded-xl text-lg font-bold">{initials}</AvatarFallback>
@@ -221,7 +221,7 @@ function CompanyProfilePage() {
           {/* Left column — about + jobs */}
           <div className="space-y-10 lg:col-span-2">
             {company.description ? (
-              <div className="animate-fade-in space-y-3">
+              <div className="space-y-3">
                 <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
                   About
                 </h2>
@@ -232,7 +232,7 @@ function CompanyProfilePage() {
             ) : null}
 
             {company.culture ? (
-              <div className="animate-fade-in stagger-1 space-y-3">
+              <div className="stagger-1 space-y-3">
                 <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
                   Culture & Perks
                 </h2>
@@ -243,7 +243,7 @@ function CompanyProfilePage() {
             ) : null}
 
             {/* Open jobs */}
-            <div className="animate-fade-in stagger-2 space-y-4">
+            <div className="stagger-2 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">

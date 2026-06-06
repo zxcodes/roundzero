@@ -239,7 +239,7 @@ function ApplicantReviewPage() {
   };
 
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="space-y-6">
       {/* Top breadcrumb / nav row */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Button variant="ghost" size="sm" asChild className="-ml-2">

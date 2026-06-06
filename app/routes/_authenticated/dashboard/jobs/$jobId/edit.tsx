@@ -51,7 +51,7 @@ function EditJobPage() {
   };
 
   return (
-    <div className="animate-fade-in space-y-6 pb-28">
+    <div className="space-y-6 pb-28">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" className="shrink-0" asChild>
           <Link to="/dashboard/jobs/$jobId" params={{ jobId: job.id }}>

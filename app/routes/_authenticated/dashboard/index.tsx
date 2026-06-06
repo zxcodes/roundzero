@@ -601,7 +601,7 @@ function DashboardIndexPage() {
   })();
 
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold tracking-tight">{user?.name?.split(" ")[0]}</h2>
         <p className="mt-1 text-sm text-muted-foreground">{welcomeMessage}</p>
@@ -638,7 +638,7 @@ function DashboardIndexPage() {
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {buildCandidateMetrics(metrics).map((card, i) => (
-            <Card key={card.label} className={`animate-fade-in stagger-${i + 1}`}>
+            <Card key={card.label} className={`stagger-${i + 1}`}>
               <CardHeader className="flex flex-row items-start justify-between gap-4 pb-2">
                 <div>
                   <CardDescription className="text-xs">{card.label}</CardDescription>

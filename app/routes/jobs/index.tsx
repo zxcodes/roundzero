@@ -175,7 +175,7 @@ function JobsPage() {
         <section className="relative overflow-hidden border-b border-border/40">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--color-primary)/6%,transparent_70%)]" />
           <div className="relative mx-auto max-w-6xl px-6 py-16 lg:px-8 lg:py-20">
-            <div className="animate-fade-in space-y-3">
+            <div className="space-y-3">
               <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
                 Job board
               </p>
@@ -292,7 +292,7 @@ function JobsPage() {
               </EmptyHeader>
             </Empty>
           ) : (
-            <div className="animate-fade-in grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {items.map((job, i) => (
                 <JobCard key={job.id} job={job} className={i < 3 ? `stagger-${i + 1}` : ""} />
               ))}

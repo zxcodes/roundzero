@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
  */
 export function RouteSpinner() {
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="space-y-6">
       <div className="space-y-2.5">
         <Skeleton className="h-7 w-44" />
         <Skeleton className="h-4 w-64" />
@@ -397,7 +397,7 @@ export function DashboardJobsListSkeleton() {
 
 function CompanyJobsListSkeleton() {
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <Skeleton className="h-8 w-16" />
@@ -444,7 +444,7 @@ function CompanyJobsListSkeleton() {
 
 function CandidateJobsListSkeleton() {
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="space-y-6">
       <div>
         <Skeleton className="h-8 w-36" />
         <Skeleton className="mt-1 h-4 w-56" />
@@ -482,7 +482,7 @@ function CandidateJobsListSkeleton() {
  */
 export function DashboardJobDetailSkeleton() {
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-start gap-3">
         <Skeleton className="mt-0.5 size-9 shrink-0 rounded-md" />
@@ -565,7 +565,7 @@ export function DashboardJobDetailSkeleton() {
  */
 export function DashboardJobApplicantsSkeleton() {
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="space-y-6">
       {/* Back nav + badges */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Skeleton className="h-8 w-28 rounded-md" />
@@ -633,7 +633,7 @@ export function DashboardJobApplicantsSkeleton() {
  */
 export function DashboardIndexSkeleton() {
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="space-y-6">
       <div>
         <Skeleton className="h-8 w-64" />
         <Skeleton className="mt-1 h-4 w-80" />
@@ -758,7 +758,7 @@ export function DashboardSettingsSkeleton() {
 
 function CandidateDashboardSettingsSkeleton() {
   return (
-    <div className="animate-fade-in space-y-6 pb-28">
+    <div className="space-y-6 pb-28">
       <div>
         <Skeleton className="h-8 w-40" />
         <Skeleton className="mt-1 h-4 w-96 max-w-full" />
@@ -810,7 +810,7 @@ function CandidateDashboardSettingsSkeleton() {
 
 function CompanyDashboardSettingsSkeleton() {
   return (
-    <div className="animate-fade-in space-y-6 pb-28">
+    <div className="space-y-6 pb-28">
       <div>
         <Skeleton className="h-8 w-40" />
         <Skeleton className="mt-1 h-4 w-96 max-w-full" />
@@ -841,7 +841,7 @@ function CompanyDashboardSettingsSkeleton() {
  */
 export function DashboardApplicationsSkeleton() {
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="space-y-1">
           <Skeleton className="h-8 w-44" />
@@ -906,7 +906,7 @@ export function DashboardApplicationsSkeleton() {
  */
 export function DashboardApplicationDetailSkeleton() {
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="space-y-6">
       {/* Back link */}
       <Skeleton className="h-8 w-28 rounded-md" />
 
@@ -974,7 +974,7 @@ export function DashboardApplicationDetailSkeleton() {
  */
 export function DashboardApplicantReviewSkeleton() {
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="space-y-6">
       {/* Back nav with prev/next */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Skeleton className="h-8 w-28 rounded-md" />
@@ -1051,7 +1051,7 @@ export function DashboardApplicantReviewSkeleton() {
  */
 export function DashboardApplicantReportSkeleton() {
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="space-y-6">
       {/* Breadcrumb + batch nav */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Skeleton className="h-8 w-28 rounded-md" />
@@ -1187,7 +1187,7 @@ export function InterviewWorkspacePageSkeleton() {
  */
 export function InterviewWorkspaceSkeleton() {
   return (
-    <div className="flex h-full min-h-0 w-full gap-2 bg-background p-2 text-foreground animate-fade-in">
+    <div className="flex h-full min-h-0 w-full gap-2 bg-background p-2 text-foreground">
       <aside className="hidden h-full w-72 shrink-0 rounded-2xl bg-sidebar text-sidebar-foreground shadow-sm ring-1 ring-sidebar-border md:flex md:min-h-0 md:flex-col">
         <div className="p-2">
           <Skeleton className="h-4 w-24" />
@@ -1281,7 +1281,7 @@ export function DashboardLayoutSkeleton() {
         {/* Content */}
         <div className="flex min-h-0 flex-1 flex-col">
           <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
-            <div className="animate-fade-in space-y-6">
+            <div className="space-y-6">
               <div className="space-y-2.5">
                 <Skeleton className="h-7 w-44" />
                 <Skeleton className="h-4 w-64" />
@@ -1357,7 +1357,7 @@ export function BillingPageSkeleton() {
  */
 export function BatchDetailSkeleton() {
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="space-y-6">
       <div className="space-y-2">
         <Skeleton className="h-7 w-32" />
         <Skeleton className="h-7 w-72" />

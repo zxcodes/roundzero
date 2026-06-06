@@ -202,7 +202,7 @@ function JobDetailPage() {
               All jobs
             </Link>
 
-            <div className="animate-fade-in mt-8 space-y-5">
+            <div className="mt-8 space-y-5">
               <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
                 <div className="space-y-2">
                   <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
@@ -274,7 +274,7 @@ function JobDetailPage() {
           {/* Left column — description & requirements */}
           <div className="space-y-10 lg:col-span-2">
             {job.description ? (
-              <div className="animate-fade-in space-y-3">
+              <div className="space-y-3">
                 <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
                   Description
                 </h2>
@@ -285,7 +285,7 @@ function JobDetailPage() {
             ) : null}
 
             {requirements.length > 0 ? (
-              <div className="animate-fade-in stagger-1 space-y-3">
+              <div className="stagger-1 space-y-3">
                 <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
                   Requirements
                 </h2>
@@ -305,7 +305,7 @@ function JobDetailPage() {
 
             {/* Bottom CTA */}
             {!isCompany && !isClosed ? (
-              <Empty className="border animate-fade-in stagger-2 bg-muted">
+              <Empty className="border stagger-2 bg-muted">
                 <EmptyContent>
                   <PublicJobCTA
                     isCandidate={isCandidate}

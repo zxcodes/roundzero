@@ -81,7 +81,7 @@ function JobDetailPage() {
   const salary = formatSalaryFull(job.salaryMin, job.salaryMax, job.salaryCurrency);
 
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-start gap-3">
         <Button variant="ghost" size="icon" className="mt-0.5 shrink-0" asChild>
@@ -137,7 +137,7 @@ function JobDetailPage() {
       <div className="grid gap-5 lg:grid-cols-3">
         {/* Left column — description + requirements */}
         <div className="space-y-5 lg:col-span-2">
-          <Card className="animate-fade-in stagger-1">
+          <Card className="stagger-1">
             <CardHeader>
               <CardTitle>Description</CardTitle>
             </CardHeader>
@@ -147,7 +147,7 @@ function JobDetailPage() {
           </Card>
 
           {requirements.length > 0 ? (
-            <Card className="animate-fade-in stagger-2">
+            <Card className="stagger-2">
               <CardHeader>
                 <CardTitle>Requirements</CardTitle>
               </CardHeader>
@@ -168,7 +168,7 @@ function JobDetailPage() {
         {/* Right column — metadata sidebar */}
         <div className="space-y-5">
           {/* Job metadata card */}
-          <Card className="animate-fade-in stagger-2">
+          <Card className="stagger-2">
             <CardHeader>
               <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
                 Job details
@@ -338,7 +338,7 @@ function ApplicantsSummaryCard({
   evaluatedCount: number;
 }) {
   return (
-    <Card className="animate-fade-in stagger-3 border-border/70">
+    <Card className="stagger-3 border-border/70">
       <CardHeader>
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">

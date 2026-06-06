@@ -16,7 +16,7 @@ export function ErrorBoundary({
   };
 
   return (
-    <div className="animate-fade-in-up flex flex-1 flex-col items-center justify-center gap-6 p-6 text-center">
+    <div className="flex flex-1 flex-col items-center justify-center gap-6 p-6 text-center">
       <div className="flex flex-col items-center gap-3">
         <div className="flex size-14 items-center justify-center rounded-2xl bg-destructive/10">
           <HugeiconsIcon icon={Alert02Icon} strokeWidth={2} className="size-7 text-destructive" />
