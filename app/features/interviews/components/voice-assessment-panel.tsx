@@ -154,6 +154,13 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
     })
     .filter((m): m is ChatMessage => m !== null);
 
+  // Keep the latest live transcript in a ref so the auto-submit effect below
+  // can read it without listing the (always-new) array in its dependencies.
+  // Without this, the 2s dbData refetch re-renders the component and would
+  // continuously reset the auto-submit timer so it never fires.
+  const liveTranscriptRef = useRef<ChatMessage[]>([]);
+  liveTranscriptRef.current = liveTranscript;
+
   const historicalChat: ChatMessage[] = (historicalTranscript ?? []).map((m) => ({
     role: m.role === "assistant" ? "assistant" : "user",
     text: m.content,
@@ -176,6 +183,26 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
     }
   }, [effectiveStatus]);
 
+  // Detect the call ending for ANY reason — the candidate clicking "End call",
+  // the ElevenLabs agent invoking its `end_call` tool, or an unexpected drop.
+  // We mark `justEnded` so the finalisation path below runs regardless of who
+  // hung up. (Manual end also sets this; the flag is idempotent.)
+  const wasConnectedRef = useRef(false);
+  useEffect(() => {
+    if (chat.status === "connected") {
+      wasConnectedRef.current = true;
+      return;
+    }
+    if (chat.status === "idle" && wasConnectedRef.current) {
+      wasConnectedRef.current = false;
+      // On an error disconnect the adapter sets `clientError`; let the candidate
+      // dismiss/retry/skip instead of finalising a half-finished transcript.
+      if (clientError) return;
+      setJustEnded(true);
+      queryClient.invalidateQueries({ queryKey: ["voice-assessment", interviewId] });
+    }
+  }, [chat.status, clientError, queryClient, interviewId]);
+
   // Give the ElevenLabs webhook a chance to persist the transcript first.
   // If that never happens, fall back to the browser transcript so local dev
   // and webhook outages do not permanently strand the assessment.
@@ -184,14 +211,16 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
     if (!justEnded) return;
     if (completeCalledRef.current) return;
     if (effectiveStatus === "completed" || effectiveStatus === "skipped") return;
-    if (liveTranscript.length === 0) return;
+    if (liveTranscriptRef.current.length === 0) return;
 
     const timeoutId = window.setTimeout(() => {
+      const transcript = liveTranscriptRef.current;
+      if (completeCalledRef.current || transcript.length === 0) return;
       completeCalledRef.current = true;
       completeMutation.mutate({
         data: {
           interviewId,
-          messages: liveTranscript.map((m) => ({ role: m.role, content: m.text })),
+          messages: transcript.map((m) => ({ role: m.role, content: m.text })),
         },
       });
     }, 8_000);
@@ -199,14 +228,7 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [
-    chat.status,
-    justEnded,
-    effectiveStatus,
-    liveTranscript,
-    interviewId,
-    completeMutation.mutate,
-  ]);
+  }, [chat.status, justEnded, effectiveStatus, interviewId, completeMutation.mutate]);
 
   const onStartCall = () => {
     setClientError(null);
@@ -229,6 +251,25 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
 
   const onSkip = () => {
     skipMutation.mutate({ data: { interviewId } });
+  };
+
+  // Manual submit — the guaranteed path to persist the assessment once the call
+  // has ended, without waiting on the webhook grace period. Mirrors the text
+  // interview's explicit submit so the candidate is never stranded.
+  const onSubmitTranscript = () => {
+    if (completeCalledRef.current || completeMutation.isPending) return;
+    const transcript = liveTranscriptRef.current;
+    if (transcript.length === 0) {
+      toast.error("No conversation was recorded. Try starting the assessment again.");
+      return;
+    }
+    completeCalledRef.current = true;
+    completeMutation.mutate({
+      data: {
+        interviewId,
+        messages: transcript.map((m) => ({ role: m.role, content: m.text })),
+      },
+    });
   };
 
   // ---------- Terminal states ----------
@@ -329,7 +370,9 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
                             ? "Zero is speaking…"
                             : "Connected"
                       : finalising
-                        ? "Finalising results…"
+                        ? completeMutation.isPending
+                          ? "Finalising results…"
+                          : "Call ended"
                         : "Voice communication assessment"}
               </p>
               <p className="text-xs text-muted-foreground">
@@ -442,10 +485,32 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
         ) : isInCall ? (
           <ActiveCallFooter audioLevel={chat.inputLevel} mode={chat.mode} />
         ) : finalising ? (
-          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-            <HugeiconsIcon icon={Loading03Icon} strokeWidth={2} className="size-4 animate-spin" />
-            Finalising results…
-          </div>
+          completeMutation.isPending ? (
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <HugeiconsIcon icon={Loading03Icon} strokeWidth={2} className="size-4 animate-spin" />
+              Finalising results…
+            </div>
+          ) : liveTranscript.length > 0 ? (
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-muted-foreground">
+                Call ended. Submit your assessment to finish.
+              </p>
+              <Button size="sm" onClick={onSubmitTranscript} className="px-5">
+                <HugeiconsIcon icon={Tick01Icon} strokeWidth={2} className="size-4" />
+                Submit assessment
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-muted-foreground">
+                No conversation was recorded. Start the assessment to try again.
+              </p>
+              <Button size="sm" onClick={onStartCall} className="px-5">
+                <HugeiconsIcon icon={Mic01Icon} strokeWidth={2} className="size-4" />
+                Start voice assessment
+              </Button>
+            </div>
+          )
         ) : showStartScreen ? (
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-muted-foreground">

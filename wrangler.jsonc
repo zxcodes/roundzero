@@ -14,12 +14,8 @@
       "enabled": true
     }
   },
+  "keep_vars": true,
   "vars": {
-    // Cloudflare AI Gateway routing for OpenRouter.
-    // Secrets (OPENROUTER_API_KEY, AI_GATEWAY_TOKEN, ELEVENLABS_API_KEY,
-    // ELEVENLABS_AGENT_ID, ELEVENLABS_WEBHOOK_SECRET) live in `.dev.vars`
-    // locally and `wrangler secret put` in prod.
-    // Docs: https://developers.cloudflare.com/ai-gateway/usage/providers/openrouter/
     "CLOUDFLARE_ACCOUNT_ID": "5634bacd1c09247fdaa26ef02fbcf6ef",
     "AI_GATEWAY_ID": "roundzero"
   },
