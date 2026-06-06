@@ -1,6 +1,6 @@
 ## TODO
 
-- "Interview questions" when generating a job with ai are not good. these are not supposed to be technical questions. these are purely informatory such as (relocation, visa, salary exp etc). Maybe rename it to screening questions or something?
+- "Interview questions" when generating a job with ai are not good. these are not supposed to be technical questions. these are purely informatory such as (relocation, visa, salary exp etc). Maybe rename it to screening questions or something? also update the job templates & creation prompt.
 - there's a crash on signup on prod (something undefined)
 - job creation has no creating feedback. the page just redirects after a while.
 - the mf skeleton is still there. add a new route that displays all of them and check.
