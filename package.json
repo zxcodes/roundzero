@@ -26,7 +26,6 @@
   },
   "dependencies": {
     "@elevenlabs/client": "^1.9.0",
-    "@elevenlabs/elevenlabs-js": "^2.51.0",
     "@fontsource-variable/fraunces": "^5.2.9",
     "@fontsource-variable/geist": "^5.2.9",
     "@fontsource-variable/geist-mono": "^5.2.8",
