@@ -1,4 +1,4 @@
-# RoundZero
+# RoundZero 
 
 AI-powered hiring platform that replaces the first round of hiring with structured, adaptive interviews and explainable candidate evaluations.
 
