@@ -1,4 +1,4 @@
-import type { PartialOptions } from "@elevenlabs/client";
+import type { DisconnectionDetails, PartialOptions } from "@elevenlabs/client";
 import { Conversation } from "@elevenlabs/client";
 import type { AnyClientTool, RealtimeMessage, RealtimeToken } from "@tanstack/ai";
 import type { RealtimeAdapter, RealtimeConnection } from "@tanstack/ai-client";
@@ -80,9 +80,17 @@ async function createConnection(
         void options.onConversationStarted(conversationId);
       }
     },
-    onDisconnect: () => {
-      emit("status_change", { status: "idle" });
+    onDisconnect: (details: DisconnectionDetails) => {
       emit("mode_change", { mode: "idle" });
+      // ElevenLabs reports who/what ended the session:
+      //   "agent" → the agent's `end_call` system tool (a clean, intended end)
+      //   "user"  → the candidate hung up (also clean)
+      //   "error" → the connection dropped — surface it so the UI doesn't
+      //             silently finalise a partial transcript.
+      if (details.reason === "error") {
+        emit("error", { error: new Error(details.message || "Voice connection lost") });
+      }
+      emit("status_change", { status: "idle" });
     },
     onModeChange: ({ mode }: { mode: "speaking" | "listening" }) => {
       emit("mode_change", { mode });
