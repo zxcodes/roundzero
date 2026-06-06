@@ -1,16 +1,5 @@
 ## TODO
 
-
-
-- harden the final summary prompt to be extremely strict and judge every single response from the user. here's an example: (WIP)
- 
-  Candidate consistently failed to implement the requested features across multiple tasks, submitting unrelated console output instead of functional solutions. Every submission violated problem constraints (no I/O) and received rubric scores of 0 for lacking required implementations.
-
-  Impact: No working deliverables — LRUCache, promisePool, Router, debounce, deepClone, and paginate were not implemented; responses contain console.log snippets instead of solutions.
-  Role fit: Insufficient evidence of core engineering skills (data structures, async/concurrency, API design, correctness); candidate did not follow explicit problem requirements across tasks.
-  Risk/gap: High execution risk — repeated inability to produce test-ready code and respect constraints; would require close supervision and remediation before assignment to production work.
-
-
 - think about the auth. should it be possible for people to create company and candidate acc with same email?
 - voice interview still doesnt end the call on its own. and even after the interview, if I refresh, the entire session is lost. it just gets back to square one."start assessment" perhaps we should have a manual submit similar to text interview?
 - the final report should be based on the candidate's response to each and every question. like it should be a deciding factor.
@@ -20,6 +9,13 @@
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- harden the final summary prompt to be extremely strict and judge every single response from the user. here's an example: (WIP)
+ 
+  Candidate consistently failed to implement the requested features across multiple tasks, submitting unrelated console output instead of functional solutions. Every submission violated problem constraints (no I/O) and received rubric scores of 0 for lacking required implementations.
+
+  Impact: No working deliverables — LRUCache, promisePool, Router, debounce, deepClone, and paginate were not implemented; responses contain console.log snippets instead of solutions.
+  Role fit: Insufficient evidence of core engineering skills (data structures, async/concurrency, API design, correctness); candidate did not follow explicit problem requirements across tasks.
+  Risk/gap: High execution risk — repeated inability to produce test-ready code and respect constraints; would require close supervision and remediation before assignment to production work.-->
 <!--- the text interview or voice interview don't ask questions based on the actual resume at all. they just seem to add job desc specific questions. (WIP)-->
 <!--- check if everything a company sees (application statues) are accurate at each step. (applied, failed eval, interviewing, interviewed, etc, all lifecycle events.) (SUPPOSEDLY FIXED IN LAST COMMIT)--> 
 <!--- think more about the duration from first report to last report generation bc it will depend on the candidate. think if we need to add an expiry or something and pass it to the next candidate? (BATCH WORKFLOW TEST)-->
