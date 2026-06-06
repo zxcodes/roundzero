@@ -57,6 +57,10 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         content: "RoundZero",
       },
       {
+        property: "og:logo",
+        content: `${import.meta.env.VITE_APP_URL}/apple-touch-icon.png`,
+      },
+      {
         property: "og:image",
         content: `${import.meta.env.VITE_APP_URL}/og-default.jpeg`,
       },
