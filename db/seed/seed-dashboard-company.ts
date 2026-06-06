@@ -107,7 +107,7 @@ async function seedJobs(companyId: string) {
 
     await sql`
       INSERT INTO jobs (
-        id, company_id, title, description, requirements, interview_questions, status,
+        id, company_id, title, description, requirements, screening_questions, status,
         location, workplace_type, employment_type, experience_level,
         salary_min, salary_max, salary_currency, team_size, headcount, final_report_target,
         expires_at

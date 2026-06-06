@@ -208,15 +208,15 @@ function GeneratedPreview({
           </>
         ) : null}
 
-        {data.interviewQuestions.length > 0 ? (
+        {data.screeningQuestions.length > 0 ? (
           <>
             <Separator />
             <div>
               <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-                Interview questions
+                Screening questions
               </p>
               <ul className="mt-1.5 space-y-1">
-                {data.interviewQuestions.map((q, i) => (
+                {data.screeningQuestions.map((q, i) => (
                   <li key={i} className="flex items-start gap-2 text-xs">
                     <span className="mt-1.5 block size-1 shrink-0 rounded-full bg-primary" />
                     {q}
