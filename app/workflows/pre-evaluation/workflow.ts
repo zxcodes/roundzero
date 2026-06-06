@@ -81,7 +81,7 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
 
       await step.do(
         "write_pre_evaluation",
-        writePreEvaluation(applicationId, aiResult, slopCheck, log),
+        writePreEvaluation(applicationId, resumeText, aiResult, slopCheck, log),
       );
 
       const decision = await step.do(

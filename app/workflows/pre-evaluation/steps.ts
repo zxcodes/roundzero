@@ -401,6 +401,7 @@ export function runAiPreEvaluation(
 
 export function writePreEvaluation(
   applicationId: string,
+  resumeText: string,
   aiResult: {
     result: PreEvaluationResult;
     rawResponse: RawPreEvaluationModelResponse | { error: string };
@@ -439,6 +440,13 @@ export function writePreEvaluation(
           promptVersion: aiResult.promptVersion,
         });
       }
+
+      await tx
+        .unsafe(
+          `UPDATE applications SET metadata = COALESCE(metadata, '{}'::jsonb) || jsonb_build_object('resumeText', $1::text), updated_at = now() WHERE id = $2`,
+          [sanitizeUntrustedText(resumeText, LIMITS.RESUME_TEXT), applicationId],
+        )
+        .values();
 
       await updateApplicationStatus(transaction, {
         id: applicationId,
