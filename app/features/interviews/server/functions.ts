@@ -1,5 +1,4 @@
 import { env } from "cloudflare:workers";
-import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 import type { RealtimeToken } from "@tanstack/ai";
 import { chat } from "@tanstack/ai";
 import { createOpenRouterText } from "@tanstack/ai-openrouter";
@@ -541,14 +540,18 @@ export const getMyVoiceToken = createServerFn({ method: "POST" })
       candidateSummary = ctx.candidateSummary;
     }
 
-    const client = new ElevenLabsClient({ apiKey });
-    const tokenResponse = await client.conversationalAi.conversations.getSignedUrl({
-      agentId,
-    });
+    const tokenResponse = await fetch(
+      `https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=${agentId}`,
+      { headers: { "xi-api-key": apiKey } },
+    );
+    if (!tokenResponse.ok) {
+      throw new Error("Failed to get ElevenLabs signed URL");
+    }
+    const { signed_url: signedUrl } = (await tokenResponse.json()) as { signed_url: string };
 
     return {
       provider: "elevenlabs",
-      token: tokenResponse.signedUrl,
+      token: signedUrl,
       expiresAt: Date.now() + 30 * 60 * 1000,
       config: {
         providerOptions: {
