@@ -9,6 +9,16 @@ import { defineConfig } from "vite";
 const config = defineConfig({
   server: { port: 3000 },
   resolve: { tsconfigPaths: true },
+  build: {
+    rollupOptions: {
+      onLog(level, log, defaultHandler) {
+        if (log.code === "INVALID_ANNOTATION" && log.message?.includes("@hugeicons")) {
+          return;
+        }
+        defaultHandler(level, log);
+      },
+    },
+  },
   plugins: [
     devtools(),
     cloudflare({ viteEnvironment: { name: "ssr" } }),
