@@ -22,7 +22,7 @@
   "hyperdrive": [
     {
       "binding": "HYPERDRIVE",
-      "id": "<YOUR_HYPERDRIVE_CONFIG_ID>",
+      "id": "bb78ad8ae6314ac597683d314c81f094",
       "localConnectionString": "postgres://postgres:password@localhost:6311/postgres?sslmode=disable"
     }
   ],
