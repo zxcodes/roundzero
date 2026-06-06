@@ -53,14 +53,14 @@ function jobMeta(job: JobDetail | null) {
       content: `${job.title} at ${job.companyName}${location}. Apply with one click and get an AI-driven interview on your schedule.`,
     },
     { property: "og:description", content: ogDescription },
-    { property: "og:url", content: `https://roundzero.dev/jobs/${job.id}` },
+    { property: "og:url", content: `${import.meta.env.VITE_APP_URL}/jobs/${job.id}` },
     { name: "twitter:description", content: ogDescription },
   ];
 }
 
 function jobLinks(job: JobDetail | null) {
   if (!job) return [];
-  return [{ rel: "canonical" as const, href: `https://roundzero.dev/jobs/${job.id}` }];
+  return [{ rel: "canonical" as const, href: `${import.meta.env.VITE_APP_URL}/jobs/${job.id}` }];
 }
 
 function jobScripts(job: JobDetail | null) {

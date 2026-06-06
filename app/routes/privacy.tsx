@@ -11,7 +11,7 @@ export const Route = createFileRoute("/privacy")({
           "RoundZero Privacy Policy — how we collect, use, store, and share your personal information when you use our hiring platform and AI interview services.",
       },
     ],
-    links: [{ rel: "canonical", href: "https://roundzero.dev/privacy" }],
+    links: [{ rel: "canonical", href: `${import.meta.env.VITE_APP_URL}/privacy` }],
   }),
   component: PrivacyPage,
 });

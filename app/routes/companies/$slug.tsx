@@ -63,14 +63,20 @@ function companyMeta(data: LoaderData | null) {
       property: "og:description",
       content: `${data.company.name} is hiring on RoundZero. ${jobCount} open ${plural} available.`,
     },
-    { property: "og:url", content: `https://roundzero.dev/companies/${data.company.slug}` },
+    {
+      property: "og:url",
+      content: `${import.meta.env.VITE_APP_URL}/companies/${data.company.slug}`,
+    },
   ];
 }
 
 function companyLinks(data: LoaderData | null) {
   if (!data) return [];
   return [
-    { rel: "canonical" as const, href: `https://roundzero.dev/companies/${data.company.slug}` },
+    {
+      rel: "canonical" as const,
+      href: `${import.meta.env.VITE_APP_URL}/companies/${data.company.slug}`,
+    },
   ];
 }
 
