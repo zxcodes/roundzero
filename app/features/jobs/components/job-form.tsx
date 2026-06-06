@@ -37,7 +37,7 @@ export interface JobFormData {
   title: string;
   description: string;
   requirements: string[];
-  interviewQuestions: string[];
+  screeningQuestions: string[];
   status: JobStatus;
   location: string | null;
   workplaceType: WorkplaceType;
@@ -65,7 +65,7 @@ const formSchema = z
     title: requiredString(200, "Job title is required"),
     description: requiredString(5000, "Job description is required"),
     requirements: z.array(z.string()),
-    interviewQuestions: z.array(z.string()),
+    screeningQuestions: z.array(z.string()),
     status: z.enum(["draft", "open"]),
     location: z.string().max(200),
     workplaceType: z.string().min(1, "Workplace type is required"),
@@ -141,7 +141,7 @@ export function JobForm({
   onCancel?: () => void;
 }) {
   const [requirementInput, setRequirementInput] = useState("");
-  const [interviewQuestionInput, setInterviewQuestionInput] = useState("");
+  const [screeningQuestionInput, setScreeningQuestionInput] = useState("");
   const [deadlineOpen, setDeadlineOpen] = useState(false);
 
   const form = useForm({
@@ -149,7 +149,7 @@ export function JobForm({
       title: defaultValues?.title ?? "",
       description: defaultValues?.description ?? "",
       requirements: defaultValues?.requirements ?? ([] as string[]),
-      interviewQuestions: defaultValues?.interviewQuestions ?? ([] as string[]),
+      screeningQuestions: defaultValues?.screeningQuestions ?? ([] as string[]),
       status: defaultValues?.status ?? ("draft" as string),
       location: defaultValues?.location ?? "",
       workplaceType: (defaultValues?.workplaceType ?? "") as string,
@@ -177,7 +177,7 @@ export function JobForm({
         title: value.title,
         description: value.description,
         requirements: value.requirements,
-        interviewQuestions: value.interviewQuestions,
+        screeningQuestions: value.screeningQuestions,
         status: value.status as JobStatus,
         location: value.location || null,
         workplaceType: value.workplaceType as WorkplaceType,
@@ -201,8 +201,8 @@ export function JobForm({
   const onRequirementInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setRequirementInput(e.target.value);
   };
-  const onInterviewQuestionInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInterviewQuestionInput(e.target.value);
+  const onScreeningQuestionInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setScreeningQuestionInput(e.target.value);
   };
 
   return (
@@ -288,50 +288,51 @@ export function JobForm({
 
       <div className="space-y-4">
         <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
-          Interview questions
+          Screening questions
         </p>
-        <form.Field name="interviewQuestions" mode="array">
+        <form.Field name="screeningQuestions" mode="array">
           {(iqField) => {
-            const onInterviewQuestionInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-              const trimmed = interviewQuestionInput.trim();
+            const onScreeningQuestionInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+              const trimmed = screeningQuestionInput.trim();
               if (e.key === "Enter" && trimmed) {
                 e.preventDefault();
                 if (!iqField.state.value.includes(trimmed)) {
                   iqField.pushValue(trimmed);
                 }
-                setInterviewQuestionInput("");
+                setScreeningQuestionInput("");
               }
             };
-            const onAddInterviewQuestion = () => {
-              const trimmed = interviewQuestionInput.trim();
+            const onAddScreeningQuestion = () => {
+              const trimmed = screeningQuestionInput.trim();
               if (trimmed && !iqField.state.value.includes(trimmed)) {
                 iqField.pushValue(trimmed);
               }
-              setInterviewQuestionInput("");
+              setScreeningQuestionInput("");
             };
-            const onRemoveInterviewQuestion = (index: number) => {
+            const onRemoveScreeningQuestion = (index: number) => {
               iqField.removeValue(index);
             };
 
             return (
               <div className="space-y-2">
                 <p className="text-xs text-muted-foreground">
-                  Questions the interview agent will ask candidates during their conversational
-                  application.
+                  Short logistics and eligibility questions (e.g. work authorization, relocation,
+                  salary expectations, notice period) the interview agent will ask candidates to
+                  qualify them early.
                 </p>
                 <div className="flex gap-2">
                   <Input
                     placeholder="e.g. Are you authorized to work in the US?"
-                    value={interviewQuestionInput}
-                    onChange={onInterviewQuestionInputChange}
-                    onKeyDown={onInterviewQuestionInputKeyDown}
+                    value={screeningQuestionInput}
+                    onChange={onScreeningQuestionInputChange}
+                    onKeyDown={onScreeningQuestionInputKeyDown}
                     maxLength={300}
                   />
                   <Button
                     type="button"
                     variant="outline"
                     size="icon"
-                    onClick={onAddInterviewQuestion}
+                    onClick={onAddScreeningQuestion}
                   >
                     <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-4" />
                   </Button>
@@ -339,7 +340,7 @@ export function JobForm({
                 {iqField.state.value.length > 0 ? (
                   <ul className="mt-2 space-y-1">
                     {iqField.state.value.map((q, i) => {
-                      const onRemoveClick = () => onRemoveInterviewQuestion(i);
+                      const onRemoveClick = () => onRemoveScreeningQuestion(i);
                       return (
                         <li
                           key={`${q}-${i}`}
@@ -747,6 +748,9 @@ export function JobForm({
       <Separator />
 
       <div className="space-y-4">
+        <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
+          Requirements <span className="text-destructive">*</span>
+        </p>
         <form.Field name="requirements" mode="array">
           {(reqField) => {
             const onRequirementInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -769,10 +773,11 @@ export function JobForm({
             const onRemoveRequirement = (index: number) => reqField.removeValue(index);
 
             return (
-              <Field>
-                <FieldLabel>
-                  Requirements <span className="text-destructive">*</span>
-                </FieldLabel>
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  Skills, experience, and qualifications candidates need for this role. The AI uses
+                  these to screen résumés and guide the interview.
+                </p>
                 <div className="flex gap-2">
                   <Input
                     placeholder="e.g. 3+ years React experience"
@@ -816,7 +821,7 @@ export function JobForm({
                     })}
                   </ul>
                 ) : null}
-              </Field>
+              </div>
             );
           }}
         </form.Field>

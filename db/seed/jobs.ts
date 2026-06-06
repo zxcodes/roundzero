@@ -183,15 +183,11 @@ function buildRequirements(template: DomainTemplate, seed: string): string[] {
   ];
 }
 
-function buildInterviewQuestions(template: DomainTemplate, seed: string): string[] {
-  const priorityA = pick(template.priorities, randomInt(`${seed}-assessment-a`, 0, 100));
-  const priorityB = pick(template.priorities, randomInt(`${seed}-assessment-b`, 0, 100));
-  const stack = pick(template.techStack, randomInt(`${seed}-assessment-stack`, 0, 100));
-
+function buildScreeningQuestions(_template: DomainTemplate, _seed: string): string[] {
   return [
-    `Are you comfortable working with ${stack} in production?`,
-    `Can you describe your experience with ${priorityA}?`,
-    `What's your approach to ${priorityB} in real-world projects?`,
+    "Are you authorized to work in this location without visa sponsorship?",
+    "What are your salary expectations for this role?",
+    "What is your current notice period or earliest available start date?",
     "Are you open to occasional on-site collaboration?",
   ];
 }
@@ -226,7 +222,7 @@ async function seedJobs() {
     salaryCurrency: string;
     teamSize: number;
     headcount: number;
-    interviewQuestions: string[];
+    screeningQuestions: string[];
     expiresAt: Date | null;
   }>;
 
@@ -278,7 +274,7 @@ async function seedJobs() {
         salaryCurrency: template.compensation.currency,
         teamSize,
         headcount,
-        interviewQuestions: buildInterviewQuestions(template, seed),
+        screeningQuestions: buildScreeningQuestions(template, seed),
         expiresAt,
       });
 
@@ -290,13 +286,13 @@ async function seedJobs() {
     await sql`
       INSERT INTO jobs (
         id, company_id, title, description, requirements, status,
-        interview_questions, location, workplace_type, employment_type, experience_level,
+        screening_questions, location, workplace_type, employment_type, experience_level,
         salary_min, salary_max, salary_currency, team_size, headcount, expires_at
       )
       VALUES (
         ${job.id}, ${job.companyId}, ${job.title}, ${job.description},
         ${sql.json(job.requirements)}, ${job.status},
-        ${sql.json(job.interviewQuestions)},
+        ${sql.json(job.screeningQuestions)},
         ${job.location}, ${job.workplaceType}, ${job.employmentType}, ${job.experienceLevel},
         ${job.salaryMin}, ${job.salaryMax}, ${job.salaryCurrency}, ${job.teamSize}, ${job.headcount}, ${job.expiresAt}
       )
@@ -307,7 +303,7 @@ async function seedJobs() {
         description = EXCLUDED.description,
         requirements = EXCLUDED.requirements,
         status = EXCLUDED.status,
-        interview_questions = EXCLUDED.interview_questions,
+        screening_questions = EXCLUDED.screening_questions,
         location = EXCLUDED.location,
         workplace_type = EXCLUDED.workplace_type,
         employment_type = EXCLUDED.employment_type,

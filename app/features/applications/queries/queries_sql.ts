@@ -178,9 +178,9 @@ export interface getApplicationsByJobRow {
     candidateName: string;
     candidateEmail: string;
     candidatePicture: string | null;
-    reportId: string | null;
-    reportRecommendation: string | null;
-    reportScores: any | null;
+    reportId: string;
+    reportRecommendation: string;
+    reportScores: any;
     reportReleasedAt: Date | null;
     preEvaluationScore: number | null;
 }

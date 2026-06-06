@@ -458,7 +458,7 @@ export function decideNextStep(
       requirements: unknown;
       companyName: string;
       finalReportTarget: number | null;
-      interviewQuestions: unknown;
+      screeningQuestions: unknown;
     };
   },
   log: ReturnType<typeof createWorkflowLogger>,

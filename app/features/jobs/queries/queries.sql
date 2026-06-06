@@ -1,6 +1,6 @@
 -- name: createJob :one
 INSERT INTO jobs (
-  company_id, title, description, requirements, interview_questions, status,
+  company_id, title, description, requirements, screening_questions, status,
   location, workplace_type, employment_type, experience_level,
   salary_min, salary_max, salary_currency, team_size, headcount, final_report_target, expires_at
 )
@@ -48,7 +48,7 @@ UPDATE jobs
 SET title = $1,
     description = $2,
     requirements = $3,
-    interview_questions = $4,
+    screening_questions = $4,
     status = $5,
     location = $6,
     workplace_type = $7,

@@ -60,7 +60,7 @@ export const createJob = createServerFn({ method: "POST" })
       title: data.title,
       description: data.description,
       requirements: data.requirements,
-      interviewQuestions: data.interviewQuestions,
+      screeningQuestions: data.screeningQuestions,
       status: data.status,
       location: data.location ?? null,
       workplaceType: data.workplaceType ?? null,
@@ -152,7 +152,7 @@ export const updateJob = createServerFn({ method: "POST" })
       title: data.title,
       description: data.description,
       requirements: data.requirements,
-      interviewQuestions: data.interviewQuestions,
+      screeningQuestions: data.screeningQuestions,
       status: data.status,
       location: data.location ?? null,
       workplaceType: data.workplaceType ?? null,
@@ -231,7 +231,7 @@ export const publishJob = createServerFn({ method: "POST" })
       title: job.title,
       description: job.description,
       requirements: job.requirements,
-      interviewQuestions: job.interviewQuestions,
+      screeningQuestions: job.screeningQuestions,
       status: "open",
       location: job.location,
       workplaceType: job.workplaceType,
@@ -358,7 +358,7 @@ Guidelines:
 - Write a professional, engaging job description that would attract top-tier candidates
 - Requirements should be specific and actionable (e.g., "5+ years of React experience" not just "React experience")
 - Include 4-8 relevant requirements based on the role
-- Include 2-4 interview questions that assess key competencies for the role
+- Include 2-4 screening questions. These are NOT technical or competency questions — they are short, informatory logistics/eligibility questions used to qualify candidates early (e.g. work authorization/visa status, willingness to relocate, salary expectations, notice period, availability/start date, on-site vs remote preference). Tailor them to the role and location (e.g. ask about relocation only if the role is onsite/hybrid, ask about visa status based on the location). Never include questions that test skills, knowledge, or problem-solving.
 - Salary should be realistic for the role and location; if unsure, use reasonable market ranges
 - Team size and headcount should be realistic; use null if not inferable from the prompt
 - Experience level should map to: junior (0-2y), mid (2-5y), senior (5-8y), staff (8-12y), lead (5+ y with leadership), principal (10+ y)
@@ -382,7 +382,7 @@ function cleanAiJobOutput(output: Record<string, unknown>): Record<string, unkno
     }
   }
 
-  const arrayStringFields = ["requirements", "interviewQuestions"];
+  const arrayStringFields = ["requirements", "screeningQuestions"];
   for (const key of arrayStringFields) {
     const arr = cleaned[key];
     if (Array.isArray(arr)) {
@@ -394,15 +394,15 @@ function cleanAiJobOutput(output: Record<string, unknown>): Record<string, unkno
 
   // Sanity check: cap array lengths to prevent model from generating excessive lists
   const MAX_REQUIREMENTS = 12;
-  const MAX_INTERVIEW_QUESTIONS = 12;
+  const MAX_SCREENING_QUESTIONS = 12;
   if (Array.isArray(cleaned.requirements) && cleaned.requirements.length > MAX_REQUIREMENTS) {
     cleaned.requirements = cleaned.requirements.slice(0, MAX_REQUIREMENTS);
   }
   if (
-    Array.isArray(cleaned.interviewQuestions) &&
-    cleaned.interviewQuestions.length > MAX_INTERVIEW_QUESTIONS
+    Array.isArray(cleaned.screeningQuestions) &&
+    cleaned.screeningQuestions.length > MAX_SCREENING_QUESTIONS
   ) {
-    cleaned.interviewQuestions = cleaned.interviewQuestions.slice(0, MAX_INTERVIEW_QUESTIONS);
+    cleaned.screeningQuestions = cleaned.screeningQuestions.slice(0, MAX_SCREENING_QUESTIONS);
   }
 
   // Sanity check: cap salary fields to prevent unrealistic values
