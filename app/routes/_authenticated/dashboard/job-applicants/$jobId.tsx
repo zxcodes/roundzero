@@ -192,7 +192,7 @@ function JobApplicantsPage() {
 
           {view === "all" ? (
             <Select value={filter} onValueChange={onFilterChange}>
-              <SelectTrigger className="w-[210px]">
+              <SelectTrigger className="w-52.5">
                 <SelectValue placeholder="Filter status" />
               </SelectTrigger>
               <SelectContent>
