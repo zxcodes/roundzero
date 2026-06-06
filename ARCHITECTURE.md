@@ -639,7 +639,84 @@ See `PLAN.md` for the full build plan. Based on the current architecture, likely
 
 ---
 
-## 17. Key Decisions
+## 17. Deployment
+
+### Environments
+
+| Env | Branch | URL | Workers Plan |
+| --- | --- | --- | --- |
+| staging | `staging` | `staging.roundzero.dev` | Paid (or Free if < 3 MiB gzip) |
+| production | `main` | `roundzero.dev` | Paid |
+
+### CI/CD
+
+GitHub Actions workflow at `.github/workflows/deploy.yml`.
+
+Triggers:
+- push to `staging` or `main`
+- `workflow_dispatch` (manual) from Actions tab
+
+Pipeline:
+1. `bun install --frozen-lockfile`
+2. `bun run check` — lint + typecheck
+3. create `.env.ci` from GitHub environment secrets
+4. `bun run db:migrate` — run dbmate against Neon DB
+5. `vite build && wrangler deploy --env <env> --secrets-file .env.ci`
+
+Secrets are uploaded alongside code via `--secrets-file`, not pre-set with `wrangler secret put`.
+
+### First-time setup
+
+```bash
+# 1. Create GitHub environments and set secrets
+gh secret set --env staging --env-file .env.staging
+gh secret set --env production --env-file .env.production
+# Note: CLOUDFLARE_API_TOKEN must be set manually per environment
+gh secret set --env staging CLOUDFLARE_API_TOKEN
+
+# 2. Create staging branch and push
+git checkout -b staging
+git push origin staging
+
+# 3. Create Hyperdrive config for staging Neon DB
+# (One-time — paste the resulting UUID into wrangler.jsonc env.staging.hyperdrive.id)
+wrangler hyperdrive create roundzero-db-staging \
+  --connection-string="postgresql://neondb_owner:...@...neon.tech/neondb?sslmode=require"
+
+# 4. Push main when ready for production
+# (Create production Neon DB + Hyperdrive config first)
+```
+
+### Required GitHub secrets (per environment)
+
+| Secret | Purpose |
+|--------|---------|
+| `DATABASE_URL` | Postgres connection string for dbmate migrations |
+| `SESSION_SECRET` | Cookie signing key |
+| `APP_URL` | Canonical app URL (`https://staging.roundzero.dev`) |
+| `RESEND_API_KEY` | Email delivery |
+| `RESEND_FROM_EMAIL` | Sender address |
+| `OPENROUTER_API_KEY` | LLM inference |
+| `AI_GATEWAY_TOKEN` | Cloudflare AI Gateway |
+| `POLAR_ACCESS_TOKEN` | Billing API |
+| `POLAR_WEBHOOK_SECRET` | Billing webhook verification |
+| `POLAR_PRODUCT_ID_PRO` | Stripe product reference |
+| `ELEVENLABS_API_KEY` | Voice assessment |
+| `ELEVENLABS_AGENT_ID` | Voice agent config |
+| `ELEVENLABS_WEBHOOK_SECRET` | Voice webhook verification |
+| `VITE_GOOGLE_CLIENT_ID` | Google OAuth client ID |
+| `VITE_APP_URL` | Client-side app URL |
+| `VITE_PUBLIC_ASSET_BASE_URL` | R2 asset CDN domain (optional) |
+| `CLOUDFLARE_API_TOKEN` | Wrangler deploy auth (Workers: Edit permission) |
+
+### Local secrets
+
+`.env` — local dev only, never committed (covered by `.gitignore`).
+`.env.staging` / `.env.production` — environment-specific values, never committed (covered by `.env.*` in `.gitignore`).
+
+---
+
+## 18. Key Decisions
 
 | Decision | Choice | Rationale |
 | --- | --- | --- |
