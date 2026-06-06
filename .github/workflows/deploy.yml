@@ -49,4 +49,7 @@ jobs:
       - name: Build and deploy
         run: bun run build && bunx wrangler deploy --env staging --secrets-file .env.ci
         env:
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          VITE_APP_URL: ${{ secrets.VITE_APP_URL }}
+          VITE_PUBLIC_ASSET_BASE_URL: ${{ secrets.VITE_PUBLIC_ASSET_BASE_URL }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
