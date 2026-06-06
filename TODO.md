@@ -1,5 +1,6 @@
 ## TODO
 
+- there's a crash on signup on prod (something undefined)
 - job creation has no creating feedback. the page just redirects after a while.
 - the mf skeleton is still there. add a new route that displays all of them and check.
 - company isn't clickable from the job description page.
