@@ -91,7 +91,7 @@ function PrivacyPage() {
             <p>
               <strong style={{ color: "var(--ed-ink)" }}>Job Posting Data:</strong> When companies
               create job postings, we collect the job title, description, requirements, location,
-              type, experience level, salary information, and custom interview questions.
+              type, experience level, salary information, and custom screening questions.
             </p>
             <p>
               <strong style={{ color: "var(--ed-ink)" }}>Application Data:</strong> When you apply

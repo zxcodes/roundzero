@@ -79,8 +79,8 @@ function EditJobPage() {
               title: job.title,
               description: job.description,
               requirements: Array.isArray(job.requirements) ? job.requirements : [],
-              interviewQuestions: Array.isArray(job.interviewQuestions)
-                ? job.interviewQuestions
+              screeningQuestions: Array.isArray(job.screeningQuestions)
+                ? job.screeningQuestions
                 : [],
               status: job.status as JobStatus,
               location: job.location,

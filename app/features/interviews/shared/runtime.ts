@@ -120,7 +120,7 @@ export async function buildInterviewContextState(
     jobRequirements: filterStrings(job?.requirements),
     candidateName: candidate?.name ?? interview.candidateName,
     candidateSummary: sanitizeUntrustedText(candidateSummaryRaw, LIMITS.CANDIDATE_SUMMARY),
-    customQuestions: filterStrings(job?.interviewQuestions),
+    customQuestions: filterStrings(job?.screeningQuestions),
     preEvaluation: {
       score: preEvaluation?.score ?? null,
       missingRequirements: filterStrings(preEvaluation?.missingRequirements),

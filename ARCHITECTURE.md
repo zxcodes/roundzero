@@ -159,7 +159,7 @@ High-level responsibilities:
 - `dashboard`: role-specific metrics and dashboard data
 - `edge`: edge/runtime-specific code surface
 - `interviews`: interview lifecycle, routes, agent chat hooks/components, server functions
-- `jobs`: job CRUD, lifecycle, requirements, interview questions
+- `jobs`: job CRUD, lifecycle, requirements, screening questions
 - `notifications`: inbox UI, payload rendering, email delivery
 - `pre-evaluations`: pre-screening queries and server functions
 - `reports`: post-evaluation reports, report pages, reusable report components
@@ -244,7 +244,7 @@ Source of truth:
 - stores:
   - title, description
   - requirements
-  - interview questions
+  - screening questions
   - lifecycle status (`draft`, `open`, `closed`)
   - salary / workplace / experience fields
   - `final_report_target`
@@ -499,7 +499,7 @@ Jobs support:
 - archive behavior
 - `expires_at`
 - auto-close behavior for expired jobs
-- interview questions stored in JSONB
+- screening questions stored in JSONB
 
 Batch-oriented evaluation adds:
 

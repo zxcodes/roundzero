@@ -19,7 +19,7 @@ const jobFieldsBaseSchema = z.object({
         .max(200, "Requirement must be under 200 characters"),
     )
     .default([]),
-  interviewQuestions: z
+  screeningQuestions: z
     .array(
       z
         .string()

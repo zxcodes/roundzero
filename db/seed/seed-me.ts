@@ -156,7 +156,7 @@ async function seedForCompany(user: DevUser) {
     // Customize description and requirements based on job type
     let description = "";
     let requirements = "";
-    let interviewQuestions = [];
+    let screeningQuestions = [];
 
     switch (t.title) {
       case "Senior Full-Stack Engineer":
@@ -170,13 +170,7 @@ async function seedForCompany(user: DevUser) {
           "Track record of breaking down ambiguous problems into shippable iterations",
           "Bonus: experience with real-time systems (WebSockets, CRDTs) or AI/LLM integrations",
         ]);
-        interviewQuestions = sql.json([
-          ...commonScreeningQuestions,
-          "Walk me through the architecture of a real-time, multi-user feature you designed end-to-end — what tradeoffs did you make on consistency vs. latency?",
-          "How do you approach performance optimization in a React + Node.js stack? Give a concrete example where you measurably improved a metric.",
-          "Describe a hard production bug you debugged across the full stack. How did you isolate it and what was the root cause?",
-          "How do you balance shipping quickly against accumulating technical debt on a small team?",
-        ]);
+        screeningQuestions = sql.json(commonScreeningQuestions);
         break;
 
       case "Product Manager - Growth":
@@ -189,13 +183,7 @@ async function seedForCompany(user: DevUser) {
           "Comfortable writing SQL and exploring data in tools like Amplitude, Mixpanel, or Looker",
           "Excellent written communication and cross-functional stakeholder management",
         ]);
-        interviewQuestions = sql.json([
-          ...commonScreeningQuestions,
-          "Walk us through a growth experiment you ran end-to-end — the hypothesis, design, result, and what you'd do differently.",
-          "How would you approach improving the activation rate of a B2B SaaS product in its first 30 days?",
-          "How do you decide between optimizing an existing funnel step vs. introducing a new acquisition channel?",
-          "Which 3 metrics would you build a weekly growth review around for a product like ours, and why?",
-        ]);
+        screeningQuestions = sql.json(commonScreeningQuestions);
         break;
 
       case "Senior Backend Engineer":
@@ -209,13 +197,7 @@ async function seedForCompany(user: DevUser) {
           "Working knowledge of event-driven architectures and queue-based systems",
           "Bonus: experience operating systems at >1k RPS or handling sensitive data (PII, payments)",
         ]);
-        interviewQuestions = sql.json([
-          ...commonScreeningQuestions,
-          "Design an API for a webhook delivery system that guarantees at-least-once delivery — what are the moving parts and failure modes?",
-          "Describe how you'd diagnose a query that suddenly went from 50ms to 5s in production.",
-          "How would you handle a 10x traffic spike to a critical endpoint on short notice?",
-          "Talk about an event-driven system you've built. What broke first when it scaled, and how did you fix it?",
-        ]);
+        screeningQuestions = sql.json(commonScreeningQuestions);
         break;
 
       case "Frontend Engineer (React)":
@@ -229,13 +211,7 @@ async function seedForCompany(user: DevUser) {
           "Strong eye for detail — pixel-perfect, accessible, performant interfaces",
           "Bonus: experience with React Server Components, Suspense, or animation libraries",
         ]);
-        interviewQuestions = sql.json([
-          ...commonScreeningQuestions,
-          "How do you decide between local state, server state, and global state in a complex React app?",
-          "Describe how you'd ensure a complex form (multi-step, async validation) is accessible to keyboard and screen reader users.",
-          "Walk me through a real performance optimization you shipped on the frontend — how did you measure it?",
-          "What's your experience contributing to or maintaining a design system?",
-        ]);
+        screeningQuestions = sql.json(commonScreeningQuestions);
         break;
 
       case "DevOps Engineer":
@@ -249,13 +225,7 @@ async function seedForCompany(user: DevUser) {
           "Familiarity with observability tools (Prometheus, Grafana, Datadog, or similar)",
           "Comfortable being part of an on-call rotation and writing postmortems",
         ]);
-        interviewQuestions = sql.json([
-          ...commonScreeningQuestions,
-          "Walk me through how you'd take a CI pipeline from 25 minutes down to under 5 minutes.",
-          "Describe an incident you led the response to. What was the timeline, blast radius, and what changed afterward?",
-          "How do you decide what to alert on vs. what to merely dashboard?",
-          "Compare blue/green and canary deployments — when would you pick each, and why?",
-        ]);
+        screeningQuestions = sql.json(commonScreeningQuestions);
         break;
 
       case "Technical Writer":
@@ -268,13 +238,7 @@ async function seedForCompany(user: DevUser) {
           "Working understanding of REST APIs, webhooks, and authentication concepts",
           "Strong editorial judgment and information architecture instincts",
         ]);
-        interviewQuestions = sql.json([
-          ...commonScreeningQuestions,
-          "Walk us through how you'd document a brand-new API endpoint from scratch — what artifacts would you produce?",
-          "How do you keep documentation in sync with a fast-moving codebase? What systems or rituals have worked for you?",
-          "Describe how you'd extract information from a busy engineer who 'doesn't have time for docs'.",
-          "Show us a piece of API documentation you're particularly proud of and explain the choices behind it.",
-        ]);
+        screeningQuestions = sql.json(commonScreeningQuestions);
         break;
 
       case "Customer Success Manager":
@@ -287,13 +251,7 @@ async function seedForCompany(user: DevUser) {
           "Comfort analyzing product usage data to spot risks and opportunities",
           "Experience with CRMs and CS tools (Salesforce, HubSpot, Gainsight, or similar)",
         ]);
-        interviewQuestions = sql.json([
-          ...commonScreeningQuestions,
-          "How do you define and measure customer health? What signals do you weight most heavily?",
-          "Walk me through a time you turned around an at-risk customer. What did you actually do, week by week?",
-          "How do you balance reactive support with proactive expansion conversations across a 30+ account book?",
-          "Describe an onboarding program you built or improved. What changed in the customer outcomes afterward?",
-        ]);
+        screeningQuestions = sql.json(commonScreeningQuestions);
         break;
 
       case "UX/UI Designer":
@@ -306,13 +264,7 @@ async function seedForCompany(user: DevUser) {
           "Experience contributing to or owning a design system",
           "Solid understanding of accessibility principles (WCAG 2.1 AA)",
         ]);
-        interviewQuestions = sql.json([
-          ...commonScreeningQuestions,
-          "Walk me through your design process on a recent feature, from problem framing to ship.",
-          "How do you incorporate user research and feedback into your designs without it slowing you down?",
-          "How do you balance aesthetic ambition against accessibility and engineering cost?",
-          "Tell us about a time you pushed back on a PM or engineer on a design decision. How did it land?",
-        ]);
+        screeningQuestions = sql.json(commonScreeningQuestions);
         break;
 
       default:
@@ -323,18 +275,13 @@ async function seedForCompany(user: DevUser) {
           "Experience with TypeScript and PostgreSQL",
           "Excellent communication and ownership mindset",
         ]);
-        interviewQuestions = sql.json([
-          ...commonScreeningQuestions,
-          "Walk me through a system you designed from scratch.",
-          "How do you approach debugging a production incident?",
-          "Describe a time you had to make a significant technical tradeoff.",
-        ]);
+        screeningQuestions = sql.json(commonScreeningQuestions);
     }
 
     await sql`
       INSERT INTO jobs (
         id, company_id, title, description, requirements, status,
-        interview_questions, location, workplace_type, employment_type,
+        screening_questions, location, workplace_type, employment_type,
         experience_level, salary_min, salary_max, salary_currency, team_size, headcount,
         final_report_target, expires_at
       )
@@ -343,7 +290,7 @@ async function seedForCompany(user: DevUser) {
         ${description},
         ${requirements},
         ${t.status},
-        ${interviewQuestions},
+        ${screeningQuestions},
         ${t.workplace === "remote" ? "Remote (US timezones)" : "San Francisco, CA"},
         ${t.workplace}, ${t.type}, ${t.exp},
         ${100000 + (i * 15000)}, ${180000 + (i * 20000)}, ${"USD"}, ${6 + i}, ${i % 3 === 0 ? 2 : 1},
@@ -352,7 +299,7 @@ async function seedForCompany(user: DevUser) {
       ON CONFLICT (id) DO UPDATE
       SET title = EXCLUDED.title, description = EXCLUDED.description,
           requirements = EXCLUDED.requirements, status = EXCLUDED.status,
-          interview_questions = EXCLUDED.interview_questions,
+          screening_questions = EXCLUDED.screening_questions,
           location = EXCLUDED.location, workplace_type = EXCLUDED.workplace_type,
           employment_type = EXCLUDED.employment_type, experience_level = EXCLUDED.experience_level,
           salary_min = EXCLUDED.salary_min, salary_max = EXCLUDED.salary_max,
