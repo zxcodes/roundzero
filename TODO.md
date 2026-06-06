@@ -1,8 +1,8 @@
 ## TODO
 
 
-- the text interview or voice interview don't ask questions based on the actual resume at all. they just seem to add job desc specific questions.
-- harden the final summary prompt to be extremely strict and judge every single response from the user. here's an example:
+
+- harden the final summary prompt to be extremely strict and judge every single response from the user. here's an example: (WIP)
  
   Candidate consistently failed to implement the requested features across multiple tasks, submitting unrelated console output instead of functional solutions. Every submission violated problem constraints (no I/O) and received rubric scores of 0 for lacking required implementations.
 
@@ -20,6 +20,7 @@
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- the text interview or voice interview don't ask questions based on the actual resume at all. they just seem to add job desc specific questions. (WIP)-->
 <!--- check if everything a company sees (application statues) are accurate at each step. (applied, failed eval, interviewing, interviewed, etc, all lifecycle events.) (SUPPOSEDLY FIXED IN LAST COMMIT)--> 
 <!--- think more about the duration from first report to last report generation bc it will depend on the candidate. think if we need to add an expiry or something and pass it to the next candidate? (BATCH WORKFLOW TEST)-->
 <!--- check for leaking info in api calls (emails, ids etc) (DONE — audit. Real leak fixed: candidate-facing interview server fns (getMyInterview/getMyInterviews/startMyInterview/cancelMyInterview/completeMyInterview/getInterviewForApplication) were returning the raw interviews.metadata JSONB, which holds the AI runtime contextState — system-prompt inputs, the company's screening questions, the candidate's pre-eval authenticity flags + internal slop/consistency scores. A candidate could read these from the network response and iterate to defeat pre-eval guards. Now sanitized via toCandidateInterview() which strips metadata + agentId and surfaces only expiresAt. Route loaders updated to read interview.expiresAt instead of parsing metadata. Candidate-contactable email + candidate_id to the owning company are by design (mailto on applicant detail). Lower-sev note: getApplicationsByJob still selects a.metadata (eval retry counters + headline/skills/links) returned to the owning company, but it's never rendered and only reaches the job owner — left as-is.)-->

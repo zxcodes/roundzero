@@ -214,7 +214,7 @@ export const startMyInterview = createServerFn({ method: "POST" })
         messages: [
           {
             role: "user",
-            content: `Open the interview. Greet ${contextState.candidateName || "the candidate"} warmly by name, reference one specific resume detail that connects to this role, then ask your first focused interview question. Plain conversational English only.`,
+            content: `Open the interview. Greet ${contextState.candidateName || "the candidate"} warmly by name, then ask your first question. It MUST be about a specific project, role, or technology from their resume — tie it directly to this role. If no resume is available, ask a job-role question instead. Plain conversational English only.`,
           },
         ],
         systemPrompts: [
