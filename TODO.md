@@ -1,5 +1,9 @@
 ## TODO
 
+- job creation has no creating feedback. the page just redirects after a while.
+- the mf skeleton is still there. add a new route that displays all of them and check.
+- company isn't clickable from the job description page.
+- we need to be able to invite people with their email. so when they signup they can join that org or something.
 - think about the auth. should it be possible for people to create company and candidate acc with same email?
 - voice interview still doesnt end the call on its own. and even after the interview, if I refresh, the entire session is lost. it just gets back to square one."start assessment" perhaps we should have a manual submit similar to text interview?
 - the final report should be based on the candidate's response to each and every question. like it should be a deciding factor.
