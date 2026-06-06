@@ -1,6 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "roundzero",
+  "workers_dev": false,
   "preview_urls": true,
   "compatibility_date": "2026-04-23",
   "compatibility_flags": ["nodejs_compat"],
@@ -14,7 +15,6 @@
       "enabled": true
     }
   },
-  "keep_vars": true,
   "vars": {
     "CLOUDFLARE_ACCOUNT_ID": "5634bacd1c09247fdaa26ef02fbcf6ef",
     "AI_GATEWAY_ID": "roundzero"
@@ -55,14 +55,112 @@
       "schedules": ["0 */6 * * *"]
     },
     {
-      // Sweeps applications stranded in `evaluation_failed` (15 min cool-down,
-      // capped at EVAL_RETRY_AUTO_CAP attempts). Faster cadence than the pool
-      // check because a hung pre/post-eval blocks a single candidate's whole
-      // application and we want to recover quickly.
       "name": "eval-retry",
       "binding": "EVAL_RETRY",
       "class_name": "EvalRetryWorkflow",
       "schedules": ["*/30 * * * *"]
     }
-  ]
+  ],
+  "env": {
+    "staging": {
+      "hyperdrive": [
+        {
+          "binding": "HYPERDRIVE",
+          "id": "bb78ad8ae6314ac597683d314c81f094"
+        }
+      ],
+      "vars": {
+        "CLOUDFLARE_ACCOUNT_ID": "5634bacd1c09247fdaa26ef02fbcf6ef",
+        "AI_GATEWAY_ID": "roundzero"
+      },
+      "r2_buckets": [
+        {
+          "binding": "RESUMES",
+          "bucket_name": "roundzero-assets"
+        }
+      ],
+      "workflows": [
+        {
+          "name": "pre-evaluation",
+          "binding": "PRE_EVALUATION",
+          "class_name": "PreEvaluationWorkflow"
+        },
+        {
+          "name": "post-evaluation",
+          "binding": "POST_EVALUATION",
+          "class_name": "PostEvaluationWorkflow"
+        },
+        {
+          "name": "batch-orchestration",
+          "binding": "BATCH_ORCHESTRATION",
+          "class_name": "BatchOrchestrationWorkflow"
+        },
+        {
+          "name": "pool-check",
+          "binding": "POOL_CHECK",
+          "class_name": "PoolCheckWorkflow",
+          "schedules": ["0 */6 * * *"]
+        },
+        {
+          "name": "eval-retry",
+          "binding": "EVAL_RETRY",
+          "class_name": "EvalRetryWorkflow",
+          "schedules": ["*/30 * * * *"]
+        }
+      ],
+      "routes": [
+        {
+          "pattern": "staging.roundzero.dev",
+          "custom_domain": true
+        }
+      ]
+    },
+    "production": {
+      "hyperdrive": [
+        {
+          "binding": "HYPERDRIVE",
+          "id": "<PRODUCTION_HYPERDRIVE_CONFIG_ID>"
+        }
+      ],
+      "vars": {
+        "CLOUDFLARE_ACCOUNT_ID": "5634bacd1c09247fdaa26ef02fbcf6ef",
+        "AI_GATEWAY_ID": "roundzero"
+      },
+      "r2_buckets": [
+        {
+          "binding": "RESUMES",
+          "bucket_name": "roundzero-assets"
+        }
+      ],
+      "workflows": [
+        {
+          "name": "pre-evaluation",
+          "binding": "PRE_EVALUATION",
+          "class_name": "PreEvaluationWorkflow"
+        },
+        {
+          "name": "post-evaluation",
+          "binding": "POST_EVALUATION",
+          "class_name": "PostEvaluationWorkflow"
+        },
+        {
+          "name": "batch-orchestration",
+          "binding": "BATCH_ORCHESTRATION",
+          "class_name": "BatchOrchestrationWorkflow"
+        },
+        {
+          "name": "pool-check",
+          "binding": "POOL_CHECK",
+          "class_name": "PoolCheckWorkflow",
+          "schedules": ["0 */6 * * *"]
+        },
+        {
+          "name": "eval-retry",
+          "binding": "EVAL_RETRY",
+          "class_name": "EvalRetryWorkflow",
+          "schedules": ["*/30 * * * *"]
+        }
+      ]
+    }
+  }
 }
