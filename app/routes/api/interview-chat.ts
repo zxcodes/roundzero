@@ -195,7 +195,7 @@ export const Route = createFileRoute("/api/interview-chat")({
         const abortController = new AbortController();
         const stream = chat({
           adapter: createOpenRouterText(model, env.OPENROUTER_API_KEY, {
-            httpReferer: env.APP_URL ?? "https://roundzero.dev",
+            httpReferer: env.APP_URL,
             appTitle: "RoundZero",
           }),
           messages: history.map(

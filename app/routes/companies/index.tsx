@@ -62,13 +62,13 @@ export const Route = createFileRoute("/companies/")({
       },
       {
         property: "og:url",
-        content: "https://roundzero.dev/companies",
+        content: `${import.meta.env.VITE_APP_URL}/companies`,
       },
     ],
     links: [
       {
         rel: "canonical",
-        href: "https://roundzero.dev/companies",
+        href: `${import.meta.env.VITE_APP_URL}/companies`,
       },
     ],
   }),

@@ -26,13 +26,13 @@ export const Route = createFileRoute("/")({
       },
       {
         property: "og:url",
-        content: "https://roundzero.dev/",
+        content: `${import.meta.env.VITE_APP_URL}/`,
       },
     ],
     links: [
       {
         rel: "canonical",
-        href: "https://roundzero.dev/",
+        href: `${import.meta.env.VITE_APP_URL}/`,
       },
     ],
   }),

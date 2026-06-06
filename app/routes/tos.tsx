@@ -11,7 +11,7 @@ export const Route = createFileRoute("/tos")({
           "RoundZero Terms of Service — the terms governing your use of our AI-driven hiring platform and interview services.",
       },
     ],
-    links: [{ rel: "canonical", href: "https://roundzero.dev/tos" }],
+    links: [{ rel: "canonical", href: `${import.meta.env.VITE_APP_URL}/tos` }],
   }),
   component: TermsPage,
 });

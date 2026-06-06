@@ -38,7 +38,7 @@ export const Route = createFileRoute("/company/login")({
           "Sign in to RoundZero as an employer. Post jobs, run AI-driven interviews, and get ranked candidates with structured evaluation reports.",
       },
     ],
-    links: [{ rel: "canonical", href: "https://roundzero.dev/company/login" }],
+    links: [{ rel: "canonical", href: `${import.meta.env.VITE_APP_URL}/company/login` }],
   }),
   component: CompanyLoginPage,
 });

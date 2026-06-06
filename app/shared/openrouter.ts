@@ -45,7 +45,7 @@ export function getOpenRouter(): OpenRouterProvider {
 
   const headers: Record<string, string> = {
     // OpenRouter ranking headers — surface the app in OpenRouter analytics.
-    "HTTP-Referer": env.APP_URL ?? "https://roundzero.dev",
+    "HTTP-Referer": env.APP_URL,
     "X-Title": "RoundZero",
   };
 

@@ -88,13 +88,13 @@ export const Route = createFileRoute("/jobs/")({
       },
       {
         property: "og:url",
-        content: "https://roundzero.dev/jobs",
+        content: `${import.meta.env.VITE_APP_URL}/jobs`,
       },
     ],
     links: [
       {
         rel: "canonical",
-        href: "https://roundzero.dev/jobs",
+        href: `${import.meta.env.VITE_APP_URL}/jobs`,
       },
     ],
   }),

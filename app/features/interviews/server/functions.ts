@@ -207,7 +207,7 @@ export const startMyInterview = createServerFn({ method: "POST" })
       const { model, fallbacks } = getModelChain("interview");
       const greeting = await chat({
         adapter: createOpenRouterText(model, env.OPENROUTER_API_KEY, {
-          httpReferer: env.APP_URL ?? "https://roundzero.dev",
+          httpReferer: env.APP_URL,
           appTitle: "RoundZero",
         }),
         messages: [
