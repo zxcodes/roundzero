@@ -48,8 +48,6 @@ jobs:
 
       - name: Run tests
         run: bun run test
-        env:
-          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/roundzero_test?sslmode=disable
 
       - name: Create secrets file
         run: |
