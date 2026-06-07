@@ -1,5 +1,6 @@
 ## TODO
 
+- interview experience regressed. no greeting. even if did, says im zero, a senior engineer at [company] wtf is that? you're a fucking assistant ugh.
 - interview skeleton has two sidebars. the skeleton itself has its sidebar, and the actual sidebar too so it appears as if there are two.
 - pretty sure model fallbacks still don't work. verify in local dev.
 - there's a crash on signup on prod (something undefined)
