@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TosRouteImport } from './routes/tos'
-import { Route as SkeletonsRouteImport } from './routes/skeletons'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
@@ -49,11 +48,6 @@ import { Route as AuthenticatedDashboardApplicantReportsApplicationIdFullRouteIm
 const TosRoute = TosRouteImport.update({
   id: '/tos',
   path: '/tos',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SkeletonsRoute = SkeletonsRouteImport.update({
-  id: '/skeletons',
-  path: '/skeletons',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -249,7 +243,6 @@ const AuthenticatedDashboardApplicantReportsApplicationIdFullRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/privacy': typeof PrivacyRoute
-  '/skeletons': typeof SkeletonsRoute
   '/tos': typeof TosRoute
   '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/interview': typeof AuthenticatedInterviewRouteWithChildren
@@ -286,7 +279,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/privacy': typeof PrivacyRoute
-  '/skeletons': typeof SkeletonsRoute
   '/tos': typeof TosRoute
   '/onboarding': typeof AuthenticatedOnboardingRouteWithChildren
   '/api/interview-chat': typeof ApiInterviewChatRoute
@@ -321,7 +313,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/privacy': typeof PrivacyRoute
-  '/skeletons': typeof SkeletonsRoute
   '/tos': typeof TosRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/_authenticated/interview': typeof AuthenticatedInterviewRouteWithChildren
@@ -360,7 +351,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/privacy'
-    | '/skeletons'
     | '/tos'
     | '/dashboard'
     | '/interview'
@@ -397,7 +387,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/privacy'
-    | '/skeletons'
     | '/tos'
     | '/onboarding'
     | '/api/interview-chat'
@@ -431,7 +420,6 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/privacy'
-    | '/skeletons'
     | '/tos'
     | '/_authenticated/dashboard'
     | '/_authenticated/interview'
@@ -470,7 +458,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   PrivacyRoute: typeof PrivacyRoute
-  SkeletonsRoute: typeof SkeletonsRoute
   TosRoute: typeof TosRoute
   ApiInterviewChatRoute: typeof ApiInterviewChatRoute
   ApiVoiceWebhookRoute: typeof ApiVoiceWebhookRoute
@@ -489,13 +476,6 @@ declare module '@tanstack/react-router' {
       path: '/tos'
       fullPath: '/tos'
       preLoaderRoute: typeof TosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/skeletons': {
-      id: '/skeletons'
-      path: '/skeletons'
-      fullPath: '/skeletons'
-      preLoaderRoute: typeof SkeletonsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -872,7 +852,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   PrivacyRoute: PrivacyRoute,
-  SkeletonsRoute: SkeletonsRoute,
   TosRoute: TosRoute,
   ApiInterviewChatRoute: ApiInterviewChatRoute,
   ApiVoiceWebhookRoute: ApiVoiceWebhookRoute,
