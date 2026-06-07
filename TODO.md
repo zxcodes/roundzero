@@ -1,17 +1,17 @@
 ## TODO
 
 - there's a crash on signup on prod (something undefined)
-- company isn't clickable from the job description page.
 - we need to be able to invite people with their email. so when they signup they can join that org or something.
 - think about the auth. should it be possible for people to create company and candidate acc with same email?
 - voice interview still doesnt end the call on its own. and even after the interview, if I refresh, the entire session is lost. it just gets back to square one."start assessment" perhaps we should have a manual submit similar to text interview?
-- the final report should be based on the candidate's response to each and every question. like it should be a deciding factor.
-- for company full report, they should also see what they did in the chat, detecting ai responses (should maybe see something like: potential ai written answer?)
 - add a feedback option for people or requesting features etc (global? context aware? can trigger anywhere and it will automatically include the context?).
 - add score breakdown. 
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- for company full report, they should also see what they did in the chat, detecting ai responses (should maybe see something like: potential ai written answer?)-->
+<!--- the final report should be based on the candidate's response to each and every question. like it should be a deciding factor.-->
+<!--- company isn't clickable from the job description page.-->
 <!--- job creation has no creating feedback. the page just redirects after a while.-->
 <!--- the mf skeleton is still there. add a new route that displays all of them and check.-->
 <!--- "Interview questions" when generating a job with ai are not good. these are not supposed to be technical questions. these are purely informatory such as (relocation, visa, salary exp etc). Maybe rename it to screening questions or something? also update the job templates & creation prompt.-->
