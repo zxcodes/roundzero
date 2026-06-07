@@ -98,7 +98,13 @@ function JobDetailPage() {
           <p className="mt-1 text-xs text-muted-foreground">
             {job.companyName ? (
               <>
-                <span className="font-medium text-foreground">{job.companyName}</span>
+                <Link
+                  to="/companies/$slug"
+                  params={{ slug: job.companySlug }}
+                  className="font-medium text-foreground transition-colors hover:text-primary"
+                >
+                  {job.companyName}
+                </Link>
                 {" \u00B7 "}
               </>
             ) : null}
