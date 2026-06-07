@@ -4,26 +4,8 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /**
- * Generic fallback skeleton used as the default pending component for all routes.
- */
-export function RouteSpinner() {
-  return (
-    <div className="space-y-6">
-      <div className="space-y-2.5">
-        <Skeleton className="h-7 w-44" />
-        <Skeleton className="h-4 w-64" />
-      </div>
-      <div className="space-y-3">
-        <Skeleton className="h-28 w-full rounded-xl" />
-        <Skeleton className="h-28 w-full rounded-xl" />
-      </div>
-    </div>
-  );
-}
-
-/**
  * Skeleton for /jobs — public jobs listing page.
- * Matches: hero header + filter bar + results count + 3-column card grid.
+ * Matches: hero header + filter bar + results count + 3-column card grid + pagination.
  */
 export function JobsListSkeleton() {
   return (
@@ -84,6 +66,15 @@ export function JobsListSkeleton() {
               </Card>
             ))}
           </div>
+
+          {/* Pagination */}
+          <div className="mt-8 flex items-center justify-center gap-1">
+            <Skeleton className="h-9 w-9 rounded-md" />
+            <Skeleton className="h-9 w-9 rounded-md" />
+            <Skeleton className="h-9 w-9 rounded-md" />
+            <Skeleton className="h-9 w-9 rounded-md" />
+            <Skeleton className="h-9 w-9 rounded-md" />
+          </div>
         </section>
       </main>
 
@@ -94,7 +85,7 @@ export function JobsListSkeleton() {
 
 /**
  * Skeleton for /companies — public companies listing page.
- * Matches: hero header + filter bar + results count + 3-column card grid.
+ * Matches: hero header + filter bar + results count + 3-column card grid + pagination.
  */
 export function CompaniesListSkeleton() {
   return (
@@ -155,6 +146,15 @@ export function CompaniesListSkeleton() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+
+          {/* Pagination */}
+          <div className="mt-8 flex items-center justify-center gap-1">
+            <Skeleton className="h-9 w-9 rounded-md" />
+            <Skeleton className="h-9 w-9 rounded-md" />
+            <Skeleton className="h-9 w-9 rounded-md" />
+            <Skeleton className="h-9 w-9 rounded-md" />
+            <Skeleton className="h-9 w-9 rounded-md" />
           </div>
         </section>
       </main>
@@ -450,6 +450,19 @@ function CandidateJobsListSkeleton() {
         <Skeleton className="mt-1 h-4 w-56" />
       </div>
 
+      {/* Filter bar */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <Skeleton className="h-9 flex-1 rounded-md" />
+        <Skeleton className="h-9 w-full sm:w-36 rounded-md" />
+        <Skeleton className="h-9 w-full sm:w-36 rounded-md" />
+        <Skeleton className="h-9 w-full sm:w-36 rounded-md" />
+        <Skeleton className="h-9 w-full sm:w-36 rounded-md" />
+        <Skeleton className="h-9 w-full sm:w-36 rounded-md" />
+      </div>
+
+      {/* Results count */}
+      <Skeleton className="h-3.5 w-28" />
+
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {Array.from({ length: 9 }).map((_, i) => (
           <Card key={i}>
@@ -472,15 +485,29 @@ function CandidateJobsListSkeleton() {
           </Card>
         ))}
       </div>
+
+      {/* Pagination */}
+      <div className="flex items-center justify-center gap-1">
+        <Skeleton className="h-9 w-9 rounded-md" />
+        <Skeleton className="h-9 w-9 rounded-md" />
+        <Skeleton className="h-9 w-9 rounded-md" />
+        <Skeleton className="h-9 w-9 rounded-md" />
+        <Skeleton className="h-9 w-9 rounded-md" />
+      </div>
     </div>
   );
 }
 
 /**
  * Skeleton for /dashboard/jobs/$jobId — dashboard job detail page.
- * Matches: back button + title/status + date + action buttons + 2-col layout.
+ * Matches: back button + title/status + date + action buttons + applicants summary + 2-col layout + apply section.
  */
 export function DashboardJobDetailSkeleton() {
+  const { isCompany } = useRouteContext({ from: "/_authenticated/dashboard/jobs/$jobId/" });
+  return isCompany ? <CompanyJobDetailSkeleton /> : <CandidateJobDetailSkeleton />;
+}
+
+function CompanyJobDetailSkeleton() {
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -497,11 +524,32 @@ export function DashboardJobDetailSkeleton() {
 
       {/* Action buttons */}
       <div className="flex gap-2">
-        <Skeleton className="h-8 w-28 rounded-md" />
-        <Skeleton className="h-8 w-20 rounded-md" />
-        <Skeleton className="h-8 w-16 rounded-md" />
-        <Skeleton className="h-8 w-20 rounded-md" />
+        <Skeleton className="h-8 w-36 rounded-md" />
+        <Skeleton className="h-8 w-8 rounded-md" />
       </div>
+
+      {/* Applicants summary card */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-5 w-20" />
+              <Skeleton className="h-5 w-8 rounded-full" />
+            </div>
+            <Skeleton className="h-8 w-32 rounded-md" />
+          </div>
+          <Skeleton className="mt-1 h-3 w-64" />
+        </CardHeader>
+        <CardContent>
+          <Card className="bg-muted/20 border-border/70">
+            <CardContent className="space-y-2 p-4">
+              <Skeleton className="h-4 w-48" />
+              <Skeleton className="h-5 w-20 rounded-full" />
+              <Skeleton className="h-3 w-72" />
+            </CardContent>
+          </Card>
+        </CardContent>
+      </Card>
 
       {/* 2-col layout */}
       <div className="grid gap-5 lg:grid-cols-3">
@@ -559,9 +607,88 @@ export function DashboardJobDetailSkeleton() {
   );
 }
 
+function CandidateJobDetailSkeleton() {
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-start gap-3">
+        <Skeleton className="mt-0.5 size-9 shrink-0 rounded-md" />
+        <div className="min-w-0 flex-1 space-y-2">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-7 w-56" />
+            <Skeleton className="h-5 w-14 rounded-full" />
+          </div>
+          <Skeleton className="h-3.5 w-48" />
+        </div>
+      </div>
+
+      {/* 2-col layout */}
+      <div className="grid gap-5 lg:grid-cols-3">
+        {/* Left column */}
+        <div className="space-y-5 lg:col-span-2">
+          {/* Description card */}
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-5 w-24" />
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-5/6" />
+              <Skeleton className="h-4 w-3/4" />
+            </CardContent>
+          </Card>
+          {/* Requirements card */}
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-5 w-28" />
+            </CardHeader>
+            <CardContent className="space-y-2.5">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-start gap-2.5">
+                  <Skeleton className="mt-2 size-1 shrink-0 rounded-full" />
+                  <Skeleton className="h-4 w-full" />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right sidebar */}
+        <div className="space-y-5">
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-3 w-20" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <Skeleton className="mt-0.5 size-4 shrink-0" />
+                  <div className="space-y-1">
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+          {/* Apply section */}
+          <Card>
+            <CardContent className="space-y-3 py-4">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-4 w-56" />
+              <Skeleton className="h-9 w-full rounded-md" />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /**
  * Skeleton for /dashboard/job-applicants/$jobId — applicants list page.
- * Matches: back nav + header (title + badges) + applicant list cards.
+ * Matches: back nav + header (title + badges) + 3 summary cards + tabs/filter + applicant list + active batch panel.
  */
 export function DashboardJobApplicantsSkeleton() {
   return (
@@ -624,14 +751,51 @@ export function DashboardJobApplicantsSkeleton() {
           </Card>
         ))}
       </div>
+
+      {/* Active batch panel */}
+      <Card size="sm" className="border-border/60">
+        <CardContent className="space-y-3 py-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="space-y-1">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-3 w-36" />
+            </div>
+            <Skeleton className="h-8 w-24 rounded-md" />
+          </div>
+          <Skeleton className="h-2 w-full rounded-full" />
+        </CardContent>
+      </Card>
+
+      {/* Secondary applicant list for batch */}
+      <div className="space-y-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Card key={i} size="sm" className="ring-foreground/5">
+            <CardContent className="py-0">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <Skeleton className="size-8 rounded-full" />
+                  <Skeleton className="h-4 w-28" />
+                </div>
+                <Skeleton className="h-5 w-16 rounded-full" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }
 
 /**
- * Skeleton for /dashboard — dashboard index with welcome + metric cards.
+ * Skeleton for /dashboard — dashboard index page.
+ * Matches company and candidate views.
  */
 export function DashboardIndexSkeleton() {
+  const { isCompany } = useRouteContext({ from: "/_authenticated/dashboard/" });
+  return isCompany ? <DashboardCompanyIndexSkeleton /> : <DashboardCandidateIndexSkeleton />;
+}
+
+function DashboardCompanyIndexSkeleton() {
   return (
     <div className="space-y-6">
       <div>
@@ -743,6 +907,34 @@ export function DashboardIndexSkeleton() {
             </div>
           </CardContent>
         </Card>
+      </div>
+    </div>
+  );
+}
+
+function DashboardCandidateIndexSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div>
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="mt-1 h-4 w-80" />
+      </div>
+
+      {/* 2-column metric cards */}
+      <div className="grid gap-3 sm:grid-cols-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i}>
+            <CardHeader className="flex flex-row items-start justify-between gap-4 pb-2">
+              <div>
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="mt-1.5 h-8 w-16" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-3 w-36" />
+            </CardContent>
+          </Card>
+        ))}
       </div>
     </div>
   );
@@ -902,7 +1094,7 @@ export function DashboardApplicationsSkeleton() {
 
 /**
  * Skeleton for /dashboard/application/$applicationId — candidate application detail.
- * Matches: back link + header (company, title, badge) + status pipeline + actions + snapshot.
+ * Matches: back link + header (company, title, badge) + date + status pipeline + interview card + actions.
  */
 export function DashboardApplicationDetailSkeleton() {
   return (
@@ -929,8 +1121,8 @@ export function DashboardApplicationDetailSkeleton() {
       <div className="space-y-3">
         <div className="flex gap-8">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <Skeleton className="size-1.5 rounded-full" />
+            <div key={i} className="flex-1 space-y-1.5">
+              <Skeleton className="h-1.5 w-full rounded-full" />
               <Skeleton className="h-3.5 w-16" />
             </div>
           ))}
@@ -944,25 +1136,19 @@ export function DashboardApplicationDetailSkeleton() {
         </Card>
       </div>
 
+      {/* Interview invitation card */}
+      <Card className="border-warning/20 bg-warning/5">
+        <CardContent className="space-y-3 py-4">
+          <Skeleton className="h-4 w-40" />
+          <Skeleton className="h-3 w-56" />
+          <Skeleton className="h-8 w-28 rounded-md" />
+        </CardContent>
+      </Card>
+
       {/* Action buttons */}
       <div className="flex gap-2">
         <Skeleton className="h-8 w-36 rounded-md" />
         <Skeleton className="h-8 w-28 rounded-md" />
-      </div>
-
-      {/* Submitted profile */}
-      <div className="space-y-4">
-        <Skeleton className="h-3 w-28" />
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-xl border border-border/70 p-3">
-            <Skeleton className="h-3 w-16" />
-            <Skeleton className="mt-1.5 h-4 w-48" />
-          </div>
-          <div className="rounded-xl border border-border/70 p-3">
-            <Skeleton className="h-3 w-14" />
-            <Skeleton className="mt-1.5 h-4 w-28" />
-          </div>
-        </div>
       </div>
     </div>
   );
@@ -970,9 +1156,16 @@ export function DashboardApplicationDetailSkeleton() {
 
 /**
  * Skeleton for /dashboard/applicants/$applicationId — company applicant review.
- * Matches: back nav + header (avatar + name + badges) + status pipeline + actions + snapshot.
+ * Matches: back nav + header (avatar + name) + status pipeline (5 steps) + actions + report/pre-evaluation.
  */
 export function DashboardApplicantReviewSkeleton() {
+  const { isCompany } = useRouteContext({
+    from: "/_authenticated/dashboard/applicants/$applicationId",
+  });
+  return isCompany ? <CompanyApplicantReviewSkeleton /> : null;
+}
+
+function CompanyApplicantReviewSkeleton() {
   return (
     <div className="space-y-6">
       {/* Back nav with prev/next */}
@@ -984,60 +1177,56 @@ export function DashboardApplicantReviewSkeleton() {
         </div>
       </div>
 
-      {/* Avatar + name + badges */}
+      {/* Avatar + name */}
       <div className="flex items-start gap-4">
         <Skeleton className="size-14 rounded-full" />
         <div className="min-w-0 flex-1 space-y-2">
           <Skeleton className="h-7 w-48" />
           <Skeleton className="h-4 w-64" />
-          <div className="flex flex-wrap gap-2">
-            <Skeleton className="h-5 w-20 rounded-full" />
-            <Skeleton className="h-5 w-32 rounded-full" />
-          </div>
         </div>
       </div>
 
-      {/* Status pipeline */}
-      <Card size="sm">
-        <CardContent className="space-y-2 py-0">
-          <div className="flex gap-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <Skeleton className="size-2 rounded-full" />
-                <Skeleton className="h-3.5 w-16" />
+      {/* Status section card */}
+      <Card size="sm" className="border-border/60">
+        <CardContent className="space-y-4 py-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="space-y-1.5">
+              <Skeleton className="h-3 w-24" />
+              <div className="flex gap-2">
+                <Skeleton className="h-5 w-20 rounded-full" />
+                <Skeleton className="h-5 w-24 rounded-full" />
               </div>
-            ))}
+            </div>
+            <div className="flex gap-2">
+              <Skeleton className="h-8 w-24 rounded-md" />
+              <Skeleton className="h-8 w-20 rounded-md" />
+            </div>
           </div>
-          <Skeleton className="h-4 w-72" />
+
+          {/* 5-step stepper */}
+          <div className="space-y-3 border-y border-border/50 py-3">
+            <div className="grid grid-cols-5 gap-0">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex flex-col items-center gap-1.5">
+                  <Skeleton className="size-2.5 rounded-full" />
+                  <Skeleton className="h-3 w-12" />
+                </div>
+              ))}
+            </div>
+            <div className="space-y-2 lg:flex lg:items-center lg:gap-3">
+              <Skeleton className="h-8 w-full rounded-md" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Actions */}
-      <div className="flex flex-wrap items-end gap-2">
-        <div className="space-y-2">
-          <Skeleton className="h-3 w-32" />
-          <Skeleton className="h-9 w-48 rounded-md" />
-        </div>
-        <Skeleton className="h-9 w-28 rounded-md" />
-        <Skeleton className="h-9 w-28 rounded-md" />
-      </div>
-
-      {/* Snapshot */}
-      <div className="space-y-4">
-        <Skeleton className="h-3 w-28" />
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Card size="sm">
-            <CardContent className="py-0">
-              <Skeleton className="h-3 w-16" />
-              <Skeleton className="mt-1.5 h-4 w-48" />
-            </CardContent>
-          </Card>
-          <Card size="sm">
-            <CardContent className="py-0">
-              <Skeleton className="h-3 w-14" />
-              <Skeleton className="mt-1.5 h-4 w-28" />
-            </CardContent>
-          </Card>
+      {/* Report snapshot card */}
+      <div className="rounded-xl border border-border/70 bg-card p-5">
+        <div className="space-y-3">
+          <Skeleton className="h-3 w-24" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-5/6" />
         </div>
       </div>
     </div>
@@ -1047,7 +1236,8 @@ export function DashboardApplicantReviewSkeleton() {
 /**
  * Skeleton for /dashboard/applicant-reports/$applicationId — polished report summary.
  * Matches: breadcrumb + batch nav, hero (avatar/name/score/actions),
- * summary + score bars, strengths/weaknesses, evidence.
+ * summary + score bars, strengths/weaknesses, evidence, insights,
+ * screening questions, pre-screening/voice accordion, full audit link.
  */
 export function DashboardApplicantReportSkeleton() {
   return (
@@ -1127,6 +1317,54 @@ export function DashboardApplicantReportSkeleton() {
           ))}
         </div>
       </div>
+
+      {/* Insights */}
+      <div className="rounded-4xl border border-border/70 bg-card px-5 py-5 shadow-sm md:px-7 md:py-6">
+        <Skeleton className="h-3 w-20" />
+        <div className="mt-3 space-y-1.5">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="flex gap-2">
+              <Skeleton className="mt-2 size-1 shrink-0 rounded-full" />
+              <Skeleton className="h-4 w-full" />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Screening questions */}
+      <div className="rounded-4xl border border-border/70 bg-card px-5 py-5 shadow-sm md:px-7 md:py-6">
+        <Skeleton className="h-3 w-24" />
+        <div className="mt-4 space-y-3">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <div key={i} className="space-y-1.5">
+              <div className="flex items-start justify-between gap-3">
+                <Skeleton className="h-4 w-64" />
+                <Skeleton className="h-5 w-16 rounded-full" />
+              </div>
+              <Skeleton className="h-4 w-full" />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Pre-screening / Voice accordion */}
+      <div className="space-y-px rounded-xl border border-border/70 bg-card">
+        {Array.from({ length: 2 }).map((_, i) => (
+          <div key={i} className="px-5 py-3.5 md:px-7">
+            <div className="flex items-center gap-2">
+              <Skeleton className="size-4 shrink-0" />
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-5 w-12 rounded-full" />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Full audit link */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+        <Skeleton className="h-3 w-56" />
+        <Skeleton className="h-8 w-40 rounded-md" />
+      </div>
     </div>
   );
 }
@@ -1150,6 +1388,14 @@ export function InterviewWorkspacePageSkeleton() {
           <Skeleton className="h-8 w-24 rounded-md" />
         </div>
       </header>
+
+      {/* Tabs */}
+      <div className="mx-4 mt-3 md:mx-6">
+        <div className="flex gap-1">
+          <Skeleton className="h-8 w-16 rounded-md" />
+          <Skeleton className="h-8 w-16 rounded-md" />
+        </div>
+      </div>
 
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="min-h-0 flex-1 space-y-4 px-4 py-5 md:px-6 md:py-6">
@@ -1353,37 +1599,88 @@ export function BillingPageSkeleton() {
 
 /**
  * Skeleton for /dashboard/job-batches/$batchId — batch detail page.
- * Matches: header + 3 timestamp cards + ranked candidate list.
+ * Matches: header (status badge) + combined timestamp card + ranked candidates + awaiting/expired card.
  */
 export function BatchDetailSkeleton() {
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <Skeleton className="h-7 w-32" />
-        <Skeleton className="h-7 w-72" />
-        <Skeleton className="h-4 w-60" />
+      {/* Header with status badge */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="space-y-2">
+          <Skeleton className="h-7 w-28" />
+          <Skeleton className="h-7 w-72" />
+          <Skeleton className="h-4 w-60" />
+        </div>
+        <Skeleton className="h-6 w-20 rounded-full" />
       </div>
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Skeleton className="h-20 w-full rounded-xl" />
-        <Skeleton className="h-20 w-full rounded-xl" />
-        <Skeleton className="h-20 w-full rounded-xl" />
-      </div>
+
+      {/* Single combined timestamp card */}
+      <Card size="sm" className="border-border/60">
+        <CardContent className="flex flex-wrap items-center gap-x-6 gap-y-3 py-3">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-3 w-12" />
+            <Skeleton className="h-4 w-8" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-3 w-14" />
+            <Skeleton className="h-4 w-8" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-3 w-16" />
+            <Skeleton className="h-5 w-20 rounded-full" />
+          </div>
+          <div className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-1">
+            <Skeleton className="h-3 w-28" />
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Ranked candidates */}
       <Card>
         <CardHeader>
-          <Skeleton className="h-5 w-44" />
-          <Skeleton className="mt-2 h-3.5 w-72" />
+          <Skeleton className="h-5 w-36" />
+          <Skeleton className="mt-1 h-3 w-56" />
         </CardHeader>
-        <CardContent className="space-y-3 p-5">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-4">
-              <Skeleton className="size-10 rounded-full" />
-              <div className="flex-1 space-y-2">
-                <Skeleton className="h-4 w-1/3" />
-                <Skeleton className="h-3 w-2/3" />
+        <CardContent className="p-0">
+          <div className="divide-y divide-border/50">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div
+                key={i}
+                className="grid items-center gap-4 px-5 py-4 md:grid-cols-[2.5rem_auto_1fr_auto]"
+              >
+                <Skeleton className="h-3 w-6" />
+                <Skeleton className="size-10 rounded-full" />
+                <div className="space-y-1">
+                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-3 w-56" />
+                </div>
+                <Skeleton className="h-6 w-16 rounded-md" />
               </div>
-              <Skeleton className="size-10 rounded-2xl" />
-            </div>
-          ))}
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Awaiting / Expired card */}
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="mt-1 h-3 w-48" />
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="divide-y divide-border/50">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <div key={i} className="flex items-center justify-between gap-3 px-5 py-3">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="size-8 rounded-full" />
+                  <Skeleton className="h-4 w-28" />
+                </div>
+                <Skeleton className="h-5 w-16 rounded-full" />
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
     </div>

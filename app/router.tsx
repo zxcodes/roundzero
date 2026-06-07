@@ -3,7 +3,6 @@ import { createRouter as createTanStackRouter } from "@tanstack/react-router";
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
 import { ErrorBoundary } from "./components/error-boundary";
 import { NotFound } from "./components/not-found";
-import { RouteSpinner } from "./components/route-skeletons";
 import type { getCurrentUser } from "./features/auth/server/functions";
 import type { getMyCandidateProfile } from "./features/candidates/server/functions";
 import type { getMyCompany } from "./features/companies/server/functions";
@@ -53,7 +52,6 @@ export function getRouter() {
     },
     defaultErrorComponent: ErrorBoundary,
     defaultNotFoundComponent: NotFound,
-    defaultPendingComponent: RouteSpinner,
     defaultPendingMs: 200,
     defaultPendingMinMs: 300,
   });
