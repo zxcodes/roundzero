@@ -72,4 +72,16 @@ ${companies.map((c) => `  <url><loc>${siteUrl}/companies/${c.slug}</loc><lastmod
       ctx,
     );
   },
+  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+    switch (event.cron) {
+      case "0 */6 * * *": {
+        ctx.waitUntil(env.POOL_CHECK.create({ id: `pool-check-${event.scheduledTime}` }));
+        break;
+      }
+      case "*/30 * * * *": {
+        ctx.waitUntil(env.EVAL_RETRY.create({ id: `eval-retry-${event.scheduledTime}` }));
+        break;
+      }
+    }
+  },
 };

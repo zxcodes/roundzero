@@ -49,16 +49,17 @@
     {
       "name": "pool-check",
       "binding": "POOL_CHECK",
-      "class_name": "PoolCheckWorkflow",
-      "schedules": ["0 */6 * * *"]
+      "class_name": "PoolCheckWorkflow"
     },
     {
       "name": "eval-retry",
       "binding": "EVAL_RETRY",
-      "class_name": "EvalRetryWorkflow",
-      "schedules": ["*/30 * * * *"]
+      "class_name": "EvalRetryWorkflow"
     }
   ],
+  "triggers": {
+    "crons": ["0 */6 * * *", "*/30 * * * *"]
+  },
   "env": {
     "staging": {
       "hyperdrive": [
@@ -96,14 +97,12 @@
         {
           "name": "pool-check",
           "binding": "POOL_CHECK",
-          "class_name": "PoolCheckWorkflow",
-          "schedules": ["0 */6 * * *"]
+          "class_name": "PoolCheckWorkflow"
         },
         {
           "name": "eval-retry",
           "binding": "EVAL_RETRY",
-          "class_name": "EvalRetryWorkflow",
-          "schedules": ["*/30 * * * *"]
+          "class_name": "EvalRetryWorkflow"
         }
       ],
       "routes": [
@@ -149,14 +148,12 @@
         {
           "name": "pool-check",
           "binding": "POOL_CHECK",
-          "class_name": "PoolCheckWorkflow",
-          "schedules": ["0 */6 * * *"]
+          "class_name": "PoolCheckWorkflow"
         },
         {
           "name": "eval-retry",
           "binding": "EVAL_RETRY",
-          "class_name": "EvalRetryWorkflow",
-          "schedules": ["*/30 * * * *"]
+          "class_name": "EvalRetryWorkflow"
         }
       ]
     }
