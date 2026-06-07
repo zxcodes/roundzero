@@ -70,11 +70,8 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
   const updateNameFn = useServerFn(updateUserName);
   const updateNameMutation = useMutation({
     mutationFn: updateNameFn,
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: currentUserQueryKey,
-        refetchType: "all",
-      });
+    onSuccess: (data) => {
+      queryClient.setQueryData(currentUserQueryKey, data.user);
     },
   });
 

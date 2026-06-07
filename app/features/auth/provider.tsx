@@ -1,7 +1,7 @@
 import { type TokenResponse, useGoogleLogin } from "@react-oauth/google";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
-import { createContext, use, useRef } from "react";
+import { createContext, use, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { UserRole } from "@/shared/enums";
 import { currentUserQueryKey, loginWithGoogle, logout } from "./server/functions";
@@ -9,6 +9,8 @@ import { currentUserQueryKey, loginWithGoogle, logout } from "./server/functions
 interface AuthContextType {
   signIn: (role?: UserRole, redirectTo?: string) => void;
   signOut: () => Promise<void>;
+  isSigningIn: boolean;
+  isSigningOut: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -18,6 +20,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
   const pendingRoleRef = useRef<UserRole | undefined>(undefined);
   const pendingRedirectRef = useRef<string | undefined>(undefined);
+  const [isSigningIn, setIsSigningIn] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const login = useGoogleLogin({
     onSuccess: async (tokenResponse: TokenResponse) => {
@@ -32,13 +36,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         pendingRoleRef.current = undefined;
         pendingRedirectRef.current = undefined;
 
-        // Refresh the cached user before any navigation re-runs `__root.beforeLoad`.
-        // `refetchType: "all"` is required because the query is only used in a
-        // loader (inactive), so a plain invalidate would not refetch it.
-        await queryClient.invalidateQueries({
-          queryKey: currentUserQueryKey,
-          refetchType: "all",
-        });
+        // Seed the cache with the freshly-authenticated user so
+        // `__root.beforeLoad` hits warm cache instead of round-tripping.
+        queryClient.setQueryData(currentUserQueryKey, result.user);
 
         if (result.restored) {
           toast.success("Welcome back! Your account deletion has been cancelled.");
@@ -46,6 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (!result.user.role) {
           await router.invalidate();
+          setIsSigningIn(false);
           return;
         }
 
@@ -65,37 +66,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         pendingRoleRef.current = undefined;
         pendingRedirectRef.current = undefined;
         toast.error("Failed to sign in with Google");
+      } finally {
+        setIsSigningIn(false);
       }
     },
     onError: () => {
       pendingRoleRef.current = undefined;
       pendingRedirectRef.current = undefined;
+      setIsSigningIn(false);
       toast.error("Google sign in failed");
     },
   });
 
   const signIn = (role?: UserRole, redirectTo?: string) => {
+    setIsSigningIn(true);
     pendingRoleRef.current = role;
     pendingRedirectRef.current = redirectTo;
     login();
   };
 
   const signOut = async () => {
+    setIsSigningOut(true);
     try {
       await logout();
-      await queryClient.invalidateQueries({
-        queryKey: currentUserQueryKey,
-        refetchType: "all",
-      });
+      // Seed the cache with null so `__root.beforeLoad` hits warm cache
+      // instead of round-tripping to confirm the session is gone.
+      queryClient.setQueryData(currentUserQueryKey, null);
       await router.invalidate();
       await router.navigate({ to: "/" });
     } catch (error) {
       console.error("Logout failed:", error);
       toast.error("Failed to sign out");
+    } finally {
+      setIsSigningOut(false);
     }
   };
 
-  return <AuthContext value={{ signIn, signOut }}>{children}</AuthContext>;
+  return (
+    <AuthContext value={{ signIn, signOut, isSigningIn, isSigningOut }}>{children}</AuthContext>
+  );
 }
 
 export function useAuth() {

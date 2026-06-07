@@ -28,10 +28,7 @@ export function DeleteAccountSection() {
       toast.success(
         "Your account has been scheduled for deletion. You have 30 days to log back in if you change your mind.",
       );
-      await queryClient.invalidateQueries({
-        queryKey: currentUserQueryKey,
-        refetchType: "all",
-      });
+      queryClient.setQueryData(currentUserQueryKey, null);
       await router.navigate({ to: "/" });
       await router.invalidate();
     },

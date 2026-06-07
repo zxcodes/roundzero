@@ -3,6 +3,7 @@ import {
   Briefcase01Icon,
   BubbleChatIcon,
   House01Icon,
+  Loading03Icon,
   Logout03Icon,
   Moon02Icon,
   Search01Icon,
@@ -90,7 +91,7 @@ const candidateNavItems = [
 export function CommandPalette({ isCompany, atLimit, open, onOpenChange }: CommandPaletteProps) {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
-  const { signOut } = useAuth();
+  const { signOut, isSigningOut } = useAuth();
 
   const navItems = isCompany ? companyNavItems(atLimit) : candidateNavItems;
 
@@ -136,9 +137,9 @@ export function CommandPalette({ isCompany, atLimit, open, onOpenChange }: Comma
           </CommandGroup>
           <CommandSeparator />
           <CommandGroup heading="Account">
-            <CommandItem onSelect={onSignOut}>
-              <HugeiconsIcon icon={Logout03Icon} strokeWidth={2} />
-              <span>Sign Out</span>
+            <CommandItem onSelect={onSignOut} disabled={isSigningOut}>
+              <HugeiconsIcon icon={isSigningOut ? Loading03Icon : Logout03Icon} strokeWidth={2} />
+              <span>{isSigningOut ? "Signing out..." : "Sign Out"}</span>
               <CommandShortcut>⇧⌘Q</CommandShortcut>
             </CommandItem>
           </CommandGroup>

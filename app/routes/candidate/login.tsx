@@ -2,6 +2,7 @@ import {
   BubbleChatIcon,
   CheckmarkCircle02Icon,
   Clock01Icon,
+  Loading03Icon,
   Search01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -44,7 +45,7 @@ export const Route = createFileRoute("/candidate/login")({
 });
 
 function CandidateLoginPage() {
-  const { signIn } = useAuth();
+  const { signIn, isSigningIn } = useAuth();
   const { redirect: redirectTo } = Route.useSearch();
 
   const onSignIn = () => {
@@ -146,9 +147,23 @@ function CandidateLoginPage() {
           </div>
 
           <div className="space-y-4">
-            <Button variant="outline" size="lg" className="w-full gap-3" onClick={onSignIn}>
-              <GoogleIcon />
-              Continue with Google
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-full gap-3"
+              onClick={onSignIn}
+              disabled={isSigningIn}
+            >
+              {isSigningIn ? (
+                <HugeiconsIcon
+                  icon={Loading03Icon}
+                  strokeWidth={2}
+                  className="size-4 animate-spin"
+                />
+              ) : (
+                <GoogleIcon />
+              )}
+              {isSigningIn ? "Signing in..." : "Continue with Google"}
             </Button>
           </div>
 
