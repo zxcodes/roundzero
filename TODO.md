@@ -1,8 +1,6 @@
 ## TODO
 
 - there's a crash on signup on prod (something undefined)
-- job creation has no creating feedback. the page just redirects after a while.
-- the mf skeleton is still there. add a new route that displays all of them and check.
 - company isn't clickable from the job description page.
 - we need to be able to invite people with their email. so when they signup they can join that org or something.
 - think about the auth. should it be possible for people to create company and candidate acc with same email?
@@ -14,6 +12,8 @@
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- job creation has no creating feedback. the page just redirects after a while.-->
+<!--- the mf skeleton is still there. add a new route that displays all of them and check.-->
 <!--- "Interview questions" when generating a job with ai are not good. these are not supposed to be technical questions. these are purely informatory such as (relocation, visa, salary exp etc). Maybe rename it to screening questions or something? also update the job templates & creation prompt.-->
 <!--- harden the final summary prompt to be extremely strict and judge every single response from the user. here's an example: (WIP)
  
