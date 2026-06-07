@@ -1,5 +1,6 @@
 ## TODO
 
+- pretty sure model fallbacks still don't work. verify in local dev.
 - there's a crash on signup on prod (something undefined)
 - we need to be able to invite people with their email. so when they signup they can join that org or something.
 - think about the auth. should it be possible for people to create company and candidate acc with same email?
