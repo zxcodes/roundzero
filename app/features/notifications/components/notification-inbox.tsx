@@ -110,7 +110,7 @@ export function NotificationInbox({
 
   const content = (
     <div className="flex h-full flex-col">
-      <div className="flex items-start justify-between gap-4 px-5 pt-5 pb-3">
+      <div className="flex items-start justify-between gap-4 px-5 pt-5 pb-3 max-sm:pr-14">
         <div className="space-y-1">
           <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">Inbox</p>
           <h2 className="font-heading text-lg font-semibold">Notifications</h2>

@@ -1,5 +1,12 @@
 ## TODO
 
+- pricing needs a big change. (think about per job, x number of jobs, and pay as you go kind?)
+- still a few rough edges around failed eval. retry eval button doesnt seem to work. better to kill it? (says Retry skipped
+post_eval_already_complete)
+- interview panel padding still sucks (sticks left side completely on mobile and short screens)
+- even after shortlisting/rejecting, I see "Your interview is complete. The company will review your evaluation." this messaging
+- interview experience regressed. no greeting. even if did, says im zero, a senior engineer at [company] wtf is that? you're a fucking assistant ugh.
+- interview skeleton has two sidebars. the skeleton itself has its sidebar, and the actual sidebar too so it appears as if there are two.
 - pretty sure model fallbacks still don't work. verify in local dev.
 - there's a crash on signup on prod (something undefined)
 - we need to be able to invite people with their email. so when they signup they can join that org or something.
@@ -10,6 +17,7 @@
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- mobile notification close icon has overlap with mark all read text.-->
 <!--- for company full report, they should also see what they did in the chat, detecting ai responses (should maybe see something like: potential ai written answer?)-->
 <!--- the final report should be based on the candidate's response to each and every question. like it should be a deciding factor.-->
 <!--- company isn't clickable from the job description page.-->
