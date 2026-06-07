@@ -17,7 +17,6 @@ import {
   InterviewWorkspaceSkeleton,
   JobDetailSkeleton,
   JobsListSkeleton,
-  RouteSpinner,
 } from "@/components/route-skeletons";
 
 export const Route = createFileRoute("/skeletons")({
@@ -37,9 +36,6 @@ function SkeletonGallery() {
         </p>
 
         <div className="mt-10 space-y-8">
-          <Inline label="RouteSpinner">
-            <RouteSpinner />
-          </Inline>
           <FullPage label="JobsListSkeleton (public)">
             <JobsListSkeleton />
           </FullPage>
