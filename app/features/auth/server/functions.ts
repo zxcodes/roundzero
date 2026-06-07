@@ -92,6 +92,9 @@ export const logout = createServerFn({ method: "POST" }).handler(async () => {
   return {};
 });
 
+/** React Query key for the cached current user (see `__root.beforeLoad`). */
+export const currentUserQueryKey = ["currentUser"] as const;
+
 export const getCurrentUser = createServerFn({ method: "GET" }).handler(async () => {
   const session = await useSession<SessionData>(sessionConfig);
 

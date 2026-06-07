@@ -1,7 +1,7 @@
 import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
-import { createFileRoute, Link, redirect, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useLoaderData, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
@@ -18,21 +18,15 @@ export const Route = createFileRoute("/_authenticated/dashboard/jobs/new")({
     if (!context.isCompany) {
       throw redirect({ to: "/dashboard" });
     }
-
-    const atLimit = !context.subscription?.isActive && (context.jobCounts?.openCount ?? 0) >= 3;
-
-    if (atLimit) {
-      throw redirect({ to: "/dashboard/billing", search: { reason: "job_limit" } });
-    }
   },
   component: NewJobPage,
 });
 
 function NewJobPage() {
   const router = useRouter();
-  const context = Route.useRouteContext();
-  const companyName = context.company?.name ?? "";
-  const isPaid = context.subscription?.isActive ?? false;
+  const auth = useLoaderData({ from: "/_authenticated" });
+  const companyName = auth.type === "company" ? (auth.company?.name ?? "") : "";
+  const isPaid = auth.type === "company" ? (auth.subscription?.isActive ?? false) : false;
   const [draft, setDraft] = useState<JobFormData | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<JobTemplate | null>(null);

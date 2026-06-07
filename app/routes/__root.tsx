@@ -11,7 +11,7 @@ import { NotFound } from "@/components/not-found";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/features/auth/provider";
-import { getCurrentUser } from "@/features/auth/server/functions";
+import { currentUserQueryKey, getCurrentUser } from "@/features/auth/server/functions";
 import { getThemeServerFn } from "@/lib/theme";
 import type { RouterContext } from "@/router";
 import type { FileRoutesByTo } from "@/routeTree.gen";
@@ -97,9 +97,15 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       },
     ],
   }),
-  beforeLoad: async () => {
+  beforeLoad: async ({ context }) => {
     try {
-      const user = await getCurrentUser();
+      // Cache the user in React Query so repeated navigations don't re-round-trip
+      // to the worker. Auth mutations invalidate `currentUserQueryKey` to refresh.
+      const user = await context.queryClient.ensureQueryData({
+        queryKey: currentUserQueryKey,
+        queryFn: () => getCurrentUser(),
+        staleTime: 30_000,
+      });
       return {
         user,
         isCompany: user?.role === "company",

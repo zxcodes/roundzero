@@ -7,7 +7,7 @@ import {
   UserGroupIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useLoaderData } from "@tanstack/react-router";
 import { DashboardIndexSkeleton } from "@/components/route-skeletons";
 import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -569,11 +569,13 @@ function CompanyDashboardSection({ metrics }: { metrics: CompanyMetrics }) {
 }
 
 function DashboardIndexPage() {
-  const context = Route.useRouteContext();
-  const { user, isCompany, isCandidate } = context;
+  const auth = useLoaderData({ from: "/_authenticated" });
+  const user = auth.user;
+  const isCompany = auth.type === "company";
+  const isCandidate = auth.type === "candidate";
   const { metrics } = Route.useLoaderData();
-  const candidateProfile = context.candidateProfile;
-  const company = context.company;
+  const candidateProfile = auth.type === "candidate" ? auth.candidateProfile : null;
+  const company = auth.type === "company" ? auth.company : null;
   const showResumeBanner = isCandidate && candidateProfile && !candidateProfile.resumeKey;
   const showCompanyLogoBanner = isCompany && company && !company.logoKey;
 

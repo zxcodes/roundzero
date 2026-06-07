@@ -1,4 +1,5 @@
 import { createFileRoute, notFound, Outlet } from "@tanstack/react-router";
+import { DashboardJobDetailSkeleton } from "@/components/route-skeletons";
 import { getJobApplicants, hasApplied } from "@/features/applications/server/functions";
 import { getMyCandidateProfile } from "@/features/candidates/server/functions";
 import { getJob } from "@/features/jobs/server/functions";
@@ -24,6 +25,7 @@ export const Route = createFileRoute("/_authenticated/dashboard/jobs/$jobId")({
     const candidateProfile = await getMyCandidateProfile();
     return { type: "candidate" as const, job: jobResult, alreadyApplied, candidateProfile };
   },
+  pendingComponent: DashboardJobDetailSkeleton,
   component: JobLayout,
 });
 

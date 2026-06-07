@@ -1,9 +1,10 @@
 import { type TokenResponse, useGoogleLogin } from "@react-oauth/google";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { createContext, use, useRef } from "react";
 import { toast } from "sonner";
 import type { UserRole } from "@/shared/enums";
-import { loginWithGoogle, logout } from "./server/functions";
+import { currentUserQueryKey, loginWithGoogle, logout } from "./server/functions";
 
 interface AuthContextType {
   signIn: (role?: UserRole, redirectTo?: string) => void;
@@ -14,6 +15,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const pendingRoleRef = useRef<UserRole | undefined>(undefined);
   const pendingRedirectRef = useRef<string | undefined>(undefined);
 
@@ -29,6 +31,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const redirectTo = pendingRedirectRef.current;
         pendingRoleRef.current = undefined;
         pendingRedirectRef.current = undefined;
+
+        // Refresh the cached user before any navigation re-runs `__root.beforeLoad`.
+        // `refetchType: "all"` is required because the query is only used in a
+        // loader (inactive), so a plain invalidate would not refetch it.
+        await queryClient.invalidateQueries({
+          queryKey: currentUserQueryKey,
+          refetchType: "all",
+        });
 
         if (result.restored) {
           toast.success("Welcome back! Your account deletion has been cancelled.");
@@ -73,6 +83,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       await logout();
+      await queryClient.invalidateQueries({
+        queryKey: currentUserQueryKey,
+        refetchType: "all",
+      });
       await router.invalidate();
       await router.navigate({ to: "/" });
     } catch (error) {
