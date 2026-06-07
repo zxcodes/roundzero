@@ -1,5 +1,6 @@
 ## TODO
 
+- interview skeleton has two sidebars. the skeleton itself has its sidebar, and the actual sidebar too so it appears as if there are two.
 - pretty sure model fallbacks still don't work. verify in local dev.
 - there's a crash on signup on prod (something undefined)
 - we need to be able to invite people with their email. so when they signup they can join that org or something.
