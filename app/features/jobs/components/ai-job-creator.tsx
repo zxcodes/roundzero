@@ -1,4 +1,4 @@
-import { AiMagicIcon, RefreshIcon, Rocket01Icon } from "@hugeicons/core-free-icons";
+import { AiMagicIcon, Loading03Icon, RefreshIcon, Rocket01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -111,7 +111,11 @@ export function AiJobCreator({ isPaid, onApply, onDiscard }: AiJobCreatorProps) 
               >
                 {isGenerating ? (
                   <>
-                    <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    <HugeiconsIcon
+                      icon={Loading03Icon}
+                      strokeWidth={2}
+                      className="size-4 animate-spin"
+                    />
                     Generating...
                   </>
                 ) : (

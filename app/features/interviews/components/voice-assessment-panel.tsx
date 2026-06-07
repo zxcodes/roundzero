@@ -397,7 +397,7 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
                   className="size-4 animate-spin"
                 />
               ) : null}
-              Skip
+              {skipMutation.isPending ? "Skipping..." : "Skip"}
             </Button>
           )}
         </div>

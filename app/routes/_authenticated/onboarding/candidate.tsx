@@ -1,3 +1,5 @@
+import { Loading03Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
@@ -164,7 +166,18 @@ function CandidateOnboardingPage() {
           <form.Subscribe selector={(state) => state.isSubmitting}>
             {(isSubmitting) => (
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Creating..." : "Create profile"}
+                {isSubmitting ? (
+                  <>
+                    <HugeiconsIcon
+                      icon={Loading03Icon}
+                      strokeWidth={2}
+                      className="size-4 animate-spin"
+                    />
+                    Creating...
+                  </>
+                ) : (
+                  "Create profile"
+                )}
               </Button>
             )}
           </form.Subscribe>

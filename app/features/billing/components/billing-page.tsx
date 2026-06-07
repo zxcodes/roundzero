@@ -1,4 +1,4 @@
-import { Briefcase01Icon, Tick02Icon } from "@hugeicons/core-free-icons";
+import { Briefcase01Icon, Loading03Icon, Tick02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -117,7 +117,18 @@ function CurrentPlanCard({
           </div>
           {subscription.hasPolarCustomer ? (
             <Button variant="outline" onClick={onOpenPortal} disabled={portalLoading}>
-              {portalLoading ? "Opening…" : "Manage billing"}
+              {portalLoading ? (
+                <>
+                  <HugeiconsIcon
+                    icon={Loading03Icon}
+                    strokeWidth={2}
+                    className="size-4 animate-spin"
+                  />
+                  Opening...
+                </>
+              ) : (
+                "Manage billing"
+              )}
             </Button>
           ) : null}
         </div>
@@ -236,7 +247,18 @@ function PlanCard({
             disabled={checkingOut}
             className="bg-brand text-brand-foreground hover:bg-brand/90 shadow-sm shadow-brand/20"
           >
-            {checkingOut ? "Redirecting…" : `Upgrade to ${config.name}`}
+            {checkingOut ? (
+              <>
+                <HugeiconsIcon
+                  icon={Loading03Icon}
+                  strokeWidth={2}
+                  className="size-4 animate-spin"
+                />
+                Redirecting...
+              </>
+            ) : (
+              `Upgrade to ${config.name}`
+            )}
           </Button>
         )}
       </CardContent>

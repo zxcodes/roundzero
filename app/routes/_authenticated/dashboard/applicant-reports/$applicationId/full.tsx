@@ -289,8 +289,16 @@ function ApplicantAiReportPage() {
           <div className="flex flex-wrap items-center gap-2">
             {canShortlist ? (
               <Button onClick={onShortlist} disabled={updateStatusMutation.isPending}>
-                <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-4" />
-                Shortlist
+                {updateStatusMutation.isPending ? (
+                  <HugeiconsIcon
+                    icon={Loading03Icon}
+                    strokeWidth={2}
+                    className="size-4 animate-spin"
+                  />
+                ) : (
+                  <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-4" />
+                )}
+                {updateStatusMutation.isPending ? "Shortlisting..." : "Shortlist"}
               </Button>
             ) : null}
             {canReject ? (
@@ -299,8 +307,16 @@ function ApplicantAiReportPage() {
                 onClick={onRejectClick}
                 disabled={updateStatusMutation.isPending}
               >
-                <HugeiconsIcon icon={Alert02Icon} strokeWidth={2} className="size-4" />
-                Reject
+                {updateStatusMutation.isPending ? (
+                  <HugeiconsIcon
+                    icon={Loading03Icon}
+                    strokeWidth={2}
+                    className="size-4 animate-spin"
+                  />
+                ) : (
+                  <HugeiconsIcon icon={Alert02Icon} strokeWidth={2} className="size-4" />
+                )}
+                {updateStatusMutation.isPending ? "Rejecting..." : "Reject"}
               </Button>
             ) : null}
             <Select
@@ -326,8 +342,16 @@ function ApplicantAiReportPage() {
                 onClick={onResumeView}
                 disabled={resumeDownloadMutation.isPending}
               >
-                <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-4" />
-                {resumeDownloadMutation.isPending ? "Opening…" : "View submitted resume"}
+                {resumeDownloadMutation.isPending ? (
+                  <HugeiconsIcon
+                    icon={Loading03Icon}
+                    strokeWidth={2}
+                    className="size-4 animate-spin"
+                  />
+                ) : (
+                  <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-4" />
+                )}
+                {resumeDownloadMutation.isPending ? "Opening..." : "View submitted resume"}
               </Button>
             ) : null}
           </div>

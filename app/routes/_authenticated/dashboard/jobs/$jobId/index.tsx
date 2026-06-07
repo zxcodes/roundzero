@@ -6,6 +6,7 @@ import {
   Clock01Icon,
   Edit02Icon,
   EyeIcon,
+  Loading03Icon,
   Location01Icon,
   MoneyBag02Icon,
   MoreVerticalCircle01Icon,
@@ -494,7 +495,15 @@ function CompanyActions({
       {isDraft ? (
         <>
           <Button onClick={onPublish} disabled={publishJobMutation.isPending}>
-            <HugeiconsIcon icon={Rocket01Icon} strokeWidth={2} className="size-3.5" />
+            {publishJobMutation.isPending ? (
+              <HugeiconsIcon
+                icon={Loading03Icon}
+                strokeWidth={2}
+                className="size-3.5 animate-spin"
+              />
+            ) : (
+              <HugeiconsIcon icon={Rocket01Icon} strokeWidth={2} className="size-3.5" />
+            )}
             {publishJobMutation.isPending ? "Publishing..." : "Publish"}
           </Button>
           <Button variant="outline" asChild>
@@ -536,7 +545,15 @@ function CompanyActions({
             onSelect={onOpenArchive}
             disabled={archiveJobMutation.isPending}
           >
-            <HugeiconsIcon icon={Archive01Icon} strokeWidth={2} className="size-3.5" />
+            {archiveJobMutation.isPending ? (
+              <HugeiconsIcon
+                icon={Loading03Icon}
+                strokeWidth={2}
+                className="size-3.5 animate-spin"
+              />
+            ) : (
+              <HugeiconsIcon icon={Archive01Icon} strokeWidth={2} className="size-3.5" />
+            )}
             {archiveJobMutation.isPending ? "Archiving..." : "Archive"}
           </DropdownMenuItem>
         </DropdownMenuContent>
