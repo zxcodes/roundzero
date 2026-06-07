@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useLoaderData, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -58,8 +58,8 @@ function BillingRoute() {
     }
   }, [search.reason, navigate]);
 
-  const context = Route.useRouteContext();
-  const jobCounts = context.jobCounts;
+  const auth = useLoaderData({ from: "/_authenticated" });
+  const jobCounts = auth.type === "company" ? auth.jobCounts : null;
 
   return <BillingPage subscription={subscription} jobCounts={jobCounts} />;
 }

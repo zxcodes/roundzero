@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, useMatches } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useLoaderData, useMatches } from "@tanstack/react-router";
 import { useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { CommandPalette } from "@/components/command-palette";
@@ -31,15 +31,19 @@ const routeTitles: Record<string, string> = {
 };
 
 function DashboardLayout() {
-  const context = Route.useRouteContext();
-  const { user, isCompany } = context;
+  const auth = useLoaderData({ from: "/_authenticated" });
+  const user = auth.user;
+  const isCompany = auth.type === "company";
   const { notificationsFeed } = Route.useLoaderData();
   const matches = useMatches();
   const lastMatch = matches[matches.length - 1];
   const title = routeTitles[lastMatch?.routeId ?? ""] ?? "Dashboard";
   const [commandOpen, setCommandOpen] = useState(false);
 
-  const atLimit = !context.subscription?.isActive && (context.jobCounts?.openCount ?? 0) >= 3;
+  const atLimit =
+    auth.type === "company" &&
+    !auth.subscription?.isActive &&
+    (auth.jobCounts?.openCount ?? 0) >= 3;
 
   useCommandPaletteShortcut(() => {
     setCommandOpen((prev) => !prev);

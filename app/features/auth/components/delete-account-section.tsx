@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -15,10 +15,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { deleteAccount } from "@/features/auth/server/functions";
+import { currentUserQueryKey, deleteAccount } from "@/features/auth/server/functions";
 
 export function DeleteAccountSection() {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const deleteAccountFn = useServerFn(deleteAccount);
   const deleteAccountMutation = useMutation({
@@ -27,6 +28,10 @@ export function DeleteAccountSection() {
       toast.success(
         "Your account has been scheduled for deletion. You have 30 days to log back in if you change your mind.",
       );
+      await queryClient.invalidateQueries({
+        queryKey: currentUserQueryKey,
+        refetchType: "all",
+      });
       await router.navigate({ to: "/" });
       await router.invalidate();
     },

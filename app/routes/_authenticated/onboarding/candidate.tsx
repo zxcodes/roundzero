@@ -1,5 +1,5 @@
 import { useForm } from "@tanstack/react-form";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { updateUserName } from "@/features/auth/server/functions";
+import { currentUserQueryKey, updateUserName } from "@/features/auth/server/functions";
 import { ResumeUploadField } from "@/features/candidates/components/resume-upload-field";
 import { createCandidateProfile } from "@/features/candidates/server/functions";
 
@@ -25,6 +25,7 @@ function CandidateOnboardingPage() {
   const { user } = Route.useRouteContext();
   const { redirect: redirectTo } = Route.useSearch();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const onboardingSchema = z.object({
     name: z.string().trim().min(1, "Name is required"),
@@ -47,6 +48,12 @@ function CandidateOnboardingPage() {
   const updateNameFn = useServerFn(updateUserName);
   const updateNameMutation = useMutation({
     mutationFn: updateNameFn,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: currentUserQueryKey,
+        refetchType: "all",
+      });
+    },
   });
 
   const form = useForm({

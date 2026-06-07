@@ -1,7 +1,7 @@
 import { Cancel01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useForm } from "@tanstack/react-form";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useId, useState } from "react";
@@ -14,7 +14,7 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { UnsavedChangesBar } from "@/components/unsaved-changes-bar";
 import { DeleteAccountSection } from "@/features/auth/components/delete-account-section";
-import { updateUserName } from "@/features/auth/server/functions";
+import { currentUserQueryKey, updateUserName } from "@/features/auth/server/functions";
 import { ResumeUploadField } from "@/features/candidates/components/resume-upload-field";
 import {
   type getMyCandidateProfile,
@@ -47,6 +47,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 export function CandidateSettings({ profile, user }: { profile: CandidateProfile; user: User }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const id = useId();
 
   const updateProfileFn = useServerFn(updateMyCandidateProfile);
@@ -69,6 +70,12 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
   const updateNameFn = useServerFn(updateUserName);
   const updateNameMutation = useMutation({
     mutationFn: updateNameFn,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: currentUserQueryKey,
+        refetchType: "all",
+      });
+    },
   });
 
   const links =
