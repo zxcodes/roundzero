@@ -298,6 +298,7 @@ function ApplicantReviewPage() {
           canShortlist={canShortlist}
           canReject={canReject}
           isPending={updateStatusMutation.isPending}
+          isRejectPending={pendingStatus !== null}
           onShortlist={onShortlist}
           onReject={onRejectClick}
           onRetryEvaluation={onRetryEvaluation}
@@ -380,6 +381,7 @@ function ApplicationStatusSection({
   canShortlist,
   canReject,
   isPending,
+  isRejectPending,
   onShortlist,
   onReject,
   onRetryEvaluation,
@@ -400,6 +402,7 @@ function ApplicationStatusSection({
   canShortlist: boolean;
   canReject: boolean;
   isPending: boolean;
+  isRejectPending: boolean;
   onShortlist: () => void | Promise<void>;
   onReject: () => void;
   onRetryEvaluation: () => void | Promise<void>;
@@ -472,27 +475,27 @@ function ApplicationStatusSection({
 
             {canReject ? (
               <Button variant="destructive" disabled={isPending} onClick={onReject}>
-                {isPending ? (
+                {isPending && isRejectPending ? (
                   <HugeiconsIcon
                     icon={Loading03Icon}
                     strokeWidth={2}
                     className="size-4 animate-spin"
                   />
                 ) : null}
-                {isPending ? "Rejecting..." : "Reject"}
+                {isPending && isRejectPending ? "Rejecting..." : "Reject"}
               </Button>
             ) : null}
 
             {canShortlist ? (
               <Button disabled={isPending} onClick={onShortlist}>
-                {isPending ? (
+                {isPending && !isRejectPending ? (
                   <HugeiconsIcon
                     icon={Loading03Icon}
                     strokeWidth={2}
                     className="size-4 animate-spin"
                   />
                 ) : null}
-                {isPending ? "Shortlisting..." : "Shortlist"}
+                {isPending && !isRejectPending ? "Shortlisting..." : "Shortlist"}
               </Button>
             ) : null}
           </div>
