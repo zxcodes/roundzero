@@ -12,7 +12,9 @@ import {
 vi.mock("cloudflare:workers", () => ({
   env: {
     HYPERDRIVE: {
-      connectionString: "postgres://postgres:password@localhost:6312/postgres?sslmode=disable",
+      connectionString:
+        process.env.TEST_DATABASE_URL ??
+        "postgres://postgres:password@localhost:6312/postgres?sslmode=disable",
     },
     BATCH_ORCHESTRATION: { create: vi.fn().mockResolvedValue(undefined) },
   },
