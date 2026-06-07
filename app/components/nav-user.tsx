@@ -1,4 +1,4 @@
-import { Logout03Icon, MoreVerticalIcon } from "@hugeicons/core-free-icons";
+import { Loading03Icon, Logout03Icon, MoreVerticalIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -28,7 +28,7 @@ const getInitials = (name: string) =>
 
 export function NavUser({ user }: { user: User }) {
   const { isMobile } = useSidebar();
-  const { signOut } = useAuth();
+  const { signOut, isSigningOut } = useAuth();
 
   return (
     <SidebarMenu>
@@ -73,9 +73,13 @@ export function NavUser({ user }: { user: User }) {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={signOut}>
-              <HugeiconsIcon icon={Logout03Icon} strokeWidth={2} className="size-4" />
-              Log out
+            <DropdownMenuItem onClick={signOut} disabled={isSigningOut}>
+              <HugeiconsIcon
+                icon={isSigningOut ? Loading03Icon : Logout03Icon}
+                strokeWidth={2}
+                className="size-4"
+              />
+              {isSigningOut ? "Logging out..." : "Log out"}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
