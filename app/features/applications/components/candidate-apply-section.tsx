@@ -1,4 +1,4 @@
-import { CheckmarkCircle02Icon } from "@hugeicons/core-free-icons";
+import { CheckmarkCircle02Icon, Loading03Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
 import { Link, useRouter } from "@tanstack/react-router";
@@ -124,7 +124,14 @@ export function CandidateApplySection({
 
   return (
     <Button className="w-full" size="lg" onClick={onApply} disabled={applyMutation.isPending}>
-      {applyMutation.isPending ? "Applying…" : "Apply for this position"}
+      {applyMutation.isPending ? (
+        <>
+          <HugeiconsIcon icon={Loading03Icon} strokeWidth={2} className="size-4 animate-spin" />
+          Applying...
+        </>
+      ) : (
+        "Apply for this position"
+      )}
     </Button>
   );
 }

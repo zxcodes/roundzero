@@ -1,3 +1,5 @@
+import { Loading03Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { ClientOnly } from "@tanstack/react-router";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
@@ -33,7 +35,18 @@ export function UnsavedChangesBar({
                 Discard
               </Button>
               <Button disabled={isSubmitting} onClick={onSave}>
-                {isSubmitting ? "Saving..." : "Save changes"}
+                {isSubmitting ? (
+                  <>
+                    <HugeiconsIcon
+                      icon={Loading03Icon}
+                      strokeWidth={2}
+                      className="size-4 animate-spin"
+                    />
+                    Saving...
+                  </>
+                ) : (
+                  "Save changes"
+                )}
               </Button>
             </div>
           </div>

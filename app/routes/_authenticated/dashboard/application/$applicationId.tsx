@@ -3,6 +3,7 @@ import {
   Calendar01Icon,
   Cancel01Icon,
   File02Icon,
+  Loading03Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
@@ -353,8 +354,12 @@ function CandidateApplicationDetailPage() {
             onClick={onResumeView}
             disabled={resumeDownloadMutation.isPending}
           >
-            <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-4" />
-            View submitted resume
+            {resumeDownloadMutation.isPending ? (
+              <HugeiconsIcon icon={Loading03Icon} strokeWidth={2} className="size-4 animate-spin" />
+            ) : (
+              <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-4" />
+            )}
+            {resumeDownloadMutation.isPending ? "Opening..." : "View submitted resume"}
           </Button>
         ) : null}
         {application.companyOwnerDeleted ? null : (

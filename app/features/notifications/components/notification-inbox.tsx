@@ -1,4 +1,9 @@
-import { Alert02Icon, CheckmarkCircle02Icon, Notification02Icon } from "@hugeicons/core-free-icons";
+import {
+  Alert02Icon,
+  CheckmarkCircle02Icon,
+  Loading03Icon,
+  Notification02Icon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
@@ -117,7 +122,10 @@ export function NotificationInbox({
           onClick={onMarkAllRead}
           disabled={feed.unreadCount === 0 || markAllMutation.isPending}
         >
-          Mark all read
+          {markAllMutation.isPending ? (
+            <HugeiconsIcon icon={Loading03Icon} strokeWidth={2} className="size-4 animate-spin" />
+          ) : null}
+          {markAllMutation.isPending ? "Marking..." : "Mark all read"}
         </Button>
       </div>
 

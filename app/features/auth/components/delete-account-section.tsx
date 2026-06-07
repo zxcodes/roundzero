@@ -1,3 +1,5 @@
+import { Loading03Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -51,7 +53,18 @@ export function DeleteAccountSection() {
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button variant="destructive" size="sm" disabled={deleteAccountMutation.isPending}>
-              {deleteAccountMutation.isPending ? "Deleting…" : "Delete account"}
+              {deleteAccountMutation.isPending ? (
+                <>
+                  <HugeiconsIcon
+                    icon={Loading03Icon}
+                    strokeWidth={2}
+                    className="size-4 animate-spin"
+                  />
+                  Deleting...
+                </>
+              ) : (
+                "Delete account"
+              )}
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>

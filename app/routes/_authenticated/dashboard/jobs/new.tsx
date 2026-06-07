@@ -117,6 +117,7 @@ function NewJobPage() {
             onSubmit={onSubmit}
             submitLabel="Create job"
             companyName={companyName}
+            isSubmitting={createJobMutation.isPending}
           />
         </CardContent>
       </Card>

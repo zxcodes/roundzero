@@ -3,6 +3,7 @@ import {
   Alert01Icon,
   Archive01Icon,
   Briefcase01Icon,
+  Loading03Icon,
   Location01Icon,
   MoneyBag02Icon,
   Rocket01Icon,
@@ -394,8 +395,16 @@ function ActiveJobsTable({
                         onClick={onPublishClick}
                         disabled={isPending}
                       >
-                        <HugeiconsIcon icon={Rocket01Icon} strokeWidth={2} className="size-3.5" />
-                        Publish
+                        {isPending ? (
+                          <HugeiconsIcon
+                            icon={Loading03Icon}
+                            strokeWidth={2}
+                            className="size-3.5 animate-spin"
+                          />
+                        ) : (
+                          <HugeiconsIcon icon={Rocket01Icon} strokeWidth={2} className="size-3.5" />
+                        )}
+                        {isPending ? "Publishing..." : "Publish"}
                       </Button>
                     ) : null}
                     <Button variant="outline" size="sm" asChild>

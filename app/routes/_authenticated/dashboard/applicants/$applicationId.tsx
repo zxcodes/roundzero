@@ -3,6 +3,7 @@ import {
   ArrowRight01Icon,
   Calendar01Icon,
   File02Icon,
+  Loading03Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
@@ -439,8 +440,16 @@ function ApplicationStatusSection({
           <div className="flex flex-wrap items-center gap-2">
             {hasResume ? (
               <Button variant="outline" onClick={onResumeView} disabled={resumeLoading}>
-                <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-4" />
-                {resumeLoading ? "Opening…" : "View resume"}
+                {resumeLoading ? (
+                  <HugeiconsIcon
+                    icon={Loading03Icon}
+                    strokeWidth={2}
+                    className="size-4 animate-spin"
+                  />
+                ) : (
+                  <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-4" />
+                )}
+                {resumeLoading ? "Opening..." : "View resume"}
               </Button>
             ) : null}
 
@@ -450,19 +459,40 @@ function ApplicationStatusSection({
                 disabled={retryEvaluationPending}
                 onClick={onRetryEvaluation}
               >
-                {retryEvaluationPending ? "Retrying…" : "Retry evaluation"}
+                {retryEvaluationPending ? (
+                  <HugeiconsIcon
+                    icon={Loading03Icon}
+                    strokeWidth={2}
+                    className="size-4 animate-spin"
+                  />
+                ) : null}
+                {retryEvaluationPending ? "Retrying..." : "Retry evaluation"}
               </Button>
             ) : null}
 
             {canReject ? (
               <Button variant="destructive" disabled={isPending} onClick={onReject}>
-                Reject
+                {isPending ? (
+                  <HugeiconsIcon
+                    icon={Loading03Icon}
+                    strokeWidth={2}
+                    className="size-4 animate-spin"
+                  />
+                ) : null}
+                {isPending ? "Rejecting..." : "Reject"}
               </Button>
             ) : null}
 
             {canShortlist ? (
               <Button disabled={isPending} onClick={onShortlist}>
-                Shortlist
+                {isPending ? (
+                  <HugeiconsIcon
+                    icon={Loading03Icon}
+                    strokeWidth={2}
+                    className="size-4 animate-spin"
+                  />
+                ) : null}
+                {isPending ? "Shortlisting..." : "Shortlist"}
               </Button>
             ) : null}
           </div>

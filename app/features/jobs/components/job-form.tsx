@@ -1,4 +1,4 @@
-import { Add01Icon, Calendar03Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
+import { Add01Icon, Calendar03Icon, Cancel01Icon, Loading03Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useForm } from "@tanstack/react-form";
 import { useState } from "react";
@@ -133,12 +133,14 @@ export function JobForm({
   submitLabel,
   companyName,
   onCancel,
+  isSubmitting: isSubmittingProp,
 }: {
   defaultValues?: Partial<JobFormData>;
   onSubmit: (data: JobFormData) => void;
   submitLabel: string;
   companyName?: string;
   onCancel?: () => void;
+  isSubmitting?: boolean;
 }) {
   const [requirementInput, setRequirementInput] = useState("");
   const [screeningQuestionInput, setScreeningQuestionInput] = useState("");
@@ -856,13 +858,22 @@ export function JobForm({
         </form.Field>
 
         {!onCancel ? (
-          <form.Subscribe
-            selector={(state) => ({ isSubmitting: state.isSubmitting, values: state.values })}
-          >
-            {({ isSubmitting, values }) => (
+          <form.Subscribe selector={(state) => ({ values: state.values })}>
+            {({ values }) => (
               <div className="flex items-center gap-2">
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? "Saving..." : submitLabel}
+                <Button type="submit" disabled={isSubmittingProp}>
+                  {isSubmittingProp ? (
+                    <>
+                      <HugeiconsIcon
+                        icon={Loading03Icon}
+                        strokeWidth={2}
+                        className="size-4 animate-spin"
+                      />
+                      Creating...
+                    </>
+                  ) : (
+                    submitLabel
+                  )}
                 </Button>
                 {companyName ? (
                   <JobPreviewDialog
