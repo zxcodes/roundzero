@@ -1,5 +1,6 @@
 ## TODO
 
+- pricing needs a big change. (think about per job, x number of jobs, and pay as you go kind?)
 - still a few rough edges around failed eval. retry eval button doesnt seem to work. better to kill it? (says Retry skipped
 post_eval_already_complete)
 - interview panel padding still sucks (sticks left side completely on mobile and short screens)
