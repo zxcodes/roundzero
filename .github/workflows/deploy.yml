@@ -44,12 +44,12 @@ jobs:
       - name: Run test database migrations
         run: bun run db:migrate
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/roundzero_test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/roundzero_test?sslmode=disable
 
       - name: Run tests
         run: bun run test
         env:
-          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/roundzero_test
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/roundzero_test?sslmode=disable
 
       - name: Create secrets file
         run: |
