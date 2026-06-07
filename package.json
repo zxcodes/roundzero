@@ -22,7 +22,7 @@
     "setup": "bun run setup.ts",
     "prepare": "husky",
     "listen": "polar listen http://localhost:3000/api/polar/webhook",
-    "cron": "bun wrangler workflows trigger pool-check --local --port 3000 && bun wrangler workflows trigger eval-retry --local --port 3000"
+    "cron": "curl http://localhost:3000/cdn-cgi/handler/scheduled?format=json"
   },
   "dependencies": {
     "@elevenlabs/client": "^1.9.0",
@@ -59,7 +59,7 @@
     "mammoth": "^1.12.0",
     "next-themes": "^0.4.6",
     "postgres": "^3.4.9",
-    "radix-ui": "^1.4.3",
+    "radix-ui": "^1.5.0",
     "react": "^19.2.7",
     "react-day-picker": "^10.0.1",
     "react-dom": "^19.2.7",
@@ -85,8 +85,8 @@
     "@tanstack/react-query-devtools": "^5.101.0",
     "@types/babel__core": "^7.20.5",
     "@types/bun": "^1.3.14",
-    "@types/node": "^25.9.1",
-    "@types/react": "^19.2.16",
+    "@types/node": "^25.9.2",
+    "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@typescript/native-preview": "7.0.0-dev.20260603.1",
     "@vitejs/plugin-react": "^6.0.2",
@@ -94,7 +94,7 @@
     "dbmate": "^2.33.0",
     "husky": "^9.1.7",
     "jsdom": "^29.1.1",
-    "knip": "^6.15.0",
+    "knip": "^6.16.0",
     "typescript": "^6.0.3",
     "vite": "^8.0.16",
     "vitest": "^4.1.8",

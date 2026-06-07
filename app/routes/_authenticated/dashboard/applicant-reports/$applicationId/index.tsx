@@ -331,7 +331,7 @@ function ApplicantReportSummaryPage() {
         <div className="flex flex-wrap items-center gap-2">
           {canShortlist ? (
             <Button onClick={onShortlist} disabled={updateStatusMutation.isPending}>
-              {updateStatusMutation.isPending ? (
+              {updateStatusMutation.isPending && pendingStatus === null ? (
                 <HugeiconsIcon
                   icon={Loading03Icon}
                   strokeWidth={2}
@@ -340,7 +340,9 @@ function ApplicantReportSummaryPage() {
               ) : (
                 <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-4" />
               )}
-              {updateStatusMutation.isPending ? "Shortlisting..." : "Shortlist"}
+              {updateStatusMutation.isPending && pendingStatus === null
+                ? "Shortlisting..."
+                : "Shortlist"}
             </Button>
           ) : null}
           {canReject ? (
@@ -349,7 +351,7 @@ function ApplicantReportSummaryPage() {
               onClick={onRejectClick}
               disabled={updateStatusMutation.isPending}
             >
-              {updateStatusMutation.isPending ? (
+              {updateStatusMutation.isPending && pendingStatus !== null ? (
                 <HugeiconsIcon
                   icon={Loading03Icon}
                   strokeWidth={2}
@@ -358,7 +360,7 @@ function ApplicantReportSummaryPage() {
               ) : (
                 <HugeiconsIcon icon={Alert02Icon} strokeWidth={2} className="size-4" />
               )}
-              {updateStatusMutation.isPending ? "Rejecting..." : "Reject"}
+              {updateStatusMutation.isPending && pendingStatus !== null ? "Rejecting..." : "Reject"}
             </Button>
           ) : null}
           {allowedStatusOptions.length > 1 ? (
