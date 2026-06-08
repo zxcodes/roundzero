@@ -1,5 +1,7 @@
 ## TODO
 
+- overall caching seems a bit too aggressive. login/logouts, switching accounts, has stale data.
+- choose a consistent brand naming "roundzero" vs "RoundZero".
 - change the fucking app icon ugh.
 - voice assistant still outputting [Understood] kind of messages in text. Check eleven labs docs, etc.
 - check deleted account behaviour for companies, applications, etc. how the entire flow handles it.
