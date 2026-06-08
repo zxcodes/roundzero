@@ -13,11 +13,11 @@ post_eval_already_complete)
 - we need to be able to invite people with their email. so when they signup they can join that org or something.
 - think about the auth. should it be possible for people to create company and candidate acc with same email?
 - voice interview still doesnt end the call on its own. and even after the interview, if I refresh, the entire session is lost. it just gets back to square one."start assessment" perhaps we should have a manual submit similar to text interview?
-- add a feedback option for people or requesting features etc (global? context aware? can trigger anywhere and it will automatically include the context?).
 - add score breakdown. 
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- add a feedback option for people or requesting features etc (global? context aware? can trigger anywhere and it will automatically include the context?).-->
 <!--- mobile notification close icon has overlap with mark all read text.-->
 <!--- for company full report, they should also see what they did in the chat, detecting ai responses (should maybe see something like: potential ai written answer?)-->
 <!--- the final report should be based on the candidate's response to each and every question. like it should be a deciding factor.-->
