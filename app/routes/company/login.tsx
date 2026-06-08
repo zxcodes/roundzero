@@ -234,8 +234,14 @@ function CompanyLoginPage() {
             </p>
             <p>
               By continuing, you agree to our{" "}
-              <span className="underline underline-offset-2">Terms</span> and{" "}
-              <span className="underline underline-offset-2">Privacy Policy</span>.
+              <Link to="/tos" className="underline underline-offset-2">
+                Terms
+              </Link>{" "}
+              and{" "}
+              <Link to="/privacy" className="underline underline-offset-2">
+                Privacy Policy
+              </Link>
+              .
             </p>
           </div>
         </div>
