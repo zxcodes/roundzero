@@ -87,7 +87,7 @@ export function FeedbackDialog() {
             <SidebarMenuButton asChild>
               <button type="button">
                 <HugeiconsIcon icon={ChatFeedback01Icon} strokeWidth={2} className="size-4" />
-                <span>Feedback</span>
+                <span>Send Feedback</span>
               </button>
             </SidebarMenuButton>
           </SidebarMenuItem>
