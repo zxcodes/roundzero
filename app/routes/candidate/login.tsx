@@ -132,7 +132,7 @@ function CandidateLoginPage() {
           {/* Mobile logo */}
           <div className="flex justify-center lg:hidden">
             <Link to="/" className="flex items-center gap-2">
-              <Logo classname="size-10" />
+              <Logo classname="size-7" />
             </Link>
           </div>
 
