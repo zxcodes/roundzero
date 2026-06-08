@@ -14,7 +14,7 @@ function OnboardingLayout() {
         {/* Logo */}
         <div className="mb-8 flex justify-center">
           <Link to="/" className="flex items-center gap-2.5">
-            <Logo classname="size-9" />
+            <Logo classname="size-7" />
             <span className="text-lg font-semibold tracking-tight">roundzero</span>
           </Link>
         </div>
