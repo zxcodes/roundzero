@@ -107,6 +107,20 @@ CREATE TABLE public.companies (
 
 
 --
+-- Name: feedback; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.feedback (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    role text NOT NULL,
+    type text NOT NULL,
+    message text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: interview_messages; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -356,6 +370,14 @@ ALTER TABLE ONLY public.companies
 
 
 --
+-- Name: feedback feedback_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.feedback
+    ADD CONSTRAINT feedback_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: interview_messages interview_messages_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -515,6 +537,20 @@ CREATE UNIQUE INDEX idx_companies_polar_customer ON public.companies USING btree
 
 
 --
+-- Name: idx_feedback_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_feedback_created_at ON public.feedback USING btree (created_at DESC);
+
+
+--
+-- Name: idx_feedback_user; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_feedback_user ON public.feedback USING btree (user_id);
+
+
+--
 -- Name: idx_interview_messages_interview_position; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -661,6 +697,14 @@ ALTER TABLE ONLY public.companies
 
 
 --
+-- Name: feedback feedback_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.feedback
+    ADD CONSTRAINT feedback_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE RESTRICT;
+
+
+--
 -- Name: interview_messages interview_messages_interview_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -745,4 +789,5 @@ ALTER TABLE ONLY public.reports
 
 INSERT INTO public.schema_migrations (version) VALUES
     ('20260328081657'),
-    ('20260606171616');
+    ('20260606171616'),
+    ('20260608010913');
