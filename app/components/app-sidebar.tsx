@@ -22,6 +22,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { FeedbackDialog } from "@/features/feedback/components/feedback-dialog";
 import type { User } from "@/router";
 import { Logo } from "./public-layout";
 
@@ -138,7 +139,8 @@ export function AppSidebar({
         <NavMain sections={[{ items: mainItems }]} />
       </SidebarContent>
 
-      <SidebarFooter>
+      <SidebarFooter className="flex flex-col gap-2">
+        <FeedbackDialog />
         <NavUser user={user} />
       </SidebarFooter>
     </Sidebar>
