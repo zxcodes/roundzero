@@ -1,5 +1,9 @@
 ## TODO
 
+- overall caching seems a bit too aggressive. login/logouts, switching accounts, has stale data.
+- choose a consistent brand naming "roundzero" vs "RoundZero".
+- change the fucking app icon ugh.
+- voice assistant still outputting [Understood] kind of messages in text. Check eleven labs docs, etc.
 - check deleted account behaviour for companies, applications, etc. how the entire flow handles it.
 - pricing needs a big change. (think about per job, x number of jobs, and pay as you go kind?)
 - still a few rough edges around failed eval. retry eval button doesnt seem to work. better to kill it? (says Retry skipped
@@ -7,8 +11,7 @@ post_eval_already_complete)
 - interview panel padding still sucks (sticks left side completely on mobile and short screens)
 - even after shortlisting/rejecting, I see "Your interview is complete. The company will review your evaluation." this messaging
 - interview experience regressed. no greeting. even if did, says im zero, a senior engineer at [company] wtf is that? you're a fucking assistant ugh.
-- interview skeleton has two sidebars. the skeleton itself has its sidebar, and the actual sidebar too so it appears as if there are two.
-- pretty sure model fallbacks still don't work. verify in local dev.
+- pretty sure openrouter model fallbacks still don't work. verify in local dev.
 - there's a crash on signup on prod (something undefined)
 - we need to be able to invite people with their email. so when they signup they can join that org or something.
 - think about the auth. should it be possible for people to create company and candidate acc with same email?
@@ -17,6 +20,7 @@ post_eval_already_complete)
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- interview skeleton has two sidebars. the skeleton itself has its sidebar, and the actual sidebar too so it appears as if there are two.-->
 <!--- add a feedback option for people or requesting features etc (global? context aware? can trigger anywhere and it will automatically include the context?).-->
 <!--- mobile notification close icon has overlap with mark all read text.-->
 <!--- for company full report, they should also see what they did in the chat, detecting ai responses (should maybe see something like: potential ai written answer?)-->
@@ -193,7 +197,6 @@ post_eval_already_complete)
 
 
 ## PROD THINGS
-- add sentry.
 - add good seo stuff (check skills), basic done. use tanstack dev tools for og stuff it's good. enable them first.
 - check about data retention & allowing people to delete accounts.
 - planetscale for db?
@@ -208,6 +211,7 @@ post_eval_already_complete)
 - prevent people from using diff resumes/profiles for diff jobs. we can use snapshots to compare and decide if we wanna hold them in pre-eval itself. not exactly prevent, it should just act as a guardrail in the background.
 - think about pricing (per job flat fee, or monthly, etc. something that suits a hiring platform. subscription based might not work for this kind of platforms.)
 
+<!--- add sentry.-->
 <!--- add save job feature for candidates. -->
 <!--- companies might need api access to list jobs? iframes? too much for now? think about it.-->
 <!--- think more about company questions (gender, race etc the other platforms ask.) (AGENT-OFFLOAD)-->
