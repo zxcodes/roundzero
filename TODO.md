@@ -8,8 +8,7 @@ post_eval_already_complete)
 - interview panel padding still sucks (sticks left side completely on mobile and short screens)
 - even after shortlisting/rejecting, I see "Your interview is complete. The company will review your evaluation." this messaging
 - interview experience regressed. no greeting. even if did, says im zero, a senior engineer at [company] wtf is that? you're a fucking assistant ugh.
-- interview skeleton has two sidebars. the skeleton itself has its sidebar, and the actual sidebar too so it appears as if there are two.
-- pretty sure model fallbacks still don't work. verify in local dev.
+- pretty sure openrouter model fallbacks still don't work. verify in local dev.
 - there's a crash on signup on prod (something undefined)
 - we need to be able to invite people with their email. so when they signup they can join that org or something.
 - think about the auth. should it be possible for people to create company and candidate acc with same email?
@@ -18,6 +17,7 @@ post_eval_already_complete)
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- interview skeleton has two sidebars. the skeleton itself has its sidebar, and the actual sidebar too so it appears as if there are two.-->
 <!--- add a feedback option for people or requesting features etc (global? context aware? can trigger anywhere and it will automatically include the context?).-->
 <!--- mobile notification close icon has overlap with mark all read text.-->
 <!--- for company full report, they should also see what they did in the chat, detecting ai responses (should maybe see something like: potential ai written answer?)-->
