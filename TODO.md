@@ -195,7 +195,6 @@ post_eval_already_complete)
 
 
 ## PROD THINGS
-- add sentry.
 - add good seo stuff (check skills), basic done. use tanstack dev tools for og stuff it's good. enable them first.
 - check about data retention & allowing people to delete accounts.
 - planetscale for db?
@@ -210,6 +209,7 @@ post_eval_already_complete)
 - prevent people from using diff resumes/profiles for diff jobs. we can use snapshots to compare and decide if we wanna hold them in pre-eval itself. not exactly prevent, it should just act as a guardrail in the background.
 - think about pricing (per job flat fee, or monthly, etc. something that suits a hiring platform. subscription based might not work for this kind of platforms.)
 
+<!--- add sentry.-->
 <!--- add save job feature for candidates. -->
 <!--- companies might need api access to list jobs? iframes? too much for now? think about it.-->
 <!--- think more about company questions (gender, race etc the other platforms ask.) (AGENT-OFFLOAD)-->
