@@ -1,6 +1,9 @@
+import * as Sentry from "@sentry/cloudflare";
+import { wrapFetchWithSentry } from "@sentry/tanstackstart-react";
 import handler from "@tanstack/react-start/server-entry";
 import { handlePolarWebhook } from "./features/billing/webhook";
 import { getDb } from "./shared/db";
+import { isDev } from "./shared/env.app";
 
 export { BatchOrchestrationWorkflow } from "./workflows/batch-orchestration/workflow";
 export { EvalRetryWorkflow } from "./workflows/eval-retry/workflow";
@@ -30,8 +33,7 @@ async function serveAsset(request: Request, env: Env): Promise<Response | null> 
   });
 }
 
-// biome-ignore lint/style/noDefaultExport: worker entrypoint
-export default {
+const appHandler = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
@@ -85,3 +87,15 @@ ${companies.map((c) => `  <url><loc>${siteUrl}/companies/${c.slug}</loc><lastmod
     }
   },
 };
+
+// biome-ignore lint/style/noDefaultExport: worker entrypoint
+export default isDev
+  ? appHandler
+  : Sentry.withSentry(
+      () => ({
+        dsn: "https://93220926b2dbb8136dfb5e8d25f7a3fd@o4511527312687104.ingest.us.sentry.io/4511527318388736",
+        sendDefaultPii: true,
+      }),
+      // @ts-expect-error - handler is not typed as a Cloudflare handler
+      wrapFetchWithSentry(appHandler),
+    );

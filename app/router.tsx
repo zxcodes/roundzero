@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/tanstackstart-react";
 import { QueryClient } from "@tanstack/react-query";
 import { createRouter as createTanStackRouter } from "@tanstack/react-router";
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
@@ -41,6 +42,13 @@ export function getRouter() {
     defaultPendingMs: 200,
     defaultPendingMinMs: 300,
   });
+
+  if (!router.isServer && !import.meta.env.DEV) {
+    Sentry.init({
+      dsn: "https://93220926b2dbb8136dfb5e8d25f7a3fd@o4511527312687104.ingest.us.sentry.io/4511527318388736",
+      sendDefaultPii: true,
+    });
+  }
 
   setupRouterSsrQueryIntegration({ router, queryClient });
 

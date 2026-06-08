@@ -1,6 +1,8 @@
 import { Alert02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import * as Sentry from "@sentry/tanstackstart-react";
 import { Link, useRouter } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 
 export function ErrorBoundary({
@@ -11,6 +13,13 @@ export function ErrorBoundary({
   reset?: () => void;
 }) {
   const router = useRouter();
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) {
+      Sentry.captureException(error);
+    }
+  }, [error]);
+
   const onRetry = () => {
     router.invalidate();
   };
