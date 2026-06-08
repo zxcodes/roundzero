@@ -1,5 +1,6 @@
 ## TODO
 
+- change the fucking app icon ugh.
 - voice assistant still outputting [Understood] kind of messages in text. Check eleven labs docs, etc.
 - check deleted account behaviour for companies, applications, etc. how the entire flow handles it.
 - pricing needs a big change. (think about per job, x number of jobs, and pay as you go kind?)
