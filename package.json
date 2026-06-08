@@ -36,6 +36,8 @@
     "@polar-sh/sdk": "^0.48.0",
     "@react-email/components": "^1.0.12",
     "@react-oauth/google": "^0.13.5",
+    "@sentry/cloudflare": "^10.56.0",
+    "@sentry/tanstackstart-react": "^10.56.0",
     "@snaplet/copycat": "^6.0.0",
     "@tailwindcss/vite": "^4.3.0",
     "@tanstack/ai": "^0.28.0",
