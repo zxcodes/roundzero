@@ -1399,7 +1399,7 @@ function Closing() {
             </div>
 
             <div
-              className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 pt-8"
+              className="mt-16 grid grid-cols-2 sm:grid-cols-5 gap-4 pt-8"
               style={{ borderTop: "1px solid var(--ed-rule-hair)" }}
             >
               {[
@@ -1407,19 +1407,34 @@ function Closing() {
                 ["Printed", "On the open web"],
                 ["Issue", "Vol. 01"],
                 ["Made by", "RoundZero"],
+                ["Contact", null],
               ].map(([k, v]) => (
                 <div key={k}>
                   <SmallCaps>{k}</SmallCaps>
-                  <p
-                    className="mt-1 font-editorial text-[15px]"
-                    style={{
-                      color: "var(--ed-ink)",
-                      fontStyle: "italic",
-                      fontWeight: 400,
-                    }}
-                  >
-                    {v}
-                  </p>
+                  {k === "Contact" ? (
+                    <a
+                      href="mailto:hello@roundzero.dev"
+                      className="mt-1 block font-editorial text-[15px] hover:opacity-70 transition-opacity"
+                      style={{
+                        color: "var(--ed-ink)",
+                        fontStyle: "italic",
+                        fontWeight: 400,
+                      }}
+                    >
+                      hello@roundzero.dev
+                    </a>
+                  ) : (
+                    <p
+                      className="mt-1 font-editorial text-[15px]"
+                      style={{
+                        color: "var(--ed-ink)",
+                        fontStyle: "italic",
+                        fontWeight: 400,
+                      }}
+                    >
+                      {v}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
