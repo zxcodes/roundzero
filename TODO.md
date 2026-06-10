@@ -1,9 +1,9 @@
 ## TODO
 
-- interview invited notification is not being sent thru email?
+- show voice interview transcript after completion similar to text interview but with voice aesthetics.
 - overall caching seems a bit too aggressive. login/logouts, switching accounts, has stale data.
 - choose a consistent brand naming "roundzero" vs "RoundZero".
-- change the fucking app icon ugh.
+- change the fucking app icon ugh. (more seo icons remaining)
 - voice assistant still outputting [Understood] kind of messages in text. Check eleven labs docs, etc.
 - check deleted account behaviour for companies, applications, etc. how the entire flow handles it.
 - pricing needs a big change. (think about per job, x number of jobs, and pay as you go kind?)
@@ -11,16 +11,17 @@
 post_eval_already_complete)
 - interview panel padding still sucks (sticks left side completely on mobile and short screens)
 - even after shortlisting/rejecting, I see "Your interview is complete. The company will review your evaluation." this messaging
-- interview experience regressed. no greeting. even if did, says im zero, a senior engineer at [company] wtf is that? you're a fucking assistant ugh.
 - pretty sure openrouter model fallbacks still don't work. verify in local dev.
-- there's a crash on signup on prod (something undefined)
 - we need to be able to invite people with their email. so when they signup they can join that org or something.
 - think about the auth. should it be possible for people to create company and candidate acc with same email?
-- voice interview still doesnt end the call on its own. and even after the interview, if I refresh, the entire session is lost. it just gets back to square one."start assessment" perhaps we should have a manual submit similar to text interview?
 - add score breakdown. 
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- voice interview still doesnt end the call on its own. and even after the interview, if I refresh, the entire session is lost. it just gets back to square one."start assessment" perhaps we should have a manual submit similar to text interview?-->
+<!--- interview invited notification is not being sent thru email?-->
+<!--- interview experience regressed. no greeting. even if did, says im zero, a senior engineer at [company] wtf is that? you're a fucking assistant ugh.-->
+<!--- there's a crash on signup on prod (something undefined)-->
 <!--- interview skeleton has two sidebars. the skeleton itself has its sidebar, and the actual sidebar too so it appears as if there are two.-->
 <!--- add a feedback option for people or requesting features etc (global? context aware? can trigger anywhere and it will automatically include the context?).-->
 <!--- mobile notification close icon has overlap with mark all read text.-->
