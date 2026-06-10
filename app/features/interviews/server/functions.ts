@@ -53,7 +53,7 @@ const expireInterviewIfNeeded = <T extends ExpirableInterview>(input: {
 
 export const getMyInterview = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidator(interviewIdSchema))
+  .validator(zodValidator(interviewIdSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
 
@@ -80,7 +80,7 @@ export const getMyInterview = createServerFn({ method: "GET" })
 
 export const getMyInterviewMessages = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidator(interviewIdSchema))
+  .validator(zodValidator(interviewIdSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
 
@@ -139,7 +139,7 @@ export const getMyInterviews = createServerFn({ method: "GET" })
 
 export const startMyInterview = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidator(interviewIdSchema))
+  .validator(zodValidator(interviewIdSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
 
@@ -255,7 +255,7 @@ export const startMyInterview = createServerFn({ method: "POST" })
 
 export const cancelMyInterview = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidator(interviewIdSchema))
+  .validator(zodValidator(interviewIdSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
 
@@ -309,7 +309,7 @@ export const cancelMyInterview = createServerFn({ method: "POST" })
 
 export const completeMyInterview = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidator(interviewIdSchema))
+  .validator(zodValidator(interviewIdSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
 
@@ -393,7 +393,7 @@ export const completeMyInterview = createServerFn({ method: "POST" })
 
 export const getInterviewForApplication = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .inputValidator(
+  .validator(
     zodValidator(
       z.object({
         applicationId: z.string().uuid(),
@@ -426,7 +426,7 @@ export const getInterviewForApplication = createServerFn({ method: "GET" })
 
 export const getMyVoiceAssessment = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidator(interviewIdSchema))
+  .validator(zodValidator(interviewIdSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
 
@@ -479,7 +479,7 @@ const registerVoiceAssessmentSessionSchema = z.object({
 
 export const getMyVoiceToken = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidator(interviewIdSchema))
+  .validator(zodValidator(interviewIdSchema))
   .handler(async ({ data, context }): Promise<RealtimeToken> => {
     if (context.user.role !== "candidate") {
       throw new Error("Only candidates can start voice assessments");
@@ -579,7 +579,7 @@ const voiceTranscriptDbSchema = z
 
 export const getMyVoiceAssessmentTranscript = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidator(interviewIdSchema))
+  .validator(zodValidator(interviewIdSchema))
   .handler(async ({ data, context }) => {
     if (context.user.role !== "candidate") {
       throw new Error("Only candidates can view voice assessment transcripts");
@@ -603,7 +603,7 @@ export const getMyVoiceAssessmentTranscript = createServerFn({ method: "GET" })
 
 export const skipMyVoiceAssessment = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidator(interviewIdSchema))
+  .validator(zodValidator(interviewIdSchema))
   .handler(async ({ data, context }) => {
     if (context.user.role !== "candidate") {
       throw new Error("Only candidates can skip voice assessments");
@@ -639,7 +639,7 @@ export const skipMyVoiceAssessment = createServerFn({ method: "POST" })
 
 export const registerMyVoiceAssessmentSession = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidator(registerVoiceAssessmentSessionSchema))
+  .validator(zodValidator(registerVoiceAssessmentSessionSchema))
   .handler(async ({ data, context }) => {
     if (context.user.role !== "candidate") {
       throw new Error("Only candidates can start voice assessments");
@@ -671,7 +671,7 @@ export const registerMyVoiceAssessmentSession = createServerFn({ method: "POST" 
 
 export const completeMyVoiceAssessment = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidator(completeVoiceAssessmentSchema))
+  .validator(zodValidator(completeVoiceAssessmentSchema))
   .handler(async ({ data, context }) => {
     if (context.user.role !== "candidate") {
       throw new Error("Only candidates can complete voice assessments");

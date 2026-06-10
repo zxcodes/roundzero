@@ -42,7 +42,7 @@ async function enforceJobLimit(
 
 export const createJob = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
-  .inputValidator(zodValidator(jobFieldsSchema))
+  .validator(zodValidator(jobFieldsSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
 
@@ -108,7 +108,7 @@ export const getMyArchivedJobs = createServerFn({ method: "GET" })
 
 export const getJob = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidator(jobIdSchema))
+  .validator(zodValidator(jobIdSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
     await db.unsafe(closeExpiredJobsQuery);
@@ -130,7 +130,7 @@ export const getJob = createServerFn({ method: "GET" })
 
 export const updateJob = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
-  .inputValidator(zodValidator(updateJobSchema))
+  .validator(zodValidator(updateJobSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
 
@@ -176,7 +176,7 @@ export const updateJob = createServerFn({ method: "POST" })
 
 export const archiveJob = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
-  .inputValidator(zodValidator(jobIdSchema))
+  .validator(zodValidator(jobIdSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
     const archived = await archiveJobQuery(db, { id: data.id, companyId: context.company.id });
@@ -200,7 +200,7 @@ export const archiveJob = createServerFn({ method: "POST" })
 
 export const publishJob = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
-  .inputValidator(zodValidator(jobIdSchema))
+  .validator(zodValidator(jobIdSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
     await db.unsafe(closeExpiredJobsQuery);
@@ -271,7 +271,7 @@ const companyIdSchema = z.object({
 });
 
 export const getPublicJobById = createServerFn({ method: "GET" })
-  .inputValidator(zodValidator(jobIdSchema))
+  .validator(zodValidator(jobIdSchema))
   .handler(async ({ data }) => {
     const db = getDb();
     await db.unsafe(closeExpiredJobsQuery);
@@ -285,7 +285,7 @@ export const getPublicJobById = createServerFn({ method: "GET" })
   });
 
 export const getOpenJobsByCompanyId = createServerFn({ method: "GET" })
-  .inputValidator(zodValidator(companyIdSchema))
+  .validator(zodValidator(companyIdSchema))
   .handler(async ({ data }) => {
     const db = getDb();
     await db.unsafe(closeExpiredJobsQuery);
@@ -305,7 +305,7 @@ const paginatedJobsSchema = z.object({
 });
 
 export const getOpenJobsPaginated = createServerFn({ method: "GET" })
-  .inputValidator(zodValidator(paginatedJobsSchema))
+  .validator(zodValidator(paginatedJobsSchema))
   .handler(async ({ data }) => {
     const db = getDb();
     await db.unsafe(closeExpiredJobsQuery);
@@ -429,7 +429,7 @@ function cleanAiJobOutput(output: Record<string, unknown>): Record<string, unkno
 
 export const generateJobWithAI = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
-  .inputValidator(zodValidator(generateJobPromptSchema))
+  .validator(zodValidator(generateJobPromptSchema))
   .handler(async ({ data, context }) => {
     const isPaid = hasActiveSubscription({
       subscriptionPlan: context.company.subscriptionPlan,
