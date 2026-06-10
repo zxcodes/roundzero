@@ -11,10 +11,22 @@ function formatResult(r: PoolCheckResult, jobId: string) {
   return { jobId, launched: false as const, reason: r.reason };
 }
 
+/**
+ * Periodic pool check that launches batches when enough candidates have queued.
+ *
+ * A fresh DB client is created inside each `step.do` and `await db.end()` is
+ * called afterwards. `checkAndLaunchBatch` also manages its own client lifecycle.
+ */
 export class PoolCheckWorkflow extends WorkflowEntrypoint<Env> {
   async run(_event: WorkflowEvent<unknown>, step: WorkflowStep) {
-    const sql = getDb();
-    const jobs = await getJobsWithQueuedCandidates(sql);
+    const jobs = await step.do("list_jobs_with_queued", async () => {
+      const db = getDb();
+      try {
+        return await getJobsWithQueuedCandidates(db);
+      } finally {
+        await db.end();
+      }
+    });
 
     if (jobs.length === 0) {
       return { checked: 0 };

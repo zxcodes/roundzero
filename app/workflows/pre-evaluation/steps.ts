@@ -176,26 +176,30 @@ export function readApplicationData(
   return async () => {
     log.step("load_application", "Loading application from DB");
     const db = getDb();
-    const application = await getApplicationById(db, { id: applicationId });
-    if (!application) {
-      throw new NonRetryableError(`Application not found: ${applicationId}`);
-    }
-    if (!application.resumeKey) {
-      throw new NonRetryableError(`Application has no resume: ${applicationId}`);
-    }
+    try {
+      const application = await getApplicationById(db, { id: applicationId });
+      if (!application) {
+        throw new NonRetryableError(`Application not found: ${applicationId}`);
+      }
+      if (!application.resumeKey) {
+        throw new NonRetryableError(`Application has no resume: ${applicationId}`);
+      }
 
-    const job = await getJobById(db, { id: application.jobId });
-    if (!job) {
-      throw new NonRetryableError(`Job not found: ${application.jobId}`);
-    }
+      const job = await getJobById(db, { id: application.jobId });
+      if (!job) {
+        throw new NonRetryableError(`Job not found: ${application.jobId}`);
+      }
 
-    log.result("load_application", {
-      jobTitle: job.title,
-      jobId: job.id,
-      resumeKey: application.resumeKey,
-      candidateId: application.candidateId,
-    });
-    return { application, job };
+      log.result("load_application", {
+        jobTitle: job.title,
+        jobId: job.id,
+        resumeKey: application.resumeKey,
+        candidateId: application.candidateId,
+      });
+      return { application, job };
+    } finally {
+      await db.end();
+    }
   };
 }
 
@@ -398,50 +402,54 @@ export function writePreEvaluation(
   return async () => {
     log.step("save_pre_eval", "Saving pre-evaluation to DB");
     const db = getDb();
-    await db.begin(async (tx) => {
-      const transaction = tx as unknown as Sql;
-      await tx
-        .unsafe(`SELECT id FROM applications WHERE id = $1 FOR UPDATE`, [applicationId])
-        .values();
+    try {
+      await db.begin(async (tx) => {
+        const transaction = tx as unknown as Sql;
+        await tx
+          .unsafe(`SELECT id FROM applications WHERE id = $1 FOR UPDATE`, [applicationId])
+          .values();
 
-      const existingPreEvaluation = await getPreEvaluationByApplicationId(transaction, {
-        applicationId,
-      });
-
-      if (!existingPreEvaluation) {
-        await createPreEvaluation(transaction, {
+        const existingPreEvaluation = await getPreEvaluationByApplicationId(transaction, {
           applicationId,
-          score: aiResult.result.score,
-          missingRequirements: aiResult.result.missingRequirements,
-          confidence: aiResult.result.confidence,
-          nextStep: aiResult.result.modelNextStep,
-          consistencyScore: slopCheck.consistencyScore,
-          rawResponse: {
-            preEvaluation: aiResult.rawResponse,
-            slopCheck,
-          },
-          model: aiResult.model,
-          promptVersion: aiResult.promptVersion,
         });
-      }
 
-      await tx
-        .unsafe(
-          `UPDATE applications SET metadata = COALESCE(metadata, '{}'::jsonb) || jsonb_build_object('resumeText', $1::text), updated_at = now() WHERE id = $2`,
-          [sanitizeUntrustedText(resumeText, LIMITS.RESUME_TEXT), applicationId],
-        )
-        .values();
+        if (!existingPreEvaluation) {
+          await createPreEvaluation(transaction, {
+            applicationId,
+            score: aiResult.result.score,
+            missingRequirements: aiResult.result.missingRequirements,
+            confidence: aiResult.result.confidence,
+            nextStep: aiResult.result.modelNextStep,
+            consistencyScore: slopCheck.consistencyScore,
+            rawResponse: {
+              preEvaluation: aiResult.rawResponse,
+              slopCheck,
+            },
+            model: aiResult.model,
+            promptVersion: aiResult.promptVersion,
+          });
+        }
 
-      await updateApplicationStatus(transaction, {
-        id: applicationId,
-        status: "pre_screening",
+        await tx
+          .unsafe(
+            `UPDATE applications SET metadata = COALESCE(metadata, '{}'::jsonb) || jsonb_build_object('resumeText', $1::text), updated_at = now() WHERE id = $2`,
+            [sanitizeUntrustedText(resumeText, LIMITS.RESUME_TEXT), applicationId],
+          )
+          .values();
+
+        await updateApplicationStatus(transaction, {
+          id: applicationId,
+          status: "pre_screening",
+        });
       });
-    });
 
-    log.result("save_pre_eval", {
-      status: "pre_screening",
-      consistencyScore: slopCheck.consistencyScore,
-    });
+      log.result("save_pre_eval", {
+        status: "pre_screening",
+        consistencyScore: slopCheck.consistencyScore,
+      });
+    } finally {
+      await db.end();
+    }
   };
 }
 
@@ -483,120 +491,125 @@ export function decideNextStep(
     }
 
     const db = getDb();
-    const job = applicationData.job;
-    const finalReportTarget = typeof job.finalReportTarget === "number" ? job.finalReportTarget : 5;
+    try {
+      const job = applicationData.job;
+      const finalReportTarget =
+        typeof job.finalReportTarget === "number" ? job.finalReportTarget : 5;
 
-    const allocation = await db.begin(async (tx) => {
-      const transaction = tx as unknown as Sql;
+      const allocation = await db.begin(async (tx) => {
+        const transaction = tx as unknown as Sql;
 
-      const lockedJobRows = await tx
-        .unsafe(`SELECT final_report_target FROM jobs WHERE id = $1 FOR UPDATE`, [job.id])
-        .values();
+        const lockedJobRows = await tx
+          .unsafe(`SELECT final_report_target FROM jobs WHERE id = $1 FOR UPDATE`, [job.id])
+          .values();
 
-      if (lockedJobRows.length !== 1) {
-        throw new Error(`Job not found while acquiring quota lock: ${job.id}`);
-      }
+        if (lockedJobRows.length !== 1) {
+          throw new Error(`Job not found while acquiring quota lock: ${job.id}`);
+        }
 
-      const interviewInTransaction = await getInterviewByApplicationId(transaction, {
-        applicationId,
-      });
-      if (interviewInTransaction) {
+        const interviewInTransaction = await getInterviewByApplicationId(transaction, {
+          applicationId,
+        });
+        if (interviewInTransaction) {
+          return {
+            kind: "existing" as const,
+            interview: interviewInTransaction,
+          };
+        }
+
+        const lockedFinalReportTarget =
+          typeof lockedJobRows[0]?.[0] === "number" ? lockedJobRows[0][0] : finalReportTarget;
+
+        const completedReportsRows = await tx
+          .unsafe(
+            `SELECT count(*)::int AS count FROM reports r JOIN applications a ON a.id = r.application_id WHERE a.job_id = $1 AND r.released_at IS NOT NULL`,
+            [job.id],
+          )
+          .values();
+        const releasedReports =
+          completedReportsRows.length === 1 && typeof completedReportsRows[0]?.[0] === "number"
+            ? completedReportsRows[0][0]
+            : 0;
+
+        const activeSlots = await countActiveInterviewSlotsByJob(transaction, { jobId: job.id });
+        const activeCount = activeSlots?.count ?? 0;
+        const remainingReports = Math.max(0, lockedFinalReportTarget - releasedReports);
+        const availableInviteSlots = remainingReports - activeCount;
+
+        if (availableInviteSlots <= 0) {
+          return {
+            kind: "quota_exhausted" as const,
+            activeCount,
+            releasedReports,
+            limit: lockedFinalReportTarget,
+          };
+        }
+
+        // Instead of creating an interview immediately, add candidate to pool
+        await updateApplicationStatus(transaction, {
+          id: applicationId,
+          status: "queued_for_batch",
+        });
+
         return {
-          kind: "existing" as const,
-          interview: interviewInTransaction,
-        };
-      }
-
-      const lockedFinalReportTarget =
-        typeof lockedJobRows[0]?.[0] === "number" ? lockedJobRows[0][0] : finalReportTarget;
-
-      const completedReportsRows = await tx
-        .unsafe(
-          `SELECT count(*)::int AS count FROM reports r JOIN applications a ON a.id = r.application_id WHERE a.job_id = $1 AND r.released_at IS NOT NULL`,
-          [job.id],
-        )
-        .values();
-      const releasedReports =
-        completedReportsRows.length === 1 && typeof completedReportsRows[0]?.[0] === "number"
-          ? completedReportsRows[0][0]
-          : 0;
-
-      const activeSlots = await countActiveInterviewSlotsByJob(transaction, { jobId: job.id });
-      const activeCount = activeSlots?.count ?? 0;
-      const remainingReports = Math.max(0, lockedFinalReportTarget - releasedReports);
-      const availableInviteSlots = remainingReports - activeCount;
-
-      if (availableInviteSlots <= 0) {
-        return {
-          kind: "quota_exhausted" as const,
+          kind: "pooled" as const,
           activeCount,
           releasedReports,
           limit: lockedFinalReportTarget,
+          remainingReports,
+          availableInviteSlots,
         };
+      });
+
+      if (allocation.kind === "quota_exhausted") {
+        log.result("decide", {
+          action: "quota_exhausted",
+          active: allocation.activeCount,
+          releasedReports: allocation.releasedReports,
+          limit: allocation.limit,
+        });
+
+        const candidate = await getUserById(db, { id: applicationData.application.candidateId });
+        if (candidate) {
+          const payload = notificationPayloadSchemas.position_filled.parse({
+            applicationId,
+            jobId: job.id,
+            jobTitle: job.title,
+          });
+          await createNotification(db, {
+            userId: candidate.id,
+            type: "position_filled",
+            payload,
+          });
+        }
+
+        return { action: "quota_exhausted" as const };
       }
 
-      // Instead of creating an interview immediately, add candidate to pool
-      await updateApplicationStatus(transaction, {
-        id: applicationId,
-        status: "queued_for_batch",
-      });
-
-      return {
-        kind: "pooled" as const,
-        activeCount,
-        releasedReports,
-        limit: lockedFinalReportTarget,
-        remainingReports,
-        availableInviteSlots,
-      };
-    });
-
-    if (allocation.kind === "quota_exhausted") {
-      log.result("decide", {
-        action: "quota_exhausted",
-        active: allocation.activeCount,
-        releasedReports: allocation.releasedReports,
-        limit: allocation.limit,
-      });
-
-      const candidate = await getUserById(db, { id: applicationData.application.candidateId });
-      if (candidate) {
-        const payload = notificationPayloadSchemas.position_filled.parse({
-          applicationId,
-          jobId: job.id,
-          jobTitle: job.title,
+      if (allocation.kind === "existing") {
+        log.result("decide", {
+          action: "already_invited",
+          interviewId: allocation.interview.id,
         });
-        await createNotification(db, {
-          userId: candidate.id,
-          type: "position_filled",
-          payload,
-        });
+        return { action: "already_invited" as const };
       }
 
-      return { action: "quota_exhausted" as const };
-    }
-
-    if (allocation.kind === "existing") {
       log.result("decide", {
-        action: "already_invited",
-        interviewId: allocation.interview.id,
+        action: "pooled",
+        newStatus: "queued_for_batch",
+        availableSlots: allocation.availableInviteSlots,
       });
-      return { action: "already_invited" as const };
+
+      // Trigger batch check asynchronously — if pool is large enough, launch immediately
+      checkAndLaunchBatch(job.id).catch((error) => {
+        log.warn(
+          `Background batch check failed for job ${job.id}: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      });
+
+      return { action: "pooled" as const };
+    } finally {
+      await db.end();
     }
-
-    log.result("decide", {
-      action: "pooled",
-      newStatus: "queued_for_batch",
-      availableSlots: allocation.availableInviteSlots,
-    });
-
-    // Trigger batch check asynchronously — if pool is large enough, launch immediately
-    checkAndLaunchBatch(job.id).catch((error) => {
-      log.warn(
-        `Background batch check failed for job ${job.id}: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    });
-
-    return { action: "pooled" as const };
   };
 }
