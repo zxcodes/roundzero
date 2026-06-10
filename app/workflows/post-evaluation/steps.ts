@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import { NonRetryableError } from "cloudflare:workflows";
 import { generateText, Output } from "ai";
+import type { Sql } from "postgres";
 import { jsx } from "react/jsx-runtime";
 import { Resend } from "resend";
 import { updateApplicationStatus } from "@/features/applications/queries/queries_sql";
@@ -37,7 +38,6 @@ import {
   type TranscriptMessage,
   transcriptHasEnoughSignal,
 } from "@/shared/ai-refine";
-import { getDb } from "@/shared/db";
 import type { Recommendation } from "@/shared/enums";
 import type { createWorkflowLogger } from "@/shared/logger";
 import { notificationPayloadSchemas } from "@/shared/notifications-config";
@@ -110,8 +110,6 @@ type ReadInterviewDataResult =
       reason: string;
     };
 
-// reportSchema is imported from @/features/reports/schemas
-
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
 async function runPostEvalObject(args: { systemPrompt: string; userPrompt: string }): Promise<{
@@ -147,123 +145,103 @@ async function runPostEvalObject(args: { systemPrompt: string; userPrompt: strin
 
 export function loadExistingReport(
   interviewId: string,
+  db: Sql,
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
   return async () => {
-    const db = getDb();
-    try {
-      log.info("Loading existing report state");
-      return await getReportByInterviewId(db, { interviewId });
-    } finally {
-      await db.end();
-    }
+    log.info("Loading existing report state");
+    return await getReportByInterviewId(db, { interviewId });
   };
 }
 
-export function markApplicationEvaluatedExisting(interviewId: string) {
+export function markApplicationEvaluatedExisting(interviewId: string, db: Sql) {
   return async () => {
-    const db = getDb();
-    try {
-      const interview = await getInterviewContextById(db, { id: interviewId });
-      if (!interview) {
-        throw new Error(`Interview not found while reconciling status: ${interviewId}`);
-      }
-
-      await updateApplicationStatus(db, {
-        id: interview.applicationId,
-        status: "evaluated_held",
-      });
-    } finally {
-      await db.end();
+    const interview = await getInterviewContextById(db, { id: interviewId });
+    if (!interview) {
+      throw new Error(`Interview not found while reconciling status: ${interviewId}`);
     }
+
+    await updateApplicationStatus(db, {
+      id: interview.applicationId,
+      status: "evaluated_held",
+    });
   };
 }
 
 export function readInterviewData(
   interviewId: string,
+  db: Sql,
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
   return async (): Promise<ReadInterviewDataResult> => {
-    const db = getDb();
-    try {
-      log.info("Reading interview context and transcript");
+    log.info("Reading interview context and transcript");
 
-      const interview = await getInterviewContextById(db, { id: interviewId });
-      if (!interview) {
-        throw new NonRetryableError(`Interview not found: ${interviewId}`);
-      }
-
-      const metadata = await ensureInterviewRuntimeMetadata(db, interview);
-      const contextState = metadata.contextState;
-      if (!contextState) {
-        throw new Error(`Interview metadata is missing context for ${interviewId}`);
-      }
-
-      const storedMessages = await getInterviewMessagesByInterviewId(db, {
-        interviewId,
-      });
-      const messages: TranscriptMessage[] = sanitizeTranscriptMessages(
-        storedMessages
-          .filter((message) => message.role === "assistant" || message.role === "candidate")
-          .map((message) => ({
-            role: message.role === "assistant" ? "assistant" : "candidate",
-            content: message.content,
-          })),
-      );
-
-      // Short-circuit empty / one-sided / trivial transcripts. Better to mark
-      // the application `evaluation_failed` than to fabricate a report from
-      // essentially no signal.
-      const signal: InterviewSignalStatus = transcriptHasEnoughSignal(messages);
-      if (!signal.ok) {
-        return {
-          kind: "insufficient_signal",
-          interview,
-          contextState,
-          reason: signal.reason,
-        };
-      }
-      const coveredScreeningQuestions = auditScreeningCoverage(
-        contextState.customQuestions,
-        messages,
-      );
-      const minScreeningCoverage = requiredScreeningCoverage(contextState.customQuestions.length);
-      if (coveredScreeningQuestions.size < minScreeningCoverage) {
-        return {
-          kind: "insufficient_signal",
-          interview,
-          contextState,
-          reason: `covered ${coveredScreeningQuestions.size}/${contextState.customQuestions.length} required screening question(s); need at least ${minScreeningCoverage}`,
-        };
-      }
-
-      // Content moderation: check for abusive, spammy, or pathological content
-      const moderation = moderateTranscript(messages);
-      if (moderation.quality === "low") {
-        log.warn(
-          `Interview transcript quality check failed for ${interviewId}: ${moderation.reason}`,
-        );
-      }
-
-      // Use structured "Role: text" join for the prompt sites that still need a
-      // single string blob. Sanitization already removed role-marker leaks from
-      // candidate messages, so this join is safe to feed to the LLM.
-      const transcript = messages
-        .map((m) => `${m.role === "assistant" ? "Interviewer" : "Candidate"}: ${m.content}`)
-        .join("\n\n");
-
-      return {
-        kind: "ready",
-        interview,
-        transcript,
-        messages,
-        screeningCoverage: metadata.screeningCoverage ?? {},
-        moderation,
-        contextState,
-      };
-    } finally {
-      await db.end();
+    const interview = await getInterviewContextById(db, { id: interviewId });
+    if (!interview) {
+      throw new NonRetryableError(`Interview not found: ${interviewId}`);
     }
+
+    const metadata = await ensureInterviewRuntimeMetadata(db, interview);
+    const contextState = metadata.contextState;
+    if (!contextState) {
+      throw new Error(`Interview metadata is missing context for ${interviewId}`);
+    }
+
+    const storedMessages = await getInterviewMessagesByInterviewId(db, {
+      interviewId,
+    });
+    const messages: TranscriptMessage[] = sanitizeTranscriptMessages(
+      storedMessages
+        .filter((message) => message.role === "assistant" || message.role === "candidate")
+        .map((message) => ({
+          role: message.role === "assistant" ? "assistant" : "candidate",
+          content: message.content,
+        })),
+    );
+
+    const signal: InterviewSignalStatus = transcriptHasEnoughSignal(messages);
+    if (!signal.ok) {
+      return {
+        kind: "insufficient_signal",
+        interview,
+        contextState,
+        reason: signal.reason,
+      };
+    }
+    const coveredScreeningQuestions = auditScreeningCoverage(
+      contextState.customQuestions,
+      messages,
+    );
+    const minScreeningCoverage = requiredScreeningCoverage(contextState.customQuestions.length);
+    if (coveredScreeningQuestions.size < minScreeningCoverage) {
+      return {
+        kind: "insufficient_signal",
+        interview,
+        contextState,
+        reason: `covered ${coveredScreeningQuestions.size}/${contextState.customQuestions.length} required screening question(s); need at least ${minScreeningCoverage}`,
+      };
+    }
+
+    const moderation = moderateTranscript(messages);
+    if (moderation.quality === "low") {
+      log.warn(
+        `Interview transcript quality check failed for ${interviewId}: ${moderation.reason}`,
+      );
+    }
+
+    const transcript = messages
+      .map((m) => `${m.role === "assistant" ? "Interviewer" : "Candidate"}: ${m.content}`)
+      .join("\n\n");
+
+    return {
+      kind: "ready",
+      interview,
+      transcript,
+      messages,
+      screeningCoverage: metadata.screeningCoverage ?? {},
+      moderation,
+      contextState,
+    };
   };
 }
 
@@ -427,63 +405,57 @@ export function persistReport(
   },
   reportDraft: ReportModelResponse,
   model: string,
+  db: Sql,
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
   return async () => {
-    const db = getDb();
+    log.info("Persisting report to database");
+
+    let created = null;
+
     try {
-      log.info("Persisting report to database");
-
-      let created = null;
-
-      try {
-        created = await createReport(db, {
-          interviewId,
-          applicationId: interviewData.interview.applicationId,
-          summary: reportDraft.summary,
-          strengths: reportDraft.strengths,
-          weaknesses: reportDraft.weaknesses,
-          insights: reportDraft.insights,
-          evidence: reportDraft.evidence,
-          screeningAnswers: reportDraft.screeningAnswers,
-          scores: reportDraft.scores,
-          recommendation: reportDraft.recommendation,
-          model,
-          promptVersion: POST_EVAL_PROMPT_VERSION,
-          refineVersion: REFINE_PROMPT_VERSION,
-        });
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        log.warn(`Report create failed (possible duplicate): ${message}`);
-      }
-
-      if (created) {
-        return created;
-      }
-
-      const existing = await getReportByInterviewId(db, { interviewId });
-      if (existing) {
-        return existing;
-      }
-
-      throw new Error(`Failed to create report for interview ${interviewId}`);
-    } finally {
-      await db.end();
+      created = await createReport(db, {
+        interviewId,
+        applicationId: interviewData.interview.applicationId,
+        summary: reportDraft.summary,
+        strengths: reportDraft.strengths,
+        weaknesses: reportDraft.weaknesses,
+        insights: reportDraft.insights,
+        evidence: reportDraft.evidence,
+        screeningAnswers: reportDraft.screeningAnswers,
+        scores: reportDraft.scores,
+        recommendation: reportDraft.recommendation,
+        model,
+        promptVersion: POST_EVAL_PROMPT_VERSION,
+        refineVersion: REFINE_PROMPT_VERSION,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      log.warn(`Report create failed (possible duplicate): ${message}`);
     }
+
+    if (created) {
+      return created;
+    }
+
+    const existing = await getReportByInterviewId(db, { interviewId });
+    if (existing) {
+      return existing;
+    }
+
+    throw new Error(`Failed to create report for interview ${interviewId}`);
   };
 }
 
-export function markApplicationEvaluated(interviewData: { interview: { applicationId: string } }) {
+export function markApplicationEvaluated(
+  interviewData: { interview: { applicationId: string } },
+  db: Sql,
+) {
   return async () => {
-    const db = getDb();
-    try {
-      await updateApplicationStatus(db, {
-        id: interviewData.interview.applicationId,
-        status: "evaluated_held",
-      });
-    } finally {
-      await db.end();
-    }
+    await updateApplicationStatus(db, {
+      id: interviewData.interview.applicationId,
+      status: "evaluated_held",
+    });
   };
 }
 
@@ -498,29 +470,25 @@ export function notifyReportReady(
     };
   },
   reportDraft: { scores: { overall: number } },
+  db: Sql,
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
   return async () => {
-    const db = getDb();
-    try {
-      log.info("Creating report_ready notification for company");
+    log.info("Creating report_ready notification for company");
 
-      const payload = notificationPayloadSchemas.report_ready.parse({
-        applicationId: interviewData.interview.applicationId,
-        jobId: interviewData.interview.jobId,
-        jobTitle: interviewData.interview.jobTitle,
-        candidateName: interviewData.interview.candidateName,
-        score: reportDraft.scores.overall,
-      });
+    const payload = notificationPayloadSchemas.report_ready.parse({
+      applicationId: interviewData.interview.applicationId,
+      jobId: interviewData.interview.jobId,
+      jobTitle: interviewData.interview.jobTitle,
+      candidateName: interviewData.interview.candidateName,
+      score: reportDraft.scores.overall,
+    });
 
-      return await createNotification(db, {
-        userId: interviewData.interview.companyOwnerId,
-        type: "report_ready",
-        payload,
-      });
-    } finally {
-      await db.end();
-    }
+    return await createNotification(db, {
+      userId: interviewData.interview.companyOwnerId,
+      type: "report_ready",
+      payload,
+    });
   };
 }
 
@@ -535,80 +503,76 @@ export function sendReportReadyEmail(
   },
   notification: { id: string } | null,
   reportDraft: { scores: { overall: number }; recommendation: Recommendation },
+  db: Sql,
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
   return async () => {
-    const db = getDb();
+    if (!notification) {
+      log.warn("No notification created, skipping email");
+      return;
+    }
+
+    const resendApiKey = env.RESEND_API_KEY;
+    const resendFromEmail = env.RESEND_FROM_EMAIL;
+
+    if (!resendApiKey || !resendFromEmail) {
+      log.info("Resend not configured, skipping email delivery");
+      await markNotificationEmailSkipped(db, {
+        id: notification.id,
+        reason: "Email delivery is not configured",
+      });
+      return;
+    }
+
+    const owner = await getUserById(db, { id: interviewData.interview.companyOwnerId });
+    if (!owner?.email) {
+      log.warn("Company owner email not found, skipping email");
+      await markNotificationEmailSkipped(db, {
+        id: notification.id,
+        reason: "Recipient email unavailable",
+      });
+      return;
+    }
+
     try {
-      if (!notification) {
-        log.warn("No notification created, skipping email");
-        return;
+      const resend = new Resend(resendApiKey);
+      const appUrl = env.APP_URL ?? "";
+      const reportUrl = appUrl
+        ? new URL(
+            `/dashboard/applicant-reports/${interviewData.interview.applicationId}`,
+            appUrl,
+          ).toString()
+        : "";
+
+      const response = await resend.emails.send({
+        from: `RoundZero <${resendFromEmail}>`,
+        to: owner.email,
+        subject: `Evaluation ready for ${interviewData.interview.candidateName}`,
+        react: jsx(ReportReadyEmailTemplate, {
+          candidateName: interviewData.interview.candidateName,
+          jobTitle: interviewData.interview.jobTitle,
+          overallScore: Math.round(reportDraft.scores.overall),
+          recommendation: reportDraft.recommendation,
+          reportUrl,
+        }),
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
       }
 
-      const resendApiKey = env.RESEND_API_KEY;
-      const resendFromEmail = env.RESEND_FROM_EMAIL;
-
-      if (!resendApiKey || !resendFromEmail) {
-        log.info("Resend not configured, skipping email delivery");
-        await markNotificationEmailSkipped(db, {
-          id: notification.id,
-          reason: "Email delivery is not configured",
-        });
-        return;
-      }
-
-      const owner = await getUserById(db, { id: interviewData.interview.companyOwnerId });
-      if (!owner?.email) {
-        log.warn("Company owner email not found, skipping email");
-        await markNotificationEmailSkipped(db, {
-          id: notification.id,
-          reason: "Recipient email unavailable",
-        });
-        return;
-      }
-
-      try {
-        const resend = new Resend(resendApiKey);
-        const appUrl = env.APP_URL ?? "";
-        const reportUrl = appUrl
-          ? new URL(
-              `/dashboard/applicant-reports/${interviewData.interview.applicationId}`,
-              appUrl,
-            ).toString()
-          : "";
-
-        const response = await resend.emails.send({
-          from: `RoundZero <${resendFromEmail}>`,
-          to: owner.email,
-          subject: `Evaluation ready for ${interviewData.interview.candidateName}`,
-          react: jsx(ReportReadyEmailTemplate, {
-            candidateName: interviewData.interview.candidateName,
-            jobTitle: interviewData.interview.jobTitle,
-            overallScore: Math.round(reportDraft.scores.overall),
-            recommendation: reportDraft.recommendation,
-            reportUrl,
-          }),
-        });
-
-        if (response.error) {
-          throw new Error(response.error.message);
-        }
-
-        await markNotificationEmailDelivered(db, {
-          id: notification.id,
-          providerMessageId: response.data?.id ?? null,
-        });
-        log.info(`Report ready email sent to ${owner.email}`);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Unknown email delivery failure";
-        log.error(`Failed to send report ready email: ${message}`);
-        await markNotificationEmailFailed(db, {
-          id: notification.id,
-          errorMessage: message,
-        });
-      }
-    } finally {
-      await db.end();
+      await markNotificationEmailDelivered(db, {
+        id: notification.id,
+        providerMessageId: response.data?.id ?? null,
+      });
+      log.info(`Report ready email sent to ${owner.email}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown email delivery failure";
+      log.error(`Failed to send report ready email: ${message}`);
+      await markNotificationEmailFailed(db, {
+        id: notification.id,
+        errorMessage: message,
+      });
     }
   };
 }
@@ -617,28 +581,24 @@ export function sendReportReadyEmail(
 
 export function loadVoiceAssessment(
   interviewId: string,
+  db: Sql,
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
   return async (): Promise<CommunicationAssessmentAnalysis | null> => {
-    const db = getDb();
-    try {
-      const row = await getCommunicationAssessmentByInterviewId(db, { interviewId });
-      if (row?.status !== "completed" || !row.analysis) {
-        log.info(`No completed voice assessment for interview ${interviewId}`);
-        return null;
-      }
-
-      const parsed = communicationAssessmentSchema.safeParse(row.analysis);
-      if (!parsed.success) {
-        log.warn(`Voice assessment analysis for ${interviewId} failed schema validation`);
-        return null;
-      }
-
-      log.info(`Loaded voice assessment for interview ${interviewId}`);
-      return parsed.data;
-    } finally {
-      await db.end();
+    const row = await getCommunicationAssessmentByInterviewId(db, { interviewId });
+    if (row?.status !== "completed" || !row.analysis) {
+      log.info(`No completed voice assessment for interview ${interviewId}`);
+      return null;
     }
+
+    const parsed = communicationAssessmentSchema.safeParse(row.analysis);
+    if (!parsed.success) {
+      log.warn(`Voice assessment analysis for ${interviewId} failed schema validation`);
+      return null;
+    }
+
+    log.info(`Loaded voice assessment for interview ${interviewId}`);
+    return parsed.data;
   };
 }
 
@@ -661,8 +621,6 @@ export function applyVoiceAssessmentToReport(
     };
   }
 
-  // Calculate signal quality based on total evidence count across all dimensions
-  // More evidence = higher confidence in the voice assessment
   const totalEvidence =
     voice.clarity.evidence.length +
     voice.articulation.evidence.length +
@@ -670,11 +628,6 @@ export function applyVoiceAssessmentToReport(
     voice.listening.evidence.length +
     voice.confidence.evidence.length;
 
-  // Continuous voice weight as a function of grounded-evidence count.
-  // - 0 evidence  → 15% weight (the voice analysis is essentially uncorroborated)
-  // - 10 evidence → 70% weight (cap, matches the original 60/40 spec ceiling)
-  // Smooth curve avoids cliff-jumps at bucket boundaries (e.g. 5→6 evidence
-  // used to jump from 40% to 60%).
   const voiceWeight = Math.min(0.7, 0.15 + totalEvidence * 0.055);
   const textWeight = 1 - voiceWeight;
 

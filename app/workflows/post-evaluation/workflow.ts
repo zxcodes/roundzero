@@ -28,29 +28,23 @@ import {
 // voice-assessment spec.
 const VOICE_ASSESSMENT_WAIT_MS = 12 * 60 * 60 * 1000;
 
-/**
- * Post-evaluation workflow that generates a report after an interview completes.
- *
- * A fresh DB client is created inside every `step.do` callback and `await db.end()`
- * is called afterwards. Reusing a client across steps (or across workflow retries)
- * leaks Hyperdrive origin connections and eventually exhausts the pool.
- */
 export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluationPayload> {
   async run(event: WorkflowEvent<PostEvaluationPayload>, step: WorkflowStep) {
     const { interviewId } = event.payload;
     const log = createWorkflowLogger("post-evaluation", interviewId);
+    let db = getDb();
     let applicationId: string | null = null;
 
     try {
       const existingReport = await step.do(
         "load_existing_report",
-        loadExistingReport(interviewId, log),
+        loadExistingReport(interviewId, db, log),
       );
 
       if (existingReport) {
         await step.do(
           "mark_application_evaluated_existing_report",
-          markApplicationEvaluatedExisting(interviewId),
+          markApplicationEvaluatedExisting(interviewId, db),
         );
 
         log.info(`Report already exists, skipping: ${existingReport.id}`);
@@ -59,7 +53,7 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
 
       const interviewData = await step.do(
         "read_interview_data",
-        readInterviewData(interviewId, log),
+        readInterviewData(interviewId, db, log),
       );
       if (interviewData.kind === "insufficient_signal") {
         applicationId = interviewData.interview?.applicationId ?? null;
@@ -71,15 +65,10 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
           { retries: { limit: 3, delay: "5 seconds", backoff: "exponential" } },
           async () => {
             if (!applicationId) return;
-            const db = getDb();
-            try {
-              await updateApplicationStatus(db, {
-                id: applicationId,
-                status: "evaluation_failed",
-              });
-            } finally {
-              await db.end();
-            }
+            await updateApplicationStatus(db, {
+              id: applicationId,
+              status: "evaluation_failed",
+            });
           },
         );
         return { interviewId, status: "insufficient_signal" as const };
@@ -93,14 +82,9 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
       const voiceCommAssessmentPending = await step.do(
         "check_voice_assessment_pending",
         async () => {
-          const db = getDb();
-          try {
-            const row = await getCommunicationAssessmentByInterviewId(db, { interviewId });
-            if (!row) return false;
-            return row.status === "pending" || row.status === "in_progress";
-          } finally {
-            await db.end();
-          }
+          const row = await getCommunicationAssessmentByInterviewId(db, { interviewId });
+          if (!row) return false;
+          return row.status === "pending" || row.status === "in_progress";
         },
       );
 
@@ -113,18 +97,18 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
           });
           log.info("Voice assessment event received");
         } catch (error) {
-          // Workflow waitForEvent throws on timeout. Proceed without voice data.
           log.warn(
             `Voice assessment wait expired or failed: ${
               error instanceof Error ? error.message : String(error)
             }`,
           );
         }
+        db = getDb();
       }
 
       const voiceAssessment = await step.do(
         "load_voice_assessment",
-        loadVoiceAssessment(interviewId, log),
+        loadVoiceAssessment(interviewId, db, log),
       );
 
       const { report: reportDraft, model } = await step.do(
@@ -147,30 +131,20 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
 
       const report = await step.do(
         "persist_report",
-        persistReport(interviewId, interviewData, finalReport, model, log),
+        persistReport(interviewId, interviewData, finalReport, model, db, log),
       );
 
-      await step.do("mark_application_evaluated_held", markApplicationEvaluated(interviewData));
+      await step.do("mark_application_evaluated_held", markApplicationEvaluated(interviewData, db));
 
       // Check if this interview belongs to a batch and if the batch is fully resolved
       const batchId = await step.do("check_batch_completion", async () => {
-        const db = getDb();
-        try {
-          const interview = await getInterviewContextById(db, { id: interviewId });
-          return interview?.batchId ?? null;
-        } finally {
-          await db.end();
-        }
+        const interview = await getInterviewContextById(db, { id: interviewId });
+        return interview?.batchId ?? null;
       });
 
       if (batchId) {
         const fullyResolved = await step.do("check_batch_fully_resolved", async () => {
-          const db = getDb();
-          try {
-            return isBatchFullyResolved(db, batchId);
-          } finally {
-            await db.end();
-          }
+          return isBatchFullyResolved(db, batchId);
         });
 
         if (fullyResolved) {
@@ -194,12 +168,12 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
         // No batch — this is a non-batched report (legacy or manual). Send individual notification.
         const notification = await step.do(
           "notify_report_ready",
-          notifyReportReady(interviewData, finalReport, log),
+          notifyReportReady(interviewData, finalReport, db, log),
         );
 
         await step.do(
           "send_report_ready_email",
-          sendReportReadyEmail(interviewData, notification, finalReport, log),
+          sendReportReadyEmail(interviewData, notification, finalReport, db, log),
         );
       }
 
@@ -212,19 +186,14 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
         "mark_evaluation_failed",
         { retries: { limit: 5, delay: "5 seconds", backoff: "exponential" } },
         async () => {
-          const db = getDb();
-          try {
-            const targetApplicationId =
-              applicationId ??
-              (await getInterviewContextById(db, { id: interviewId }))?.applicationId;
-            if (targetApplicationId) {
-              await updateApplicationStatus(db, {
-                id: targetApplicationId,
-                status: "evaluation_failed",
-              });
-            }
-          } finally {
-            await db.end();
+          const targetApplicationId =
+            applicationId ??
+            (await getInterviewContextById(db, { id: interviewId }))?.applicationId;
+          if (targetApplicationId) {
+            await updateApplicationStatus(db, {
+              id: targetApplicationId,
+              status: "evaluation_failed",
+            });
           }
         },
       );

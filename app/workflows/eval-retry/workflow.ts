@@ -18,25 +18,20 @@ type SweepEntry =
  * cool-down (encoded in the SQL query) whose retry counter is below the
  * {@link EVAL_RETRY_AUTO_CAP}. Each retry runs in its own `step.do` so a
  * single failing application cannot block the rest of the sweep.
- *
- * Important: a fresh DB client is created inside every `step.do` callback and
- * `await db.end()` is called afterwards. Reusing a client across steps (or
- * across workflow retries) leaks Hyperdrive origin connections and eventually
- * exhausts the pool, causing "Timed out while creating a new server connection".
  */
 export class EvalRetryWorkflow extends WorkflowEntrypoint<Env> {
   async run(_event: WorkflowEvent<unknown>, step: WorkflowStep) {
-    const rows = await step.do("list_stale_applications", async () => {
-      const db = getDb();
-      try {
-        return await listStaleEvaluationFailedApplications(db, {
+    const rows = await step.do(
+      "list_stale_applications",
+      { retries: { limit: 3, delay: "10 seconds", backoff: "exponential" } },
+      async () => {
+        const sql = getDb();
+        return await listStaleEvaluationFailedApplications(sql, {
           cap: EVAL_RETRY_AUTO_CAP,
           rowlimit: EVAL_RETRY_SWEEP_LIMIT,
         });
-      } finally {
-        await db.end();
-      }
-    });
+      },
+    );
 
     if (rows.length === 0) {
       return { swept: 0 };
@@ -50,8 +45,8 @@ export class EvalRetryWorkflow extends WorkflowEntrypoint<Env> {
           retries: { limit: 1, delay: "10 seconds", backoff: "exponential" },
         },
         async (): Promise<SweepEntry> => {
-          const db = getDb();
           try {
+            const db = getDb();
             const result = await retryEvaluation(
               db,
               row.id,
@@ -65,8 +60,6 @@ export class EvalRetryWorkflow extends WorkflowEntrypoint<Env> {
               status: "error",
               message: error instanceof Error ? error.message : String(error),
             };
-          } finally {
-            await db.end();
           }
         },
       );
