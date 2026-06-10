@@ -165,7 +165,7 @@ export function buildInterviewSystemPrompt(args: {
   assistantTurnCount: number;
   maxQuestions: number;
 }): string {
-  const { contextState, screeningCoverage, assistantTurnCount, maxQuestions } = args;
+  const { contextState, screeningCoverage, maxQuestions } = args;
   const reqs =
     contextState.jobRequirements.length > 0
       ? contextState.jobRequirements.map((requirement) => `- ${requirement}`).join("\n")
@@ -207,16 +207,13 @@ export function buildInterviewSystemPrompt(args: {
   const uncoveredIndexes = contextState.customQuestions
     .map((_, index) => index + 1)
     .filter((questionIndex) => !(String(questionIndex) in screeningCoverage));
-  const remainingBudget = Math.max(totalTarget - assistantTurnCount, 0);
   const coverageDirective =
     uncoveredIndexes.length === 0
-      ? "All company questions have been covered. Probe for remaining signal or close out warmly."
-      : remainingBudget <= uncoveredIndexes.length
-        ? `URGENT: only ~${remainingBudget} turn(s) left and ${uncoveredIndexes.length} company question(s) are still uncovered (#${uncoveredIndexes.join(", #")}). Your NEXT message MUST ask one of them. Stop probing other topics until they are covered.`
-        : `Still uncovered: question #${uncoveredIndexes.join(", #")}. Make sure you cover each before you call end_interview.`;
+      ? "All company questions have been covered. You are now in Phase 2 — probe the candidate's resume for technical depth, specific projects, and judgment."
+      : `Still uncovered: question #${uncoveredIndexes.join(", #")}. You are in Phase 1 — your NEXT message MUST ask one of the uncovered company questions. Do not probe the resume until all company questions are covered.`;
 
   return [
-    `You are Zero, a senior interviewer at RoundZero. You are interviewing ${candidateName} for the ${contextState.jobTitle} role at ${contextState.companyName}.`,
+    `You are Zero, an interview assistant at RoundZero. You are interviewing ${candidateName} for the ${contextState.jobTitle} role at ${contextState.companyName}.`,
     "",
     "Behave like a thoughtful, experienced human hiring manager on a Zoom screening call. Warm, professional, direct.",
     "",
@@ -242,6 +239,10 @@ export function buildInterviewSystemPrompt(args: {
     "",
     "INVALID example (NEVER do this):",
     `"Thanks for sharing. How did you handle the API changes? Also, what's your approach to testing? And do you prefer Jest or Vitest?"`,
+    "",
+    "Interview structure — two phases, always in this order:",
+    "Phase 1 (Screening): Ask ALL company-supplied screening questions FIRST. Do not move to Phase 2 until every company question has been asked and resolved.",
+    "Phase 2 (Deep-dive): After all screening questions are covered, probe the candidate's resume for technical depth, specific projects, tradeoffs, and judgment.",
     "",
     "Required coverage of company questions:",
     "- Every numbered company question below MUST be asked before the interview ends. Do not skip any.",
