@@ -110,8 +110,6 @@ type ReadInterviewDataResult =
       reason: string;
     };
 
-// reportSchema is imported from @/features/reports/schemas
-
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
 async function runPostEvalObject(args: { systemPrompt: string; userPrompt: string }): Promise<{
@@ -201,9 +199,6 @@ export function readInterviewData(
         })),
     );
 
-    // Short-circuit empty / one-sided / trivial transcripts. Better to mark
-    // the application `evaluation_failed` than to fabricate a report from
-    // essentially no signal.
     const signal: InterviewSignalStatus = transcriptHasEnoughSignal(messages);
     if (!signal.ok) {
       return {
@@ -227,7 +222,6 @@ export function readInterviewData(
       };
     }
 
-    // Content moderation: check for abusive, spammy, or pathological content
     const moderation = moderateTranscript(messages);
     if (moderation.quality === "low") {
       log.warn(
@@ -235,9 +229,6 @@ export function readInterviewData(
       );
     }
 
-    // Use structured "Role: text" join for the prompt sites that still need a
-    // single string blob. Sanitization already removed role-marker leaks from
-    // candidate messages, so this join is safe to feed to the LLM.
     const transcript = messages
       .map((m) => `${m.role === "assistant" ? "Interviewer" : "Candidate"}: ${m.content}`)
       .join("\n\n");
@@ -630,8 +621,6 @@ export function applyVoiceAssessmentToReport(
     };
   }
 
-  // Calculate signal quality based on total evidence count across all dimensions
-  // More evidence = higher confidence in the voice assessment
   const totalEvidence =
     voice.clarity.evidence.length +
     voice.articulation.evidence.length +
@@ -639,11 +628,6 @@ export function applyVoiceAssessmentToReport(
     voice.listening.evidence.length +
     voice.confidence.evidence.length;
 
-  // Continuous voice weight as a function of grounded-evidence count.
-  // - 0 evidence  → 15% weight (the voice analysis is essentially uncorroborated)
-  // - 10 evidence → 70% weight (cap, matches the original 60/40 spec ceiling)
-  // Smooth curve avoids cliff-jumps at bucket boundaries (e.g. 5→6 evidence
-  // used to jump from 40% to 60%).
   const voiceWeight = Math.min(0.7, 0.15 + totalEvidence * 0.055);
   const textWeight = 1 - voiceWeight;
 

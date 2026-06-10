@@ -13,8 +13,14 @@ function formatResult(r: PoolCheckResult, jobId: string) {
 
 export class PoolCheckWorkflow extends WorkflowEntrypoint<Env> {
   async run(_event: WorkflowEvent<unknown>, step: WorkflowStep) {
-    const sql = getDb();
-    const jobs = await getJobsWithQueuedCandidates(sql);
+    const jobs = await step.do(
+      "list_jobs_with_queued",
+      { retries: { limit: 3, delay: "10 seconds", backoff: "exponential" } },
+      async () => {
+        const sql = getDb();
+        return await getJobsWithQueuedCandidates(sql);
+      },
+    );
 
     if (jobs.length === 0) {
       return { checked: 0 };

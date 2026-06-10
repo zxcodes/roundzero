@@ -21,11 +21,17 @@ type SweepEntry =
  */
 export class EvalRetryWorkflow extends WorkflowEntrypoint<Env> {
   async run(_event: WorkflowEvent<unknown>, step: WorkflowStep) {
-    const sql = getDb();
-    const rows = await listStaleEvaluationFailedApplications(sql, {
-      cap: EVAL_RETRY_AUTO_CAP,
-      rowlimit: EVAL_RETRY_SWEEP_LIMIT,
-    });
+    const rows = await step.do(
+      "list_stale_applications",
+      { retries: { limit: 3, delay: "10 seconds", backoff: "exponential" } },
+      async () => {
+        const sql = getDb();
+        return await listStaleEvaluationFailedApplications(sql, {
+          cap: EVAL_RETRY_AUTO_CAP,
+          rowlimit: EVAL_RETRY_SWEEP_LIMIT,
+        });
+      },
+    );
 
     if (rows.length === 0) {
       return { swept: 0 };
@@ -40,8 +46,9 @@ export class EvalRetryWorkflow extends WorkflowEntrypoint<Env> {
         },
         async (): Promise<SweepEntry> => {
           try {
+            const db = getDb();
             const result = await retryEvaluation(
-              sql,
+              db,
               row.id,
               { preEvaluation: env.PRE_EVALUATION, postEvaluation: env.POST_EVALUATION },
               { cap: EVAL_RETRY_AUTO_CAP, source: "cron" },
