@@ -1,5 +1,6 @@
 ## TODO
 
+- interview invited notification is not being sent thru email?
 - overall caching seems a bit too aggressive. login/logouts, switching accounts, has stale data.
 - choose a consistent brand naming "roundzero" vs "RoundZero".
 - change the fucking app icon ugh.
@@ -217,3 +218,82 @@ post_eval_already_complete)
 <!--- think more about company questions (gender, race etc the other platforms ask.) (AGENT-OFFLOAD)-->
 <!--- improve work experience fields, add skills, site location etc etc. (AGENT-OFFLOAD)-->
 
+
+
+
+
+[post-evaluation:e05f7964] [INFO] Waiting for voice assessment to complete (max 12h)
+LOG /app/features/interviews/server/voice-assessment.ts:219:7
+ →  [voice-assessment] analysis attempt 1 failed: NoOutputGeneratedError [AI_NoOutputGeneratedError]: No output generated.
+    at DefaultGenerateTextResult.output (/Users/zxcodes/Projects/roundzero/node_modules/.vite/deps_ssr/ai.js?v=f7ef04eb:7327:35)
+    at runVoiceAnalysis (/Users/zxcodes/Projects/roundzero/app/features/interviews/server/voice-assessment.ts:217:1)
+    at finalizeVoiceAssessmentFromTranscript (/Users/zxcodes/Projects/roundzero/app/features/interviews/server/voice-assessment.ts:175:1)
+    at Object.serverFn (/Users/zxcodes/Projects/roundzero/app/features/interviews/server/functions.ts:703:1)
+    at server (/Users/zxcodes/Projects/roundzero/node_modules/@tanstack/start-client-core/src/createServerFn.ts:944:24)
+    at callNextMiddleware (/Users/zxcodes/Projects/roundzero/node_modules/@tanstack/start-client-core/src/createServerFn.ts:322:24)
+    at userNext (/Users/zxcodes/Projects/roundzero/node_modules/@tanstack/start-client-core/src/createServerFn.ts:312:26)
+    at callNextMiddleware (/Users/zxcodes/Projects/roundzero/node_modules/@tanstack/start-client-core/src/createServerFn.ts:322:24)
+    at Object.assign.__executeServer (/Users/zxcodes/Projects/roundzero/node_modules/@tanstack/start-client-core/src/createServerFn.ts:212:20)
+    at /Users/zxcodes/Projects/roundzero/node_modules/@tanstack/start-server-core/src/server-functions-handler.ts:159:16
+    at /Users/zxcodes/Projects/roundzero/node_modules/@tanstack/start-server-core/src/server-functions-handler.ts:81:17
+    at handleServerAction (/Users/zxcodes/Projects/roundzero/node_modules/@tanstack/start-server-core/src/server-functions-handler.ts:418:10)
+    at Object.next (/Users/zxcodes/Projects/roundzero/node_modules/@tanstack/start-server-core/src/createStartHandler.ts:301:16)
+    at next (/Users/zxcodes/Projects/roundzero/node_modules/@tanstack/start-server-core/src/createStartHandler.ts:301:16)
+    at executeMiddleware (/Users/zxcodes/Projects/roundzero/node_modules/@tanstack/start-server-core/src/createStartHandler.ts:324:3)
+    at startRequestResolver (/Users/zxcodes/Projects/roundzero/node_modules/@tanstack/start-server-core/src/createStartHandler.ts:524:50) {
+  cause: undefined,
+  Symbol(vercel.ai.error): true,
+  Symbol(vercel.ai.error.AI_NoOutputGeneratedError): true
+}
+LOG /app/features/interviews/server/voice-assessment.ts:219:7
+ →  [voice-assessment] analysis attempt 2 failed: DOMException {
+  code: 20,
+  name: 'AbortError',
+  message: 'The operation was aborted',
+  stack: 'AbortError: The operation was aborted\n' +
+    '    at /Users/zxcodes/Projects/roundzero/node_modules/.vite/deps_ssr/@openrouter_ai-sdk-provider.js?v=f7ef04eb:1790:23\n' +
+    '    at postToApi (/Users/zxcodes/Projects/roundzero/node_modules/.vite/deps_ssr/@openrouter_ai-sdk-provider.js?v=f7ef04eb:1675:11)\n' +
+    '    at OpenRouterChatLanguageModel.doGenerate (/Users/zxcodes/Projects/roundzero/node_modules/.vite/deps_ssr/@openrouter_ai-sdk-provider.js?v=f7ef04eb:2703:53)\n' +
+    '    at fn (/Users/zxcodes/Projects/roundzero/node_modules/.vite/deps_ssr/ai.js?v=f7ef04eb:6985:25)\n' +
+    '    at /Users/zxcodes/Projects/roundzero/node_modules/.vite/deps_ssr/ai.js?v=f7ef04eb:5467:19\n' +
+    '    at _retryWithExponentialBackoff (/Users/zxcodes/Projects/roundzero/node_modules/.vite/deps_ssr/ai.js?v=f7ef04eb:5675:10)\n' +
+    '    at fn (/Users/zxcodes/Projects/roundzero/node_modules/.vite/deps_ssr/ai.js?v=f7ef04eb:6954:30)\n' +
+    '    at /Users/zxcodes/Projects/roundzero/node_modules/.vite/deps_ssr/ai.js?v=f7ef04eb:5467:19\n' +
+    '    at generateText (/Users/zxcodes/Projects/roundzero/node_modules/.vite/deps_ssr/ai.js?v=f7ef04eb:6820:10)\n' +
+    '    at runVoiceAnalysis (/Users/zxcodes/Projects/roundzero/app/features/interviews/server/voice-assessment.ts:209:1)\n' +
+    '    at finalizeVoiceAssessmentFromTranscript (/Users/zxcodes/Projects/roundzero/app/features/interviews/server/voice-assessment.ts:175:1)\n' +
+    '    at Object.serverFn (/Users/zxcodes/Projects/roundzero/app/features/interviews/server/functions.ts:703:1)\n' +
+    '    at server (/Users/zxcodes/Projects/roundzero/node_modules/@tanstack/start-client-core/src/createServerFn.ts:944:24)\n' +
+    '    at callNextMiddleware (/Users/zxcodes/Projects/roundzero/node_modules/@tanstack/start-client-core/src/createServerFn.ts:322:24)\n' +
+    '    at userNext (/Users/zxcodes/Projects/roundzero/node_modules/@tanstack/start-client-core/src/createServerFn.ts:312:26)\n' +
+    '    at callNextMiddleware (/Users/zxcodes/Projects/roundzero/node_modules/@tanstack/start-client-core/src/createServerFn.ts:322:24)',
+  retryable: true
+}
+LOG /app/features/interviews/server/voice-assessment.ts:219:7
+ →  [voice-assessment] analysis attempt 3 failed: DOMException {
+  code: 20,
+  name: 'AbortError',
+  message: 'The operation was aborted',
+  stack: 'AbortError: The operation was aborted\n' +
+    '    at /Users/zxcodes/Projects/roundzero/node_modules/.vite/deps_ssr/@openrouter_ai-sdk-provider.js?v=f7ef04eb:1790:23\n' +
+    '    at postToApi (/Users/zxcodes/Projects/roundzero/node_modules/.vite/deps_ssr/@openrouter_ai-sdk-provider.js?v=f7ef04eb:1675:11)\n' +
+    '    at OpenRouterChatLanguageModel.doGenerate (/Users/zxcodes/Projects/roundzero/node_modules/.vite/deps_ssr/@openrouter_ai-sdk-provider.js?v=f7ef04eb:2703:53)\n' +
+    '    at fn (/Users/zxcodes/Projects/roundzero/node_modules/.vite/deps_ssr/ai.js?v=f7ef04eb:6985:25)\n' +
+    '    at /Users/zxcodes/Projects/roundzero/node_modules/.vite/deps_ssr/ai.js?v=f7ef04eb:5467:19\n' +
+    '    at _retryWithExponentialBackoff (/Users/zxcodes/Projects/roundzero/node_modules/.vite/deps_ssr/ai.js?v=f7ef04eb:5675:10)\n' +
+    '    at fn (/Users/zxcodes/Projects/roundzero/node_modules/.vite/deps_ssr/ai.js?v=f7ef04eb:6954:30)\n' +
+    '    at /Users/zxcodes/Projects/roundzero/node_modules/.vite/deps_ssr/ai.js?v=f7ef04eb:5467:19\n' +
+    '    at generateText (/Users/zxcodes/Projects/roundzero/node_modules/.vite/deps_ssr/ai.js?v=f7ef04eb:6820:10)\n' +
+    '    at runVoiceAnalysis (/Users/zxcodes/Projects/roundzero/app/features/interviews/server/voice-assessment.ts:209:1)\n' +
+    '    at finalizeVoiceAssessmentFromTranscript (/Users/zxcodes/Projects/roundzero/app/features/interviews/server/voice-assessment.ts:175:1)\n' +
+    '    at Object.serverFn (/Users/zxcodes/Projects/roundzero/app/features/interviews/server/functions.ts:703:1)\n' +
+    '    at server (/Users/zxcodes/Projects/roundzero/node_modules/@tanstack/start-client-core/src/createServerFn.ts:944:24)\n' +
+    '    at callNextMiddleware (/Users/zxcodes/Projects/roundzero/node_modules/@tanstack/start-client-core/src/createServerFn.ts:322:24)\n' +
+    '    at userNext (/Users/zxcodes/Projects/roundzero/node_modules/@tanstack/start-client-core/src/createServerFn.ts:312:26)\n' +
+    '    at callNextMiddleware (/Users/zxcodes/Projects/roundzero/node_modules/@tanstack/start-client-core/src/createServerFn.ts:322:24)',
+  retryable: true
+}
+[post-evaluation:e05f7964] [INFO] Voice assessment event received
+[post-evaluation:e05f7964] [INFO] No completed voice assessment for interview e05f7964-2b92-49f8-bbff-561a6f69ccd1
+[post-evaluation:e05f7964] [INFO] Generating structured interview report with OpenRouter
+[post-evaluation:e05f7964] [INFO] ai-call → prompt=11006 tokens=3000 latencyMs=0
