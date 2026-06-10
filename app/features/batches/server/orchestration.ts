@@ -17,6 +17,10 @@ import {
 import { ensureInterviewRuntimeMetadata } from "@/features/interviews/shared/runtime";
 import { getJobById } from "@/features/jobs/queries/queries_sql";
 import { createNotification } from "@/features/notifications/queries/queries_sql";
+import {
+  deliverNotificationEmail,
+  sendNotificationEmailViaResend,
+} from "@/features/notifications/services/email";
 import { getDb } from "@/shared/db";
 import { notificationPayloadSchemas } from "@/shared/notifications-config";
 import { sendBatchDigestEmail } from "./email";
@@ -26,13 +30,19 @@ export type PoolCheckResult =
   | { launched: true; batchId: string; candidateCount: number }
   | { launched: false; reason: string };
 
+type PendingInviteEmail = {
+  notification: { id: string; type: string; payload: unknown };
+  recipient: { email: string } | null;
+};
+
 /** Check if a job has enough pooled candidates to launch a batch.
  * Called after every pre-evaluation completion and on a periodic schedule.
  */
 export async function checkAndLaunchBatch(jobId: string): Promise<PoolCheckResult> {
   const db = getDb();
+  const pendingEmails: PendingInviteEmail[] = [];
 
-  return await db.begin(async (tx) => {
+  const result: PoolCheckResult = await db.begin(async (tx) => {
     const transaction = tx as unknown as Sql;
 
     const job = await getJobById(transaction, { id: jobId });
@@ -40,7 +50,6 @@ export async function checkAndLaunchBatch(jobId: string): Promise<PoolCheckResul
       return { launched: false, reason: "Job not found" };
     }
 
-    // Check if there's already an active batch for this job
     const activeBatch = await getFormingBatchForJob(transaction, { jobId });
     if (activeBatch) {
       return { launched: false, reason: "Batch already forming" };
@@ -59,10 +68,6 @@ export async function checkAndLaunchBatch(jobId: string): Promise<PoolCheckResul
     const oldestQueuedMs = pool.length > 0 ? Date.now() - new Date(pool[0].createdAt).getTime() : 0;
     const poolFormationTimeout = BATCH_CONFIG.POOL_FORMATION_TIMEOUT_MS;
 
-    // Launch conditions:
-    // 1. Pool >= target size
-    // 2. Pool >= MIN_BATCH_SIZE AND oldest queued > POOL_FORMATION_TIMEOUT
-    // 3. Any candidate queued > 2 * POOL_FORMATION_TIMEOUT (don't wait forever)
     const shouldLaunch =
       pool.length >= targetSize ||
       (pool.length >= BATCH_CONFIG.MIN_BATCH_SIZE && oldestQueuedMs > poolFormationTimeout) ||
@@ -75,11 +80,9 @@ export async function checkAndLaunchBatch(jobId: string): Promise<PoolCheckResul
       };
     }
 
-    // Determine how many to invite (up to target)
     const inviteCount = Math.min(pool.length, targetSize);
     const candidatesToInvite = pool.slice(0, inviteCount);
 
-    // Create the batch
     const batch = await createBatch(transaction, {
       jobId,
       targetSize: inviteCount,
@@ -88,7 +91,6 @@ export async function checkAndLaunchBatch(jobId: string): Promise<PoolCheckResul
       return { launched: false, reason: "Failed to create batch" };
     }
 
-    // Create interviews and assign to batch for each candidate
     const expiresAt = new Date(Date.now() + BATCH_CONFIG.INTERVIEW_EXPIRY_MS).toISOString();
 
     for (const candidate of candidatesToInvite) {
@@ -101,7 +103,7 @@ export async function checkAndLaunchBatch(jobId: string): Promise<PoolCheckResul
         (await createInterview(transaction, {
           applicationId: candidate.id,
           agentId: null,
-          type: "full", // Will be determined by pre-eval score
+          type: "full",
           metadata: { preEvaluationScore: candidate.preEvaluationScore ?? null, expiresAt },
           status: "pending",
           invitedAt: new Date(),
@@ -126,13 +128,11 @@ export async function checkAndLaunchBatch(jobId: string): Promise<PoolCheckResul
       });
     }
 
-    // Launch the batch
     await updateBatchStatus(transaction, {
       id: batch.id,
       status: "active",
     });
 
-    // Invite all candidates simultaneously
     for (const candidate of candidatesToInvite) {
       await transaction.unsafe(
         `UPDATE applications SET status = 'interview_invited', updated_at = now() WHERE id = $1`,
@@ -159,14 +159,20 @@ export async function checkAndLaunchBatch(jobId: string): Promise<PoolCheckResul
         interviewType: interview.type,
         expiresAt,
       });
-      await createNotification(transaction, {
+      const notification = await createNotification(transaction, {
         userId: user.id,
         type: "interview_invited",
         payload,
       });
+
+      if (notification) {
+        pendingEmails.push({
+          notification,
+          recipient: user.email ? { email: user.email } : null,
+        });
+      }
     }
 
-    // Trigger the batch orchestration workflow (instance ID = batch ID for easy signaling)
     try {
       await env.BATCH_ORCHESTRATION.create({
         id: batch.id,
@@ -178,6 +184,18 @@ export async function checkAndLaunchBatch(jobId: string): Promise<PoolCheckResul
 
     return { launched: true, batchId: batch.id, candidateCount: inviteCount };
   });
+
+  if (result.launched) {
+    for (const pending of pendingEmails) {
+      await deliverNotificationEmail(db, {
+        notification: pending.notification,
+        recipient: pending.recipient,
+        sendEmail: sendNotificationEmailViaResend,
+      });
+    }
+  }
+
+  return result;
 }
 
 /** Release a batch and dispatch the digest email if delivery is configured.

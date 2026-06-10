@@ -13,7 +13,7 @@ const createFeedbackSchema = z.object({
 
 export const createFeedback = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidator(createFeedbackSchema))
+  .validator(zodValidator(createFeedbackSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
 

@@ -32,7 +32,7 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
   async run(event: WorkflowEvent<PostEvaluationPayload>, step: WorkflowStep) {
     const { interviewId } = event.payload;
     const log = createWorkflowLogger("post-evaluation", interviewId);
-    const db = getDb();
+    let db = getDb();
     let applicationId: string | null = null;
 
     try {
@@ -97,13 +97,13 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
           });
           log.info("Voice assessment event received");
         } catch (error) {
-          // Workflow waitForEvent throws on timeout. Proceed without voice data.
           log.warn(
             `Voice assessment wait expired or failed: ${
               error instanceof Error ? error.message : String(error)
             }`,
           );
         }
+        db = getDb();
       }
 
       const voiceAssessment = await step.do(

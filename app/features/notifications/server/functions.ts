@@ -31,7 +31,7 @@ export const getMyNotificationsFeed = createServerFn({ method: "GET" })
 
 export const markMyNotificationRead = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidator(notificationIdSchema))
+  .validator(zodValidator(notificationIdSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
 

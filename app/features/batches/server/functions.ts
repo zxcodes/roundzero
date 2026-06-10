@@ -25,7 +25,7 @@ const batchIdSchema = z.object({ batchId: z.string().uuid() });
 
 export const getActiveBatchForJobServer = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidator(jobIdSchema))
+  .validator(zodValidator(jobIdSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
 
@@ -45,7 +45,7 @@ export const getActiveBatchForJobServer = createServerFn({ method: "GET" })
 
 export const getBatchOverview = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidator(batchIdSchema))
+  .validator(zodValidator(batchIdSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
 
