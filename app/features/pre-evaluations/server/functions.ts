@@ -13,7 +13,7 @@ const getPreEvaluationSchema = z.object({
 
 export const getPreEvaluationForApplication = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidator(getPreEvaluationSchema))
+  .validator(zodValidator(getPreEvaluationSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
 

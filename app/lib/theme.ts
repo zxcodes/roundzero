@@ -13,5 +13,5 @@ export const getThemeServerFn = createServerFn().handler(
 );
 
 export const setThemeServerFn = createServerFn({ method: "POST" })
-  .inputValidator(zodValidator(themeSchema))
+  .validator(zodValidator(themeSchema))
   .handler(async ({ data }) => setCookie(STORAGE_KEY, data));

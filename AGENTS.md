@@ -37,7 +37,7 @@ Always consult both before making design decisions or implementing features.
 ## Server Functions + Route Loaders
 
 - **Server functions return `null` for not-found resources.** Never `throw new Error("...not found")`. Return `null` so loaders can distinguish "doesn't exist" (→ `notFound()`) from real errors (→ error boundary). Auth/authorization errors (e.g. "Only candidates can view", "Not authorized to view this applicant") still `throw new Error()`. Do not conflate auth violations with not-found — they have different UI outcomes (error boundary vs 404 page).
-- **Validate UUID params in `beforeLoad`.** Routes with UUID path params (`$jobId`, `$applicationId`, etc.) must validate them in `beforeLoad` using `validateUuidParams()` from `@/shared/validation`. This catches invalid formats (e.g. `xxxid`) before the server function's Zod `inputValidator` throws a generic error:
+- **Validate UUID params in `beforeLoad`.** Routes with UUID path params (`$jobId`, `$applicationId`, etc.) must validate them in `beforeLoad` using `validateUuidParams()` from `@/shared/validation`. This catches invalid formats (e.g. `xxxid`) before the server function's Zod `validator` throws a generic error:
   ```ts
   beforeLoad: ({ params }) => {
     validateUuidParams({ jobId: params.jobId });
@@ -76,7 +76,7 @@ Always consult both before making design decisions or implementing features.
 ## TanStack
 
 - **Check TanStack Intent skills first** — run `bunx @tanstack/intent@latest list`, read `node_modules/@tanstack/<package>/skills/<skill>/SKILL.md`.
-- **Use `zodValidator()` from `@tanstack/zod-adapter`** for `inputValidator`. Never use manual `schema.parse()` callbacks.
+- **Use `zodValidator()` from `@tanstack/zod-adapter`** for `validator`. Never use manual `schema.parse()` callbacks.
 - **All forms use TanStack Form** via `useAppForm` from `@/shared/form` (provides `TextField`, `NumberField`, `TextareaField`, `SelectField`, `SubmitButton`). Use `form.AppField` for simple fields, `form.Field` with `mode="array"` for arrays. Forms manage submit state internally — never pass `isSubmitting` from parents.
 - **Never use `NumberField` (type="number") for numeric inputs.** It renders spinner arrows which look bad. Use `TextField` with string defaults instead, and convert to `number | null` in `onSubmit`:
   - Default: `salaryMin: defaultValues?.salaryMin != null ? String(defaultValues.salaryMin) : ""`

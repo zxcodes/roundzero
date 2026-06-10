@@ -43,7 +43,7 @@ const applicationIdSchema = z.object({
 
 export const applyToJob = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidator(applySchema))
+  .validator(zodValidator(applySchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
     return await applyToJobWorkflow(
@@ -82,7 +82,7 @@ export const getMyApplications = createServerFn({ method: "GET" })
 
 export const getMyApplicationDetail = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidator(applicationIdSchema))
+  .validator(zodValidator(applicationIdSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
 
@@ -104,7 +104,7 @@ export const getMyApplicationDetail = createServerFn({ method: "GET" })
 
 export const getJobApplicants = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidator(jobIdSchema))
+  .validator(zodValidator(jobIdSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
 
@@ -141,7 +141,7 @@ export const getJobApplicants = createServerFn({ method: "GET" })
 
 export const updateApplicationStatus = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidator(updateStatusSchema))
+  .validator(zodValidator(updateStatusSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
     return await updateApplicationStatusWorkflow(db, {
@@ -153,7 +153,7 @@ export const updateApplicationStatus = createServerFn({ method: "POST" })
 
 export const withdrawApplication = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidator(applicationIdSchema))
+  .validator(zodValidator(applicationIdSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
     return await withdrawApplicationWorkflow(db, {
@@ -164,7 +164,7 @@ export const withdrawApplication = createServerFn({ method: "POST" })
 
 export const retryApplicationEvaluation = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
-  .inputValidator(zodValidator(applicationIdSchema))
+  .validator(zodValidator(applicationIdSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
 
@@ -193,7 +193,7 @@ export const retryApplicationEvaluation = createServerFn({ method: "POST" })
 
 export const hasApplied = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidator(jobIdSchema))
+  .validator(zodValidator(jobIdSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
 
@@ -210,7 +210,7 @@ export const hasApplied = createServerFn({ method: "GET" })
 
 export const getApplicationResume = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidator(applicationIdSchema))
+  .validator(zodValidator(applicationIdSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
 
@@ -251,7 +251,7 @@ export const getApplicationResume = createServerFn({ method: "POST" })
 
 export const getCompanyApplicantReview = createServerFn({ method: "GET" })
   .middleware([companyMiddleware])
-  .inputValidator(zodValidator(applicationIdSchema))
+  .validator(zodValidator(applicationIdSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
 

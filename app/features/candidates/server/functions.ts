@@ -90,7 +90,7 @@ const assertResumeKeyBelongsToUser = (resumeKey: string, userId: string) => {
 
 export const createCandidateProfile = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidator(createCandidateProfileSchema))
+  .validator(zodValidator(createCandidateProfileSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
 
@@ -125,7 +125,7 @@ export const getMyCandidateProfile = createServerFn({ method: "GET" }).handler(a
 
 export const updateMyCandidateProfile = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidator(updateCandidateProfileSchema))
+  .validator(zodValidator(updateCandidateProfileSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
 
@@ -151,7 +151,7 @@ export const updateMyCandidateProfile = createServerFn({ method: "POST" })
 
 export const uploadResume = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidatorWithFormattedErrors(uploadResumeSchema))
+  .validator(zodValidatorWithFormattedErrors(uploadResumeSchema))
   .handler(async ({ data, context }) => {
     if (context.user.role !== "candidate") {
       throw new Error("Only candidates can upload resumes");
@@ -166,7 +166,7 @@ export const uploadResume = createServerFn({ method: "POST" })
 
 export const getResume = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidator(getResumeSchema))
+  .validator(zodValidator(getResumeSchema))
   .handler(async ({ data, context }) => {
     assertResumeKeyBelongsToUser(data.resumeKey, context.userId);
     const object = await env.RESUMES.get(data.resumeKey);
