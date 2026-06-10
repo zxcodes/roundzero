@@ -42,7 +42,7 @@ const getInterviewFallbackTimeline = (
 
 export const getCompanyApplicantReportTimeline = createServerFn({ method: "GET" })
   .middleware([companyMiddleware])
-  .inputValidator(zodValidator(applicationIdSchema))
+  .validator(zodValidator(applicationIdSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
 

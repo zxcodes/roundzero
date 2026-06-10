@@ -24,7 +24,7 @@ const googleAuthSchema = z.object({
 });
 
 export const loginWithGoogle = createServerFn({ method: "POST" })
-  .inputValidator(zodValidator(googleAuthSchema))
+  .validator(zodValidator(googleAuthSchema))
   .handler(async ({ data }) => {
     const userResponse = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
       headers: { Authorization: `Bearer ${data.access_token}` },
@@ -122,7 +122,7 @@ const updateNameSchema = z.object({
 
 export const updateUserName = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidator(updateNameSchema))
+  .validator(zodValidator(updateNameSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
     const user = await updateUserNameQuery(db, {
