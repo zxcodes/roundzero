@@ -144,7 +144,7 @@ const assertLogoKeyBelongsToUser = (logoKey: string, userId: string) => {
 
 export const createCompany = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidator(createCompanySchema))
+  .validator(zodValidator(createCompanySchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
 
@@ -190,7 +190,7 @@ export const getMyCompany = createServerFn({ method: "GET" }).handler(async () =
 
 export const updateCompanyProfile = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
-  .inputValidator(zodValidator(updateCompanyProfileSchema))
+  .validator(zodValidator(updateCompanyProfileSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
 
@@ -223,7 +223,7 @@ export const updateCompanyProfile = createServerFn({ method: "POST" })
 
 export const uploadCompanyLogo = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(zodValidatorWithFormattedErrors(uploadCompanyLogoSchema))
+  .validator(zodValidatorWithFormattedErrors(uploadCompanyLogoSchema))
   .handler(async ({ data, context }) => {
     if (context.user.role !== "company") {
       throw new Error("Only company users can upload logos");
@@ -244,7 +244,7 @@ const companySlugSchema = z.object({
 });
 
 export const getCompanyBySlug = createServerFn({ method: "GET" })
-  .inputValidator(zodValidator(companySlugSchema))
+  .validator(zodValidator(companySlugSchema))
   .handler(async ({ data }) => {
     const db = getDb();
     const company = await getCompanyBySlugQuery(db, { slug: data.slug });
@@ -261,7 +261,7 @@ const paginatedCompaniesSchema = z.object({
 });
 
 export const getAllCompaniesPaginated = createServerFn({ method: "GET" })
-  .inputValidator(zodValidator(paginatedCompaniesSchema))
+  .validator(zodValidator(paginatedCompaniesSchema))
   .handler(async ({ data }) => {
     const db = getDb();
     const offset = (data.page - 1) * COMPANIES_PER_PAGE;

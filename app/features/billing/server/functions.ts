@@ -51,7 +51,7 @@ async function ensurePolarCustomer(input: {
 
 export const createCheckoutSession = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
-  .inputValidator(zodValidator(checkoutSchema))
+  .validator(zodValidator(checkoutSchema))
   .handler(async ({ data, context }) => {
     const plan = data.plan as SubscriptionPlan;
     const productId = productIdForPlan(plan);
