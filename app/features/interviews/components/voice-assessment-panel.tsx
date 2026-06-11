@@ -275,18 +275,75 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
   // ---------- Terminal states ----------
 
   if (effectiveStatus === "completed") {
+    const completedMessages: ChatMessage[] = (historicalTranscript ?? []).map((m) => ({
+      role: m.role === "assistant" ? "assistant" : "user",
+      text: m.content,
+    }));
+
     return (
-      <CompletedState
-        icon={<HugeiconsIcon icon={Tick01Icon} strokeWidth={2} className="size-6 text-success" />}
-        iconBg="bg-success/10"
-        title="Voice assessment complete"
-        description="Your results are included in the report."
-        actions={
-          <Button size="sm" variant="outline" asChild>
-            <Link to="/dashboard/applications">Back to applications</Link>
-          </Button>
-        }
-      />
+      <div className="flex h-full min-h-0 flex-col overflow-hidden bg-muted/30">
+        <div className="shrink-0 border-b border-border/50 bg-card/60 px-5 py-3 md:px-6">
+          <div className="flex items-center gap-3">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-success/10">
+              <HugeiconsIcon icon={Tick01Icon} strokeWidth={2} className="size-4 text-success" />
+            </div>
+            <div>
+              <p className="text-sm font-medium">Voice assessment complete</p>
+              <p className="text-xs text-muted-foreground">
+                Your results are included in the report.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {completedMessages.length > 0 ? (
+          <ScrollArea className="min-h-0 flex-1">
+            <div className="space-y-7 px-5 py-6 md:px-7 md:py-7">
+              {completedMessages.map((msg, i) => {
+                const isCandidate = msg.role === "user";
+                return (
+                  <div
+                    key={`completed-${i}-${msg.role}-${msg.text.length}`}
+                    className={isCandidate ? "flex justify-end" : "flex justify-start"}
+                  >
+                    <div className="max-w-[86%] md:max-w-[66%]">
+                      <p className="mb-1 px-1 text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground/90">
+                        {isCandidate ? "You" : "Zero"}
+                      </p>
+                      <div
+                        className={
+                          isCandidate
+                            ? "whitespace-pre-wrap wrap-break-word rounded-2xl border border-primary/35 bg-primary px-4 py-3 text-sm leading-6 text-primary-foreground shadow-sm ring-1 ring-primary/20"
+                            : "whitespace-pre-wrap wrap-break-word rounded-2xl border border-border/70 bg-background/95 px-4 py-3 text-sm leading-6 text-foreground shadow-sm ring-1 ring-border/35"
+                        }
+                      >
+                        {msg.text}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </ScrollArea>
+        ) : (
+          <div className="flex flex-1 items-center justify-center px-6 py-10">
+            <div className="flex flex-col items-center gap-3 text-center text-muted-foreground">
+              <div className="flex size-12 items-center justify-center rounded-full border border-border/70 bg-card shadow-sm">
+                <HugeiconsIcon icon={Mic01Icon} strokeWidth={2} className="size-5 text-primary" />
+              </div>
+              <p className="text-sm text-foreground">Transcript unavailable</p>
+            </div>
+          </div>
+        )}
+
+        <div className="shrink-0 border-t border-border/50 bg-card px-5 py-4 md:px-6">
+          <div className="flex items-center justify-end">
+            <Button size="sm" variant="outline" asChild>
+              <Link to="/dashboard/applications">Back to applications</Link>
+            </Button>
+          </div>
+        </div>
+      </div>
     );
   }
 
