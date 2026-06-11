@@ -106,8 +106,12 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
         db = getDb();
       }
 
+      // This step may run the communication-scoring LLM call (when the
+      // transcript was persisted but not yet scored). Give it more time than
+      // the analysis's internal retry budget (~3 × 45s + backoff ≈ 138s).
       const voiceAssessment = await step.do(
         "load_voice_assessment",
+        { timeout: "5 minutes" },
         loadVoiceAssessment(interviewId, db, log),
       );
 

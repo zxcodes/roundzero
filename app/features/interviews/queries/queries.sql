@@ -196,6 +196,15 @@ WHERE interview_id = $1
   AND status != 'skipped'
 RETURNING *;
 
+-- name: updateCommunicationAssessmentAnalysis :one
+UPDATE communication_assessments
+SET analysis = $2,
+    updated_at = now()
+WHERE interview_id = $1
+  AND status = 'completed'
+  AND analysis IS NULL
+RETURNING *;
+
 -- name: markCommunicationAssessmentSkipped :one
 UPDATE communication_assessments
 SET status = 'skipped',
