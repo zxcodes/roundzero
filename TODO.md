@@ -1,5 +1,6 @@
 ## TODO
 
+- voice assessment gets stuck on finalizing, sometimes even lost completely? seems like post eval isn't loading voice transcript if this is failed? recheck the entire flow.
 - cut bundle size (polar, elevenlabs sdk, etc)
 - show voice interview transcript after completion similar to text interview but with voice aesthetics.
 - overall caching seems a bit too aggressive. login/logouts, switching accounts, has stale data.
