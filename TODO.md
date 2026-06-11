@@ -1,5 +1,6 @@
 ## TODO
 
+- cut bundle size (polar, elevenlabs sdk, etc)
 - show voice interview transcript after completion similar to text interview but with voice aesthetics.
 - overall caching seems a bit too aggressive. login/logouts, switching accounts, has stale data.
 - choose a consistent brand naming "roundzero" vs "RoundZero".
