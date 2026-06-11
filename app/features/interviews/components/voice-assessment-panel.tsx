@@ -99,7 +99,12 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
 
   const completeMutation = useMutation({
     mutationFn: completeFn,
-    onSuccess: async () => {
+    onSuccess: async (result) => {
+      // A race (webhook already finalized, or interview not found) returns
+      // `ok: false`. Clear the guard so the candidate can retry submitting.
+      if (!result?.ok) {
+        completeCalledRef.current = false;
+      }
       queryClient.invalidateQueries({ queryKey: ["voice-assessment", interviewId] });
       queryClient.invalidateQueries({
         queryKey: ["voice-assessment-transcript", interviewId],
@@ -107,6 +112,8 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
       await router.invalidate();
     },
     onError: (error) => {
+      // Allow a resubmit instead of stranding the candidate on a failed save.
+      completeCalledRef.current = false;
       toast.error(error instanceof Error ? error.message : "Could not save voice assessment.");
     },
   });

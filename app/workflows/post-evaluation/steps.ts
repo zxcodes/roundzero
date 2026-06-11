@@ -4,18 +4,22 @@ import { generateText, Output } from "ai";
 import type { Sql } from "postgres";
 import { jsx } from "react/jsx-runtime";
 import { Resend } from "resend";
+import { z } from "zod";
 import { updateApplicationStatus } from "@/features/applications/queries/queries_sql";
 import { getUserById } from "@/features/auth/queries/queries_sql";
 import {
   getCommunicationAssessmentByInterviewId,
   getInterviewContextById,
   getInterviewMessagesByInterviewId,
+  updateCommunicationAssessmentAnalysis,
 } from "@/features/interviews/queries/queries_sql";
+import { analyzeVoiceTranscript } from "@/features/interviews/server/voice-assessment";
 import {
   ensureInterviewRuntimeMetadata,
   type InterviewContextState,
   type ScreeningCoverage,
 } from "@/features/interviews/shared/runtime";
+import { loadVoiceAssessmentContext } from "@/features/interviews/shared/voice-runtime";
 import { ReportReadyEmailTemplate } from "@/features/notifications/components/report-ready-email-template";
 import {
   createNotification,
@@ -352,7 +356,7 @@ export function generateReport(
           },
           summary: interviewData.voiceAssessment.summary,
         }
-      : "(not completed — the candidate did not complete the voice communication assessment. Set communication score to 0 to indicate it was not assessed.)";
+      : "(not available — the voice communication assessment was not completed or could not be assessed. Set communication score to 0 to indicate it was not assessed.)";
 
     const userPrompt = JSON.stringify({
       instructions:
@@ -579,6 +583,17 @@ export function sendReportReadyEmail(
 
 // ─── Voice communication assessment ────────────────────────────────────────
 
+// Stored transcript rows are `{ role, content }`. Normalize to the two roles
+// the scorer expects; drop anything malformed rather than failing the report.
+const voiceTranscriptDbSchema = z
+  .array(
+    z.object({ role: z.string(), content: z.string() }).transform((m) => ({
+      role: m.role === "assistant" ? ("assistant" as const) : ("candidate" as const),
+      content: m.content,
+    })),
+  )
+  .catch([]);
+
 export function loadVoiceAssessment(
   interviewId: string,
   db: Sql,
@@ -586,19 +601,64 @@ export function loadVoiceAssessment(
 ) {
   return async (): Promise<CommunicationAssessmentAnalysis | null> => {
     const row = await getCommunicationAssessmentByInterviewId(db, { interviewId });
-    if (row?.status !== "completed" || !row.analysis) {
+    if (row?.status !== "completed") {
       log.info(`No completed voice assessment for interview ${interviewId}`);
       return null;
     }
 
-    const parsed = communicationAssessmentSchema.safeParse(row.analysis);
-    if (!parsed.success) {
-      log.warn(`Voice assessment analysis for ${interviewId} failed schema validation`);
+    // Already scored (e.g. a legacy row or a previous workflow run): reuse it.
+    if (row.analysis) {
+      const parsed = communicationAssessmentSchema.safeParse(row.analysis);
+      if (!parsed.success) {
+        log.warn(`Voice assessment analysis for ${interviewId} failed schema validation`);
+        return null;
+      }
+      log.info(`Loaded voice assessment for interview ${interviewId}`);
+      return parsed.data;
+    }
+
+    // Completed but unscored: the candidate finished the call, the transcript
+    // was persisted instantly, and scoring was deferred to us. Run the analysis
+    // here (durably, off the candidate's request path) and backfill the row.
+    const transcript = voiceTranscriptDbSchema.safeParse(row.transcript ?? []);
+    if (!transcript.success || transcript.data.length === 0) {
+      log.info(`Completed voice assessment for ${interviewId} has no transcript to score`);
       return null;
     }
 
-    log.info(`Loaded voice assessment for interview ${interviewId}`);
-    return parsed.data;
+    try {
+      const interview = await getInterviewContextById(db, { id: interviewId });
+      if (!interview) {
+        return null;
+      }
+
+      const ctx = await loadVoiceAssessmentContext(db, interview);
+      const analysis = await analyzeVoiceTranscript(transcript.data, ctx);
+      if (!analysis) {
+        log.warn(`Voice assessment scoring produced no result for ${interviewId}`);
+        return null;
+      }
+
+      try {
+        await updateCommunicationAssessmentAnalysis(db, { interviewId, analysis });
+      } catch (error) {
+        log.warn(
+          `Could not persist voice analysis for ${interviewId}: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      }
+
+      log.info(`Scored voice assessment for interview ${interviewId}`);
+      return analysis;
+    } catch (error) {
+      log.warn(
+        `Voice analysis failed for ${interviewId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      return null;
+    }
   };
 }
 
