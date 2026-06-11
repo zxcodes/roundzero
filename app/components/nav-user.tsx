@@ -15,7 +15,6 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { useAuth } from "@/features/auth/provider";
 import type { User } from "@/router";
 
 const getInitials = (name: string) =>
@@ -26,9 +25,16 @@ const getInitials = (name: string) =>
     .slice(0, 2)
     .toUpperCase();
 
-export function NavUser({ user }: { user: User }) {
+export function NavUser({
+  user,
+  onSignOut,
+  isSigningOut,
+}: {
+  user: User;
+  onSignOut: () => void;
+  isSigningOut: boolean;
+}) {
   const { isMobile } = useSidebar();
-  const { signOut, isSigningOut } = useAuth();
 
   return (
     <SidebarMenu>
@@ -73,7 +79,7 @@ export function NavUser({ user }: { user: User }) {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={signOut} disabled={isSigningOut}>
+            <DropdownMenuItem onClick={onSignOut} disabled={isSigningOut}>
               <HugeiconsIcon
                 icon={isSigningOut ? Loading03Icon : Logout03Icon}
                 strokeWidth={2}
