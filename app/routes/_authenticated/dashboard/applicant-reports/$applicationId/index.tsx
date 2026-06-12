@@ -464,7 +464,7 @@ function ApplicantReportSummaryPage() {
 
       {/* Answer authenticity — surfaced prominently because it can flip a decision */}
       {showAuthenticity ? (
-        <section className="rounded-4xl border border-amber-500/30 bg-amber-500/[0.03] px-5 py-5 shadow-sm md:px-7 md:py-6">
+        <section className="rounded-4xl border border-amber-500/30 bg-amber-500/3 px-5 py-5 shadow-sm md:px-7 md:py-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex items-center gap-2.5">
               <div className="flex size-7 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/10">
