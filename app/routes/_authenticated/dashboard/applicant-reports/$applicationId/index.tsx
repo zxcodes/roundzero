@@ -1,4 +1,5 @@
 import {
+  AiMagicIcon,
   Alert02Icon,
   AnalyticsUpIcon,
   ArrowLeft01Icon,
@@ -281,6 +282,10 @@ function ApplicantReportSummaryPage() {
   const parsedRecommendation = recommendationSchema.safeParse(report.recommendation);
   const recommendation = parsedRecommendation.success ? parsedRecommendation.data : null;
 
+  const authenticity = report.answerAuthenticity;
+  const showAuthenticity =
+    authenticity?.riskLevel === "medium" || authenticity?.riskLevel === "high";
+
   return (
     <div className="space-y-6">
       <BreadcrumbRow
@@ -310,6 +315,17 @@ function ApplicantReportSummaryPage() {
                 <Badge variant="outline" className={statusTone.badge}>
                   {applicationStatusLabels[currentStatus]}
                 </Badge>
+                {showAuthenticity ? (
+                  <Badge
+                    variant="outline"
+                    className="gap-1 border-amber-500/30 bg-amber-500/10 text-amber-600"
+                  >
+                    <HugeiconsIcon icon={AiMagicIcon} strokeWidth={2} className="size-3" />
+                    {authenticity.riskLevel === "high"
+                      ? "Likely AI answers"
+                      : "Possible AI answers"}
+                  </Badge>
+                ) : null}
               </div>
               <p className="truncate text-sm text-muted-foreground">
                 Post-interview report for{" "}
@@ -445,6 +461,51 @@ function ApplicantReportSummaryPage() {
           })}
         </div>
       </section>
+
+      {/* Answer authenticity — surfaced prominently because it can flip a decision */}
+      {showAuthenticity ? (
+        <section className="rounded-4xl border border-amber-500/30 bg-amber-500/[0.03] px-5 py-5 shadow-sm md:px-7 md:py-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="flex items-center gap-2.5">
+              <div className="flex size-7 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/10">
+                <HugeiconsIcon
+                  icon={AiMagicIcon}
+                  strokeWidth={2}
+                  className="size-3.5 text-amber-600"
+                />
+              </div>
+              <div>
+                <h2 className="text-[11px] font-bold uppercase tracking-[0.22em] text-amber-600">
+                  Answer authenticity ·{" "}
+                  {authenticity.riskLevel === "high" ? "High risk" : "Medium risk"}
+                </h2>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Independent check for AI-generated answers
+                </p>
+              </div>
+            </div>
+            <span className="shrink-0 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 font-mono text-xs font-bold uppercase text-amber-600">
+              {authenticity.signals.length} signal{authenticity.signals.length === 1 ? "" : "s"}
+            </span>
+          </div>
+          <p className="mt-3 text-sm leading-6 text-foreground">{authenticity.explanation}</p>
+          {authenticity.signals.length > 0 ? (
+            <ul className="mt-4 space-y-2">
+              {authenticity.signals.map((signal) => (
+                <li
+                  key={signal.signal}
+                  className="rounded-lg border border-border/60 bg-background/50 p-3"
+                >
+                  <p className="text-sm font-medium text-foreground">{signal.signal}</p>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                    <span className="font-medium">Evidence:</span> &ldquo;{signal.evidence}&rdquo;
+                  </p>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </section>
+      ) : null}
 
       {/* Strengths + Weaknesses */}
       <section className="grid gap-4 lg:grid-cols-2">

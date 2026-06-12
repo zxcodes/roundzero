@@ -275,7 +275,8 @@ CREATE TABLE public.reports (
     prompt_version text,
     refine_version text,
     released_at timestamp with time zone,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    answer_authenticity jsonb
 );
 
 
@@ -790,4 +791,5 @@ ALTER TABLE ONLY public.reports
 INSERT INTO public.schema_migrations (version) VALUES
     ('20260328081657'),
     ('20260606171616'),
-    ('20260608010913');
+    ('20260608010913'),
+    ('20260612120000');

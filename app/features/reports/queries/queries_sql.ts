@@ -1,9 +1,9 @@
 import { Sql } from "postgres";
 
 export const createReportQuery = `-- name: createReport :one
-INSERT INTO reports (interview_id, application_id, summary, strengths, weaknesses, insights, evidence, screening_answers, scores, recommendation, model, prompt_version, refine_version, created_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
-RETURNING id, interview_id, application_id, summary, strengths, weaknesses, insights, evidence, screening_answers, scores, recommendation, model, prompt_version, refine_version, created_at`;
+INSERT INTO reports (interview_id, application_id, summary, strengths, weaknesses, insights, evidence, screening_answers, scores, recommendation, model, prompt_version, refine_version, answer_authenticity, created_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())
+RETURNING id, interview_id, application_id, summary, strengths, weaknesses, insights, evidence, screening_answers, scores, recommendation, model, prompt_version, refine_version, answer_authenticity, created_at`;
 
 export interface createReportArgs {
     interviewId: string;
@@ -19,6 +19,7 @@ export interface createReportArgs {
     model: string | null;
     promptVersion: string | null;
     refineVersion: string | null;
+    answerAuthenticity: any | null;
 }
 
 export interface createReportRow {
@@ -36,11 +37,12 @@ export interface createReportRow {
     model: string | null;
     promptVersion: string | null;
     refineVersion: string | null;
+    answerAuthenticity: any | null;
     createdAt: Date;
 }
 
 export async function createReport(sql: Sql, args: createReportArgs): Promise<createReportRow | null> {
-    const rows = await sql.unsafe(createReportQuery, [args.interviewId, args.applicationId, args.summary, args.strengths, args.weaknesses, args.insights, args.evidence, args.screeningAnswers, args.scores, args.recommendation, args.model, args.promptVersion, args.refineVersion]).values();
+    const rows = await sql.unsafe(createReportQuery, [args.interviewId, args.applicationId, args.summary, args.strengths, args.weaknesses, args.insights, args.evidence, args.screeningAnswers, args.scores, args.recommendation, args.model, args.promptVersion, args.refineVersion, args.answerAuthenticity]).values();
     if (rows.length !== 1) {
         return null;
     }
@@ -60,12 +62,13 @@ export async function createReport(sql: Sql, args: createReportArgs): Promise<cr
         model: row[11],
         promptVersion: row[12],
         refineVersion: row[13],
-        createdAt: row[14]
+        answerAuthenticity: row[14],
+        createdAt: row[15]
     };
 }
 
 export const getReportByApplicationIdQuery = `-- name: getReportByApplicationId :one
-SELECT id, interview_id, application_id, summary, strengths, weaknesses, insights, evidence, screening_answers, scores, recommendation, model, prompt_version, refine_version, created_at
+SELECT id, interview_id, application_id, summary, strengths, weaknesses, insights, evidence, screening_answers, scores, recommendation, model, prompt_version, refine_version, answer_authenticity, created_at
 FROM reports
 WHERE application_id = $1
 ORDER BY created_at DESC
@@ -90,6 +93,7 @@ export interface getReportByApplicationIdRow {
     model: string | null;
     promptVersion: string | null;
     refineVersion: string | null;
+    answerAuthenticity: any | null;
     createdAt: Date;
 }
 
@@ -114,12 +118,13 @@ export async function getReportByApplicationId(sql: Sql, args: getReportByApplic
         model: row[11],
         promptVersion: row[12],
         refineVersion: row[13],
-        createdAt: row[14]
+        answerAuthenticity: row[14],
+        createdAt: row[15]
     };
 }
 
 export const getReleasedReportByApplicationIdQuery = `-- name: getReleasedReportByApplicationId :one
-SELECT id, interview_id, application_id, summary, strengths, weaknesses, insights, evidence, screening_answers, scores, recommendation, model, prompt_version, refine_version, created_at
+SELECT id, interview_id, application_id, summary, strengths, weaknesses, insights, evidence, screening_answers, scores, recommendation, model, prompt_version, refine_version, answer_authenticity, created_at
 FROM reports
 WHERE application_id = $1
   AND released_at IS NOT NULL
@@ -145,6 +150,7 @@ export interface getReleasedReportByApplicationIdRow {
     model: string | null;
     promptVersion: string | null;
     refineVersion: string | null;
+    answerAuthenticity: any | null;
     createdAt: Date;
 }
 
@@ -169,12 +175,13 @@ export async function getReleasedReportByApplicationId(sql: Sql, args: getReleas
         model: row[11],
         promptVersion: row[12],
         refineVersion: row[13],
-        createdAt: row[14]
+        answerAuthenticity: row[14],
+        createdAt: row[15]
     };
 }
 
 export const getReportByInterviewIdQuery = `-- name: getReportByInterviewId :one
-SELECT id, interview_id, application_id, summary, strengths, weaknesses, insights, evidence, screening_answers, scores, recommendation, model, prompt_version, refine_version, created_at
+SELECT id, interview_id, application_id, summary, strengths, weaknesses, insights, evidence, screening_answers, scores, recommendation, model, prompt_version, refine_version, answer_authenticity, created_at
 FROM reports
 WHERE interview_id = $1`;
 
@@ -197,6 +204,7 @@ export interface getReportByInterviewIdRow {
     model: string | null;
     promptVersion: string | null;
     refineVersion: string | null;
+    answerAuthenticity: any | null;
     createdAt: Date;
 }
 
@@ -221,7 +229,8 @@ export async function getReportByInterviewId(sql: Sql, args: getReportByIntervie
         model: row[11],
         promptVersion: row[12],
         refineVersion: row[13],
-        createdAt: row[14]
+        answerAuthenticity: row[14],
+        createdAt: row[15]
     };
 }
 

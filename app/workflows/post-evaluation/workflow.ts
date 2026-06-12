@@ -10,6 +10,7 @@ import { createWorkflowLogger } from "@/shared/logger";
 import { refineReport } from "./refine";
 import {
   applyVoiceAssessmentToReport,
+  assessAnswerAuthenticity,
   generateReport,
   loadExistingReport,
   loadVoiceAssessment,
@@ -115,9 +116,21 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
         loadVoiceAssessment(interviewId, db, log),
       );
 
+      const answerAuthenticity = await step.do(
+        "assess_answer_authenticity",
+        { timeout: "2 minutes" },
+        assessAnswerAuthenticity(
+          {
+            interview: interviewData.interview,
+            transcript: interviewData.transcript,
+          },
+          log,
+        ),
+      );
+
       const { report: reportDraft, model } = await step.do(
         "generate_report",
-        generateReport({ ...interviewData, voiceAssessment }, log),
+        generateReport({ ...interviewData, voiceAssessment, answerAuthenticity }, log),
       );
 
       const refinedDraft = await step.do("refine_report", async () =>
