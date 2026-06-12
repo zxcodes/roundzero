@@ -26,13 +26,13 @@ import { type ExpirableInterview, expireInterviewIfDue } from "@/features/interv
 import {
   finalizeVoiceAssessmentFromTranscript,
   signalVoiceAssessmentComplete,
+  startPostEvaluation,
 } from "@/features/interviews/server/voice-assessment";
 import {
   buildInterviewSystemPrompt,
   ensureInterviewRuntimeMetadata,
 } from "@/features/interviews/shared/runtime";
 import { loadVoiceAssessmentContext } from "@/features/interviews/shared/voice-runtime";
-import { getReportByApplicationId } from "@/features/reports/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { authMiddleware } from "@/shared/middleware";
 import { getModelChain } from "@/shared/openrouter";
@@ -334,6 +334,13 @@ export const completeMyInterview = createServerFn({ method: "POST" })
     }
 
     if (effectiveInterview.status === "completed") {
+      // Recover from a prior partial completion (e.g. the interview was marked
+      // completed but the post-eval workflow create failed). Idempotent: a
+      // no-op once a report exists or the workflow is already running.
+      await startPostEvaluation(db, {
+        interviewId: data.interviewId,
+        applicationId: effectiveInterview.applicationId,
+      });
       return effectiveInterview;
     }
 
@@ -346,44 +353,10 @@ export const completeMyInterview = createServerFn({ method: "POST" })
       return null;
     }
 
-    const existingReport = await getReportByApplicationId(db, {
+    await startPostEvaluation(db, {
+      interviewId: data.interviewId,
       applicationId: effectiveInterview.applicationId,
     });
-
-    if (!existingReport) {
-      try {
-        // Pre-create the voice communication assessment row so the post-eval
-        // workflow knows to wait for the candidate's optional voice call.
-        const existingAssessment = await getCommunicationAssessmentByInterviewId(db, {
-          interviewId: data.interviewId,
-        });
-        if (!existingAssessment) {
-          await createCommunicationAssessment(db, {
-            interviewId: data.interviewId,
-            applicationId: effectiveInterview.applicationId,
-            status: "pending",
-          });
-        }
-      } catch (error) {
-        console.error(
-          `[completeMyInterview] Failed to seed communication assessment row for ${data.interviewId}`,
-          error,
-        );
-      }
-
-      try {
-        await env.POST_EVALUATION.create({
-          // Stable id so completeMyVoiceAssessment can signal this workflow.
-          id: data.interviewId,
-          params: { interviewId: data.interviewId },
-        });
-      } catch (error) {
-        console.error(
-          `[completeMyInterview] Failed to trigger post-evaluation for ${data.interviewId}`,
-          error,
-        );
-      }
-    }
 
     return await getInterviewForCandidateById(db, {
       id: data.interviewId,

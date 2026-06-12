@@ -1184,6 +1184,59 @@ export async function completeCommunicationAssessment(sql: Sql, args: completeCo
     };
 }
 
+export const updateCommunicationAssessmentAnalysisQuery = `-- name: updateCommunicationAssessmentAnalysis :one
+UPDATE communication_assessments
+SET analysis = $2,
+    updated_at = now()
+WHERE interview_id = $1
+  AND status = 'completed'
+  AND analysis IS NULL
+RETURNING id, interview_id, application_id, status, audio_key, provider_session_id, provider_conversation_id, transcript, analysis, started_at, completed_at, created_at, updated_at`;
+
+export interface updateCommunicationAssessmentAnalysisArgs {
+    interviewId: string;
+    analysis: any | null;
+}
+
+export interface updateCommunicationAssessmentAnalysisRow {
+    id: string;
+    interviewId: string;
+    applicationId: string;
+    status: string;
+    audioKey: string | null;
+    providerSessionId: string | null;
+    providerConversationId: string | null;
+    transcript: any;
+    analysis: any | null;
+    startedAt: Date | null;
+    completedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export async function updateCommunicationAssessmentAnalysis(sql: Sql, args: updateCommunicationAssessmentAnalysisArgs): Promise<updateCommunicationAssessmentAnalysisRow | null> {
+    const rows = await sql.unsafe(updateCommunicationAssessmentAnalysisQuery, [args.interviewId, args.analysis]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        interviewId: row[1],
+        applicationId: row[2],
+        status: row[3],
+        audioKey: row[4],
+        providerSessionId: row[5],
+        providerConversationId: row[6],
+        transcript: row[7],
+        analysis: row[8],
+        startedAt: row[9],
+        completedAt: row[10],
+        createdAt: row[11],
+        updatedAt: row[12]
+    };
+}
+
 export const markCommunicationAssessmentSkippedQuery = `-- name: markCommunicationAssessmentSkipped :one
 UPDATE communication_assessments
 SET status = 'skipped',

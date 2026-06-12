@@ -4,18 +4,22 @@ import { generateText, Output } from "ai";
 import type { Sql } from "postgres";
 import { jsx } from "react/jsx-runtime";
 import { Resend } from "resend";
+import { z } from "zod";
 import { updateApplicationStatus } from "@/features/applications/queries/queries_sql";
 import { getUserById } from "@/features/auth/queries/queries_sql";
 import {
   getCommunicationAssessmentByInterviewId,
   getInterviewContextById,
   getInterviewMessagesByInterviewId,
+  updateCommunicationAssessmentAnalysis,
 } from "@/features/interviews/queries/queries_sql";
+import { analyzeVoiceTranscript } from "@/features/interviews/server/voice-assessment";
 import {
   ensureInterviewRuntimeMetadata,
   type InterviewContextState,
   type ScreeningCoverage,
 } from "@/features/interviews/shared/runtime";
+import { loadVoiceAssessmentContext } from "@/features/interviews/shared/voice-runtime";
 import { ReportReadyEmailTemplate } from "@/features/notifications/components/report-ready-email-template";
 import {
   createNotification,
@@ -24,7 +28,13 @@ import {
   markNotificationEmailSkipped,
 } from "@/features/notifications/queries/queries_sql";
 import { createReport, getReportByInterviewId } from "@/features/reports/queries/queries_sql";
-import { reportSchema } from "@/features/reports/schemas";
+import { reportGenerationSchema } from "@/features/reports/schemas";
+import {
+  ANSWER_AUTHENTICITY_SYSTEM_PROMPT,
+  ANSWER_AUTHENTICITY_USER_PROMPT_TEMPLATE,
+  type AnswerAuthenticity,
+  answerAuthenticitySchema,
+} from "@/prompts/answer-authenticity";
 import {
   type CommunicationAssessmentAnalysis,
   communicationAssessmentSchema,
@@ -44,8 +54,8 @@ import { notificationPayloadSchemas } from "@/shared/notifications-config";
 import { createChatModel, getModelChain } from "@/shared/openrouter";
 
 // Prompt versions for tracking which prompt was used for each report
-const POST_EVAL_PROMPT_VERSION = "1.0.0";
-const REFINE_PROMPT_VERSION = "1.0.0";
+const POST_EVAL_PROMPT_VERSION = "1.1.0";
+const REFINE_PROMPT_VERSION = "1.1.0";
 
 /**
  * Minimum number of company screening questions that must be referenced by
@@ -89,6 +99,7 @@ type ReportModelResponse = {
     overall: number;
   };
   recommendation: "strong_yes" | "yes" | "lean_no" | "no";
+  answerAuthenticity: AnswerAuthenticity | null;
 };
 
 type InterviewSignalStatus = { ok: true } | { ok: false; reason: string };
@@ -112,8 +123,10 @@ type ReadInterviewDataResult =
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
+type ReportGenerationResponse = Omit<ReportModelResponse, "answerAuthenticity">;
+
 async function runPostEvalObject(args: { systemPrompt: string; userPrompt: string }): Promise<{
-  object: ReportModelResponse;
+  object: ReportGenerationResponse;
   usage: { inputTokens: number; outputTokens: number };
   model: string;
 }> {
@@ -121,7 +134,7 @@ async function runPostEvalObject(args: { systemPrompt: string; userPrompt: strin
 
   const result = await generateText({
     model: createChatModel("post_eval", { plugins: [{ id: "response-healing" }] }),
-    output: Output.object({ schema: reportSchema }),
+    output: Output.object({ schema: reportGenerationSchema }),
     system: args.systemPrompt,
     prompt: args.userPrompt,
   });
@@ -142,6 +155,53 @@ async function runPostEvalObject(args: { systemPrompt: string; userPrompt: strin
 // if they were real evaluation output is worse than admitting failure.
 
 // ─── Steps ─────────────────────────────────────────────────────────────────
+
+export function assessAnswerAuthenticity(
+  interviewData: { interview: { jobTitle: string; candidateName: string }; transcript: string },
+  log: ReturnType<typeof createWorkflowLogger>,
+) {
+  return async (): Promise<AnswerAuthenticity | null> => {
+    log.info("Assessing answer authenticity");
+
+    const userPrompt = ANSWER_AUTHENTICITY_USER_PROMPT_TEMPLATE(
+      {
+        jobTitle: interviewData.interview.jobTitle,
+        candidateName: interviewData.interview.candidateName,
+      },
+      interviewData.transcript.slice(0, LIMITS.TRANSCRIPT),
+    );
+
+    try {
+      const result = await generateText({
+        model: createChatModel("answer_authenticity", {
+          plugins: [{ id: "response-healing" }],
+        }),
+        output: Output.object({ schema: answerAuthenticitySchema }),
+        system: ANSWER_AUTHENTICITY_SYSTEM_PROMPT.prompt,
+        prompt: userPrompt,
+      });
+
+      log.ai(userPrompt.length, result.usage.outputTokens ?? 0, 0, "answer-authenticity-1.0");
+
+      if (result.output.riskLevel === "low") {
+        log.info("Answer authenticity: low risk (no concerning patterns)");
+      } else {
+        log.warn(
+          `Answer authenticity: ${result.output.riskLevel} risk — ${result.output.signals.length} signal(s) detected`,
+        );
+      }
+
+      return result.output;
+    } catch (error) {
+      log.warn(
+        `Answer authenticity assessment failed, continuing without: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      return null;
+    }
+  };
+}
 
 export function loadExistingReport(
   interviewId: string,
@@ -257,6 +317,7 @@ export function generateReport(
     moderation: { quality: "normal" | "low"; reason?: string };
     contextState: InterviewContextState;
     voiceAssessment?: CommunicationAssessmentAnalysis | null;
+    answerAuthenticity?: AnswerAuthenticity | null;
   },
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
@@ -314,6 +375,7 @@ export function generateReport(
       "",
       "# How to fill each field",
       "- summary: 3–6 sentences. The TL;DR a busy hiring manager can read in 20 seconds. Cover: who they are in one line, the strongest signal observed, the biggest concern, and your headline recommendation. Mention any dealbreaker screening answer here.",
+      "  Voice: write like a sharp human recruiter giving a colleague a verbal readout over coffee — warm, plain, and direct. Use natural sentences and everyday words. Refer to the person by their first name or 'the candidate', never as a subject of analysis. Avoid stiff/academic phrasing ('overstates', 'demonstrates a propensity', 'exhibits', 'the candidate's responses indicate'), filler, and hedging. It should sound like a person talking, not a system generating a report.",
       "- strengths: 2–5 specific, transcript-grounded items. Each item is one sentence and references something the candidate actually said or demonstrated.",
       "- weaknesses: 1–5 specific, transcript-grounded items. Be honest. Frame as 'limited evidence of X' or 'dodged when asked Y' — not as personal attacks.",
       "- insights: 1–4 items that are NOT strengths or weaknesses but matter for the hire. Examples: motivations they shared, working-style preferences, signals about seniority, expansion potential.",
@@ -338,6 +400,11 @@ export function generateReport(
       "",
       "# Calibration",
       "Be a tough-but-fair senior interviewer. Most candidates are 'yes' or 'lean_no'. 'strong_yes' should require multiple standout moments. Never inflate to be polite.",
+      "",
+      "# Answer Authenticity Signal",
+      "You will receive an `answerAuthenticitySignal` alongside the transcript. This is an independent assessment of whether the candidate's answers may have been AI-generated.",
+      "If riskLevel is 'high', mention it prominently in `summary` and include a specific weakness about answer authenticity. If riskLevel is 'medium', mention it in `summary` or `weaknesses` depending on your judgment. If riskLevel is 'low', mention it only if relevant in context.",
+      "Do NOT fabricate authenticity concerns. The signal is provided as supporting context — ground any authenticity-related claims in the transcript itself.",
     ].join("\n");
 
     const voiceSignal = interviewData.voiceAssessment
@@ -352,7 +419,7 @@ export function generateReport(
           },
           summary: interviewData.voiceAssessment.summary,
         }
-      : "(not completed — the candidate did not complete the voice communication assessment. Set communication score to 0 to indicate it was not assessed.)";
+      : "(not available — the voice communication assessment was not completed or could not be assessed. Set communication score to 0 to indicate it was not assessed.)";
 
     const userPrompt = JSON.stringify({
       instructions:
@@ -381,6 +448,7 @@ export function generateReport(
         totalRequired: customQuestions.length,
       },
       requiredScreeningQuestions: customQuestionsBlock,
+      answerAuthenticitySignal: interviewData.answerAuthenticity ?? null,
       transcript: interviewData.transcript.slice(0, LIMITS.TRANSCRIPT),
     });
 
@@ -394,7 +462,10 @@ export function generateReport(
     });
 
     log.ai(userPrompt.length, usage.outputTokens, 0);
-    return { report, model };
+    return {
+      report: { ...report, answerAuthenticity: interviewData.answerAuthenticity ?? null },
+      model,
+    };
   };
 }
 
@@ -428,6 +499,7 @@ export function persistReport(
         model,
         promptVersion: POST_EVAL_PROMPT_VERSION,
         refineVersion: REFINE_PROMPT_VERSION,
+        answerAuthenticity: reportDraft.answerAuthenticity,
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -579,6 +651,17 @@ export function sendReportReadyEmail(
 
 // ─── Voice communication assessment ────────────────────────────────────────
 
+// Stored transcript rows are `{ role, content }`. Normalize to the two roles
+// the scorer expects; drop anything malformed rather than failing the report.
+const voiceTranscriptDbSchema = z
+  .array(
+    z.object({ role: z.string(), content: z.string() }).transform((m) => ({
+      role: m.role === "assistant" ? ("assistant" as const) : ("candidate" as const),
+      content: m.content,
+    })),
+  )
+  .catch([]);
+
 export function loadVoiceAssessment(
   interviewId: string,
   db: Sql,
@@ -586,19 +669,64 @@ export function loadVoiceAssessment(
 ) {
   return async (): Promise<CommunicationAssessmentAnalysis | null> => {
     const row = await getCommunicationAssessmentByInterviewId(db, { interviewId });
-    if (row?.status !== "completed" || !row.analysis) {
+    if (row?.status !== "completed") {
       log.info(`No completed voice assessment for interview ${interviewId}`);
       return null;
     }
 
-    const parsed = communicationAssessmentSchema.safeParse(row.analysis);
-    if (!parsed.success) {
-      log.warn(`Voice assessment analysis for ${interviewId} failed schema validation`);
+    // Already scored (e.g. a legacy row or a previous workflow run): reuse it.
+    if (row.analysis) {
+      const parsed = communicationAssessmentSchema.safeParse(row.analysis);
+      if (!parsed.success) {
+        log.warn(`Voice assessment analysis for ${interviewId} failed schema validation`);
+        return null;
+      }
+      log.info(`Loaded voice assessment for interview ${interviewId}`);
+      return parsed.data;
+    }
+
+    // Completed but unscored: the candidate finished the call, the transcript
+    // was persisted instantly, and scoring was deferred to us. Run the analysis
+    // here (durably, off the candidate's request path) and backfill the row.
+    const transcript = voiceTranscriptDbSchema.safeParse(row.transcript ?? []);
+    if (!transcript.success || transcript.data.length === 0) {
+      log.info(`Completed voice assessment for ${interviewId} has no transcript to score`);
       return null;
     }
 
-    log.info(`Loaded voice assessment for interview ${interviewId}`);
-    return parsed.data;
+    try {
+      const interview = await getInterviewContextById(db, { id: interviewId });
+      if (!interview) {
+        return null;
+      }
+
+      const ctx = await loadVoiceAssessmentContext(db, interview);
+      const analysis = await analyzeVoiceTranscript(transcript.data, ctx);
+      if (!analysis) {
+        log.warn(`Voice assessment scoring produced no result for ${interviewId}`);
+        return null;
+      }
+
+      try {
+        await updateCommunicationAssessmentAnalysis(db, { interviewId, analysis });
+      } catch (error) {
+        log.warn(
+          `Could not persist voice analysis for ${interviewId}: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      }
+
+      log.info(`Scored voice assessment for interview ${interviewId}`);
+      return analysis;
+    } catch (error) {
+      log.warn(
+        `Voice analysis failed for ${interviewId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      return null;
+    }
   };
 }
 

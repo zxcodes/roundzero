@@ -1,6 +1,7 @@
 ## TODO
 
-- show voice interview transcript after completion similar to text interview but with voice aesthetics.
+- give companies a nice way to see all shortlisted candidates separated by role for easier next steps (copy email, reaching out etc for next steps. and make this clear on candidate side too after being shortlisted. think about overall ux here.)
+- cut bundle size (polar, elevenlabs sdk, etc)
 - overall caching seems a bit too aggressive. login/logouts, switching accounts, has stale data.
 - choose a consistent brand naming "roundzero" vs "RoundZero".
 - change the fucking app icon ugh. (more seo icons remaining)
@@ -18,6 +19,8 @@ post_eval_already_complete)
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- voice assessment gets stuck on finalizing, sometimes even lost completely? seems like post eval isn't loading voice transcript if this is failed? recheck the entire flow. (also check what happens in case of post eval is skipped, but voice assessment is still there?)-->
+<!--- show voice interview transcript after completion similar to text interview but with voice aesthetics.-->
 <!--- voice interview still doesnt end the call on its own. and even after the interview, if I refresh, the entire session is lost. it just gets back to square one."start assessment" perhaps we should have a manual submit similar to text interview?-->
 <!--- interview invited notification is not being sent thru email?-->
 <!--- interview experience regressed. no greeting. even if did, says im zero, a senior engineer at [company] wtf is that? you're a fucking assistant ugh.-->
@@ -195,6 +198,7 @@ post_eval_already_complete)
 <!--- think about compacting existing user-agent chats and reusing them for similar roles to save time and compute.-->
 <!--- **pre-eval: switch slop + eval steps to OpenRouter (Claude 3.5 Haiku / Llama 3.3 70B)** for reliable structured outputs and deterministic scoring. Keep Workers AI for classify step only. See `pre-evaluation.ts` comments for context. Do this before scaling eval volume. And add temperature: 0 and explicit max_tokens — eliminates score variance.-->
 <!--- pre-eval: Delete parseJsonPayload entirely — OpenRouter + Claude actually respects response_format. You’ll get clean objects every time.-->
+<!--- enable min release age in prod.-->
 
 
 
@@ -203,8 +207,6 @@ post_eval_already_complete)
 - check about data retention & allowing people to delete accounts.
 - planetscale for db?
 - analytics? stretch? or just have a basic admin dashboard with stats (should be good enough for the start).
-- enable min release age in prod.
-- see if we can use SST for deployments.
 - validate open router models using their api key in prod ci so we detect non existent models beforehand.
 
 

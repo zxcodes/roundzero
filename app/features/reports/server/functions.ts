@@ -145,6 +145,7 @@ export const getCompanyApplicantReportTimeline = createServerFn({ method: "GET" 
             screeningAnswers: reportRow.screeningAnswers,
             scores: reportRow.scores,
             recommendation: reportRow.recommendation,
+            answerAuthenticity: reportRow.answerAuthenticity,
           }).data ?? null)
         : null,
       reportCreatedAt: reportRow?.createdAt ?? null,
