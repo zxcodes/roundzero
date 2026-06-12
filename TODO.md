@@ -1,7 +1,6 @@
 ## TODO
 
 - give companies a nice way to see all shortlisted candidates separated by role for easier next steps (copy email, reaching out etc for next steps. and make this clear on candidate side too after being shortlisted. think about overall ux here.)
-- voice assessment gets stuck on finalizing, sometimes even lost completely? seems like post eval isn't loading voice transcript if this is failed? recheck the entire flow. (also check what happens in case of post eval is skipped, but voice assessment is still there?)
 - cut bundle size (polar, elevenlabs sdk, etc)
 - overall caching seems a bit too aggressive. login/logouts, switching accounts, has stale data.
 - choose a consistent brand naming "roundzero" vs "RoundZero".
@@ -20,6 +19,7 @@ post_eval_already_complete)
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- voice assessment gets stuck on finalizing, sometimes even lost completely? seems like post eval isn't loading voice transcript if this is failed? recheck the entire flow. (also check what happens in case of post eval is skipped, but voice assessment is still there?)-->
 <!--- show voice interview transcript after completion similar to text interview but with voice aesthetics.-->
 <!--- voice interview still doesnt end the call on its own. and even after the interview, if I refresh, the entire session is lost. it just gets back to square one."start assessment" perhaps we should have a manual submit similar to text interview?-->
 <!--- interview invited notification is not being sent thru email?-->
