@@ -4,7 +4,6 @@
 - give companies a nice way to see all shortlisted candidates separated by role for easier next steps (copy email, reaching out etc for next steps. and make this clear on candidate side too after being shortlisted. think about overall ux here.)
 - cut bundle size (polar, elevenlabs sdk, etc)
 - overall caching seems a bit too aggressive. login/logouts, switching accounts, has stale data.
-- choose a consistent brand naming "roundzero" vs "RoundZero".
 - voice assistant still outputting [Understood] kind of messages in text. Check eleven labs docs, etc.
 - check deleted account behaviour for companies, applications, etc. how the entire flow handles it.
 - pricing needs a big change. (think about per job, x number of jobs, and pay as you go kind?)
@@ -19,6 +18,7 @@ post_eval_already_complete)
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- choose a consistent brand naming "roundzero" vs "RoundZero".-->
 <!--- change the fucking app icon ugh. (more seo icons remaining)-->
 <!--- voice assessment gets stuck on finalizing, sometimes even lost completely? seems like post eval isn't loading voice transcript if this is failed? recheck the entire flow. (also check what happens in case of post eval is skipped, but voice assessment is still there?)-->
 <!--- show voice interview transcript after completion similar to text interview but with voice aesthetics.-->
