@@ -20,7 +20,6 @@ import {
   getMyVoiceAssessment,
   startMyInterview,
 } from "@/features/interviews/server/functions";
-import { cn } from "@/lib/utils";
 import { formatDeadlineLabel, formatTimeLeft } from "@/shared/date";
 import { Route as ParentRoute } from "../$interviewId";
 
@@ -173,7 +172,6 @@ function InterviewWorkspaceContent({
 
   const voiceStatus = voiceAssessmentQuery.data?.status ?? null;
   const voiceTabAvailable = isCompleted;
-  const voiceTabBadge = getVoiceTabBadge(voiceStatus, isCompleted);
 
   // Auto-switch to the voice tab once when the chat is completed and the
   // voice assessment is still pending/in-progress. This covers both the
@@ -312,13 +310,6 @@ function InterviewWorkspaceContent({
                 <span>
                   <TabsTrigger value="voice" disabled={!voiceTabAvailable} className="gap-2">
                     <span>Voice</span>
-                    {voiceTabBadge ? (
-                      <Badge
-                        className={cn("h-5 px-1.5 text-[10px] font-medium", voiceTabBadge.tone)}
-                      >
-                        {voiceTabBadge.label}
-                      </Badge>
-                    ) : null}
                   </TabsTrigger>
                 </span>
               </TooltipTrigger>
@@ -347,21 +338,4 @@ function InterviewWorkspaceContent({
       </Tabs>
     </>
   );
-}
-
-function getVoiceTabBadge(
-  voiceStatus: string | null | undefined,
-  isCompleted: boolean,
-): { label: string; tone: string } | null {
-  if (!isCompleted) return null;
-  if (voiceStatus === "completed") {
-    return { label: "Done", tone: "border-success/20 bg-success/10 text-success" };
-  }
-  if (voiceStatus === "skipped") {
-    return { label: "Skipped", tone: "bg-muted text-muted-foreground" };
-  }
-  if (voiceStatus === "in_progress") {
-    return { label: "In progress", tone: "bg-primary/10 text-primary" };
-  }
-  return { label: "New", tone: "border-warning/20 bg-warning/10 text-warning" };
 }
