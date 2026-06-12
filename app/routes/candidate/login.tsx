@@ -58,7 +58,7 @@ function CandidateLoginPage() {
       <div className="relative hidden overflow-hidden bg-muted lg:block">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,var(--color-primary)/8%,transparent_60%)]" />
         <div className="relative flex h-full flex-col justify-between p-10 xl:p-14">
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-1">
             <Logo />
             <span
               className="font-heading text-[19px] leading-none tracking-[-0.01em]"
