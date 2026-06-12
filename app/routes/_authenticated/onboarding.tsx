@@ -13,7 +13,7 @@ function OnboardingLayout() {
       <div className="relative w-full max-w-lg">
         {/* Logo */}
         <div className="mb-8 flex justify-center">
-          <Link to="/" className="flex items-center gap-2.5">
+          <Link to="/" className="flex items-center gap-1">
             <Logo />
             <span
               className="font-heading text-[19px] leading-none tracking-[-0.01em]"
