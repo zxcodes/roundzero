@@ -14,7 +14,6 @@
     "@fontsource/instrument-serif",
     "tailwindcss",
     "tw-animate-css",
-    "recharts",
     "vaul",
     "shadcn",
     "@tanstack/router-plugin",
