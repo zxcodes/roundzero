@@ -1,4 +1,5 @@
 import {
+  AiMagicIcon,
   Alert02Icon,
   AnalyticsUpIcon,
   ArrowRight01Icon,
@@ -754,6 +755,67 @@ export function ReportTimeline({
           ) : null}
         </div>
       </TimelineNode>
+
+      {report.answerAuthenticity?.riskLevel === "medium" ||
+      report.answerAuthenticity?.riskLevel === "high" ? (
+        <TimelineNode
+          icon={AiMagicIcon}
+          iconClass="text-foreground"
+          dotClassName="ring-border bg-amber-500/10"
+          title="Answer authenticity concern"
+          timestamp={reportCreatedAt}
+        >
+          <Card className="border-amber-500/30 bg-amber-500/2">
+            <CardContent className="space-y-4 pt-6">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="max-w-xl space-y-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex size-7 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/10">
+                      <HugeiconsIcon
+                        icon={AiMagicIcon}
+                        strokeWidth={2}
+                        className="size-3.5 text-amber-600"
+                      />
+                    </div>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-amber-600">
+                      {report.answerAuthenticity.riskLevel === "high" ? "High risk" : "Medium risk"}
+                    </p>
+                  </div>
+                  <p className="text-sm leading-6 text-foreground">
+                    {report.answerAuthenticity.explanation}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2">
+                  <HugeiconsIcon
+                    icon={AiMagicIcon}
+                    strokeWidth={2}
+                    className="size-4 text-amber-600"
+                  />
+                  <span className="font-mono text-xs font-bold uppercase text-amber-600">
+                    {report.answerAuthenticity.signals.length} signal
+                    {report.answerAuthenticity.signals.length === 1 ? "" : "s"}
+                  </span>
+                </div>
+              </div>
+              {report.answerAuthenticity.signals.length > 0 ? (
+                <div className="space-y-2">
+                  {report.answerAuthenticity.signals.map((s, i) => (
+                    <div
+                      key={i}
+                      className="rounded-lg border border-border/60 bg-background/50 p-3"
+                    >
+                      <p className="text-sm font-medium text-foreground">{s.signal}</p>
+                      <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                        <span className="font-medium">Evidence:</span> &ldquo;{s.evidence}&rdquo;
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </CardContent>
+          </Card>
+        </TimelineNode>
+      ) : null}
 
       <TimelineNode
         icon={CheckmarkCircle02Icon}
