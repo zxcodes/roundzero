@@ -14,21 +14,19 @@ import { useSession } from "@tanstack/react-start/server";
 import { z } from "zod";
 import {
   completeInterview,
-  createCommunicationAssessment,
   createInterviewMessage,
-  getCommunicationAssessmentByInterviewId,
   getInterviewContextById,
   getInterviewForCandidateById,
   getInterviewMessagesByInterviewId,
   updateInterviewMetadata,
 } from "@/features/interviews/queries/queries_sql";
 import { expireInterviewIfDue } from "@/features/interviews/server/expire";
+import { startPostEvaluation } from "@/features/interviews/server/voice-assessment";
 import {
   buildInterviewSystemPrompt,
   ensureInterviewRuntimeMetadata,
   type InterviewMetadata,
 } from "@/features/interviews/shared/runtime";
-import { getReportByApplicationId } from "@/features/reports/queries/queries_sql";
 import { isAnchoredTo } from "@/shared/ai-refine";
 import { getDb } from "@/shared/db";
 import { getModelChain } from "@/shared/openrouter";
@@ -239,32 +237,10 @@ export const Route = createFileRoute("/api/interview-chat")({
             endInterviewDef.server(async ({ reason }) => {
               await completeInterview(db, { id: interviewId });
 
-              const existingReport = await getReportByApplicationId(db, {
+              await startPostEvaluation(db, {
+                interviewId,
                 applicationId: interview.applicationId,
               });
-
-              if (!existingReport) {
-                const existingAssessment = await getCommunicationAssessmentByInterviewId(db, {
-                  interviewId,
-                });
-
-                if (!existingAssessment) {
-                  await createCommunicationAssessment(db, {
-                    interviewId,
-                    applicationId: interview.applicationId,
-                    status: "pending",
-                  });
-                }
-
-                try {
-                  await env.POST_EVALUATION.create({
-                    id: interviewId,
-                    params: { interviewId },
-                  });
-                } catch (error) {
-                  console.error("[interview-chat] failed to trigger post-evaluation", error);
-                }
-              }
 
               return { completed: true, reason };
             }),

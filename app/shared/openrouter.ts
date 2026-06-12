@@ -76,7 +76,13 @@ export function getOpenRouter(): OpenRouterProvider {
 //
 // https://openrouter.ai/docs/guides/routing/model-fallbacks
 
-type Task = "pre_eval" | "post_eval" | "post_eval_audit" | "interview" | "job_creation";
+type Task =
+  | "pre_eval"
+  | "post_eval"
+  | "post_eval_audit"
+  | "interview"
+  | "job_creation"
+  | "answer_authenticity";
 
 const MODEL_CHAINS = {
   pre_eval: {
@@ -104,6 +110,11 @@ const MODEL_CHAINS = {
     dev: ["openrouter/free"],
     staging: ["deepseek/deepseek-v4-flash"],
     prod: ["anthropic/claude-sonnet-4.5", "anthropic/claude-haiku-4.5"],
+  },
+  answer_authenticity: {
+    dev: ["openrouter/free"],
+    staging: ["deepseek/deepseek-v4-flash"],
+    prod: ["anthropic/claude-haiku-4.5"],
   },
 } as const satisfies Record<
   Task,

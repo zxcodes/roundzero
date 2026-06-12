@@ -37,6 +37,7 @@ describe("refineReport", () => {
         overall: 68,
       },
       recommendation: "lean_no" as const,
+      answerAuthenticity: null,
     };
 
     const transcript = [
