@@ -267,7 +267,7 @@ export function classifyJobType(
       log.ai(prompt.length, 0, latency, CLASSIFY_JOB_SYSTEM_PROMPT.version);
       const message = error instanceof Error ? error.message : String(error);
       log.error(`Job type classification failed: ${message}`);
-      throw new NonRetryableError(
+      throw new Error(
         `Job type classification failed for job "${jobTitle}": ${message}. This prevents using the correct role-specific evaluation prompt.`,
       );
     }
@@ -376,7 +376,7 @@ export function runAiPreEvaluation(
       log.ai(userPrompt.length, 0, latency, promptVersion);
       const message = error instanceof Error ? error.message : String(error);
       log.error(`Pre-evaluation failed: ${message}`);
-      throw new NonRetryableError(
+      throw new Error(
         `Pre-evaluation failed for application: ${message}. This prevents generating a valid evaluation score.`,
       );
     }
