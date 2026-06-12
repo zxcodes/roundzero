@@ -80,7 +80,7 @@ ${companies.map((c) => `  <url><loc>${siteUrl}/companies/${c.slug}</loc><lastmod
         ctx.waitUntil(env.POOL_CHECK.create({ id: `pool-check-${event.scheduledTime}` }));
         break;
       }
-      case "*/30 * * * *": {
+      case "0 */3 * * *": {
         ctx.waitUntil(env.EVAL_RETRY.create({ id: `eval-retry-${event.scheduledTime}` }));
         break;
       }

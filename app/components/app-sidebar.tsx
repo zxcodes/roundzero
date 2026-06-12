@@ -22,6 +22,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { useAuth } from "@/features/auth/provider";
 import { FeedbackDialog } from "@/features/feedback/components/feedback-dialog";
 import type { User } from "@/router";
 import { Logo } from "./public-layout";
@@ -87,6 +88,7 @@ export function AppSidebar({
   isCompany: boolean;
   atLimit: boolean;
 }) {
+  const { signOut, isSigningOut } = useAuth();
   const mainItems = isCompany ? companyMain : candidateMain;
 
   return (
@@ -141,7 +143,7 @@ export function AppSidebar({
 
       <SidebarFooter className="flex flex-col gap-2">
         <FeedbackDialog />
-        <NavUser user={user} />
+        <NavUser user={user} onSignOut={signOut} isSigningOut={isSigningOut} />
       </SidebarFooter>
     </Sidebar>
   );

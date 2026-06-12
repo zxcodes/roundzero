@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { InterviewTranscript } from "@/features/interviews/components/interview-transcript";
+import { CompletedInterviewBar } from "@/features/interviews/components/voice-assessment-panel";
 
 type InterviewChatProps = {
   messages: Array<{
@@ -179,9 +180,14 @@ export function InterviewChat({
             </div>
           ) : (
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm text-muted-foreground">
-                {isExpired ? "This interview has expired." : "This interview has ended."}
-              </p>
+              <CompletedInterviewBar
+                title={isExpired ? "Interview expired" : "Interview complete"}
+                description={
+                  isExpired
+                    ? "This interview window has closed."
+                    : "Your results are included in the report."
+                }
+              />
               <Button variant="outline" size="sm" asChild>
                 <Link to="/dashboard/applications">Back to applications</Link>
               </Button>
