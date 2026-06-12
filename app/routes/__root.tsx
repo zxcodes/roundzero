@@ -17,8 +17,6 @@ import type { RouterContext } from "@/router";
 import type { FileRoutesByTo } from "@/routeTree.gen";
 import appCss from "../styles.css?url";
 
-const FAVICON_SVG = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='-30 -30 260 260'><style>.l{fill:%231a1a1a}@media(prefers-color-scheme:dark){.l{fill:%23fff}}</style><g><path class='l' d='M200 30C200 46.5685 186.569 60 170 60C153.431 60 140 46.5685 140 30C140 13.4315 153.431 0 170 0C186.569 0 200 13.4315 200 30Z'/><path class='l' d='M200 170C200 186.569 186.569 200 170 200C153.431 200 140 186.569 140 170C140 153.431 153.431 140 170 140C186.569 140 200 153.431 200 170Z'/><path class='l' d='M151 100C151 128.167 128.167 151 100 151C71.8335 151 49 128.167 49 100C49 71.8335 71.8335 49 100 49C128.167 49 151 71.8335 151 100Z'/><path class='l' d='M60 30C60 46.5685 46.5685 60 30 60C13.4315 60 0 46.5685 0 30C0 13.4315 13.4315 0 30 0C46.5685 0 60 13.4315 60 30Z'/><path class='l' d='M60 170C60 186.569 46.5685 200 30 200C13.4315 200 0 186.569 0 170C0 153.431 13.4315 140 30 140C46.5685 140 60 153.431 60 170Z'/></g></svg>`;
-
 export const Route = createRootRouteWithContext<RouterContext>()({
   head: () => ({
     meta: [
@@ -96,11 +94,6 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       {
         rel: "stylesheet",
         href: appCss,
-      },
-      {
-        rel: "icon",
-        type: "image/svg+xml",
-        href: `data:image/svg+xml,${FAVICON_SVG}`,
       },
     ],
   }),

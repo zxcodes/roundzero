@@ -371,27 +371,4 @@
   .animate-scale-in {
     animation: scale-in 0.3s ease-out both;
   }
-  .animate-shimmer-scan {
-    background-size: 200% 100%;
-    animation: shimmer-scan 1.8s ease-in-out infinite;
-  }
-
-  .stagger-1 {
-    animation-delay: 50ms;
-  }
-  .stagger-2 {
-    animation-delay: 100ms;
-  }
-  .stagger-3 {
-    animation-delay: 150ms;
-  }
-  .stagger-4 {
-    animation-delay: 200ms;
-  }
-  .stagger-5 {
-    animation-delay: 250ms;
-  }
-  .stagger-6 {
-    animation-delay: 300ms;
-  }
 }
