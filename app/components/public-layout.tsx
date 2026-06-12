@@ -22,7 +22,7 @@ export function PublicHeader({ editorial }: { editorial?: boolean }) {
     >
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6 lg:px-8">
         <div className="flex items-center">
-          <Link to="/" className="flex items-center gap-2.5">
+          <Link to="/" className="flex items-center gap-1">
             <Logo />
 
             <span
@@ -134,38 +134,48 @@ export function PublicFooter() {
 
 export function Logo({ classname }: { classname?: string }) {
   return (
-    <div className={cn("size-4", classname)}>
+    <div className={cn("size-6", classname)}>
       <svg
-        viewBox="0 0 200 200"
+        width="512"
+        height="512"
+        viewBox="0 0 512 512"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         className="size-full"
       >
-        <g clipPath="url(#clip0_1_1483)">
+        <rect
+          x="512"
+          width="512"
+          height="512"
+          rx="112"
+          transform="rotate(90 512 0)"
+          fill="#EFEBE4"
+        />
+        <g clipPath="url(#clip0_5_3)">
           <path
-            d="M200 30C200 46.5685 186.569 60 170 60C153.431 60 140 46.5685 140 30C140 13.4315 153.431 0 170 0C186.569 0 200 13.4315 200 30Z"
-            fill="currentColor"
+            d="M406 151C406 175.853 385.853 196 361 196C336.147 196 316 175.853 316 151C316 126.147 336.147 106 361 106C385.853 106 406 126.147 406 151Z"
+            fill="#2E2E2E"
           />
           <path
-            d="M200 170C200 186.569 186.569 200 170 200C153.431 200 140 186.569 140 170C140 153.431 153.431 140 170 140C186.569 140 200 153.431 200 170Z"
-            fill="currentColor"
+            d="M406 361C406 385.853 385.853 406 361 406C336.147 406 316 385.853 316 361C316 336.147 336.147 316 361 316C385.853 316 406 336.147 406 361Z"
+            fill="#2E2E2E"
           />
           <path
-            d="M151 100C151 128.167 128.167 151 100 151C71.8335 151 49 128.167 49 100C49 71.8335 71.8335 49 100 49C128.167 49 151 71.8335 151 100Z"
-            fill="currentColor"
+            d="M332.5 256C332.5 298.25 298.25 332.5 256 332.5C213.75 332.5 179.5 298.25 179.5 256C179.5 213.75 213.75 179.5 256 179.5C298.25 179.5 332.5 213.75 332.5 256Z"
+            fill="#2E2E2E"
           />
           <path
-            d="M60 30C60 46.5685 46.5685 60 30 60C13.4315 60 0 46.5685 0 30C0 13.4315 13.4315 0 30 0C46.5685 0 60 13.4315 60 30Z"
-            fill="currentColor"
+            d="M196 151C196 175.853 175.853 196 151 196C126.147 196 106 175.853 106 151C106 126.147 126.147 106 151 106C175.853 106 196 126.147 196 151Z"
+            fill="#2E2E2E"
           />
           <path
-            d="M60 170C60 186.569 46.5685 200 30 200C13.4315 200 0 186.569 0 170C0 153.431 13.4315 140 30 140C46.5685 140 60 153.431 60 170Z"
-            fill="currentColor"
+            d="M196 361C196 385.853 175.853 406 151 406C126.147 406 106 385.853 106 361C106 336.147 126.147 316 151 316C175.853 316 196 336.147 196 361Z"
+            fill="#2E2E2E"
           />
         </g>
         <defs>
-          <clipPath id="clip0_1_1483">
-            <rect width="200" height="200" fill="white" />
+          <clipPath id="clip0_5_3">
+            <rect width="300" height="300" fill="white" transform="translate(106 106)" />
           </clipPath>
         </defs>
       </svg>
