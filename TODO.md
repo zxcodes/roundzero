@@ -198,6 +198,7 @@ post_eval_already_complete)
 <!--- think about compacting existing user-agent chats and reusing them for similar roles to save time and compute.-->
 <!--- **pre-eval: switch slop + eval steps to OpenRouter (Claude 3.5 Haiku / Llama 3.3 70B)** for reliable structured outputs and deterministic scoring. Keep Workers AI for classify step only. See `pre-evaluation.ts` comments for context. Do this before scaling eval volume. And add temperature: 0 and explicit max_tokens — eliminates score variance.-->
 <!--- pre-eval: Delete parseJsonPayload entirely — OpenRouter + Claude actually respects response_format. You’ll get clean objects every time.-->
+<!--- enable min release age in prod.-->
 
 
 
@@ -206,8 +207,6 @@ post_eval_already_complete)
 - check about data retention & allowing people to delete accounts.
 - planetscale for db?
 - analytics? stretch? or just have a basic admin dashboard with stats (should be good enough for the start).
-- enable min release age in prod.
-- see if we can use SST for deployments.
 - validate open router models using their api key in prod ci so we detect non existent models beforehand.
 
 
