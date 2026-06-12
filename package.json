@@ -23,7 +23,7 @@
     "cron": "curl http://localhost:3000/cdn-cgi/handler/scheduled?format=json"
   },
   "dependencies": {
-    "@elevenlabs/client": "^1.10.0",
+    "@elevenlabs/client": "^1.11.0",
     "@fontsource-variable/fraunces": "^5.2.9",
     "@fontsource-variable/geist": "^5.2.9",
     "@fontsource-variable/geist-mono": "^5.2.8",

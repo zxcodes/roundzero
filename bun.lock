@@ -5,7 +5,7 @@
     "": {
       "name": "roundzero",
       "dependencies": {
-        "@elevenlabs/client": "^1.10.0",
+        "@elevenlabs/client": "^1.11.0",
         "@fontsource-variable/fraunces": "^5.2.9",
         "@fontsource-variable/geist": "^5.2.9",
         "@fontsource-variable/geist-mono": "^5.2.8",
@@ -232,7 +232,7 @@
 
     "@ecies/ciphers": ["@ecies/ciphers@0.2.6", "", { "peerDependencies": { "@noble/ciphers": "^1.0.0" } }, "sha512-patgsRPKGkhhoBjETV4XxD0En4ui5fbX0hzayqI3M8tvNMGUoUvmyYAIWwlxBc1KX5cturfqByYdj5bYGRpN9g=="],
 
-    "@elevenlabs/client": ["@elevenlabs/client@1.10.0", "", { "dependencies": { "@elevenlabs/types": "0.14.0", "livekit-client": "2.16.1" } }, "sha512-a8OIuULCwpodN//aIV5G/eS9r0AFTJmrrt2a1G0rnRkxs0Kh9lha00lGLfURsYec7litrBerEznQvkMuKw3fGA=="],
+    "@elevenlabs/client": ["@elevenlabs/client@1.11.0", "", { "dependencies": { "@elevenlabs/types": "0.14.0", "livekit-client": "2.16.1" } }, "sha512-gx4qrGr/Tymq5dIDS1RYOxkul1rj4xcFSZbaMSkAyynoUekD7iDARlWwQf064ObDyrJiegbwYSvJlNzwF9VwZQ=="],
 
     "@elevenlabs/types": ["@elevenlabs/types@0.14.0", "", {}, "sha512-CfpxFyNtTq9Iwm1/Hfxk+FK0QlFgsHpXcNM9jMPYrjP/kAYMFi9rgFoosdJcBGYbgkvzUL7hwT9I6WzHyNyxDg=="],
 
