@@ -86,18 +86,18 @@ type Task =
 
 const MODEL_CHAINS = {
   pre_eval: {
-    dev: ["deepseek/deepseek-v4-flash"],
+    dev: ["openrouter/free"],
     staging: ["deepseek/deepseek-v4-flash"],
     prod: ["anthropic/claude-sonnet-4.5", "anthropic/claude-haiku-4.5"],
   },
   post_eval: {
-    dev: ["deepseek/deepseek-v4-flash"],
+    dev: ["openrouter/free"],
     staging: ["deepseek/deepseek-v4-flash"],
     prod: ["anthropic/claude-sonnet-4.5", "anthropic/claude-haiku-4.5"],
   },
   // Audit uses a different model family than post_eval to catch biases.
   post_eval_audit: {
-    dev: ["deepseek/deepseek-v4-flash"],
+    dev: ["openrouter/free"],
     staging: ["deepseek/deepseek-v4-flash"],
     prod: ["anthropic/claude-sonnet-4.5", "anthropic/claude-haiku-4.5"],
   },
@@ -107,12 +107,12 @@ const MODEL_CHAINS = {
     prod: ["anthropic/claude-sonnet-4.5", "anthropic/claude-haiku-4.5"],
   },
   job_creation: {
-    dev: ["deepseek/deepseek-v4-flash"],
+    dev: ["openrouter/free"],
     staging: ["deepseek/deepseek-v4-flash"],
     prod: ["anthropic/claude-sonnet-4.5", "anthropic/claude-haiku-4.5"],
   },
   answer_authenticity: {
-    dev: ["deepseek/deepseek-v4-flash"],
+    dev: ["openrouter/free"],
     staging: ["deepseek/deepseek-v4-flash"],
     prod: ["anthropic/claude-haiku-4.5"],
   },
