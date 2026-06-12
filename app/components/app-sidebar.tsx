@@ -94,7 +94,7 @@ export function AppSidebar({
   return (
     <Sidebar collapsible="offcanvas" {...props} variant="floating">
       <SidebarHeader>
-        <Link to="/dashboard" className="flex items-center gap-2.5 px-1 py-0.5">
+        <Link to="/dashboard" className="flex items-center gap-1 px-1 py-0.5">
           <Logo />
           <span
             className="font-heading text-[18px] leading-none tracking-[-0.01em]"
