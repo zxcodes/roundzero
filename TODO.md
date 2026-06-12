@@ -1,5 +1,6 @@
 ## TODO
 
+- give companies a nice way to see all shortlisted candidates separated by role for easier next steps (copy email, reaching out etc for next steps. and make this clear on candidate side too after being shortlisted. think about overall ux here.)
 - voice assessment gets stuck on finalizing, sometimes even lost completely? seems like post eval isn't loading voice transcript if this is failed? recheck the entire flow. (also check what happens in case of post eval is skipped, but voice assessment is still there?)
 - cut bundle size (polar, elevenlabs sdk, etc)
 - overall caching seems a bit too aggressive. login/logouts, switching accounts, has stale data.
