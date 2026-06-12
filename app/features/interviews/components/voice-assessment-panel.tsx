@@ -27,6 +27,26 @@ type ChatMessage = { role: "assistant" | "user"; text: string };
 const normMessage = (m: ChatMessage): string =>
   `${m.role}:${m.text.replace(/\s+/g, " ").trim().toLowerCase()}`;
 
+export function CompletedInterviewBar({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-success/10">
+        <HugeiconsIcon icon={Tick01Icon} strokeWidth={2} className="size-4 text-success" />
+      </div>
+      <div>
+        <p className="text-sm font-medium">{title}</p>
+        <p className="text-xs text-muted-foreground">{description}</p>
+      </div>
+    </div>
+  );
+}
+
 export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -289,20 +309,6 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
 
     return (
       <div className="flex h-full min-h-0 flex-col overflow-hidden bg-muted/30">
-        <div className="shrink-0 border-b border-border/50 bg-card/60 px-5 py-3 md:px-6">
-          <div className="flex items-center gap-3">
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-success/10">
-              <HugeiconsIcon icon={Tick01Icon} strokeWidth={2} className="size-4 text-success" />
-            </div>
-            <div>
-              <p className="text-sm font-medium">Voice assessment complete</p>
-              <p className="text-xs text-muted-foreground">
-                Your results are included in the report.
-              </p>
-            </div>
-          </div>
-        </div>
-
         {completedMessages.length > 0 ? (
           <ScrollArea className="min-h-0 flex-1">
             <div className="space-y-7 px-5 py-6 md:px-7 md:py-7">
@@ -344,7 +350,11 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
         )}
 
         <div className="shrink-0 border-t border-border/50 bg-card px-5 py-4 md:px-6">
-          <div className="flex items-center justify-end">
+          <div className="flex items-center justify-between gap-3">
+            <CompletedInterviewBar
+              title="Voice assessment complete"
+              description="Your results are included in the report."
+            />
             <Button size="sm" variant="outline" asChild>
               <Link to="/dashboard/applications">Back to applications</Link>
             </Button>
