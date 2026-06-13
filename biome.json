@@ -50,25 +50,16 @@
       "preset": "recommended",
       "a11y": {
         "noAutofocus": "warn",
-        "noSvgWithoutTitle": "off",
-        "noPositiveTabindex": "warn",
-        "useButtonType": "off",
-        "noLabelWithoutControl": "off",
-        "useKeyWithClickEvents": "off",
-        "noStaticElementInteractions": "off"
+        "noPositiveTabindex": "warn"
       },
       "style": {
         "noNonNullAssertion": "error",
-        "useNodejsImportProtocol": "off",
-        "noParameterAssign": "off",
         "noUselessElse": "warn",
         "noDefaultExport": "warn"
       },
       "suspicious": {
         "noNonNullAssertedOptionalChain": "error",
         "noExplicitAny": "warn",
-        "noAssignInExpressions": "off",
-        "noUnknownAtRules": "off",
         "noImplicitAnyLet": "error",
         "noArrayIndexKey": "off",
         "noConsole": {
@@ -78,13 +69,8 @@
           }
         }
       },
-      "security": {
-        "noDangerouslySetInnerHtml": "off",
-        "noBlankTarget": "off"
-      },
+      "security": {},
       "correctness": {
-        "noChildrenProp": "off",
-        "useExhaustiveDependencies": "off",
         "useJsxKeyInIterable": "error",
         "noUnusedVariables": {
           "level": "error",
@@ -96,7 +82,6 @@
         "useHookAtTopLevel": "error"
       },
       "complexity": {
-        "noForEach": "off",
         "noUselessStringConcat": "warn",
         "noUselessCatch": "warn"
       }
