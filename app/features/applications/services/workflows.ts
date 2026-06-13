@@ -24,8 +24,10 @@ import {
   createApplication as createApplicationQuery,
   getApplicationById,
   getApplicationByJobAndCandidate,
+  setShortlistDetails,
   updateApplicationStatus as updateApplicationStatusQuery,
 } from "../queries/queries_sql";
+import type { ShortlistDetails } from "../shortlist";
 
 interface PreEvaluationTriggerResult {
   workflowInstanceId: string;
@@ -239,6 +241,87 @@ export const updateApplicationStatusWorkflow = async (
       jobTitle: application.jobTitle,
       companyName: application.companyName,
       status: input.status,
+    });
+
+    const notification = await createNotification(db, {
+      userId: application.candidateId,
+      type: "application_status_changed",
+      payload,
+    });
+
+    if (notification) {
+      const candidate = await getUserById(db, { id: application.candidateId });
+      await deliverNotificationEmail(db, {
+        notification,
+        recipient: candidate ? { email: candidate.email } : null,
+        sendEmail: options?.sendNotificationEmail ?? sendNotificationEmailViaResend,
+      });
+    }
+  }
+
+  return { application: updated };
+};
+
+export const shortlistApplicantWorkflow = async (
+  db: Sql,
+  input: {
+    userId: string;
+    applicationId: string;
+    note: string | null;
+    /** Re-notify the candidate. Ignored (forced on) for the first shortlist. */
+    notify: boolean;
+  },
+  options?: {
+    sendNotificationEmail?: NotificationEmailSender;
+  },
+) => {
+  const application = await getApplicationById(db, { id: input.applicationId });
+  if (!application) {
+    throw new Error("Application not found");
+  }
+
+  const company = await getCompanyByOwnerId(db, { ownerId: input.userId });
+  if (!company) {
+    throw new Error("Not authorized");
+  }
+
+  const job = await getJobById(db, { id: application.jobId });
+  if (!job || job.companyId !== company.id) {
+    throw new Error("Not authorized");
+  }
+
+  const currentStatus = applicationStatusSchema.parse(application.status);
+  const alreadyShortlisted = currentStatus === "shortlisted";
+  if (!alreadyShortlisted && !isValidTransition(currentStatus, "shortlisted")) {
+    throw new Error(`Cannot shortlist an application with status "${currentStatus}"`);
+  }
+
+  const shortlist: ShortlistDetails = {
+    note: input.note,
+    updatedAt: new Date().toISOString(),
+  };
+
+  const updated = await setShortlistDetails(db, {
+    id: input.applicationId,
+    shortlist,
+    status: alreadyShortlisted ? null : "shortlisted",
+  });
+
+  if (!updated) {
+    throw new Error("Failed to shortlist applicant");
+  }
+
+  // First shortlist always notifies; edits only when explicitly requested.
+  const shouldNotify = !alreadyShortlisted || input.notify;
+  if (shouldNotify) {
+    const payload = notificationPayloadSchemas.application_status_changed.parse({
+      applicationId: application.id,
+      jobId: application.jobId,
+      jobTitle: application.jobTitle,
+      companyName: application.companyName,
+      status: "shortlisted",
+      note: shortlist.note,
+      isShortlistUpdate: alreadyShortlisted,
     });
 
     const notification = await createNotification(db, {

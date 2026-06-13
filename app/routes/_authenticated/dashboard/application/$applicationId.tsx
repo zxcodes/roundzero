@@ -2,6 +2,7 @@ import {
   ArrowLeft01Icon,
   Calendar01Icon,
   Cancel01Icon,
+  CheckmarkCircle02Icon,
   File02Icon,
   Loading03Icon,
 } from "@hugeicons/core-free-icons";
@@ -30,6 +31,7 @@ import {
   getMyApplicationDetail,
   withdrawApplication,
 } from "@/features/applications/server/functions";
+import { hasShortlistNextSteps, parseShortlistDetails } from "@/features/applications/shortlist";
 import { InterviewInvitationCard } from "@/features/interviews/components/interview-invitation-card";
 import { getInterviewForApplication } from "@/features/interviews/server/functions";
 import { formatDate, formatDateShort } from "@/shared/date";
@@ -222,6 +224,11 @@ function CandidateApplicationDetailPage() {
 
   const currentStage = toApplicationStage(application.status);
   const progressStage = currentStage === "shortlisted" ? "evaluated" : currentStage;
+  const shortlistDetails =
+    application.status === "shortlisted" && !application.companyOwnerDeleted
+      ? parseShortlistDetails(application.metadata)
+      : null;
+  const hasShortlistActions = hasShortlistNextSteps(shortlistDetails);
   const meta = getDisplayMeta({
     status: application.status,
     interviewStatus: interview?.status ?? null,
@@ -233,7 +240,6 @@ function CandidateApplicationDetailPage() {
       application.status === "interview_in_progress") &&
     !application.companyOwnerDeleted;
 
-  const hasInterview = interview !== null;
   const interviewExpiresAt = interview?.expiresAt ?? null;
 
   const onResumeView = async () => {
@@ -337,7 +343,32 @@ function CandidateApplicationDetailPage() {
         </Card>
       </div>
 
-      {hasInterview && !application.companyOwnerDeleted ? (
+      {hasShortlistActions ? (
+        <Card>
+          <CardContent className="space-y-3">
+            <div className="flex items-center gap-2">
+              <HugeiconsIcon
+                icon={CheckmarkCircle02Icon}
+                strokeWidth={2}
+                className="size-4 text-success"
+              />
+              <p className="text-sm font-medium text-foreground">
+                Follow-up from {application.companyName}
+              </p>
+            </div>
+
+            {shortlistDetails?.note ? (
+              <div className="rounded-2xl bg-muted/60 px-4 py-3 text-sm text-foreground">
+                {shortlistDetails.note}
+              </div>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {interview &&
+      !application.companyOwnerDeleted &&
+      (interview.status === "pending" || interview.status === "in_progress") ? (
         <InterviewInvitationCard
           interviewId={interview.id}
           interviewType={interview.type}

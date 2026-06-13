@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { archiveJob, createJob } from "@/features/jobs/queries/queries_sql";
+import { getNotificationsByUser } from "@/features/notifications/queries/queries_sql";
 import { getTestDb, makeTestResumeKey, seedCompany, seedUser } from "@/shared/__tests__/test-utils";
 import { isValidTransition } from "@/shared/enums";
 import {
@@ -9,8 +10,10 @@ import {
   getApplicationReviewById,
   updateApplicationStatus,
 } from "../queries/queries_sql";
+import { shortlistApplicantWorkflow } from "../services/workflows";
 
 const sql = getTestDb();
+const noopNotificationEmail = async () => ({ providerMessageId: null });
 
 /** Helper to create an open job. */
 const makeOpenJob = async (companyId: string, title = "Open Job") => {
@@ -315,6 +318,174 @@ describe("application status transitions", () => {
 
     const step7 = await updateApplicationStatus(sql, { id: app!.id, status: "rejected" });
     expect(step7!.status).toBe("rejected");
+  });
+});
+
+describe("shortlist workflow", () => {
+  it("shortlists once, edits silently by default, and re-notifies when requested", async () => {
+    const { company, owner } = await seedCompany({ name: "Orbit Labs" });
+    const candidate = await seedUser({ role: "candidate" });
+    const job = await makeOpenJob(company.id, "Platform Engineer");
+    const application = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: {},
+      status: "evaluated",
+    });
+
+    expect(application).not.toBeNull();
+    if (!application) {
+      return;
+    }
+
+    await shortlistApplicantWorkflow(
+      sql,
+      {
+        userId: owner.id,
+        applicationId: application.id,
+        note: "Loved the systems answers.",
+        notify: false,
+      },
+      { sendNotificationEmail: noopNotificationEmail },
+    );
+
+    const afterFirstShortlist = await getApplicationById(sql, { id: application.id });
+    const firstNotifications = await getNotificationsByUser(sql, {
+      userId: candidate.id,
+      limit: "10",
+    });
+
+    expect(afterFirstShortlist?.status).toBe("shortlisted");
+    expect(afterFirstShortlist?.metadata).toMatchObject({
+      shortlist: {
+        note: "Loved the systems answers.",
+      },
+    });
+    expect(firstNotifications).toHaveLength(1);
+    expect(firstNotifications[0].payload).toEqual({
+      applicationId: application.id,
+      jobId: job.id,
+      jobTitle: "Platform Engineer",
+      companyName: "Orbit Labs",
+      status: "shortlisted",
+      note: "Loved the systems answers.",
+      isShortlistUpdate: false,
+    });
+
+    await shortlistApplicantWorkflow(
+      sql,
+      {
+        userId: owner.id,
+        applicationId: application.id,
+        note: "Please book the team panel.",
+        notify: false,
+      },
+      { sendNotificationEmail: noopNotificationEmail },
+    );
+
+    const afterSilentEdit = await getApplicationById(sql, { id: application.id });
+    const afterSilentEditNotifications = await getNotificationsByUser(sql, {
+      userId: candidate.id,
+      limit: "10",
+    });
+
+    expect(afterSilentEdit?.metadata).toMatchObject({
+      shortlist: {
+        note: "Please book the team panel.",
+      },
+    });
+    expect(afterSilentEditNotifications).toHaveLength(1);
+
+    await shortlistApplicantWorkflow(
+      sql,
+      {
+        userId: owner.id,
+        applicationId: application.id,
+        note: "Panel updated for Thursday.",
+        notify: true,
+      },
+      { sendNotificationEmail: noopNotificationEmail },
+    );
+
+    const afterNotifyEditNotifications = await getNotificationsByUser(sql, {
+      userId: candidate.id,
+      limit: "10",
+    });
+
+    expect(afterNotifyEditNotifications).toHaveLength(2);
+    expect(afterNotifyEditNotifications[0].payload).toEqual({
+      applicationId: application.id,
+      jobId: job.id,
+      jobTitle: "Platform Engineer",
+      companyName: "Orbit Labs",
+      status: "shortlisted",
+      note: "Panel updated for Thursday.",
+      isShortlistUpdate: true,
+    });
+  });
+
+  it("blocks non-owner companies from shortlisting", async () => {
+    const { company } = await seedCompany({ name: "Owner Co" });
+    const { owner: otherOwner } = await seedCompany({ name: "Other Co" });
+    const candidate = await seedUser({ role: "candidate" });
+    const job = await makeOpenJob(company.id, "Backend Engineer");
+    const application = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: {},
+      status: "evaluated",
+    });
+
+    expect(application).not.toBeNull();
+    if (!application) {
+      return;
+    }
+
+    await expect(
+      shortlistApplicantWorkflow(
+        sql,
+        {
+          userId: otherOwner.id,
+          applicationId: application.id,
+          note: "Not your role",
+          notify: true,
+        },
+        { sendNotificationEmail: noopNotificationEmail },
+      ),
+    ).rejects.toThrow("Not authorized");
+  });
+
+  it("blocks invalid transitions into shortlisted", async () => {
+    const { company, owner } = await seedCompany({ name: "Blocked Co" });
+    const candidate = await seedUser({ role: "candidate" });
+    const job = await makeOpenJob(company.id, "Product Engineer");
+    const application = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: {},
+      status: "applied",
+    });
+
+    expect(application).not.toBeNull();
+    if (!application) {
+      return;
+    }
+
+    await expect(
+      shortlistApplicantWorkflow(
+        sql,
+        {
+          userId: owner.id,
+          applicationId: application.id,
+          note: "Too early",
+          notify: true,
+        },
+        { sendNotificationEmail: noopNotificationEmail },
+      ),
+    ).rejects.toThrow('Cannot shortlist an application with status "applied"');
   });
 });
 

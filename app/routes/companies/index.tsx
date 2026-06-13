@@ -256,7 +256,7 @@ function CompanyCard({ company, className }: { company: CompanyFromLoader; class
               ) : null}
             </div>
             {company.openJobCount > 0 ? (
-              <Badge variant="secondary" className="shrink-0 gap-1 text-[11px] font-semibold">
+              <Badge variant="secondary" className="shrink-0 gap-1 font-semibold">
                 <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} className="size-3" />
                 {company.openJobCount}
               </Badge>

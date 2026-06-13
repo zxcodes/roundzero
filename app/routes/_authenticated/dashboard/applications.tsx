@@ -19,6 +19,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { getMyApplications } from "@/features/applications/server/functions";
+import { hasShortlistNextSteps, parseShortlistDetails } from "@/features/applications/shortlist";
 import { formatDate } from "@/shared/date";
 
 export const Route = createFileRoute("/_authenticated/dashboard/applications")({
@@ -258,6 +259,16 @@ function ApplicationListCard({
   className?: string;
 }) {
   const statusMeta = getStatusMeta(application);
+  const shortlistDetails =
+    application.status === "shortlisted" && !application.companyOwnerDeleted
+      ? parseShortlistDetails(application.metadata)
+      : null;
+  const hasNextSteps = hasShortlistNextSteps(shortlistDetails);
+  const description = application.companyOwnerDeleted
+    ? "The company account has been deleted — this application is no longer active"
+    : hasNextSteps
+      ? "The company added follow-up for your shortlisted application"
+      : statusMeta.blurb;
 
   return (
     <Card size="sm" className={className}>
@@ -272,15 +283,12 @@ function ApplicationListCard({
                 {getJobStateLabel(application)}
               </Badge>
               <Badge className={`${statusMeta.tone} text-[11px]`}>{statusMeta.badge}</Badge>
+              {hasNextSteps ? <Badge variant="secondary">Follow-up available</Badge> : null}
             </div>
 
             <div className="space-y-1">
               <CardTitle className="text-lg">{application.jobTitle}</CardTitle>
-              <CardDescription>
-                {application.companyOwnerDeleted
-                  ? "The company account has been deleted — this application is no longer active"
-                  : statusMeta.blurb}
-              </CardDescription>
+              <CardDescription>{description}</CardDescription>
             </div>
 
             <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
