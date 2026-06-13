@@ -1093,6 +1093,79 @@ export function DashboardApplicationsSkeleton() {
 }
 
 /**
+ * Skeleton for /dashboard/shortlisted — company shortlist board grouped by role.
+ * Matches: page heading + summary metrics + collapsible role sections with candidate rows.
+ */
+export function DashboardShortlistedSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-3 md:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <Card key={`shortlisted-metric-${index}`} size="sm">
+            <CardHeader className="gap-1.5">
+              <Skeleton className="h-3 w-20" />
+              <Skeleton className="h-8 w-16" />
+              <Skeleton className="h-3 w-40" />
+            </CardHeader>
+          </Card>
+        ))}
+      </div>
+
+      <div className="space-y-3">
+        {Array.from({ length: 2 }).map((_, sectionIndex) => (
+          <div
+            key={`shortlisted-section-${sectionIndex}`}
+            className="overflow-hidden rounded-2xl border bg-card"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 md:px-6">
+              <div className="space-y-2">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-5 w-52" />
+              </div>
+              <Skeleton className="h-5 w-24 rounded-full" />
+            </div>
+
+            <div className="px-5 pb-5 md:px-6">
+              <div className="divide-y divide-border/50 overflow-hidden rounded-3xl border border-border/60">
+                {Array.from({ length: 2 }).map((_, rowIndex) => (
+                  <div
+                    key={`shortlisted-row-${sectionIndex}-${rowIndex}`}
+                    className="px-4 py-4 md:px-5"
+                  >
+                    <div className="flex flex-wrap items-center gap-3">
+                      <Skeleton className="size-10 shrink-0 rounded-full" />
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-5 w-28 rounded-full" />
+                        </div>
+                        <Skeleton className="h-3 w-44" />
+                      </div>
+                      <Skeleton className="h-6 w-24 shrink-0 rounded-full" />
+                      <div className="flex w-full flex-wrap items-center gap-1.5 md:w-auto">
+                        <Skeleton className="h-8 w-20 rounded-md" />
+                        <Skeleton className="h-8 w-20 rounded-md" />
+                        <Skeleton className="h-8 w-28 rounded-md" />
+                        <Skeleton className="h-8 w-28 rounded-md" />
+                      </div>
+                    </div>
+                    <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                      <Skeleton className="h-6 w-64 rounded-2xl" />
+                      <Skeleton className="h-6 w-20 rounded-md" />
+                      <Skeleton className="h-3 w-28" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
  * Skeleton for /dashboard/application/$applicationId — candidate application detail.
  * Matches: back link + header (company, title, badge) + date + status pipeline + interview card + actions.
  */
@@ -1135,6 +1208,21 @@ export function DashboardApplicationDetailSkeleton() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Optional shortlist next-steps card */}
+      <Card className="border-success/20 bg-success/5">
+        <CardContent className="space-y-3 py-4">
+          <div className="flex items-start gap-3">
+            <Skeleton className="size-10 rounded-2xl" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <Skeleton className="h-4 w-44" />
+              <Skeleton className="h-3 w-60" />
+            </div>
+          </div>
+          <Skeleton className="h-16 w-full rounded-2xl" />
+          <Skeleton className="h-9 w-32 rounded-md" />
+        </CardContent>
+      </Card>
 
       {/* Interview invitation card */}
       <Card className="border-warning/20 bg-warning/5">

@@ -80,6 +80,42 @@ SET status = $1,
 WHERE id = $2
 RETURNING id, job_id, candidate_id, resume_key, metadata, status, created_at, updated_at;
 
+-- name: setShortlistDetails :one
+-- Writes (or overwrites) metadata.shortlist and optionally flips the status to
+-- 'shortlisted'. The status arg is NULL on edits of an already-shortlisted app.
+UPDATE applications
+SET metadata = COALESCE(metadata, '{}'::jsonb) || jsonb_build_object('shortlist', sqlc.arg('shortlist')::jsonb),
+    status = COALESCE(sqlc.narg('status')::text, status),
+    updated_at = now()
+WHERE id = sqlc.arg('id')
+RETURNING id, job_id, candidate_id, resume_key, metadata, status, created_at, updated_at;
+
+-- name: getShortlistedApplicantsByCompany :many
+-- Every shortlisted application across all of a company's active jobs, with the
+-- candidate contact details, job grouping, and latest released report score.
+-- Ordered by job, then score desc, for the cross-role "shortlisted" view.
+SELECT a.id, a.job_id, a.candidate_id, a.metadata, a.status, a.updated_at,
+       j.title AS job_title,
+       u.name AS candidate_name, u.email AS candidate_email, u.picture AS candidate_picture,
+       latest_released_report.recommendation AS report_recommendation,
+       latest_released_report.scores AS report_scores
+FROM applications a
+JOIN jobs j ON j.id = a.job_id
+JOIN companies c ON c.id = j.company_id
+JOIN users u ON u.id = a.candidate_id AND u.deleted_at IS NULL
+LEFT JOIN LATERAL (
+  SELECT r.recommendation, r.scores
+  FROM reports r
+  WHERE r.application_id = a.id
+    AND r.released_at IS NOT NULL
+  ORDER BY r.released_at DESC, r.created_at DESC
+  LIMIT 1
+) latest_released_report ON TRUE
+WHERE c.id = $1
+  AND a.status = 'shortlisted'
+  AND j.archived_at IS NULL
+ORDER BY j.title ASC, COALESCE((latest_released_report.scores->>'overall')::numeric, 0) DESC, a.updated_at DESC;
+
 -- name: getApplicationCountByJob :one
 SELECT count(*)::int AS count
 FROM applications
