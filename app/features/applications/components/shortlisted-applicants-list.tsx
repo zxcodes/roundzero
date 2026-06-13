@@ -81,7 +81,7 @@ export function ShortlistedApplicantsList({
 
       <div className="space-y-3">
         {groups.map((group) => (
-          <Accordion key={group.jobId} type="multiple" defaultValue={[group.jobId]}>
+          <Accordion key={group.jobId} type="multiple">
             <AccordionItem value={group.jobId}>
               <AccordionTrigger className="px-5 py-4 text-left hover:no-underline md:px-6">
                 <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-3 pr-3">
@@ -91,7 +91,7 @@ export function ShortlistedApplicantsList({
                     </p>
                     <h3 className="truncate text-lg font-semibold">{group.jobTitle}</h3>
                   </div>
-                  <Badge variant="secondary" className="font-mono text-[11px]">
+                  <Badge variant="secondary">
                     {group.applicants.length} candidate
                     {group.applicants.length === 1 ? "" : "s"}
                   </Badge>

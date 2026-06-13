@@ -739,13 +739,13 @@ function CandidateJobsList({ data }: { data: Awaited<ReturnType<typeof getOpenJo
 
                     <div className="flex flex-wrap gap-1.5 border-t border-border/40 pt-3">
                       {job.employmentType ? (
-                        <Badge variant="secondary" className="text-[11px]">
+                        <Badge variant="secondary">
                           {employmentTypeLabels[job.employmentType as EmploymentType] ??
                             job.employmentType}
                         </Badge>
                       ) : null}
                       {job.experienceLevel ? (
-                        <Badge variant="secondary" className="text-[11px]">
+                        <Badge variant="secondary">
                           {experienceLevelLabels[job.experienceLevel as ExperienceLevel] ??
                             job.experienceLevel}
                         </Badge>

@@ -233,9 +233,7 @@ function ActionQueueCard({ actions }: { actions: ActionItem[] }) {
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base">Action queue</CardTitle>
-          <Badge variant="secondary" className="font-mono text-[11px]">
-            {actions.length}
-          </Badge>
+          <Badge variant="secondary">{actions.length}</Badge>
         </div>
         <CardDescription className="text-xs">
           Top things to handle next, in priority order.
@@ -423,9 +421,7 @@ function RecentReleasesCard({ reports }: { reports: ReportHighlight[] }) {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="text-base">Recent releases</CardTitle>
-          <Badge variant="secondary" className="font-mono text-[11px]">
-            {reports.length}
-          </Badge>
+          <Badge variant="secondary">{reports.length}</Badge>
         </div>
         <CardDescription className="text-xs">
           Top-scoring evaluations across your roles.

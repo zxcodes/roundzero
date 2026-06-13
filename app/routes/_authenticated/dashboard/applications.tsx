@@ -283,11 +283,7 @@ function ApplicationListCard({
                 {getJobStateLabel(application)}
               </Badge>
               <Badge className={`${statusMeta.tone} text-[11px]`}>{statusMeta.badge}</Badge>
-              {hasNextSteps ? (
-                <Badge variant="secondary" className="text-[11px]">
-                  Next steps ready
-                </Badge>
-              ) : null}
+              {hasNextSteps ? <Badge variant="secondary">Next steps ready</Badge> : null}
             </div>
 
             <div className="space-y-1">

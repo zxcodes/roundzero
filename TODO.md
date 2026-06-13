@@ -1,7 +1,6 @@
 ## TODO
 
 - improve ci. prevent unnecessary runs.
-- give companies a nice way to see all shortlisted candidates separated by role for easier next steps (copy email, reaching out etc for next steps. and make this clear on candidate side too after being shortlisted. think about overall ux here.)
 - overall caching seems a bit too aggressive. login/logouts, switching accounts, has stale data.
 - check deleted account behaviour for companies, applications, etc. how the entire flow handles it.
 - pricing needs a big change. (think about per job, x number of jobs, and pay as you go kind?)
@@ -16,6 +15,7 @@ post_eval_already_complete)
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- give companies a nice way to see all shortlisted candidates separated by role for easier next steps (copy email, reaching out etc for next steps. and make this clear on candidate side too after being shortlisted. think about overall ux here.)-->
 <!--- voice assistant still outputting [Understood] kind of messages in text. Check eleven labs docs, etc.-->
 <!--- choose a consistent brand naming "roundzero" vs "RoundZero".-->
 <!--- change the fucking app icon ugh. (more seo icons remaining)-->
