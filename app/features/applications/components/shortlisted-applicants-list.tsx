@@ -75,7 +75,7 @@ export function ShortlistedApplicantsList({
         <MetricCard
           label="With next steps"
           value={String(applicants.filter(hasCandidateNextSteps).length)}
-          description="Candidates with a note or link attached."
+          description="Candidates with a note attached."
         />
       </div>
 
@@ -197,7 +197,7 @@ function ShortlistedApplicantRow({ applicant }: { applicant: ShortlistedApplican
             defaultNote={shortlistDetails?.note ?? null}
             trigger={
               <Button variant="outline" size="sm">
-                Edit next steps
+                Edit note
               </Button>
             }
           />
