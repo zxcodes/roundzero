@@ -3,10 +3,16 @@ import {
   countApplicationsByCandidate,
   countApplicationsByCompany,
   createApplication,
+  getApplicationsByCandidate,
+  getRecentApplicationsByCandidate,
   updateApplicationStatus,
 } from "@/features/applications/queries/queries_sql";
 import { getUserById } from "@/features/auth/queries/queries_sql";
 import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
+import {
+  createInterview,
+  getInterviewsByCandidate,
+} from "@/features/interviews/queries/queries_sql";
 import {
   archiveJob,
   countJobsByCompanyAndStatus,
@@ -259,6 +265,67 @@ describe("candidate dashboard metrics", () => {
 
     const counts = await countApplicationsByCandidate(sql, { candidateId: candidate.id });
     expect(counts?.totalCount).toBe(1);
+  });
+
+  it("surfaces shortlisted apps and pending interviews for the enriched candidate dashboard", async () => {
+    const { company } = await seedCompany();
+    const candidate = await seedUser({ role: "candidate" });
+
+    const jobShort = await makeOpenJob(company.id, "Shortlisted Role");
+    const jobInt = await makeOpenJob(company.id, "Interview Role");
+
+    // Shortlisted app with follow-up note in metadata
+    await createApplication(sql, {
+      jobId: jobShort.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: {
+        shortlist: {
+          note: "Excited to chat — please reply with availability.",
+          updatedAt: new Date().toISOString(),
+        },
+      },
+      status: "shortlisted",
+    });
+
+    // Separate app + pending interview (actionable interview path)
+    const intApp = await createApplication(sql, {
+      jobId: jobInt.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: {},
+      status: "interview_invited",
+    });
+
+    await createInterview(sql, {
+      applicationId: intApp!.id,
+      agentId: "test-agent",
+      type: "full",
+      metadata: { expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString() },
+      status: "pending",
+      invitedAt: new Date(),
+      startedAt: null,
+      completedAt: null,
+    });
+
+    const apps = await getApplicationsByCandidate(sql, { candidateId: candidate.id });
+    const interviews = await getInterviewsByCandidate(sql, { candidateId: candidate.id });
+
+    const shortlisted = apps.filter((a) => a.status === "shortlisted");
+    expect(shortlisted.length).toBeGreaterThan(0);
+    expect(shortlisted[0].metadata?.shortlist).toBeTruthy();
+
+    const pendingInts = interviews.filter(
+      (i) => i.status === "pending" || i.status === "in_progress",
+    );
+    expect(pendingInts.length).toBeGreaterThan(0);
+    expect(pendingInts[0].jobTitle).toBe("Interview Role");
+
+    const recent = await getRecentApplicationsByCandidate(sql, { candidateId: candidate.id });
+    expect(recent.length).toBe(2);
+    // intApp created after shortlisted one, so most recent first
+    expect(recent[0].jobTitle).toBe("Interview Role");
+    expect(recent.some((a) => a.jobTitle === "Shortlisted Role")).toBe(true);
   });
 });
 

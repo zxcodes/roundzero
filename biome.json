@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.4.16/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.0/schema.json",
   "vcs": {
     "enabled": false,
     "clientKind": "git",
@@ -47,28 +47,19 @@
     "enabled": true,
     "rules": {
       "nursery": { "noFloatingPromises": "warn" },
-      "recommended": true,
+      "preset": "recommended",
       "a11y": {
         "noAutofocus": "warn",
-        "noSvgWithoutTitle": "off",
-        "noPositiveTabindex": "warn",
-        "useButtonType": "off",
-        "noLabelWithoutControl": "off",
-        "useKeyWithClickEvents": "off",
-        "noStaticElementInteractions": "off"
+        "noPositiveTabindex": "warn"
       },
       "style": {
         "noNonNullAssertion": "error",
-        "useNodejsImportProtocol": "off",
-        "noParameterAssign": "off",
         "noUselessElse": "warn",
         "noDefaultExport": "warn"
       },
       "suspicious": {
         "noNonNullAssertedOptionalChain": "error",
         "noExplicitAny": "warn",
-        "noAssignInExpressions": "off",
-        "noUnknownAtRules": "off",
         "noImplicitAnyLet": "error",
         "noArrayIndexKey": "off",
         "noConsole": {
@@ -78,13 +69,8 @@
           }
         }
       },
-      "security": {
-        "noDangerouslySetInnerHtml": "off",
-        "noBlankTarget": "off"
-      },
+      "security": {},
       "correctness": {
-        "noChildrenProp": "off",
-        "useExhaustiveDependencies": "off",
         "useJsxKeyInIterable": "error",
         "noUnusedVariables": {
           "level": "error",
@@ -96,7 +82,6 @@
         "useHookAtTopLevel": "error"
       },
       "complexity": {
-        "noForEach": "off",
         "noUselessStringConcat": "warn",
         "noUselessCatch": "warn"
       }
