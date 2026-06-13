@@ -1,5 +1,6 @@
 ## TODO
 
+- add onCopy, onPaste detectors and evaluate final score based on that.
 - company has redundant steps. if I click a job, first taken to a page where there is jd, I have to click view applicants, which is another redundant page. we can def drop one of these here and make it simple.
 - improve ci. prevent unnecessary runs.
 - overall caching seems a bit too aggressive. login/logouts, switching accounts, has stale data.
