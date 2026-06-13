@@ -370,6 +370,7 @@ describe("shortlist workflow", () => {
       companyName: "Orbit Labs",
       status: "shortlisted",
       note: "Loved the systems answers.",
+      isShortlistUpdate: false,
     });
 
     await shortlistApplicantWorkflow(
@@ -420,6 +421,7 @@ describe("shortlist workflow", () => {
       companyName: "Orbit Labs",
       status: "shortlisted",
       note: "Panel updated for Thursday.",
+      isShortlistUpdate: true,
     });
   });
 
