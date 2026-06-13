@@ -5,9 +5,6 @@
   "ignore": ["app/components/ui/**"],
   "ignoreBinaries": ["sqlc", "polar"],
   "ignoreDependencies": [
-    "@tanstack/react-devtools",
-    "@tanstack/react-router-devtools",
-    "@tanstack/react-query-devtools",
     "@fontsource-variable/geist-mono",
     "@fontsource-variable/geist",
     "@fontsource-variable/fraunces",

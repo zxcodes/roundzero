@@ -33,12 +33,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ShortlistDialog } from "@/features/applications/components/shortlist-dialog";
 import {
   getApplicationResume,
   getCompanyApplicantReview,
   retryApplicationEvaluation,
   updateApplicationStatus,
 } from "@/features/applications/server/functions";
+import { parseShortlistDetails } from "@/features/applications/shortlist";
 import { getPreEvaluationForApplication } from "@/features/pre-evaluations/server/functions";
 import { ReportSnapshotCard } from "@/features/reports/components/report-cards";
 import { getCompanyApplicantReportTimeline } from "@/features/reports/server/functions";
@@ -192,10 +194,14 @@ function ApplicantReviewPage() {
   const canShortlist =
     allowedTransitions.includes("shortlisted") && currentStatus !== "shortlisted";
   const canReject = allowedTransitions.includes("rejected") && currentStatus !== "rejected";
+  const isShortlisted = currentStatus === "shortlisted";
+  const shortlistDetails = parseShortlistDetails(application.metadata);
 
+  // Shortlisting goes through the dedicated dialog (note + link), so it is
+  // excluded from the generic "Move to" dropdown to avoid a second code path.
   const allowedStatusOptions: ApplicationStatus[] = [
     currentStatus,
-    ...allowedTransitions.filter((s) => s !== currentStatus),
+    ...allowedTransitions.filter((s) => s !== currentStatus && s !== "shortlisted"),
   ];
 
   const onStatusValueChange = async (value: string) => {
@@ -208,12 +214,6 @@ function ApplicantReviewPage() {
 
     await updateStatusMutation.mutateAsync({
       data: { applicationId: application.id, status: nextStatus },
-    });
-  };
-
-  const onShortlist = async () => {
-    await updateStatusMutation.mutateAsync({
-      data: { applicationId: application.id, status: "shortlisted" },
     });
   };
 
@@ -295,11 +295,15 @@ function ApplicantReviewPage() {
 
         <ApplicationStatusSection
           currentStatus={currentStatus}
+          applicationId={application.id}
+          candidateName={application.candidateName}
           canShortlist={canShortlist}
+          isShortlisted={isShortlisted}
+          shortlistNote={shortlistDetails?.note ?? null}
+          shortlistLink={shortlistDetails?.link ?? null}
           canReject={canReject}
           isPending={updateStatusMutation.isPending}
           isRejectPending={pendingStatus !== null}
-          onShortlist={onShortlist}
           onReject={onRejectClick}
           onRetryEvaluation={onRetryEvaluation}
           retryEvaluationPending={retryEvaluationMutation.isPending}
@@ -378,11 +382,15 @@ function ApplicantReviewPage() {
 
 function ApplicationStatusSection({
   currentStatus,
+  applicationId,
+  candidateName,
   canShortlist,
+  isShortlisted,
+  shortlistNote,
+  shortlistLink,
   canReject,
   isPending,
   isRejectPending,
-  onShortlist,
   onReject,
   onRetryEvaluation,
   retryEvaluationPending,
@@ -399,11 +407,15 @@ function ApplicationStatusSection({
   createdAt,
 }: {
   currentStatus: ApplicationStatus;
+  applicationId: string;
+  candidateName: string;
   canShortlist: boolean;
+  isShortlisted: boolean;
+  shortlistNote: string | null;
+  shortlistLink: string | null;
   canReject: boolean;
   isPending: boolean;
   isRejectPending: boolean;
-  onShortlist: () => void | Promise<void>;
   onReject: () => void;
   onRetryEvaluation: () => void | Promise<void>;
   retryEvaluationPending: boolean;
@@ -487,16 +499,23 @@ function ApplicationStatusSection({
             ) : null}
 
             {canShortlist ? (
-              <Button disabled={isPending} onClick={onShortlist}>
-                {isPending && !isRejectPending ? (
-                  <HugeiconsIcon
-                    icon={Loading03Icon}
-                    strokeWidth={2}
-                    className="size-4 animate-spin"
-                  />
-                ) : null}
-                {isPending && !isRejectPending ? "Shortlisting..." : "Shortlist"}
-              </Button>
+              <ShortlistDialog
+                applicationId={applicationId}
+                candidateName={candidateName}
+                mode="create"
+                trigger={<Button disabled={isPending}>Shortlist</Button>}
+              />
+            ) : null}
+
+            {isShortlisted ? (
+              <ShortlistDialog
+                applicationId={applicationId}
+                candidateName={candidateName}
+                mode="edit"
+                defaultNote={shortlistNote}
+                defaultLink={shortlistLink}
+                trigger={<Button variant="outline">Edit next steps</Button>}
+              />
             ) : null}
           </div>
         </div>

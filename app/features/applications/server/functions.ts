@@ -16,13 +16,16 @@ import {
   getApplicationReviewById,
   getApplicationsByCandidate,
   getApplicationsByJob,
+  getShortlistedApplicantsByCompany,
 } from "../queries/queries_sql";
 import { retryEvaluation } from "../services/retry";
 import {
   applyToJobWorkflow,
+  shortlistApplicantWorkflow,
   updateApplicationStatusWorkflow,
   withdrawApplicationWorkflow,
 } from "../services/workflows";
+import { shortlistInputSchema } from "../shortlist";
 
 const applySchema = z.object({
   jobId: z.string().uuid(),
@@ -149,6 +152,27 @@ export const updateApplicationStatus = createServerFn({ method: "POST" })
       applicationId: data.applicationId,
       status: data.status,
     });
+  });
+
+export const shortlistApplicant = createServerFn({ method: "POST" })
+  .middleware([companyMiddleware])
+  .validator(zodValidator(shortlistInputSchema))
+  .handler(async ({ data, context }) => {
+    const db = getDb();
+    return await shortlistApplicantWorkflow(db, {
+      userId: context.userId,
+      applicationId: data.applicationId,
+      note: data.note ?? null,
+      link: data.link ?? null,
+      notify: data.notify ?? false,
+    });
+  });
+
+export const getShortlistedApplicants = createServerFn({ method: "GET" })
+  .middleware([companyMiddleware])
+  .handler(async ({ context }) => {
+    const db = getDb();
+    return await getShortlistedApplicantsByCompany(db, { id: context.company.id });
   });
 
 export const withdrawApplication = createServerFn({ method: "POST" })

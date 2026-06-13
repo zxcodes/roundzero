@@ -13,6 +13,7 @@ import {
   getApplicationReviewById,
   getApplicationsByCandidate,
   getApplicationsByJob,
+  getShortlistedApplicantsByCompany,
   updateApplicationStatus,
 } from "../queries_sql";
 
@@ -417,6 +418,127 @@ describe("getApplicationsByCandidate", () => {
   });
 });
 
+describe("getShortlistedApplicantsByCompany", () => {
+  it("returns only the company's shortlisted applicants ordered by role then score", async () => {
+    const { company } = await seedCompany({ name: "Shortlist Co" });
+    const { company: otherCompany } = await seedCompany({ name: "Other Co" });
+
+    const backendJob = await makeOpenJob(company.id, "Backend Engineer");
+    const frontendJob = await makeOpenJob(company.id, "Frontend Engineer");
+    const archivedJob = await makeOpenJob(company.id, "Ops Engineer");
+    const otherJob = await makeOpenJob(otherCompany.id, "Design Engineer");
+
+    const backendHigh = await seedUser({ name: "Ava High", role: "candidate" });
+    const backendLow = await seedUser({ name: "Ben Low", role: "candidate" });
+    const frontendCandidate = await seedUser({ name: "Cara Front", role: "candidate" });
+    const archivedCandidate = await seedUser({ name: "Drew Archived", role: "candidate" });
+    const otherCandidate = await seedUser({ name: "Elle Other", role: "candidate" });
+    const notShortlisted = await seedUser({ name: "Finn Pending", role: "candidate" });
+
+    const backendHighApp = await createApplication(sql, {
+      jobId: backendJob.id,
+      candidateId: backendHigh.id,
+      resumeKey: makeTestResumeKey(backendHigh.id),
+      metadata: {
+        shortlist: {
+          note: "Schedule panel",
+          link: "https://cal.example.com/backend-high",
+          updatedAt: "2026-06-13T08:00:00.000Z",
+        },
+      },
+      status: "shortlisted",
+    });
+    const backendLowApp = await createApplication(sql, {
+      jobId: backendJob.id,
+      candidateId: backendLow.id,
+      resumeKey: makeTestResumeKey(backendLow.id),
+      metadata: {
+        shortlist: {
+          note: null,
+          link: null,
+          updatedAt: "2026-06-13T08:10:00.000Z",
+        },
+      },
+      status: "shortlisted",
+    });
+    const frontendApp = await createApplication(sql, {
+      jobId: frontendJob.id,
+      candidateId: frontendCandidate.id,
+      resumeKey: makeTestResumeKey(frontendCandidate.id),
+      metadata: {
+        shortlist: {
+          note: "Meet the PM",
+          link: "https://cal.example.com/frontend",
+          updatedAt: "2026-06-13T08:20:00.000Z",
+        },
+      },
+      status: "shortlisted",
+    });
+    await createApplication(sql, {
+      jobId: backendJob.id,
+      candidateId: notShortlisted.id,
+      resumeKey: makeTestResumeKey(notShortlisted.id),
+      metadata: {},
+      status: "evaluated",
+    });
+    await createApplication(sql, {
+      jobId: archivedJob.id,
+      candidateId: archivedCandidate.id,
+      resumeKey: makeTestResumeKey(archivedCandidate.id),
+      metadata: {
+        shortlist: {
+          note: "Should be hidden",
+          link: null,
+          updatedAt: "2026-06-13T08:25:00.000Z",
+        },
+      },
+      status: "shortlisted",
+    });
+    await createApplication(sql, {
+      jobId: otherJob.id,
+      candidateId: otherCandidate.id,
+      resumeKey: makeTestResumeKey(otherCandidate.id),
+      metadata: {
+        shortlist: {
+          note: "Other company",
+          link: null,
+          updatedAt: "2026-06-13T08:30:00.000Z",
+        },
+      },
+      status: "shortlisted",
+    });
+
+    await archiveJob(sql, { id: archivedJob.id, companyId: company.id });
+
+    await insertReleasedReport(backendHighApp!.id, 93);
+    await insertReleasedReport(backendLowApp!.id, 81);
+    await insertReleasedReport(frontendApp!.id, 88);
+
+    const rows = await getShortlistedApplicantsByCompany(sql, { id: company.id });
+
+    expect(rows).toHaveLength(3);
+    expect(rows.map((row) => row.jobTitle)).toEqual([
+      "Backend Engineer",
+      "Backend Engineer",
+      "Frontend Engineer",
+    ]);
+    expect(rows.map((row) => row.candidateName)).toEqual(["Ava High", "Ben Low", "Cara Front"]);
+    expect(rows.map((row) => row.id)).toEqual([
+      backendHighApp!.id,
+      backendLowApp!.id,
+      frontendApp!.id,
+    ]);
+    expect(rows[0].candidateEmail).toBe(backendHigh.email);
+    expect(rows[0].reportScores).toEqual({
+      communication: 93,
+      problemSolving: 92,
+      ownership: 91,
+      roleFit: 94,
+      overall: 93,
+    });
+  });
+});
+
 describe("updateApplicationStatus", () => {
   it("updates the status and updated_at", async () => {
     const { company } = await seedCompany();
@@ -448,6 +570,67 @@ describe("updateApplicationStatus", () => {
     expect(result).toBeNull();
   });
 });
+
+async function insertReleasedReport(applicationId: string, overall: number) {
+  const interview = await createInterview(sql, {
+    applicationId,
+    agentId: null,
+    type: "full",
+    metadata: {},
+    status: "completed",
+    invitedAt: new Date(),
+    startedAt: new Date(),
+    completedAt: new Date(),
+  });
+
+  expect(interview).not.toBeNull();
+  if (!interview) {
+    return;
+  }
+
+  await sql`
+    INSERT INTO reports (
+      interview_id,
+      application_id,
+      summary,
+      strengths,
+      weaknesses,
+      insights,
+      evidence,
+      screening_answers,
+      scores,
+      recommendation,
+      model,
+      prompt_version,
+      refine_version,
+      created_at,
+      released_at
+    )
+    VALUES (
+      ${interview.id},
+      ${applicationId},
+      'Released summary',
+      '[]'::jsonb,
+      '[]'::jsonb,
+      '[]'::jsonb,
+      '[]'::jsonb,
+      '[]'::jsonb,
+      jsonb_build_object(
+        'communication', ${overall}::int,
+        'problemSolving', ${overall - 1}::int,
+        'ownership', ${overall - 2}::int,
+        'roleFit', ${overall + 1}::int,
+        'overall', ${overall}::int
+      ),
+      'yes',
+      'test-model',
+      '1.0.0',
+      '1.0.0',
+      now(),
+      now()
+    )
+  `;
+}
 
 describe("getApplicationCountByJob", () => {
   it("counts applications for a job", async () => {
