@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/empty";
 import { getDashboardMetrics } from "@/features/dashboard/server/functions";
 import { ScorePill } from "@/features/reports/components/score-pill";
+import { formatRelativeTime } from "@/shared/date";
 import { recommendationSchema, recommendationSurfaceTone } from "@/shared/enums";
 
 type DashboardMetrics = Awaited<ReturnType<typeof getDashboardMetrics>>;
@@ -31,6 +32,7 @@ type CandidateMetrics = Extract<DashboardMetrics, { type: "candidate" }> & {
   shortlistedCount?: number;
   pendingInterviews?: PendingInterview[];
   shortlistedApplications?: ShortlistedApp[];
+  recentActivity?: RecentActivityItem[];
 };
 type RoleHealth = CompanyMetrics["roleHealth"][number];
 type ReportHighlight = CompanyMetrics["reportHighlights"][number];
@@ -51,6 +53,17 @@ type ShortlistedApp = {
   jobTitle: string;
   companyName: string;
   hasFollowUp: boolean;
+};
+
+type RecentActivityItem = {
+  id: string;
+  jobTitle: string;
+  companyName: string;
+  status: string;
+  updatedAt: Date | string;
+  jobStatus: string;
+  companyOwnerDeleted: boolean;
+  interviewStatus: string | null;
 };
 
 export const Route = createFileRoute("/_authenticated/dashboard/")({
@@ -279,6 +292,52 @@ function buildCandidateActionQueue(metrics: CandidateMetrics): ActionItem[] {
 
   return items.slice(0, 5);
 }
+
+const getRecentStatusMeta = (app: RecentActivityItem) => {
+  if (app.companyOwnerDeleted) {
+    return { badge: "Account deleted", tone: "bg-muted text-muted-foreground" };
+  }
+  if (app.jobStatus === "closed") {
+    return { badge: "Role closed", tone: "bg-muted text-muted-foreground" };
+  }
+  if (app.jobStatus === "draft") {
+    return { badge: "Role paused", tone: "bg-muted text-muted-foreground" };
+  }
+
+  const status = app.status;
+  const interviewStatus = app.interviewStatus;
+
+  if (status === "interview_in_progress" && interviewStatus === "completed") {
+    return {
+      badge: "Awaiting company decision",
+      tone: "border-success/20 bg-success/10 text-success",
+    };
+  }
+
+  switch (status) {
+    case "shortlisted":
+      return { badge: "Shortlisted", tone: "border-success/20 bg-success/10 text-success" };
+    case "rejected":
+      return { badge: "Closed", tone: "border-danger/20 bg-danger/10 text-danger" };
+    case "withdrawn":
+      return { badge: "Withdrawn", tone: "bg-muted text-muted-foreground" };
+    case "interview_invited":
+      return { badge: "Interview Ready", tone: "border-warning/20 bg-warning/10 text-warning" };
+    case "interview_in_progress":
+      return {
+        badge: "Interview in Progress",
+        tone: "border-warning/20 bg-warning/10 text-warning",
+      };
+    case "evaluated":
+    case "evaluated_held":
+      return {
+        badge: "Awaiting company decision",
+        tone: "border-success/20 bg-success/10 text-success",
+      };
+    default:
+      return { badge: "Application Received", tone: "border-info/20 bg-info/10 text-info" };
+  }
+};
 
 const toneDot: Record<ActionItem["tone"], string> = {
   danger: "bg-danger",
@@ -687,6 +746,8 @@ function CandidateDashboardSection({ metrics }: { metrics: CandidateMetrics }) {
 
       <ActionQueueCard actions={actions} />
 
+      <RecentActivitySection activity={metrics.recentActivity ?? []} />
+
       {/* Quick access to full list + browse */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Button variant="ghost" size="sm" asChild>
@@ -711,6 +772,58 @@ function CandidateDashboardSection({ metrics }: { metrics: CandidateMetrics }) {
         </Card>
       )}
     </div>
+  );
+}
+
+function RecentActivitySection({ activity }: { activity: RecentActivityItem[] }) {
+  if (activity.length === 0) return null;
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Recent activity</CardTitle>
+        <CardDescription className="text-xs">
+          Your most recently updated applications.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="p-0">
+        <ul className="divide-y divide-border/50">
+          {activity.map((app) => {
+            const meta = getRecentStatusMeta(app);
+            return (
+              <li
+                key={app.id}
+                className="flex items-center justify-between gap-4 px-5 py-3 transition-colors hover:bg-muted/30"
+              >
+                <div className="min-w-0 flex-1 space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary">
+                      {app.companyName}
+                    </span>
+                    <Badge variant="outline" className="font-mono text-[10px]">
+                      {app.jobStatus === "open" ? "Role open" : app.jobStatus}
+                    </Badge>
+                    <Badge className={`${meta.tone} text-[10px]`}>{meta.badge}</Badge>
+                  </div>
+                  <div className="truncate text-sm font-medium">{app.jobTitle}</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    Updated {formatRelativeTime(app.updatedAt)}
+                  </div>
+                </div>
+                <Button variant="outline" size="sm" asChild className="shrink-0">
+                  <Link
+                    to="/dashboard/application/$applicationId"
+                    params={{ applicationId: app.id }}
+                  >
+                    View
+                  </Link>
+                </Button>
+              </li>
+            );
+          })}
+        </ul>
+      </CardContent>
+    </Card>
   );
 }
 

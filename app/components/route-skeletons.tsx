@@ -955,6 +955,28 @@ function DashboardCandidateIndexSkeleton() {
         </CardContent>
       </Card>
 
+      {/* Recent activity skeleton */}
+      <Card>
+        <CardHeader className="pb-3">
+          <Skeleton className="h-5 w-32" />
+          <Skeleton className="mt-1 h-3 w-48" />
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="divide-y divide-border/50">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <div key={i} className="flex items-center justify-between gap-4 px-5 py-3">
+                <div className="space-y-1">
+                  <Skeleton className="h-3 w-24" />
+                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+                <Skeleton className="h-8 w-14" />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Quick links row */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Skeleton className="h-8 w-40" />

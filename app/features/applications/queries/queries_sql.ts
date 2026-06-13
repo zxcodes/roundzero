@@ -140,6 +140,66 @@ export async function getApplicationsByCandidate(sql: Sql, args: getApplications
     }));
 }
 
+export const getRecentApplicationsByCandidateQuery = `-- name: getRecentApplicationsByCandidate :many
+SELECT a.id, a.job_id, a.candidate_id, a.resume_key, a.metadata, a.status, a.created_at, a.updated_at,
+       j.title AS job_title, j.status AS job_status,
+       c.name AS company_name,
+       u.deleted_at IS NOT NULL AS company_owner_deleted,
+       latest_interview.status AS interview_status
+FROM applications a
+JOIN jobs j ON j.id = a.job_id
+JOIN companies c ON c.id = j.company_id
+JOIN users u ON u.id = c.owner_id
+LEFT JOIN LATERAL (
+  SELECT i.status
+  FROM interviews i
+  WHERE i.application_id = a.id
+  ORDER BY i.updated_at DESC
+  LIMIT 1
+) latest_interview ON TRUE
+WHERE a.candidate_id = $1
+  AND j.archived_at IS NULL
+ORDER BY a.updated_at DESC
+LIMIT 3`;
+
+export interface getRecentApplicationsByCandidateArgs {
+    candidateId: string;
+}
+
+export interface getRecentApplicationsByCandidateRow {
+    id: string;
+    jobId: string;
+    candidateId: string;
+    resumeKey: string | null;
+    metadata: any;
+    status: string;
+    createdAt: Date;
+    updatedAt: Date;
+    jobTitle: string;
+    jobStatus: string;
+    companyName: string;
+    companyOwnerDeleted: string | null;
+    interviewStatus: string;
+}
+
+export async function getRecentApplicationsByCandidate(sql: Sql, args: getRecentApplicationsByCandidateArgs): Promise<getRecentApplicationsByCandidateRow[]> {
+    return (await sql.unsafe(getRecentApplicationsByCandidateQuery, [args.candidateId]).values()).map(row => ({
+        id: row[0],
+        jobId: row[1],
+        candidateId: row[2],
+        resumeKey: row[3],
+        metadata: row[4],
+        status: row[5],
+        createdAt: row[6],
+        updatedAt: row[7],
+        jobTitle: row[8],
+        jobStatus: row[9],
+        companyName: row[10],
+        companyOwnerDeleted: row[11],
+        interviewStatus: row[12]
+    }));
+}
+
 export const getApplicationsByJobQuery = `-- name: getApplicationsByJob :many
 SELECT a.id, a.job_id, a.candidate_id, a.resume_key, a.metadata, a.status, a.created_at, a.updated_at,
        u.name AS candidate_name, u.email AS candidate_email, u.picture AS candidate_picture,

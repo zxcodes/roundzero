@@ -4,6 +4,7 @@ import {
   countApplicationsByCompany,
   getApplicationsByCandidate,
   getApplicationsByJob,
+  getRecentApplicationsByCandidate,
 } from "@/features/applications/queries/queries_sql";
 import { hasShortlistNextSteps, parseShortlistDetails } from "@/features/applications/shortlist";
 import { getActiveBatchesByCompany } from "@/features/batches/queries/queries_sql";
@@ -154,9 +155,10 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
     // Candidate
     const counts = await countApplicationsByCandidate(db, { candidateId: context.userId });
 
-    const [rawInterviews, rawApplications] = await Promise.all([
+    const [rawInterviews, rawApplications, recentApplications] = await Promise.all([
       getInterviewsByCandidate(db, { candidateId: context.userId }),
       getApplicationsByCandidate(db, { candidateId: context.userId }),
+      getRecentApplicationsByCandidate(db, { candidateId: context.userId }),
     ]);
 
     const interviews = await Promise.all(
@@ -200,6 +202,17 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
         };
       });
 
+    const recentActivity = recentApplications.map((a) => ({
+      id: a.id,
+      jobTitle: a.jobTitle,
+      companyName: a.companyName,
+      status: a.status,
+      updatedAt: a.updatedAt,
+      jobStatus: a.jobStatus,
+      companyOwnerDeleted: a.companyOwnerDeleted,
+      interviewStatus: a.interviewStatus ?? null,
+    }));
+
     return {
       type: "candidate",
       applicationsSent: counts?.totalCount ?? 0,
@@ -209,5 +222,6 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
       shortlistedCount: shortlistedApplications.length,
       pendingInterviews,
       shortlistedApplications,
+      recentActivity,
     };
   });
