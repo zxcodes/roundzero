@@ -240,7 +240,6 @@ function CandidateApplicationDetailPage() {
       application.status === "interview_in_progress") &&
     !application.companyOwnerDeleted;
 
-  const hasInterview = interview !== null;
   const interviewExpiresAt = interview?.expiresAt ?? null;
 
   const onResumeView = async () => {
@@ -345,24 +344,21 @@ function CandidateApplicationDetailPage() {
       </div>
 
       {hasShortlistActions ? (
-        <Card className="border-success/25 bg-success/5">
-          <CardContent className="space-y-4">
-            <div className="flex flex-wrap items-start gap-3">
-              <div className="flex size-10 items-center justify-center rounded-2xl bg-success/10 text-success">
-                <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-5" />
-              </div>
-              <div className="min-w-0 flex-1 space-y-1">
-                <p className="text-sm font-semibold text-foreground">
-                  Follow-up from {application.companyName}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  The company included the following for this shortlisted application.
-                </p>
-              </div>
+        <Card>
+          <CardContent className="space-y-3">
+            <div className="flex items-center gap-2">
+              <HugeiconsIcon
+                icon={CheckmarkCircle02Icon}
+                strokeWidth={2}
+                className="size-4 text-success"
+              />
+              <p className="text-sm font-medium text-foreground">
+                Follow-up from {application.companyName}
+              </p>
             </div>
 
             {shortlistDetails?.note ? (
-              <div className="rounded-2xl border border-success/15 bg-background/80 px-4 py-3 text-sm text-foreground">
+              <div className="rounded-2xl bg-muted/60 px-4 py-3 text-sm text-foreground">
                 {shortlistDetails.note}
               </div>
             ) : null}
@@ -370,7 +366,9 @@ function CandidateApplicationDetailPage() {
         </Card>
       ) : null}
 
-      {hasInterview && !application.companyOwnerDeleted ? (
+      {interview &&
+      !application.companyOwnerDeleted &&
+      (interview.status === "pending" || interview.status === "in_progress") ? (
         <InterviewInvitationCard
           interviewId={interview.id}
           interviewType={interview.type}
