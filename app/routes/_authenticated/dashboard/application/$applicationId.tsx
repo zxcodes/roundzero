@@ -1,7 +1,9 @@
 import {
   ArrowLeft01Icon,
+  ArrowRight01Icon,
   Calendar01Icon,
   Cancel01Icon,
+  CheckmarkCircle02Icon,
   File02Icon,
   Loading03Icon,
 } from "@hugeicons/core-free-icons";
@@ -30,6 +32,7 @@ import {
   getMyApplicationDetail,
   withdrawApplication,
 } from "@/features/applications/server/functions";
+import { hasShortlistNextSteps, parseShortlistDetails } from "@/features/applications/shortlist";
 import { InterviewInvitationCard } from "@/features/interviews/components/interview-invitation-card";
 import { getInterviewForApplication } from "@/features/interviews/server/functions";
 import { formatDate, formatDateShort } from "@/shared/date";
@@ -222,6 +225,11 @@ function CandidateApplicationDetailPage() {
 
   const currentStage = toApplicationStage(application.status);
   const progressStage = currentStage === "shortlisted" ? "evaluated" : currentStage;
+  const shortlistDetails =
+    application.status === "shortlisted" && !application.companyOwnerDeleted
+      ? parseShortlistDetails(application.metadata)
+      : null;
+  const hasShortlistActions = hasShortlistNextSteps(shortlistDetails);
   const meta = getDisplayMeta({
     status: application.status,
     interviewStatus: interview?.status ?? null,
@@ -336,6 +344,41 @@ function CandidateApplicationDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      {hasShortlistActions ? (
+        <Card className="border-success/25 bg-success/5">
+          <CardContent className="space-y-4">
+            <div className="flex flex-wrap items-start gap-3">
+              <div className="flex size-10 items-center justify-center rounded-2xl bg-success/10 text-success">
+                <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-5" />
+              </div>
+              <div className="min-w-0 flex-1 space-y-1">
+                <p className="text-sm font-semibold text-foreground">
+                  Next steps from {application.companyName}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  The company added follow-up instructions for this shortlisted application.
+                </p>
+              </div>
+            </div>
+
+            {shortlistDetails?.note ? (
+              <div className="rounded-2xl border border-success/15 bg-background/80 px-4 py-3 text-sm text-foreground">
+                {shortlistDetails.note}
+              </div>
+            ) : null}
+
+            {shortlistDetails?.link ? (
+              <Button asChild>
+                <a href={shortlistDetails.link} target="_blank" rel="noreferrer">
+                  View next steps
+                  <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-4" />
+                </a>
+              </Button>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
 
       {hasInterview && !application.companyOwnerDeleted ? (
         <InterviewInvitationCard

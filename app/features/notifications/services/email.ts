@@ -68,6 +68,7 @@ const getEmailPresentationMeta = (presentation: ReturnType<typeof getNotificatio
   if (!presentation || !("meta" in presentation)) {
     return {
       ctaLabel: undefined,
+      ctaHref: undefined as string | undefined,
       deadlineText: null as string | null,
     };
   }
@@ -76,13 +77,15 @@ const getEmailPresentationMeta = (presentation: ReturnType<typeof getNotificatio
   if (typeof meta !== "object" || !meta) {
     return {
       ctaLabel: undefined,
+      ctaHref: undefined as string | undefined,
       deadlineText: null as string | null,
     };
   }
 
   const ctaLabel = typeof meta.ctaLabel === "string" ? meta.ctaLabel : undefined;
+  const ctaHref = "ctaHref" in meta && typeof meta.ctaHref === "string" ? meta.ctaHref : undefined;
   const deadlineText = formatDeadline((meta as { deadline?: unknown }).deadline);
-  return { ctaLabel, deadlineText };
+  return { ctaLabel, ctaHref, deadlineText };
 };
 
 export const sendNotificationEmailViaResend: NotificationEmailSender = async (message) => {
@@ -157,7 +160,7 @@ export async function deliverNotificationEmail(
       react: jsx(NotificationEmailTemplate, {
         previewText: presentation.title,
         body: presentation.body,
-        ctaHref: link,
+        ctaHref: meta.ctaHref ?? link,
         ctaLabel: meta.ctaLabel,
         deadlineText: meta.deadlineText,
       }),

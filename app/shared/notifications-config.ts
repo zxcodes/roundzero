@@ -14,6 +14,9 @@ const baseApplicationPayloadSchema = z.object({
 const applicationStatusChangedPayloadSchema = baseApplicationPayloadSchema.extend({
   companyName: z.string().min(1),
   status: applicationStatusSchema,
+  // Optional next-steps attached on shortlist (note + external link).
+  note: z.string().nullish(),
+  link: z.string().nullish(),
 });
 
 const applicationWithdrawnPayloadSchema = baseApplicationPayloadSchema.extend({
