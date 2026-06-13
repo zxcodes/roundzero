@@ -17,6 +17,8 @@ const applicationStatusChangedPayloadSchema = baseApplicationPayloadSchema.exten
   // Optional next-steps attached on shortlist (note + external link).
   note: z.string().nullish(),
   link: z.string().nullish(),
+  // True when the company updates an existing shortlist's note/link.
+  isShortlistUpdate: z.boolean().optional(),
 });
 
 const applicationWithdrawnPayloadSchema = baseApplicationPayloadSchema.extend({

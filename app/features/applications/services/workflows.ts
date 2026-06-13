@@ -324,6 +324,7 @@ export const shortlistApplicantWorkflow = async (
       status: "shortlisted",
       note: shortlist.note,
       link: shortlist.link,
+      isShortlistUpdate: alreadyShortlisted,
     });
 
     const notification = await createNotification(db, {

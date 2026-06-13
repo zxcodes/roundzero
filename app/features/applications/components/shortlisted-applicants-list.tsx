@@ -1,9 +1,4 @@
-import {
-  ArrowRight01Icon,
-  Copy01Icon,
-  Mail01Icon,
-  UserGroupIcon,
-} from "@hugeicons/core-free-icons";
+import { ArrowRight01Icon, Copy01Icon, UserGroupIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -156,10 +151,6 @@ function ShortlistedApplicantRow({ applicant }: { applicant: ShortlistedApplican
     }
   };
 
-  const onEmail = () => {
-    window.open(`mailto:${applicant.candidateEmail}`);
-  };
-
   const onViewCandidate = () => {
     router.navigate({
       to: "/dashboard/applicants/$applicationId",
@@ -197,11 +188,7 @@ function ShortlistedApplicantRow({ applicant }: { applicant: ShortlistedApplican
         <div className="flex w-full flex-wrap items-center gap-1.5 md:w-auto md:justify-end">
           <Button variant="outline" size="sm" onClick={onCopyEmail}>
             <HugeiconsIcon icon={Copy01Icon} strokeWidth={2} className="size-3.5" />
-            Copy
-          </Button>
-          <Button variant="outline" size="sm" onClick={onEmail}>
-            <HugeiconsIcon icon={Mail01Icon} strokeWidth={2} className="size-3.5" />
-            Email
+            Copy email
           </Button>
           <ShortlistDialog
             applicationId={applicant.id}
