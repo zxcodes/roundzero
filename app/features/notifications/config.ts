@@ -126,9 +126,25 @@ export const getNotificationPresentation = (notification: { type: string; payloa
       return null;
     }
 
-    const { status, jobTitle, companyName, note, link } = payload.data;
+    const { status, jobTitle, companyName, note, link, isShortlistUpdate } = payload.data;
 
     if (status === "shortlisted") {
+      if (isShortlistUpdate) {
+        const noteLine = note ? ` Updated note: "${note}"` : "";
+        return {
+          type,
+          tone: statusChangedTone(status),
+          icon: statusChangedIcon(status),
+          title: `${companyName} updated your next steps`,
+          body: `${companyName} updated the next steps for ${jobTitle}.${noteLine}`,
+          to: "/dashboard/application/$applicationId" as const,
+          params: { applicationId: payload.data.applicationId },
+          meta: link
+            ? { ctaLabel: "View next steps", ctaHref: link }
+            : { ctaLabel: "View next steps" },
+        };
+      }
+
       const noteLine = note ? ` They left a note: "${note}"` : "";
       return {
         type,
