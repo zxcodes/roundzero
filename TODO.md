@@ -1,5 +1,6 @@
 ## TODO
 
+- company has redundant steps. if I click a job, first taken to a page where there is jd, I have to click view applicants, which is another redundant page. we can def drop one of these here and make it simple.
 - ready for decision tab still doesn't seem to show evaluated candidates? why do we even need two tabs there? check.
 - improve ci. prevent unnecessary runs.
 - overall caching seems a bit too aggressive. login/logouts, switching accounts, has stale data.
