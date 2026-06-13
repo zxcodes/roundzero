@@ -349,7 +349,7 @@ const toneDot: Record<ActionItem["tone"], string> = {
 function ActionQueueCard({ actions }: { actions: ActionItem[] }) {
   if (actions.length === 0) {
     return (
-      <Card className="border-success/20 bg-success/5">
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <HugeiconsIcon

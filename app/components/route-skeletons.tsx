@@ -1256,7 +1256,7 @@ export function DashboardApplicationDetailSkeleton() {
       </div>
 
       {/* Optional shortlist next-steps card */}
-      <Card className="border-success/20 bg-success/5">
+      <Card>
         <CardContent className="space-y-3 py-4">
           <div className="flex items-start gap-3">
             <Skeleton className="size-10 rounded-2xl" />
