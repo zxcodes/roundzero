@@ -53,10 +53,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { ShortlistDialog } from "@/features/applications/components/shortlist-dialog";
 import {
   getApplicationResume,
   updateApplicationStatus,
 } from "@/features/applications/server/functions";
+import { parseShortlistDetails } from "@/features/applications/shortlist";
 import { ScorePill } from "@/features/reports/components/score-pill";
 import { getCompanyApplicantReportTimeline } from "@/features/reports/server/functions";
 import { cn } from "@/lib/utils";
@@ -182,9 +184,11 @@ function ApplicantReportSummaryPage() {
   const canShortlist =
     allowedTransitions.includes("shortlisted") && currentStatus !== "shortlisted";
   const canReject = allowedTransitions.includes("rejected") && currentStatus !== "rejected";
+  const isShortlisted = currentStatus === "shortlisted";
+  const shortlistDetails = parseShortlistDetails(application.metadata);
   const allowedStatusOptions: ApplicationStatus[] = [
     currentStatus,
-    ...allowedTransitions.filter((status) => status !== currentStatus),
+    ...allowedTransitions.filter((status) => status !== currentStatus && status !== "shortlisted"),
   ];
 
   const onStatusValueChange = async (value: string) => {
@@ -196,12 +200,6 @@ function ApplicantReportSummaryPage() {
     }
     await updateStatusMutation.mutateAsync({
       data: { applicationId: application.id, status: nextStatus },
-    });
-  };
-
-  const onShortlist = async () => {
-    await updateStatusMutation.mutateAsync({
-      data: { applicationId: application.id, status: "shortlisted" },
     });
   };
 
@@ -346,20 +344,26 @@ function ApplicantReportSummaryPage() {
 
         <div className="flex flex-wrap items-center gap-2">
           {canShortlist ? (
-            <Button onClick={onShortlist} disabled={updateStatusMutation.isPending}>
-              {updateStatusMutation.isPending && pendingStatus === null ? (
-                <HugeiconsIcon
-                  icon={Loading03Icon}
-                  strokeWidth={2}
-                  className="size-4 animate-spin"
-                />
-              ) : (
-                <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-4" />
-              )}
-              {updateStatusMutation.isPending && pendingStatus === null
-                ? "Shortlisting..."
-                : "Shortlist"}
-            </Button>
+            <ShortlistDialog
+              applicationId={application.id}
+              candidateName={application.candidateName}
+              mode="create"
+              trigger={
+                <Button>
+                  <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-4" />
+                  Shortlist
+                </Button>
+              }
+            />
+          ) : null}
+          {isShortlisted ? (
+            <ShortlistDialog
+              applicationId={application.id}
+              candidateName={application.candidateName}
+              mode="edit"
+              defaultNote={shortlistDetails?.note ?? null}
+              trigger={<Button variant="outline">Edit note</Button>}
+            />
           ) : null}
           {canReject ? (
             <Button

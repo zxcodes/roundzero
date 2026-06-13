@@ -29,6 +29,7 @@ import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedOnboardingCompanyRouteImport } from './routes/_authenticated/onboarding/company'
 import { Route as AuthenticatedOnboardingCandidateRouteImport } from './routes/_authenticated/onboarding/candidate'
 import { Route as AuthenticatedInterviewInterviewIdRouteImport } from './routes/_authenticated/interview/$interviewId'
+import { Route as AuthenticatedDashboardShortlistedRouteImport } from './routes/_authenticated/dashboard/shortlisted'
 import { Route as AuthenticatedDashboardSettingsRouteImport } from './routes/_authenticated/dashboard/settings'
 import { Route as AuthenticatedDashboardBillingRouteImport } from './routes/_authenticated/dashboard/billing'
 import { Route as AuthenticatedDashboardApplicationsRouteImport } from './routes/_authenticated/dashboard/applications'
@@ -149,6 +150,12 @@ const AuthenticatedInterviewInterviewIdRoute =
     path: '/$interviewId',
     getParentRoute: () => AuthenticatedInterviewRoute,
   } as any)
+const AuthenticatedDashboardShortlistedRoute =
+  AuthenticatedDashboardShortlistedRouteImport.update({
+    id: '/shortlisted',
+    path: '/shortlisted',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
 const AuthenticatedDashboardSettingsRoute =
   AuthenticatedDashboardSettingsRouteImport.update({
     id: '/settings',
@@ -258,6 +265,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/applications': typeof AuthenticatedDashboardApplicationsRoute
   '/dashboard/billing': typeof AuthenticatedDashboardBillingRoute
   '/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
+  '/dashboard/shortlisted': typeof AuthenticatedDashboardShortlistedRoute
   '/interview/$interviewId': typeof AuthenticatedInterviewInterviewIdRouteWithChildren
   '/onboarding/candidate': typeof AuthenticatedOnboardingCandidateRoute
   '/onboarding/company': typeof AuthenticatedOnboardingCompanyRoute
@@ -292,6 +300,7 @@ export interface FileRoutesByTo {
   '/dashboard/applications': typeof AuthenticatedDashboardApplicationsRoute
   '/dashboard/billing': typeof AuthenticatedDashboardBillingRoute
   '/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
+  '/dashboard/shortlisted': typeof AuthenticatedDashboardShortlistedRoute
   '/onboarding/candidate': typeof AuthenticatedOnboardingCandidateRoute
   '/onboarding/company': typeof AuthenticatedOnboardingCompanyRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
@@ -328,6 +337,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard/applications': typeof AuthenticatedDashboardApplicationsRoute
   '/_authenticated/dashboard/billing': typeof AuthenticatedDashboardBillingRoute
   '/_authenticated/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
+  '/_authenticated/dashboard/shortlisted': typeof AuthenticatedDashboardShortlistedRoute
   '/_authenticated/interview/$interviewId': typeof AuthenticatedInterviewInterviewIdRouteWithChildren
   '/_authenticated/onboarding/candidate': typeof AuthenticatedOnboardingCandidateRoute
   '/_authenticated/onboarding/company': typeof AuthenticatedOnboardingCompanyRoute
@@ -366,6 +376,7 @@ export interface FileRouteTypes {
     | '/dashboard/applications'
     | '/dashboard/billing'
     | '/dashboard/settings'
+    | '/dashboard/shortlisted'
     | '/interview/$interviewId'
     | '/onboarding/candidate'
     | '/onboarding/company'
@@ -400,6 +411,7 @@ export interface FileRouteTypes {
     | '/dashboard/applications'
     | '/dashboard/billing'
     | '/dashboard/settings'
+    | '/dashboard/shortlisted'
     | '/onboarding/candidate'
     | '/onboarding/company'
     | '/dashboard'
@@ -435,6 +447,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard/applications'
     | '/_authenticated/dashboard/billing'
     | '/_authenticated/dashboard/settings'
+    | '/_authenticated/dashboard/shortlisted'
     | '/_authenticated/interview/$interviewId'
     | '/_authenticated/onboarding/candidate'
     | '/_authenticated/onboarding/company'
@@ -611,6 +624,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInterviewInterviewIdRouteImport
       parentRoute: typeof AuthenticatedInterviewRoute
     }
+    '/_authenticated/dashboard/shortlisted': {
+      id: '/_authenticated/dashboard/shortlisted'
+      path: '/shortlisted'
+      fullPath: '/dashboard/shortlisted'
+      preLoaderRoute: typeof AuthenticatedDashboardShortlistedRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
     '/_authenticated/dashboard/settings': {
       id: '/_authenticated/dashboard/settings'
       path: '/settings'
@@ -741,6 +761,7 @@ interface AuthenticatedDashboardRouteChildren {
   AuthenticatedDashboardApplicationsRoute: typeof AuthenticatedDashboardApplicationsRoute
   AuthenticatedDashboardBillingRoute: typeof AuthenticatedDashboardBillingRoute
   AuthenticatedDashboardSettingsRoute: typeof AuthenticatedDashboardSettingsRoute
+  AuthenticatedDashboardShortlistedRoute: typeof AuthenticatedDashboardShortlistedRoute
   AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
   AuthenticatedDashboardApplicantsApplicationIdRoute: typeof AuthenticatedDashboardApplicantsApplicationIdRoute
   AuthenticatedDashboardApplicationApplicationIdRoute: typeof AuthenticatedDashboardApplicationApplicationIdRoute
@@ -759,6 +780,8 @@ const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
       AuthenticatedDashboardApplicationsRoute,
     AuthenticatedDashboardBillingRoute: AuthenticatedDashboardBillingRoute,
     AuthenticatedDashboardSettingsRoute: AuthenticatedDashboardSettingsRoute,
+    AuthenticatedDashboardShortlistedRoute:
+      AuthenticatedDashboardShortlistedRoute,
     AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
     AuthenticatedDashboardApplicantsApplicationIdRoute:
       AuthenticatedDashboardApplicantsApplicationIdRoute,

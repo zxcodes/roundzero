@@ -359,6 +359,108 @@ export async function updateApplicationStatus(sql: Sql, args: updateApplicationS
     };
 }
 
+export const setShortlistDetailsQuery = `-- name: setShortlistDetails :one
+UPDATE applications
+SET metadata = COALESCE(metadata, '{}'::jsonb) || jsonb_build_object('shortlist', $1::jsonb),
+    status = COALESCE($2::text, status),
+    updated_at = now()
+WHERE id = $3
+RETURNING id, job_id, candidate_id, resume_key, metadata, status, created_at, updated_at`;
+
+export interface setShortlistDetailsArgs {
+    shortlist: any;
+    status: string | null;
+    id: string;
+}
+
+export interface setShortlistDetailsRow {
+    id: string;
+    jobId: string;
+    candidateId: string;
+    resumeKey: string | null;
+    metadata: any;
+    status: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export async function setShortlistDetails(sql: Sql, args: setShortlistDetailsArgs): Promise<setShortlistDetailsRow | null> {
+    const rows = await sql.unsafe(setShortlistDetailsQuery, [args.shortlist, args.status, args.id]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        jobId: row[1],
+        candidateId: row[2],
+        resumeKey: row[3],
+        metadata: row[4],
+        status: row[5],
+        createdAt: row[6],
+        updatedAt: row[7]
+    };
+}
+
+export const getShortlistedApplicantsByCompanyQuery = `-- name: getShortlistedApplicantsByCompany :many
+SELECT a.id, a.job_id, a.candidate_id, a.metadata, a.status, a.updated_at,
+       j.title AS job_title,
+       u.name AS candidate_name, u.email AS candidate_email, u.picture AS candidate_picture,
+       latest_released_report.recommendation AS report_recommendation,
+       latest_released_report.scores AS report_scores
+FROM applications a
+JOIN jobs j ON j.id = a.job_id
+JOIN companies c ON c.id = j.company_id
+JOIN users u ON u.id = a.candidate_id AND u.deleted_at IS NULL
+LEFT JOIN LATERAL (
+  SELECT r.recommendation, r.scores
+  FROM reports r
+  WHERE r.application_id = a.id
+    AND r.released_at IS NOT NULL
+  ORDER BY r.released_at DESC, r.created_at DESC
+  LIMIT 1
+) latest_released_report ON TRUE
+WHERE c.id = $1
+  AND a.status = 'shortlisted'
+  AND j.archived_at IS NULL
+ORDER BY j.title ASC, COALESCE((latest_released_report.scores->>'overall')::numeric, 0) DESC, a.updated_at DESC`;
+
+export interface getShortlistedApplicantsByCompanyArgs {
+    id: string;
+}
+
+export interface getShortlistedApplicantsByCompanyRow {
+    id: string;
+    jobId: string;
+    candidateId: string;
+    metadata: any;
+    status: string;
+    updatedAt: Date;
+    jobTitle: string;
+    candidateName: string;
+    candidateEmail: string;
+    candidatePicture: string | null;
+    reportRecommendation: string;
+    reportScores: any;
+}
+
+export async function getShortlistedApplicantsByCompany(sql: Sql, args: getShortlistedApplicantsByCompanyArgs): Promise<getShortlistedApplicantsByCompanyRow[]> {
+    return (await sql.unsafe(getShortlistedApplicantsByCompanyQuery, [args.id]).values()).map(row => ({
+        id: row[0],
+        jobId: row[1],
+        candidateId: row[2],
+        metadata: row[3],
+        status: row[4],
+        updatedAt: row[5],
+        jobTitle: row[6],
+        candidateName: row[7],
+        candidateEmail: row[8],
+        candidatePicture: row[9],
+        reportRecommendation: row[10],
+        reportScores: row[11]
+    }));
+}
+
 export const getApplicationCountByJobQuery = `-- name: getApplicationCountByJob :one
 SELECT count(*)::int AS count
 FROM applications

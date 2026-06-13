@@ -56,7 +56,7 @@ export function CompanyJobApplicantsList({
           </h3>
         </div>
         {evaluatedCount > 0 ? (
-          <Badge variant="secondary" className="gap-1 font-mono text-[11px]">
+          <Badge variant="secondary" className="gap-1">
             <HugeiconsIcon icon={RankingIcon} strokeWidth={2} className="size-3" />
             {evaluatedCount} evaluated
           </Badge>

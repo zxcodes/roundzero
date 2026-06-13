@@ -165,6 +165,8 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
 
   // Derive a chat-shaped transcript. Live messages from the realtime hook are
   // role+parts; we flatten them down to plain text and tag candidate-role.
+  const EXPRESSIVE_TAG_RE = /\[[\w\s-]+?\]\s*/g;
+
   const liveTranscript: ChatMessage[] = chat.messages
     .map((msg): ChatMessage | null => {
       if (msg.role !== "assistant" && msg.role !== "user") return null;
@@ -175,6 +177,7 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
           return "";
         })
         .join(" ")
+        .replace(EXPRESSIVE_TAG_RE, "")
         .trim();
       if (!text) return null;
       return { role: msg.role, text };
@@ -190,7 +193,7 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
 
   const historicalChat: ChatMessage[] = (historicalTranscript ?? []).map((m) => ({
     role: m.role === "assistant" ? "assistant" : "user",
-    text: m.content,
+    text: m.content.replace(EXPRESSIVE_TAG_RE, ""),
   }));
   const historicalKeys = new Set(historicalChat.map(normMessage));
   const visibleTranscript: ChatMessage[] = [
