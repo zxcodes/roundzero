@@ -55,21 +55,15 @@ export function InterviewChat({
   const transcriptEndRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const wasStreamingRef = useRef(false);
-  const lastMessageContent = messages[messages.length - 1]?.content ?? "";
-
-  const scrollChatToBottom = () => {
-    transcriptEndRef.current?.scrollIntoView({ block: "end" });
-  };
-
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
-      scrollChatToBottom();
+      transcriptEndRef.current?.scrollIntoView({ block: "end" });
     });
 
     return () => {
       cancelAnimationFrame(frame);
     };
-  }, [messages.length, lastMessageContent]);
+  });
 
   useEffect(() => {
     if (!isStreaming) {
@@ -78,7 +72,7 @@ export function InterviewChat({
 
     let frame = 0;
     const syncWhileStreaming = () => {
-      scrollChatToBottom();
+      transcriptEndRef.current?.scrollIntoView({ block: "end" });
       frame = requestAnimationFrame(syncWhileStreaming);
     };
 

@@ -203,7 +203,7 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
 
   useEffect(() => {
     transcriptEndRef.current?.scrollIntoView({ block: "end" });
-  }, [visibleTranscript.length, chat.pendingUserTranscript]);
+  });
 
   // Reset transient flags when the DB confirms a terminal state.
   useEffect(() => {

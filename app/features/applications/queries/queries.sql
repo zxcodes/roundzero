@@ -29,6 +29,30 @@ WHERE a.candidate_id = $1
   AND j.archived_at IS NULL
 ORDER BY a.created_at DESC;
 
+-- name: getRecentApplicationsByCandidate :many
+-- Returns the most recently *updated* applications (by a.updated_at) for the
+-- candidate dashboard "Recent activity" section. Limited at DB level.
+SELECT a.id, a.job_id, a.candidate_id, a.resume_key, a.metadata, a.status, a.created_at, a.updated_at,
+       j.title AS job_title, j.status AS job_status,
+       c.name AS company_name,
+       u.deleted_at IS NOT NULL AS company_owner_deleted,
+       latest_interview.status AS interview_status
+FROM applications a
+JOIN jobs j ON j.id = a.job_id
+JOIN companies c ON c.id = j.company_id
+JOIN users u ON u.id = c.owner_id
+LEFT JOIN LATERAL (
+  SELECT i.status
+  FROM interviews i
+  WHERE i.application_id = a.id
+  ORDER BY i.updated_at DESC
+  LIMIT 1
+) latest_interview ON TRUE
+WHERE a.candidate_id = $1
+  AND j.archived_at IS NULL
+ORDER BY a.updated_at DESC
+LIMIT 3;
+
 -- name: getApplicationsByJob :many
 SELECT a.id, a.job_id, a.candidate_id, a.resume_key, a.metadata, a.status, a.created_at, a.updated_at,
        u.name AS candidate_name, u.email AS candidate_email, u.picture AS candidate_picture,
