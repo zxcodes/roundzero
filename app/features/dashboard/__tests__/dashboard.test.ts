@@ -4,6 +4,7 @@ import {
   countApplicationsByCompany,
   createApplication,
   getApplicationsByCandidate,
+  getRecentApplicationsByCandidate,
   updateApplicationStatus,
 } from "@/features/applications/queries/queries_sql";
 import { getUserById } from "@/features/auth/queries/queries_sql";
@@ -319,6 +320,12 @@ describe("candidate dashboard metrics", () => {
     );
     expect(pendingInts.length).toBeGreaterThan(0);
     expect(pendingInts[0].jobTitle).toBe("Interview Role");
+
+    const recent = await getRecentApplicationsByCandidate(sql, { candidateId: candidate.id });
+    expect(recent.length).toBe(2);
+    // intApp created after shortlisted one, so most recent first
+    expect(recent[0].jobTitle).toBe("Interview Role");
+    expect(recent.some((a) => a.jobTitle === "Shortlisted Role")).toBe(true);
   });
 });
 
