@@ -126,7 +126,7 @@ export const getNotificationPresentation = (notification: { type: string; payloa
       return null;
     }
 
-    const { status, jobTitle, companyName, note, link, isShortlistUpdate } = payload.data;
+    const { status, jobTitle, companyName, note, isShortlistUpdate } = payload.data;
 
     if (status === "shortlisted") {
       if (isShortlistUpdate) {
@@ -139,9 +139,6 @@ export const getNotificationPresentation = (notification: { type: string; payloa
           body: `${companyName} updated the next steps for ${jobTitle}.${noteLine}`,
           to: "/dashboard/application/$applicationId" as const,
           params: { applicationId: payload.data.applicationId },
-          meta: link
-            ? { ctaLabel: "View next steps", ctaHref: link }
-            : { ctaLabel: "View next steps" },
         };
       }
 
@@ -154,9 +151,6 @@ export const getNotificationPresentation = (notification: { type: string; payloa
         body: `Great news — ${companyName} shortlisted you for ${jobTitle}.${noteLine}`,
         to: "/dashboard/application/$applicationId" as const,
         params: { applicationId: payload.data.applicationId },
-        meta: link
-          ? { ctaLabel: "View next steps", ctaHref: link }
-          : { ctaLabel: "View next steps" },
       };
     }
 

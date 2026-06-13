@@ -14,10 +14,9 @@ const baseApplicationPayloadSchema = z.object({
 const applicationStatusChangedPayloadSchema = baseApplicationPayloadSchema.extend({
   companyName: z.string().min(1),
   status: applicationStatusSchema,
-  // Optional next-steps attached on shortlist (note + external link).
+  // Optional note attached on shortlist.
   note: z.string().nullish(),
-  link: z.string().nullish(),
-  // True when the company updates an existing shortlist's note/link.
+  // True when the company updates an existing shortlist's note.
   isShortlistUpdate: z.boolean().optional(),
 });
 

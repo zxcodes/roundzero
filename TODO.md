@@ -1,5 +1,6 @@
 ## TODO
 
+- ready for decision tab still doesn't seem to show evaluated candidates? why do we even need two tabs there? check.
 - improve ci. prevent unnecessary runs.
 - overall caching seems a bit too aggressive. login/logouts, switching accounts, has stale data.
 - check deleted account behaviour for companies, applications, etc. how the entire flow handles it.

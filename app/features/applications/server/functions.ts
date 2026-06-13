@@ -163,7 +163,6 @@ export const shortlistApplicant = createServerFn({ method: "POST" })
       userId: context.userId,
       applicationId: data.applicationId,
       note: data.note ?? null,
-      link: data.link ?? null,
       notify: data.notify ?? false,
     });
   });

@@ -18,13 +18,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
 import { shortlistApplicant } from "@/features/applications/server/functions";
-import { MAX_SHORTLIST_NOTE_LENGTH, shortlistLinkSchema } from "@/features/applications/shortlist";
+import { MAX_SHORTLIST_NOTE_LENGTH } from "@/features/applications/shortlist";
 
-const linkFieldSchema = z.union([z.literal(""), shortlistLinkSchema]);
 const noteFieldSchema = z.string().max(MAX_SHORTLIST_NOTE_LENGTH, "Note is too long");
 
 export function ShortlistDialog({
@@ -32,14 +30,12 @@ export function ShortlistDialog({
   candidateName,
   mode,
   defaultNote,
-  defaultLink,
   trigger,
 }: {
   applicationId: string;
   candidateName: string;
   mode: "create" | "edit";
   defaultNote?: string | null;
-  defaultLink?: string | null;
   trigger: ReactNode;
 }) {
   const id = useId();
@@ -50,7 +46,7 @@ export function ShortlistDialog({
   const mutation = useMutation({
     mutationFn: shortlistFn,
     onSuccess: async () => {
-      toast.success(mode === "create" ? `${candidateName} shortlisted` : "Next steps updated");
+      toast.success(mode === "create" ? `${candidateName} shortlisted` : "Note updated");
       setOpen(false);
       await router.invalidate();
     },
@@ -62,7 +58,6 @@ export function ShortlistDialog({
   const form = useForm({
     defaultValues: {
       note: defaultNote ?? "",
-      link: defaultLink ?? "",
       notify: mode === "create",
     },
     onSubmit: ({ value }) => {
@@ -70,7 +65,6 @@ export function ShortlistDialog({
         data: {
           applicationId,
           note: value.note,
-          link: value.link,
           notify: value.notify,
         },
       });
@@ -88,12 +82,12 @@ export function ShortlistDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {mode === "create" ? `Shortlist ${candidateName}` : "Edit next steps"}
+            {mode === "create" ? `Shortlist ${candidateName}` : "Edit note"}
           </DialogTitle>
           <DialogDescription>
             {mode === "create"
-              ? "Optionally add a note and a link (scheduling, meeting, or next-steps URL). The candidate is notified."
-              : "Update the note and link the candidate sees. Choose whether to notify them again."}
+              ? "Optionally add a private note for the candidate. They'll be notified."
+              : "Update the note the candidate sees. Choose whether to notify them again."}
           </DialogDescription>
         </DialogHeader>
 
@@ -115,31 +109,6 @@ export function ShortlistDialog({
                     onChange={(e) => field.handleChange(e.target.value)}
                     aria-invalid={isInvalid}
                   />
-                  {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
-                </Field>
-              );
-            }}
-          </form.Field>
-
-          <form.Field name="link" validators={{ onBlur: linkFieldSchema }}>
-            {(field) => {
-              const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
-              return (
-                <Field data-invalid={isInvalid}>
-                  <FieldLabel htmlFor={`link-${id}`}>Link (optional)</FieldLabel>
-                  <Input
-                    id={`link-${id}`}
-                    type="url"
-                    inputMode="url"
-                    placeholder="https://cal.com/your-team/intro"
-                    value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    aria-invalid={isInvalid}
-                  />
-                  <FieldDescription>
-                    Shown to the candidate as a button. Must start with http:// or https://.
-                  </FieldDescription>
                   {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
                 </Field>
               );
@@ -177,7 +146,7 @@ export function ShortlistDialog({
               ) : mode === "create" ? (
                 "Shortlist candidate"
               ) : (
-                "Save next steps"
+                "Save note"
               )}
             </Button>
           </DialogFooter>

@@ -268,7 +268,6 @@ export const shortlistApplicantWorkflow = async (
     userId: string;
     applicationId: string;
     note: string | null;
-    link: string | null;
     /** Re-notify the candidate. Ignored (forced on) for the first shortlist. */
     notify: boolean;
   },
@@ -299,7 +298,6 @@ export const shortlistApplicantWorkflow = async (
 
   const shortlist: ShortlistDetails = {
     note: input.note,
-    link: input.link,
     updatedAt: new Date().toISOString(),
   };
 
@@ -323,7 +321,6 @@ export const shortlistApplicantWorkflow = async (
       companyName: application.companyName,
       status: "shortlisted",
       note: shortlist.note,
-      link: shortlist.link,
       isShortlistUpdate: alreadyShortlisted,
     });
 

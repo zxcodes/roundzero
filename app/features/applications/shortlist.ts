@@ -3,21 +3,13 @@ import { z } from "zod";
 /** Max length of the optional note a company attaches when shortlisting. */
 export const MAX_SHORTLIST_NOTE_LENGTH = 1000;
 
-/** A next-steps link must be a real http(s) URL — no mailto:, javascript:, etc. */
-export const shortlistLinkSchema = z
-  .url()
-  .refine((value) => value.startsWith("http://") || value.startsWith("https://"), {
-    message: "Link must start with http:// or https://",
-  });
-
 /**
  * Shape persisted at `applications.metadata.shortlist`. Written when a company
- * shortlists an applicant and editable afterward. Both fields are optional —
- * a company can shortlist with no note/link at all.
+ * shortlists an applicant and editable afterward. The note is optional —
+ * a company can shortlist with no note at all.
  */
 export const shortlistDetailsSchema = z.object({
   note: z.string().max(MAX_SHORTLIST_NOTE_LENGTH).nullable(),
-  link: shortlistLinkSchema.nullable(),
   updatedAt: z.string(),
 });
 
@@ -27,10 +19,6 @@ export const shortlistInputSchema = z.object({
   note: z.preprocess(
     (value) => (typeof value === "string" && value.trim().length === 0 ? null : value),
     z.string().trim().max(MAX_SHORTLIST_NOTE_LENGTH).nullish(),
-  ),
-  link: z.preprocess(
-    (value) => (typeof value === "string" && value.trim().length === 0 ? null : value),
-    shortlistLinkSchema.nullish(),
   ),
   notify: z.boolean().optional(),
 });
@@ -47,6 +35,6 @@ export const parseShortlistDetails = (metadata: unknown): ShortlistDetails | nul
   return parsed.success ? parsed.data : null;
 };
 
-/** True when the shortlist carries something actionable for the candidate. */
+/** True when the shortlist carries a note for the candidate. */
 export const hasShortlistNextSteps = (details: ShortlistDetails | null): boolean =>
-  details !== null && (Boolean(details.note) || Boolean(details.link));
+  details !== null && Boolean(details.note);
