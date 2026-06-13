@@ -47,7 +47,7 @@
     "enabled": true,
     "rules": {
       "nursery": { "noFloatingPromises": "warn" },
-      "recommended": true,
+      "preset": "recommended",
       "a11y": {
         "noAutofocus": "warn",
         "noSvgWithoutTitle": "off",
