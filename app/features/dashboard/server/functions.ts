@@ -2,10 +2,15 @@ import { createServerFn } from "@tanstack/react-start";
 import {
   countApplicationsByCandidate,
   countApplicationsByCompany,
+  getApplicationsByCandidate,
   getApplicationsByJob,
+  getRecentApplicationsByCandidate,
 } from "@/features/applications/queries/queries_sql";
+import { hasShortlistNextSteps, parseShortlistDetails } from "@/features/applications/shortlist";
 import { getActiveBatchesByCompany } from "@/features/batches/queries/queries_sql";
 import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
+import { getInterviewsByCandidate } from "@/features/interviews/queries/queries_sql";
+import { expireInterviewIfDue } from "@/features/interviews/server/expire";
 import {
   countJobsByCompanyAndStatus,
   getJobsWithPipelineByCompanyId,
@@ -150,11 +155,73 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
     // Candidate
     const counts = await countApplicationsByCandidate(db, { candidateId: context.userId });
 
+    const [rawInterviews, rawApplications, recentApplications] = await Promise.all([
+      getInterviewsByCandidate(db, { candidateId: context.userId }),
+      getApplicationsByCandidate(db, { candidateId: context.userId }),
+      getRecentApplicationsByCandidate(db, { candidateId: context.userId }),
+    ]);
+
+    const interviews = await Promise.all(
+      rawInterviews.map(async (iv) => {
+        const result = await expireInterviewIfDue({
+          db,
+          interview: iv,
+          postEvaluation: null,
+        });
+        return result.interview;
+      }),
+    );
+
+    const pendingInterviews = interviews
+      .filter((iv) => iv.status === "pending" || iv.status === "in_progress")
+      .map((iv) => ({
+        id: iv.id,
+        applicationId: iv.applicationId,
+        jobTitle: iv.jobTitle,
+        companyName: iv.companyName,
+        status: iv.status,
+        expiresAt: iv.expiresAt ?? null,
+      }))
+      .sort((a, b) => {
+        // Soonest expiry first; nulls (no expiry) last
+        if (!a.expiresAt && !b.expiresAt) return 0;
+        if (!a.expiresAt) return 1;
+        if (!b.expiresAt) return -1;
+        return a.expiresAt.localeCompare(b.expiresAt);
+      });
+
+    const shortlistedApplications = rawApplications
+      .filter((a) => a.status === "shortlisted" && !a.companyOwnerDeleted)
+      .map((a) => {
+        const details = parseShortlistDetails(a.metadata);
+        return {
+          id: a.id,
+          jobTitle: a.jobTitle,
+          companyName: a.companyName,
+          hasFollowUp: hasShortlistNextSteps(details),
+        };
+      });
+
+    const recentActivity = recentApplications.map((a) => ({
+      id: a.id,
+      jobTitle: a.jobTitle,
+      companyName: a.companyName,
+      status: a.status,
+      updatedAt: a.updatedAt,
+      jobStatus: a.jobStatus,
+      companyOwnerDeleted: a.companyOwnerDeleted,
+      interviewStatus: a.interviewStatus ?? null,
+    }));
+
     return {
       type: "candidate",
       applicationsSent: counts?.totalCount ?? 0,
       activeApplications: counts?.activeCount ?? 0,
       interviewInvites: counts?.interviewInvitedCount ?? 0,
       evaluationsReceived: counts?.evaluatedCount ?? 0,
+      shortlistedCount: shortlistedApplications.length,
+      pendingInterviews,
+      shortlistedApplications,
+      recentActivity,
     };
   });

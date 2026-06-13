@@ -13,6 +13,7 @@ import {
   getApplicationReviewById,
   getApplicationsByCandidate,
   getApplicationsByJob,
+  getRecentApplicationsByCandidate,
   getShortlistedApplicantsByCompany,
   updateApplicationStatus,
 } from "../queries_sql";
@@ -415,6 +416,84 @@ describe("getApplicationsByCandidate", () => {
     const apps = await getApplicationsByCandidate(sql, { candidateId: candidate.id });
     expect(apps).toHaveLength(1);
     expect(apps[0].companyOwnerDeleted).toBe(true);
+  });
+});
+
+describe("getRecentApplicationsByCandidate", () => {
+  it("returns most recently updated applications ordered by updated_at DESC, limited to 3, excludes archived jobs", async () => {
+    const { company } = await seedCompany();
+    const candidate = await seedUser({ role: "candidate" });
+
+    const jobs = [];
+    for (let i = 1; i <= 5; i++) {
+      jobs.push(await makeOpenJob(company.id, `Job ${i}`));
+    }
+    const archivedJob = await makeOpenJob(company.id, "Archived Job");
+
+    const createdApps = [];
+    for (const job of jobs) {
+      const app = await createApplication(sql, {
+        jobId: job.id,
+        candidateId: candidate.id,
+        resumeKey: makeTestResumeKey(candidate.id),
+        metadata: {},
+        status: "applied",
+      });
+      createdApps.push(app);
+    }
+    await createApplication(sql, {
+      jobId: archivedJob.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: {},
+      status: "applied",
+    });
+
+    await archiveJob(sql, { id: archivedJob.id, companyId: company.id });
+
+    // Update some applications later (in this order) so their updated_at is more recent.
+    // Final order by updated_at desc among active: Job 1 (last update), Job 5, Job 4, Job 2, Job 3 (no update)
+    await updateApplicationStatus(sql, { id: createdApps[1]!.id, status: "interview_invited" }); // Job 2
+    await updateApplicationStatus(sql, { id: createdApps[3]!.id, status: "interview_invited" }); // Job 4
+    await updateApplicationStatus(sql, { id: createdApps[4]!.id, status: "interview_invited" }); // Job 5
+    await updateApplicationStatus(sql, { id: createdApps[0]!.id, status: "interview_invited" }); // Job 1 (most recent update)
+
+    const recent = await getRecentApplicationsByCandidate(sql, { candidateId: candidate.id });
+    expect(recent).toHaveLength(3);
+    expect(recent[0].jobTitle).toBe("Job 1");
+    expect(recent[1].jobTitle).toBe("Job 5");
+    expect(recent[2].jobTitle).toBe("Job 4");
+    // Job 2 is 4th by update time so excluded by LIMIT 3
+    expect(recent.some((a) => a.jobTitle === "Archived Job")).toBe(false);
+  });
+
+  it("surfaces the latest interview status", async () => {
+    const { company } = await seedCompany();
+    const candidate = await seedUser({ role: "candidate" });
+    const job = await makeOpenJob(company.id);
+
+    const app = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: {},
+      status: "applied",
+    });
+
+    await createInterview(sql, {
+      applicationId: app!.id,
+      agentId: "test",
+      type: "full",
+      metadata: {},
+      status: "pending",
+      invitedAt: new Date(),
+      startedAt: null,
+      completedAt: null,
+    });
+
+    const recent = await getRecentApplicationsByCandidate(sql, { candidateId: candidate.id });
+    expect(recent).toHaveLength(1);
+    expect(recent[0].interviewStatus).toBe("pending");
   });
 });
 

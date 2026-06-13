@@ -920,21 +920,67 @@ function DashboardCandidateIndexSkeleton() {
         <Skeleton className="mt-1 h-4 w-80" />
       </div>
 
-      {/* 2-column metric cards */}
-      <div className="grid gap-3 sm:grid-cols-2">
+      {/* Header stats (light rounded cards, same as company) */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i}>
-            <CardHeader className="flex flex-row items-start justify-between gap-4 pb-2">
-              <div>
-                <Skeleton className="h-3 w-24" />
-                <Skeleton className="mt-1.5 h-8 w-16" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-3 w-36" />
-            </CardContent>
-          </Card>
+          <div key={i} className="rounded-xl border border-border/60 bg-card px-4 py-3">
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="mt-1 h-7 w-16" />
+          </div>
         ))}
+      </div>
+
+      {/* Action queue card skeleton (matches ActionQueueCard structure) */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-5 w-32" />
+            <Skeleton className="h-5 w-8 rounded-full" />
+          </div>
+          <Skeleton className="mt-1 h-3 w-48" />
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="divide-y divide-border/50">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex items-start gap-3 px-5 py-3.5">
+                <Skeleton className="mt-1.5 size-2 rounded-full" />
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  <Skeleton className="h-4 w-64" />
+                  <Skeleton className="h-3 w-80" />
+                </div>
+                <Skeleton className="h-8 w-20" />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Recent activity skeleton */}
+      <Card>
+        <CardHeader className="pb-3">
+          <Skeleton className="h-5 w-32" />
+          <Skeleton className="mt-1 h-3 w-48" />
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="divide-y divide-border/50">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <div key={i} className="flex items-center justify-between gap-4 px-5 py-3">
+                <div className="space-y-1">
+                  <Skeleton className="h-3 w-24" />
+                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+                <Skeleton className="h-8 w-14" />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Quick links row */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Skeleton className="h-8 w-40" />
+        <Skeleton className="h-8 w-36" />
       </div>
     </div>
   );
