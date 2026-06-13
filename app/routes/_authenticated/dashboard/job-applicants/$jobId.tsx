@@ -122,7 +122,7 @@ function JobApplicantsPage() {
           </Link>
         </Button>
         <div className="flex flex-wrap gap-2">
-          <Badge variant="secondary" className="gap-1 font-mono text-[11px]">
+          <Badge variant="secondary" className="gap-1">
             <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} className="size-3" />
             {applicants.length} applicant{applicants.length !== 1 ? "s" : ""}
           </Badge>
@@ -177,16 +177,12 @@ function JobApplicantsPage() {
             <TabsTrigger value="ready" className="gap-2">
               <HugeiconsIcon icon={RankingIcon} strokeWidth={2} className="size-4" />
               Ready for decision
-              <Badge variant="secondary" className="font-mono text-[11px]">
-                {readyForDecisionApplicants.length}
-              </Badge>
+              <Badge variant="secondary">{readyForDecisionApplicants.length}</Badge>
             </TabsTrigger>
             <TabsTrigger value="all" className="gap-2">
               <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} className="size-4" />
               All applicants
-              <Badge variant="secondary" className="font-mono text-[11px]">
-                {applicants.length}
-              </Badge>
+              <Badge variant="secondary">{applicants.length}</Badge>
             </TabsTrigger>
           </TabsList>
 

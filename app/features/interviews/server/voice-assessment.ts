@@ -116,11 +116,17 @@ export function getWebhookSessionId(
   return event.data.userId ?? event.data.user_id ?? null;
 }
 
+const EXPRESSIVE_TAG_RE = /\[[\w\s-]+?\]\s*/g;
+
+function stripExpressiveTags(text: string): string {
+  return text.replace(EXPRESSIVE_TAG_RE, "").trim();
+}
+
 export function normalizeVoiceTranscriptMessages(
   transcript: z.infer<typeof elevenLabsTranscriptEventSchema>["data"]["transcript"],
 ): Array<VoiceTranscriptMessage> {
   return transcript.reduce<Array<VoiceTranscriptMessage>>((messages, message) => {
-    const content = message.message.trim();
+    const content = stripExpressiveTags(message.message);
     if (!content) {
       return messages;
     }
@@ -167,7 +173,7 @@ export async function finalizeVoiceAssessmentFromTranscript(input: {
 
   const transcriptForDb = input.messages.map((message) => ({
     role: message.role,
-    content: message.content,
+    content: stripExpressiveTags(message.content),
   }));
 
   // Never terminally complete an empty transcript. An empty webhook payload

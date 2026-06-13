@@ -350,9 +350,7 @@ function ApplicantsSummaryCard({
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <CardTitle>Applicants</CardTitle>
-            <Badge variant="secondary" className="font-mono text-[11px]">
-              {applicantsCount}
-            </Badge>
+            <Badge variant="secondary">{applicantsCount}</Badge>
           </div>
           <Button variant="outline" size="sm" asChild>
             <Link to="/dashboard/job-applicants/$jobId" params={{ jobId }}>
