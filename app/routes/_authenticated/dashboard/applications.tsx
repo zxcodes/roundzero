@@ -267,7 +267,7 @@ function ApplicationListCard({
   const description = application.companyOwnerDeleted
     ? "The company account has been deleted — this application is no longer active"
     : hasNextSteps
-      ? "You have been shortlisted and the company added next steps for you"
+      ? "The company added follow-up for your shortlisted application"
       : statusMeta.blurb;
 
   return (
@@ -283,7 +283,7 @@ function ApplicationListCard({
                 {getJobStateLabel(application)}
               </Badge>
               <Badge className={`${statusMeta.tone} text-[11px]`}>{statusMeta.badge}</Badge>
-              {hasNextSteps ? <Badge variant="secondary">Next steps ready</Badge> : null}
+              {hasNextSteps ? <Badge variant="secondary">Follow-up available</Badge> : null}
             </div>
 
             <div className="space-y-1">

@@ -300,7 +300,6 @@ function ApplicantReviewPage() {
           canShortlist={canShortlist}
           isShortlisted={isShortlisted}
           shortlistNote={shortlistDetails?.note ?? null}
-          shortlistLink={shortlistDetails?.link ?? null}
           canReject={canReject}
           isPending={updateStatusMutation.isPending}
           isRejectPending={pendingStatus !== null}
@@ -387,7 +386,6 @@ function ApplicationStatusSection({
   canShortlist,
   isShortlisted,
   shortlistNote,
-  shortlistLink,
   canReject,
   isPending,
   isRejectPending,
@@ -412,7 +410,6 @@ function ApplicationStatusSection({
   canShortlist: boolean;
   isShortlisted: boolean;
   shortlistNote: string | null;
-  shortlistLink: string | null;
   canReject: boolean;
   isPending: boolean;
   isRejectPending: boolean;
@@ -513,8 +510,7 @@ function ApplicationStatusSection({
                 candidateName={candidateName}
                 mode="edit"
                 defaultNote={shortlistNote}
-                defaultLink={shortlistLink}
-                trigger={<Button variant="outline">Edit next steps</Button>}
+                trigger={<Button variant="outline">Edit note</Button>}
               />
             ) : null}
           </div>

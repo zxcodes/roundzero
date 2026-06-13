@@ -442,7 +442,6 @@ describe("getShortlistedApplicantsByCompany", () => {
       metadata: {
         shortlist: {
           note: "Schedule panel",
-          link: "https://cal.example.com/backend-high",
           updatedAt: "2026-06-13T08:00:00.000Z",
         },
       },
@@ -455,7 +454,6 @@ describe("getShortlistedApplicantsByCompany", () => {
       metadata: {
         shortlist: {
           note: null,
-          link: null,
           updatedAt: "2026-06-13T08:10:00.000Z",
         },
       },
@@ -468,7 +466,6 @@ describe("getShortlistedApplicantsByCompany", () => {
       metadata: {
         shortlist: {
           note: "Meet the PM",
-          link: "https://cal.example.com/frontend",
           updatedAt: "2026-06-13T08:20:00.000Z",
         },
       },
@@ -488,7 +485,6 @@ describe("getShortlistedApplicantsByCompany", () => {
       metadata: {
         shortlist: {
           note: "Should be hidden",
-          link: null,
           updatedAt: "2026-06-13T08:25:00.000Z",
         },
       },
@@ -501,7 +497,6 @@ describe("getShortlistedApplicantsByCompany", () => {
       metadata: {
         shortlist: {
           note: "Other company",
-          link: null,
           updatedAt: "2026-06-13T08:30:00.000Z",
         },
       },

@@ -362,13 +362,7 @@ function ApplicantReportSummaryPage() {
               candidateName={application.candidateName}
               mode="edit"
               defaultNote={shortlistDetails?.note ?? null}
-              defaultLink={shortlistDetails?.link ?? null}
-              trigger={
-                <Button variant="outline">
-                  <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-4" />
-                  Edit next steps
-                </Button>
-              }
+              trigger={<Button variant="outline">Edit note</Button>}
             />
           ) : null}
           {canReject ? (

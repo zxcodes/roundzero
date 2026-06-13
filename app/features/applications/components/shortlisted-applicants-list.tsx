@@ -1,4 +1,4 @@
-import { ArrowRight01Icon, Copy01Icon, UserGroupIcon } from "@hugeicons/core-free-icons";
+import { Copy01Icon, UserGroupIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -195,7 +195,6 @@ function ShortlistedApplicantRow({ applicant }: { applicant: ShortlistedApplican
             candidateName={applicant.candidateName}
             mode="edit"
             defaultNote={shortlistDetails?.note ?? null}
-            defaultLink={shortlistDetails?.link ?? null}
             trigger={
               <Button variant="outline" size="sm">
                 Edit next steps
@@ -208,22 +207,12 @@ function ShortlistedApplicantRow({ applicant }: { applicant: ShortlistedApplican
         </div>
       </div>
 
-      {shortlistDetails?.note || shortlistDetails?.link || shortlistDetails?.updatedAt ? (
+      {shortlistDetails?.note ? (
         <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-          {shortlistDetails.note ? (
-            <span className="rounded-2xl bg-muted/60 px-3 py-1.5 text-foreground">
-              <span className="font-medium">Note: </span>
-              {shortlistDetails.note}
-            </span>
-          ) : null}
-          {shortlistDetails.link ? (
-            <Button variant="ghost" size="xs" asChild>
-              <a href={shortlistDetails.link} target="_blank" rel="noreferrer">
-                View link
-                <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-3" />
-              </a>
-            </Button>
-          ) : null}
+          <span className="rounded-2xl bg-muted/60 px-3 py-1.5 text-foreground">
+            <span className="font-medium">Note: </span>
+            {shortlistDetails.note}
+          </span>
           {shortlistDetails.updatedAt ? (
             <span className="text-muted-foreground/60">
               Updated {formatDateTime(shortlistDetails.updatedAt)}

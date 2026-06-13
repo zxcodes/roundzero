@@ -11,7 +11,6 @@ import {
   updateApplicationStatus,
 } from "../queries/queries_sql";
 import { shortlistApplicantWorkflow } from "../services/workflows";
-import { shortlistInputSchema } from "../shortlist";
 
 const sql = getTestDb();
 const noopNotificationEmail = async () => ({ providerMessageId: null });
@@ -346,7 +345,6 @@ describe("shortlist workflow", () => {
         userId: owner.id,
         applicationId: application.id,
         note: "Loved the systems answers.",
-        link: "https://cal.example.com/orbit/intro",
         notify: false,
       },
       { sendNotificationEmail: noopNotificationEmail },
@@ -362,7 +360,6 @@ describe("shortlist workflow", () => {
     expect(afterFirstShortlist?.metadata).toMatchObject({
       shortlist: {
         note: "Loved the systems answers.",
-        link: "https://cal.example.com/orbit/intro",
       },
     });
     expect(firstNotifications).toHaveLength(1);
@@ -373,7 +370,6 @@ describe("shortlist workflow", () => {
       companyName: "Orbit Labs",
       status: "shortlisted",
       note: "Loved the systems answers.",
-      link: "https://cal.example.com/orbit/intro",
     });
 
     await shortlistApplicantWorkflow(
@@ -382,7 +378,6 @@ describe("shortlist workflow", () => {
         userId: owner.id,
         applicationId: application.id,
         note: "Please book the team panel.",
-        link: "https://cal.example.com/orbit/panel",
         notify: false,
       },
       { sendNotificationEmail: noopNotificationEmail },
@@ -397,7 +392,6 @@ describe("shortlist workflow", () => {
     expect(afterSilentEdit?.metadata).toMatchObject({
       shortlist: {
         note: "Please book the team panel.",
-        link: "https://cal.example.com/orbit/panel",
       },
     });
     expect(afterSilentEditNotifications).toHaveLength(1);
@@ -408,7 +402,6 @@ describe("shortlist workflow", () => {
         userId: owner.id,
         applicationId: application.id,
         note: "Panel updated for Thursday.",
-        link: "https://cal.example.com/orbit/thursday",
         notify: true,
       },
       { sendNotificationEmail: noopNotificationEmail },
@@ -427,19 +420,7 @@ describe("shortlist workflow", () => {
       companyName: "Orbit Labs",
       status: "shortlisted",
       note: "Panel updated for Thursday.",
-      link: "https://cal.example.com/orbit/thursday",
     });
-  });
-
-  it("rejects invalid shortlist links before the workflow runs", () => {
-    const parsed = shortlistInputSchema.safeParse({
-      applicationId: "00000000-0000-0000-0000-000000000000",
-      note: "See you soon",
-      link: "javascript:alert(1)",
-      notify: true,
-    });
-
-    expect(parsed.success).toBe(false);
   });
 
   it("blocks non-owner companies from shortlisting", async () => {
@@ -467,7 +448,6 @@ describe("shortlist workflow", () => {
           userId: otherOwner.id,
           applicationId: application.id,
           note: "Not your role",
-          link: null,
           notify: true,
         },
         { sendNotificationEmail: noopNotificationEmail },
@@ -499,7 +479,6 @@ describe("shortlist workflow", () => {
           userId: owner.id,
           applicationId: application.id,
           note: "Too early",
-          link: null,
           notify: true,
         },
         { sendNotificationEmail: noopNotificationEmail },

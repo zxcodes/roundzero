@@ -1,6 +1,5 @@
 import {
   ArrowLeft01Icon,
-  ArrowRight01Icon,
   Calendar01Icon,
   Cancel01Icon,
   CheckmarkCircle02Icon,
@@ -354,10 +353,10 @@ function CandidateApplicationDetailPage() {
               </div>
               <div className="min-w-0 flex-1 space-y-1">
                 <p className="text-sm font-semibold text-foreground">
-                  Next steps from {application.companyName}
+                  Follow-up from {application.companyName}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  The company added follow-up instructions for this shortlisted application.
+                  The company included the following for this shortlisted application.
                 </p>
               </div>
             </div>
@@ -366,15 +365,6 @@ function CandidateApplicationDetailPage() {
               <div className="rounded-2xl border border-success/15 bg-background/80 px-4 py-3 text-sm text-foreground">
                 {shortlistDetails.note}
               </div>
-            ) : null}
-
-            {shortlistDetails?.link ? (
-              <Button asChild>
-                <a href={shortlistDetails.link} target="_blank" rel="noreferrer">
-                  View next steps
-                  <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-4" />
-                </a>
-              </Button>
             ) : null}
           </CardContent>
         </Card>
