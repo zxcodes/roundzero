@@ -1,7 +1,6 @@
 ## TODO
 
 - company has redundant steps. if I click a job, first taken to a page where there is jd, I have to click view applicants, which is another redundant page. we can def drop one of these here and make it simple.
-- ready for decision tab still doesn't seem to show evaluated candidates? why do we even need two tabs there? check.
 - improve ci. prevent unnecessary runs.
 - overall caching seems a bit too aggressive. login/logouts, switching accounts, has stale data.
 - check deleted account behaviour for companies, applications, etc. how the entire flow handles it.
@@ -9,7 +8,6 @@
 - still a few rough edges around failed eval. retry eval button doesnt seem to work. better to kill it? (says Retry skipped
 post_eval_already_complete)
 - interview panel padding still sucks (sticks left side completely on mobile and short screens)
-- even after shortlisting/rejecting, I see "Your interview is complete. The company will review your evaluation." this messaging
 - pretty sure openrouter model fallbacks still don't work. verify in local dev.
 - we need to be able to invite people with their email. so when they signup they can join that org or something.
 - think about the auth. should it be possible for people to create company and candidate acc with same email?
@@ -17,6 +15,8 @@ post_eval_already_complete)
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- ready for decision tab still doesn't seem to show evaluated candidates? why do we even need two tabs there? check.-->
+<!--- even after shortlisting/rejecting, I see "Your interview is complete. The company will review your evaluation." this messaging-->
 <!--- give companies a nice way to see all shortlisted candidates separated by role for easier next steps (copy email, reaching out etc for next steps. and make this clear on candidate side too after being shortlisted. think about overall ux here.)-->
 <!--- voice assistant still outputting [Understood] kind of messages in text. Check eleven labs docs, etc.-->
 <!--- choose a consistent brand naming "roundzero" vs "RoundZero".-->
