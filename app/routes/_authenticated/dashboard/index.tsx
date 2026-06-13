@@ -23,14 +23,48 @@ import {
 } from "@/components/ui/empty";
 import { getDashboardMetrics } from "@/features/dashboard/server/functions";
 import { ScorePill } from "@/features/reports/components/score-pill";
+import { formatRelativeTime } from "@/shared/date";
 import { recommendationSchema, recommendationSurfaceTone } from "@/shared/enums";
 
 type DashboardMetrics = Awaited<ReturnType<typeof getDashboardMetrics>>;
 type CompanyMetrics = Extract<DashboardMetrics, { type: "company" }>;
-type CandidateMetrics = Extract<DashboardMetrics, { type: "candidate" }>;
+type CandidateMetrics = Extract<DashboardMetrics, { type: "candidate" }> & {
+  shortlistedCount?: number;
+  pendingInterviews?: PendingInterview[];
+  shortlistedApplications?: ShortlistedApp[];
+  recentActivity?: RecentActivityItem[];
+};
 type RoleHealth = CompanyMetrics["roleHealth"][number];
 type ReportHighlight = CompanyMetrics["reportHighlights"][number];
 type ActiveBatch = CompanyMetrics["activeBatches"][number];
+
+// Enriched candidate dashboard pieces (populated by getDashboardMetrics for the actionable view)
+type PendingInterview = {
+  id: string;
+  applicationId: string;
+  jobTitle: string;
+  companyName: string;
+  status: string;
+  expiresAt: string | null;
+};
+
+type ShortlistedApp = {
+  id: string;
+  jobTitle: string;
+  companyName: string;
+  hasFollowUp: boolean;
+};
+
+type RecentActivityItem = {
+  id: string;
+  jobTitle: string;
+  companyName: string;
+  status: string;
+  updatedAt: Date | string;
+  jobStatus: string;
+  companyOwnerDeleted: boolean;
+  interviewStatus: string | null;
+};
 
 export const Route = createFileRoute("/_authenticated/dashboard/")({
   loader: async () => {
@@ -40,35 +74,6 @@ export const Route = createFileRoute("/_authenticated/dashboard/")({
   pendingComponent: DashboardIndexSkeleton,
   component: DashboardIndexPage,
 });
-
-type CandidateMetricCard = {
-  label: string;
-  value: string;
-  description: string;
-};
-
-const buildCandidateMetrics = (m: CandidateMetrics): CandidateMetricCard[] => [
-  {
-    label: "Applications Sent",
-    value: String(m.applicationsSent),
-    description: "Total applications submitted",
-  },
-  {
-    label: "Active Applications",
-    value: String(m.activeApplications),
-    description: "Applications still in progress",
-  },
-  {
-    label: "Interview Invites",
-    value: String(m.interviewInvites),
-    description: "Applications moved to interview stage",
-  },
-  {
-    label: "Evaluations Received",
-    value: String(m.evaluationsReceived),
-    description: "Completed interview evaluations",
-  },
-];
 
 const toInitials = (name: string) => {
   const parts = name.trim().split(/\s+/).filter(Boolean).slice(0, 2);
@@ -190,6 +195,149 @@ function buildActionQueue(metrics: CompanyMetrics): ActionItem[] {
 
   return items.slice(0, 5);
 }
+
+function buildCandidateActionQueue(metrics: CandidateMetrics): ActionItem[] {
+  const items: ActionItem[] = [];
+
+  const pending: PendingInterview[] = metrics.pendingInterviews ?? [];
+  const shortlisted: ShortlistedApp[] = metrics.shortlistedApplications ?? [];
+
+  const now = Date.now();
+
+  // 1. Expiring interviews (danger) — only for the final urgent window
+  // Interviews have a ~12h window. We only surface "expires soon" (danger)
+  // when very little time remains, otherwise we show the normal state + correct CTA.
+  const INTERVIEW_URGENT_HOURS = 4;
+
+  const expiringSoon = pending.filter((p) => {
+    if (!p.expiresAt) return false;
+    const exp = new Date(p.expiresAt).getTime();
+    const hoursLeft = (exp - now) / (1000 * 60 * 60);
+    return hoursLeft > 0 && hoursLeft <= INTERVIEW_URGENT_HOURS;
+  });
+
+  for (const p of expiringSoon.slice(0, 1)) {
+    const isInProgress = p.status === "in_progress";
+    items.push({
+      id: `interview-expiring-${p.id}`,
+      tone: "danger",
+      title: isInProgress
+        ? `Your interview for ${p.jobTitle} expires soon`
+        : `Interview for ${p.jobTitle} expires soon`,
+      description: `at ${p.companyName} — ${isInProgress ? "continue" : "complete"} it before the deadline.`,
+      cta: isInProgress ? "Continue" : "Start interview",
+      link: (
+        <Link to="/interview/$interviewId" params={{ interviewId: p.id }}>
+          {isInProgress ? "Continue" : "Start"}
+          <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-3.5" />
+        </Link>
+      ),
+    });
+  }
+
+  // 2. Other pending or in-progress interviews
+  for (const p of pending.slice(0, 2)) {
+    if (expiringSoon.some((e) => e.id === p.id)) continue;
+    const isInProgress = p.status === "in_progress";
+    items.push({
+      id: `interview-${p.id}`,
+      tone: "warning",
+      title: isInProgress
+        ? `Interview in progress: ${p.jobTitle}`
+        : `Interview ready: ${p.jobTitle}`,
+      description: `at ${p.companyName}`,
+      cta: isInProgress ? "Continue" : "Start interview",
+      link: (
+        <Link to="/interview/$interviewId" params={{ interviewId: p.id }}>
+          {isInProgress ? "Continue" : "Start"}
+          <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-3.5" />
+        </Link>
+      ),
+    });
+  }
+
+  // 3. Shortlisted (with follow-up notes prioritized)
+  const withFollowUp = shortlisted.filter((s) => s.hasFollowUp);
+  if (withFollowUp.length > 0) {
+    const s = withFollowUp[0];
+    items.push({
+      id: `shortlist-followup-${s.id}`,
+      tone: "success",
+      title: `Follow-up from ${s.companyName}`,
+      description: `for ${s.jobTitle} — they left a note with next steps.`,
+      cta: "View details",
+      link: (
+        <Link to="/dashboard/application/$applicationId" params={{ applicationId: s.id }}>
+          View
+          <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-3.5" />
+        </Link>
+      ),
+    });
+  } else if (shortlisted.length > 0) {
+    const s = shortlisted[0];
+    items.push({
+      id: `shortlist-${s.id}`,
+      tone: "success",
+      title: `You're shortlisted for ${s.jobTitle}`,
+      description: `at ${s.companyName} — great work.`,
+      cta: "View",
+      link: (
+        <Link to="/dashboard/application/$applicationId" params={{ applicationId: s.id }}>
+          View
+          <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-3.5" />
+        </Link>
+      ),
+    });
+  }
+
+  return items.slice(0, 5);
+}
+
+const getRecentStatusMeta = (app: RecentActivityItem) => {
+  if (app.companyOwnerDeleted) {
+    return { badge: "Account deleted", tone: "bg-muted text-muted-foreground" };
+  }
+  if (app.jobStatus === "closed") {
+    return { badge: "Role closed", tone: "bg-muted text-muted-foreground" };
+  }
+  if (app.jobStatus === "draft") {
+    return { badge: "Role paused", tone: "bg-muted text-muted-foreground" };
+  }
+
+  const status = app.status;
+  const interviewStatus = app.interviewStatus;
+
+  if (status === "interview_in_progress" && interviewStatus === "completed") {
+    return {
+      badge: "Awaiting company decision",
+      tone: "border-success/20 bg-success/10 text-success",
+    };
+  }
+
+  switch (status) {
+    case "shortlisted":
+      return { badge: "Shortlisted", tone: "border-success/20 bg-success/10 text-success" };
+    case "rejected":
+      return { badge: "Closed", tone: "border-danger/20 bg-danger/10 text-danger" };
+    case "withdrawn":
+      return { badge: "Withdrawn", tone: "bg-muted text-muted-foreground" };
+    case "interview_invited":
+      return { badge: "Interview Ready", tone: "border-warning/20 bg-warning/10 text-warning" };
+    case "interview_in_progress":
+      return {
+        badge: "Interview in Progress",
+        tone: "border-warning/20 bg-warning/10 text-warning",
+      };
+    case "evaluated":
+    case "evaluated_held":
+      return {
+        badge: "Awaiting company decision",
+        tone: "border-success/20 bg-success/10 text-success",
+      };
+    default:
+      return { badge: "Application Received", tone: "border-info/20 bg-info/10 text-info" };
+  }
+};
 
 const toneDot: Record<ActionItem["tone"], string> = {
   danger: "bg-danger",
@@ -564,6 +712,121 @@ function CompanyDashboardSection({ metrics }: { metrics: CompanyMetrics }) {
   );
 }
 
+function CandidateDashboardSection({ metrics }: { metrics: CandidateMetrics }) {
+  const actions = buildCandidateActionQueue(metrics);
+
+  // Light header stats row (consistent visual weight with company)
+  const headerItems = [
+    { label: "Active applications", value: metrics.activeApplications },
+    { label: "Interviews pending", value: metrics.pendingInterviews?.length ?? 0 },
+    {
+      label: "Shortlisted",
+      value: metrics.shortlistedCount ?? metrics.shortlistedApplications?.length ?? 0,
+    },
+    { label: "Evaluations received", value: metrics.evaluationsReceived },
+  ];
+
+  const hasActions = actions.length > 0;
+  const hasPending = (metrics.pendingInterviews?.length ?? 0) > 0;
+  const hasShortlisted =
+    (metrics.shortlistedCount ?? metrics.shortlistedApplications?.length ?? 0) > 0;
+
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {headerItems.map((item) => (
+          <div key={item.label} className="rounded-xl border border-border/60 bg-card px-4 py-3">
+            <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+              {item.label}
+            </p>
+            <p className="mt-1 font-mono text-2xl font-semibold tracking-tight">{item.value}</p>
+          </div>
+        ))}
+      </div>
+
+      <ActionQueueCard actions={actions} />
+
+      <RecentActivitySection activity={metrics.recentActivity ?? []} />
+
+      {/* Quick access to full list + browse */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Button variant="ghost" size="sm" asChild>
+          <Link to="/dashboard/applications">
+            View all applications
+            <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-3.5" />
+          </Link>
+        </Button>
+        <Button size="sm" asChild>
+          <Link to="/dashboard/jobs">
+            Browse open roles
+            <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-3.5" />
+          </Link>
+        </Button>
+      </div>
+
+      {!(hasActions || hasPending || hasShortlisted) && (
+        <Card className="border-dashed">
+          <CardContent className="py-6 text-center text-sm text-muted-foreground">
+            No active interviews or shortlists right now. Apply to more roles to get started.
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+function RecentActivitySection({ activity }: { activity: RecentActivityItem[] }) {
+  if (activity.length === 0) return null;
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Recent activity</CardTitle>
+        <CardDescription className="text-xs">
+          Your most recently updated applications.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="p-0">
+        <ul className="divide-y divide-border/50">
+          {activity.map((app) => {
+            const meta = getRecentStatusMeta(app);
+            return (
+              <li
+                key={app.id}
+                className="flex items-center justify-between gap-4 px-5 py-3 transition-colors hover:bg-muted/30"
+              >
+                <div className="min-w-0 flex-1 space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary">
+                      {app.companyName}
+                    </span>
+                    <Badge variant="outline" className="font-mono text-[10px]">
+                      {app.jobStatus === "open" ? "Role open" : app.jobStatus}
+                    </Badge>
+                    <Badge className={`${meta.tone} text-[10px]`}>{meta.badge}</Badge>
+                  </div>
+                  <div className="truncate text-sm font-medium">{app.jobTitle}</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    Updated {formatRelativeTime(app.updatedAt)}
+                  </div>
+                </div>
+                <Button variant="outline" size="sm" asChild className="shrink-0">
+                  <Link
+                    to="/dashboard/application/$applicationId"
+                    params={{ applicationId: app.id }}
+                  >
+                    View
+                  </Link>
+                </Button>
+              </li>
+            );
+          })}
+        </ul>
+      </CardContent>
+    </Card>
+  );
+}
+
 function DashboardIndexPage() {
   const auth = useLoaderData({ from: "/_authenticated" });
   const user = auth.user;
@@ -590,10 +853,14 @@ function DashboardIndexPage() {
         } total applicant${metrics.totalApplicants === 1 ? "" : "s"}.`;
       return "Your pipeline is quiet. Post a role to get started.";
     }
-    const active = (metrics as CandidateMetrics).activeApplications;
+    const m = metrics as CandidateMetrics;
+    const pendingI = m.pendingInterviews?.length ?? 0;
+    if (pendingI > 0)
+      return `${pendingI} interview${pendingI === 1 ? "" : "s"} ready — complete them to move forward.`;
+    const active = m.activeApplications;
     if (active > 0)
       return `${active} active application${active === 1 ? "" : "s"} — ${
-        (metrics as CandidateMetrics).interviewInvites
+        m.interviewInvites
       } moved to interview.`;
     return `Here is your applications overview.`;
   })();
@@ -634,23 +901,7 @@ function DashboardIndexPage() {
       {metrics.type === "company" ? (
         <CompanyDashboardSection metrics={metrics} />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {buildCandidateMetrics(metrics).map((card, i) => (
-            <Card key={card.label} className={`stagger-${i + 1}`}>
-              <CardHeader className="flex flex-row items-start justify-between gap-4 pb-2">
-                <div>
-                  <CardDescription className="text-xs">{card.label}</CardDescription>
-                  <CardTitle className="mt-1.5 font-mono text-3xl font-semibold tracking-tight">
-                    {card.value}
-                  </CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-xs text-muted-foreground">{card.description}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <CandidateDashboardSection metrics={metrics as CandidateMetrics} />
       )}
     </div>
   );
