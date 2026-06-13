@@ -843,3 +843,4 @@ export async function countOpenJobsFiltered(sql: Sql, args: countOpenJobsFiltere
         total: row[0]
     };
 }
+
