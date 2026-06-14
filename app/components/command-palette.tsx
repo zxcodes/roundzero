@@ -9,6 +9,7 @@ import {
   Search01Icon,
   Setting06Icon,
   Sun01Icon,
+  UserGroupIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useNavigate } from "@tanstack/react-router";
@@ -29,11 +30,12 @@ import { useAuth } from "@/features/auth/provider";
 interface CommandPaletteProps {
   isCompany: boolean;
   atLimit: boolean;
+  showTeam: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const companyNavItems = (atLimit: boolean) => [
+const companyNavItems = (atLimit: boolean, showTeam: boolean) => [
   {
     title: "Overview",
     url: "/dashboard",
@@ -53,6 +55,15 @@ const companyNavItems = (atLimit: boolean) => [
           icon: AddCircleIcon,
         },
       ]),
+  ...(showTeam
+    ? [
+        {
+          title: "Team",
+          url: "/dashboard/team",
+          icon: UserGroupIcon,
+        },
+      ]
+    : []),
   {
     title: "Settings",
     url: "/dashboard/settings",
@@ -88,12 +99,18 @@ const candidateNavItems = [
   },
 ];
 
-export function CommandPalette({ isCompany, atLimit, open, onOpenChange }: CommandPaletteProps) {
+export function CommandPalette({
+  isCompany,
+  atLimit,
+  showTeam,
+  open,
+  onOpenChange,
+}: CommandPaletteProps) {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const { signOut, isSigningOut } = useAuth();
 
-  const navItems = isCompany ? companyNavItems(atLimit) : candidateNavItems;
+  const navItems = isCompany ? companyNavItems(atLimit, showTeam) : candidateNavItems;
 
   const onSelectNav = (url: string) => {
     onOpenChange(false);

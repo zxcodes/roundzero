@@ -7,6 +7,7 @@ import {
   House01Icon,
   Search01Icon,
   Setting06Icon,
+  UserGroupIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
@@ -29,7 +30,7 @@ import type { User } from "@/router";
 import type { CompanyMemberRole } from "@/shared/enums";
 import { Logo } from "./public-layout";
 
-const buildCompanyMain = (showBilling: boolean) => [
+const buildCompanyMain = (showBilling: boolean, showTeam: boolean) => [
   {
     title: "Overview",
     url: "/dashboard",
@@ -45,6 +46,15 @@ const buildCompanyMain = (showBilling: boolean) => [
     url: "/dashboard/shortlisted",
     icon: <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-4" />,
   },
+  ...(showTeam
+    ? [
+        {
+          title: "Team",
+          url: "/dashboard/team",
+          icon: <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} className="size-4" />,
+        },
+      ]
+    : []),
   ...(showBilling
     ? [
         {
@@ -102,7 +112,10 @@ export function AppSidebar({
   atLimit: boolean;
 }) {
   const { signOut, isSigningOut } = useAuth();
-  const mainItems = isCompany ? buildCompanyMain(membershipRole === "owner") : candidateMain;
+  const canManageTeam = membershipRole === "owner" || membershipRole === "admin";
+  const mainItems = isCompany
+    ? buildCompanyMain(membershipRole === "owner", canManageTeam)
+    : candidateMain;
 
   return (
     <Sidebar collapsible="offcanvas" {...props} variant="floating">
