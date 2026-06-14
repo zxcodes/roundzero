@@ -1,10 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
-import {
-  getCompanyByOwnerId,
-  setCompanyPolarCustomer,
-} from "@/features/companies/queries/queries_sql";
+import { getCompanyById, setCompanyPolarCustomer } from "@/features/companies/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { appEnv } from "@/shared/env.app";
 import { companyMiddleware } from "@/shared/middleware";
@@ -105,7 +102,7 @@ export const getMySubscription = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     // Re-read so we always reflect the latest webhook-applied state.
     const db = getDb();
-    const company = await getCompanyByOwnerId(db, { ownerId: context.userId });
+    const company = await getCompanyById(db, { id: context.company.id });
     if (!company) return null;
 
     return {

@@ -2,7 +2,7 @@ import type { Sql } from "postgres";
 import { z } from "zod";
 import { getUserById } from "@/features/auth/queries/queries_sql";
 import { getCandidateProfileByUserId } from "@/features/candidates/queries/queries_sql";
-import { getCompanyById, getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
+import { getCompanyById, getCompanyByMemberUserId } from "@/features/companies/queries/queries_sql";
 import {
   createInterview,
   getInterviewByApplicationId,
@@ -131,7 +131,7 @@ export const updateApplicationStatusWorkflow = async (
     throw new Error("Application not found");
   }
 
-  const company = await getCompanyByOwnerId(db, { ownerId: input.userId });
+  const company = await getCompanyByMemberUserId(db, { userId: input.userId });
   if (!company) {
     throw new Error("Not authorized");
   }
@@ -280,7 +280,7 @@ export const shortlistApplicantWorkflow = async (
     throw new Error("Application not found");
   }
 
-  const company = await getCompanyByOwnerId(db, { ownerId: input.userId });
+  const company = await getCompanyByMemberUserId(db, { userId: input.userId });
   if (!company) {
     throw new Error("Not authorized");
   }

@@ -225,6 +225,154 @@ export async function getCompanyById(sql: Sql, args: getCompanyByIdArgs): Promis
     };
 }
 
+export const getActiveMembershipByUserIdQuery = `-- name: getActiveMembershipByUserId :one
+SELECT id, company_id, user_id, role, status
+FROM company_members
+WHERE user_id = $1
+  AND status = 'active'`;
+
+export interface getActiveMembershipByUserIdArgs {
+    userId: string;
+}
+
+export interface getActiveMembershipByUserIdRow {
+    id: string;
+    companyId: string;
+    userId: string;
+    role: string;
+    status: string;
+}
+
+export async function getActiveMembershipByUserId(sql: Sql, args: getActiveMembershipByUserIdArgs): Promise<getActiveMembershipByUserIdRow | null> {
+    const rows = await sql.unsafe(getActiveMembershipByUserIdQuery, [args.userId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        companyId: row[1],
+        userId: row[2],
+        role: row[3],
+        status: row[4]
+    };
+}
+
+export const getCompanyByMemberUserIdQuery = `-- name: getCompanyByMemberUserId :one
+SELECT c.id, c.owner_id, c.name, c.slug, c.onboarding_completed_at, c.description, c.logo_key, c.website, c.industry, c.company_size, c.founded_year, c.location, c.tech_stack, c.culture, c.social_links, c.polar_customer_id, c.polar_subscription_id, c.polar_product_id, c.subscription_plan, c.subscription_status, c.subscription_current_period_end, c.subscription_cancel_at_period_end, c.created_at, c.updated_at
+FROM company_members cm
+JOIN companies c ON c.id = cm.company_id
+WHERE cm.user_id = $1
+  AND cm.status = 'active'`;
+
+export interface getCompanyByMemberUserIdArgs {
+    userId: string;
+}
+
+export interface getCompanyByMemberUserIdRow {
+    id: string;
+    ownerId: string;
+    name: string;
+    slug: string;
+    onboardingCompletedAt: Date | null;
+    description: string | null;
+    logoKey: string | null;
+    website: string | null;
+    industry: string | null;
+    companySize: string | null;
+    foundedYear: number | null;
+    location: string | null;
+    techStack: any | null;
+    culture: string | null;
+    socialLinks: any | null;
+    polarCustomerId: string | null;
+    polarSubscriptionId: string | null;
+    polarProductId: string | null;
+    subscriptionPlan: string;
+    subscriptionStatus: string;
+    subscriptionCurrentPeriodEnd: Date | null;
+    subscriptionCancelAtPeriodEnd: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export async function getCompanyByMemberUserId(sql: Sql, args: getCompanyByMemberUserIdArgs): Promise<getCompanyByMemberUserIdRow | null> {
+    const rows = await sql.unsafe(getCompanyByMemberUserIdQuery, [args.userId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        ownerId: row[1],
+        name: row[2],
+        slug: row[3],
+        onboardingCompletedAt: row[4],
+        description: row[5],
+        logoKey: row[6],
+        website: row[7],
+        industry: row[8],
+        companySize: row[9],
+        foundedYear: row[10],
+        location: row[11],
+        techStack: row[12],
+        culture: row[13],
+        socialLinks: row[14],
+        polarCustomerId: row[15],
+        polarSubscriptionId: row[16],
+        polarProductId: row[17],
+        subscriptionPlan: row[18],
+        subscriptionStatus: row[19],
+        subscriptionCurrentPeriodEnd: row[20],
+        subscriptionCancelAtPeriodEnd: row[21],
+        createdAt: row[22],
+        updatedAt: row[23]
+    };
+}
+
+export const createCompanyMemberQuery = `-- name: createCompanyMember :one
+INSERT INTO company_members (company_id, user_id, role, status, invited_by)
+VALUES ($1, $2, $3, 'active', $4)
+RETURNING id, company_id, user_id, role, status, invited_by, joined_at, created_at, updated_at`;
+
+export interface createCompanyMemberArgs {
+    companyId: string;
+    userId: string;
+    role: string;
+    invitedBy: string | null;
+}
+
+export interface createCompanyMemberRow {
+    id: string;
+    companyId: string;
+    userId: string;
+    role: string;
+    status: string;
+    invitedBy: string | null;
+    joinedAt: Date;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export async function createCompanyMember(sql: Sql, args: createCompanyMemberArgs): Promise<createCompanyMemberRow | null> {
+    const rows = await sql.unsafe(createCompanyMemberQuery, [args.companyId, args.userId, args.role, args.invitedBy]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        companyId: row[1],
+        userId: row[2],
+        role: row[3],
+        status: row[4],
+        invitedBy: row[5],
+        joinedAt: row[6],
+        createdAt: row[7],
+        updatedAt: row[8]
+    };
+}
+
 export const getCompanyBySlugQuery = `-- name: getCompanyBySlug :one
 SELECT c.id, c.owner_id, c.name, c.slug, c.onboarding_completed_at, c.description, c.logo_key, c.website, c.industry, c.company_size, c.founded_year, c.location, c.tech_stack, c.culture, c.social_links, c.polar_customer_id, c.polar_subscription_id, c.polar_product_id, c.subscription_plan, c.subscription_status, c.subscription_current_period_end, c.subscription_cancel_at_period_end, c.created_at, c.updated_at,
        u.name AS owner_name,
@@ -317,7 +465,6 @@ SET name = $1,
     social_links = $11,
     updated_at = now()
 WHERE id = $12
-  AND owner_id = $13
 RETURNING id, owner_id, name, slug, onboarding_completed_at, description, logo_key, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, polar_customer_id, polar_subscription_id, polar_product_id, subscription_plan, subscription_status, subscription_current_period_end, subscription_cancel_at_period_end, created_at, updated_at`;
 
 export interface updateCompanyProfileArgs {
@@ -333,7 +480,6 @@ export interface updateCompanyProfileArgs {
     culture: string | null;
     socialLinks: any | null;
     id: string;
-    ownerId: string;
 }
 
 export interface updateCompanyProfileRow {
@@ -364,7 +510,7 @@ export interface updateCompanyProfileRow {
 }
 
 export async function updateCompanyProfile(sql: Sql, args: updateCompanyProfileArgs): Promise<updateCompanyProfileRow | null> {
-    const rows = await sql.unsafe(updateCompanyProfileQuery, [args.name, args.description, args.logoKey, args.website, args.industry, args.companySize, args.foundedYear, args.location, args.techStack, args.culture, args.socialLinks, args.id, args.ownerId]).values();
+    const rows = await sql.unsafe(updateCompanyProfileQuery, [args.name, args.description, args.logoKey, args.website, args.industry, args.companySize, args.foundedYear, args.location, args.techStack, args.culture, args.socialLinks, args.id]).values();
     if (rows.length !== 1) {
         return null;
     }

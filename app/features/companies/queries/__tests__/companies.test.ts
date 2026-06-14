@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { softDeleteUser } from "@/features/auth/queries/queries_sql";
-import { getTestDb, seedUser } from "@/shared/__tests__/test-utils";
+import { getTestDb, seedCompany, seedUser } from "@/shared/__tests__/test-utils";
 import {
   clearCompanySubscription,
   createCompany,
+  createCompanyMember,
+  getActiveMembershipByUserId,
   getAllCompanies,
   getCompanyById,
+  getCompanyByMemberUserId,
   getCompanyByOwnerId,
   getCompanyByPolarCustomerId,
   getCompanyBySlug,
@@ -198,7 +201,6 @@ describe("updateCompanyProfile", () => {
 
     const updated = await updateCompanyProfile(sql, {
       id: created!.id,
-      ownerId: owner.id,
       name: "New Name",
       description: "New desc",
       logoKey: "company-logos/user-123/logo.png",
@@ -225,41 +227,10 @@ describe("updateCompanyProfile", () => {
     expect(updated!.updatedAt.getTime()).toBeGreaterThan(created!.createdAt.getTime());
   });
 
-  it("returns null when ownerId doesn't match", async () => {
-    const owner = await seedUser({ role: "company" });
-    const other = await seedUser({ role: "company" });
-    const created = await createCompany(sql, {
-      ownerId: owner.id,
-      name: "My Company",
-      slug: "my-company",
-      description: null,
-      logoKey: null,
-      industry: null,
-      companySize: null,
-    });
-
-    const result = await updateCompanyProfile(sql, {
-      id: created!.id,
-      ownerId: other.id,
-      name: "Hacked",
-      description: null,
-      logoKey: null,
-      website: null,
-      industry: null,
-      companySize: null,
-      foundedYear: null,
-      location: null,
-      techStack: null,
-      culture: null,
-      socialLinks: null,
-    });
-
-    expect(result).toBeNull();
-
-    // Original unchanged
-    const check = await getCompanyById(sql, { id: created!.id });
-    expect(check!.name).toBe("My Company");
-  });
+  // Note: authorization (who may edit a company) moved from this query's
+  // WHERE clause to the membership layer (companyMiddleware + role checks).
+  // The query now scopes by company id only, so there is no owner-mismatch
+  // case to test here anymore.
 });
 
 describe("slugExists", () => {
@@ -477,5 +448,64 @@ describe("clearCompanySubscription", () => {
   it("returns null for unknown polar customer id", async () => {
     const result = await clearCompanySubscription(sql, { polarCustomerId: "unknown" });
     expect(result).toBeNull();
+  });
+});
+
+describe("company membership", () => {
+  it("getActiveMembershipByUserId returns the owner membership for a seeded company", async () => {
+    const { company, owner } = await seedCompany();
+
+    const membership = await getActiveMembershipByUserId(sql, { userId: owner.id });
+
+    expect(membership).not.toBeNull();
+    expect(membership!.companyId).toBe(company.id);
+    expect(membership!.role).toBe("owner");
+    expect(membership!.status).toBe("active");
+  });
+
+  it("getActiveMembershipByUserId returns null for a user with no membership", async () => {
+    const stranger = await seedUser({ role: "company" });
+
+    const membership = await getActiveMembershipByUserId(sql, { userId: stranger.id });
+
+    expect(membership).toBeNull();
+  });
+
+  it("getCompanyByMemberUserId resolves the company for an added member", async () => {
+    const { company } = await seedCompany();
+    const teammate = await seedUser({ role: "company" });
+
+    await createCompanyMember(sql, {
+      companyId: company.id,
+      userId: teammate.id,
+      role: "admin",
+      invitedBy: null,
+    });
+
+    const resolved = await getCompanyByMemberUserId(sql, { userId: teammate.id });
+
+    expect(resolved).not.toBeNull();
+    expect(resolved!.id).toBe(company.id);
+    expect(resolved!.name).toBe(company.name);
+  });
+
+  it("removed members are not resolved by membership queries", async () => {
+    const { company } = await seedCompany();
+    const teammate = await seedUser({ role: "company" });
+
+    const member = await createCompanyMember(sql, {
+      companyId: company.id,
+      userId: teammate.id,
+      role: "member",
+      invitedBy: null,
+    });
+    await sql`
+      UPDATE company_members
+      SET status = 'removed', updated_at = now()
+      WHERE id = ${member!.id}
+    `;
+
+    expect(await getActiveMembershipByUserId(sql, { userId: teammate.id })).toBeNull();
+    expect(await getCompanyByMemberUserId(sql, { userId: teammate.id })).toBeNull();
   });
 });

@@ -3,7 +3,7 @@ import { clearSession, updateSession, useSession } from "@tanstack/react-start/s
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { getCandidateProfileByUserId } from "@/features/candidates/queries/queries_sql";
-import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
+import { getCompanyByMemberUserId } from "@/features/companies/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { userRoleSchema } from "@/shared/enums";
 import { authMiddleware } from "@/shared/middleware";
@@ -77,7 +77,7 @@ export const loginWithGoogle = createServerFn({ method: "POST" })
 
     let onboardingComplete = false;
     if (activeUser.role === "company") {
-      const company = await getCompanyByOwnerId(db, { ownerId: activeUser.id });
+      const company = await getCompanyByMemberUserId(db, { userId: activeUser.id });
       onboardingComplete = Boolean(company?.onboardingCompletedAt);
     } else if (activeUser.role === "candidate") {
       const profile = await getCandidateProfileByUserId(db, { userId: activeUser.id });

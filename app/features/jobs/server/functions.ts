@@ -3,7 +3,7 @@ import { zodValidator } from "@tanstack/zod-adapter";
 import { generateText, Output } from "ai";
 import { z } from "zod";
 import { hasActiveSubscription } from "@/features/billing/config";
-import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
+import { getCompanyByMemberUserId } from "@/features/companies/queries/queries_sql";
 import { createNotification } from "@/features/notifications/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
@@ -87,7 +87,7 @@ export const getMyJobsWithPipeline = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const db = getDb();
     await db.unsafe(closeExpiredJobsQuery);
-    const company = await getCompanyByOwnerId(db, { ownerId: context.userId });
+    const company = await getCompanyByMemberUserId(db, { userId: context.userId });
     if (!company) {
       return [];
     }
@@ -98,7 +98,7 @@ export const getMyArchivedJobs = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
     const db = getDb();
-    const company = await getCompanyByOwnerId(db, { ownerId: context.userId });
+    const company = await getCompanyByMemberUserId(db, { userId: context.userId });
     if (!company) {
       return [];
     }
@@ -119,7 +119,7 @@ export const getJob = createServerFn({ method: "GET" })
 
     // Non-open jobs are only visible to the company owner
     if (job.status !== "open") {
-      const company = await getCompanyByOwnerId(db, { ownerId: context.userId });
+      const company = await getCompanyByMemberUserId(db, { userId: context.userId });
       if (!company || company.id !== job.companyId) {
         return null;
       }
@@ -334,7 +334,7 @@ export const getMyJobCounts = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
     const db = getDb();
-    const company = await getCompanyByOwnerId(db, { ownerId: context.userId });
+    const company = await getCompanyByMemberUserId(db, { userId: context.userId });
     if (!company) {
       return { openCount: 0, draftCount: 0, totalCount: 0 };
     }
