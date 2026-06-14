@@ -22,6 +22,24 @@ SELECT *
 FROM companies
 WHERE id = $1;
 
+-- name: getActiveMembershipByUserId :one
+SELECT id, company_id, user_id, role, status
+FROM company_members
+WHERE user_id = $1
+  AND status = 'active';
+
+-- name: getCompanyByMemberUserId :one
+SELECT c.*
+FROM company_members cm
+JOIN companies c ON c.id = cm.company_id
+WHERE cm.user_id = $1
+  AND cm.status = 'active';
+
+-- name: createCompanyMember :one
+INSERT INTO company_members (company_id, user_id, role, status, invited_by)
+VALUES ($1, $2, $3, 'active', $4)
+RETURNING *;
+
 -- name: getCompanyBySlug :one
 SELECT c.*,
        u.name AS owner_name,
@@ -45,7 +63,6 @@ SET name = $1,
     social_links = $11,
     updated_at = now()
 WHERE id = $12
-  AND owner_id = $13
 RETURNING *;
 
 -- name: getAllCompanies :many

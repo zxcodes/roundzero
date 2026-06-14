@@ -15,7 +15,7 @@ import {
   getInterviewsByBatchWithCandidate,
   getReportsByBatchId,
 } from "@/features/batches/queries/queries_sql";
-import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
+import { getCompanyByMemberUserId } from "@/features/companies/queries/queries_sql";
 import { getJobById } from "@/features/jobs/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { authMiddleware } from "@/shared/middleware";
@@ -29,7 +29,7 @@ export const getActiveBatchForJobServer = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const db = getDb();
 
-    const company = await getCompanyByOwnerId(db, { ownerId: context.userId });
+    const company = await getCompanyByMemberUserId(db, { userId: context.userId });
     if (!company) {
       throw new Error("No company found");
     }
@@ -55,7 +55,7 @@ export const getBatchOverview = createServerFn({ method: "GET" })
     }
 
     // Verify the requester owns the company that owns the job
-    const company = await getCompanyByOwnerId(db, { ownerId: context.userId });
+    const company = await getCompanyByMemberUserId(db, { userId: context.userId });
     if (!company) {
       throw new Error("Not authorized to view this batch");
     }

@@ -107,6 +107,23 @@ CREATE TABLE public.companies (
 
 
 --
+-- Name: company_members; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.company_members (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    company_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    role text NOT NULL,
+    status text DEFAULT 'active'::text NOT NULL,
+    invited_by uuid,
+    joined_at timestamp with time zone DEFAULT now() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: feedback; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -371,6 +388,14 @@ ALTER TABLE ONLY public.companies
 
 
 --
+-- Name: company_members company_members_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.company_members
+    ADD CONSTRAINT company_members_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: feedback feedback_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -538,6 +563,41 @@ CREATE UNIQUE INDEX idx_companies_polar_customer ON public.companies USING btree
 
 
 --
+-- Name: idx_company_members_company; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_company_members_company ON public.company_members USING btree (company_id);
+
+
+--
+-- Name: idx_company_members_company_user; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_company_members_company_user ON public.company_members USING btree (company_id, user_id);
+
+
+--
+-- Name: idx_company_members_one_active; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_company_members_one_active ON public.company_members USING btree (user_id) WHERE (status = 'active'::text);
+
+
+--
+-- Name: idx_company_members_one_owner; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_company_members_one_owner ON public.company_members USING btree (company_id) WHERE (role = 'owner'::text);
+
+
+--
+-- Name: idx_company_members_user; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_company_members_user ON public.company_members USING btree (user_id);
+
+
+--
 -- Name: idx_feedback_created_at; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -698,6 +758,30 @@ ALTER TABLE ONLY public.companies
 
 
 --
+-- Name: company_members company_members_company_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.company_members
+    ADD CONSTRAINT company_members_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id) ON DELETE RESTRICT;
+
+
+--
+-- Name: company_members company_members_invited_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.company_members
+    ADD CONSTRAINT company_members_invited_by_fkey FOREIGN KEY (invited_by) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: company_members company_members_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.company_members
+    ADD CONSTRAINT company_members_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE RESTRICT;
+
+
+--
 -- Name: feedback feedback_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -792,4 +876,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260328081657'),
     ('20260606171616'),
     ('20260608010913'),
-    ('20260612120000');
+    ('20260612120000'),
+    ('20260614000000');

@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { getApplicationReviewById } from "@/features/applications/queries/queries_sql";
-import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
+import { getCompanyByMemberUserId } from "@/features/companies/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { authMiddleware } from "@/shared/middleware";
 import { getPreEvaluationByApplicationId } from "../queries/queries_sql";
@@ -29,7 +29,7 @@ export const getPreEvaluationForApplication = createServerFn({ method: "GET" })
     }
 
     if (context.user.role === "company") {
-      const company = await getCompanyByOwnerId(db, { ownerId: context.userId });
+      const company = await getCompanyByMemberUserId(db, { userId: context.userId });
       if (!company || company.id !== application.companyId) {
         throw new Error("Not authorized to view this pre-evaluation");
       }

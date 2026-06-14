@@ -2,7 +2,7 @@ import { env } from "cloudflare:workers";
 import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
-import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
+import { getCompanyByMemberUserId } from "@/features/companies/queries/queries_sql";
 import { getActiveInterviewsByJob } from "@/features/interviews/queries/queries_sql";
 import { expireInterviewIfDue } from "@/features/interviews/server/expire";
 import { getJobById } from "@/features/jobs/queries/queries_sql";
@@ -112,7 +112,7 @@ export const getJobApplicants = createServerFn({ method: "GET" })
     const db = getDb();
 
     // Verify this user owns the company that owns the job
-    const company = await getCompanyByOwnerId(db, { ownerId: context.userId });
+    const company = await getCompanyByMemberUserId(db, { userId: context.userId });
     if (!company) {
       throw new Error("No company found");
     }
@@ -247,7 +247,7 @@ export const getApplicationResume = createServerFn({ method: "POST" })
     }
 
     if (context.user.role === "company") {
-      const company = await getCompanyByOwnerId(db, { ownerId: context.userId });
+      const company = await getCompanyByMemberUserId(db, { userId: context.userId });
       if (!company) {
         throw new Error("Not authorized");
       }

@@ -17,9 +17,11 @@ import {
 } from "@/shared/validation";
 import {
   countCompaniesFiltered,
+  createCompanyMember,
   createCompany as createCompanyQuery,
+  getActiveMembershipByUserId,
   getAllCompaniesPaginated as getAllCompaniesPaginatedQuery,
-  getCompanyByOwnerId,
+  getCompanyById,
   getCompanyBySlug as getCompanyBySlugQuery,
   slugExists,
   updateCompanyProfile as updateCompanyProfileQuery,
@@ -148,28 +150,41 @@ export const createCompany = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const db = getDb();
 
-    const existing = await getCompanyByOwnerId(db, {
-      ownerId: context.userId,
+    const existing = await getActiveMembershipByUserId(db, {
+      userId: context.userId,
     });
     if (existing) {
-      throw new Error("You already have a company");
+      throw new Error("You already belong to a company");
     }
 
     const slug = await generateUniqueSlug(data.name);
 
-    const company = await createCompanyQuery(db, {
-      ownerId: context.userId,
-      name: data.name,
-      slug,
-      description: data.description ?? null,
-      logoKey: null,
-      industry: data.industry ?? null,
-      companySize: data.companySize ?? null,
-    });
+    const company = await db.begin(async (tx) => {
+      const transaction = tx as unknown as typeof db;
 
-    if (!company) {
-      throw new Error("Failed to create company");
-    }
+      const created = await createCompanyQuery(transaction, {
+        ownerId: context.userId,
+        name: data.name,
+        slug,
+        description: data.description ?? null,
+        logoKey: null,
+        industry: data.industry ?? null,
+        companySize: data.companySize ?? null,
+      });
+
+      if (!created) {
+        throw new Error("Failed to create company");
+      }
+
+      await createCompanyMember(transaction, {
+        companyId: created.id,
+        userId: context.userId,
+        role: "owner",
+        invitedBy: null,
+      });
+
+      return created;
+    });
 
     return { company };
   });
@@ -182,9 +197,14 @@ export const getMyCompany = createServerFn({ method: "GET" }).handler(async () =
   }
 
   const db = getDb();
-  const company = await getCompanyByOwnerId(db, {
-    ownerId: session.data.userId,
+  const membership = await getActiveMembershipByUserId(db, {
+    userId: session.data.userId,
   });
+  if (!membership) {
+    return null;
+  }
+
+  const company = await getCompanyById(db, { id: membership.companyId });
   return company;
 });
 
@@ -211,7 +231,6 @@ export const updateCompanyProfile = createServerFn({ method: "POST" })
       culture: data.culture,
       socialLinks: data.socialLinks,
       id: context.company.id,
-      ownerId: context.userId,
     });
 
     if (!updated) {
