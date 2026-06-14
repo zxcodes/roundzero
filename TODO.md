@@ -1,8 +1,9 @@
 ## TODO
 
+- add an easier copy company jobs profile for companies to link it in their careers page.
+- add retro or technical logs on landing page (pre, post eval) looks nice. 
 - add onCopy, onPaste detectors and evaluate final score based on that.
 - company has redundant steps. if I click a job, first taken to a page where there is jd, I have to click view applicants, which is another redundant page. we can def drop one of these here and make it simple.
-- improve ci. prevent unnecessary runs.
 - overall caching seems a bit too aggressive. login/logouts, switching accounts, has stale data.
 - check deleted account behaviour for companies, applications, etc. how the entire flow handles it.
 - pricing needs a big change. (think about per job, x number of jobs, and pay as you go kind?)
@@ -16,6 +17,7 @@ post_eval_already_complete)
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- improve ci. prevent unnecessary runs.-->
 <!--- candidate needs a nice dashboard too (sent applications, pending interviews, shortlisted applications etc.) — implemented actionable version with action queue, header stats, and pipeline signals (see docs/superpowers/specs/2026-06-13-candidate-dashboard-plan.md)-->
 <!--- ready for decision tab still doesn't seem to show evaluated candidates? why do we even need two tabs there? check.-->
 <!--- even after shortlisting/rejecting, I see "Your interview is complete. The company will review your evaluation." this messaging-->
