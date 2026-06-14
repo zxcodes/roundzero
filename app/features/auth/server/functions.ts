@@ -8,7 +8,9 @@ import {
   getActiveMembershipByUserId,
   getCompanyByMemberUserId,
   getInvitationByToken,
+  getMembershipByCompanyAndUser,
   markInvitationAccepted,
+  reactivateCompanyMember,
 } from "@/features/companies/queries/membership-queries_sql";
 import { getDb } from "@/shared/db";
 import { asSqlTransaction } from "@/shared/db-transaction";
@@ -183,12 +185,31 @@ export const acceptInvite = createServerFn({ method: "POST" })
           throw new Error("You already belong to a company");
         }
 
-        await createCompanyMember(transaction, {
+        const priorMembership = await getMembershipByCompanyAndUser(transaction, {
           companyId: freshInvitation.companyId,
           userId: activeUser.id,
-          role: freshInvitation.role,
-          invitedBy: freshInvitation.invitedBy,
         });
+
+        if (priorMembership?.status === "removed") {
+          const reactivated = await reactivateCompanyMember(transaction, {
+            role: freshInvitation.role,
+            invitedBy: freshInvitation.invitedBy,
+            companyId: freshInvitation.companyId,
+            userId: activeUser.id,
+          });
+          if (!reactivated) {
+            throw new Error("Failed to rejoin company");
+          }
+        } else if (priorMembership) {
+          throw new Error("You already belong to a company");
+        } else {
+          await createCompanyMember(transaction, {
+            companyId: freshInvitation.companyId,
+            userId: activeUser.id,
+            role: freshInvitation.role,
+            invitedBy: freshInvitation.invitedBy,
+          });
+        }
 
         const accepted = await markInvitationAccepted(transaction, { id: freshInvitation.id });
         if (!accepted) {
