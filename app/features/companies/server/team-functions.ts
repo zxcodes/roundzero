@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
+import { clearSession } from "@tanstack/react-start/server";
 import { zodValidator } from "@tanstack/zod-adapter";
+import type { Sql } from "postgres";
 import { z } from "zod";
 import { getUserByEmail } from "@/features/auth/queries/queries_sql";
 import { sendCompanyInviteEmail } from "@/features/companies/services/invite-email";
@@ -7,6 +9,7 @@ import { getDb } from "@/shared/db";
 import { companyInvitationRoleSchema } from "@/shared/enums";
 import { emailsMatch, normalizeEmail } from "@/shared/google-userinfo";
 import { companyMiddleware } from "@/shared/middleware";
+import { sessionConfig } from "@/shared/session";
 import { zodValidatorWithFormattedErrors } from "@/shared/validation";
 import {
   createInvitation,
@@ -20,6 +23,8 @@ import {
   removeCompanyMember,
   resetInvitationForResend,
   revokeInvitation as revokeInvitationQuery,
+  updateCompanyMemberRole,
+  updateCompanyOwner,
 } from "../queries/queries_sql";
 
 const INVITE_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000;
@@ -252,5 +257,75 @@ export const removeMember = createServerFn({ method: "POST" })
       throw new Error("Failed to remove team member");
     }
 
+    return {};
+  });
+
+export const transferOwnership = createServerFn({ method: "POST" })
+  .middleware([companyMiddleware])
+  .validator(zodValidator(memberIdSchema))
+  .handler(async ({ data, context }) => {
+    if (context.membership.role !== "owner") {
+      throw new Error("Only the owner can transfer ownership");
+    }
+
+    const db = getDb();
+    const target = await getMembershipById(db, { id: data.memberId });
+
+    if (!target || target.companyId !== context.company.id || target.status !== "active") {
+      throw new Error("Team member not found");
+    }
+
+    if (target.role === "owner") {
+      throw new Error("This member is already the owner");
+    }
+
+    if (target.userId === context.userId) {
+      throw new Error("You are already the owner");
+    }
+
+    await db.begin(async (tx) => {
+      const transaction = tx as unknown as Sql;
+
+      const demoted = await updateCompanyMemberRole(transaction, {
+        role: "admin",
+        id: context.membership.id,
+        companyId: context.company.id,
+      });
+      const promoted = await updateCompanyMemberRole(transaction, {
+        role: "owner",
+        id: data.memberId,
+        companyId: context.company.id,
+      });
+      const updatedCompany = await updateCompanyOwner(transaction, {
+        ownerId: target.userId,
+        id: context.company.id,
+      });
+
+      if (!demoted || !promoted || !updatedCompany) {
+        throw new Error("Failed to transfer ownership");
+      }
+    });
+
+    return {};
+  });
+
+export const leaveCompany = createServerFn({ method: "POST" })
+  .middleware([companyMiddleware])
+  .handler(async ({ context }) => {
+    if (context.membership.role === "owner") {
+      throw new Error("Transfer ownership before leaving the team");
+    }
+
+    const db = getDb();
+    const removed = await removeCompanyMember(db, {
+      id: context.membership.id,
+      companyId: context.company.id,
+    });
+
+    if (!removed) {
+      throw new Error("Failed to leave team");
+    }
+
+    await clearSession(sessionConfig);
     return {};
   });

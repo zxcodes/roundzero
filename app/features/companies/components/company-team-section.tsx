@@ -32,6 +32,7 @@ import {
   removeMember,
   resendInvitation,
   revokeInvitation,
+  transferOwnership,
 } from "@/features/companies/server/team-functions";
 import { formatDate } from "@/shared/date";
 import type { companyInvitationRoleSchema } from "@/shared/enums";
@@ -52,9 +53,11 @@ const memberRoleLabels = {
 export function CompanyTeamSection({
   team,
   currentUserId,
+  isOwner,
 }: {
   team: TeamOverview;
   currentUserId: string;
+  isOwner: boolean;
 }) {
   const router = useRouter();
   const id = useId();
@@ -65,6 +68,7 @@ export function CompanyTeamSection({
   const revokeFn = useServerFn(revokeInvitation);
   const resendFn = useServerFn(resendInvitation);
   const removeFn = useServerFn(removeMember);
+  const transferFn = useServerFn(transferOwnership);
 
   const inviteMutation = useMutation({
     mutationFn: inviteFn,
@@ -111,6 +115,17 @@ export function CompanyTeamSection({
     },
   });
 
+  const transferMutation = useMutation({
+    mutationFn: transferFn,
+    onSuccess: async () => {
+      toast.success("Ownership transferred.");
+      await router.invalidate();
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Failed to transfer ownership.");
+    },
+  });
+
   const form = useForm({
     defaultValues: {
       email: "",
@@ -136,6 +151,10 @@ export function CompanyTeamSection({
 
   const onRemoveMember = (memberId: string) => {
     removeMutation.mutate({ data: { memberId } });
+  };
+
+  const onTransferOwnership = (memberId: string) => {
+    transferMutation.mutate({ data: { memberId } });
   };
 
   return (
@@ -311,6 +330,8 @@ export function CompanyTeamSection({
             <div className="space-y-3">
               {team.members.map((member) => {
                 const canRemove = member.role !== "owner" && member.userId !== currentUserId;
+                const canTransfer =
+                  isOwner && member.role !== "owner" && member.userId !== currentUserId;
                 return (
                   <div
                     key={member.id}
@@ -325,16 +346,31 @@ export function CompanyTeamSection({
                         </Badge>
                       </div>
                     </div>
-                    {canRemove ? (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={removeMutation.isPending}
-                        onClick={() => onRemoveMember(member.id)}
-                      >
-                        Remove
-                      </Button>
+                    {canRemove || canTransfer ? (
+                      <div className="flex shrink-0 gap-2">
+                        {canTransfer ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={transferMutation.isPending}
+                            onClick={() => onTransferOwnership(member.id)}
+                          >
+                            Make owner
+                          </Button>
+                        ) : null}
+                        {canRemove ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={removeMutation.isPending}
+                            onClick={() => onRemoveMember(member.id)}
+                          >
+                            Remove
+                          </Button>
+                        ) : null}
+                      </div>
                     ) : null}
                   </div>
                 );

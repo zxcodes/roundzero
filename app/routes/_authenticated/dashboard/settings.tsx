@@ -2,6 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { DashboardSettingsSkeleton } from "@/components/route-skeletons";
 import { CandidateSettings } from "@/features/candidates/components/candidate-settings";
 import { getMyCandidateProfile } from "@/features/candidates/server/functions";
+import { CompanyLeaveSection } from "@/features/companies/components/company-leave-section";
 import { CompanySettings } from "@/features/companies/components/company-settings";
 import { CompanyTeamSection } from "@/features/companies/components/company-team-section";
 import { getMyCompany, getMyMembership } from "@/features/companies/server/functions";
@@ -23,6 +24,8 @@ export const Route = createFileRoute("/_authenticated/dashboard/settings")({
         company,
         canManageProfile: canManageTeam,
         canManageTeam,
+        isOwner: membership?.role === "owner",
+        canLeaveTeam: membership?.role !== "owner",
         team,
       };
     }
@@ -52,8 +55,9 @@ function SettingsPage() {
         </div>
         <CompanySettings company={data.company} canManageProfile={data.canManageProfile} />
         {data.canManageTeam && data.team ? (
-          <CompanyTeamSection team={data.team} currentUserId={user.id} />
+          <CompanyTeamSection team={data.team} currentUserId={user.id} isOwner={data.isOwner} />
         ) : null}
+        {data.canLeaveTeam ? <CompanyLeaveSection /> : null}
       </div>
     );
   }

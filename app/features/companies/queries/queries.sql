@@ -65,6 +65,31 @@ WHERE id = $1
   AND role <> 'owner'
 RETURNING id;
 
+-- name: listCompanyNotificationRecipients :many
+SELECT u.id AS user_id, u.email
+FROM company_members cm
+JOIN users u ON u.id = cm.user_id AND u.deleted_at IS NULL
+WHERE cm.company_id = $1
+  AND cm.status = 'active'
+  AND cm.role IN ('owner', 'admin')
+ORDER BY CASE cm.role WHEN 'owner' THEN 0 ELSE 1 END, cm.joined_at ASC;
+
+-- name: updateCompanyMemberRole :one
+UPDATE company_members
+SET role = $1,
+    updated_at = now()
+WHERE id = $2
+  AND company_id = $3
+  AND status = 'active'
+RETURNING id, user_id, role;
+
+-- name: updateCompanyOwner :one
+UPDATE companies
+SET owner_id = $1,
+    updated_at = now()
+WHERE id = $2
+RETURNING id, owner_id;
+
 -- name: createInvitation :one
 INSERT INTO company_invitations (company_id, email, role, token, invited_by, expires_at)
 VALUES ($1, $2, $3, $4, $5, $6)

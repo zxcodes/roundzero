@@ -16,12 +16,16 @@ import {
   getCompanyBySlug,
   getInvitationByToken,
   getPendingInvitationByEmail,
+  listCompanyNotificationRecipients,
   listPendingInvitationsByCompany,
   markInvitationAccepted,
+  removeCompanyMember,
   resetInvitationForResend,
   revokeInvitation as revokeInvitationQuery,
   setCompanyPolarCustomer,
   slugExists,
+  updateCompanyMemberRole,
+  updateCompanyOwner,
   updateCompanyProfile,
   updateCompanySubscription,
 } from "../queries_sql";
@@ -631,5 +635,91 @@ describe("company invitations", () => {
       email: "fresh@acme.com",
     });
     expect(pending).toBeNull();
+  });
+});
+
+describe("company team management", () => {
+  it("lists owner and admins as notification recipients", async () => {
+    const { company, owner } = await seedCompany();
+    const admin = await seedUser({ role: "company" });
+    const member = await seedUser({ role: "company" });
+
+    await createCompanyMember(sql, {
+      companyId: company.id,
+      userId: admin.id,
+      role: "admin",
+      invitedBy: owner.id,
+    });
+    await createCompanyMember(sql, {
+      companyId: company.id,
+      userId: member.id,
+      role: "member",
+      invitedBy: owner.id,
+    });
+
+    const recipients = await listCompanyNotificationRecipients(sql, {
+      companyId: company.id,
+    });
+
+    expect(recipients).toHaveLength(2);
+    expect(recipients.map((r) => r.userId).sort()).toEqual([admin.id, owner.id].sort());
+  });
+
+  it("transfers ownership by demoting old owner and updating companies.owner_id", async () => {
+    const { company, owner } = await seedCompany();
+    const admin = await seedUser({ role: "company" });
+
+    const ownerMembership = await getActiveMembershipByUserId(sql, { userId: owner.id });
+    const adminMembership = await createCompanyMember(sql, {
+      companyId: company.id,
+      userId: admin.id,
+      role: "admin",
+      invitedBy: owner.id,
+    });
+
+    await sql.begin(async (tx) => {
+      const transaction = tx as unknown as typeof sql;
+      await updateCompanyMemberRole(transaction, {
+        role: "admin",
+        id: ownerMembership!.id,
+        companyId: company.id,
+      });
+      await updateCompanyMemberRole(transaction, {
+        role: "owner",
+        id: adminMembership!.id,
+        companyId: company.id,
+      });
+      await updateCompanyOwner(transaction, {
+        ownerId: admin.id,
+        id: company.id,
+      });
+    });
+
+    const updatedCompany = await getCompanyById(sql, { id: company.id });
+    expect(updatedCompany!.ownerId).toBe(admin.id);
+
+    const newOwnerMembership = await getActiveMembershipByUserId(sql, { userId: admin.id });
+    const formerOwnerMembership = await getActiveMembershipByUserId(sql, { userId: owner.id });
+    expect(newOwnerMembership!.role).toBe("owner");
+    expect(formerOwnerMembership!.role).toBe("admin");
+  });
+
+  it("lets non-owners leave by marking membership removed", async () => {
+    const { company } = await seedCompany();
+    const member = await seedUser({ role: "company" });
+
+    const membership = await createCompanyMember(sql, {
+      companyId: company.id,
+      userId: member.id,
+      role: "member",
+      invitedBy: null,
+    });
+
+    const removed = await removeCompanyMember(sql, {
+      id: membership!.id,
+      companyId: company.id,
+    });
+    expect(removed).not.toBeNull();
+    expect(await getActiveMembershipByUserId(sql, { userId: member.id })).toBeNull();
   });
 });
