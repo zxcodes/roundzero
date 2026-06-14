@@ -7,7 +7,7 @@ import {
   UserGroupIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { createFileRoute, Link, useLoaderData } from "@tanstack/react-router";
+import { createFileRoute, Link, useLoaderData, useRouteContext } from "@tanstack/react-router";
 import { DashboardIndexSkeleton } from "@/components/route-skeletons";
 import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -347,6 +347,8 @@ const toneDot: Record<ActionItem["tone"], string> = {
 };
 
 function ActionQueueCard({ actions }: { actions: ActionItem[] }) {
+  const { isCandidate } = useRouteContext({ from: "/_authenticated" });
+
   if (actions.length === 0) {
     return (
       <Card>
@@ -360,8 +362,9 @@ function ActionQueueCard({ actions }: { actions: ActionItem[] }) {
             All caught up
           </CardTitle>
           <CardDescription>
-            No pending decisions, expiring roles, or active batches. Post a new role or wait for
-            more applicants to roll in.
+            {isCandidate
+              ? "No interviews or shortlists right now. Browse open roles to apply."
+              : "No pending decisions, expiring roles, or active batches. Post a new role or wait for more applicants to roll in."}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -726,11 +729,6 @@ function CandidateDashboardSection({ metrics }: { metrics: CandidateMetrics }) {
     { label: "Evaluations received", value: metrics.evaluationsReceived },
   ];
 
-  const hasActions = actions.length > 0;
-  const hasPending = (metrics.pendingInterviews?.length ?? 0) > 0;
-  const hasShortlisted =
-    (metrics.shortlistedCount ?? metrics.shortlistedApplications?.length ?? 0) > 0;
-
   return (
     <div className="space-y-6">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -763,14 +761,6 @@ function CandidateDashboardSection({ metrics }: { metrics: CandidateMetrics }) {
           </Link>
         </Button>
       </div>
-
-      {!(hasActions || hasPending || hasShortlisted) && (
-        <Card className="border-dashed">
-          <CardContent className="py-6 text-center text-sm text-muted-foreground">
-            No active interviews or shortlists right now. Apply to more roles to get started.
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
