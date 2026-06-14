@@ -180,6 +180,81 @@ export async function getMembershipById(sql: Sql, args: getMembershipByIdArgs): 
     };
 }
 
+export const getMembershipByCompanyAndUserQuery = `-- name: getMembershipByCompanyAndUser :one
+SELECT id, company_id, user_id, role, status
+FROM company_members
+WHERE company_id = $1
+  AND user_id = $2`;
+
+export interface getMembershipByCompanyAndUserArgs {
+    companyId: string;
+    userId: string;
+}
+
+export interface getMembershipByCompanyAndUserRow {
+    id: string;
+    companyId: string;
+    userId: string;
+    role: string;
+    status: string;
+}
+
+export async function getMembershipByCompanyAndUser(sql: Sql, args: getMembershipByCompanyAndUserArgs): Promise<getMembershipByCompanyAndUserRow | null> {
+    const rows = await sql.unsafe(getMembershipByCompanyAndUserQuery, [args.companyId, args.userId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        companyId: row[1],
+        userId: row[2],
+        role: row[3],
+        status: row[4]
+    };
+}
+
+export const reactivateCompanyMemberQuery = `-- name: reactivateCompanyMember :one
+UPDATE company_members
+SET role = $1,
+    status = 'active',
+    invited_by = $2,
+    updated_at = now()
+WHERE company_id = $3
+  AND user_id = $4
+  AND status = 'removed'
+RETURNING id, company_id, user_id, role, status`;
+
+export interface reactivateCompanyMemberArgs {
+    role: string;
+    invitedBy: string | null;
+    companyId: string;
+    userId: string;
+}
+
+export interface reactivateCompanyMemberRow {
+    id: string;
+    companyId: string;
+    userId: string;
+    role: string;
+    status: string;
+}
+
+export async function reactivateCompanyMember(sql: Sql, args: reactivateCompanyMemberArgs): Promise<reactivateCompanyMemberRow | null> {
+    const rows = await sql.unsafe(reactivateCompanyMemberQuery, [args.role, args.invitedBy, args.companyId, args.userId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        companyId: row[1],
+        userId: row[2],
+        role: row[3],
+        status: row[4]
+    };
+}
+
 export const listActiveMembersByCompanyQuery = `-- name: listActiveMembersByCompany :many
 SELECT cm.id, cm.role, cm.status, cm.joined_at,
        u.id AS user_id, u.name AS user_name, u.email AS user_email, u.picture AS user_picture

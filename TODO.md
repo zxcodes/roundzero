@@ -12,12 +12,12 @@
 post_eval_already_complete)
 - interview panel padding still sucks (sticks left side completely on mobile and short screens)
 - pretty sure openrouter model fallbacks still don't work. verify in local dev.
-- ~~we need to be able to invite people with their email. so when they signup they can join that org or something.~~ Done — see [multi-tenant company auth plan](docs/superpowers/specs/2026-06-14-multi-tenant-company-auth-plan.md).
 - ~~think about the auth. should it be possible for people to create company and candidate acc with same email?~~ MVP: no — block invite accept when email is already a candidate account (same plan).
 - add score breakdown. 
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- ~~we need to be able to invite people with their email. so when they signup they can join that org or something.~~ Done — see [multi-tenant company auth plan](docs/superpowers/specs/2026-06-14-multi-tenant-company-auth-plan.md).-->
 <!--- improve ci. prevent unnecessary runs.-->
 <!--- candidate needs a nice dashboard too (sent applications, pending interviews, shortlisted applications etc.) — implemented actionable version with action queue, header stats, and pipeline signals (see docs/superpowers/specs/2026-06-13-candidate-dashboard-plan.md)-->
 <!--- ready for decision tab still doesn't seem to show evaluated candidates? why do we even need two tabs there? check.-->

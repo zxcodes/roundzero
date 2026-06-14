@@ -8,10 +8,12 @@ import {
   getActiveMembershipByUserId,
   getCompanyByMemberUserId,
   getInvitationByToken,
+  getMembershipByCompanyAndUser,
   getPendingInvitationByEmail,
   listCompanyNotificationRecipients,
   listPendingInvitationsByCompany,
   markInvitationAccepted,
+  reactivateCompanyMember,
   removeCompanyMember,
   resetInvitationForResend,
   revokeInvitation as revokeInvitationQuery,
@@ -727,6 +729,40 @@ describe("company team management", () => {
     const formerOwnerMembership = await getActiveMembershipByUserId(sql, { userId: owner.id });
     expect(newOwnerMembership!.role).toBe("owner");
     expect(formerOwnerMembership!.role).toBe("admin");
+  });
+
+  it("reactivates a removed membership for re-invited teammates", async () => {
+    const { company } = await seedCompany();
+    const member = await seedUser({ role: "company" });
+
+    const membership = await createCompanyMember(sql, {
+      companyId: company.id,
+      userId: member.id,
+      role: "member",
+      invitedBy: null,
+    });
+
+    await removeCompanyMember(sql, {
+      id: membership!.id,
+      companyId: company.id,
+    });
+
+    const prior = await getMembershipByCompanyAndUser(sql, {
+      companyId: company.id,
+      userId: member.id,
+    });
+    expect(prior!.status).toBe("removed");
+
+    const reactivated = await reactivateCompanyMember(sql, {
+      role: "admin",
+      invitedBy: null,
+      companyId: company.id,
+      userId: member.id,
+    });
+    expect(reactivated).not.toBeNull();
+    expect(reactivated!.status).toBe("active");
+    expect(reactivated!.role).toBe("admin");
+    expect(await getActiveMembershipByUserId(sql, { userId: member.id })).not.toBeNull();
   });
 
   it("lets non-owners leave by marking membership removed", async () => {

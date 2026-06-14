@@ -21,6 +21,23 @@ SELECT id, company_id, user_id, role, status
 FROM company_members
 WHERE id = $1;
 
+-- name: getMembershipByCompanyAndUser :one
+SELECT id, company_id, user_id, role, status
+FROM company_members
+WHERE company_id = $1
+  AND user_id = $2;
+
+-- name: reactivateCompanyMember :one
+UPDATE company_members
+SET role = $1,
+    status = 'active',
+    invited_by = $2,
+    updated_at = now()
+WHERE company_id = $3
+  AND user_id = $4
+  AND status = 'removed'
+RETURNING id, company_id, user_id, role, status;
+
 -- name: listActiveMembersByCompany :many
 SELECT cm.id, cm.role, cm.status, cm.joined_at,
        u.id AS user_id, u.name AS user_name, u.email AS user_email, u.picture AS user_picture
