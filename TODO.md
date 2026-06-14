@@ -1,5 +1,6 @@
 ## TODO
 
+- add an easier copy company jobs profile for companies to link it in their careers page.
 - add retro or technical logs on landing page (pre, post eval) looks nice. 
 - add onCopy, onPaste detectors and evaluate final score based on that.
 - company has redundant steps. if I click a job, first taken to a page where there is jd, I have to click view applicants, which is another redundant page. we can def drop one of these here and make it simple.
