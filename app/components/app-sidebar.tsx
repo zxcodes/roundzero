@@ -26,6 +26,7 @@ import {
 import { useAuth } from "@/features/auth/provider";
 import { FeedbackDialog } from "@/features/feedback/components/feedback-dialog";
 import type { User } from "@/router";
+import type { CompanyMemberRole } from "@/shared/enums";
 import { Logo } from "./public-layout";
 
 const buildCompanyMain = (showBilling: boolean) => [
@@ -97,7 +98,7 @@ export function AppSidebar({
 }: React.ComponentProps<typeof Sidebar> & {
   user: User;
   isCompany: boolean;
-  membershipRole: string | null;
+  membershipRole: CompanyMemberRole | null;
   atLimit: boolean;
 }) {
   const { signOut, isSigningOut } = useAuth();

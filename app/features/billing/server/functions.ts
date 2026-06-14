@@ -4,15 +4,10 @@ import { z } from "zod";
 import { getCompanyById, setCompanyPolarCustomer } from "@/features/companies/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { appEnv } from "@/shared/env.app";
+import { assertCompanyOwner } from "@/shared/membership-auth";
 import { companyMiddleware } from "@/shared/middleware";
 import { hasActiveSubscription, type SubscriptionPlan, subscriptionPlanSchema } from "../config";
 import { getPolar } from "../services/polar";
-
-const assertCompanyOwner = (role: string) => {
-  if (role !== "owner") {
-    throw new Error("Only the company owner can manage billing");
-  }
-};
 
 const checkoutSchema = z.object({
   plan: subscriptionPlanSchema,

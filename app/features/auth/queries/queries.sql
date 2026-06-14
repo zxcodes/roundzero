@@ -27,6 +27,13 @@ WHERE id = $2
   AND role IS NULL
 RETURNING id, email, name, picture, role, google_id, deleted_at, created_at, updated_at;
 
+-- name: clearUserRole :one
+UPDATE users
+SET role = NULL,
+    updated_at = now()
+WHERE id = $1
+RETURNING id, email, name, picture, role, google_id, deleted_at, created_at, updated_at;
+
 -- name: updateUserName :one
 UPDATE users
 SET name = $1,

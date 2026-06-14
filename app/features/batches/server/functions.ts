@@ -15,7 +15,7 @@ import {
   getInterviewsByBatchWithCandidate,
   getReportsByBatchId,
 } from "@/features/batches/queries/queries_sql";
-import { getCompanyByMemberUserId } from "@/features/companies/queries/queries_sql";
+import { getCompanyByMemberUserId } from "@/features/companies/queries/membership-queries_sql";
 import { getJobById } from "@/features/jobs/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { authMiddleware } from "@/shared/middleware";

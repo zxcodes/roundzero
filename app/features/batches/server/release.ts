@@ -16,6 +16,7 @@ import {
   type CompanyTeamNotificationDelivery,
   notifyCompanyTeam,
 } from "@/features/companies/services/company-team-notifications";
+import { asSqlTransaction } from "@/shared/db-transaction";
 import { notificationPayloadSchemas } from "@/shared/notifications-config";
 
 export type BatchReleaseSummary =
@@ -36,7 +37,7 @@ export type BatchReleaseSummary =
  */
 export async function releaseBatch(sql: Sql, batchId: string): Promise<BatchReleaseSummary> {
   return await sql.begin(async (tx) => {
-    const transaction = tx as unknown as Sql;
+    const transaction = asSqlTransaction(tx);
 
     const lockedBatch = await getBatchForUpdate(transaction, { id: batchId });
     if (!lockedBatch) {

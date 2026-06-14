@@ -3,7 +3,7 @@ import { zodValidator } from "@tanstack/zod-adapter";
 import { generateText, Output } from "ai";
 import { z } from "zod";
 import { hasActiveSubscription } from "@/features/billing/config";
-import { getCompanyByMemberUserId } from "@/features/companies/queries/queries_sql";
+import { getCompanyByMemberUserId } from "@/features/companies/queries/membership-queries_sql";
 import { notifyCompanyTeam } from "@/features/companies/services/company-team-notifications";
 import { getDb } from "@/shared/db";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
@@ -117,7 +117,7 @@ export const getJob = createServerFn({ method: "GET" })
       return null;
     }
 
-    // Non-open jobs are only visible to the company owner
+    // Non-open jobs are only visible to company members
     if (job.status !== "open") {
       const company = await getCompanyByMemberUserId(db, { userId: context.userId });
       if (!company || company.id !== job.companyId) {

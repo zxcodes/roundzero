@@ -2,7 +2,8 @@ import type { Sql } from "postgres";
 import { z } from "zod";
 import { getUserById } from "@/features/auth/queries/queries_sql";
 import { getCandidateProfileByUserId } from "@/features/candidates/queries/queries_sql";
-import { getCompanyById, getCompanyByMemberUserId } from "@/features/companies/queries/queries_sql";
+import { getCompanyByMemberUserId } from "@/features/companies/queries/membership-queries_sql";
+import { getCompanyById } from "@/features/companies/queries/queries_sql";
 import { notifyCompanyTeam } from "@/features/companies/services/company-team-notifications";
 import {
   createInterview,

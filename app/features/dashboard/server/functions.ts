@@ -8,7 +8,7 @@ import {
 } from "@/features/applications/queries/queries_sql";
 import { hasShortlistNextSteps, parseShortlistDetails } from "@/features/applications/shortlist";
 import { getActiveBatchesByCompany } from "@/features/batches/queries/queries_sql";
-import { getCompanyByMemberUserId } from "@/features/companies/queries/queries_sql";
+import { getCompanyByMemberUserId } from "@/features/companies/queries/membership-queries_sql";
 import { getInterviewsByCandidate } from "@/features/interviews/queries/queries_sql";
 import { expireInterviewIfDue } from "@/features/interviews/server/expire";
 import {

@@ -6,6 +6,17 @@ import { useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useId } from "react";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -155,6 +166,14 @@ export function CompanyTeamSection({
 
   const onTransferOwnership = (memberId: string) => {
     transferMutation.mutate({ data: { memberId } });
+  };
+
+  const onConfirmRemove = (memberId: string) => {
+    onRemoveMember(memberId);
+  };
+
+  const onConfirmTransfer = (memberId: string) => {
+    onTransferOwnership(memberId);
   };
 
   return (
@@ -349,26 +368,67 @@ export function CompanyTeamSection({
                     {canRemove || canTransfer ? (
                       <div className="flex shrink-0 gap-2">
                         {canTransfer ? (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            disabled={transferMutation.isPending}
-                            onClick={() => onTransferOwnership(member.id)}
-                          >
-                            Make owner
-                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={transferMutation.isPending}
+                              >
+                                Make owner
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Transfer ownership?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  {member.userName} will become the owner and you will be demoted to
+                                  admin. Billing access moves with ownership.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => onConfirmTransfer(member.id)}
+                                  disabled={transferMutation.isPending}
+                                >
+                                  Transfer ownership
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         ) : null}
                         {canRemove ? (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            disabled={removeMutation.isPending}
-                            onClick={() => onRemoveMember(member.id)}
-                          >
-                            Remove
-                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={removeMutation.isPending}
+                              >
+                                Remove
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Remove team member?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  {member.userName} will lose access to this company workspace.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => onConfirmRemove(member.id)}
+                                  disabled={removeMutation.isPending}
+                                >
+                                  Remove member
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         ) : null}
                       </div>
                     ) : null}

@@ -1,13 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { clearSession } from "@tanstack/react-start/server";
 import { zodValidator } from "@tanstack/zod-adapter";
-import type { Sql } from "postgres";
 import { z } from "zod";
-import { getUserByEmail } from "@/features/auth/queries/queries_sql";
+import { clearUserRole, getUserByEmail } from "@/features/auth/queries/queries_sql";
 import { sendCompanyInviteEmail } from "@/features/companies/services/invite-email";
 import { getDb } from "@/shared/db";
+import { asSqlTransaction } from "@/shared/db-transaction";
 import { companyInvitationRoleSchema } from "@/shared/enums";
 import { emailsMatch, normalizeEmail } from "@/shared/google-userinfo";
+import { assertCanManageTeam, assertCompanyOwner } from "@/shared/membership-auth";
 import { companyMiddleware } from "@/shared/middleware";
 import { sessionConfig } from "@/shared/session";
 import { zodValidatorWithFormattedErrors } from "@/shared/validation";
@@ -25,19 +26,13 @@ import {
   revokeInvitation as revokeInvitationQuery,
   updateCompanyMemberRole,
   updateCompanyOwner,
-} from "../queries/queries_sql";
+} from "../queries/membership-queries_sql";
 
 const INVITE_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000;
 
 const inviteExpiryAt = () => new Date(Date.now() + INVITE_EXPIRY_MS);
 
 const newInviteToken = () => crypto.randomUUID();
-
-const assertCanManageTeam = (role: string) => {
-  if (role !== "owner" && role !== "admin") {
-    throw new Error("Not authorized to manage team members");
-  }
-};
 
 const invitationIdSchema = z.object({
   invitationId: z.string().uuid(),
@@ -158,13 +153,21 @@ export const inviteMember = createServerFn({ method: "POST" })
       throw new Error("Failed to create invitation");
     }
 
-    await sendCompanyInviteEmail({
-      to: data.email,
-      companyName: context.company.name,
-      inviterName: context.user.name,
-      role: data.role,
-      token,
-    });
+    try {
+      await sendCompanyInviteEmail({
+        to: data.email,
+        companyName: context.company.name,
+        inviterName: context.user.name,
+        role: data.role,
+        token,
+      });
+    } catch {
+      await revokeInvitationQuery(db, {
+        id: invitation.id,
+        companyId: context.company.id,
+      });
+      throw new Error("Failed to send invitation email. Please try again.");
+    }
 
     return {
       invitation: {
@@ -216,13 +219,17 @@ export const resendInvitation = createServerFn({ method: "POST" })
       throw new Error("Invitation not found or already handled");
     }
 
-    await sendCompanyInviteEmail({
-      to: updated.email,
-      companyName: context.company.name,
-      inviterName: context.user.name,
-      role: updated.role as "admin" | "member",
-      token: updated.token,
-    });
+    try {
+      await sendCompanyInviteEmail({
+        to: updated.email,
+        companyName: context.company.name,
+        inviterName: context.user.name,
+        role: updated.role as "admin" | "member",
+        token: updated.token,
+      });
+    } catch {
+      throw new Error("Failed to resend invitation email. Please try again.");
+    }
 
     return { expiresAt };
   });
@@ -257,6 +264,8 @@ export const removeMember = createServerFn({ method: "POST" })
       throw new Error("Failed to remove team member");
     }
 
+    await clearUserRole(db, { id: target.userId });
+
     return {};
   });
 
@@ -264,9 +273,7 @@ export const transferOwnership = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
   .validator(zodValidator(memberIdSchema))
   .handler(async ({ data, context }) => {
-    if (context.membership.role !== "owner") {
-      throw new Error("Only the owner can transfer ownership");
-    }
+    assertCompanyOwner(context.membership.role);
 
     const db = getDb();
     const target = await getMembershipById(db, { id: data.memberId });
@@ -284,7 +291,7 @@ export const transferOwnership = createServerFn({ method: "POST" })
     }
 
     await db.begin(async (tx) => {
-      const transaction = tx as unknown as Sql;
+      const transaction = asSqlTransaction(tx);
 
       const demoted = await updateCompanyMemberRole(transaction, {
         role: "admin",
@@ -326,6 +333,7 @@ export const leaveCompany = createServerFn({ method: "POST" })
       throw new Error("Failed to leave team");
     }
 
+    await clearUserRole(db, { id: context.userId });
     await clearSession(sessionConfig);
     return {};
   });

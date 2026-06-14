@@ -173,6 +173,48 @@ export async function setUserRole(sql: Sql, args: setUserRoleArgs): Promise<setU
     };
 }
 
+export const clearUserRoleQuery = `-- name: clearUserRole :one
+UPDATE users
+SET role = NULL,
+    updated_at = now()
+WHERE id = $1
+RETURNING id, email, name, picture, role, google_id, deleted_at, created_at, updated_at`;
+
+export interface clearUserRoleArgs {
+    id: string;
+}
+
+export interface clearUserRoleRow {
+    id: string;
+    email: string;
+    name: string;
+    picture: string | null;
+    role: string | null;
+    googleId: string | null;
+    deletedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export async function clearUserRole(sql: Sql, args: clearUserRoleArgs): Promise<clearUserRoleRow | null> {
+    const rows = await sql.unsafe(clearUserRoleQuery, [args.id]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        email: row[1],
+        name: row[2],
+        picture: row[3],
+        role: row[4],
+        googleId: row[5],
+        deletedAt: row[6],
+        createdAt: row[7],
+        updatedAt: row[8]
+    };
+}
+
 export const updateUserNameQuery = `-- name: updateUserName :one
 UPDATE users
 SET name = $1,
