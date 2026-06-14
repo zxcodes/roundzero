@@ -1,5 +1,6 @@
 ## TODO
 
+- check if candidate profile settings (skills, links, etc are useless since we already have resume and we parse from that.)
 - add an easier copy company jobs profile for companies to link it in their careers page.
 - add retro or technical logs on landing page (pre, post eval) looks nice. 
 - add onCopy, onPaste detectors and evaluate final score based on that.
