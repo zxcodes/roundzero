@@ -373,6 +373,383 @@ export async function createCompanyMember(sql: Sql, args: createCompanyMemberArg
     };
 }
 
+export const getMembershipByIdQuery = `-- name: getMembershipById :one
+SELECT id, company_id, user_id, role, status
+FROM company_members
+WHERE id = $1`;
+
+export interface getMembershipByIdArgs {
+    id: string;
+}
+
+export interface getMembershipByIdRow {
+    id: string;
+    companyId: string;
+    userId: string;
+    role: string;
+    status: string;
+}
+
+export async function getMembershipById(sql: Sql, args: getMembershipByIdArgs): Promise<getMembershipByIdRow | null> {
+    const rows = await sql.unsafe(getMembershipByIdQuery, [args.id]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        companyId: row[1],
+        userId: row[2],
+        role: row[3],
+        status: row[4]
+    };
+}
+
+export const listActiveMembersByCompanyQuery = `-- name: listActiveMembersByCompany :many
+SELECT cm.id, cm.role, cm.status, cm.joined_at,
+       u.id AS user_id, u.name AS user_name, u.email AS user_email, u.picture AS user_picture
+FROM company_members cm
+JOIN users u ON u.id = cm.user_id
+WHERE cm.company_id = $1
+  AND cm.status = 'active'
+ORDER BY
+  CASE cm.role WHEN 'owner' THEN 0 WHEN 'admin' THEN 1 ELSE 2 END,
+  cm.joined_at ASC`;
+
+export interface listActiveMembersByCompanyArgs {
+    companyId: string;
+}
+
+export interface listActiveMembersByCompanyRow {
+    id: string;
+    role: string;
+    status: string;
+    joinedAt: Date;
+    userId: string;
+    userName: string;
+    userEmail: string;
+    userPicture: string | null;
+}
+
+export async function listActiveMembersByCompany(sql: Sql, args: listActiveMembersByCompanyArgs): Promise<listActiveMembersByCompanyRow[]> {
+    return (await sql.unsafe(listActiveMembersByCompanyQuery, [args.companyId]).values()).map(row => ({
+        id: row[0],
+        role: row[1],
+        status: row[2],
+        joinedAt: row[3],
+        userId: row[4],
+        userName: row[5],
+        userEmail: row[6],
+        userPicture: row[7]
+    }));
+}
+
+export const removeCompanyMemberQuery = `-- name: removeCompanyMember :one
+UPDATE company_members
+SET status = 'removed',
+    updated_at = now()
+WHERE id = $1
+  AND company_id = $2
+  AND role <> 'owner'
+RETURNING id`;
+
+export interface removeCompanyMemberArgs {
+    id: string;
+    companyId: string;
+}
+
+export interface removeCompanyMemberRow {
+    id: string;
+}
+
+export async function removeCompanyMember(sql: Sql, args: removeCompanyMemberArgs): Promise<removeCompanyMemberRow | null> {
+    const rows = await sql.unsafe(removeCompanyMemberQuery, [args.id, args.companyId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0]
+    };
+}
+
+export const createInvitationQuery = `-- name: createInvitation :one
+INSERT INTO company_invitations (company_id, email, role, token, invited_by, expires_at)
+VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING id, company_id, email, role, token, invited_by, expires_at, accepted_at, revoked_at, created_at, updated_at`;
+
+export interface createInvitationArgs {
+    companyId: string;
+    email: string;
+    role: string;
+    token: string;
+    invitedBy: string | null;
+    expiresAt: Date;
+}
+
+export interface createInvitationRow {
+    id: string;
+    companyId: string;
+    email: string;
+    role: string;
+    token: string;
+    invitedBy: string | null;
+    expiresAt: Date;
+    acceptedAt: Date | null;
+    revokedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export async function createInvitation(sql: Sql, args: createInvitationArgs): Promise<createInvitationRow | null> {
+    const rows = await sql.unsafe(createInvitationQuery, [args.companyId, args.email, args.role, args.token, args.invitedBy, args.expiresAt]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        companyId: row[1],
+        email: row[2],
+        role: row[3],
+        token: row[4],
+        invitedBy: row[5],
+        expiresAt: row[6],
+        acceptedAt: row[7],
+        revokedAt: row[8],
+        createdAt: row[9],
+        updatedAt: row[10]
+    };
+}
+
+export const getPendingInvitationByEmailQuery = `-- name: getPendingInvitationByEmail :one
+SELECT id
+FROM company_invitations
+WHERE company_id = $1
+  AND email = $2
+  AND accepted_at IS NULL
+  AND revoked_at IS NULL`;
+
+export interface getPendingInvitationByEmailArgs {
+    companyId: string;
+    email: string;
+}
+
+export interface getPendingInvitationByEmailRow {
+    id: string;
+}
+
+export async function getPendingInvitationByEmail(sql: Sql, args: getPendingInvitationByEmailArgs): Promise<getPendingInvitationByEmailRow | null> {
+    const rows = await sql.unsafe(getPendingInvitationByEmailQuery, [args.companyId, args.email]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0]
+    };
+}
+
+export const getActiveMemberByCompanyEmailQuery = `-- name: getActiveMemberByCompanyEmail :one
+SELECT cm.id
+FROM company_members cm
+JOIN users u ON u.id = cm.user_id
+WHERE cm.company_id = $1
+  AND cm.status = 'active'
+  AND lower(u.email) = $2`;
+
+export interface getActiveMemberByCompanyEmailArgs {
+    companyId: string;
+    email: string;
+}
+
+export interface getActiveMemberByCompanyEmailRow {
+    id: string;
+}
+
+export async function getActiveMemberByCompanyEmail(sql: Sql, args: getActiveMemberByCompanyEmailArgs): Promise<getActiveMemberByCompanyEmailRow | null> {
+    const rows = await sql.unsafe(getActiveMemberByCompanyEmailQuery, [args.companyId, args.email]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0]
+    };
+}
+
+export const getInvitationByTokenQuery = `-- name: getInvitationByToken :one
+SELECT i.id, i.company_id, i.email, i.role, i.token, i.expires_at,
+       i.accepted_at, i.revoked_at, i.invited_by,
+       c.name AS company_name
+FROM company_invitations i
+JOIN companies c ON c.id = i.company_id
+WHERE i.token = $1`;
+
+export interface getInvitationByTokenArgs {
+    token: string;
+}
+
+export interface getInvitationByTokenRow {
+    id: string;
+    companyId: string;
+    email: string;
+    role: string;
+    token: string;
+    expiresAt: Date;
+    acceptedAt: Date | null;
+    revokedAt: Date | null;
+    invitedBy: string | null;
+    companyName: string;
+}
+
+export async function getInvitationByToken(sql: Sql, args: getInvitationByTokenArgs): Promise<getInvitationByTokenRow | null> {
+    const rows = await sql.unsafe(getInvitationByTokenQuery, [args.token]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        companyId: row[1],
+        email: row[2],
+        role: row[3],
+        token: row[4],
+        expiresAt: row[5],
+        acceptedAt: row[6],
+        revokedAt: row[7],
+        invitedBy: row[8],
+        companyName: row[9]
+    };
+}
+
+export const listPendingInvitationsByCompanyQuery = `-- name: listPendingInvitationsByCompany :many
+SELECT id, email, role, expires_at, created_at
+FROM company_invitations
+WHERE company_id = $1
+  AND accepted_at IS NULL
+  AND revoked_at IS NULL
+ORDER BY created_at DESC`;
+
+export interface listPendingInvitationsByCompanyArgs {
+    companyId: string;
+}
+
+export interface listPendingInvitationsByCompanyRow {
+    id: string;
+    email: string;
+    role: string;
+    expiresAt: Date;
+    createdAt: Date;
+}
+
+export async function listPendingInvitationsByCompany(sql: Sql, args: listPendingInvitationsByCompanyArgs): Promise<listPendingInvitationsByCompanyRow[]> {
+    return (await sql.unsafe(listPendingInvitationsByCompanyQuery, [args.companyId]).values()).map(row => ({
+        id: row[0],
+        email: row[1],
+        role: row[2],
+        expiresAt: row[3],
+        createdAt: row[4]
+    }));
+}
+
+export const revokeInvitationQuery = `-- name: revokeInvitation :one
+UPDATE company_invitations
+SET revoked_at = now(),
+    updated_at = now()
+WHERE id = $1
+  AND company_id = $2
+  AND accepted_at IS NULL
+  AND revoked_at IS NULL
+RETURNING id`;
+
+export interface revokeInvitationArgs {
+    id: string;
+    companyId: string;
+}
+
+export interface revokeInvitationRow {
+    id: string;
+}
+
+export async function revokeInvitation(sql: Sql, args: revokeInvitationArgs): Promise<revokeInvitationRow | null> {
+    const rows = await sql.unsafe(revokeInvitationQuery, [args.id, args.companyId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0]
+    };
+}
+
+export const resetInvitationForResendQuery = `-- name: resetInvitationForResend :one
+UPDATE company_invitations
+SET token = $3,
+    expires_at = $4,
+    updated_at = now()
+WHERE id = $1
+  AND company_id = $2
+  AND accepted_at IS NULL
+  AND revoked_at IS NULL
+RETURNING id, email, role, token`;
+
+export interface resetInvitationForResendArgs {
+    id: string;
+    companyId: string;
+    token: string;
+    expiresAt: Date;
+}
+
+export interface resetInvitationForResendRow {
+    id: string;
+    email: string;
+    role: string;
+    token: string;
+}
+
+export async function resetInvitationForResend(sql: Sql, args: resetInvitationForResendArgs): Promise<resetInvitationForResendRow | null> {
+    const rows = await sql.unsafe(resetInvitationForResendQuery, [args.id, args.companyId, args.token, args.expiresAt]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        email: row[1],
+        role: row[2],
+        token: row[3]
+    };
+}
+
+export const markInvitationAcceptedQuery = `-- name: markInvitationAccepted :one
+UPDATE company_invitations
+SET accepted_at = now(),
+    updated_at = now()
+WHERE id = $1
+  AND accepted_at IS NULL
+  AND revoked_at IS NULL
+RETURNING id`;
+
+export interface markInvitationAcceptedArgs {
+    id: string;
+}
+
+export interface markInvitationAcceptedRow {
+    id: string;
+}
+
+export async function markInvitationAccepted(sql: Sql, args: markInvitationAcceptedArgs): Promise<markInvitationAcceptedRow | null> {
+    const rows = await sql.unsafe(markInvitationAcceptedQuery, [args.id]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0]
+    };
+}
+
 export const getCompanyBySlugQuery = `-- name: getCompanyBySlug :one
 SELECT c.id, c.owner_id, c.name, c.slug, c.onboarding_completed_at, c.description, c.logo_key, c.website, c.industry, c.company_size, c.founded_year, c.location, c.tech_stack, c.culture, c.social_links, c.polar_customer_id, c.polar_subscription_id, c.polar_product_id, c.subscription_plan, c.subscription_status, c.subscription_current_period_end, c.subscription_cancel_at_period_end, c.created_at, c.updated_at,
        u.name AS owner_name,

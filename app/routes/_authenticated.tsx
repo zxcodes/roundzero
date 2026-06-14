@@ -3,7 +3,7 @@ import { DashboardLayoutSkeleton } from "@/components/route-skeletons";
 import { Skeleton } from "@/components/ui/skeleton";
 import { hasActiveSubscription } from "@/features/billing/config";
 import { getMyCandidateProfile } from "@/features/candidates/server/functions";
-import { getMyCompany } from "@/features/companies/server/functions";
+import { getMyCompany, getMyMembership } from "@/features/companies/server/functions";
 import { getMyJobCounts } from "@/features/jobs/server/functions";
 
 type Company = NonNullable<Awaited<ReturnType<typeof getMyCompany>>>;
@@ -39,7 +39,11 @@ export const Route = createFileRoute("/_authenticated")({
     const search = redirectParam ? { redirect: redirectParam } : {};
 
     if (user.role === "company") {
-      const [company, jobCounts] = await Promise.all([getMyCompany(), getMyJobCounts()]);
+      const [company, jobCounts, membership] = await Promise.all([
+        getMyCompany(),
+        getMyJobCounts(),
+        getMyMembership(),
+      ]);
       const onboarded = Boolean(company?.onboardingCompletedAt);
 
       if (!onboarded && !isOnboardingRoute) {
@@ -60,6 +64,7 @@ export const Route = createFileRoute("/_authenticated")({
         type: "company" as const,
         user,
         company,
+        membershipRole: membership?.role ?? null,
         subscription,
         jobCounts,
         candidateProfile: null,
@@ -80,6 +85,7 @@ export const Route = createFileRoute("/_authenticated")({
       type: "candidate" as const,
       user,
       company: null,
+      membershipRole: null,
       subscription: null,
       jobCounts: null,
       candidateProfile,

@@ -88,6 +88,47 @@ export async function getUserById(sql: Sql, args: getUserByIdArgs): Promise<getU
     };
 }
 
+export const getUserByEmailQuery = `-- name: getUserByEmail :one
+SELECT id, email, name, picture, role, google_id, deleted_at, created_at, updated_at
+FROM users
+WHERE lower(email) = lower($1)
+  AND deleted_at IS NULL`;
+
+export interface getUserByEmailArgs {
+    email: string;
+}
+
+export interface getUserByEmailRow {
+    id: string;
+    email: string;
+    name: string;
+    picture: string | null;
+    role: string | null;
+    googleId: string | null;
+    deletedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export async function getUserByEmail(sql: Sql, args: getUserByEmailArgs): Promise<getUserByEmailRow | null> {
+    const rows = await sql.unsafe(getUserByEmailQuery, [args.email]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        email: row[1],
+        name: row[2],
+        picture: row[3],
+        role: row[4],
+        googleId: row[5],
+        deletedAt: row[6],
+        createdAt: row[7],
+        updatedAt: row[8]
+    };
+}
+
 export const setUserRoleQuery = `-- name: setUserRole :one
 UPDATE users
 SET role = $1,
