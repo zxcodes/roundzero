@@ -27,6 +27,7 @@ const routeTitles: Record<string, string> = {
   "/_authenticated/dashboard/applications": "My Applications",
   "/_authenticated/dashboard/application/$applicationId": "Application Details",
   "/_authenticated/dashboard/billing": "Billing",
+  "/_authenticated/dashboard/team": "Team",
   "/_authenticated/dashboard/settings": "Settings",
 };
 
@@ -74,6 +75,9 @@ function DashboardLayout() {
         <CommandPalette
           isCompany={isCompany}
           atLimit={atLimit}
+          showTeam={
+            isCompany && (auth.membershipRole === "owner" || auth.membershipRole === "admin")
+          }
           open={commandOpen}
           onOpenChange={setCommandOpen}
         />

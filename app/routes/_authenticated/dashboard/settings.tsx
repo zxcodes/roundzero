@@ -4,9 +4,7 @@ import { CandidateSettings } from "@/features/candidates/components/candidate-se
 import { getMyCandidateProfile } from "@/features/candidates/server/functions";
 import { CompanyLeaveSection } from "@/features/companies/components/company-leave-section";
 import { CompanySettings } from "@/features/companies/components/company-settings";
-import { CompanyTeamSection } from "@/features/companies/components/company-team-section";
 import { getMyCompanyContext } from "@/features/companies/server/functions";
-import { getTeamOverview } from "@/features/companies/server/team-functions";
 
 export const Route = createFileRoute("/_authenticated/dashboard/settings")({
   loader: async ({ context }) => {
@@ -17,17 +15,13 @@ export const Route = createFileRoute("/_authenticated/dashboard/settings")({
       }
 
       const { company, membership } = companyContext;
-      const canManageTeam = membership.role === "owner" || membership.role === "admin";
-      const team = canManageTeam ? await getTeamOverview() : null;
+      const canManageProfile = membership.role === "owner" || membership.role === "admin";
 
       return {
         type: "company" as const,
         company,
-        canManageProfile: canManageTeam,
-        canManageTeam,
-        isOwner: membership.role === "owner",
+        canManageProfile,
         canLeaveTeam: membership.role !== "owner",
-        team,
       };
     }
     const profile = await getMyCandidateProfile();
@@ -43,24 +37,22 @@ export const Route = createFileRoute("/_authenticated/dashboard/settings")({
 function SettingsPage() {
   const data = Route.useLoaderData();
   const { user } = Route.useRouteContext();
-  if (!user) return null;
 
   if (data.type === "company") {
     return (
       <div className="space-y-6 pb-28">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
-          <p className="text-sm text-muted-foreground">
-            Manage your company profile and team access.
-          </p>
+          <p className="text-sm text-muted-foreground">Manage your company profile.</p>
         </div>
         <CompanySettings company={data.company} canManageProfile={data.canManageProfile} />
-        {data.canManageTeam && data.team ? (
-          <CompanyTeamSection team={data.team} currentUserId={user.id} isOwner={data.isOwner} />
-        ) : null}
         {data.canLeaveTeam ? <CompanyLeaveSection /> : null}
       </div>
     );
+  }
+
+  if (!user) {
+    return null;
   }
 
   return <CandidateSettings profile={data.profile} user={user} />;

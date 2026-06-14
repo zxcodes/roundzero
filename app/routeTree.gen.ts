@@ -31,6 +31,7 @@ import { Route as AuthenticatedOnboardingNoWorkspaceRouteImport } from './routes
 import { Route as AuthenticatedOnboardingCompanyRouteImport } from './routes/_authenticated/onboarding/company'
 import { Route as AuthenticatedOnboardingCandidateRouteImport } from './routes/_authenticated/onboarding/candidate'
 import { Route as AuthenticatedInterviewInterviewIdRouteImport } from './routes/_authenticated/interview/$interviewId'
+import { Route as AuthenticatedDashboardTeamRouteImport } from './routes/_authenticated/dashboard/team'
 import { Route as AuthenticatedDashboardShortlistedRouteImport } from './routes/_authenticated/dashboard/shortlisted'
 import { Route as AuthenticatedDashboardSettingsRouteImport } from './routes/_authenticated/dashboard/settings'
 import { Route as AuthenticatedDashboardBillingRouteImport } from './routes/_authenticated/dashboard/billing'
@@ -163,6 +164,12 @@ const AuthenticatedInterviewInterviewIdRoute =
     path: '/$interviewId',
     getParentRoute: () => AuthenticatedInterviewRoute,
   } as any)
+const AuthenticatedDashboardTeamRoute =
+  AuthenticatedDashboardTeamRouteImport.update({
+    id: '/team',
+    path: '/team',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
 const AuthenticatedDashboardShortlistedRoute =
   AuthenticatedDashboardShortlistedRouteImport.update({
     id: '/shortlisted',
@@ -280,6 +287,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/billing': typeof AuthenticatedDashboardBillingRoute
   '/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
   '/dashboard/shortlisted': typeof AuthenticatedDashboardShortlistedRoute
+  '/dashboard/team': typeof AuthenticatedDashboardTeamRoute
   '/interview/$interviewId': typeof AuthenticatedInterviewInterviewIdRouteWithChildren
   '/onboarding/candidate': typeof AuthenticatedOnboardingCandidateRoute
   '/onboarding/company': typeof AuthenticatedOnboardingCompanyRoute
@@ -317,6 +325,7 @@ export interface FileRoutesByTo {
   '/dashboard/billing': typeof AuthenticatedDashboardBillingRoute
   '/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
   '/dashboard/shortlisted': typeof AuthenticatedDashboardShortlistedRoute
+  '/dashboard/team': typeof AuthenticatedDashboardTeamRoute
   '/onboarding/candidate': typeof AuthenticatedOnboardingCandidateRoute
   '/onboarding/company': typeof AuthenticatedOnboardingCompanyRoute
   '/onboarding/no-workspace': typeof AuthenticatedOnboardingNoWorkspaceRoute
@@ -356,6 +365,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard/billing': typeof AuthenticatedDashboardBillingRoute
   '/_authenticated/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
   '/_authenticated/dashboard/shortlisted': typeof AuthenticatedDashboardShortlistedRoute
+  '/_authenticated/dashboard/team': typeof AuthenticatedDashboardTeamRoute
   '/_authenticated/interview/$interviewId': typeof AuthenticatedInterviewInterviewIdRouteWithChildren
   '/_authenticated/onboarding/candidate': typeof AuthenticatedOnboardingCandidateRoute
   '/_authenticated/onboarding/company': typeof AuthenticatedOnboardingCompanyRoute
@@ -397,6 +407,7 @@ export interface FileRouteTypes {
     | '/dashboard/billing'
     | '/dashboard/settings'
     | '/dashboard/shortlisted'
+    | '/dashboard/team'
     | '/interview/$interviewId'
     | '/onboarding/candidate'
     | '/onboarding/company'
@@ -434,6 +445,7 @@ export interface FileRouteTypes {
     | '/dashboard/billing'
     | '/dashboard/settings'
     | '/dashboard/shortlisted'
+    | '/dashboard/team'
     | '/onboarding/candidate'
     | '/onboarding/company'
     | '/onboarding/no-workspace'
@@ -472,6 +484,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard/billing'
     | '/_authenticated/dashboard/settings'
     | '/_authenticated/dashboard/shortlisted'
+    | '/_authenticated/dashboard/team'
     | '/_authenticated/interview/$interviewId'
     | '/_authenticated/onboarding/candidate'
     | '/_authenticated/onboarding/company'
@@ -664,6 +677,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInterviewInterviewIdRouteImport
       parentRoute: typeof AuthenticatedInterviewRoute
     }
+    '/_authenticated/dashboard/team': {
+      id: '/_authenticated/dashboard/team'
+      path: '/team'
+      fullPath: '/dashboard/team'
+      preLoaderRoute: typeof AuthenticatedDashboardTeamRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
     '/_authenticated/dashboard/shortlisted': {
       id: '/_authenticated/dashboard/shortlisted'
       path: '/shortlisted'
@@ -802,6 +822,7 @@ interface AuthenticatedDashboardRouteChildren {
   AuthenticatedDashboardBillingRoute: typeof AuthenticatedDashboardBillingRoute
   AuthenticatedDashboardSettingsRoute: typeof AuthenticatedDashboardSettingsRoute
   AuthenticatedDashboardShortlistedRoute: typeof AuthenticatedDashboardShortlistedRoute
+  AuthenticatedDashboardTeamRoute: typeof AuthenticatedDashboardTeamRoute
   AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
   AuthenticatedDashboardApplicantsApplicationIdRoute: typeof AuthenticatedDashboardApplicantsApplicationIdRoute
   AuthenticatedDashboardApplicationApplicationIdRoute: typeof AuthenticatedDashboardApplicationApplicationIdRoute
@@ -822,6 +843,7 @@ const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
     AuthenticatedDashboardSettingsRoute: AuthenticatedDashboardSettingsRoute,
     AuthenticatedDashboardShortlistedRoute:
       AuthenticatedDashboardShortlistedRoute,
+    AuthenticatedDashboardTeamRoute: AuthenticatedDashboardTeamRoute,
     AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
     AuthenticatedDashboardApplicantsApplicationIdRoute:
       AuthenticatedDashboardApplicantsApplicationIdRoute,

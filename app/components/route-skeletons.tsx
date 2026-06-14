@@ -1055,7 +1055,7 @@ function CompanyDashboardSettingsSkeleton() {
       </div>
 
       <div className="space-y-6">
-        {Array.from({ length: 5 }).map((_, i) => (
+        {Array.from({ length: 3 }).map((_, i) => (
           <Card key={i}>
             <CardHeader>
               <Skeleton className="h-5 w-36" />
@@ -1068,6 +1068,57 @@ function CompanyDashboardSettingsSkeleton() {
             </CardContent>
           </Card>
         ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Skeleton for /dashboard/team — invite form, pending invites, and members list.
+ */
+export function DashboardTeamSkeleton() {
+  return (
+    <div className="space-y-6 pb-28">
+      <div>
+        <Skeleton className="h-8 w-24" />
+        <Skeleton className="mt-1 h-4 w-96 max-w-full" />
+      </div>
+
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-5 w-32" />
+            <Skeleton className="h-3.5 w-80 max-w-full" />
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-end">
+            <Skeleton className="h-9 flex-1" />
+            <Skeleton className="h-9 w-full sm:w-40" />
+            <Skeleton className="h-9 w-28" />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-5 w-40" />
+            <Skeleton className="h-3.5 w-64" />
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Skeleton className="h-20 w-full rounded-lg" />
+            <Skeleton className="h-20 w-full rounded-lg" />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-5 w-32" />
+            <Skeleton className="h-3.5 w-72" />
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Skeleton className="h-20 w-full rounded-lg" />
+            <Skeleton className="h-20 w-full rounded-lg" />
+            <Skeleton className="h-20 w-full rounded-lg" />
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
