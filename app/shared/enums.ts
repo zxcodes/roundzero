@@ -3,10 +3,6 @@ import { z } from "zod";
 export const userRoleSchema = z.enum(["company", "candidate"]);
 export type UserRole = z.infer<typeof userRoleSchema>;
 
-/** Org-level role within a company. `owner` is unique per company. */
-export const companyMemberRoleSchema = z.enum(["owner", "admin", "member"]);
-export type CompanyMemberRole = z.infer<typeof companyMemberRoleSchema>;
-
 /** Roles assignable via invitation — `owner` is never invitable. */
 export const companyInvitationRoleSchema = z.enum(["admin", "member"]);
 export type CompanyInvitationRole = z.infer<typeof companyInvitationRoleSchema>;
