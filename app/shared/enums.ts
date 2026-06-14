@@ -7,6 +7,9 @@ export type UserRole = z.infer<typeof userRoleSchema>;
 export const companyInvitationRoleSchema = z.enum(["admin", "member"]);
 export type CompanyInvitationRole = z.infer<typeof companyInvitationRoleSchema>;
 
+export const companyMemberRoleSchema = z.enum(["owner", "admin", "member"]);
+export type CompanyMemberRole = z.infer<typeof companyMemberRoleSchema>;
+
 export const jobStatusSchema = z.enum(["draft", "open", "closed"]);
 export type JobStatus = z.infer<typeof jobStatusSchema>;
 

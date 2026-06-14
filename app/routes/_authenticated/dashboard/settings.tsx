@@ -5,18 +5,19 @@ import { getMyCandidateProfile } from "@/features/candidates/server/functions";
 import { CompanyLeaveSection } from "@/features/companies/components/company-leave-section";
 import { CompanySettings } from "@/features/companies/components/company-settings";
 import { CompanyTeamSection } from "@/features/companies/components/company-team-section";
-import { getMyCompany, getMyMembership } from "@/features/companies/server/functions";
+import { getMyCompanyContext } from "@/features/companies/server/functions";
 import { getTeamOverview } from "@/features/companies/server/team-functions";
 
 export const Route = createFileRoute("/_authenticated/dashboard/settings")({
   loader: async ({ context }) => {
     if (context.isCompany) {
-      const [company, membership] = await Promise.all([getMyCompany(), getMyMembership()]);
-      if (!company) {
-        throw redirect({ to: "/onboarding/company" });
+      const companyContext = await getMyCompanyContext();
+      if (!companyContext) {
+        throw redirect({ to: "/onboarding/no-workspace" });
       }
 
-      const canManageTeam = membership?.role === "owner" || membership?.role === "admin";
+      const { company, membership } = companyContext;
+      const canManageTeam = membership.role === "owner" || membership.role === "admin";
       const team = canManageTeam ? await getTeamOverview() : null;
 
       return {
@@ -24,8 +25,8 @@ export const Route = createFileRoute("/_authenticated/dashboard/settings")({
         company,
         canManageProfile: canManageTeam,
         canManageTeam,
-        isOwner: membership?.role === "owner",
-        canLeaveTeam: membership?.role !== "owner",
+        isOwner: membership.role === "owner",
+        canLeaveTeam: membership.role !== "owner",
         team,
       };
     }

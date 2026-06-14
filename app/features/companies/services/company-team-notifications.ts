@@ -1,9 +1,16 @@
 import type { Sql } from "postgres";
-import { listCompanyNotificationRecipients } from "@/features/companies/queries/queries_sql";
+import type { z } from "zod";
+import { listCompanyNotificationRecipients } from "@/features/companies/queries/membership-queries_sql";
 import {
   createNotification,
   type createNotificationRow,
 } from "@/features/notifications/queries/queries_sql";
+import type { notificationPayloadSchemas } from "@/shared/notifications-config";
+
+type NotificationType = keyof typeof notificationPayloadSchemas;
+type NotificationPayload<T extends NotificationType> = z.infer<
+  (typeof notificationPayloadSchemas)[T]
+>;
 
 export type CompanyTeamNotificationDelivery = {
   notification: createNotificationRow;
@@ -11,12 +18,12 @@ export type CompanyTeamNotificationDelivery = {
   email: string;
 };
 
-export async function notifyCompanyTeam(
+export async function notifyCompanyTeam<T extends NotificationType>(
   sql: Sql,
   input: {
     companyId: string;
-    type: string;
-    payload: unknown;
+    type: T;
+    payload: NotificationPayload<T>;
   },
 ): Promise<CompanyTeamNotificationDelivery[]> {
   const recipients = await listCompanyNotificationRecipients(sql, {

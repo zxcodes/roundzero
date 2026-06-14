@@ -2,18 +2,11 @@ import { describe, expect, it } from "vitest";
 import { softDeleteUser } from "@/features/auth/queries/queries_sql";
 import { getTestDb, seedCompany, seedUser } from "@/shared/__tests__/test-utils";
 import {
-  clearCompanySubscription,
-  createCompany,
   createCompanyMember,
   createInvitation,
   getActiveMemberByCompanyEmail,
   getActiveMembershipByUserId,
-  getAllCompanies,
-  getCompanyById,
   getCompanyByMemberUserId,
-  getCompanyByOwnerId,
-  getCompanyByPolarCustomerId,
-  getCompanyBySlug,
   getInvitationByToken,
   getPendingInvitationByEmail,
   listCompanyNotificationRecipients,
@@ -22,10 +15,19 @@ import {
   removeCompanyMember,
   resetInvitationForResend,
   revokeInvitation as revokeInvitationQuery,
-  setCompanyPolarCustomer,
-  slugExists,
   updateCompanyMemberRole,
   updateCompanyOwner,
+} from "../membership-queries_sql";
+import {
+  clearCompanySubscription,
+  createCompany,
+  getAllCompanies,
+  getCompanyById,
+  getCompanyByOwnerId,
+  getCompanyByPolarCustomerId,
+  getCompanyBySlug,
+  setCompanyPolarCustomer,
+  slugExists,
   updateCompanyProfile,
   updateCompanySubscription,
 } from "../queries_sql";
@@ -599,6 +601,29 @@ describe("company invitations", () => {
 
     expect(await getInvitationByToken(sql, { token: "old-token" })).toBeNull();
     expect(await getInvitationByToken(sql, { token: "new-token" })).not.toBeNull();
+  });
+
+  it("ignores expired invitations when checking pending by email", async () => {
+    const { company, owner } = await seedCompany();
+    const expiredAt = new Date(Date.now() - 60_000);
+
+    await createInvitation(sql, {
+      companyId: company.id,
+      email: "expired@acme.com",
+      role: "member",
+      token: "expired-token",
+      invitedBy: owner.id,
+      expiresAt: expiredAt,
+    });
+
+    const pending = await getPendingInvitationByEmail(sql, {
+      companyId: company.id,
+      email: "expired@acme.com",
+    });
+    expect(pending).toBeNull();
+
+    const listed = await listPendingInvitationsByCompany(sql, { companyId: company.id });
+    expect(listed).toHaveLength(0);
   });
 
   it("marks invitation accepted and detects existing members by email", async () => {

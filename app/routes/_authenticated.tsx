@@ -3,10 +3,12 @@ import { DashboardLayoutSkeleton } from "@/components/route-skeletons";
 import { Skeleton } from "@/components/ui/skeleton";
 import { hasActiveSubscription } from "@/features/billing/config";
 import { getMyCandidateProfile } from "@/features/candidates/server/functions";
-import { getMyCompany, getMyMembership } from "@/features/companies/server/functions";
+import { getMyCompanyContext } from "@/features/companies/server/functions";
 import { getMyJobCounts } from "@/features/jobs/server/functions";
+import type { CompanyMemberRole } from "@/shared/enums";
+import { parseCompanyMemberRole } from "@/shared/membership-auth";
 
-type Company = NonNullable<Awaited<ReturnType<typeof getMyCompany>>>;
+type Company = NonNullable<Awaited<ReturnType<typeof getMyCompanyContext>>>["company"];
 type SubscriptionSummary = { plan: string; status: string; isActive: boolean };
 
 const buildSubscription = (company: Company): SubscriptionSummary => ({
@@ -19,13 +21,36 @@ const buildSubscription = (company: Company): SubscriptionSummary => ({
 });
 
 export const Route = createFileRoute("/_authenticated")({
-  // Cheap, synchronous gate only. Heavy async work lives in `loader` so the
-  // router can render `pendingComponent` while it resolves (pending components
-  // are NOT shown while `beforeLoad` is pending).
-  beforeLoad: ({ context }) => {
+  beforeLoad: async ({ context, location }) => {
     if (!context.user?.role) {
       throw redirect({ to: "/" });
     }
+
+    if (context.user.role !== "company") {
+      return {
+        membershipRole: null as CompanyMemberRole | null,
+        company: null as Company | null,
+        hasCompanyWorkspace: false,
+      };
+    }
+
+    const companyContext = await getMyCompanyContext();
+    if (!companyContext) {
+      if (!location.pathname.startsWith("/onboarding/no-workspace")) {
+        throw redirect({ to: "/onboarding/no-workspace" });
+      }
+      return {
+        membershipRole: null as CompanyMemberRole | null,
+        company: null as Company | null,
+        hasCompanyWorkspace: false,
+      };
+    }
+
+    return {
+      membershipRole: parseCompanyMemberRole(companyContext.membership.role),
+      company: companyContext.company,
+      hasCompanyWorkspace: true,
+    };
   },
   loader: async ({ context, location }) => {
     const user = context.user;
@@ -39,17 +64,14 @@ export const Route = createFileRoute("/_authenticated")({
     const search = redirectParam ? { redirect: redirectParam } : {};
 
     if (user.role === "company") {
-      const [company, jobCounts, membership] = await Promise.all([
-        getMyCompany(),
-        getMyJobCounts(),
-        getMyMembership(),
-      ]);
+      const company = context.company;
+      const jobCounts = context.hasCompanyWorkspace ? await getMyJobCounts() : null;
       const onboarded = Boolean(company?.onboardingCompletedAt);
 
-      if (!onboarded && !isOnboardingRoute) {
+      if (context.hasCompanyWorkspace && !onboarded && !isOnboardingRoute) {
         throw redirect({ to: "/onboarding/company", search });
       }
-      if (onboarded && isOnboardingRoute) {
+      if (onboarded && isOnboardingRoute && location.pathname !== "/onboarding/no-workspace") {
         throw redirect({ to: "/dashboard" });
       }
 
@@ -64,7 +86,7 @@ export const Route = createFileRoute("/_authenticated")({
         type: "company" as const,
         user,
         company,
-        membershipRole: membership?.role ?? null,
+        membershipRole: context.membershipRole,
         subscription,
         jobCounts,
         candidateProfile: null,

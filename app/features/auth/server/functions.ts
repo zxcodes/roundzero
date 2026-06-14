@@ -9,11 +9,13 @@ import {
   getCompanyByMemberUserId,
   getInvitationByToken,
   markInvitationAccepted,
-} from "@/features/companies/queries/queries_sql";
+} from "@/features/companies/queries/membership-queries_sql";
 import { getDb } from "@/shared/db";
+import { asSqlTransaction } from "@/shared/db-transaction";
 import { userRoleSchema } from "@/shared/enums";
 import { emailsMatch, fetchGoogleUserInfo } from "@/shared/google-userinfo";
 import { authMiddleware } from "@/shared/middleware";
+import { isUniqueViolation } from "@/shared/postgres-errors";
 import { type SessionData, sessionConfig } from "@/shared/session";
 import { requiredTrimmedString } from "@/shared/validation";
 import {
@@ -39,6 +41,9 @@ export const loginWithGoogle = createServerFn({ method: "POST" })
   .validator(zodValidator(googleAuthSchema))
   .handler(async ({ data }) => {
     const googleUser = await fetchGoogleUserInfo(data.access_token);
+    if (!googleUser.verified_email) {
+      throw new Error("Google account email must be verified");
+    }
 
     const db = getDb();
     const user = await upsertUserByGoogleId(db, {
@@ -149,11 +154,6 @@ export const acceptInvite = createServerFn({ method: "POST" })
       throw new Error("This email is registered as a candidate account");
     }
 
-    const existingMembership = await getActiveMembershipByUserId(db, { userId: activeUser.id });
-    if (existingMembership) {
-      throw new Error("You already belong to a company");
-    }
-
     if (!activeUser.role) {
       const updated = await setUserRoleQuery(db, {
         role: "company",
@@ -164,21 +164,43 @@ export const acceptInvite = createServerFn({ method: "POST" })
       }
     }
 
-    await db.begin(async (tx) => {
-      const transaction = tx as unknown as typeof db;
+    try {
+      await db.begin(async (tx) => {
+        const transaction = asSqlTransaction(tx);
 
-      await createCompanyMember(transaction, {
-        companyId: invitation.companyId,
-        userId: activeUser.id,
-        role: invitation.role,
-        invitedBy: invitation.invitedBy,
+        const freshInvitation = await getInvitationByToken(transaction, { token: data.token });
+        if (!freshInvitation || freshInvitation.acceptedAt || freshInvitation.revokedAt) {
+          throw new Error("Invitation not found or no longer valid");
+        }
+        if (freshInvitation.expiresAt.getTime() <= Date.now()) {
+          throw new Error("This invitation has expired");
+        }
+
+        const existingMembership = await getActiveMembershipByUserId(transaction, {
+          userId: activeUser.id,
+        });
+        if (existingMembership) {
+          throw new Error("You already belong to a company");
+        }
+
+        await createCompanyMember(transaction, {
+          companyId: freshInvitation.companyId,
+          userId: activeUser.id,
+          role: freshInvitation.role,
+          invitedBy: freshInvitation.invitedBy,
+        });
+
+        const accepted = await markInvitationAccepted(transaction, { id: freshInvitation.id });
+        if (!accepted) {
+          throw new Error("Invitation not found or no longer valid");
+        }
       });
-
-      const accepted = await markInvitationAccepted(transaction, { id: invitation.id });
-      if (!accepted) {
-        throw new Error("Invitation not found or no longer valid");
+    } catch (error) {
+      if (isUniqueViolation(error)) {
+        throw new Error("You already belong to a company");
       }
-    });
+      throw error;
+    }
 
     await updateSession<SessionData>(sessionConfig, { userId: activeUser.id });
 

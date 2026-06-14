@@ -4,7 +4,9 @@ import { useSession } from "@tanstack/react-start/server";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { getDb } from "@/shared/db";
+import { asSqlTransaction } from "@/shared/db-transaction";
 import { companySizeSchema, industrySchema, MAX_COMPANY_DESCRIPTION_LENGTH } from "@/shared/enums";
+import { assertCanManageCompanyProfile } from "@/shared/membership-auth";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
 import { type SessionData, sessionConfig } from "@/shared/session";
 import {
@@ -16,10 +18,12 @@ import {
   zodValidatorWithFormattedErrors,
 } from "@/shared/validation";
 import {
-  countCompaniesFiltered,
   createCompanyMember,
-  createCompany as createCompanyQuery,
   getActiveMembershipByUserId,
+} from "../queries/membership-queries_sql";
+import {
+  countCompaniesFiltered,
+  createCompany as createCompanyQuery,
   getAllCompaniesPaginated as getAllCompaniesPaginatedQuery,
   getCompanyById,
   getCompanyBySlug as getCompanyBySlugQuery,
@@ -142,10 +146,19 @@ const assertLogoKeyBelongsToUser = (logoKey: string, userId: string) => {
   }
 };
 
-const assertCanManageCompanyProfile = (role: string) => {
-  if (role !== "owner" && role !== "admin") {
-    throw new Error("Not authorized to update company profile");
+const resolveMyCompanyContext = async (userId: string) => {
+  const db = getDb();
+  const membership = await getActiveMembershipByUserId(db, { userId });
+  if (!membership) {
+    return null;
   }
+
+  const company = await getCompanyById(db, { id: membership.companyId });
+  if (!company) {
+    return null;
+  }
+
+  return { company, membership };
 };
 
 // --- Server Functions ---
@@ -163,10 +176,16 @@ export const createCompany = createServerFn({ method: "POST" })
       throw new Error("You already belong to a company");
     }
 
+    if (context.user.role === "company") {
+      throw new Error(
+        "Your account has no active company workspace. Accept an invitation to join a team.",
+      );
+    }
+
     const slug = await generateUniqueSlug(data.name);
 
     const company = await db.begin(async (tx) => {
-      const transaction = tx as unknown as typeof db;
+      const transaction = asSqlTransaction(tx);
 
       const created = await createCompanyQuery(transaction, {
         ownerId: context.userId,
@@ -195,34 +214,30 @@ export const createCompany = createServerFn({ method: "POST" })
     return { company };
   });
 
-export const getMyCompany = createServerFn({ method: "GET" }).handler(async () => {
+export const getMyCompanyContext = createServerFn({ method: "GET" }).handler(async () => {
   const session = await useSession<SessionData>(sessionConfig);
-
   if (!session.data.userId) {
     return null;
   }
+  return resolveMyCompanyContext(session.data.userId);
+});
 
-  const db = getDb();
-  const membership = await getActiveMembershipByUserId(db, {
-    userId: session.data.userId,
-  });
-  if (!membership) {
+export const getMyCompany = createServerFn({ method: "GET" }).handler(async () => {
+  const session = await useSession<SessionData>(sessionConfig);
+  if (!session.data.userId) {
     return null;
   }
-
-  const company = await getCompanyById(db, { id: membership.companyId });
-  return company;
+  const context = await resolveMyCompanyContext(session.data.userId);
+  return context?.company ?? null;
 });
 
 export const getMyMembership = createServerFn({ method: "GET" }).handler(async () => {
   const session = await useSession<SessionData>(sessionConfig);
-
   if (!session.data.userId) {
     return null;
   }
-
-  const db = getDb();
-  return getActiveMembershipByUserId(db, { userId: session.data.userId });
+  const context = await resolveMyCompanyContext(session.data.userId);
+  return context?.membership ?? null;
 });
 
 export const updateCompanyProfile = createServerFn({ method: "POST" })
@@ -260,12 +275,10 @@ export const updateCompanyProfile = createServerFn({ method: "POST" })
   });
 
 export const uploadCompanyLogo = createServerFn({ method: "POST" })
-  .middleware([authMiddleware])
+  .middleware([companyMiddleware])
   .validator(zodValidatorWithFormattedErrors(uploadCompanyLogoSchema))
   .handler(async ({ data, context }) => {
-    if (context.user.role !== "company") {
-      throw new Error("Only company users can upload logos");
-    }
+    assertCanManageCompanyProfile(context.membership.role);
 
     const logoKey = buildLogoKey(context.userId, data.fileName, data.contentType);
     const bytes = Uint8Array.from(atob(data.fileBase64), (c) => c.charCodeAt(0));

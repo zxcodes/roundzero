@@ -2,7 +2,7 @@ import { env } from "cloudflare:workers";
 import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
-import { getCompanyByMemberUserId } from "@/features/companies/queries/queries_sql";
+import { getCompanyByMemberUserId } from "@/features/companies/queries/membership-queries_sql";
 import { getActiveInterviewsByJob } from "@/features/interviews/queries/queries_sql";
 import { expireInterviewIfDue } from "@/features/interviews/server/expire";
 import { getJobById } from "@/features/jobs/queries/queries_sql";
