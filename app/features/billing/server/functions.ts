@@ -8,6 +8,12 @@ import { companyMiddleware } from "@/shared/middleware";
 import { hasActiveSubscription, type SubscriptionPlan, subscriptionPlanSchema } from "../config";
 import { getPolar } from "../services/polar";
 
+const assertCompanyOwner = (role: string) => {
+  if (role !== "owner") {
+    throw new Error("Only the company owner can manage billing");
+  }
+};
+
 const checkoutSchema = z.object({
   plan: subscriptionPlanSchema,
 });
@@ -50,6 +56,8 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
   .validator(zodValidator(checkoutSchema))
   .handler(async ({ data, context }) => {
+    assertCompanyOwner(context.membership.role);
+
     const plan = data.plan as SubscriptionPlan;
     const productId = productIdForPlan(plan);
 
@@ -85,6 +93,8 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
 export const createBillingPortalSession = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
   .handler(async ({ context }) => {
+    assertCompanyOwner(context.membership.role);
+
     if (!context.company.polarCustomerId) {
       throw new Error("No billing account on file. Subscribe first.");
     }
@@ -100,6 +110,8 @@ export const createBillingPortalSession = createServerFn({ method: "POST" })
 export const getMySubscription = createServerFn({ method: "GET" })
   .middleware([companyMiddleware])
   .handler(async ({ context }) => {
+    assertCompanyOwner(context.membership.role);
+
     // Re-read so we always reflect the latest webhook-applied state.
     const db = getDb();
     const company = await getCompanyById(db, { id: context.company.id });

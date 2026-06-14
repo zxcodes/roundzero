@@ -5,6 +5,7 @@ import { z } from "zod";
 import { BillingPageSkeleton } from "@/components/route-skeletons";
 import { BillingPage } from "@/features/billing/components/billing-page";
 import { getMySubscription } from "@/features/billing/server/functions";
+import { getMyMembership } from "@/features/companies/server/functions";
 
 const searchSchema = z.object({
   status: z.enum(["success", "cancelled"]).optional(),
@@ -14,8 +15,13 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/_authenticated/dashboard/billing")({
   validateSearch: searchSchema,
-  beforeLoad: ({ context }) => {
+  beforeLoad: async ({ context }) => {
     if (!context.isCompany) {
+      throw redirect({ to: "/dashboard" });
+    }
+
+    const membership = await getMyMembership();
+    if (membership?.role !== "owner") {
       throw redirect({ to: "/dashboard" });
     }
   },

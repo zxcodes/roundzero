@@ -107,6 +107,25 @@ CREATE TABLE public.companies (
 
 
 --
+-- Name: company_invitations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.company_invitations (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    company_id uuid NOT NULL,
+    email text NOT NULL,
+    role text NOT NULL,
+    token text NOT NULL,
+    invited_by uuid,
+    expires_at timestamp with time zone NOT NULL,
+    accepted_at timestamp with time zone,
+    revoked_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: company_members; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -388,6 +407,14 @@ ALTER TABLE ONLY public.companies
 
 
 --
+-- Name: company_invitations company_invitations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.company_invitations
+    ADD CONSTRAINT company_invitations_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: company_members company_members_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -560,6 +587,27 @@ CREATE INDEX idx_companies_owner ON public.companies USING btree (owner_id);
 --
 
 CREATE UNIQUE INDEX idx_companies_polar_customer ON public.companies USING btree (polar_customer_id) WHERE (polar_customer_id IS NOT NULL);
+
+
+--
+-- Name: idx_company_invitations_company; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_company_invitations_company ON public.company_invitations USING btree (company_id);
+
+
+--
+-- Name: idx_company_invitations_pending; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_company_invitations_pending ON public.company_invitations USING btree (company_id, email) WHERE ((accepted_at IS NULL) AND (revoked_at IS NULL));
+
+
+--
+-- Name: idx_company_invitations_token; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_company_invitations_token ON public.company_invitations USING btree (token);
 
 
 --
@@ -758,6 +806,22 @@ ALTER TABLE ONLY public.companies
 
 
 --
+-- Name: company_invitations company_invitations_company_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.company_invitations
+    ADD CONSTRAINT company_invitations_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id) ON DELETE RESTRICT;
+
+
+--
+-- Name: company_invitations company_invitations_invited_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.company_invitations
+    ADD CONSTRAINT company_invitations_invited_by_fkey FOREIGN KEY (invited_by) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
 -- Name: company_members company_members_company_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -877,4 +941,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260606171616'),
     ('20260608010913'),
     ('20260612120000'),
-    ('20260614000000');
+    ('20260614000000'),
+    ('20260614010000');

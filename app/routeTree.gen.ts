@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as JobsIndexRouteImport } from './routes/jobs/index'
 import { Route as CompaniesIndexRouteImport } from './routes/companies/index'
 import { Route as JobsJobIdRouteImport } from './routes/jobs/$jobId'
+import { Route as InviteTokenRouteImport } from './routes/invite/$token'
 import { Route as CompanyLoginRouteImport } from './routes/company/login'
 import { Route as CompaniesSlugRouteImport } from './routes/companies/$slug'
 import { Route as CandidateLoginRouteImport } from './routes/candidate/login'
@@ -78,6 +79,11 @@ const CompaniesIndexRoute = CompaniesIndexRouteImport.update({
 const JobsJobIdRoute = JobsJobIdRouteImport.update({
   id: '/jobs/$jobId',
   path: '/jobs/$jobId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InviteTokenRoute = InviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CompanyLoginRoute = CompanyLoginRouteImport.update({
@@ -259,6 +265,7 @@ export interface FileRoutesByFullPath {
   '/candidate/login': typeof CandidateLoginRoute
   '/companies/$slug': typeof CompaniesSlugRoute
   '/company/login': typeof CompanyLoginRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
   '/companies/': typeof CompaniesIndexRoute
   '/jobs/': typeof JobsIndexRoute
@@ -294,6 +301,7 @@ export interface FileRoutesByTo {
   '/candidate/login': typeof CandidateLoginRoute
   '/companies/$slug': typeof CompaniesSlugRoute
   '/company/login': typeof CompanyLoginRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
   '/companies': typeof CompaniesIndexRoute
   '/jobs': typeof JobsIndexRoute
@@ -331,6 +339,7 @@ export interface FileRoutesById {
   '/candidate/login': typeof CandidateLoginRoute
   '/companies/$slug': typeof CompaniesSlugRoute
   '/company/login': typeof CompanyLoginRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
   '/companies/': typeof CompaniesIndexRoute
   '/jobs/': typeof JobsIndexRoute
@@ -370,6 +379,7 @@ export interface FileRouteTypes {
     | '/candidate/login'
     | '/companies/$slug'
     | '/company/login'
+    | '/invite/$token'
     | '/jobs/$jobId'
     | '/companies/'
     | '/jobs/'
@@ -405,6 +415,7 @@ export interface FileRouteTypes {
     | '/candidate/login'
     | '/companies/$slug'
     | '/company/login'
+    | '/invite/$token'
     | '/jobs/$jobId'
     | '/companies'
     | '/jobs'
@@ -441,6 +452,7 @@ export interface FileRouteTypes {
     | '/candidate/login'
     | '/companies/$slug'
     | '/company/login'
+    | '/invite/$token'
     | '/jobs/$jobId'
     | '/companies/'
     | '/jobs/'
@@ -477,6 +489,7 @@ export interface RootRouteChildren {
   CandidateLoginRoute: typeof CandidateLoginRoute
   CompaniesSlugRoute: typeof CompaniesSlugRoute
   CompanyLoginRoute: typeof CompanyLoginRoute
+  InviteTokenRoute: typeof InviteTokenRoute
   JobsJobIdRoute: typeof JobsJobIdRoute
   CompaniesIndexRoute: typeof CompaniesIndexRoute
   JobsIndexRoute: typeof JobsIndexRoute
@@ -531,6 +544,13 @@ declare module '@tanstack/react-router' {
       path: '/jobs/$jobId'
       fullPath: '/jobs/$jobId'
       preLoaderRoute: typeof JobsJobIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invite/$token': {
+      id: '/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/invite/$token'
+      preLoaderRoute: typeof InviteTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/company/login': {
@@ -881,6 +901,7 @@ const rootRouteChildren: RootRouteChildren = {
   CandidateLoginRoute: CandidateLoginRoute,
   CompaniesSlugRoute: CompaniesSlugRoute,
   CompanyLoginRoute: CompanyLoginRoute,
+  InviteTokenRoute: InviteTokenRoute,
   JobsJobIdRoute: JobsJobIdRoute,
   CompaniesIndexRoute: CompaniesIndexRoute,
   JobsIndexRoute: JobsIndexRoute,

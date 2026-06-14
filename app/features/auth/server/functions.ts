@@ -3,9 +3,16 @@ import { clearSession, updateSession, useSession } from "@tanstack/react-start/s
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { getCandidateProfileByUserId } from "@/features/candidates/queries/queries_sql";
-import { getCompanyByMemberUserId } from "@/features/companies/queries/queries_sql";
+import {
+  createCompanyMember,
+  getActiveMembershipByUserId,
+  getCompanyByMemberUserId,
+  getInvitationByToken,
+  markInvitationAccepted,
+} from "@/features/companies/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { userRoleSchema } from "@/shared/enums";
+import { emailsMatch, fetchGoogleUserInfo } from "@/shared/google-userinfo";
 import { authMiddleware } from "@/shared/middleware";
 import { type SessionData, sessionConfig } from "@/shared/session";
 import { requiredTrimmedString } from "@/shared/validation";
@@ -23,23 +30,15 @@ const googleAuthSchema = z.object({
   role: userRoleSchema.optional(),
 });
 
+const acceptInviteSchema = z.object({
+  token: z.string().trim().min(1),
+  access_token: z.string().min(1).optional(),
+});
+
 export const loginWithGoogle = createServerFn({ method: "POST" })
   .validator(zodValidator(googleAuthSchema))
   .handler(async ({ data }) => {
-    const userResponse = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
-      headers: { Authorization: `Bearer ${data.access_token}` },
-    });
-
-    if (!userResponse.ok) {
-      throw new Error("Failed to fetch Google user info");
-    }
-
-    const googleUser = (await userResponse.json()) as {
-      id: string;
-      email: string;
-      name: string;
-      picture: string;
-    };
+    const googleUser = await fetchGoogleUserInfo(data.access_token);
 
     const db = getDb();
     const user = await upsertUserByGoogleId(db, {
@@ -85,6 +84,108 @@ export const loginWithGoogle = createServerFn({ method: "POST" })
     }
 
     return { user: activeUser, onboardingComplete, restored };
+  });
+
+export const acceptInvite = createServerFn({ method: "POST" })
+  .validator(zodValidator(acceptInviteSchema))
+  .handler(async ({ data }) => {
+    const db = getDb();
+    const invitation = await getInvitationByToken(db, { token: data.token });
+
+    if (!invitation || invitation.acceptedAt || invitation.revokedAt) {
+      throw new Error("Invitation not found or no longer valid");
+    }
+
+    if (invitation.expiresAt.getTime() <= Date.now()) {
+      throw new Error("This invitation has expired");
+    }
+
+    const session = await useSession<SessionData>(sessionConfig);
+    let activeUser: NonNullable<Awaited<ReturnType<typeof getUserById>>>;
+
+    if (data.access_token) {
+      const googleUser = await fetchGoogleUserInfo(data.access_token);
+      if (!googleUser.verified_email) {
+        throw new Error("Google account email must be verified");
+      }
+      if (!emailsMatch(googleUser.email, invitation.email)) {
+        throw new Error(`Sign in with the Google account for ${invitation.email}`);
+      }
+
+      const user = await upsertUserByGoogleId(db, {
+        email: googleUser.email,
+        name: googleUser.name,
+        picture: googleUser.picture,
+        googleId: googleUser.id,
+      });
+
+      if (!user) {
+        throw new Error("Failed to create or update user");
+      }
+
+      if (user.deletedAt) {
+        await restoreUser(db, { id: user.id });
+      }
+
+      const refreshedUser = await getUserById(db, { id: user.id });
+      if (!refreshedUser) {
+        throw new Error("Failed to create or update user");
+      }
+      activeUser = refreshedUser;
+    } else if (session.data.userId) {
+      const sessionUser = await getUserById(db, { id: session.data.userId });
+      if (!sessionUser) {
+        throw new Error("Not authenticated");
+      }
+      if (!emailsMatch(sessionUser.email, invitation.email)) {
+        throw new Error(`Sign in with ${invitation.email} to accept this invitation`);
+      }
+      activeUser = sessionUser;
+    } else {
+      throw new Error("Sign in with Google to accept this invitation");
+    }
+
+    if (activeUser.role === "candidate") {
+      throw new Error("This email is registered as a candidate account");
+    }
+
+    const existingMembership = await getActiveMembershipByUserId(db, { userId: activeUser.id });
+    if (existingMembership) {
+      throw new Error("You already belong to a company");
+    }
+
+    if (!activeUser.role) {
+      const updated = await setUserRoleQuery(db, {
+        role: "company",
+        id: activeUser.id,
+      });
+      if (updated) {
+        activeUser = updated;
+      }
+    }
+
+    await db.begin(async (tx) => {
+      const transaction = tx as unknown as typeof db;
+
+      await createCompanyMember(transaction, {
+        companyId: invitation.companyId,
+        userId: activeUser.id,
+        role: invitation.role,
+        invitedBy: invitation.invitedBy,
+      });
+
+      const accepted = await markInvitationAccepted(transaction, { id: invitation.id });
+      if (!accepted) {
+        throw new Error("Invitation not found or no longer valid");
+      }
+    });
+
+    await updateSession<SessionData>(sessionConfig, { userId: activeUser.id });
+
+    const company = await getCompanyByMemberUserId(db, { userId: activeUser.id });
+    const onboardingComplete = Boolean(company?.onboardingCompletedAt);
+
+    return { user: activeUser, onboardingComplete };
   });
 
 export const logout = createServerFn({ method: "POST" }).handler(async () => {

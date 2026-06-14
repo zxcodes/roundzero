@@ -1798,3 +1798,25 @@ export function BatchDetailSkeleton() {
     </div>
   );
 }
+
+/** Skeleton for /invite/$token — invitation accept page. */
+export function InviteAcceptSkeleton() {
+  return (
+    <div className="flex min-h-svh items-center justify-center bg-background p-6">
+      <div className="w-full max-w-md space-y-6">
+        <div className="flex justify-center">
+          <Skeleton className="size-7 rounded-md" />
+        </div>
+        <Card>
+          <CardHeader className="text-center">
+            <Skeleton className="mx-auto h-7 w-48" />
+            <Skeleton className="mx-auto mt-2 h-4 w-64" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-11 w-full rounded-md" />
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

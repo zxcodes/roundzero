@@ -64,7 +64,13 @@ function DashboardLayout() {
           } as { [key: string]: string }
         }
       >
-        <AppSidebar user={user} isCompany={isCompany} atLimit={atLimit} variant="inset" />
+        <AppSidebar
+          user={user}
+          isCompany={isCompany}
+          membershipRole={auth.type === "company" ? auth.membershipRole : null}
+          atLimit={atLimit}
+          variant="inset"
+        />
         <CommandPalette
           isCompany={isCompany}
           atLimit={atLimit}

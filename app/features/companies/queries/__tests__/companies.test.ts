@@ -5,6 +5,8 @@ import {
   clearCompanySubscription,
   createCompany,
   createCompanyMember,
+  createInvitation,
+  getActiveMemberByCompanyEmail,
   getActiveMembershipByUserId,
   getAllCompanies,
   getCompanyById,
@@ -12,6 +14,12 @@ import {
   getCompanyByOwnerId,
   getCompanyByPolarCustomerId,
   getCompanyBySlug,
+  getInvitationByToken,
+  getPendingInvitationByEmail,
+  listPendingInvitationsByCompany,
+  markInvitationAccepted,
+  resetInvitationForResend,
+  revokeInvitation as revokeInvitationQuery,
   setCompanyPolarCustomer,
   slugExists,
   updateCompanyProfile,
@@ -507,5 +515,121 @@ describe("company membership", () => {
 
     expect(await getActiveMembershipByUserId(sql, { userId: teammate.id })).toBeNull();
     expect(await getCompanyByMemberUserId(sql, { userId: teammate.id })).toBeNull();
+  });
+});
+
+describe("company invitations", () => {
+  it("creates and resolves a pending invitation by token", async () => {
+    const { company, owner } = await seedCompany();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    const invitation = await createInvitation(sql, {
+      companyId: company.id,
+      email: "teammate@acme.com",
+      role: "admin",
+      token: "invite-token-1",
+      invitedBy: owner.id,
+      expiresAt,
+    });
+
+    expect(invitation).not.toBeNull();
+
+    const byToken = await getInvitationByToken(sql, { token: "invite-token-1" });
+    expect(byToken).not.toBeNull();
+    expect(byToken!.companyName).toBe(company.name);
+    expect(byToken!.email).toBe("teammate@acme.com");
+    expect(byToken!.acceptedAt).toBeNull();
+    expect(byToken!.revokedAt).toBeNull();
+  });
+
+  it("lists pending invitations and revokes them", async () => {
+    const { company, owner } = await seedCompany();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    const invitation = await createInvitation(sql, {
+      companyId: company.id,
+      email: "pending@acme.com",
+      role: "member",
+      token: "invite-token-2",
+      invitedBy: owner.id,
+      expiresAt,
+    });
+
+    const pending = await listPendingInvitationsByCompany(sql, { companyId: company.id });
+    expect(pending).toHaveLength(1);
+    expect(pending[0]!.email).toBe("pending@acme.com");
+
+    const revoked = await revokeInvitationQuery(sql, {
+      id: invitation!.id,
+      companyId: company.id,
+    });
+    expect(revoked).not.toBeNull();
+
+    const after = await listPendingInvitationsByCompany(sql, { companyId: company.id });
+    expect(after).toHaveLength(0);
+  });
+
+  it("resets token and expiry on resend", async () => {
+    const { company, owner } = await seedCompany();
+    const expiresAt = new Date(Date.now() + 60_000);
+
+    const invitation = await createInvitation(sql, {
+      companyId: company.id,
+      email: "resend@acme.com",
+      role: "member",
+      token: "old-token",
+      invitedBy: owner.id,
+      expiresAt,
+    });
+
+    const newExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const resent = await resetInvitationForResend(sql, {
+      id: invitation!.id,
+      companyId: company.id,
+      token: "new-token",
+      expiresAt: newExpiry,
+    });
+
+    expect(resent).not.toBeNull();
+    expect(resent!.token).toBe("new-token");
+
+    expect(await getInvitationByToken(sql, { token: "old-token" })).toBeNull();
+    expect(await getInvitationByToken(sql, { token: "new-token" })).not.toBeNull();
+  });
+
+  it("marks invitation accepted and detects existing members by email", async () => {
+    const { company, owner } = await seedCompany();
+    const teammate = await seedUser({ role: "company", email: "member@acme.com" });
+    await createCompanyMember(sql, {
+      companyId: company.id,
+      userId: teammate.id,
+      role: "member",
+      invitedBy: owner.id,
+    });
+
+    const existing = await getActiveMemberByCompanyEmail(sql, {
+      companyId: company.id,
+      email: "member@acme.com",
+    });
+    expect(existing).not.toBeNull();
+
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const invitation = await createInvitation(sql, {
+      companyId: company.id,
+      email: "fresh@acme.com",
+      role: "member",
+      token: "accept-token",
+      invitedBy: owner.id,
+      expiresAt,
+    });
+
+    const accepted = await markInvitationAccepted(sql, { id: invitation!.id });
+    expect(accepted).not.toBeNull();
+
+    const pending = await getPendingInvitationByEmail(sql, {
+      companyId: company.id,
+      email: "fresh@acme.com",
+    });
+    expect(pending).toBeNull();
   });
 });

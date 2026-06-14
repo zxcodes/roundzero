@@ -142,6 +142,12 @@ const assertLogoKeyBelongsToUser = (logoKey: string, userId: string) => {
   }
 };
 
+const assertCanManageCompanyProfile = (role: string) => {
+  if (role !== "owner" && role !== "admin") {
+    throw new Error("Not authorized to update company profile");
+  }
+};
+
 // --- Server Functions ---
 
 export const createCompany = createServerFn({ method: "POST" })
@@ -208,10 +214,23 @@ export const getMyCompany = createServerFn({ method: "GET" }).handler(async () =
   return company;
 });
 
+export const getMyMembership = createServerFn({ method: "GET" }).handler(async () => {
+  const session = await useSession<SessionData>(sessionConfig);
+
+  if (!session.data.userId) {
+    return null;
+  }
+
+  const db = getDb();
+  return getActiveMembershipByUserId(db, { userId: session.data.userId });
+});
+
 export const updateCompanyProfile = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
   .validator(zodValidator(updateCompanyProfileSchema))
   .handler(async ({ data, context }) => {
+    assertCanManageCompanyProfile(context.membership.role);
+
     const db = getDb();
 
     if (data.logoKey) {

@@ -28,7 +28,7 @@ import { FeedbackDialog } from "@/features/feedback/components/feedback-dialog";
 import type { User } from "@/router";
 import { Logo } from "./public-layout";
 
-const companyMain = [
+const buildCompanyMain = (showBilling: boolean) => [
   {
     title: "Overview",
     url: "/dashboard",
@@ -44,11 +44,15 @@ const companyMain = [
     url: "/dashboard/shortlisted",
     icon: <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-4" />,
   },
-  {
-    title: "Billing",
-    url: "/dashboard/billing",
-    icon: <HugeiconsIcon icon={CreditCardIcon} strokeWidth={2} className="size-4" />,
-  },
+  ...(showBilling
+    ? [
+        {
+          title: "Billing",
+          url: "/dashboard/billing",
+          icon: <HugeiconsIcon icon={CreditCardIcon} strokeWidth={2} className="size-4" />,
+        },
+      ]
+    : []),
   {
     title: "Settings",
     url: "/dashboard/settings",
@@ -87,15 +91,17 @@ const candidateMain = [
 export function AppSidebar({
   user,
   isCompany,
+  membershipRole,
   atLimit,
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
   user: User;
   isCompany: boolean;
+  membershipRole: string | null;
   atLimit: boolean;
 }) {
   const { signOut, isSigningOut } = useAuth();
-  const mainItems = isCompany ? companyMain : candidateMain;
+  const mainItems = isCompany ? buildCompanyMain(membershipRole === "owner") : candidateMain;
 
   return (
     <Sidebar collapsible="offcanvas" {...props} variant="floating">
