@@ -203,19 +203,21 @@ export async function checkAndLaunchBatch(jobId: string): Promise<PoolCheckResul
  */
 export async function releaseBatchAndNotify(batchId: string): Promise<BatchReleaseSummary> {
   const summary = await releaseBatch(getDb(), batchId);
-  if (!summary.released || !summary.notificationId || !summary.ownerEmail) {
+  if (!summary.released || summary.notificationDeliveries.length === 0) {
     return summary;
   }
 
-  await sendBatchDigestEmail({
-    notificationId: summary.notificationId,
-    to: summary.ownerEmail,
-    batchId,
-    jobTitle: summary.jobTitle,
-    reportCount: summary.reportCount,
-    topScore: summary.topScore,
-    topCandidateName: summary.topCandidateName,
-  });
+  for (const delivery of summary.notificationDeliveries) {
+    await sendBatchDigestEmail({
+      notificationId: delivery.notification.id,
+      to: delivery.email,
+      batchId,
+      jobTitle: summary.jobTitle,
+      reportCount: summary.reportCount,
+      topScore: summary.topScore,
+      topCandidateName: summary.topCandidateName,
+    });
+  }
 
   return summary;
 }

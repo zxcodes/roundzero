@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getUserById } from "@/features/auth/queries/queries_sql";
 import { getCandidateProfileByUserId } from "@/features/candidates/queries/queries_sql";
 import { getCompanyById, getCompanyByMemberUserId } from "@/features/companies/queries/queries_sql";
+import { notifyCompanyTeam } from "@/features/companies/services/company-team-notifications";
 import {
   createInterview,
   getInterviewByApplicationId,
@@ -392,17 +393,16 @@ export const withdrawApplicationWorkflow = async (
         candidateName: user.name,
       });
 
-      const notification = await createNotification(db, {
-        userId: company.ownerId,
+      const deliveries = await notifyCompanyTeam(db, {
+        companyId: company.id,
         type: "application_withdrawn",
         payload,
       });
 
-      if (notification) {
-        const owner = await getUserById(db, { id: company.ownerId });
+      for (const delivery of deliveries) {
         await deliverNotificationEmail(db, {
-          notification,
-          recipient: owner ? { email: owner.email } : null,
+          notification: delivery.notification,
+          recipient: { email: delivery.email },
           sendEmail: options?.sendNotificationEmail ?? sendNotificationEmailViaResend,
         });
       }

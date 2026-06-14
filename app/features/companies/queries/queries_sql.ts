@@ -473,6 +473,94 @@ export async function removeCompanyMember(sql: Sql, args: removeCompanyMemberArg
     };
 }
 
+export const listCompanyNotificationRecipientsQuery = `-- name: listCompanyNotificationRecipients :many
+SELECT u.id AS user_id, u.email
+FROM company_members cm
+JOIN users u ON u.id = cm.user_id AND u.deleted_at IS NULL
+WHERE cm.company_id = $1
+  AND cm.status = 'active'
+  AND cm.role IN ('owner', 'admin')
+ORDER BY CASE cm.role WHEN 'owner' THEN 0 ELSE 1 END, cm.joined_at ASC`;
+
+export interface listCompanyNotificationRecipientsArgs {
+    companyId: string;
+}
+
+export interface listCompanyNotificationRecipientsRow {
+    userId: string;
+    email: string;
+}
+
+export async function listCompanyNotificationRecipients(sql: Sql, args: listCompanyNotificationRecipientsArgs): Promise<listCompanyNotificationRecipientsRow[]> {
+    return (await sql.unsafe(listCompanyNotificationRecipientsQuery, [args.companyId]).values()).map(row => ({
+        userId: row[0],
+        email: row[1]
+    }));
+}
+
+export const updateCompanyMemberRoleQuery = `-- name: updateCompanyMemberRole :one
+UPDATE company_members
+SET role = $1,
+    updated_at = now()
+WHERE id = $2
+  AND company_id = $3
+  AND status = 'active'
+RETURNING id, user_id, role`;
+
+export interface updateCompanyMemberRoleArgs {
+    role: string;
+    id: string;
+    companyId: string;
+}
+
+export interface updateCompanyMemberRoleRow {
+    id: string;
+    userId: string;
+    role: string;
+}
+
+export async function updateCompanyMemberRole(sql: Sql, args: updateCompanyMemberRoleArgs): Promise<updateCompanyMemberRoleRow | null> {
+    const rows = await sql.unsafe(updateCompanyMemberRoleQuery, [args.role, args.id, args.companyId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        userId: row[1],
+        role: row[2]
+    };
+}
+
+export const updateCompanyOwnerQuery = `-- name: updateCompanyOwner :one
+UPDATE companies
+SET owner_id = $1,
+    updated_at = now()
+WHERE id = $2
+RETURNING id, owner_id`;
+
+export interface updateCompanyOwnerArgs {
+    ownerId: string;
+    id: string;
+}
+
+export interface updateCompanyOwnerRow {
+    id: string;
+    ownerId: string;
+}
+
+export async function updateCompanyOwner(sql: Sql, args: updateCompanyOwnerArgs): Promise<updateCompanyOwnerRow | null> {
+    const rows = await sql.unsafe(updateCompanyOwnerQuery, [args.ownerId, args.id]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        ownerId: row[1]
+    };
+}
+
 export const createInvitationQuery = `-- name: createInvitation :one
 INSERT INTO company_invitations (company_id, email, role, token, invited_by, expires_at)
 VALUES ($1, $2, $3, $4, $5, $6)

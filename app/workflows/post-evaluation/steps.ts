@@ -6,7 +6,7 @@ import { jsx } from "react/jsx-runtime";
 import { Resend } from "resend";
 import { z } from "zod";
 import { updateApplicationStatus } from "@/features/applications/queries/queries_sql";
-import { getUserById } from "@/features/auth/queries/queries_sql";
+import { notifyCompanyTeam } from "@/features/companies/services/company-team-notifications";
 import {
   getCommunicationAssessmentByInterviewId,
   getInterviewContextById,
@@ -20,9 +20,9 @@ import {
   type ScreeningCoverage,
 } from "@/features/interviews/shared/runtime";
 import { loadVoiceAssessmentContext } from "@/features/interviews/shared/voice-runtime";
+import { getJobById } from "@/features/jobs/queries/queries_sql";
 import { ReportReadyEmailTemplate } from "@/features/notifications/components/report-ready-email-template";
 import {
-  createNotification,
   markNotificationEmailDelivered,
   markNotificationEmailFailed,
   markNotificationEmailSkipped,
@@ -538,7 +538,6 @@ export function notifyReportReady(
       jobId: string;
       jobTitle: string;
       candidateName: string;
-      companyOwnerId: string;
     };
   },
   reportDraft: { scores: { overall: number } },
@@ -546,7 +545,13 @@ export function notifyReportReady(
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
   return async () => {
-    log.info("Creating report_ready notification for company");
+    log.info("Creating report_ready notifications for company team");
+
+    const job = await getJobById(db, { id: interviewData.interview.jobId });
+    if (!job) {
+      log.warn("Job not found, skipping report_ready notifications");
+      return [];
+    }
 
     const payload = notificationPayloadSchemas.report_ready.parse({
       applicationId: interviewData.interview.applicationId,
@@ -556,8 +561,8 @@ export function notifyReportReady(
       score: reportDraft.scores.overall,
     });
 
-    return await createNotification(db, {
-      userId: interviewData.interview.companyOwnerId,
+    return await notifyCompanyTeam(db, {
+      companyId: job.companyId,
       type: "report_ready",
       payload,
     });
@@ -570,17 +575,16 @@ export function sendReportReadyEmail(
       applicationId: string;
       jobTitle: string;
       candidateName: string;
-      companyOwnerId: string;
     };
   },
-  notification: { id: string } | null,
+  deliveries: { notification: { id: string }; email: string }[],
   reportDraft: { scores: { overall: number }; recommendation: Recommendation },
   db: Sql,
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
   return async () => {
-    if (!notification) {
-      log.warn("No notification created, skipping email");
+    if (deliveries.length === 0) {
+      log.warn("No notifications created, skipping email");
       return;
     }
 
@@ -589,62 +593,65 @@ export function sendReportReadyEmail(
 
     if (!resendApiKey || !resendFromEmail) {
       log.info("Resend not configured, skipping email delivery");
-      await markNotificationEmailSkipped(db, {
-        id: notification.id,
-        reason: "Email delivery is not configured",
-      });
+      for (const delivery of deliveries) {
+        await markNotificationEmailSkipped(db, {
+          id: delivery.notification.id,
+          reason: "Email delivery is not configured",
+        });
+      }
       return;
     }
 
-    const owner = await getUserById(db, { id: interviewData.interview.companyOwnerId });
-    if (!owner?.email) {
-      log.warn("Company owner email not found, skipping email");
-      await markNotificationEmailSkipped(db, {
-        id: notification.id,
-        reason: "Recipient email unavailable",
-      });
-      return;
-    }
+    const resend = new Resend(resendApiKey);
+    const appUrl = env.APP_URL ?? "";
+    const reportUrl = appUrl
+      ? new URL(
+          `/dashboard/applicant-reports/${interviewData.interview.applicationId}`,
+          appUrl,
+        ).toString()
+      : "";
 
-    try {
-      const resend = new Resend(resendApiKey);
-      const appUrl = env.APP_URL ?? "";
-      const reportUrl = appUrl
-        ? new URL(
-            `/dashboard/applicant-reports/${interviewData.interview.applicationId}`,
-            appUrl,
-          ).toString()
-        : "";
-
-      const response = await resend.emails.send({
-        from: `RoundZero <${resendFromEmail}>`,
-        to: owner.email,
-        subject: `Evaluation ready for ${interviewData.interview.candidateName}`,
-        react: jsx(ReportReadyEmailTemplate, {
-          candidateName: interviewData.interview.candidateName,
-          jobTitle: interviewData.interview.jobTitle,
-          overallScore: Math.round(reportDraft.scores.overall),
-          recommendation: reportDraft.recommendation,
-          reportUrl,
-        }),
-      });
-
-      if (response.error) {
-        throw new Error(response.error.message);
+    for (const delivery of deliveries) {
+      if (!delivery.email) {
+        log.warn("Recipient email unavailable, skipping email");
+        await markNotificationEmailSkipped(db, {
+          id: delivery.notification.id,
+          reason: "Recipient email unavailable",
+        });
+        continue;
       }
 
-      await markNotificationEmailDelivered(db, {
-        id: notification.id,
-        providerMessageId: response.data?.id ?? null,
-      });
-      log.info(`Report ready email sent to ${owner.email}`);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown email delivery failure";
-      log.error(`Failed to send report ready email: ${message}`);
-      await markNotificationEmailFailed(db, {
-        id: notification.id,
-        errorMessage: message,
-      });
+      try {
+        const response = await resend.emails.send({
+          from: `RoundZero <${resendFromEmail}>`,
+          to: delivery.email,
+          subject: `Evaluation ready for ${interviewData.interview.candidateName}`,
+          react: jsx(ReportReadyEmailTemplate, {
+            candidateName: interviewData.interview.candidateName,
+            jobTitle: interviewData.interview.jobTitle,
+            overallScore: Math.round(reportDraft.scores.overall),
+            recommendation: reportDraft.recommendation,
+            reportUrl,
+          }),
+        });
+
+        if (response.error) {
+          throw new Error(response.error.message);
+        }
+
+        await markNotificationEmailDelivered(db, {
+          id: delivery.notification.id,
+          providerMessageId: response.data?.id ?? null,
+        });
+        log.info(`Report ready email sent to ${delivery.email}`);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unknown email delivery failure";
+        log.error(`Failed to send report ready email: ${message}`);
+        await markNotificationEmailFailed(db, {
+          id: delivery.notification.id,
+          errorMessage: message,
+        });
+      }
     }
   };
 }

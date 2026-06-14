@@ -43,6 +43,8 @@ export const cleanTestData = async () => {
       interviews,
       job_batches,
       notifications,
+      company_invitations,
+      company_members,
       applications,
       jobs,
       candidate_profiles,
