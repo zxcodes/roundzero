@@ -137,12 +137,13 @@ export async function checkAndLaunchBatch(jobId: string): Promise<PoolCheckResul
     });
 
     const candidateIds = candidatesToInvite.map((c) => c.candidateId);
-    const users = candidateIds.length > 0
-      ? await transaction.unsafe<Array<{ id: string; email: string | null }>>(
-          `SELECT id, email FROM users WHERE id = ANY($1::uuid[])`,
-          [candidateIds],
-        )
-      : [];
+    const users =
+      candidateIds.length > 0
+        ? await transaction.unsafe<Array<{ id: string; email: string | null }>>(
+            `SELECT id, email FROM users WHERE id = ANY($1::uuid[])`,
+            [candidateIds],
+          )
+        : [];
     const userMap = new Map(users.map((u) => [u.id, u]));
 
     for (const candidate of candidatesToInvite) {
