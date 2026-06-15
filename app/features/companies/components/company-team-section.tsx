@@ -192,7 +192,7 @@ export function CompanyTeamSection({
               e.stopPropagation();
               void form.handleSubmit();
             }}
-            className="flex flex-col gap-4 sm:flex-row sm:items-end"
+            className="space-y-4"
           >
             <form.Field
               name="email"
@@ -210,7 +210,7 @@ export function CompanyTeamSection({
               {(field) => {
                 const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
                 return (
-                  <Field data-invalid={isInvalid} className="flex-1">
+                  <Field data-invalid={isInvalid}>
                     <FieldLabel htmlFor={emailId}>Email</FieldLabel>
                     <Input
                       id={emailId}
@@ -227,45 +227,48 @@ export function CompanyTeamSection({
               }}
             </form.Field>
 
-            <form.Field name="role">
-              {(field) => (
-                <Field className="w-full sm:w-40">
-                  <FieldLabel htmlFor={roleId}>Role</FieldLabel>
-                  <Select
-                    value={field.state.value}
-                    onValueChange={(value) => field.handleChange(value as "admin" | "member")}
-                  >
-                    <SelectTrigger id={roleId}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="member">Member</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </Field>
-              )}
-            </form.Field>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+              <form.Field name="role">
+                {(field) => (
+                  <Field className="w-full sm:w-40">
+                    <FieldLabel htmlFor={roleId}>Role</FieldLabel>
+                    <Select
+                      value={field.state.value}
+                      onValueChange={(value) => field.handleChange(value as "admin" | "member")}
+                    >
+                      <SelectTrigger id={roleId}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="member">Member</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                )}
+              </form.Field>
 
-            <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-              {([canSubmit, isSubmitting]) => (
-                <Button
-                  type="submit"
-                  disabled={!canSubmit || isSubmitting || inviteMutation.isPending}
-                >
-                  {isSubmitting || inviteMutation.isPending ? (
-                    <HugeiconsIcon
-                      icon={Loading03Icon}
-                      strokeWidth={2}
-                      className="size-4 animate-spin"
-                    />
-                  ) : (
-                    <HugeiconsIcon icon={Mail01Icon} strokeWidth={2} className="size-4" />
-                  )}
-                  Send invite
-                </Button>
-              )}
-            </form.Subscribe>
+              <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+                {([canSubmit, isSubmitting]) => (
+                  <Button
+                    type="submit"
+                    className="w-full sm:w-auto"
+                    disabled={!canSubmit || isSubmitting || inviteMutation.isPending}
+                  >
+                    {isSubmitting || inviteMutation.isPending ? (
+                      <HugeiconsIcon
+                        icon={Loading03Icon}
+                        strokeWidth={2}
+                        className="size-4 animate-spin"
+                      />
+                    ) : (
+                      <HugeiconsIcon icon={Mail01Icon} strokeWidth={2} className="size-4" />
+                    )}
+                    Send invite
+                  </Button>
+                )}
+              </form.Subscribe>
+            </div>
           </form>
         </CardContent>
       </Card>
