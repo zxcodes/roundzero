@@ -16,6 +16,7 @@ import {
   reactivateCompanyMember,
   removeCompanyMember,
   resetInvitationForResend,
+  revokeExpiredInvitationsByEmail,
   revokeInvitation as revokeInvitationQuery,
   updateCompanyMemberRole,
   updateCompanyOwner,
@@ -628,6 +629,36 @@ describe("company invitations", () => {
     expect(listed).toHaveLength(0);
   });
 
+  it("revokeExpiredInvitationsByEmail clears stale rows so a new invite can be created", async () => {
+    const { company, owner } = await seedCompany();
+    const expiredAt = new Date(Date.now() - 60_000);
+
+    await createInvitation(sql, {
+      companyId: company.id,
+      email: "stale@acme.com",
+      role: "member",
+      token: "stale-token",
+      invitedBy: owner.id,
+      expiresAt: expiredAt,
+    });
+
+    await revokeExpiredInvitationsByEmail(sql, {
+      companyId: company.id,
+      email: "stale@acme.com",
+    });
+
+    const fresh = await createInvitation(sql, {
+      companyId: company.id,
+      email: "stale@acme.com",
+      role: "admin",
+      token: "fresh-token",
+      invitedBy: owner.id,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    });
+    expect(fresh).not.toBeNull();
+    expect(fresh!.role).toBe("admin");
+  });
+
   it("marks invitation accepted and detects existing members by email", async () => {
     const { company, owner } = await seedCompany();
     const teammate = await seedUser({ role: "company", email: "member@acme.com" });
@@ -782,5 +813,131 @@ describe("company team management", () => {
     });
     expect(removed).not.toBeNull();
     expect(await getActiveMembershipByUserId(sql, { userId: member.id })).toBeNull();
+  });
+
+  it("does not remove the company owner", async () => {
+    const { company, owner } = await seedCompany();
+    const ownerMembership = await getActiveMembershipByUserId(sql, { userId: owner.id });
+
+    const removed = await removeCompanyMember(sql, {
+      id: ownerMembership!.id,
+      companyId: company.id,
+    });
+    expect(removed).toBeNull();
+  });
+
+  it("reactivateCompanyMember returns null when membership is not removed", async () => {
+    const { company } = await seedCompany();
+    const member = await seedUser({ role: "company" });
+
+    await createCompanyMember(sql, {
+      companyId: company.id,
+      userId: member.id,
+      role: "member",
+      invitedBy: null,
+    });
+
+    const result = await reactivateCompanyMember(sql, {
+      role: "admin",
+      invitedBy: null,
+      companyId: company.id,
+      userId: member.id,
+    });
+    expect(result).toBeNull();
+  });
+});
+
+describe("invitation edge cases", () => {
+  it("revokeInvitation returns null for already accepted invitations", async () => {
+    const { company, owner } = await seedCompany();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    const invitation = await createInvitation(sql, {
+      companyId: company.id,
+      email: "accepted@acme.com",
+      role: "member",
+      token: "accepted-revoke",
+      invitedBy: owner.id,
+      expiresAt,
+    });
+
+    await markInvitationAccepted(sql, { id: invitation!.id });
+
+    const revoked = await revokeInvitationQuery(sql, {
+      id: invitation!.id,
+      companyId: company.id,
+    });
+    expect(revoked).toBeNull();
+  });
+
+  it("markInvitationAccepted returns null on second accept", async () => {
+    const { company, owner } = await seedCompany();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    const invitation = await createInvitation(sql, {
+      companyId: company.id,
+      email: "double-accept@acme.com",
+      role: "member",
+      token: "double-accept",
+      invitedBy: owner.id,
+      expiresAt,
+    });
+
+    const first = await markInvitationAccepted(sql, { id: invitation!.id });
+    expect(first).not.toBeNull();
+
+    const second = await markInvitationAccepted(sql, { id: invitation!.id });
+    expect(second).toBeNull();
+  });
+
+  it("revokeInvitation returns null for already revoked invitations", async () => {
+    const { company, owner } = await seedCompany();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    const invitation = await createInvitation(sql, {
+      companyId: company.id,
+      email: "already-revoked@acme.com",
+      role: "member",
+      token: "already-revoked",
+      invitedBy: owner.id,
+      expiresAt,
+    });
+
+    const first = await revokeInvitationQuery(sql, {
+      id: invitation!.id,
+      companyId: company.id,
+    });
+    expect(first).not.toBeNull();
+
+    const second = await revokeInvitationQuery(sql, {
+      id: invitation!.id,
+      companyId: company.id,
+    });
+    expect(second).toBeNull();
+  });
+
+  it("blocks duplicate pending invitations for the same email via unique index", async () => {
+    const { company, owner } = await seedCompany();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    await createInvitation(sql, {
+      companyId: company.id,
+      email: "duplicate-pending@acme.com",
+      role: "member",
+      token: "dup-pending-1",
+      invitedBy: owner.id,
+      expiresAt,
+    });
+
+    await expect(
+      createInvitation(sql, {
+        companyId: company.id,
+        email: "duplicate-pending@acme.com",
+        role: "admin",
+        token: "dup-pending-2",
+        invitedBy: owner.id,
+        expiresAt,
+      }),
+    ).rejects.toThrow();
   });
 });
