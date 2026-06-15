@@ -420,6 +420,14 @@
   color: var(--muted-foreground);
 }
 
+.calm .highlight {
+  border-radius: 0.25rem;
+  background: oklch(0.45 0.13 28 / 0.14);
+  padding: 0.08em 0.32em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
 .calm-hero {
   background: radial-gradient(75% 62% at 50% -14%, oklch(0.92 0.004 264 / 0.9), transparent 70%);
 }

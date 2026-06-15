@@ -48,7 +48,7 @@ function HomePage() {
       <a href="#main-content" className="calm-skip-link">
         Skip to main content
       </a>
-      <PublicHeader />
+      <PublicHeader marketing />
       <main id="main-content">
         <Hero />
         <ValueStrip />
@@ -69,6 +69,27 @@ function HomePage() {
 // Shared primitives
 // ───────────────────────────────────────────────────────────────────────────
 const CONTAINER = "mx-auto w-full max-w-6xl px-6 lg:px-8";
+const SECTION_PAD = "py-20 lg:py-28";
+
+function Highlight({ children }: { children: React.ReactNode }) {
+  return <span className="highlight">{children}</span>;
+}
+
+function AnnouncementPill() {
+  return (
+    <div className="mb-6 inline-flex max-w-full flex-wrap items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 shadow-sm">
+      <span className="rounded-full bg-brand/15 px-2 py-0.5 font-mono text-[10px] font-medium uppercase tracking-wider text-brand">
+        New
+      </span>
+      <span className="text-xs text-muted-foreground">Voice assessments in every report</span>
+      <HugeiconsIcon
+        icon={ArrowRight01Icon}
+        strokeWidth={2}
+        className="size-3.5 shrink-0 text-brand"
+      />
+    </div>
+  );
+}
 
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
@@ -107,7 +128,7 @@ function SectionHeading({
 
 function PrimaryCta({ to, children }: { to: string; children: React.ReactNode }) {
   return (
-    <Button size="lg" className="rounded-lg" asChild>
+    <Button size="lg" className="rounded-full" asChild>
       <Link to={to}>
         {children}
         <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} />
@@ -118,7 +139,7 @@ function PrimaryCta({ to, children }: { to: string; children: React.ReactNode })
 
 function SecondaryCta({ to, children }: { to: string; children: React.ReactNode }) {
   return (
-    <Button size="lg" variant="outline" className="rounded-lg" asChild>
+    <Button size="lg" variant="outline" className="rounded-full" asChild>
       <Link to={to}>{children}</Link>
     </Button>
   );
@@ -141,12 +162,13 @@ function ScoreBar({ value }: { value: number }) {
 function Hero() {
   return (
     <section className="calm-hero relative overflow-hidden">
-      <div className={cn(CONTAINER, "py-16 lg:py-24")}>
-        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-12">
+      <div className={cn(CONTAINER, SECTION_PAD)}>
+        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-16">
           <div className="rise max-w-xl">
+            <AnnouncementPill />
             <Eyebrow>Async AI interviews · Ranked reports</Eyebrow>
-            <h1 className="mt-6 text-[clamp(2.4rem,5.2vw,4.25rem)] font-semibold leading-[1.02] tracking-[-0.035em]">
-              Replace your first interview round with <span className="text-brand">AI</span>
+            <h1 className="mt-6 text-[clamp(2.6rem,5.6vw,4.75rem)] font-bold leading-[1.02] tracking-[-0.035em]">
+              Replace your first interview round with <Highlight>AI</Highlight>
             </h1>
             <p className="mt-6 max-w-lg text-[clamp(1.05rem,1.4vw,1.2rem)] leading-relaxed text-muted-foreground">
               Post a job and get ranked candidates with structured, evidence-backed reports. No
@@ -160,7 +182,9 @@ function Hero() {
           </div>
 
           <div className="rise">
-            <HeroProductWindow />
+            <div className="rounded-3xl bg-secondary/80 p-3 sm:p-4 lg:p-5">
+              <HeroProductWindow />
+            </div>
           </div>
         </div>
       </div>
@@ -264,14 +288,14 @@ const valueProps = [
 
 function ValueStrip() {
   return (
-    <section className="border-t border-border">
+    <section className="border-t border-border bg-secondary/40">
       <div className={CONTAINER}>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           {valueProps.map((v, i) => (
             <div
               key={v.label}
               className={cn(
-                "py-8 sm:px-6 lg:py-10",
+                "py-10 sm:px-6 lg:py-12",
                 i !== 0 ? "border-t border-border sm:border-t-0 sm:border-l" : "",
                 i === 2 ? "sm:border-t lg:border-t-0 lg:border-l" : "",
                 i === 0 ? "lg:pl-0" : "",
@@ -317,7 +341,7 @@ const steps = [
 function HowItWorks() {
   return (
     <section className="border-t border-border">
-      <div className={cn(CONTAINER, "py-16 lg:py-24")}>
+      <div className={cn(CONTAINER, SECTION_PAD)}>
         <SectionHeading
           eyebrow="The flow"
           title="How it works"
@@ -376,13 +400,17 @@ const voiceDims = [
 
 function CandidateExperience() {
   return (
-    <section className="border-t border-border">
-      <div className={cn(CONTAINER, "py-16 lg:py-24")}>
+    <section className="border-t border-border bg-secondary/40">
+      <div className={cn(CONTAINER, SECTION_PAD)}>
         <div className="grid grid-cols-1 gap-x-12 gap-y-12 lg:grid-cols-2">
           <div>
             <SectionHeading
               eyebrow="The interview"
-              title="A conversation, not a quiz"
+              title={
+                <>
+                  A conversation, not a <Highlight>quiz</Highlight>
+                </>
+              }
               lead="Zero validates claims, probes vague answers, and adapts to the role — the way a senior interviewer would."
             />
 
@@ -513,7 +541,7 @@ const reportScores = [
 function ReportSection() {
   return (
     <section className="border-t border-border">
-      <div className={cn(CONTAINER, "py-16 lg:py-24")}>
+      <div className={cn(CONTAINER, SECTION_PAD)}>
         <div className="grid grid-cols-1 gap-x-12 gap-y-12 lg:grid-cols-12">
           <div className="lg:col-span-5">
             <SectionHeading
@@ -615,12 +643,16 @@ function recClass(rec: string) {
 function RankingSection() {
   return (
     <section className="border-t border-border">
-      <div className={cn(CONTAINER, "py-16 lg:py-24")}>
+      <div className={cn(CONTAINER, SECTION_PAD)}>
         <div className="grid grid-cols-1 gap-x-12 gap-y-10 lg:grid-cols-12">
           <div className="lg:col-span-4">
             <SectionHeading
               eyebrow="Ranking"
-              title="Ranked, not filtered"
+              title={
+                <>
+                  Ranked, not <Highlight>filtered</Highlight>
+                </>
+              }
               lead="After RoundZero you don't see applicants — you see ranked candidates, ordered by real evaluation rather than keyword matches or résumé polish."
             />
           </div>
@@ -719,7 +751,7 @@ function TierCta({ tier, className }: { tier: Tier; className?: string }) {
       <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} />
     </>
   );
-  const classes = cn("w-full rounded-lg", className);
+  const classes = cn("w-full rounded-full", className);
   if (tier.href.startsWith("mailto:")) {
     return (
       <Button variant={tier.featured ? "default" : "outline"} className={classes} asChild>
@@ -737,7 +769,7 @@ function TierCta({ tier, className }: { tier: Tier; className?: string }) {
 function PricingSection() {
   return (
     <section className="border-t border-border">
-      <div className={cn(CONTAINER, "py-16 lg:py-24")}>
+      <div className={cn(CONTAINER, SECTION_PAD)}>
         <SectionHeading
           eyebrow="Pricing"
           title="Pricing, plainly stated"
@@ -990,7 +1022,7 @@ const faq = [
 function FaqSection() {
   return (
     <section className="border-t border-border">
-      <div className={cn(CONTAINER, "py-16 lg:py-24")}>
+      <div className={cn(CONTAINER, SECTION_PAD)}>
         <div className="grid grid-cols-1 gap-x-12 gap-y-8 lg:grid-cols-12">
           <div className="lg:col-span-4">
             <SectionHeading
@@ -1027,11 +1059,11 @@ function FaqSection() {
 function Closing() {
   return (
     <section className="border-t border-border">
-      <div className={cn(CONTAINER, "py-20 lg:py-28")}>
+      <div className={cn(CONTAINER, SECTION_PAD)}>
         <div className="mx-auto max-w-2xl text-center">
           <Eyebrow>Get started</Eyebrow>
           <h2 className="mt-5 text-[clamp(2rem,4.4vw,3.5rem)] font-semibold leading-[1.04] tracking-[-0.03em]">
-            Run RoundZero before <span className="text-brand">round one</span>
+            Run RoundZero before <Highlight>round one</Highlight>
           </h2>
           <p className="mx-auto mt-5 max-w-md text-[clamp(1rem,1.4vw,1.15rem)] leading-relaxed text-muted-foreground">
             Start replacing your first interview round today — post a job and let evaluated
