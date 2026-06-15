@@ -561,7 +561,7 @@ describe("application access control", () => {
       jobId: job.id,
       candidateId: candidate.id,
       resumeKey: makeTestResumeKey(candidate.id),
-      metadata: { headline: "Backend Engineer" },
+      metadata: {},
       status: "applied",
     });
 
