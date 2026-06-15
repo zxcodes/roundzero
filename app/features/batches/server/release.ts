@@ -12,7 +12,11 @@ import {
   releaseBatchReports,
   updateBatchStatus,
 } from "@/features/batches/queries/queries_sql";
-import { createNotification } from "@/features/notifications/queries/queries_sql";
+import {
+  type CompanyTeamNotificationDelivery,
+  notifyCompanyTeam,
+} from "@/features/companies/services/company-team-notifications";
+import { asSqlTransaction } from "@/shared/db-transaction";
 import { notificationPayloadSchemas } from "@/shared/notifications-config";
 
 export type BatchReleaseSummary =
@@ -21,11 +25,10 @@ export type BatchReleaseSummary =
       released: true;
       jobId: string;
       jobTitle: string;
-      ownerEmail: string | null;
       reportCount: number;
       topScore: number | null;
       topCandidateName: string | null;
-      notificationId: string | null;
+      notificationDeliveries: CompanyTeamNotificationDelivery[];
     };
 
 /** Release a batch: move evaluated_held -> evaluated, set released_at, send notification.
@@ -34,7 +37,7 @@ export type BatchReleaseSummary =
  */
 export async function releaseBatch(sql: Sql, batchId: string): Promise<BatchReleaseSummary> {
   return await sql.begin(async (tx) => {
-    const transaction = tx as unknown as Sql;
+    const transaction = asSqlTransaction(tx);
 
     const lockedBatch = await getBatchForUpdate(transaction, { id: batchId });
     if (!lockedBatch) {
@@ -60,11 +63,10 @@ export async function releaseBatch(sql: Sql, batchId: string): Promise<BatchRele
         released: true,
         jobId: lockedBatch.jobId,
         jobTitle: ownerInfo?.jobTitle ?? "",
-        ownerEmail: ownerInfo?.ownerEmail ?? null,
         reportCount: heldReports.length,
         topScore: null,
         topCandidateName: null,
-        notificationId: null,
+        notificationDeliveries: [],
       };
     }
 
@@ -83,8 +85,8 @@ export async function releaseBatch(sql: Sql, batchId: string): Promise<BatchRele
       topCandidateName: topCandidateName ?? undefined,
     });
 
-    const notification = await createNotification(transaction, {
-      userId: ownerInfo.ownerId,
+    const notificationDeliveries = await notifyCompanyTeam(transaction, {
+      companyId: ownerInfo.companyId,
       type: "batch_ready",
       payload,
     });
@@ -93,11 +95,10 @@ export async function releaseBatch(sql: Sql, batchId: string): Promise<BatchRele
       released: true,
       jobId: ownerInfo.jobId,
       jobTitle: ownerInfo.jobTitle,
-      ownerEmail: ownerInfo.ownerEmail,
       reportCount: heldReports.length,
       topScore,
       topCandidateName,
-      notificationId: notification?.id ?? null,
+      notificationDeliveries,
     };
   });
 }

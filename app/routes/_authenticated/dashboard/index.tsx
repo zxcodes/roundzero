@@ -820,13 +820,14 @@ function RecentActivitySection({ activity }: { activity: RecentActivityItem[] })
 function DashboardIndexPage() {
   const auth = useLoaderData({ from: "/_authenticated" });
   const user = auth.user;
-  const isCompany = auth.type === "company";
   const isCandidate = auth.type === "candidate";
   const { metrics } = Route.useLoaderData();
   const candidateProfile = auth.type === "candidate" ? auth.candidateProfile : null;
   const company = auth.type === "company" ? auth.company : null;
   const showResumeBanner = isCandidate && candidateProfile && !candidateProfile.resumeKey;
-  const showCompanyLogoBanner = isCompany && company && !company.logoKey;
+  const canManageCompanyProfile =
+    auth.type === "company" && (auth.membershipRole === "owner" || auth.membershipRole === "admin");
+  const showCompanyLogoBanner = canManageCompanyProfile && company != null && !company.logoKey;
 
   const welcomeMessage = (() => {
     if (metrics.type === "company") {

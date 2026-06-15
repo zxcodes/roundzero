@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { getTestDb } from "@/shared/__tests__/test-utils";
-import { getUserById, setUserRole, softDeleteUser, upsertUserByGoogleId } from "../queries_sql";
+import {
+  clearUserRole,
+  getUserById,
+  setUserRole,
+  softDeleteUser,
+  upsertUserByGoogleId,
+} from "../queries_sql";
 
 const sql = getTestDb();
 
@@ -127,5 +133,21 @@ describe("setUserRole", () => {
     // Confirm role didn't change
     const check = await getUserById(sql, { id: user!.id });
     expect(check!.role).toBe("company");
+  });
+});
+
+describe("clearUserRole", () => {
+  it("clears an existing company role", async () => {
+    const user = await upsertUserByGoogleId(sql, {
+      email: "orphan@example.com",
+      name: "Orphan",
+      picture: null,
+      googleId: "google-orphan",
+    });
+    await setUserRole(sql, { role: "company", id: user!.id });
+
+    const cleared = await clearUserRole(sql, { id: user!.id });
+    expect(cleared).not.toBeNull();
+    expect(cleared!.role).toBeNull();
   });
 });

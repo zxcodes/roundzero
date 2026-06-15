@@ -3,8 +3,8 @@ import { zodValidator } from "@tanstack/zod-adapter";
 import { generateText, Output } from "ai";
 import { z } from "zod";
 import { hasActiveSubscription } from "@/features/billing/config";
-import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
-import { createNotification } from "@/features/notifications/queries/queries_sql";
+import { getCompanyByMemberUserId } from "@/features/companies/queries/membership-queries_sql";
+import { notifyCompanyTeam } from "@/features/companies/services/company-team-notifications";
 import { getDb } from "@/shared/db";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
 import { createChatModel } from "@/shared/openrouter";
@@ -87,7 +87,7 @@ export const getMyJobsWithPipeline = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const db = getDb();
     await db.unsafe(closeExpiredJobsQuery);
-    const company = await getCompanyByOwnerId(db, { ownerId: context.userId });
+    const company = await getCompanyByMemberUserId(db, { userId: context.userId });
     if (!company) {
       return [];
     }
@@ -98,7 +98,7 @@ export const getMyArchivedJobs = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
     const db = getDb();
-    const company = await getCompanyByOwnerId(db, { ownerId: context.userId });
+    const company = await getCompanyByMemberUserId(db, { userId: context.userId });
     if (!company) {
       return [];
     }
@@ -117,9 +117,9 @@ export const getJob = createServerFn({ method: "GET" })
       return null;
     }
 
-    // Non-open jobs are only visible to the company owner
+    // Non-open jobs are only visible to company members
     if (job.status !== "open") {
-      const company = await getCompanyByOwnerId(db, { ownerId: context.userId });
+      const company = await getCompanyByMemberUserId(db, { userId: context.userId });
       if (!company || company.id !== job.companyId) {
         return null;
       }
@@ -184,9 +184,8 @@ export const archiveJob = createServerFn({ method: "POST" })
       throw new Error("Job not found, not authorized, or already archived");
     }
 
-    // Create notification for job archived
-    await createNotification(db, {
-      userId: context.userId,
+    await notifyCompanyTeam(db, {
+      companyId: context.company.id,
       type: "job_archived",
       payload: {
         jobId: archived.id,
@@ -250,9 +249,8 @@ export const publishJob = createServerFn({ method: "POST" })
       throw new Error("Failed to publish job");
     }
 
-    // Create notification for job published
-    await createNotification(db, {
-      userId: context.userId,
+    await notifyCompanyTeam(db, {
+      companyId: context.company.id,
       type: "job_published",
       payload: {
         jobId: updated.id,
@@ -334,7 +332,7 @@ export const getMyJobCounts = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
     const db = getDb();
-    const company = await getCompanyByOwnerId(db, { ownerId: context.userId });
+    const company = await getCompanyByMemberUserId(db, { userId: context.userId });
     if (!company) {
       return { openCount: 0, draftCount: 0, totalCount: 0 };
     }

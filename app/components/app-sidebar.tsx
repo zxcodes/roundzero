@@ -7,6 +7,7 @@ import {
   House01Icon,
   Search01Icon,
   Setting06Icon,
+  UserGroupIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
@@ -26,9 +27,10 @@ import {
 import { useAuth } from "@/features/auth/provider";
 import { FeedbackDialog } from "@/features/feedback/components/feedback-dialog";
 import type { User } from "@/router";
+import type { CompanyMemberRole } from "@/shared/enums";
 import { Logo } from "./public-layout";
 
-const companyMain = [
+const buildCompanyMain = (showBilling: boolean, showTeam: boolean) => [
   {
     title: "Overview",
     url: "/dashboard",
@@ -44,11 +46,24 @@ const companyMain = [
     url: "/dashboard/shortlisted",
     icon: <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-4" />,
   },
-  {
-    title: "Billing",
-    url: "/dashboard/billing",
-    icon: <HugeiconsIcon icon={CreditCardIcon} strokeWidth={2} className="size-4" />,
-  },
+  ...(showTeam
+    ? [
+        {
+          title: "Team",
+          url: "/dashboard/team",
+          icon: <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} className="size-4" />,
+        },
+      ]
+    : []),
+  ...(showBilling
+    ? [
+        {
+          title: "Billing",
+          url: "/dashboard/billing",
+          icon: <HugeiconsIcon icon={CreditCardIcon} strokeWidth={2} className="size-4" />,
+        },
+      ]
+    : []),
   {
     title: "Settings",
     url: "/dashboard/settings",
@@ -87,15 +102,20 @@ const candidateMain = [
 export function AppSidebar({
   user,
   isCompany,
+  membershipRole,
   atLimit,
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
   user: User;
   isCompany: boolean;
+  membershipRole: CompanyMemberRole | null;
   atLimit: boolean;
 }) {
   const { signOut, isSigningOut } = useAuth();
-  const mainItems = isCompany ? companyMain : candidateMain;
+  const canManageTeam = membershipRole === "owner" || membershipRole === "admin";
+  const mainItems = isCompany
+    ? buildCompanyMain(membershipRole === "owner", canManageTeam)
+    : candidateMain;
 
   return (
     <Sidebar collapsible="offcanvas" {...props} variant="floating">
