@@ -1090,10 +1090,12 @@ export function DashboardTeamSkeleton() {
             <Skeleton className="h-5 w-32" />
             <Skeleton className="h-3.5 w-80 max-w-full" />
           </CardHeader>
-          <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-end">
-            <Skeleton className="h-9 flex-1" />
-            <Skeleton className="h-9 w-full sm:w-40" />
-            <Skeleton className="h-9 w-28" />
+          <CardContent className="space-y-4">
+            <Skeleton className="h-9 w-full" />
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+              <Skeleton className="h-9 w-full sm:w-40" />
+              <Skeleton className="h-9 w-28" />
+            </div>
           </CardContent>
         </Card>
 
