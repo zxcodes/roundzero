@@ -1,6 +1,5 @@
 import { env } from "cloudflare:workers";
 import type { Sql } from "postgres";
-import { getUserById } from "@/features/auth/queries/queries_sql";
 import { BATCH_CONFIG } from "@/features/batches/config";
 import {
   assignInterviewToBatch,
@@ -93,6 +92,8 @@ export async function checkAndLaunchBatch(jobId: string): Promise<PoolCheckResul
 
     const expiresAt = new Date(Date.now() + BATCH_CONFIG.INTERVIEW_EXPIRY_MS).toISOString();
 
+    const interviews: Map<string, { id: string; type: string }> = new Map();
+
     for (const candidate of candidatesToInvite) {
       const existingInterview = await getInterviewByApplicationId(transaction, {
         applicationId: candidate.id,
@@ -115,6 +116,8 @@ export async function checkAndLaunchBatch(jobId: string): Promise<PoolCheckResul
         continue;
       }
 
+      interviews.set(candidate.id, { id: interview.id, type: interview.type });
+
       const interviewContext = await getInterviewContextById(transaction, {
         id: interview.id,
       });
@@ -133,20 +136,27 @@ export async function checkAndLaunchBatch(jobId: string): Promise<PoolCheckResul
       status: "active",
     });
 
+    const candidateIds = candidatesToInvite.map((c) => c.candidateId);
+    const users = candidateIds.length > 0
+      ? await transaction.unsafe<Array<{ id: string; email: string | null }>>(
+          `SELECT id, email FROM users WHERE id = ANY($1::uuid[])`,
+          [candidateIds],
+        )
+      : [];
+    const userMap = new Map(users.map((u) => [u.id, u]));
+
     for (const candidate of candidatesToInvite) {
       await transaction.unsafe(
         `UPDATE applications SET status = 'interview_invited', updated_at = now() WHERE id = $1`,
         [candidate.id],
       );
 
-      const user = await getUserById(transaction, { id: candidate.candidateId });
+      const user = userMap.get(candidate.candidateId) ?? null;
       if (!user) {
         continue;
       }
 
-      const interview = await getInterviewByApplicationId(transaction, {
-        applicationId: candidate.id,
-      });
+      const interview = interviews.get(candidate.id);
       if (!interview) {
         continue;
       }
