@@ -1,4 +1,4 @@
-import { Logout01Icon } from "@hugeicons/core-free-icons";
+import { Loading03Icon, Logout01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
@@ -50,8 +50,16 @@ export function CompanyLeaveSection() {
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button type="button" variant="outline" disabled={leaveMutation.isPending}>
-              <HugeiconsIcon icon={Logout01Icon} strokeWidth={2} className="size-4" />
-              Leave team
+              {leaveMutation.isPending ? (
+                <HugeiconsIcon
+                  icon={Loading03Icon}
+                  strokeWidth={2}
+                  className="size-4 animate-spin"
+                />
+              ) : (
+                <HugeiconsIcon icon={Logout01Icon} strokeWidth={2} className="size-4" />
+              )}
+              {leaveMutation.isPending ? "Leaving..." : "Leave team"}
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
@@ -64,7 +72,14 @@ export function CompanyLeaveSection() {
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={onConfirmLeave} disabled={leaveMutation.isPending}>
-                Leave team
+                {leaveMutation.isPending ? (
+                  <HugeiconsIcon
+                    icon={Loading03Icon}
+                    strokeWidth={2}
+                    className="size-4 animate-spin"
+                  />
+                ) : null}
+                {leaveMutation.isPending ? "Leaving..." : "Leave team"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
