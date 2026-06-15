@@ -33,6 +33,8 @@ Always consult both before making design decisions or implementing features.
 ## Local DB
 
 - Postgres via Docker. Client uses `postgres` package (`app/db.ts`). `DATABASE_URL` in `.env`.
+- New migrations should always be created using `dbmate new <migration_name>`. No manual timestamp based migrations.
+- New migrations should not have migrate down block. We don't do down migrations.
 
 ## Server Functions + Route Loaders
 

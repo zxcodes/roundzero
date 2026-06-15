@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as JobsIndexRouteImport } from './routes/jobs/index'
 import { Route as CompaniesIndexRouteImport } from './routes/companies/index'
 import { Route as JobsJobIdRouteImport } from './routes/jobs/$jobId'
+import { Route as InviteTokenRouteImport } from './routes/invite/$token'
 import { Route as CompanyLoginRouteImport } from './routes/company/login'
 import { Route as CompaniesSlugRouteImport } from './routes/companies/$slug'
 import { Route as CandidateLoginRouteImport } from './routes/candidate/login'
@@ -26,9 +27,11 @@ import { Route as AuthenticatedInterviewRouteImport } from './routes/_authentica
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedInterviewIndexRouteImport } from './routes/_authenticated/interview/index'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard/index'
+import { Route as AuthenticatedOnboardingNoWorkspaceRouteImport } from './routes/_authenticated/onboarding/no-workspace'
 import { Route as AuthenticatedOnboardingCompanyRouteImport } from './routes/_authenticated/onboarding/company'
 import { Route as AuthenticatedOnboardingCandidateRouteImport } from './routes/_authenticated/onboarding/candidate'
 import { Route as AuthenticatedInterviewInterviewIdRouteImport } from './routes/_authenticated/interview/$interviewId'
+import { Route as AuthenticatedDashboardTeamRouteImport } from './routes/_authenticated/dashboard/team'
 import { Route as AuthenticatedDashboardShortlistedRouteImport } from './routes/_authenticated/dashboard/shortlisted'
 import { Route as AuthenticatedDashboardSettingsRouteImport } from './routes/_authenticated/dashboard/settings'
 import { Route as AuthenticatedDashboardBillingRouteImport } from './routes/_authenticated/dashboard/billing'
@@ -78,6 +81,11 @@ const CompaniesIndexRoute = CompaniesIndexRouteImport.update({
 const JobsJobIdRoute = JobsJobIdRouteImport.update({
   id: '/jobs/$jobId',
   path: '/jobs/$jobId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InviteTokenRoute = InviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CompanyLoginRoute = CompanyLoginRouteImport.update({
@@ -132,6 +140,12 @@ const AuthenticatedDashboardIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
+const AuthenticatedOnboardingNoWorkspaceRoute =
+  AuthenticatedOnboardingNoWorkspaceRouteImport.update({
+    id: '/no-workspace',
+    path: '/no-workspace',
+    getParentRoute: () => AuthenticatedOnboardingRoute,
+  } as any)
 const AuthenticatedOnboardingCompanyRoute =
   AuthenticatedOnboardingCompanyRouteImport.update({
     id: '/company',
@@ -149,6 +163,12 @@ const AuthenticatedInterviewInterviewIdRoute =
     id: '/$interviewId',
     path: '/$interviewId',
     getParentRoute: () => AuthenticatedInterviewRoute,
+  } as any)
+const AuthenticatedDashboardTeamRoute =
+  AuthenticatedDashboardTeamRouteImport.update({
+    id: '/team',
+    path: '/team',
+    getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
 const AuthenticatedDashboardShortlistedRoute =
   AuthenticatedDashboardShortlistedRouteImport.update({
@@ -259,6 +279,7 @@ export interface FileRoutesByFullPath {
   '/candidate/login': typeof CandidateLoginRoute
   '/companies/$slug': typeof CompaniesSlugRoute
   '/company/login': typeof CompanyLoginRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
   '/companies/': typeof CompaniesIndexRoute
   '/jobs/': typeof JobsIndexRoute
@@ -266,9 +287,11 @@ export interface FileRoutesByFullPath {
   '/dashboard/billing': typeof AuthenticatedDashboardBillingRoute
   '/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
   '/dashboard/shortlisted': typeof AuthenticatedDashboardShortlistedRoute
+  '/dashboard/team': typeof AuthenticatedDashboardTeamRoute
   '/interview/$interviewId': typeof AuthenticatedInterviewInterviewIdRouteWithChildren
   '/onboarding/candidate': typeof AuthenticatedOnboardingCandidateRoute
   '/onboarding/company': typeof AuthenticatedOnboardingCompanyRoute
+  '/onboarding/no-workspace': typeof AuthenticatedOnboardingNoWorkspaceRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/interview/': typeof AuthenticatedInterviewIndexRoute
   '/dashboard/applicants/$applicationId': typeof AuthenticatedDashboardApplicantsApplicationIdRoute
@@ -294,6 +317,7 @@ export interface FileRoutesByTo {
   '/candidate/login': typeof CandidateLoginRoute
   '/companies/$slug': typeof CompaniesSlugRoute
   '/company/login': typeof CompanyLoginRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
   '/companies': typeof CompaniesIndexRoute
   '/jobs': typeof JobsIndexRoute
@@ -301,8 +325,10 @@ export interface FileRoutesByTo {
   '/dashboard/billing': typeof AuthenticatedDashboardBillingRoute
   '/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
   '/dashboard/shortlisted': typeof AuthenticatedDashboardShortlistedRoute
+  '/dashboard/team': typeof AuthenticatedDashboardTeamRoute
   '/onboarding/candidate': typeof AuthenticatedOnboardingCandidateRoute
   '/onboarding/company': typeof AuthenticatedOnboardingCompanyRoute
+  '/onboarding/no-workspace': typeof AuthenticatedOnboardingNoWorkspaceRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
   '/interview': typeof AuthenticatedInterviewIndexRoute
   '/dashboard/applicants/$applicationId': typeof AuthenticatedDashboardApplicantsApplicationIdRoute
@@ -331,6 +357,7 @@ export interface FileRoutesById {
   '/candidate/login': typeof CandidateLoginRoute
   '/companies/$slug': typeof CompaniesSlugRoute
   '/company/login': typeof CompanyLoginRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
   '/companies/': typeof CompaniesIndexRoute
   '/jobs/': typeof JobsIndexRoute
@@ -338,9 +365,11 @@ export interface FileRoutesById {
   '/_authenticated/dashboard/billing': typeof AuthenticatedDashboardBillingRoute
   '/_authenticated/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
   '/_authenticated/dashboard/shortlisted': typeof AuthenticatedDashboardShortlistedRoute
+  '/_authenticated/dashboard/team': typeof AuthenticatedDashboardTeamRoute
   '/_authenticated/interview/$interviewId': typeof AuthenticatedInterviewInterviewIdRouteWithChildren
   '/_authenticated/onboarding/candidate': typeof AuthenticatedOnboardingCandidateRoute
   '/_authenticated/onboarding/company': typeof AuthenticatedOnboardingCompanyRoute
+  '/_authenticated/onboarding/no-workspace': typeof AuthenticatedOnboardingNoWorkspaceRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/_authenticated/interview/': typeof AuthenticatedInterviewIndexRoute
   '/_authenticated/dashboard/applicants/$applicationId': typeof AuthenticatedDashboardApplicantsApplicationIdRoute
@@ -370,6 +399,7 @@ export interface FileRouteTypes {
     | '/candidate/login'
     | '/companies/$slug'
     | '/company/login'
+    | '/invite/$token'
     | '/jobs/$jobId'
     | '/companies/'
     | '/jobs/'
@@ -377,9 +407,11 @@ export interface FileRouteTypes {
     | '/dashboard/billing'
     | '/dashboard/settings'
     | '/dashboard/shortlisted'
+    | '/dashboard/team'
     | '/interview/$interviewId'
     | '/onboarding/candidate'
     | '/onboarding/company'
+    | '/onboarding/no-workspace'
     | '/dashboard/'
     | '/interview/'
     | '/dashboard/applicants/$applicationId'
@@ -405,6 +437,7 @@ export interface FileRouteTypes {
     | '/candidate/login'
     | '/companies/$slug'
     | '/company/login'
+    | '/invite/$token'
     | '/jobs/$jobId'
     | '/companies'
     | '/jobs'
@@ -412,8 +445,10 @@ export interface FileRouteTypes {
     | '/dashboard/billing'
     | '/dashboard/settings'
     | '/dashboard/shortlisted'
+    | '/dashboard/team'
     | '/onboarding/candidate'
     | '/onboarding/company'
+    | '/onboarding/no-workspace'
     | '/dashboard'
     | '/interview'
     | '/dashboard/applicants/$applicationId'
@@ -441,6 +476,7 @@ export interface FileRouteTypes {
     | '/candidate/login'
     | '/companies/$slug'
     | '/company/login'
+    | '/invite/$token'
     | '/jobs/$jobId'
     | '/companies/'
     | '/jobs/'
@@ -448,9 +484,11 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard/billing'
     | '/_authenticated/dashboard/settings'
     | '/_authenticated/dashboard/shortlisted'
+    | '/_authenticated/dashboard/team'
     | '/_authenticated/interview/$interviewId'
     | '/_authenticated/onboarding/candidate'
     | '/_authenticated/onboarding/company'
+    | '/_authenticated/onboarding/no-workspace'
     | '/_authenticated/dashboard/'
     | '/_authenticated/interview/'
     | '/_authenticated/dashboard/applicants/$applicationId'
@@ -477,6 +515,7 @@ export interface RootRouteChildren {
   CandidateLoginRoute: typeof CandidateLoginRoute
   CompaniesSlugRoute: typeof CompaniesSlugRoute
   CompanyLoginRoute: typeof CompanyLoginRoute
+  InviteTokenRoute: typeof InviteTokenRoute
   JobsJobIdRoute: typeof JobsJobIdRoute
   CompaniesIndexRoute: typeof CompaniesIndexRoute
   JobsIndexRoute: typeof JobsIndexRoute
@@ -531,6 +570,13 @@ declare module '@tanstack/react-router' {
       path: '/jobs/$jobId'
       fullPath: '/jobs/$jobId'
       preLoaderRoute: typeof JobsJobIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invite/$token': {
+      id: '/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/invite/$token'
+      preLoaderRoute: typeof InviteTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/company/login': {
@@ -603,6 +649,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardIndexRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
+    '/_authenticated/onboarding/no-workspace': {
+      id: '/_authenticated/onboarding/no-workspace'
+      path: '/no-workspace'
+      fullPath: '/onboarding/no-workspace'
+      preLoaderRoute: typeof AuthenticatedOnboardingNoWorkspaceRouteImport
+      parentRoute: typeof AuthenticatedOnboardingRoute
+    }
     '/_authenticated/onboarding/company': {
       id: '/_authenticated/onboarding/company'
       path: '/company'
@@ -623,6 +676,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/interview/$interviewId'
       preLoaderRoute: typeof AuthenticatedInterviewInterviewIdRouteImport
       parentRoute: typeof AuthenticatedInterviewRoute
+    }
+    '/_authenticated/dashboard/team': {
+      id: '/_authenticated/dashboard/team'
+      path: '/team'
+      fullPath: '/dashboard/team'
+      preLoaderRoute: typeof AuthenticatedDashboardTeamRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
     }
     '/_authenticated/dashboard/shortlisted': {
       id: '/_authenticated/dashboard/shortlisted'
@@ -762,6 +822,7 @@ interface AuthenticatedDashboardRouteChildren {
   AuthenticatedDashboardBillingRoute: typeof AuthenticatedDashboardBillingRoute
   AuthenticatedDashboardSettingsRoute: typeof AuthenticatedDashboardSettingsRoute
   AuthenticatedDashboardShortlistedRoute: typeof AuthenticatedDashboardShortlistedRoute
+  AuthenticatedDashboardTeamRoute: typeof AuthenticatedDashboardTeamRoute
   AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
   AuthenticatedDashboardApplicantsApplicationIdRoute: typeof AuthenticatedDashboardApplicantsApplicationIdRoute
   AuthenticatedDashboardApplicationApplicationIdRoute: typeof AuthenticatedDashboardApplicationApplicationIdRoute
@@ -782,6 +843,7 @@ const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
     AuthenticatedDashboardSettingsRoute: AuthenticatedDashboardSettingsRoute,
     AuthenticatedDashboardShortlistedRoute:
       AuthenticatedDashboardShortlistedRoute,
+    AuthenticatedDashboardTeamRoute: AuthenticatedDashboardTeamRoute,
     AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
     AuthenticatedDashboardApplicantsApplicationIdRoute:
       AuthenticatedDashboardApplicantsApplicationIdRoute,
@@ -841,6 +903,7 @@ const AuthenticatedInterviewRouteWithChildren =
 interface AuthenticatedOnboardingRouteChildren {
   AuthenticatedOnboardingCandidateRoute: typeof AuthenticatedOnboardingCandidateRoute
   AuthenticatedOnboardingCompanyRoute: typeof AuthenticatedOnboardingCompanyRoute
+  AuthenticatedOnboardingNoWorkspaceRoute: typeof AuthenticatedOnboardingNoWorkspaceRoute
 }
 
 const AuthenticatedOnboardingRouteChildren: AuthenticatedOnboardingRouteChildren =
@@ -848,6 +911,8 @@ const AuthenticatedOnboardingRouteChildren: AuthenticatedOnboardingRouteChildren
     AuthenticatedOnboardingCandidateRoute:
       AuthenticatedOnboardingCandidateRoute,
     AuthenticatedOnboardingCompanyRoute: AuthenticatedOnboardingCompanyRoute,
+    AuthenticatedOnboardingNoWorkspaceRoute:
+      AuthenticatedOnboardingNoWorkspaceRoute,
   }
 
 const AuthenticatedOnboardingRouteWithChildren =
@@ -881,6 +946,7 @@ const rootRouteChildren: RootRouteChildren = {
   CandidateLoginRoute: CandidateLoginRoute,
   CompaniesSlugRoute: CompaniesSlugRoute,
   CompanyLoginRoute: CompanyLoginRoute,
+  InviteTokenRoute: InviteTokenRoute,
   JobsJobIdRoute: JobsJobIdRoute,
   CompaniesIndexRoute: CompaniesIndexRoute,
   JobsIndexRoute: JobsIndexRoute,

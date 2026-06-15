@@ -18,6 +18,10 @@ export const Route = createFileRoute("/_authenticated/dashboard/billing")({
     if (!context.isCompany) {
       throw redirect({ to: "/dashboard" });
     }
+
+    if (context.membershipRole !== "owner") {
+      throw redirect({ to: "/dashboard" });
+    }
   },
   loader: async () => {
     const subscription = await getMySubscription();

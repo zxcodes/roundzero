@@ -317,7 +317,6 @@ SET name = $1,
     social_links = $11,
     updated_at = now()
 WHERE id = $12
-  AND owner_id = $13
 RETURNING id, owner_id, name, slug, onboarding_completed_at, description, logo_key, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, polar_customer_id, polar_subscription_id, polar_product_id, subscription_plan, subscription_status, subscription_current_period_end, subscription_cancel_at_period_end, created_at, updated_at`;
 
 export interface updateCompanyProfileArgs {
@@ -333,7 +332,6 @@ export interface updateCompanyProfileArgs {
     culture: string | null;
     socialLinks: any | null;
     id: string;
-    ownerId: string;
 }
 
 export interface updateCompanyProfileRow {
@@ -364,7 +362,7 @@ export interface updateCompanyProfileRow {
 }
 
 export async function updateCompanyProfile(sql: Sql, args: updateCompanyProfileArgs): Promise<updateCompanyProfileRow | null> {
-    const rows = await sql.unsafe(updateCompanyProfileQuery, [args.name, args.description, args.logoKey, args.website, args.industry, args.companySize, args.foundedYear, args.location, args.techStack, args.culture, args.socialLinks, args.id, args.ownerId]).values();
+    const rows = await sql.unsafe(updateCompanyProfileQuery, [args.name, args.description, args.logoKey, args.website, args.industry, args.companySize, args.foundedYear, args.location, args.techStack, args.culture, args.socialLinks, args.id]).values();
     if (rows.length !== 1) {
         return null;
     }

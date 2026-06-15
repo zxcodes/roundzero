@@ -13,12 +13,25 @@ SELECT id, email, name, picture, role, google_id, deleted_at, created_at, update
 FROM users
 WHERE id = $1 AND deleted_at IS NULL;
 
+-- name: getUserByEmail :one
+SELECT id, email, name, picture, role, google_id, deleted_at, created_at, updated_at
+FROM users
+WHERE lower(email) = lower(sqlc.arg('email'))
+  AND deleted_at IS NULL;
+
 -- name: setUserRole :one
 UPDATE users
 SET role = $1,
     updated_at = now()
 WHERE id = $2
   AND role IS NULL
+RETURNING id, email, name, picture, role, google_id, deleted_at, created_at, updated_at;
+
+-- name: clearUserRole :one
+UPDATE users
+SET role = NULL,
+    updated_at = now()
+WHERE id = $1
 RETURNING id, email, name, picture, role, google_id, deleted_at, created_at, updated_at;
 
 -- name: updateUserName :one

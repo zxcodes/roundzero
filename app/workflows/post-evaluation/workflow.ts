@@ -183,14 +183,14 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
         }
       } else {
         // No batch — this is a non-batched report (legacy or manual). Send individual notification.
-        const notification = await step.do(
+        const deliveries = await step.do(
           "notify_report_ready",
           notifyReportReady(interviewData, finalReport, db, log),
         );
 
         await step.do(
           "send_report_ready_email",
-          sendReportReadyEmail(interviewData, notification, finalReport, db, log),
+          sendReportReadyEmail(interviewData, deliveries, finalReport, db, log),
         );
       }
 

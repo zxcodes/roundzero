@@ -45,7 +45,6 @@ SET name = $1,
     social_links = $11,
     updated_at = now()
 WHERE id = $12
-  AND owner_id = $13
 RETURNING *;
 
 -- name: getAllCompanies :many

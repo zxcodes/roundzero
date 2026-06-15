@@ -43,6 +43,8 @@ export const cleanTestData = async () => {
       interviews,
       job_batches,
       notifications,
+      company_invitations,
+      company_members,
       applications,
       jobs,
       candidate_profiles,
@@ -118,6 +120,14 @@ export const seedCompany = async (overrides?: {
     VALUES (${owner.id}, ${name}, ${slug}, ${description})
     RETURNING id, owner_id AS "ownerId", name, slug
   `;
+
+  // Mirror production: every company has an `owner` membership row, which is
+  // now the access-control primitive resolved by companyMiddleware.
+  await sql`
+    INSERT INTO company_members (company_id, user_id, role, status)
+    VALUES (${(row as TestCompany).id}, ${owner.id}, 'owner', 'active')
+  `;
+
   return { company: row as TestCompany, owner };
 };
 

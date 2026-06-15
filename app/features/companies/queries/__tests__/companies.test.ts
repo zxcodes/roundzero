@@ -1,6 +1,26 @@
 import { describe, expect, it } from "vitest";
 import { softDeleteUser } from "@/features/auth/queries/queries_sql";
-import { getTestDb, seedUser } from "@/shared/__tests__/test-utils";
+import { getTestDb, seedCompany, seedUser } from "@/shared/__tests__/test-utils";
+import {
+  createCompanyMember,
+  createInvitation,
+  getActiveMemberByCompanyEmail,
+  getActiveMembershipByUserId,
+  getCompanyByMemberUserId,
+  getInvitationByToken,
+  getMembershipByCompanyAndUser,
+  getPendingInvitationByEmail,
+  listCompanyNotificationRecipients,
+  listPendingInvitationsByCompany,
+  markInvitationAccepted,
+  reactivateCompanyMember,
+  removeCompanyMember,
+  resetInvitationForResend,
+  revokeExpiredInvitationsByEmail,
+  revokeInvitation as revokeInvitationQuery,
+  updateCompanyMemberRole,
+  updateCompanyOwner,
+} from "../membership-queries_sql";
 import {
   clearCompanySubscription,
   createCompany,
@@ -198,7 +218,6 @@ describe("updateCompanyProfile", () => {
 
     const updated = await updateCompanyProfile(sql, {
       id: created!.id,
-      ownerId: owner.id,
       name: "New Name",
       description: "New desc",
       logoKey: "company-logos/user-123/logo.png",
@@ -225,41 +244,10 @@ describe("updateCompanyProfile", () => {
     expect(updated!.updatedAt.getTime()).toBeGreaterThan(created!.createdAt.getTime());
   });
 
-  it("returns null when ownerId doesn't match", async () => {
-    const owner = await seedUser({ role: "company" });
-    const other = await seedUser({ role: "company" });
-    const created = await createCompany(sql, {
-      ownerId: owner.id,
-      name: "My Company",
-      slug: "my-company",
-      description: null,
-      logoKey: null,
-      industry: null,
-      companySize: null,
-    });
-
-    const result = await updateCompanyProfile(sql, {
-      id: created!.id,
-      ownerId: other.id,
-      name: "Hacked",
-      description: null,
-      logoKey: null,
-      website: null,
-      industry: null,
-      companySize: null,
-      foundedYear: null,
-      location: null,
-      techStack: null,
-      culture: null,
-      socialLinks: null,
-    });
-
-    expect(result).toBeNull();
-
-    // Original unchanged
-    const check = await getCompanyById(sql, { id: created!.id });
-    expect(check!.name).toBe("My Company");
-  });
+  // Note: authorization (who may edit a company) moved from this query's
+  // WHERE clause to the membership layer (companyMiddleware + role checks).
+  // The query now scopes by company id only, so there is no owner-mismatch
+  // case to test here anymore.
 });
 
 describe("slugExists", () => {
@@ -477,5 +465,479 @@ describe("clearCompanySubscription", () => {
   it("returns null for unknown polar customer id", async () => {
     const result = await clearCompanySubscription(sql, { polarCustomerId: "unknown" });
     expect(result).toBeNull();
+  });
+});
+
+describe("company membership", () => {
+  it("getActiveMembershipByUserId returns the owner membership for a seeded company", async () => {
+    const { company, owner } = await seedCompany();
+
+    const membership = await getActiveMembershipByUserId(sql, { userId: owner.id });
+
+    expect(membership).not.toBeNull();
+    expect(membership!.companyId).toBe(company.id);
+    expect(membership!.role).toBe("owner");
+    expect(membership!.status).toBe("active");
+  });
+
+  it("getActiveMembershipByUserId returns null for a user with no membership", async () => {
+    const stranger = await seedUser({ role: "company" });
+
+    const membership = await getActiveMembershipByUserId(sql, { userId: stranger.id });
+
+    expect(membership).toBeNull();
+  });
+
+  it("getCompanyByMemberUserId resolves the company for an added member", async () => {
+    const { company } = await seedCompany();
+    const teammate = await seedUser({ role: "company" });
+
+    await createCompanyMember(sql, {
+      companyId: company.id,
+      userId: teammate.id,
+      role: "admin",
+      invitedBy: null,
+    });
+
+    const resolved = await getCompanyByMemberUserId(sql, { userId: teammate.id });
+
+    expect(resolved).not.toBeNull();
+    expect(resolved!.id).toBe(company.id);
+    expect(resolved!.name).toBe(company.name);
+  });
+
+  it("removed members are not resolved by membership queries", async () => {
+    const { company } = await seedCompany();
+    const teammate = await seedUser({ role: "company" });
+
+    const member = await createCompanyMember(sql, {
+      companyId: company.id,
+      userId: teammate.id,
+      role: "member",
+      invitedBy: null,
+    });
+    await sql`
+      UPDATE company_members
+      SET status = 'removed', updated_at = now()
+      WHERE id = ${member!.id}
+    `;
+
+    expect(await getActiveMembershipByUserId(sql, { userId: teammate.id })).toBeNull();
+    expect(await getCompanyByMemberUserId(sql, { userId: teammate.id })).toBeNull();
+  });
+});
+
+describe("company invitations", () => {
+  it("creates and resolves a pending invitation by token", async () => {
+    const { company, owner } = await seedCompany();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    const invitation = await createInvitation(sql, {
+      companyId: company.id,
+      email: "teammate@acme.com",
+      role: "admin",
+      token: "invite-token-1",
+      invitedBy: owner.id,
+      expiresAt,
+    });
+
+    expect(invitation).not.toBeNull();
+
+    const byToken = await getInvitationByToken(sql, { token: "invite-token-1" });
+    expect(byToken).not.toBeNull();
+    expect(byToken!.companyName).toBe(company.name);
+    expect(byToken!.email).toBe("teammate@acme.com");
+    expect(byToken!.acceptedAt).toBeNull();
+    expect(byToken!.revokedAt).toBeNull();
+  });
+
+  it("lists pending invitations and revokes them", async () => {
+    const { company, owner } = await seedCompany();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    const invitation = await createInvitation(sql, {
+      companyId: company.id,
+      email: "pending@acme.com",
+      role: "member",
+      token: "invite-token-2",
+      invitedBy: owner.id,
+      expiresAt,
+    });
+
+    const pending = await listPendingInvitationsByCompany(sql, { companyId: company.id });
+    expect(pending).toHaveLength(1);
+    expect(pending[0]!.email).toBe("pending@acme.com");
+
+    const revoked = await revokeInvitationQuery(sql, {
+      id: invitation!.id,
+      companyId: company.id,
+    });
+    expect(revoked).not.toBeNull();
+
+    const after = await listPendingInvitationsByCompany(sql, { companyId: company.id });
+    expect(after).toHaveLength(0);
+  });
+
+  it("resets token and expiry on resend", async () => {
+    const { company, owner } = await seedCompany();
+    const expiresAt = new Date(Date.now() + 60_000);
+
+    const invitation = await createInvitation(sql, {
+      companyId: company.id,
+      email: "resend@acme.com",
+      role: "member",
+      token: "old-token",
+      invitedBy: owner.id,
+      expiresAt,
+    });
+
+    const newExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const resent = await resetInvitationForResend(sql, {
+      id: invitation!.id,
+      companyId: company.id,
+      token: "new-token",
+      expiresAt: newExpiry,
+    });
+
+    expect(resent).not.toBeNull();
+    expect(resent!.token).toBe("new-token");
+
+    expect(await getInvitationByToken(sql, { token: "old-token" })).toBeNull();
+    expect(await getInvitationByToken(sql, { token: "new-token" })).not.toBeNull();
+  });
+
+  it("ignores expired invitations when checking pending by email", async () => {
+    const { company, owner } = await seedCompany();
+    const expiredAt = new Date(Date.now() - 60_000);
+
+    await createInvitation(sql, {
+      companyId: company.id,
+      email: "expired@acme.com",
+      role: "member",
+      token: "expired-token",
+      invitedBy: owner.id,
+      expiresAt: expiredAt,
+    });
+
+    const pending = await getPendingInvitationByEmail(sql, {
+      companyId: company.id,
+      email: "expired@acme.com",
+    });
+    expect(pending).toBeNull();
+
+    const listed = await listPendingInvitationsByCompany(sql, { companyId: company.id });
+    expect(listed).toHaveLength(0);
+  });
+
+  it("revokeExpiredInvitationsByEmail clears stale rows so a new invite can be created", async () => {
+    const { company, owner } = await seedCompany();
+    const expiredAt = new Date(Date.now() - 60_000);
+
+    await createInvitation(sql, {
+      companyId: company.id,
+      email: "stale@acme.com",
+      role: "member",
+      token: "stale-token",
+      invitedBy: owner.id,
+      expiresAt: expiredAt,
+    });
+
+    await revokeExpiredInvitationsByEmail(sql, {
+      companyId: company.id,
+      email: "stale@acme.com",
+    });
+
+    const fresh = await createInvitation(sql, {
+      companyId: company.id,
+      email: "stale@acme.com",
+      role: "admin",
+      token: "fresh-token",
+      invitedBy: owner.id,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    });
+    expect(fresh).not.toBeNull();
+    expect(fresh!.role).toBe("admin");
+  });
+
+  it("marks invitation accepted and detects existing members by email", async () => {
+    const { company, owner } = await seedCompany();
+    const teammate = await seedUser({ role: "company", email: "member@acme.com" });
+    await createCompanyMember(sql, {
+      companyId: company.id,
+      userId: teammate.id,
+      role: "member",
+      invitedBy: owner.id,
+    });
+
+    const existing = await getActiveMemberByCompanyEmail(sql, {
+      companyId: company.id,
+      email: "member@acme.com",
+    });
+    expect(existing).not.toBeNull();
+
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const invitation = await createInvitation(sql, {
+      companyId: company.id,
+      email: "fresh@acme.com",
+      role: "member",
+      token: "accept-token",
+      invitedBy: owner.id,
+      expiresAt,
+    });
+
+    const accepted = await markInvitationAccepted(sql, { id: invitation!.id });
+    expect(accepted).not.toBeNull();
+
+    const pending = await getPendingInvitationByEmail(sql, {
+      companyId: company.id,
+      email: "fresh@acme.com",
+    });
+    expect(pending).toBeNull();
+  });
+});
+
+describe("company team management", () => {
+  it("lists owner and admins as notification recipients", async () => {
+    const { company, owner } = await seedCompany();
+    const admin = await seedUser({ role: "company" });
+    const member = await seedUser({ role: "company" });
+
+    await createCompanyMember(sql, {
+      companyId: company.id,
+      userId: admin.id,
+      role: "admin",
+      invitedBy: owner.id,
+    });
+    await createCompanyMember(sql, {
+      companyId: company.id,
+      userId: member.id,
+      role: "member",
+      invitedBy: owner.id,
+    });
+
+    const recipients = await listCompanyNotificationRecipients(sql, {
+      companyId: company.id,
+    });
+
+    expect(recipients).toHaveLength(2);
+    expect(recipients.map((r) => r.userId).sort()).toEqual([admin.id, owner.id].sort());
+  });
+
+  it("transfers ownership by demoting old owner and updating companies.owner_id", async () => {
+    const { company, owner } = await seedCompany();
+    const admin = await seedUser({ role: "company" });
+
+    const ownerMembership = await getActiveMembershipByUserId(sql, { userId: owner.id });
+    const adminMembership = await createCompanyMember(sql, {
+      companyId: company.id,
+      userId: admin.id,
+      role: "admin",
+      invitedBy: owner.id,
+    });
+
+    await sql.begin(async (tx) => {
+      const transaction = tx as unknown as typeof sql;
+      await updateCompanyMemberRole(transaction, {
+        role: "admin",
+        id: ownerMembership!.id,
+        companyId: company.id,
+      });
+      await updateCompanyMemberRole(transaction, {
+        role: "owner",
+        id: adminMembership!.id,
+        companyId: company.id,
+      });
+      await updateCompanyOwner(transaction, {
+        ownerId: admin.id,
+        id: company.id,
+      });
+    });
+
+    const updatedCompany = await getCompanyById(sql, { id: company.id });
+    expect(updatedCompany!.ownerId).toBe(admin.id);
+
+    const newOwnerMembership = await getActiveMembershipByUserId(sql, { userId: admin.id });
+    const formerOwnerMembership = await getActiveMembershipByUserId(sql, { userId: owner.id });
+    expect(newOwnerMembership!.role).toBe("owner");
+    expect(formerOwnerMembership!.role).toBe("admin");
+  });
+
+  it("reactivates a removed membership for re-invited teammates", async () => {
+    const { company } = await seedCompany();
+    const member = await seedUser({ role: "company" });
+
+    const membership = await createCompanyMember(sql, {
+      companyId: company.id,
+      userId: member.id,
+      role: "member",
+      invitedBy: null,
+    });
+
+    await removeCompanyMember(sql, {
+      id: membership!.id,
+      companyId: company.id,
+    });
+
+    const prior = await getMembershipByCompanyAndUser(sql, {
+      companyId: company.id,
+      userId: member.id,
+    });
+    expect(prior!.status).toBe("removed");
+
+    const reactivated = await reactivateCompanyMember(sql, {
+      role: "admin",
+      invitedBy: null,
+      companyId: company.id,
+      userId: member.id,
+    });
+    expect(reactivated).not.toBeNull();
+    expect(reactivated!.status).toBe("active");
+    expect(reactivated!.role).toBe("admin");
+    expect(await getActiveMembershipByUserId(sql, { userId: member.id })).not.toBeNull();
+  });
+
+  it("lets non-owners leave by marking membership removed", async () => {
+    const { company } = await seedCompany();
+    const member = await seedUser({ role: "company" });
+
+    const membership = await createCompanyMember(sql, {
+      companyId: company.id,
+      userId: member.id,
+      role: "member",
+      invitedBy: null,
+    });
+
+    const removed = await removeCompanyMember(sql, {
+      id: membership!.id,
+      companyId: company.id,
+    });
+    expect(removed).not.toBeNull();
+    expect(await getActiveMembershipByUserId(sql, { userId: member.id })).toBeNull();
+  });
+
+  it("does not remove the company owner", async () => {
+    const { company, owner } = await seedCompany();
+    const ownerMembership = await getActiveMembershipByUserId(sql, { userId: owner.id });
+
+    const removed = await removeCompanyMember(sql, {
+      id: ownerMembership!.id,
+      companyId: company.id,
+    });
+    expect(removed).toBeNull();
+  });
+
+  it("reactivateCompanyMember returns null when membership is not removed", async () => {
+    const { company } = await seedCompany();
+    const member = await seedUser({ role: "company" });
+
+    await createCompanyMember(sql, {
+      companyId: company.id,
+      userId: member.id,
+      role: "member",
+      invitedBy: null,
+    });
+
+    const result = await reactivateCompanyMember(sql, {
+      role: "admin",
+      invitedBy: null,
+      companyId: company.id,
+      userId: member.id,
+    });
+    expect(result).toBeNull();
+  });
+});
+
+describe("invitation edge cases", () => {
+  it("revokeInvitation returns null for already accepted invitations", async () => {
+    const { company, owner } = await seedCompany();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    const invitation = await createInvitation(sql, {
+      companyId: company.id,
+      email: "accepted@acme.com",
+      role: "member",
+      token: "accepted-revoke",
+      invitedBy: owner.id,
+      expiresAt,
+    });
+
+    await markInvitationAccepted(sql, { id: invitation!.id });
+
+    const revoked = await revokeInvitationQuery(sql, {
+      id: invitation!.id,
+      companyId: company.id,
+    });
+    expect(revoked).toBeNull();
+  });
+
+  it("markInvitationAccepted returns null on second accept", async () => {
+    const { company, owner } = await seedCompany();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    const invitation = await createInvitation(sql, {
+      companyId: company.id,
+      email: "double-accept@acme.com",
+      role: "member",
+      token: "double-accept",
+      invitedBy: owner.id,
+      expiresAt,
+    });
+
+    const first = await markInvitationAccepted(sql, { id: invitation!.id });
+    expect(first).not.toBeNull();
+
+    const second = await markInvitationAccepted(sql, { id: invitation!.id });
+    expect(second).toBeNull();
+  });
+
+  it("revokeInvitation returns null for already revoked invitations", async () => {
+    const { company, owner } = await seedCompany();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    const invitation = await createInvitation(sql, {
+      companyId: company.id,
+      email: "already-revoked@acme.com",
+      role: "member",
+      token: "already-revoked",
+      invitedBy: owner.id,
+      expiresAt,
+    });
+
+    const first = await revokeInvitationQuery(sql, {
+      id: invitation!.id,
+      companyId: company.id,
+    });
+    expect(first).not.toBeNull();
+
+    const second = await revokeInvitationQuery(sql, {
+      id: invitation!.id,
+      companyId: company.id,
+    });
+    expect(second).toBeNull();
+  });
+
+  it("blocks duplicate pending invitations for the same email via unique index", async () => {
+    const { company, owner } = await seedCompany();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    await createInvitation(sql, {
+      companyId: company.id,
+      email: "duplicate-pending@acme.com",
+      role: "member",
+      token: "dup-pending-1",
+      invitedBy: owner.id,
+      expiresAt,
+    });
+
+    await expect(
+      createInvitation(sql, {
+        companyId: company.id,
+        email: "duplicate-pending@acme.com",
+        role: "admin",
+        token: "dup-pending-2",
+        invitedBy: owner.id,
+        expiresAt,
+      }),
+    ).rejects.toThrow();
   });
 });
