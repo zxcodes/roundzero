@@ -27,6 +27,7 @@ const routeTitles: Record<string, string> = {
   "/_authenticated/dashboard/applications": "My Applications",
   "/_authenticated/dashboard/application/$applicationId": "Application Details",
   "/_authenticated/dashboard/billing": "Billing",
+  "/_authenticated/dashboard/team": "Team",
   "/_authenticated/dashboard/settings": "Settings",
 };
 
@@ -64,10 +65,19 @@ function DashboardLayout() {
           } as { [key: string]: string }
         }
       >
-        <AppSidebar user={user} isCompany={isCompany} atLimit={atLimit} variant="inset" />
+        <AppSidebar
+          user={user}
+          isCompany={isCompany}
+          membershipRole={auth.type === "company" ? auth.membershipRole : null}
+          atLimit={atLimit}
+          variant="inset"
+        />
         <CommandPalette
           isCompany={isCompany}
           atLimit={atLimit}
+          showTeam={
+            isCompany && (auth.membershipRole === "owner" || auth.membershipRole === "admin")
+          }
           open={commandOpen}
           onOpenChange={setCommandOpen}
         />

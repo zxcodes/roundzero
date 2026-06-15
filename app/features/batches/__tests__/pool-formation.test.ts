@@ -26,6 +26,16 @@ vi.mock("agents", () => ({
   }),
 }));
 
+vi.mock("@/features/notifications/services/email", async (importOriginal) => {
+  const mod = await importOriginal<typeof import("@/features/notifications/services/email")>();
+  return {
+    ...mod,
+    sendNotificationEmailViaResend: vi.fn().mockResolvedValue({
+      providerMessageId: "mock-id",
+    }),
+  };
+});
+
 const sql = getTestDb();
 
 async function seedQueuedCandidate(jobId: string, createdAt?: Date) {

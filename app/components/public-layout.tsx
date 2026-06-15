@@ -34,7 +34,7 @@ export function PublicHeader({ editorial }: { editorial?: boolean }) {
           </Link>
         </div>
         <div className="flex items-center gap-2">
-          {user ? (
+          {user?.role ? (
             <Button size="sm" asChild>
               <Link to="/dashboard">Dashboard</Link>
             </Button>

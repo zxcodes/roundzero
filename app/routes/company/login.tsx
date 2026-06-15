@@ -26,7 +26,7 @@ const loginSearchSchema = z.object({
 export const Route = createFileRoute("/company/login")({
   validateSearch: loginSearchSchema,
   beforeLoad: ({ context }) => {
-    if (context.user) {
+    if (context.user?.role) {
       throw redirect({ to: "/dashboard" });
     }
   },

@@ -4,7 +4,9 @@ import { useSession } from "@tanstack/react-start/server";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { getDb } from "@/shared/db";
+import { asSqlTransaction } from "@/shared/db-transaction";
 import { companySizeSchema, industrySchema, MAX_COMPANY_DESCRIPTION_LENGTH } from "@/shared/enums";
+import { assertCanManageCompanyProfile } from "@/shared/membership-auth";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
 import { type SessionData, sessionConfig } from "@/shared/session";
 import {
@@ -16,10 +18,14 @@ import {
   zodValidatorWithFormattedErrors,
 } from "@/shared/validation";
 import {
+  createCompanyMember,
+  getActiveMembershipByUserId,
+} from "../queries/membership-queries_sql";
+import {
   countCompaniesFiltered,
   createCompany as createCompanyQuery,
   getAllCompaniesPaginated as getAllCompaniesPaginatedQuery,
-  getCompanyByOwnerId,
+  getCompanyById,
   getCompanyBySlug as getCompanyBySlugQuery,
   slugExists,
   updateCompanyProfile as updateCompanyProfileQuery,
@@ -140,6 +146,21 @@ const assertLogoKeyBelongsToUser = (logoKey: string, userId: string) => {
   }
 };
 
+const resolveMyCompanyContext = async (userId: string) => {
+  const db = getDb();
+  const membership = await getActiveMembershipByUserId(db, { userId });
+  if (!membership) {
+    return null;
+  }
+
+  const company = await getCompanyById(db, { id: membership.companyId });
+  if (!company) {
+    return null;
+  }
+
+  return { company, membership };
+};
+
 // --- Server Functions ---
 
 export const createCompany = createServerFn({ method: "POST" })
@@ -148,50 +169,74 @@ export const createCompany = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const db = getDb();
 
-    const existing = await getCompanyByOwnerId(db, {
-      ownerId: context.userId,
+    const existing = await getActiveMembershipByUserId(db, {
+      userId: context.userId,
     });
     if (existing) {
-      throw new Error("You already have a company");
+      throw new Error("You already belong to a company");
+    }
+
+    if (context.user.role === "company") {
+      throw new Error(
+        "Your account has no active company workspace. Accept an invitation to join a team.",
+      );
     }
 
     const slug = await generateUniqueSlug(data.name);
 
-    const company = await createCompanyQuery(db, {
-      ownerId: context.userId,
-      name: data.name,
-      slug,
-      description: data.description ?? null,
-      logoKey: null,
-      industry: data.industry ?? null,
-      companySize: data.companySize ?? null,
-    });
+    const company = await db.begin(async (tx) => {
+      const transaction = asSqlTransaction(tx);
 
-    if (!company) {
-      throw new Error("Failed to create company");
-    }
+      const created = await createCompanyQuery(transaction, {
+        ownerId: context.userId,
+        name: data.name,
+        slug,
+        description: data.description ?? null,
+        logoKey: null,
+        industry: data.industry ?? null,
+        companySize: data.companySize ?? null,
+      });
+
+      if (!created) {
+        throw new Error("Failed to create company");
+      }
+
+      await createCompanyMember(transaction, {
+        companyId: created.id,
+        userId: context.userId,
+        role: "owner",
+        invitedBy: null,
+      });
+
+      return created;
+    });
 
     return { company };
   });
 
-export const getMyCompany = createServerFn({ method: "GET" }).handler(async () => {
+export const getMyCompanyContext = createServerFn({ method: "GET" }).handler(async () => {
   const session = await useSession<SessionData>(sessionConfig);
-
   if (!session.data.userId) {
     return null;
   }
+  return resolveMyCompanyContext(session.data.userId);
+});
 
-  const db = getDb();
-  const company = await getCompanyByOwnerId(db, {
-    ownerId: session.data.userId,
-  });
-  return company;
+export const getMyCompany = createServerFn({ method: "GET" }).handler(async () => {
+  const session = await useSession<SessionData>(sessionConfig);
+  if (!session.data.userId) {
+    return null;
+  }
+  const context = await resolveMyCompanyContext(session.data.userId);
+  return context?.company ?? null;
 });
 
 export const updateCompanyProfile = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
   .validator(zodValidator(updateCompanyProfileSchema))
   .handler(async ({ data, context }) => {
+    assertCanManageCompanyProfile(context.membership.role);
+
     const db = getDb();
 
     if (data.logoKey) {
@@ -211,7 +256,6 @@ export const updateCompanyProfile = createServerFn({ method: "POST" })
       culture: data.culture,
       socialLinks: data.socialLinks,
       id: context.company.id,
-      ownerId: context.userId,
     });
 
     if (!updated) {
@@ -222,12 +266,10 @@ export const updateCompanyProfile = createServerFn({ method: "POST" })
   });
 
 export const uploadCompanyLogo = createServerFn({ method: "POST" })
-  .middleware([authMiddleware])
+  .middleware([companyMiddleware])
   .validator(zodValidatorWithFormattedErrors(uploadCompanyLogoSchema))
   .handler(async ({ data, context }) => {
-    if (context.user.role !== "company") {
-      throw new Error("Only company users can upload logos");
-    }
+    assertCanManageCompanyProfile(context.membership.role);
 
     const logoKey = buildLogoKey(context.userId, data.fileName, data.contentType);
     const bytes = Uint8Array.from(atob(data.fileBase64), (c) => c.charCodeAt(0));
