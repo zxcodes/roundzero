@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { clearSession } from "@tanstack/react-start/server";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
-import { clearUserRole, getUserByEmail } from "@/features/auth/queries/queries_sql";
+import { getUserByEmail } from "@/features/auth/queries/queries_sql";
 import { sendCompanyInviteEmail } from "@/features/companies/services/invite-email";
 import { getDb } from "@/shared/db";
 import { asSqlTransaction } from "@/shared/db-transaction";
@@ -23,6 +23,7 @@ import {
   listPendingInvitationsByCompany,
   removeCompanyMember,
   resetInvitationForResend,
+  revokeExpiredInvitationsByEmail,
   revokeInvitation as revokeInvitationQuery,
   updateCompanyMemberRole,
   updateCompanyOwner,
@@ -122,6 +123,11 @@ export const inviteMember = createServerFn({ method: "POST" })
     if (pendingInvite) {
       throw new Error("An invitation is already pending for this email");
     }
+
+    await revokeExpiredInvitationsByEmail(db, {
+      companyId: context.company.id,
+      email: data.email,
+    });
 
     const existingUser = await getUserByEmail(db, { email: data.email });
     if (existingUser) {
@@ -264,8 +270,11 @@ export const removeMember = createServerFn({ method: "POST" })
       throw new Error("Failed to remove team member");
     }
 
-    await clearUserRole(db, { id: target.userId });
-
+    // The removed user keeps their global `company` role; with no active
+    // membership, `_authenticated` routes them to /onboarding/no-workspace
+    // on their next navigation. We intentionally don't null their role —
+    // one email maps to one role, and acceptInvite reactivates them on
+    // re-invite.
     return {};
   });
 
@@ -333,7 +342,8 @@ export const leaveCompany = createServerFn({ method: "POST" })
       throw new Error("Failed to leave team");
     }
 
-    await clearUserRole(db, { id: context.userId });
+    // Clear this user's session so they're signed out immediately. Their
+    // global `company` role is kept; re-invite reactivates the membership.
     await clearSession(sessionConfig);
     return {};
   });

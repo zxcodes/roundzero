@@ -625,6 +625,25 @@ export async function revokeInvitation(sql: Sql, args: revokeInvitationArgs): Pr
     };
 }
 
+export const revokeExpiredInvitationsByEmailQuery = `-- name: revokeExpiredInvitationsByEmail :exec
+UPDATE company_invitations
+SET revoked_at = now(),
+    updated_at = now()
+WHERE company_id = $1
+  AND email = $2
+  AND accepted_at IS NULL
+  AND revoked_at IS NULL
+  AND expires_at <= now()`;
+
+export interface revokeExpiredInvitationsByEmailArgs {
+    companyId: string;
+    email: string;
+}
+
+export async function revokeExpiredInvitationsByEmail(sql: Sql, args: revokeExpiredInvitationsByEmailArgs): Promise<void> {
+    await sql.unsafe(revokeExpiredInvitationsByEmailQuery, [args.companyId, args.email]);
+}
+
 export const resetInvitationForResendQuery = `-- name: resetInvitationForResend :one
 UPDATE company_invitations
 SET token = $3,

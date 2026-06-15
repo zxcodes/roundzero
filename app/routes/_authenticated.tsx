@@ -22,6 +22,9 @@ const buildSubscription = (company: Company): SubscriptionSummary => ({
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async ({ context, location }) => {
+    // A session with no role (e.g. a brand-new identity) is not a usable app
+    // session — treat it as logged out. Public routes guard on `user?.role`,
+    // so this does not loop.
     if (!context.user?.role) {
       throw redirect({ to: "/" });
     }

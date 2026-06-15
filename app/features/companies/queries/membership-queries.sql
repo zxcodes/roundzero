@@ -132,6 +132,16 @@ WHERE id = $1
   AND revoked_at IS NULL
 RETURNING id;
 
+-- name: revokeExpiredInvitationsByEmail :exec
+UPDATE company_invitations
+SET revoked_at = now(),
+    updated_at = now()
+WHERE company_id = $1
+  AND email = $2
+  AND accepted_at IS NULL
+  AND revoked_at IS NULL
+  AND expires_at <= now();
+
 -- name: resetInvitationForResend :one
 UPDATE company_invitations
 SET token = $3,

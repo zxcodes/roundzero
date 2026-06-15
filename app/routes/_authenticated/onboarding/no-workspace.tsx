@@ -1,6 +1,6 @@
-import { Mail01Icon } from "@hugeicons/core-free-icons";
+import { Logout01Icon, Mail01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -11,19 +11,27 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { useAuth } from "@/features/auth/provider";
 
 export const Route = createFileRoute("/_authenticated/onboarding/no-workspace")({
   component: NoWorkspacePage,
 });
 
 function NoWorkspacePage() {
+  const { signOut, isSigningOut } = useAuth();
+
+  const onSignOut = () => {
+    void signOut();
+  };
+
   return (
     <div className="flex min-h-svh items-center justify-center p-6">
       <Card className="w-full max-w-lg">
         <CardHeader>
           <CardTitle>No company workspace</CardTitle>
           <CardDescription>
-            Your account is not linked to a company team. Ask your admin for a new invitation.
+            You no longer have access to a company team. Sign out, or wait for a new invitation from
+            your admin.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -32,15 +40,16 @@ function NoWorkspacePage() {
               <EmptyMedia variant="icon">
                 <HugeiconsIcon icon={Mail01Icon} strokeWidth={2} />
               </EmptyMedia>
-              <EmptyTitle>Waiting for an invite</EmptyTitle>
+              <EmptyTitle>Access removed or not yet invited</EmptyTitle>
               <EmptyDescription>
-                When you receive an email invitation, open the link and sign in with the invited
-                Google account to rejoin.
+                If you were removed from a team, sign out and ask your admin to send a new
+                invitation. Open the invite link with the same Google account to rejoin.
               </EmptyDescription>
             </EmptyHeader>
             <EmptyContent>
-              <Button asChild variant="outline">
-                <Link to="/company/login">Sign out and switch account</Link>
+              <Button disabled={isSigningOut} onClick={onSignOut} variant="outline">
+                <HugeiconsIcon icon={Logout01Icon} strokeWidth={2} className="size-4" />
+                {isSigningOut ? "Signing out..." : "Sign out"}
               </Button>
             </EmptyContent>
           </Empty>
