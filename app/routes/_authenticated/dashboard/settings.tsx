@@ -2,17 +2,27 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { DashboardSettingsSkeleton } from "@/components/route-skeletons";
 import { CandidateSettings } from "@/features/candidates/components/candidate-settings";
 import { getMyCandidateProfile } from "@/features/candidates/server/functions";
+import { CompanyLeaveSection } from "@/features/companies/components/company-leave-section";
 import { CompanySettings } from "@/features/companies/components/company-settings";
-import { getMyCompany } from "@/features/companies/server/functions";
+import { getMyCompanyContext } from "@/features/companies/server/functions";
 
 export const Route = createFileRoute("/_authenticated/dashboard/settings")({
   loader: async ({ context }) => {
     if (context.isCompany) {
-      const company = await getMyCompany();
-      if (!company) {
-        throw redirect({ to: "/onboarding/company" });
+      const companyContext = await getMyCompanyContext();
+      if (!companyContext) {
+        throw redirect({ to: "/onboarding/no-workspace" });
       }
-      return { type: "company" as const, company };
+
+      const { company, membership } = companyContext;
+      const canManageProfile = membership.role === "owner" || membership.role === "admin";
+
+      return {
+        type: "company" as const,
+        company,
+        canManageProfile,
+        canLeaveTeam: membership.role !== "owner",
+      };
     }
     const profile = await getMyCandidateProfile();
     if (!profile) {
@@ -27,10 +37,22 @@ export const Route = createFileRoute("/_authenticated/dashboard/settings")({
 function SettingsPage() {
   const data = Route.useLoaderData();
   const { user } = Route.useRouteContext();
-  if (!user) return null;
 
   if (data.type === "company") {
-    return <CompanySettings company={data.company} />;
+    return (
+      <div className="space-y-6 pb-28">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+          <p className="text-sm text-muted-foreground">Manage your company profile.</p>
+        </div>
+        <CompanySettings company={data.company} canManageProfile={data.canManageProfile} />
+        {data.canLeaveTeam ? <CompanyLeaveSection /> : null}
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
   }
 
   return <CandidateSettings profile={data.profile} user={user} />;

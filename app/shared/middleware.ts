@@ -1,7 +1,8 @@
 import { createMiddleware } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { getUserById } from "@/features/auth/queries/queries_sql";
-import { getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
+import { getActiveMembershipByUserId } from "@/features/companies/queries/membership-queries_sql";
+import { getCompanyById } from "@/features/companies/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { type SessionData, sessionConfig } from "@/shared/session";
 
@@ -27,18 +28,26 @@ export const authMiddleware = createMiddleware().server(async ({ next }) => {
 });
 
 /**
- * Requires an authenticated user who owns a company.
- * Passes `userId` and `company` into context.
+ * Requires an authenticated user with an active company membership.
+ * Passes `company` and `membership` into context. Membership is the
+ * canonical access-control primitive (owner | admin | member); the owner
+ * is just the member whose role is `owner`.
  */
 export const companyMiddleware = createMiddleware()
   .middleware([authMiddleware])
   .server(async ({ next, context }) => {
     const db = getDb();
-    const company = await getCompanyByOwnerId(db, { ownerId: context.userId });
+    const membership = await getActiveMembershipByUserId(db, { userId: context.userId });
+
+    if (!membership) {
+      throw new Error("No company found");
+    }
+
+    const company = await getCompanyById(db, { id: membership.companyId });
 
     if (!company) {
       throw new Error("No company found");
     }
 
-    return next({ context: { company } });
+    return next({ context: { company, membership } });
   });

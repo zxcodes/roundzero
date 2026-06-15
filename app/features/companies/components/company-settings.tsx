@@ -30,7 +30,13 @@ type Company = NonNullable<Awaited<ReturnType<typeof getMyCompany>>>;
 const industryOptions = Object.entries(industryLabels).map(([value, label]) => ({ value, label }));
 const sizeOptions = Object.entries(companySizeLabels).map(([value, label]) => ({ value, label }));
 
-export function CompanySettings({ company }: { company: Company }) {
+export function CompanySettings({
+  company,
+  canManageProfile = true,
+}: {
+  company: Company;
+  canManageProfile?: boolean;
+}) {
   const router = useRouter();
   const id = useId();
 
@@ -112,8 +118,33 @@ export function CompanySettings({ company }: { company: Company }) {
     form.reset();
   };
 
+  if (!canManageProfile) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-lg font-semibold tracking-tight">Company profile</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Your admin manages the public company profile. Contact them for changes.
+          </p>
+        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">{company.name}</CardTitle>
+            {company.description ? <CardDescription>{company.description}</CardDescription> : null}
+          </CardHeader>
+          {company.website ? (
+            <CardContent>
+              <p className="text-sm text-muted-foreground">{company.website}</p>
+            </CardContent>
+          ) : null}
+        </Card>
+        <DeleteAccountSection />
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6 pb-28">
+    <div className="space-y-6">
       <form.Subscribe
         selector={(state) => ({ isDirty: state.isDirty, isSubmitting: state.isSubmitting })}
       >
@@ -128,7 +159,7 @@ export function CompanySettings({ company }: { company: Company }) {
       </form.Subscribe>
 
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Company Settings</h2>
+        <h2 className="text-lg font-semibold tracking-tight">Company profile</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Manage your company profile. This information is visible on your public company page.
         </p>

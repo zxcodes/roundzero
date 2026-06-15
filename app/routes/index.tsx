@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
   beforeLoad: ({ context }) => {
-    if (context.user) {
+    if (context.user?.role) {
       throw redirect({ to: "/dashboard" });
     }
   },

@@ -2,7 +2,9 @@ import type { Sql } from "postgres";
 import { z } from "zod";
 import { getUserById } from "@/features/auth/queries/queries_sql";
 import { getCandidateProfileByUserId } from "@/features/candidates/queries/queries_sql";
-import { getCompanyById, getCompanyByOwnerId } from "@/features/companies/queries/queries_sql";
+import { getCompanyByMemberUserId } from "@/features/companies/queries/membership-queries_sql";
+import { getCompanyById } from "@/features/companies/queries/queries_sql";
+import { notifyCompanyTeam } from "@/features/companies/services/company-team-notifications";
 import {
   createInterview,
   getInterviewByApplicationId,
@@ -131,7 +133,7 @@ export const updateApplicationStatusWorkflow = async (
     throw new Error("Application not found");
   }
 
-  const company = await getCompanyByOwnerId(db, { ownerId: input.userId });
+  const company = await getCompanyByMemberUserId(db, { userId: input.userId });
   if (!company) {
     throw new Error("Not authorized");
   }
@@ -280,7 +282,7 @@ export const shortlistApplicantWorkflow = async (
     throw new Error("Application not found");
   }
 
-  const company = await getCompanyByOwnerId(db, { ownerId: input.userId });
+  const company = await getCompanyByMemberUserId(db, { userId: input.userId });
   if (!company) {
     throw new Error("Not authorized");
   }
@@ -392,17 +394,16 @@ export const withdrawApplicationWorkflow = async (
         candidateName: user.name,
       });
 
-      const notification = await createNotification(db, {
-        userId: company.ownerId,
+      const deliveries = await notifyCompanyTeam(db, {
+        companyId: company.id,
         type: "application_withdrawn",
         payload,
       });
 
-      if (notification) {
-        const owner = await getUserById(db, { id: company.ownerId });
+      for (const delivery of deliveries) {
         await deliverNotificationEmail(db, {
-          notification,
-          recipient: owner ? { email: owner.email } : null,
+          notification: delivery.notification,
+          recipient: { email: delivery.email },
           sendEmail: options?.sendNotificationEmail ?? sendNotificationEmailViaResend,
         });
       }
