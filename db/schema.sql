@@ -43,11 +43,8 @@ CREATE TABLE public.candidate_profiles (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid NOT NULL,
     onboarding_completed_at timestamp with time zone,
-    headline text,
     resume_key text,
     resume_updated_at timestamp with time zone,
-    skills jsonb DEFAULT '[]'::jsonb,
-    links jsonb DEFAULT '{}'::jsonb,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -942,4 +939,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260608010913'),
     ('20260612120000'),
     ('20260614000000'),
-    ('20260614010000');
+    ('20260614010000'),
+    ('20260615042817');

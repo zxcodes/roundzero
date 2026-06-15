@@ -2,7 +2,6 @@ import type { Sql } from "postgres";
 import { z } from "zod";
 import { getApplicationById } from "@/features/applications/queries/queries_sql";
 import type { getInterviewContextById } from "@/features/interviews/queries/queries_sql";
-import { buildCandidateProfileSummary } from "@/shared/ai-candidate-profile";
 import { LIMITS, sanitizeUntrustedText } from "@/shared/ai-refine";
 
 const applicationMetadataSchema = z
@@ -28,10 +27,7 @@ export async function loadVoiceAssessmentContext(
   const application = await getApplicationById(db, { id: interview.applicationId });
   const applicationMetadata =
     applicationMetadataSchema.safeParse(application?.metadata ?? {}).data ?? {};
-  const candidateSummaryRaw =
-    applicationMetadata.resumeText ??
-    applicationMetadata.summary ??
-    buildCandidateProfileSummary(application?.metadata ?? {});
+  const candidateSummaryRaw = applicationMetadata.resumeText ?? applicationMetadata.summary ?? "";
 
   return {
     interviewId: interview.id,

@@ -320,48 +320,15 @@ async function seedForCandidate(user: DevUser) {
 
   await sql`
     INSERT INTO candidate_profiles (
-      id, user_id, onboarding_completed_at, headline, resume_key, resume_updated_at,
-      skills, links
+      id, user_id, onboarding_completed_at, resume_key, resume_updated_at
     )
     VALUES (
       ${makeUuidFromSeed(`seed-me-profile-${user.id}`)}, ${user.id}, now(),
-      ${"Software Engineer · TypeScript · React · Node.js · Cloudflare Workers"},
-      ${RESUME_KEY}, now(),
-      ${sql.json([
-        "TypeScript",
-        "Python",
-        "Next.js",
-        "React Router 7",
-        "Astro",
-        "Tauri",
-        "Electron",
-        "React",
-        "React Native",
-        "Node",
-        "Bun",
-        "Cloudflare Workers",
-        "Hono",
-        "Express",
-        "PostgreSQL",
-        "MySQL",
-        "SQLite",
-        "MongoDB",
-        "Redis",
-      ])},
-      ${sql.json({
-        github: "https://github.com/zxcodes",
-        linkedin: "https://linkedin.com/in/farmaann",
-        portfolio: "https://farmaan.dev/work",
-        twitter: "https://x.com/zxcodes",
-        website: "https://farmaan.dev/work",
-      })}
+      ${RESUME_KEY}, now()
     )
     ON CONFLICT (user_id) DO UPDATE
-    SET headline = EXCLUDED.headline,
-        resume_key = EXCLUDED.resume_key,
+    SET resume_key = EXCLUDED.resume_key,
         resume_updated_at = now(),
-        skills = EXCLUDED.skills,
-        links = EXCLUDED.links,
         onboarding_completed_at = now(),
         updated_at = now()
   `;

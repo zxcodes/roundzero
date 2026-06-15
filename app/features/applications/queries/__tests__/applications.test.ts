@@ -54,7 +54,7 @@ describe("createApplication", () => {
       jobId: job.id,
       candidateId: candidate.id,
       resumeKey: makeTestResumeKey(candidate.id),
-      metadata: { headline: "Engineer", links: { github: "https://github.com/test" } },
+      metadata: {},
       status: "applied",
     });
 
@@ -62,15 +62,12 @@ describe("createApplication", () => {
     expect(app!.jobId).toBe(job.id);
     expect(app!.candidateId).toBe(candidate.id);
     expect(app!.resumeKey).toBe(makeTestResumeKey(candidate.id));
-    expect(app!.metadata).toEqual({
-      headline: "Engineer",
-      links: { github: "https://github.com/test" },
-    });
+    expect(app!.metadata).toEqual({});
     expect(app!.status).toBe("applied");
     expect(app!.createdAt).toBeInstanceOf(Date);
   });
 
-  it("creates an application with metadata snapshot", async () => {
+  it("creates an application with arbitrary metadata", async () => {
     const { company } = await seedCompany();
     const candidate = await seedUser({ role: "candidate" });
     const job = await makeOpenJob(company.id);
@@ -79,12 +76,12 @@ describe("createApplication", () => {
       jobId: job.id,
       candidateId: candidate.id,
       resumeKey: makeTestResumeKey(candidate.id),
-      metadata: { skills: ["TypeScript"] },
+      metadata: { foo: "bar" },
       status: "applied",
     });
 
     expect(app).not.toBeNull();
-    expect(app!.metadata).toEqual({ skills: ["TypeScript"] });
+    expect(app!.metadata).toEqual({ foo: "bar" });
   });
 
   it("enforces unique(job_id, candidate_id) constraint", async () => {
@@ -207,7 +204,7 @@ describe("getApplicationReviewById", () => {
       jobId: job.id,
       candidateId: candidate.id,
       resumeKey: makeTestResumeKey(candidate.id),
-      metadata: { headline: "Senior Engineer" },
+      metadata: {},
       status: "applied",
     });
 
@@ -891,7 +888,7 @@ describe("candidate application tracking — interview status", () => {
       jobId: job.id,
       candidateId: candidate.id,
       resumeKey: makeTestResumeKey(candidate.id),
-      metadata: { headline: "Senior Engineer" },
+      metadata: {},
       status: "applied",
     });
 

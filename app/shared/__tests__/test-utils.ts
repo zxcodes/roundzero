@@ -165,13 +165,11 @@ export const seedJob = async (overrides?: {
 interface TestCandidateProfile {
   id: string;
   userId: string;
-  headline: string | null;
 }
 
 /** Create a test candidate profile. Creates a candidate user if userId not provided. */
 export const seedCandidateProfile = async (overrides?: {
   userId?: string;
-  headline?: string | null;
   resumeKey?: string | null;
 }): Promise<{ profile: TestCandidateProfile; user: TestUser }> => {
   const user = overrides?.userId
@@ -179,13 +177,12 @@ export const seedCandidateProfile = async (overrides?: {
     : await seedUser({ role: "candidate" });
 
   const sql = getTestDb();
-  const headline = overrides?.headline ?? "Software Engineer";
   const resumeKey = overrides?.resumeKey ?? makeTestResumeKey(user.id);
 
   const [row] = await sql`
-    INSERT INTO candidate_profiles (user_id, headline, resume_key, onboarding_completed_at, resume_updated_at)
-    VALUES (${user.id}, ${headline}, ${resumeKey}, now(), ${resumeKey ? new Date() : null})
-    RETURNING id, user_id AS "userId", headline
+    INSERT INTO candidate_profiles (user_id, resume_key, onboarding_completed_at, resume_updated_at)
+    VALUES (${user.id}, ${resumeKey}, now(), ${resumeKey ? new Date() : null})
+    RETURNING id, user_id AS "userId"
   `;
   return { profile: row as TestCandidateProfile, user };
 };
