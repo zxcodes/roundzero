@@ -231,15 +231,6 @@ export const getMyCompany = createServerFn({ method: "GET" }).handler(async () =
   return context?.company ?? null;
 });
 
-export const getMyMembership = createServerFn({ method: "GET" }).handler(async () => {
-  const session = await useSession<SessionData>(sessionConfig);
-  if (!session.data.userId) {
-    return null;
-  }
-  const context = await resolveMyCompanyContext(session.data.userId);
-  return context?.membership ?? null;
-});
-
 export const updateCompanyProfile = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
   .validator(zodValidator(updateCompanyProfileSchema))
