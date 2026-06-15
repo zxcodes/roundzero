@@ -1,5 +1,6 @@
 ## TODO
 
+- pricing needs a big change. (think about per job, x number of jobs, and pay as you go kind?, make it cheaper too) (IMPORTANT)
 - check if candidate profile settings (skills, links, etc are useless since we already have resume and we parse from that.) & from onboarding too.
 - add an easier copy company jobs profile for companies to link it in their careers page.
 - add retro or technical logs on landing page (pre, post eval) looks nice. 
@@ -7,7 +8,6 @@
 - company has redundant steps. if I click a job, first taken to a page where there is jd, I have to click view applicants, which is another redundant page. we can def drop one of these here and make it simple.
 - overall caching seems a bit too aggressive. login/logouts, switching accounts, has stale data.
 - check deleted account behaviour for companies, applications, etc. how the entire flow handles it.
-- pricing needs a big change. (think about per job, x number of jobs, and pay as you go kind?)
 - still a few rough edges around failed eval. retry eval button doesnt seem to work. better to kill it? (says Retry skipped
 post_eval_already_complete)
 - interview panel padding still sucks (sticks left side completely on mobile and short screens)
