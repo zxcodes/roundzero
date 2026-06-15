@@ -1,5 +1,6 @@
 ## TODO
 
+- do not let people skip voice interview. or even if they do tell them before hand that it's a deal breaker and will hugely affect their chances.
 - pricing needs a big change. (think about per job, x number of jobs, and pay as you go kind?, make it cheaper too) (IMPORTANT)
 - add an easier copy company jobs profile for companies to link it in their careers page.
 - add retro or technical logs on landing page (pre, post eval) looks nice. 
