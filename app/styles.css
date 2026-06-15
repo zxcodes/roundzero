@@ -372,3 +372,100 @@
     animation: scale-in 0.3s ease-out both;
   }
 }
+
+/* ==========================================================================
+   Calm Document (landing page) theme — light by default, professional,
+   modern-SaaS. Near-white warm paper, warm ink, a single restrained ox-blood
+   accent shared with the product (--brand), Geist sans for everything and
+   Geist Mono reserved for data/labels. Soft hairline surfaces, small radius.
+   Scoped to the marketing landing only; overrides the shadcn semantic tokens
+   so Button / Accordion / Badge inherit the palette automatically.
+   ========================================================================== */
+.calm {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.2 0.004 264);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2 0.004 264);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2 0.004 264);
+  --primary: oklch(0.21 0.006 264);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.974 0.002 264);
+  --secondary-foreground: oklch(0.21 0.006 264);
+  --muted: oklch(0.974 0.002 264);
+  --muted-foreground: oklch(0.52 0.008 264);
+  --accent: oklch(0.97 0.002 264);
+  --accent-foreground: oklch(0.21 0.006 264);
+  --border: oklch(0.923 0.003 264);
+  --input: oklch(0.923 0.003 264);
+  --ring: oklch(0.45 0.13 28);
+  --brand: oklch(0.45 0.13 28);
+  --brand-foreground: oklch(0.99 0 0);
+  --status-success: oklch(0.5 0.11 150);
+  --status-warning: oklch(0.52 0.12 60);
+  --radius: 0.625rem;
+
+  color: var(--foreground);
+  background: var(--background);
+  font-feature-settings: "ss01", "cv11";
+  letter-spacing: -0.003em;
+}
+
+.calm .eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted-foreground);
+}
+
+.calm-hero {
+  background: radial-gradient(75% 62% at 50% -14%, oklch(0.92 0.004 264 / 0.9), transparent 70%);
+}
+
+.calm-skip-link {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 60;
+  padding: 0.6rem 0.9rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--foreground);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transform: translateY(-160%);
+  transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.calm-skip-link:focus-visible {
+  transform: translateY(0);
+  outline: none;
+  box-shadow: 0 0 0 3px oklch(0.45 0.13 28 / 0.22);
+}
+
+@keyframes calm-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.calm .rise {
+  animation: calm-rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .calm .rise {
+    animation: none;
+  }
+  .calm-skip-link {
+    transition: none;
+  }
+}
