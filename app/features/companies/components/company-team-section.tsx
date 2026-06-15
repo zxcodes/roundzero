@@ -264,7 +264,7 @@ export function CompanyTeamSection({
                     ) : (
                       <HugeiconsIcon icon={Mail01Icon} strokeWidth={2} className="size-4" />
                     )}
-                    Send invite
+                    {isSubmitting || inviteMutation.isPending ? "Sending..." : "Send invite"}
                   </Button>
                 )}
               </form.Subscribe>
@@ -291,42 +291,69 @@ export function CompanyTeamSection({
             </Empty>
           ) : (
             <div className="space-y-3">
-              {team.invitations.map((invitation) => (
-                <div
-                  key={invitation.id}
-                  className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="min-w-0 space-y-1">
-                    <p className="truncate font-medium">{invitation.email}</p>
-                    <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                      <Badge variant="secondary">
-                        {invitationRoleLabels[invitation.role as keyof typeof invitationRoleLabels]}
-                      </Badge>
-                      <span>Expires {formatDate(invitation.expiresAt)}</span>
+              {team.invitations.map((invitation) => {
+                const isResending =
+                  resendMutation.isPending &&
+                  resendMutation.variables?.data.invitationId === invitation.id;
+                const isRevoking =
+                  revokeMutation.isPending &&
+                  revokeMutation.variables?.data.invitationId === invitation.id;
+
+                return (
+                  <div
+                    key={invitation.id}
+                    className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="min-w-0 space-y-1">
+                      <p className="truncate font-medium">{invitation.email}</p>
+                      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                        <Badge variant="secondary">
+                          {
+                            invitationRoleLabels[
+                              invitation.role as keyof typeof invitationRoleLabels
+                            ]
+                          }
+                        </Badge>
+                        <span>Expires {formatDate(invitation.expiresAt)}</span>
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={isResending}
+                        onClick={() => onResendInvitation(invitation.id)}
+                      >
+                        {isResending ? (
+                          <HugeiconsIcon
+                            icon={Loading03Icon}
+                            strokeWidth={2}
+                            className="size-4 animate-spin"
+                          />
+                        ) : null}
+                        {isResending ? "Resending..." : "Resend"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={isRevoking}
+                        onClick={() => onRevokeInvitation(invitation.id)}
+                      >
+                        {isRevoking ? (
+                          <HugeiconsIcon
+                            icon={Loading03Icon}
+                            strokeWidth={2}
+                            className="size-4 animate-spin"
+                          />
+                        ) : null}
+                        {isRevoking ? "Revoking..." : "Revoke"}
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex shrink-0 gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={resendMutation.isPending}
-                      onClick={() => onResendInvitation(invitation.id)}
-                    >
-                      Resend
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={revokeMutation.isPending}
-                      onClick={() => onRevokeInvitation(invitation.id)}
-                    >
-                      Revoke
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
@@ -354,6 +381,12 @@ export function CompanyTeamSection({
                 const canRemove = member.role !== "owner" && member.userId !== currentUserId;
                 const canTransfer =
                   isOwner && member.role !== "owner" && member.userId !== currentUserId;
+                const isRemoving =
+                  removeMutation.isPending && removeMutation.variables?.data.memberId === member.id;
+                const isTransferring =
+                  transferMutation.isPending &&
+                  transferMutation.variables?.data.memberId === member.id;
+
                 return (
                   <div
                     key={member.id}
@@ -377,9 +410,16 @@ export function CompanyTeamSection({
                                 type="button"
                                 variant="outline"
                                 size="sm"
-                                disabled={transferMutation.isPending}
+                                disabled={isTransferring}
                               >
-                                Make owner
+                                {isTransferring ? (
+                                  <HugeiconsIcon
+                                    icon={Loading03Icon}
+                                    strokeWidth={2}
+                                    className="size-4 animate-spin"
+                                  />
+                                ) : null}
+                                {isTransferring ? "Transferring..." : "Make owner"}
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
@@ -394,9 +434,16 @@ export function CompanyTeamSection({
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                                 <AlertDialogAction
                                   onClick={() => onConfirmTransfer(member.id)}
-                                  disabled={transferMutation.isPending}
+                                  disabled={isTransferring}
                                 >
-                                  Transfer ownership
+                                  {isTransferring ? (
+                                    <HugeiconsIcon
+                                      icon={Loading03Icon}
+                                      strokeWidth={2}
+                                      className="size-4 animate-spin"
+                                    />
+                                  ) : null}
+                                  {isTransferring ? "Transferring..." : "Transfer ownership"}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
@@ -409,9 +456,16 @@ export function CompanyTeamSection({
                                 type="button"
                                 variant="outline"
                                 size="sm"
-                                disabled={removeMutation.isPending}
+                                disabled={isRemoving}
                               >
-                                Remove
+                                {isRemoving ? (
+                                  <HugeiconsIcon
+                                    icon={Loading03Icon}
+                                    strokeWidth={2}
+                                    className="size-4 animate-spin"
+                                  />
+                                ) : null}
+                                {isRemoving ? "Removing..." : "Remove"}
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
@@ -425,9 +479,16 @@ export function CompanyTeamSection({
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                                 <AlertDialogAction
                                   onClick={() => onConfirmRemove(member.id)}
-                                  disabled={removeMutation.isPending}
+                                  disabled={isRemoving}
                                 >
-                                  Remove member
+                                  {isRemoving ? (
+                                    <HugeiconsIcon
+                                      icon={Loading03Icon}
+                                      strokeWidth={2}
+                                      className="size-4 animate-spin"
+                                    />
+                                  ) : null}
+                                  {isRemoving ? "Removing..." : "Remove member"}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
