@@ -2,7 +2,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { generateText, Output } from "ai";
 import { z } from "zod";
-import { getPlanJobLimit, hasActiveSubscription } from "@/features/billing/config";
+import {
+  getPlanJobLimit,
+  getPlanReportLimit,
+  hasActiveSubscription,
+} from "@/features/billing/config";
 import { getCompanyByMemberUserId } from "@/features/companies/queries/membership-queries_sql";
 import { notifyCompanyTeam } from "@/features/companies/services/company-team-notifications";
 import { getDb } from "@/shared/db";
@@ -38,6 +42,15 @@ async function enforceJobLimit(
   }
 }
 
+function clampFinalReportTarget(
+  subscriptionPlan: string | null,
+  requestedTarget: number | null | undefined,
+): number {
+  const reportLimit = getPlanReportLimit(subscriptionPlan);
+  const target = typeof requestedTarget === "number" ? requestedTarget : 5;
+  return Math.max(1, Math.min(target, reportLimit));
+}
+
 export const createJob = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
   .validator(zodValidator(jobFieldsSchema))
@@ -64,7 +77,10 @@ export const createJob = createServerFn({ method: "POST" })
       salaryCurrency: data.salaryCurrency,
       teamSize: data.teamSize ?? null,
       headcount: data.headcount ?? null,
-      finalReportTarget: data.finalReportTarget,
+      finalReportTarget: clampFinalReportTarget(
+        context.company.subscriptionPlan,
+        data.finalReportTarget,
+      ),
       expiresAt: data.expiresAt ?? null,
     });
 
@@ -151,7 +167,10 @@ export const updateJob = createServerFn({ method: "POST" })
       salaryCurrency: data.salaryCurrency,
       teamSize: data.teamSize ?? null,
       headcount: data.headcount ?? null,
-      finalReportTarget: data.finalReportTarget,
+      finalReportTarget: clampFinalReportTarget(
+        context.company.subscriptionPlan,
+        data.finalReportTarget,
+      ),
       expiresAt: data.expiresAt ?? null,
     });
 
@@ -224,7 +243,10 @@ export const publishJob = createServerFn({ method: "POST" })
       salaryCurrency: job.salaryCurrency,
       teamSize: job.teamSize,
       headcount: job.headcount,
-      finalReportTarget: job.finalReportTarget,
+      finalReportTarget: clampFinalReportTarget(
+        context.company.subscriptionPlan,
+        job.finalReportTarget,
+      ),
       expiresAt: job.expiresAt,
     });
 
@@ -417,7 +439,9 @@ export const generateJobWithAI = createServerFn({ method: "POST" })
       subscriptionStatus: context.company.subscriptionStatus,
     });
     if (!isPaid) {
-      throw new Error("AI job creation is available on Pro. Upgrade to unlock this feature.");
+      throw new Error(
+        "AI job creation is available on paid plans. Upgrade to unlock this feature.",
+      );
     }
 
     const result = await generateText({
@@ -433,7 +457,7 @@ export const generateJobWithAI = createServerFn({ method: "POST" })
       ...cleaned,
       status: "draft",
       expiresAt: null,
-      finalReportTarget: 5,
+      finalReportTarget: getPlanReportLimit(context.company.subscriptionPlan),
     });
 
     if (!validated.success) {

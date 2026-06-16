@@ -34,6 +34,7 @@ export type PlanConfig = {
   priceLabel: string;
   periodLabel: string;
   includedJobs: number;
+  includedReportsPerJob: number;
   overagePrice?: string;
   features: string[];
 };
@@ -46,10 +47,11 @@ export const PLAN_CONFIGS: Record<SubscriptionPlan, PlanConfig> = {
     priceLabel: "$0",
     periodLabel: "forever",
     includedJobs: 1,
+    includedReportsPerJob: 1,
     features: [
       "1 active job",
+      "1 evaluation report per job",
       "AI pre-evaluation on all applicants",
-      "Structured evaluation reports",
       "Email support",
     ],
   },
@@ -60,12 +62,13 @@ export const PLAN_CONFIGS: Record<SubscriptionPlan, PlanConfig> = {
     priceLabel: "$39",
     periodLabel: "per month",
     includedJobs: 3,
+    includedReportsPerJob: 3,
     overagePrice: "$12 per extra job",
     features: [
       "3 active jobs",
+      "3 evaluation reports per job",
       "AI job creation",
       "AI pre-evaluation on all applicants",
-      "Structured evaluation reports",
       "Email support",
     ],
   },
@@ -76,12 +79,13 @@ export const PLAN_CONFIGS: Record<SubscriptionPlan, PlanConfig> = {
     priceLabel: "$99",
     periodLabel: "per month",
     includedJobs: 10,
+    includedReportsPerJob: 5,
     overagePrice: "$9 per extra job",
     features: [
       "10 active jobs",
+      "5 evaluation reports per job",
       "AI job creation",
       "AI pre-evaluation on all applicants",
-      "Structured evaluation reports",
       "Email support",
     ],
   },
@@ -92,12 +96,13 @@ export const PLAN_CONFIGS: Record<SubscriptionPlan, PlanConfig> = {
     priceLabel: "$249",
     periodLabel: "per month",
     includedJobs: 25,
+    includedReportsPerJob: 10,
     overagePrice: "$7 per extra job",
     features: [
       "25 active jobs",
+      "10 evaluation reports per job",
       "AI job creation",
       "AI pre-evaluation on all applicants",
-      "Structured evaluation reports",
       "Email support",
     ],
   },
@@ -126,4 +131,13 @@ export function hasActiveSubscription(input: {
 export function getPlanJobLimit(plan: string | null | undefined): number {
   const key = (plan ?? "free") as SubscriptionPlan;
   return PLAN_CONFIGS[key]?.includedJobs ?? PLAN_CONFIGS.free.includedJobs;
+}
+
+/**
+ * Returns the maximum number of evaluation reports that can be delivered per job.
+ * This caps `finalReportTarget` on job creation/edit/AI generation.
+ */
+export function getPlanReportLimit(plan: string | null | undefined): number {
+  const key = (plan ?? "free") as SubscriptionPlan;
+  return PLAN_CONFIGS[key]?.includedReportsPerJob ?? PLAN_CONFIGS.free.includedReportsPerJob;
 }

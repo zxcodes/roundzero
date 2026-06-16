@@ -1041,10 +1041,7 @@ const featureRows = [
     label: "AI pre-evaluation",
     values: ["All applicants", "All applicants", "All applicants", "All applicants"],
   },
-  {
-    label: "Structured evaluation reports",
-    values: ["Included", "Included", "Included", "Included"],
-  },
+  { label: "Evaluation reports per job", values: ["1", "3", "5", "10"] },
   { label: "Support", values: ["Email", "Email", "Email", "Email"] },
 ];
 
