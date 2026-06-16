@@ -72,9 +72,7 @@ export class PreEvaluationWorkflow extends WorkflowEntrypoint<Env, PreEvaluation
             requirements: applicationData.job.requirements,
           },
           resumeText,
-          applicationData.application.metadata ?? {},
           jobClassification.roleType,
-
           log,
         ),
       );

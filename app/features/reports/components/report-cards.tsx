@@ -252,11 +252,7 @@ export function ReportSnapshotCard({
           <p className="line-clamp-2 max-w-2xl text-sm leading-6 text-muted-foreground">
             {report.summary}
           </p>
-          <Button
-            asChild
-            size="default"
-            className="shrink-0 shadow-sm bg-brand text-brand-foreground hover:bg-brand/90"
-          >
+          <Button asChild size="default" className="shrink-0 shadow-sm">
             <Link to="/dashboard/applicant-reports/$applicationId" params={{ applicationId }}>
               View full report
               <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2.2} className="size-4" />

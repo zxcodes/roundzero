@@ -33,7 +33,7 @@ The current date is provided in the user message's currentDate field. Use it as 
 
 ## Rules
 - Only credit explicitly demonstrated scope and outcomes. Do not infer or assume.
-- Treat the resume as primary evidence. The profile snapshot only contains a self-reported headline, skill tags, and contact links — use it as light supporting context, not as independent evidence.
+- Treat the resume as primary evidence.
 - Generic phrasing is weak evidence, not dishonesty by itself. Penalize it only when it crowds out concrete scope, outcomes, or executive decision-making.
 - Absence is a gap, not a contradiction. If a board, P&L, or org-scale detail is not mentioned, treat it as a missing requirement or follow-up point rather than fabrication.
 - Missing requirements should usually become interview probe areas, not automatic reasons to hold.

@@ -1,7 +1,7 @@
 ## TODO
 
+- do not let people skip voice interview. or even if they do tell them before hand that it's a deal breaker and will hugely affect their chances.
 - pricing needs a big change. (think about per job, x number of jobs, and pay as you go kind?, make it cheaper too) (IMPORTANT)
-- check if candidate profile settings (skills, links, etc are useless since we already have resume and we parse from that.) & from onboarding too.
 - add an easier copy company jobs profile for companies to link it in their careers page.
 - add retro or technical logs on landing page (pre, post eval) looks nice. 
 - add onCopy, onPaste detectors and evaluate final score based on that.
@@ -17,6 +17,7 @@ post_eval_already_complete)
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- check if candidate profile settings (skills, links, etc are useless since we already have resume and we parse from that.) & from onboarding too.-->
 <!--- ~~we need to be able to invite people with their email. so when they signup they can join that org or something.~~ Done — see [multi-tenant company auth plan](docs/superpowers/specs/2026-06-14-multi-tenant-company-auth-plan.md).-->
 <!--- improve ci. prevent unnecessary runs.-->
 <!--- candidate needs a nice dashboard too (sent applications, pending interviews, shortlisted applications etc.) — implemented actionable version with action queue, header stats, and pipeline signals (see docs/superpowers/specs/2026-06-13-candidate-dashboard-plan.md)-->
