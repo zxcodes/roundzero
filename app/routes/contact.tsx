@@ -45,9 +45,9 @@ function ContactPage() {
 
   if (submitted) {
     return (
-      <div className="calm min-h-svh bg-background text-foreground">
+      <div className="calm flex min-h-svh flex-col bg-background text-foreground">
         <PublicHeader />
-        <main className="mx-auto flex max-w-lg flex-col items-center px-6 py-24 text-center lg:px-10">
+        <main className="mx-auto flex w-full max-w-lg flex-1 flex-col items-center px-6 py-24 text-center lg:px-10">
           <h1 className="text-[clamp(1.75rem,3.2vw,2.6rem)] font-semibold leading-[1.05] tracking-tight">
             Message sent
           </h1>
@@ -63,9 +63,9 @@ function ContactPage() {
   }
 
   return (
-    <div className="calm min-h-svh bg-background text-foreground">
+    <div className="calm flex min-h-svh flex-col bg-background text-foreground">
       <PublicHeader />
-      <main className="mx-auto max-w-lg px-6 py-20 lg:px-10">
+      <main className="mx-auto flex-1 w-full max-w-lg px-6 py-20 lg:px-10">
         <div className="text-center">
           <h1 className="text-[clamp(1.75rem,3.2vw,2.6rem)] font-semibold leading-[1.05] tracking-tight">
             Contact us
