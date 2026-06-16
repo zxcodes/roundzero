@@ -54,7 +54,7 @@ export function PublicHeader({ marketing }: { marketing?: boolean }) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="hidden text-muted-foreground sm:inline-flex rounded-none"
+                className="hidden rounded-full text-muted-foreground sm:inline-flex"
                 asChild
               >
                 <Link to="/company/login">For companies</Link>
@@ -62,7 +62,7 @@ export function PublicHeader({ marketing }: { marketing?: boolean }) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="hidden text-muted-foreground sm:inline-flex rounded-none"
+                className="hidden rounded-full text-muted-foreground sm:inline-flex"
                 asChild
               >
                 <Link to="/candidate/login">For job seekers</Link>
