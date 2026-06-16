@@ -205,10 +205,10 @@ function PlanCard({
   return (
     <Card
       data-current={isCurrent ? "true" : undefined}
-      className={`flex flex-col ${isCurrent ? "border-brand/40 ring-1 ring-brand/10 shadow-sm shadow-brand/10" : ""}`}
+      className={`flex flex-col ${isCurrent ? "border-primary/40 ring-1 ring-primary/10 shadow-sm" : ""}`}
     >
       <CardHeader>
-        <CardTitle className={isCurrent ? "text-brand" : ""}>{config.name}</CardTitle>
+        <CardTitle className={isCurrent ? "text-foreground" : ""}>{config.name}</CardTitle>
         <div className="flex items-baseline gap-2">
           <span className="text-3xl font-semibold">{config.priceLabel}</span>
           <span className="text-sm text-muted-foreground">/ {config.periodLabel}</span>
@@ -242,11 +242,7 @@ function PlanCard({
             <a href="mailto:sales@roundzero.dev">Contact sales</a>
           </Button>
         ) : (
-          <Button
-            onClick={onClick}
-            disabled={checkingOut}
-            className="bg-brand text-brand-foreground hover:bg-brand/90 shadow-sm shadow-brand/20"
-          >
+          <Button onClick={onClick} disabled={checkingOut} className="shadow-sm">
             {checkingOut ? (
               <>
                 <HugeiconsIcon

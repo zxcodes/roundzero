@@ -23,7 +23,7 @@ export function LegalLink({ href, children }: { href: string; children: React.Re
       href={href}
       target={isMailto ? undefined : "_blank"}
       rel={isMailto ? undefined : "noopener noreferrer"}
-      className="text-brand underline underline-offset-2 hover:text-brand/80"
+      className="text-foreground underline underline-offset-2 hover:text-foreground/80"
     >
       {children}
     </a>

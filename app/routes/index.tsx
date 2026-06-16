@@ -80,14 +80,14 @@ function Highlight({ children }: { children: React.ReactNode }) {
 function AnnouncementPill() {
   return (
     <div className="mb-6 inline-flex max-w-full flex-wrap items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5">
-      <span className="rounded-full bg-brand/15 px-2 py-0.5 font-mono text-[10px] font-medium uppercase tracking-wider text-brand">
+      <span className="rounded-full bg-primary/10 px-2 py-0.5 font-mono text-[10px] font-medium uppercase tracking-wider text-foreground">
         New
       </span>
       <span className="text-xs text-muted-foreground">Voice assessments in every report</span>
       <HugeiconsIcon
         icon={ArrowRight01Icon}
         strokeWidth={2}
-        className="size-3.5 shrink-0 text-brand"
+        className="size-3.5 shrink-0 text-foreground"
       />
     </div>
   );
@@ -96,7 +96,7 @@ function AnnouncementPill() {
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
     <span className="eyebrow inline-flex items-center gap-2">
-      <span className="size-1.5 rounded-xs bg-brand" />
+      <span className="size-1.5 rounded-xs bg-foreground" />
       {children}
     </span>
   );
@@ -358,7 +358,7 @@ function HowItWorks() {
                 i === 0 ? "lg:pl-0" : "",
               )}
             >
-              <span className="font-mono text-xs text-brand">{step.n}</span>
+              <span className="font-mono text-xs text-foreground">{step.n}</span>
               <h3 className="mt-3 text-lg font-semibold tracking-[-0.01em]">{step.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.body}</p>
             </article>
@@ -419,7 +419,7 @@ function CandidateExperience() {
               lead="Zero validates claims, probes vague answers, and adapts to the role the way a senior interviewer would."
             />
 
-            <blockquote className="mt-8 border-l-2 border-brand pl-5 text-lg leading-relaxed text-foreground">
+            <blockquote className="mt-8 border-l-2 border-foreground pl-5 text-lg leading-relaxed text-foreground">
               “It noticed I'd been vague about Redis Streams and asked me to draw out exactly how
               messages were ordered. It felt less like a quiz and more like a conversation with a
               senior engineer who had already read my résumé.”
@@ -439,7 +439,7 @@ function CandidateExperience() {
                     "Stays concise. Twenty to forty minutes, async.",
                   ].map((line) => (
                     <li key={line} className="flex gap-2.5 text-sm leading-relaxed text-foreground">
-                      <span className="mt-2 size-1 shrink-0 rounded-full bg-brand" />
+                      <span className="mt-2 size-1 shrink-0 rounded-full bg-foreground" />
                       {line}
                     </li>
                   ))}
@@ -455,7 +455,7 @@ function CandidateExperience() {
                     "A fairer, more meaningful evaluation.",
                   ].map((line) => (
                     <li key={line} className="flex gap-2.5 text-sm leading-relaxed text-foreground">
-                      <span className="mt-2 size-1 shrink-0 rounded-full bg-brand" />
+                      <span className="mt-2 size-1 shrink-0 rounded-full bg-foreground" />
                       {line}
                     </li>
                   ))}
@@ -475,7 +475,7 @@ function CandidateExperience() {
                   <span
                     className={cn(
                       "col-span-3 font-mono text-[10.5px] tracking-wider sm:col-span-2",
-                      t.role === "Zero" ? "text-brand" : "text-muted-foreground",
+                      t.role === "Zero" ? "text-foreground" : "text-muted-foreground",
                     )}
                   >
                     {t.role.toUpperCase()}
@@ -510,7 +510,7 @@ function CandidateExperience() {
                       </span>
                       <div className="mt-1 h-0.5 w-full overflow-hidden rounded-full bg-border">
                         <div
-                          className="h-full rounded-full bg-brand"
+                          className="h-full rounded-full bg-foreground"
                           style={{ width: `${dim.value}%` }}
                         />
                       </div>
@@ -795,7 +795,7 @@ function PricingSection() {
                     scope="col"
                     className={cn(
                       "w-1/4 px-4 pb-6 text-left align-top",
-                      t.featured ? "border-x border-brand/25 bg-muted/25" : "",
+                      t.featured ? "border-x border-foreground/15 bg-muted/25" : "",
                     )}
                   >
                     <div className="flex flex-col gap-2">
@@ -828,7 +828,9 @@ function PricingSection() {
                       key={`${row.label}-${tiers[valueIndex]?.name}`}
                       className={cn(
                         "px-4 py-4 align-top text-[14px]",
-                        tiers[valueIndex]?.featured ? "border-x border-brand/25 bg-muted/25" : "",
+                        tiers[valueIndex]?.featured
+                          ? "border-x border-foreground/15 bg-muted/25"
+                          : "",
                         value === NOT_INCLUDED ? "text-muted-foreground" : "text-foreground",
                       )}
                     >
@@ -844,7 +846,7 @@ function PricingSection() {
                     key={t.name}
                     className={cn(
                       "px-4 pt-6 align-top",
-                      t.featured ? "border-x border-brand/25 bg-muted/25" : "",
+                      t.featured ? "border-x border-foreground/15 bg-muted/25" : "",
                     )}
                   >
                     <TierCta tier={t} />
@@ -863,12 +865,12 @@ function PricingSection() {
               className={cn(
                 "rounded-4xl border p-5",
                 t.featured
-                  ? "border-x border-brand/25 border-y-border bg-muted/25"
+                  ? "border-x border-foreground/15 border-y-border bg-muted/25"
                   : "border-border",
               )}
             >
               <div className="mb-5 flex flex-col gap-1.5">
-                {t.featured ? <span className="eyebrow text-brand">Most popular</span> : null}
+                {t.featured ? <span className="eyebrow text-foreground">Most popular</span> : null}
                 <span className="text-lg font-semibold tracking-[-0.01em]">{t.name}</span>
                 <div className="flex items-baseline gap-1.5">
                   <span className="font-mono text-3xl font-medium tracking-tight">{t.price}</span>
@@ -964,7 +966,7 @@ function CostComparison() {
                 <span
                   className={cn(
                     "col-span-5 text-[15px] font-medium",
-                    p.name === "RoundZero Pro" ? "text-brand" : "text-foreground",
+                    p.name === "RoundZero Pro" ? "text-foreground" : "text-foreground",
                   )}
                 >
                   {p.name}
