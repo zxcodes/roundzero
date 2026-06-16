@@ -1,6 +1,7 @@
 import { useRouteContext } from "@tanstack/react-router";
 import { PublicFooter, PublicHeader } from "@/components/public-layout";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /**
@@ -16,7 +17,7 @@ export function JobsListSkeleton() {
         {/* Hero header */}
         <section className="relative overflow-hidden border-b border-border/40">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--color-primary)/6%,transparent_70%)]" />
-          <div className="relative mx-auto max-w-6xl px-6 py-16 lg:px-8 lg:py-20">
+          <div className="relative mx-auto max-w-7xl px-6 py-16 lg:px-10 lg:py-20">
             <div className="space-y-3">
               <Skeleton className="h-3 w-20" />
               <Skeleton className="h-9 w-64" />
@@ -26,24 +27,28 @@ export function JobsListSkeleton() {
         </section>
 
         {/* Filter bar */}
-        <section className="sticky top-14 z-40 border-b border-border/40 bg-background/80 backdrop-blur-xl backdrop-saturate-150">
-          <div className="mx-auto flex max-w-6xl flex-col gap-3 px-6 py-3.5 sm:flex-row sm:items-center lg:px-8">
-            <Skeleton className="h-9 flex-1" />
-            <Skeleton className="h-9 w-full sm:w-36" />
-            <Skeleton className="h-9 w-full sm:w-36" />
-            <Skeleton className="h-9 w-full sm:w-36" />
-            <Skeleton className="h-9 w-full sm:w-36" />
-            <Skeleton className="h-9 w-full sm:w-36" />
+        <section className="border-b border-border/40 bg-background">
+          <div className="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-3.5 sm:flex-row sm:items-center lg:px-10">
+            <Skeleton className="h-9 flex-1 shrink-0 sm:shrink" />
+            <ScrollArea orientation="horizontal" className="-mx-6 h-9 px-6 sm:mx-0 sm:px-0">
+              <div className="flex gap-3">
+                <Skeleton className="h-9 w-36 shrink-0" />
+                <Skeleton className="h-9 w-36 shrink-0" />
+                <Skeleton className="h-9 w-36 shrink-0" />
+                <Skeleton className="h-9 w-36 shrink-0" />
+                <Skeleton className="h-9 w-36 shrink-0" />
+              </div>
+            </ScrollArea>
           </div>
         </section>
 
         {/* Results count */}
-        <div className="mx-auto max-w-6xl px-6 pt-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-6 pt-6 lg:px-10">
           <Skeleton className="h-3.5 w-28" />
         </div>
 
         {/* Card grid */}
-        <section className="mx-auto max-w-6xl px-6 py-4 pb-12 lg:px-8 lg:pb-16">
+        <section className="mx-auto max-w-7xl px-6 py-4 pb-12 lg:px-10 lg:pb-16">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 9 }).map((_, i) => (
               <Card key={i}>
@@ -96,7 +101,7 @@ export function CompaniesListSkeleton() {
         {/* Hero header */}
         <section className="relative overflow-hidden border-b border-border/40">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--color-primary)/6%,transparent_70%)]" />
-          <div className="relative mx-auto max-w-6xl px-6 py-16 lg:px-8 lg:py-20">
+          <div className="relative mx-auto max-w-7xl px-6 py-16 lg:px-10 lg:py-20">
             <div className="space-y-3">
               <Skeleton className="h-3 w-28" />
               <Skeleton className="h-9 w-72" />
@@ -107,7 +112,7 @@ export function CompaniesListSkeleton() {
 
         {/* Filter bar */}
         <section className="sticky top-14 z-40 border-b border-border/40 bg-background/80 backdrop-blur-xl backdrop-saturate-150">
-          <div className="mx-auto flex max-w-6xl flex-col gap-3 px-6 py-3.5 sm:flex-row sm:items-center lg:px-8">
+          <div className="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-3.5 sm:flex-row sm:items-center lg:px-10">
             <Skeleton className="h-9 flex-1" />
             <Skeleton className="h-9 w-full sm:w-44" />
             <Skeleton className="h-9 w-full sm:w-48" />
@@ -115,12 +120,12 @@ export function CompaniesListSkeleton() {
         </section>
 
         {/* Results count */}
-        <div className="mx-auto max-w-6xl px-6 pt-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-6 pt-6 lg:px-10">
           <Skeleton className="h-3.5 w-32" />
         </div>
 
         {/* Card grid */}
-        <section className="mx-auto max-w-6xl px-6 py-4 pb-12 lg:px-8 lg:pb-16">
+        <section className="mx-auto max-w-7xl px-6 py-4 pb-12 lg:px-10 lg:pb-16">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 9 }).map((_, i) => (
               <Card key={i}>
@@ -177,7 +182,7 @@ export function JobDetailSkeleton() {
         {/* Header section */}
         <section className="relative overflow-hidden border-b border-border/40">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--color-primary)/5%,transparent_60%)]" />
-          <div className="relative mx-auto max-w-6xl px-6 pb-10 pt-6 lg:px-8 lg:pb-12">
+          <div className="relative mx-auto max-w-7xl px-6 pb-10 pt-6 lg:px-10 lg:pb-12">
             {/* Back link */}
             <Skeleton className="h-4 w-20" />
             <div className="mt-8 space-y-5">
@@ -201,7 +206,7 @@ export function JobDetailSkeleton() {
         </section>
 
         {/* Body — 2-col grid */}
-        <section className="mx-auto grid max-w-6xl gap-10 px-6 py-8 lg:grid-cols-3 lg:px-8 lg:py-12">
+        <section className="mx-auto grid max-w-7xl gap-10 px-6 py-8 lg:grid-cols-3 lg:px-10 lg:py-12">
           {/* Left column */}
           <div className="space-y-10 lg:col-span-2">
             {/* Description */}
@@ -280,7 +285,7 @@ export function CompanyDetailSkeleton() {
         {/* Hero section */}
         <section className="relative overflow-hidden border-b border-border/40">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--color-primary)/5%,transparent_60%)]" />
-          <div className="relative mx-auto max-w-6xl px-6 pb-10 pt-6 lg:px-8 lg:pb-12">
+          <div className="relative mx-auto max-w-7xl px-6 pb-10 pt-6 lg:px-10 lg:pb-12">
             <Skeleton className="h-4 w-28" />
             <div className="mt-8 flex flex-col gap-6 sm:flex-row sm:items-start">
               <Skeleton className="size-16 rounded-xl" />
@@ -302,7 +307,7 @@ export function CompanyDetailSkeleton() {
         </section>
 
         {/* Body — 2-col grid */}
-        <section className="mx-auto grid max-w-6xl gap-10 px-6 py-8 lg:grid-cols-3 lg:px-8 lg:py-12">
+        <section className="mx-auto grid max-w-7xl gap-10 px-6 py-8 lg:grid-cols-3 lg:px-10 lg:py-12">
           {/* Left column */}
           <div className="space-y-10 lg:col-span-2">
             {/* About */}
@@ -452,12 +457,16 @@ function CandidateJobsListSkeleton() {
 
       {/* Filter bar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <Skeleton className="h-9 flex-1 rounded-md" />
-        <Skeleton className="h-9 w-full sm:w-36 rounded-md" />
-        <Skeleton className="h-9 w-full sm:w-36 rounded-md" />
-        <Skeleton className="h-9 w-full sm:w-36 rounded-md" />
-        <Skeleton className="h-9 w-full sm:w-36 rounded-md" />
-        <Skeleton className="h-9 w-full sm:w-36 rounded-md" />
+        <Skeleton className="h-9 flex-1 shrink-0 sm:shrink rounded-md" />
+        <ScrollArea orientation="horizontal" className="h-9">
+          <div className="flex gap-3">
+            <Skeleton className="h-9 w-36 shrink-0 rounded-md" />
+            <Skeleton className="h-9 w-36 shrink-0 rounded-md" />
+            <Skeleton className="h-9 w-36 shrink-0 rounded-md" />
+            <Skeleton className="h-9 w-36 shrink-0 rounded-md" />
+            <Skeleton className="h-9 w-36 shrink-0 rounded-md" />
+          </div>
+        </ScrollArea>
       </div>
 
       {/* Results count */}

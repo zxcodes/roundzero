@@ -204,7 +204,7 @@ export function InterviewChat({
             <Button
               type="button"
               size="icon"
-              className="mb-0.5 size-9 shrink-0 rounded-full bg-brand text-brand-foreground shadow-sm transition-transform hover:scale-[1.02] hover:bg-brand/90 active:scale-[0.98] disabled:scale-100 disabled:bg-muted disabled:text-muted-foreground"
+              className="mb-0.5 size-9 shrink-0 rounded-full bg-primary text-primary-foreground shadow-sm transition-transform hover:scale-[1.02] hover:bg-primary/90 active:scale-[0.98] disabled:scale-100 disabled:bg-muted disabled:text-muted-foreground"
               onMouseDown={onSendMouseDown}
               onClick={onSubmit}
               disabled={!canSend || isStreaming || isThinking || content.trim().length === 0}

@@ -20,6 +20,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -174,7 +175,7 @@ function JobsPage() {
         {/* Header */}
         <section className="relative overflow-hidden border-b border-border/40">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--color-primary)/6%,transparent_70%)]" />
-          <div className="relative mx-auto max-w-6xl px-6 py-16 lg:px-8 lg:py-20">
+          <div className="relative mx-auto max-w-7xl px-6 py-16 lg:px-10 lg:py-20">
             <div className="space-y-3">
               <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
                 Job board
@@ -189,9 +190,9 @@ function JobsPage() {
         </section>
 
         {/* Filters */}
-        <section className="sticky top-14 z-40 border-b border-border/40 bg-background/80 backdrop-blur-xl backdrop-saturate-150">
-          <div className="mx-auto flex max-w-6xl flex-col gap-3 px-6 py-3.5 sm:flex-row sm:items-center lg:px-8">
-            <div className="relative flex-1">
+        <section className="border-b border-border/40 bg-background">
+          <div className="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-3.5 sm:flex-row sm:items-center lg:px-10">
+            <div className="relative flex-1 shrink-0 sm:shrink">
               <HugeiconsIcon
                 icon={Search01Icon}
                 strokeWidth={2}
@@ -204,75 +205,79 @@ function JobsPage() {
                 className="pl-10"
               />
             </div>
-            <Select value={typeFilter} onValueChange={onTypeChange}>
-              <SelectTrigger className="w-full sm:w-36">
-                <SelectValue placeholder="Job type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All types</SelectItem>
-                {employmentTypeSchema.options.map((value) => (
-                  <SelectItem key={value} value={value}>
-                    {employmentTypeLabels[value]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={levelFilter} onValueChange={onLevelChange}>
-              <SelectTrigger className="w-full sm:w-36">
-                <SelectValue placeholder="Experience" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All levels</SelectItem>
-                {experienceLevelSchema.options.map((value) => (
-                  <SelectItem key={value} value={value}>
-                    {experienceLevelLabels[value]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={workplaceFilter} onValueChange={onWorkplaceChange}>
-              <SelectTrigger className="w-full sm:w-36">
-                <SelectValue placeholder="Workplace" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All workplaces</SelectItem>
-                {workplaceTypeSchema.options.map((value) => (
-                  <SelectItem key={value} value={value}>
-                    {workplaceTypeLabels[value]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={salaryCurrency} onValueChange={onCurrencyChange}>
-              <SelectTrigger className="w-full sm:w-36">
-                <SelectValue placeholder="Currency" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All currencies</SelectItem>
-                {salaryCurrencySchema.options.map((value) => (
-                  <SelectItem key={value} value={value}>
-                    {salaryCurrencyLabels[value]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={String(salaryMin)} onValueChange={onSalaryChange}>
-              <SelectTrigger className="w-full sm:w-36">
-                <SelectValue placeholder="Salary" />
-              </SelectTrigger>
-              <SelectContent>
-                {brackets.map((bracket) => (
-                  <SelectItem key={bracket.value} value={bracket.value}>
-                    {bracket.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <ScrollArea orientation="horizontal" className="-mx-6 h-9 px-6 sm:mx-0 sm:px-0">
+              <div className="flex gap-3">
+                <Select value={typeFilter} onValueChange={onTypeChange}>
+                  <SelectTrigger className="w-36 shrink-0">
+                    <SelectValue placeholder="Job type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All types</SelectItem>
+                    {employmentTypeSchema.options.map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {employmentTypeLabels[value]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={levelFilter} onValueChange={onLevelChange}>
+                  <SelectTrigger className="w-36 shrink-0">
+                    <SelectValue placeholder="Experience" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All levels</SelectItem>
+                    {experienceLevelSchema.options.map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {experienceLevelLabels[value]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={workplaceFilter} onValueChange={onWorkplaceChange}>
+                  <SelectTrigger className="w-36 shrink-0">
+                    <SelectValue placeholder="Workplace" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All workplaces</SelectItem>
+                    {workplaceTypeSchema.options.map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {workplaceTypeLabels[value]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={salaryCurrency} onValueChange={onCurrencyChange}>
+                  <SelectTrigger className="w-36 shrink-0">
+                    <SelectValue placeholder="Currency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All currencies</SelectItem>
+                    {salaryCurrencySchema.options.map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {salaryCurrencyLabels[value]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={String(salaryMin)} onValueChange={onSalaryChange}>
+                  <SelectTrigger className="w-36 shrink-0">
+                    <SelectValue placeholder="Salary" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {brackets.map((bracket) => (
+                      <SelectItem key={bracket.value} value={bracket.value}>
+                        {bracket.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </ScrollArea>
           </div>
         </section>
 
         {/* Results count */}
-        <div className="mx-auto max-w-6xl px-6 pt-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-6 pt-6 lg:px-10">
           <p className="text-xs font-medium text-muted-foreground">
             {total} {total === 1 ? "position" : "positions"}
             {hasFilters ? " matching your filters" : ""}
@@ -280,7 +285,7 @@ function JobsPage() {
         </div>
 
         {/* Grid */}
-        <section className="mx-auto max-w-6xl px-6 py-4 pb-12 lg:px-8 lg:pb-16">
+        <section className="mx-auto max-w-7xl px-6 py-4 pb-12 lg:px-10 lg:pb-16">
           {items.length === 0 ? (
             <Empty className="border">
               <EmptyHeader>

@@ -88,11 +88,7 @@ export const applyToJobWorkflow = async (
     jobId: input.jobId,
     candidateId: input.userId,
     resumeKey: profile.resumeKey,
-    metadata: {
-      headline: profile.headline,
-      skills: profile.skills,
-      links: profile.links,
-    },
+    metadata: {},
     status: "applied",
   });
 

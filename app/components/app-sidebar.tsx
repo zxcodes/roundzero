@@ -140,7 +140,7 @@ export function AppSidebar({
                   {atLimit ? (
                     <SidebarMenuButton
                       asChild
-                      className="bg-brand text-brand-foreground min-w-8 hover:bg-brand/90 hover:text-brand-foreground shadow-sm shadow-brand/20"
+                      className="min-w-8 bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:text-primary-foreground"
                     >
                       <Link to="/dashboard/billing">
                         <HugeiconsIcon icon={AddCircleIcon} strokeWidth={2} className="size-4" />
@@ -150,7 +150,7 @@ export function AppSidebar({
                   ) : (
                     <SidebarMenuButton
                       asChild
-                      className="bg-brand text-brand-foreground min-w-8 hover:bg-brand/90 hover:text-brand-foreground shadow-sm shadow-brand/20"
+                      className="min-w-8 bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:text-primary-foreground"
                     >
                       <Link to="/dashboard/jobs/new">
                         <HugeiconsIcon icon={AddCircleIcon} strokeWidth={2} className="size-4" />
