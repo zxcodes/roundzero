@@ -68,7 +68,7 @@ function HomePage() {
 // ───────────────────────────────────────────────────────────────────────────
 // Shared primitives
 // ───────────────────────────────────────────────────────────────────────────
-const CONTAINER = "mx-auto w-full max-w-6xl px-6 lg:px-8";
+const CONTAINER = "mx-auto w-full max-w-7xl px-6 lg:px-10";
 const SECTION_PAD = "py-20 lg:py-28";
 
 function Highlight({ children }: { children: React.ReactNode }) {

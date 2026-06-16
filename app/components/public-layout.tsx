@@ -26,7 +26,7 @@ export function PublicHeader({
       className={`border-b ${editorial ? "border-(--ed-rule)" : "border-border/40"}`}
       style={editorial ? { borderBottomColor: "var(--ed-rule)" } : undefined}
     >
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6 lg:px-8">
+      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-6 lg:px-10">
         <div className="flex items-center">
           <Link to="/" className="flex items-center gap-1">
             <Logo />
@@ -172,7 +172,7 @@ export function PublicHeader({
 export function PublicFooter() {
   return (
     <footer className="border-t border-border/40">
-      <div className="mx-auto flex max-w-6xl flex-col items-start gap-3 px-6 py-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between lg:px-8">
+      <div className="mx-auto flex max-w-7xl flex-col items-start gap-3 px-6 py-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between lg:px-10">
         <span>&copy; {new Date().getFullYear()} RoundZero</span>
         <div className="flex gap-6">
           <Link to="/privacy" className="hover:text-foreground transition-colors">
