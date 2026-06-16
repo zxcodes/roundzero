@@ -31,7 +31,6 @@ function CandidateOnboardingPage() {
 
   const onboardingSchema = z.object({
     name: z.string().trim().min(1, "Name is required"),
-    headline: z.string().trim().min(1, "Headline is required"),
     resumeKey: z.string(),
   });
 
@@ -58,7 +57,6 @@ function CandidateOnboardingPage() {
   const form = useForm({
     defaultValues: {
       name: user?.name ?? "",
-      headline: "",
       resumeKey: "",
     },
     validators: {
@@ -73,7 +71,6 @@ function CandidateOnboardingPage() {
 
       await createProfileMutation.mutateAsync({
         data: {
-          headline: value.headline || undefined,
           resumeKey: value.resumeKey || undefined,
         },
       });
@@ -89,9 +86,7 @@ function CandidateOnboardingPage() {
     <Card>
       <CardHeader>
         <CardTitle className="text-xl">Complete your profile</CardTitle>
-        <CardDescription>
-          Set up your candidate profile to start applying for jobs. You can add more details later.
-        </CardDescription>
+        <CardDescription>Set up your candidate profile to start applying for jobs.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={onFormSubmit} className="space-y-5">
@@ -116,35 +111,6 @@ function CandidateOnboardingPage() {
                     aria-invalid={isInvalid}
                   />
                   <p className="text-muted-foreground text-xs">You can update this anytime</p>
-                  {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
-                </Field>
-              );
-            }}
-          </form.Field>
-
-          <form.Field
-            name="headline"
-            validators={{
-              onBlur: z.string().trim().min(1, "Headline is required"),
-            }}
-          >
-            {(field) => {
-              const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
-              return (
-                <Field data-invalid={isInvalid}>
-                  <FieldLabel htmlFor={field.name}>Headline</FieldLabel>
-                  <Input
-                    id={field.name}
-                    placeholder="Senior Frontend Engineer"
-                    maxLength={200}
-                    value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    aria-invalid={isInvalid}
-                  />
-                  <p className="text-muted-foreground text-xs">
-                    A short professional title that describes what you do
-                  </p>
                   {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
                 </Field>
               );

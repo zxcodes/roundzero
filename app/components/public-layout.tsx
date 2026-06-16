@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
-export function PublicHeader({ editorial }: { editorial?: boolean }) {
+export function PublicHeader() {
   const { user } = useRouteContext({ from: "__root__" });
 
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -16,11 +16,8 @@ export function PublicHeader({ editorial }: { editorial?: boolean }) {
   };
 
   return (
-    <header
-      className={`border-b ${editorial ? "border-(--ed-rule)" : "border-border/40"}`}
-      style={editorial ? { borderBottomColor: "var(--ed-rule)" } : undefined}
-    >
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6 lg:px-8">
+    <header className="border-b border-border/40">
+      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-6 lg:px-10">
         <div className="flex items-center">
           <Link to="/" className="flex items-center gap-1">
             <Logo />
@@ -43,7 +40,7 @@ export function PublicHeader({ editorial }: { editorial?: boolean }) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="hidden text-muted-foreground sm:inline-flex rounded-none"
+                className="hidden rounded-full text-muted-foreground sm:inline-flex"
                 asChild
               >
                 <Link to="/company/login">For companies</Link>
@@ -51,7 +48,7 @@ export function PublicHeader({ editorial }: { editorial?: boolean }) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="hidden text-muted-foreground sm:inline-flex rounded-none"
+                className="hidden rounded-full text-muted-foreground sm:inline-flex"
                 asChild
               >
                 <Link to="/candidate/login">For job seekers</Link>
@@ -117,7 +114,7 @@ export function PublicHeader({ editorial }: { editorial?: boolean }) {
 export function PublicFooter() {
   return (
     <footer className="border-t border-border/40">
-      <div className="mx-auto flex max-w-6xl flex-col items-start gap-3 px-6 py-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between lg:px-8">
+      <div className="mx-auto flex max-w-7xl flex-col items-start gap-3 px-6 py-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between lg:px-10">
         <span>&copy; {new Date().getFullYear()} RoundZero</span>
         <div className="flex gap-6">
           <Link to="/privacy" className="hover:text-foreground transition-colors">
