@@ -1,7 +1,7 @@
 ## TODO
 
 - do not let people skip voice interview. or even if they do tell them before hand that it's a deal breaker and will hugely affect their chances.
-- pricing needs a big change. (think about per job, x number of jobs, and pay as you go kind?, make it cheaper too) (IMPORTANT)
+- pricing needs a big change. (think about per job, x number of jobs, and pay as you go kind?, make it cheaper too) (IMPORTANT). Drop the enterprise plan?
 - add an easier copy company jobs profile for companies to link it in their careers page.
 - add onCopy, onPaste detectors and evaluate final score based on that.
 - company has redundant steps. if I click a job, first taken to a page where there is jd, I have to click view applicants, which is another redundant page. we can def drop one of these here and make it simple.
