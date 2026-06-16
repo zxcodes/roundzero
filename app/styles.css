@@ -382,9 +382,9 @@
    so Button / Accordion / Badge inherit the palette automatically.
    ========================================================================== */
 .calm {
-  --background: oklch(1 0 0);
+  --background: oklch(0.993 0.002 75);
   --foreground: oklch(0.2 0.004 264);
-  --card: oklch(1 0 0);
+  --card: oklch(0.993 0.002 75);
   --card-foreground: oklch(0.2 0.004 264);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.2 0.004 264);
@@ -429,7 +429,32 @@
 }
 
 .calm-hero {
-  background: radial-gradient(75% 62% at 50% -14%, oklch(0.92 0.004 264 / 0.9), transparent 70%);
+  background:
+    radial-gradient(70% 55% at 50% -10%, oklch(0.94 0.006 75 / 0.55), transparent 68%),
+    linear-gradient(to bottom, oklch(0.993 0.002 75), var(--background));
+}
+
+.calm .panel {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) - 0.125rem);
+  background: var(--background);
+}
+
+.calm .panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--border);
+  background: oklch(0.985 0.002 75);
+  padding: 0.7rem 1.25rem;
+}
+
+.calm .spec-sheet {
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) - 0.125rem);
+  background: var(--background);
 }
 
 .calm-skip-link {

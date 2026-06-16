@@ -77,7 +77,7 @@ function Highlight({ children }: { children: React.ReactNode }) {
 
 function AnnouncementPill() {
   return (
-    <div className="mb-6 inline-flex max-w-full flex-wrap items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 shadow-sm">
+    <div className="mb-6 inline-flex max-w-full flex-wrap items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5">
       <span className="rounded-full bg-brand/15 px-2 py-0.5 font-mono text-[10px] font-medium uppercase tracking-wider text-brand">
         New
       </span>
@@ -182,9 +182,7 @@ function Hero() {
           </div>
 
           <div className="rise">
-            <div className="rounded-3xl bg-secondary/80 p-3 sm:p-4 lg:p-5">
-              <HeroProductWindow />
-            </div>
+            <HeroProductWindow />
           </div>
         </div>
       </div>
@@ -206,14 +204,16 @@ const heroDims = [
 
 function HeroProductWindow() {
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-gradient-to-b from-card to-secondary shadow-[0_24px_70px_-28px_rgba(2,6,23,0.3)] ring-1 ring-black/[0.04]">
-      <div className="flex items-center gap-2 border-b border-border bg-card/60 px-4 py-3">
-        <span className="size-2.5 rounded-full bg-border" />
-        <span className="size-2.5 rounded-full bg-border" />
-        <span className="size-2.5 rounded-full bg-border" />
-        <span className="ml-2 font-mono text-[11px] text-muted-foreground">
-          roundzero / senior-backend-engineer
-        </span>
+    <div className="panel">
+      <div className="panel-header">
+        <div className="flex items-center gap-2">
+          <span className="size-2 rounded-full bg-border" />
+          <span className="size-2 rounded-full bg-border" />
+          <span className="size-2 rounded-full bg-border" />
+          <span className="ml-1 font-mono text-[11px] text-muted-foreground">
+            roundzero / senior-backend-engineer
+          </span>
+        </div>
       </div>
 
       <div className="p-4 sm:p-5">
@@ -221,14 +221,11 @@ function HeroProductWindow() {
           <span className="eyebrow">Ranked candidates</span>
           <span className="font-mono text-[10px] text-muted-foreground">87 in pipeline</span>
         </div>
-        <div className="mt-3 space-y-1">
+        <div className="mt-3 space-y-0.5">
           {heroRanking.map((r) => (
             <div
               key={r.rank}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5",
-                r.active ? "bg-card shadow-sm ring-1 ring-border" : "",
-              )}
+              className={cn("flex items-center gap-3 px-2 py-2.5", r.active ? "bg-muted/50" : "")}
             >
               <span className="w-5 font-mono text-[11px] text-muted-foreground">
                 {String(r.rank).padStart(2, "0")}
@@ -242,7 +239,7 @@ function HeroProductWindow() {
           ))}
         </div>
 
-        <div className="mt-4 rounded-xl border border-border bg-card p-4 shadow-sm">
+        <div className="mt-4 border-t border-border pt-4">
           <div className="flex items-start justify-between gap-4">
             <div>
               <span className="eyebrow">Report · Sarah Chen</span>
@@ -347,11 +344,17 @@ function HowItWorks() {
           title="How it works"
           lead="A complete first round that runs on your behalf — from application to ranked decision."
         />
-        <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {steps.map((step) => (
+        <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-0">
+          {steps.map((step, i) => (
             <article
               key={step.n}
-              className="rounded-xl border border-border bg-card p-5 shadow-sm transition-all hover:border-foreground/15 hover:shadow-md"
+              className={cn(
+                "lg:px-7",
+                i !== 0 ? "border-t border-border pt-8 sm:border-t-0 sm:pt-0" : "",
+                i !== 0 ? "sm:border-l lg:border-l" : "",
+                i === 2 ? "sm:border-t lg:border-t-0" : "",
+                i === 0 ? "lg:pl-0" : "",
+              )}
             >
               <span className="font-mono text-xs text-brand">{step.n}</span>
               <h3 className="mt-3 text-lg font-semibold tracking-[-0.01em]">{step.title}</h3>
@@ -402,7 +405,7 @@ function CandidateExperience() {
   return (
     <section className="border-t border-border bg-secondary/40">
       <div className={cn(CONTAINER, SECTION_PAD)}>
-        <div className="grid grid-cols-1 gap-x-12 gap-y-12 lg:grid-cols-2">
+        <div className="grid grid-cols-1 items-start gap-x-12 gap-y-12 lg:grid-cols-2">
           <div>
             <SectionHeading
               eyebrow="The interview"
@@ -459,33 +462,31 @@ function CandidateExperience() {
             </div>
           </div>
 
-          <div className="space-y-6">
-            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-              <div className="flex items-center justify-between gap-2 border-b border-border px-5 py-3">
-                <span className="eyebrow">Transcript · Senior Backend Engineer</span>
-                <span className="font-mono text-[10px] text-muted-foreground">MIN 18:42</span>
-              </div>
-              <div className="divide-y divide-border">
-                {transcript.map((t) => (
-                  <div key={t.text} className="grid grid-cols-12 gap-3 px-5 py-4">
-                    <span
-                      className={cn(
-                        "col-span-3 font-mono text-[10.5px] tracking-wider sm:col-span-2",
-                        t.role === "Zero" ? "text-brand" : "text-muted-foreground",
-                      )}
-                    >
-                      {t.role.toUpperCase()}
-                    </span>
-                    <p className="col-span-9 text-[13.5px] leading-relaxed text-foreground sm:col-span-10">
-                      {t.text}
-                    </p>
-                  </div>
-                ))}
-              </div>
+          <div className="panel">
+            <div className="panel-header">
+              <span className="eyebrow">Transcript · Senior Backend Engineer</span>
+              <span className="font-mono text-[10px] text-muted-foreground">MIN 18:42</span>
+            </div>
+            <div className="divide-y divide-border">
+              {transcript.map((t) => (
+                <div key={t.text} className="grid grid-cols-12 gap-3 px-5 py-4">
+                  <span
+                    className={cn(
+                      "col-span-3 font-mono text-[10.5px] tracking-wider sm:col-span-2",
+                      t.role === "Zero" ? "text-brand" : "text-muted-foreground",
+                    )}
+                  >
+                    {t.role.toUpperCase()}
+                  </span>
+                  <p className="col-span-9 text-[13.5px] leading-relaxed text-foreground sm:col-span-10">
+                    {t.text}
+                  </p>
+                </div>
+              ))}
             </div>
 
-            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-              <div className="flex items-center justify-between gap-2 border-b border-border px-5 py-3">
+            <div className="border-t border-border">
+              <div className="panel-header border-b-0">
                 <span className="eyebrow">Voice assessment · 5 min</span>
                 <span className="font-mono text-[10px] text-muted-foreground">CLARITY 78</span>
               </div>
@@ -542,14 +543,14 @@ function ReportSection() {
   return (
     <section className="border-t border-border">
       <div className={cn(CONTAINER, SECTION_PAD)}>
-        <div className="grid grid-cols-1 gap-x-12 gap-y-12 lg:grid-cols-12">
+        <div className="grid grid-cols-1 items-start gap-x-12 gap-y-12 lg:grid-cols-12">
           <div className="lg:col-span-5">
             <SectionHeading
               eyebrow="The report"
               title="See how candidates actually perform"
               lead="Every candidate arrives with a structured report covering reasoning, communication, and relevant experience — with strengths, concerns, and a clear recommendation."
             />
-            <div className="mt-8 rounded-xl border border-border bg-card p-6 shadow-sm">
+            <div className="mt-8 border-t border-border pt-8">
               <span className="eyebrow">Dossier no. 0481</span>
               <h3 className="mt-2 text-2xl font-semibold tracking-[-0.015em]">Sarah Chen</h3>
               <p className="text-sm text-muted-foreground">for Senior Backend Engineer</p>
@@ -658,7 +659,7 @@ function RankingSection() {
           </div>
 
           <div className="lg:col-span-8">
-            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+            <div className="spec-sheet">
               <div className="grid grid-cols-12 border-b border-border px-5 py-3 font-mono text-[10.5px] uppercase tracking-[0.16em] text-muted-foreground">
                 <span className="col-span-2">#</span>
                 <span className="col-span-6">Candidate</span>
@@ -843,10 +844,7 @@ function PricingSection() {
           {tiers.map((t, tierIndex) => (
             <div
               key={t.name}
-              className={cn(
-                "rounded-xl border bg-card p-5 shadow-sm",
-                t.featured ? "border-brand/40 ring-1 ring-brand/20" : "border-border",
-              )}
+              className={cn("border border-border p-5", t.featured ? "border-brand/30" : "")}
             >
               <div className="mb-5 flex flex-col gap-1.5">
                 {t.featured ? <span className="eyebrow text-brand">Most popular</span> : null}
@@ -931,7 +929,7 @@ function CostComparison() {
           </p>
         </div>
         <div className="lg:col-span-7">
-          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+          <div className="spec-sheet">
             <div className="grid grid-cols-12 border-b border-border px-5 py-3 font-mono text-[10.5px] uppercase tracking-[0.16em] text-muted-foreground">
               <span className="col-span-5">Platform</span>
               <span className="col-span-3">Cost</span>
