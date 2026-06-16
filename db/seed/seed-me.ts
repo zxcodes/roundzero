@@ -74,6 +74,15 @@ async function seedForCompany(user: DevUser) {
         onboarding_completed_at = now(),
         updated_at = now()
   `;
+  await sql`
+    INSERT INTO company_members (company_id, user_id, role, status)
+    VALUES (${companyId}, ${user.id}, 'owner', 'active')
+    ON CONFLICT (company_id, user_id) DO UPDATE
+    SET role = EXCLUDED.role,
+        status = EXCLUDED.status,
+        updated_at = now()
+  `;
+
   console.log(`  Company created: ${companyName}`);
 
   // Common pre-screening questions companies actually ask

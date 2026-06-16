@@ -8,7 +8,8 @@ import { getMyJobCounts } from "@/features/jobs/server/functions";
 import type { CompanyMemberRole } from "@/shared/enums";
 import { parseCompanyMemberRole } from "@/shared/membership-auth";
 
-type Company = NonNullable<Awaited<ReturnType<typeof getMyCompanyContext>>>["company"];
+type CompanyContext = Awaited<ReturnType<typeof getMyCompanyContext>>;
+type Company = Extract<CompanyContext, { state: "active" }>["company"];
 type SubscriptionSummary = { plan: string; status: string; isActive: boolean };
 
 const buildSubscription = (company: Company): SubscriptionSummary => ({
@@ -38,22 +39,36 @@ export const Route = createFileRoute("/_authenticated")({
     }
 
     const companyContext = await getMyCompanyContext();
-    if (!companyContext) {
-      if (!location.pathname.startsWith("/onboarding/no-workspace")) {
-        throw redirect({ to: "/onboarding/no-workspace" });
-      }
-      return {
-        membershipRole: null as CompanyMemberRole | null,
-        company: null as Company | null,
-        hasCompanyWorkspace: false,
-      };
-    }
 
-    return {
-      membershipRole: parseCompanyMemberRole(companyContext.membership.role),
-      company: companyContext.company,
-      hasCompanyWorkspace: true,
-    };
+    switch (companyContext.state) {
+      case "active":
+        return {
+          membershipRole: parseCompanyMemberRole(companyContext.membership.role),
+          company: companyContext.company,
+          hasCompanyWorkspace: true,
+        };
+      case "removed":
+        if (!location.pathname.startsWith("/onboarding/no-workspace")) {
+          throw redirect({ to: "/onboarding/no-workspace" });
+        }
+        return {
+          membershipRole: null as CompanyMemberRole | null,
+          company: null as Company | null,
+          hasCompanyWorkspace: false,
+        };
+      case "new": {
+        if (location.pathname !== "/onboarding/company") {
+          throw redirect({ to: "/onboarding/company" });
+        }
+        return {
+          membershipRole: null as CompanyMemberRole | null,
+          company: null as Company | null,
+          hasCompanyWorkspace: false,
+        };
+      }
+      case "unauthenticated":
+        throw redirect({ to: "/" });
+    }
   },
   loader: async ({ context, location }) => {
     const user = context.user;
