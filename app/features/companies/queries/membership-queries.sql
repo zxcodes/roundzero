@@ -4,6 +4,12 @@ FROM company_members
 WHERE user_id = $1
   AND status = 'active';
 
+-- name: getAnyMembershipByUserId :one
+SELECT id, company_id, user_id, role, status
+FROM company_members
+WHERE user_id = $1
+LIMIT 1;
+
 -- name: getCompanyByMemberUserId :one
 SELECT c.*
 FROM company_members cm

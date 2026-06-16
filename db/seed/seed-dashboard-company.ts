@@ -92,6 +92,15 @@ async function ensureCompany(owner: CompanyUser) {
       updated_at = now()
   `;
 
+  await sql`
+    INSERT INTO company_members (company_id, user_id, role, status)
+    VALUES (${companyId}, ${owner.id}, 'owner', 'active')
+    ON CONFLICT (company_id, user_id) DO UPDATE
+    SET role = EXCLUDED.role,
+        status = EXCLUDED.status,
+        updated_at = now()
+  `;
+
   return companyId;
 }
 

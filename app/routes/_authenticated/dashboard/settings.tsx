@@ -10,7 +10,11 @@ export const Route = createFileRoute("/_authenticated/dashboard/settings")({
   loader: async ({ context }) => {
     if (context.isCompany) {
       const companyContext = await getMyCompanyContext();
-      if (!companyContext) {
+
+      if (companyContext.state === "new") {
+        throw redirect({ to: "/onboarding/company" });
+      }
+      if (companyContext.state !== "active") {
         throw redirect({ to: "/onboarding/no-workspace" });
       }
 
