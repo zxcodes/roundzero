@@ -18,6 +18,8 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { UnsavedChangesBar } from "@/components/unsaved-changes-bar";
+import { getPlanReportLimit } from "@/features/billing/config";
+import { useSubscription } from "@/features/billing/hooks/use-subscription";
 import { JobPreviewDialog } from "@/features/jobs/components/job-preview-dialog";
 import { formatDate } from "@/shared/date";
 import {
@@ -146,6 +148,13 @@ export function JobForm({
   const [screeningQuestionInput, setScreeningQuestionInput] = useState("");
   const [deadlineOpen, setDeadlineOpen] = useState(false);
 
+  const subscription = useSubscription();
+  const reportLimit = getPlanReportLimit(subscription?.plan);
+  const defaultReportTarget =
+    defaultValues?.finalReportTarget != null
+      ? Math.min(defaultValues.finalReportTarget, reportLimit)
+      : reportLimit;
+
   const form = useForm({
     defaultValues: {
       title: defaultValues?.title ?? "",
@@ -162,8 +171,7 @@ export function JobForm({
       salaryCurrency: defaultValues?.salaryCurrency ?? "USD",
       teamSize: defaultValues?.teamSize != null ? String(defaultValues.teamSize) : "",
       headcount: defaultValues?.headcount != null ? String(defaultValues.headcount) : "",
-      finalReportTarget:
-        defaultValues?.finalReportTarget != null ? String(defaultValues.finalReportTarget) : "5",
+      finalReportTarget: String(defaultReportTarget),
       expiresAt: defaultValues?.expiresAt ? defaultValues.expiresAt.toISOString().slice(0, 10) : "",
     },
 
@@ -715,9 +723,10 @@ export function JobForm({
               onBlur: z
                 .string()
                 .refine(
-                  (val) => Number.isInteger(Number(val)) && Number(val) >= 1 && Number(val) <= 15,
+                  (val) =>
+                    Number.isInteger(Number(val)) && Number(val) >= 1 && Number(val) <= reportLimit,
                   {
-                    message: "Final report target must be between 1 and 15",
+                    message: `Final report target must be between 1 and ${reportLimit} on your current plan`,
                   },
                 ),
             }}
@@ -730,14 +739,14 @@ export function JobForm({
                   <Input
                     id={field.name}
                     inputMode="numeric"
-                    placeholder="5"
+                    placeholder={String(reportLimit)}
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChange={(e) => field.handleChange(e.target.value.replace(/\D/g, ""))}
                     aria-invalid={isInvalid}
                   />
                   <p className="text-muted-foreground text-xs">
-                    Maximum final candidate reports to deliver for this job (1-15)
+                    Maximum evaluation reports for this job on your plan (1-{reportLimit})
                   </p>
                   {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
                 </Field>

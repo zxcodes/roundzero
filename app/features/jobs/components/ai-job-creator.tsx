@@ -9,6 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { getPlanReportLimit } from "@/features/billing/config";
+import { useSubscription } from "@/features/billing/hooks/use-subscription";
 import type { JobFormData } from "@/features/jobs/components/job-form";
 import type { AiJobGenerationOutput } from "@/features/jobs/schemas";
 import { generateJobWithAI } from "@/features/jobs/server/functions";
@@ -26,21 +28,23 @@ interface AiJobCreatorProps {
   onDiscard: () => void;
 }
 
-function mapAiOutputToFormData(output: AiJobGenerationOutput): JobFormData {
-  return {
-    ...output,
-    status: "draft",
-    expiresAt: null,
-    finalReportTarget: 5,
-    location: output.location ?? null,
-    salaryMin: output.salaryMin ?? null,
-    salaryMax: output.salaryMax ?? null,
-    teamSize: output.teamSize ?? null,
-    headcount: output.headcount ?? null,
-  };
-}
-
 export function AiJobCreator({ isPaid, onApply, onDiscard }: AiJobCreatorProps) {
+  const subscription = useSubscription();
+  const reportLimit = getPlanReportLimit(subscription?.plan);
+
+  const mapAiOutputToFormData = (output: AiJobGenerationOutput): JobFormData => {
+    return {
+      ...output,
+      status: "draft",
+      expiresAt: null,
+      finalReportTarget: reportLimit,
+      location: output.location ?? null,
+      salaryMin: output.salaryMin ?? null,
+      salaryMax: output.salaryMax ?? null,
+      teamSize: output.teamSize ?? null,
+      headcount: output.headcount ?? null,
+    };
+  };
   const [prompt, setPrompt] = useState("");
   const [result, setResult] = useState<AiJobGenerationOutput | null>(null);
 
