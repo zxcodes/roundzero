@@ -117,6 +117,9 @@ export function PublicFooter() {
       <div className="mx-auto flex max-w-7xl flex-col items-start gap-3 px-6 py-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between lg:px-10">
         <span>&copy; {new Date().getFullYear()} RoundZero</span>
         <div className="flex gap-6">
+          <a href="mailto:hello@roundzero.dev" className="hover:text-foreground transition-colors">
+            Contact
+          </a>
           <Link to="/privacy" className="hover:text-foreground transition-colors">
             Privacy Policy
           </Link>
