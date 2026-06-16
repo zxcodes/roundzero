@@ -9,6 +9,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 const NOT_INCLUDED = "Not included";
@@ -55,6 +56,7 @@ function HomePage() {
         <Hero />
         <ValueStrip />
         <HowItWorks />
+        <PipelineSection />
         <CandidateExperience />
         <ReportSection />
         <RankingSection />
@@ -363,6 +365,310 @@ function HowItWorks() {
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.body}</p>
             </article>
           ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// Pipeline
+// ───────────────────────────────────────────────────────────────────────────
+type PipelineLogLevel = "INFO" | "WARN";
+
+type PipelineLogLine = {
+  workflow: string;
+  runId: string;
+  level: PipelineLogLevel;
+  message: string;
+};
+
+const pipelineStages = [
+  {
+    label: "Pre-eval",
+    body: "Resume extraction, job classification, authenticity checks, and fit scoring run the moment someone applies.",
+  },
+  {
+    label: "Batch",
+    body: "Quota-aware orchestration pools strong candidates and schedules interviews without manual triage.",
+  },
+  {
+    label: "Post-eval",
+    body: "Transcript review, voice assessment, and structured report generation close the loop with evidence.",
+  },
+];
+
+const pipelineLogs: PipelineLogLine[] = [
+  {
+    workflow: "pre-eval",
+    runId: "d2e765a6",
+    level: "INFO",
+    message: "Starting pre-evaluation workflow",
+  },
+  {
+    workflow: "pre-eval",
+    runId: "d2e765a6",
+    level: "INFO",
+    message: "load_application: Loading application from DB",
+  },
+  {
+    workflow: "pre-eval",
+    runId: "d2e765a6",
+    level: "INFO",
+    message: "load_application completed → jobTitle=Senior Backend Engineer",
+  },
+  {
+    workflow: "pre-eval",
+    runId: "d2e765a6",
+    level: "INFO",
+    message: "extract_resume: Fetching from R2 and extracting text",
+  },
+  {
+    workflow: "pre-eval",
+    runId: "d2e765a6",
+    level: "INFO",
+    message: "Resume format: application/pdf, size: 77 KB",
+  },
+  {
+    workflow: "pre-eval",
+    runId: "d2e765a6",
+    level: "INFO",
+    message: "extract_resume completed → chars=4283 words=600",
+  },
+  {
+    workflow: "pre-eval",
+    runId: "d2e765a6",
+    level: "INFO",
+    message: "classify_job: Classifying job type for role-specific evaluation",
+  },
+  {
+    workflow: "pre-eval",
+    runId: "d2e765a6",
+    level: "INFO",
+    message: "ai-call → prompt=396 tokens=34 latencyMs=3948 promptVersion=1.0.0",
+  },
+  {
+    workflow: "pre-eval",
+    runId: "d2e765a6",
+    level: "INFO",
+    message:
+      "classify_job completed → roleType=technical reasoning=Backend APIs, scalable services, infrastructure",
+  },
+  {
+    workflow: "pre-eval",
+    runId: "d2e765a6",
+    level: "INFO",
+    message: "check_authenticity: Running resume authenticity check",
+  },
+  {
+    workflow: "pre-eval",
+    runId: "d2e765a6",
+    level: "INFO",
+    message: "ai-call → prompt=4638 tokens=3009 latencyMs=35015 promptVersion=1.0.0",
+  },
+  {
+    workflow: "pre-eval",
+    runId: "d2e765a6",
+    level: "INFO",
+    message:
+      "check_authenticity completed → consistencyScore=94 redFlags=0 explanation=No authenticity concerns",
+  },
+  {
+    workflow: "pre-eval",
+    runId: "d2e765a6",
+    level: "INFO",
+    message: "evaluate: Calling OpenRouter for pre-evaluation",
+  },
+  {
+    workflow: "pre-eval",
+    runId: "d2e765a6",
+    level: "INFO",
+    message: "ai-call → prompt=5579 tokens=1698 latencyMs=18521 promptVersion=1.0.0",
+  },
+  {
+    workflow: "pre-eval",
+    runId: "d2e765a6",
+    level: "INFO",
+    message:
+      "evaluate completed → score=52 confidence=medium modelNextStep=interview_invited missingCount=4",
+  },
+  {
+    workflow: "pre-eval",
+    runId: "d2e765a6",
+    level: "INFO",
+    message: "save_pre_eval: Saving pre-evaluation to DB",
+  },
+  {
+    workflow: "pre-eval",
+    runId: "d2e765a6",
+    level: "INFO",
+    message: "save_pre_eval completed → status=pre_screening consistencyScore=94",
+  },
+  {
+    workflow: "pre-eval",
+    runId: "d2e765a6",
+    level: "INFO",
+    message: "decide: Checking quota and making decision",
+  },
+  {
+    workflow: "pre-eval",
+    runId: "d2e765a6",
+    level: "INFO",
+    message: "decide completed → action=pooled newStatus=queued_for_batch availableSlots=5",
+  },
+  {
+    workflow: "pre-eval",
+    runId: "d2e765a6",
+    level: "INFO",
+    message: "Workflow complete: score=52, modelNextStep=interview_invited, decision=pooled",
+  },
+  {
+    workflow: "batch",
+    runId: "e104ba4b",
+    level: "INFO",
+    message: "Batch orchestration started for Senior Backend Engineer",
+  },
+  {
+    workflow: "batch",
+    runId: "e104ba4b",
+    level: "INFO",
+    message: "Matching 12 pooled candidates to 5 interview slots",
+  },
+  {
+    workflow: "batch",
+    runId: "e104ba4b",
+    level: "INFO",
+    message: "Interview invitations queued → batch=e104ba4b slots=5",
+  },
+  {
+    workflow: "post-eval",
+    runId: "88683432",
+    level: "INFO",
+    message: "Loading existing report state",
+  },
+  {
+    workflow: "post-eval",
+    runId: "88683432",
+    level: "INFO",
+    message: "Reading interview context and transcript",
+  },
+  {
+    workflow: "post-eval",
+    runId: "88683432",
+    level: "INFO",
+    message: "Waiting for voice assessment to complete (max 12h)",
+  },
+  {
+    workflow: "post-eval",
+    runId: "88683432",
+    level: "INFO",
+    message: "Voice assessment event received",
+  },
+  {
+    workflow: "post-eval",
+    runId: "88683432",
+    level: "INFO",
+    message: "Assessing answer authenticity",
+  },
+  {
+    workflow: "post-eval",
+    runId: "88683432",
+    level: "INFO",
+    message:
+      "ai-call → prompt=11715 tokens=1105 latencyMs=8420 promptVersion=answer-authenticity-1.0",
+  },
+  {
+    workflow: "post-eval",
+    runId: "88683432",
+    level: "WARN",
+    message: "Answer authenticity: medium risk, 2 signal(s) detected",
+  },
+  {
+    workflow: "post-eval",
+    runId: "88683432",
+    level: "INFO",
+    message: "Generating structured interview report with OpenRouter",
+  },
+  {
+    workflow: "post-eval",
+    runId: "88683432",
+    level: "INFO",
+    message: "report saved → overallScore=8.4 recommendation=strong_hire ranked=01",
+  },
+];
+
+function pipelineLogLevelClass(level: PipelineLogLevel) {
+  if (level === "WARN") return "text-warning";
+  return "text-info";
+}
+
+function PipelineSection() {
+  return (
+    <section className="border-t border-border">
+      <div className={cn(CONTAINER, SECTION_PAD)}>
+        <div className="grid grid-cols-1 items-start gap-x-12 gap-y-12 lg:grid-cols-2">
+          <div>
+            <SectionHeading
+              eyebrow="Under the hood"
+              title={
+                <>
+                  A real pipeline runs on every <Highlight>application</Highlight>
+                </>
+              }
+              lead="Pre-evaluation, batch orchestration, and post-interview reporting are durable workflows, not a single prompt. Here is what happens behind the ranked list you see."
+            />
+            <div className="mt-8 space-y-6">
+              {pipelineStages.map((stage) => (
+                <div
+                  key={stage.label}
+                  className="border-t border-border pt-6 first:border-t-0 first:pt-0"
+                >
+                  <span className="font-mono text-xs text-foreground">{stage.label}</span>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{stage.body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="panel">
+            <div className="panel-header">
+              <div className="flex items-center gap-2">
+                <span className="size-2 rounded-full bg-border" />
+                <span className="size-2 rounded-full bg-border" />
+                <span className="size-2 rounded-full bg-border" />
+                <span className="ml-1 font-mono text-[11px] text-muted-foreground">
+                  roundzero / pipeline
+                </span>
+              </div>
+              <span className="inline-flex items-center gap-1.5 font-mono text-[10px] text-muted-foreground">
+                <span className="size-1.5 rounded-full bg-success" />
+                live
+              </span>
+            </div>
+            <ScrollArea className="h-128">
+              <div className="space-y-0 p-4 font-mono text-[11px] leading-[1.65] sm:p-5">
+                {pipelineLogs.map((line) => (
+                  <div
+                    key={`${line.runId}-${line.message}`}
+                    className="grid grid-cols-[19ch_6ch_minmax(0,1fr)] gap-x-2 py-0.5"
+                  >
+                    <span className="truncate text-muted-foreground/70">
+                      [{line.workflow}:{line.runId}]
+                    </span>
+                    <span className={pipelineLogLevelClass(line.level)}>[{line.level}]</span>
+                    <span
+                      className={cn(
+                        "min-w-0",
+                        line.level === "WARN" ? "text-warning" : "text-foreground/85",
+                      )}
+                    >
+                      {line.message}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
         </div>
       </div>
     </section>
