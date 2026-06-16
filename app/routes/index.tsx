@@ -1305,22 +1305,6 @@ const faq = [
     a: "Pre-evaluation runs within minutes of applying. Interviews are completed by candidates on their own schedule, typically within a few days. Reports are generated immediately after the interview ends.",
   },
   {
-    q: "Do candidates need to install anything?",
-    a: "No. Apply, interview, and track status all in the browser. No apps, plugins, or calendar links.",
-  },
-  {
-    q: "What happens to candidates who aren't a strong fit?",
-    a: "They remain in your applicant pipeline with their profile and résumé available for manual review. Partial matches receive two or three clarifying questions before a final evaluation. Everyone receives clear status updates throughout the process.",
-  },
-  {
-    q: "Can I customise what the AI evaluates?",
-    a: "Yes. On Pro and Enterprise plans, you define custom evaluation criteria. The AI uses your job requirements, screening questions, and weighting preferences.",
-  },
-  {
-    q: "What is AI job creation?",
-    a: "Describe a role in plain language, like 'Senior React engineer, remote, $120-160k', and our AI builds a complete job posting with title, description, requirements, salary, screening questions, and more. You review the draft, edit anything, then publish. Available on Pro and Enterprise.",
-  },
-  {
     q: "Does RoundZero only work for technical roles?",
     a: "No, not at all. RoundZero can evaluate any role as long as the requirements and skills are clearly defined when creating the job. Just create a detailed job description, and our AI will take care of the rest.",
   },
