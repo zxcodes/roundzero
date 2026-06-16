@@ -457,6 +457,23 @@
   background: var(--background);
 }
 
+.calm-closing {
+  background: oklch(0.19 0.006 264);
+  color: oklch(0.94 0.003 75);
+}
+
+.calm-closing .eyebrow {
+  color: oklch(0.66 0.012 75);
+}
+
+.calm-closing .closing-lead {
+  color: oklch(0.72 0.01 75);
+}
+
+.calm-closing .highlight {
+  background: oklch(0.45 0.13 28 / 0.38);
+}
+
 .calm-skip-link {
   position: absolute;
   top: 1rem;

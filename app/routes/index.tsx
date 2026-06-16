@@ -11,6 +11,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+const NOT_INCLUDED = "Not included";
+
 export const Route = createFileRoute("/")({
   beforeLoad: ({ context }) => {
     if (context.user?.role) {
@@ -25,7 +27,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Run AI-driven first-round interviews and get ranked candidates with structured evaluation reports. Skip resume screening — evaluate how candidates actually think.",
+          "Run AI-driven first-round interviews and get ranked candidates with structured evaluation reports. Skip resume screening. Evaluate how candidates actually think.",
       },
       {
         property: "og:url",
@@ -172,7 +174,7 @@ function Hero() {
             </h1>
             <p className="mt-6 max-w-lg text-[clamp(1.05rem,1.4vw,1.2rem)] leading-relaxed text-muted-foreground">
               Post a job and get ranked candidates with structured, evidence-backed reports. No
-              résumés to sift through, no scheduling — candidates arrive already evaluated.
+              résumés to sift through, no scheduling. Candidates arrive already evaluated.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <PrimaryCta to="/company/login">Post a job</PrimaryCta>
@@ -316,7 +318,7 @@ const steps = [
   {
     n: "01",
     title: "You post a job",
-    body: "Describe the role. RoundZero handles the rest — no ATS setup, no keyword filters, no manual screening.",
+    body: "Describe the role. RoundZero handles the rest. No ATS setup, no keyword filters, no manual screening.",
   },
   {
     n: "02",
@@ -326,12 +328,12 @@ const steps = [
   {
     n: "03",
     title: "Ranked reports roll in",
-    body: "Strong candidates are interviewed by Zero, then you get ranked reports with scores, strengths, and evidence — the moment they're ready.",
+    body: "Strong candidates are interviewed by Zero, then you get ranked reports with scores, strengths, and evidence the moment they're ready.",
   },
   {
     n: "04",
     title: "Focus on the best",
-    body: "Review only the top-ranked candidates. Every score links back to a real conversation — no more guessing.",
+    body: "Review only the top-ranked candidates. Every score links back to a real conversation. No more guessing.",
   },
 ];
 
@@ -342,7 +344,7 @@ function HowItWorks() {
         <SectionHeading
           eyebrow="The flow"
           title="How it works"
-          lead="A complete first round that runs on your behalf — from application to ranked decision."
+          lead="A complete first round that runs on your behalf, from application to ranked decision."
         />
         <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-0">
           {steps.map((step, i) => (
@@ -368,7 +370,7 @@ function HowItWorks() {
 }
 
 // ───────────────────────────────────────────────────────────────────────────
-// Candidate experience — transcript + voice
+// Candidate experience
 // ───────────────────────────────────────────────────────────────────────────
 const transcript = [
   {
@@ -377,7 +379,7 @@ const transcript = [
   },
   {
     role: "Sarah",
-    text: "Pub/sub with Redis Streams for brokering. The tradeoff was latency vs. ordering — we chose at-least-once with client-side dedup.",
+    text: "Pub/sub with Redis Streams for brokering. The tradeoff was latency vs. ordering. We chose at-least-once with client-side dedup.",
   },
   {
     role: "Zero",
@@ -414,7 +416,7 @@ function CandidateExperience() {
                   A conversation, not a <Highlight>quiz</Highlight>
                 </>
               }
-              lead="Zero validates claims, probes vague answers, and adapts to the role — the way a senior interviewer would."
+              lead="Zero validates claims, probes vague answers, and adapts to the role the way a senior interviewer would."
             />
 
             <blockquote className="mt-8 border-l-2 border-brand pl-5 text-lg leading-relaxed text-foreground">
@@ -422,7 +424,7 @@ function CandidateExperience() {
               messages were ordered. It felt less like a quiz and more like a conversation with a
               senior engineer who had already read my résumé.”
               <footer className="mt-3 font-mono text-xs not-italic text-muted-foreground">
-                — Sarah Chen, Senior Backend Engineer
+                Sarah Chen, Senior Backend Engineer
               </footer>
             </blockquote>
 
@@ -434,7 +436,7 @@ function CandidateExperience() {
                     "Validates specific claims on the résumé.",
                     "Probes role-relevant judgement, not trivia.",
                     "Follows up on vagueness, like a human would.",
-                    "Stays concise — 20–40 minutes, async.",
+                    "Stays concise. Twenty to forty minutes, async.",
                   ].map((line) => (
                     <li key={line} className="flex gap-2.5 text-sm leading-relaxed text-foreground">
                       <span className="mt-2 size-1 shrink-0 rounded-full bg-brand" />
@@ -548,7 +550,7 @@ function ReportSection() {
             <SectionHeading
               eyebrow="The report"
               title="See how candidates actually perform"
-              lead="Every candidate arrives with a structured report covering reasoning, communication, and relevant experience — with strengths, concerns, and a clear recommendation."
+              lead="Every candidate arrives with a structured report covering reasoning, communication, and relevant experience, plus strengths, concerns, and a clear recommendation."
             />
             <div className="mt-8 border-t border-border pt-8">
               <span className="eyebrow">Dossier no. 0481</span>
@@ -607,7 +609,7 @@ function ReportSection() {
                 <ul className="mt-3 space-y-2.5">
                   {[
                     "Limited exposure to observability beyond basic logging.",
-                    "Vague answer on CI/CD pipeline design — flagged for follow-up.",
+                    "Vague answer on CI/CD pipeline design, flagged for follow-up.",
                   ].map((s) => (
                     <li key={s} className="flex gap-2.5 text-sm leading-relaxed text-foreground">
                       <span className="mt-2 size-1 shrink-0 rounded-full bg-muted-foreground/60" />
@@ -654,7 +656,7 @@ function RankingSection() {
                   Ranked, not <Highlight>filtered</Highlight>
                 </>
               }
-              lead="After RoundZero you don't see applicants — you see ranked candidates, ordered by real evaluation rather than keyword matches or résumé polish."
+              lead="After RoundZero you don't see applicants. You see ranked candidates, ordered by real evaluation rather than keyword matches or résumé polish."
             />
           </div>
 
@@ -736,12 +738,12 @@ const tiers: Tier[] = [
 
 const featureRows = [
   { label: "Active job postings", values: ["Up to 3", "Unlimited", "Unlimited"] },
-  { label: "AI job creation", values: ["—", "Included", "Included"] },
+  { label: "AI job creation", values: [NOT_INCLUDED, "Included", "Included"] },
   { label: "AI pre-evaluation", values: ["All applicants", "All applicants", "All applicants"] },
   { label: "Deep-evaluated reports", values: ["5 per job", "Top fits", "Top fits"] },
-  { label: "Custom evaluation criteria", values: ["—", "Included", "Included"] },
+  { label: "Custom evaluation criteria", values: [NOT_INCLUDED, "Included", "Included"] },
   { label: "Team seats", values: ["1", "5", "Unlimited"] },
-  { label: "API & integrations", values: ["—", "—", "Included"] },
+  { label: "API & integrations", values: [NOT_INCLUDED, NOT_INCLUDED, "Included"] },
   { label: "Support", values: ["Email", "Priority", "Dedicated AM"] },
 ];
 
@@ -788,7 +790,14 @@ function PricingSection() {
               <tr className="border-b border-border">
                 <th scope="col" className="w-1/4 pb-6 text-left" />
                 {tiers.map((t) => (
-                  <th key={t.name} scope="col" className="w-1/4 px-4 pb-6 text-left align-top">
+                  <th
+                    key={t.name}
+                    scope="col"
+                    className={cn(
+                      "w-1/4 px-4 pb-6 text-left align-top",
+                      t.featured ? "border-x border-brand/25 bg-muted/25" : "",
+                    )}
+                  >
                     <div className="flex flex-col gap-2">
                       <span className="eyebrow h-4">{t.featured ? "Most popular" : "\u00A0"}</span>
                       <span className="text-lg font-semibold tracking-[-0.01em]">{t.name}</span>
@@ -819,7 +828,8 @@ function PricingSection() {
                       key={`${row.label}-${tiers[valueIndex]?.name}`}
                       className={cn(
                         "px-4 py-4 align-top text-[14px]",
-                        value === "—" ? "font-mono text-muted-foreground" : "text-foreground",
+                        tiers[valueIndex]?.featured ? "border-x border-brand/25 bg-muted/25" : "",
+                        value === NOT_INCLUDED ? "text-muted-foreground" : "text-foreground",
                       )}
                     >
                       {value}
@@ -830,7 +840,13 @@ function PricingSection() {
               <tr>
                 <td />
                 {tiers.map((t) => (
-                  <td key={t.name} className="px-4 pt-6 align-top">
+                  <td
+                    key={t.name}
+                    className={cn(
+                      "px-4 pt-6 align-top",
+                      t.featured ? "border-x border-brand/25 bg-muted/25" : "",
+                    )}
+                  >
                     <TierCta tier={t} />
                   </td>
                 ))}
@@ -844,7 +860,12 @@ function PricingSection() {
           {tiers.map((t, tierIndex) => (
             <div
               key={t.name}
-              className={cn("border border-border p-5", t.featured ? "border-brand/30" : "")}
+              className={cn(
+                "border p-5",
+                t.featured
+                  ? "border-x border-brand/25 border-y-border bg-muted/25"
+                  : "border-border",
+              )}
             >
               <div className="mb-5 flex flex-col gap-1.5">
                 {t.featured ? <span className="eyebrow text-brand">Most popular</span> : null}
@@ -865,8 +886,8 @@ function PricingSection() {
                     <dd
                       className={cn(
                         "shrink-0 text-right text-[13px]",
-                        row.values[tierIndex] === "—"
-                          ? "font-mono text-muted-foreground"
+                        row.values[tierIndex] === NOT_INCLUDED
+                          ? "text-muted-foreground"
                           : "text-foreground",
                       )}
                     >
@@ -923,7 +944,7 @@ function CostComparison() {
             Replace a $50,000 recruiting budget with a subscription.
           </h3>
           <p className="mt-4 text-[15px] leading-relaxed text-muted-foreground">
-            Traditional platforms charge per job, per seat, or per placement — and still leave you
+            Traditional platforms charge per job, per seat, or per placement, and still leave you
             with résumés to screen. RoundZero replaces the entire first round with a flat fee that
             includes evaluation.
           </p>
@@ -977,15 +998,15 @@ const faq = [
   },
   {
     q: "What does a candidate report include?",
-    a: "Each report scores candidates across technical depth, communication, and experience credibility. It includes specific strengths, areas of concern, key insights from the interview, and a clear hire / consider / pass recommendation — every score linked to evidence in the actual conversation.",
+    a: "Each report scores candidates across technical depth, communication, and experience credibility. It includes specific strengths, areas of concern, key insights from the interview, and a clear hire / consider / pass recommendation. Every score is linked to evidence in the actual conversation.",
   },
   {
     q: "Is there a voice component to the interview?",
-    a: "Yes. After the text interview, candidates complete a short ~5 minute voice conversation to assess real-time communication. The voice assessment is blended into the communication score (60% voice, 40% text). The full transcript and per-dimension scores (clarity, articulation, conciseness, listening, confidence) are visible in the report. Candidates can skip the voice check — the report will note it was excluded.",
+    a: "Yes. After the text interview, candidates complete a short ~5 minute voice conversation to assess real-time communication. The voice assessment is blended into the communication score (60% voice, 40% text). The full transcript and per-dimension scores (clarity, articulation, conciseness, listening, confidence) are visible in the report. Candidates can skip the voice check. The report will note it was excluded.",
   },
   {
     q: "Can candidates cheat or use AI to answer?",
-    a: "Built-in guardrails catch AI-generated answers before they reach your report. The interview is adaptive — it follows up on vague answers, asks for specifics about claimed experience, and cross-references every response against the candidate's résumé. The system evaluates consistency, depth, and context, not just correctness. Answers that a model could have written are flagged automatically because they lack the context-specific details that genuine experience produces.",
+    a: "Built-in guardrails catch AI-generated answers before they reach your report. The interview is adaptive. It follows up on vague answers, asks for specifics about claimed experience, and cross-references every response against the candidate's résumé. The system evaluates consistency, depth, and context, not just correctness. Answers that a model could have written are flagged automatically because they lack the context-specific details that genuine experience produces.",
   },
   {
     q: "How long before I see results?",
@@ -993,7 +1014,7 @@ const faq = [
   },
   {
     q: "Do candidates need to install anything?",
-    a: "No. Apply, interview, and track status — all in the browser. No apps, plugins, or calendar links.",
+    a: "No. Apply, interview, and track status all in the browser. No apps, plugins, or calendar links.",
   },
   {
     q: "What happens to candidates who aren't a strong fit?",
@@ -1001,11 +1022,11 @@ const faq = [
   },
   {
     q: "Can I customise what the AI evaluates?",
-    a: "Yes — on Pro and Enterprise plans, you define custom evaluation criteria. The AI uses your job requirements, screening questions, and weighting preferences.",
+    a: "Yes. On Pro and Enterprise plans, you define custom evaluation criteria. The AI uses your job requirements, screening questions, and weighting preferences.",
   },
   {
     q: "What is AI job creation?",
-    a: "Describe a role in plain language — 'Senior React engineer, remote, $120-160k' — and our AI builds a complete job posting with title, description, requirements, salary, screening questions, and more. You review the draft, edit anything, then publish. Available on Pro and Enterprise.",
+    a: "Describe a role in plain language, like 'Senior React engineer, remote, $120-160k', and our AI builds a complete job posting with title, description, requirements, salary, screening questions, and more. You review the draft, edit anything, then publish. Available on Pro and Enterprise.",
   },
   {
     q: "Does RoundZero only work for technical roles?",
@@ -1013,7 +1034,7 @@ const faq = [
   },
   {
     q: "How is RoundZero different from other AI hiring platforms?",
-    a: "Most platforms rely on video interviews or resume screening — both consume hours of human time per candidate. RoundZero uses adaptive chat-based interviews that run on your behalf. Zero handles salary expectations, relocation preferences, visa requirements, and other screening criteria so your team only speaks to the right candidates. The interview follows up on vague answers, cross-references claims, and adjusts questions based on the role. You get rich, context-specific insights that catch inconsistencies and validate genuine experience. No scheduling friction, no video anxiety.",
+    a: "Most platforms rely on video interviews or resume screening. Both consume hours of human time per candidate. RoundZero uses adaptive chat-based interviews that run on your behalf. Zero handles salary expectations, relocation preferences, visa requirements, and other screening criteria so your team only speaks to the right candidates. The interview follows up on vague answers, cross-references claims, and adjusts questions based on the role. You get rich, context-specific insights that catch inconsistencies and validate genuine experience. No scheduling friction, no video anxiety.",
   },
 ];
 
@@ -1056,20 +1077,36 @@ function FaqSection() {
 // ───────────────────────────────────────────────────────────────────────────
 function Closing() {
   return (
-    <section className="border-t border-border">
+    <section className="calm-closing border-t border-border">
       <div className={cn(CONTAINER, SECTION_PAD)}>
         <div className="mx-auto max-w-2xl text-center">
           <Eyebrow>Get started</Eyebrow>
           <h2 className="mt-5 text-[clamp(2rem,4.4vw,3.5rem)] font-semibold leading-[1.04] tracking-[-0.03em]">
             Run RoundZero before <Highlight>round one</Highlight>
           </h2>
-          <p className="mx-auto mt-5 max-w-md text-[clamp(1rem,1.4vw,1.15rem)] leading-relaxed text-muted-foreground">
-            Start replacing your first interview round today — post a job and let evaluated
+          <p className="closing-lead mx-auto mt-5 max-w-md text-[clamp(1rem,1.4vw,1.15rem)] leading-relaxed">
+            Start replacing your first interview round today. Post a job and let evaluated
             candidates come to you.
           </p>
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <PrimaryCta to="/company/login">Post your first job</PrimaryCta>
-            <SecondaryCta to="/jobs">Browse jobs</SecondaryCta>
+            <Button
+              size="lg"
+              className="rounded-full bg-background text-foreground hover:bg-background/90"
+              asChild
+            >
+              <Link to="/company/login">
+                Post your first job
+                <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} />
+              </Link>
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="rounded-full border-background/20 bg-transparent text-inherit hover:bg-background/10"
+              asChild
+            >
+              <Link to="/jobs">Browse jobs</Link>
+            </Button>
           </div>
         </div>
       </div>
