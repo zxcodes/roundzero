@@ -79,22 +79,6 @@ function Highlight({ children }: { children: React.ReactNode }) {
   return <span className="highlight">{children}</span>;
 }
 
-function AnnouncementPill() {
-  return (
-    <div className="mb-6 inline-flex max-w-full flex-wrap items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5">
-      <span className="rounded-full bg-primary/10 px-2 py-0.5 font-mono text-[10px] font-medium uppercase tracking-wider text-foreground">
-        New
-      </span>
-      <span className="text-xs text-muted-foreground">Voice assessments in every report</span>
-      <HugeiconsIcon
-        icon={ArrowRight01Icon}
-        strokeWidth={2}
-        className="size-3.5 shrink-0 text-foreground"
-      />
-    </div>
-  );
-}
-
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
     <span className="eyebrow inline-flex items-center gap-2">
@@ -169,7 +153,6 @@ function Hero() {
       <div className={cn(CONTAINER, SECTION_PAD)}>
         <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-16">
           <div className="rise max-w-xl">
-            <AnnouncementPill />
             <Eyebrow>Async AI interviews · Ranked reports</Eyebrow>
             <h1 className="mt-6 text-[clamp(2.6rem,5.6vw,4.75rem)] font-bold leading-[1.02] tracking-[-0.035em]">
               Replace your first interview round with <Highlight>AI</Highlight>
