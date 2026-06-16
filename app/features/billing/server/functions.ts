@@ -6,7 +6,12 @@ import { getDb } from "@/shared/db";
 import { appEnv } from "@/shared/env.app";
 import { assertCompanyOwner } from "@/shared/membership-auth";
 import { companyMiddleware } from "@/shared/middleware";
-import { hasActiveSubscription, type SubscriptionPlan, subscriptionPlanSchema } from "../config";
+import {
+  hasActiveSubscription,
+  SUBSCRIPTION_PLANS,
+  type SubscriptionPlan,
+  subscriptionPlanSchema,
+} from "../config";
 import { getPolar } from "../services/polar";
 
 const checkoutSchema = z.object({
@@ -14,7 +19,9 @@ const checkoutSchema = z.object({
 });
 
 function productIdForPlan(plan: SubscriptionPlan): string | null {
-  if (plan === "pro") return appEnv.POLAR_PRODUCT_ID_PRO;
+  if (plan === "starter") return appEnv.POLAR_PRODUCT_ID_STARTER;
+  if (plan === "growth") return appEnv.POLAR_PRODUCT_ID_GROWTH;
+  if (plan === "scale") return appEnv.POLAR_PRODUCT_ID_SCALE;
   return null;
 }
 
@@ -57,11 +64,7 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
     const productId = productIdForPlan(plan);
 
     if (!productId) {
-      throw new Error(
-        plan === "enterprise"
-          ? "Contact sales for the Enterprise plan"
-          : "This plan is not purchasable",
-      );
+      throw new Error("This plan is not purchasable");
     }
 
     await ensurePolarCustomer({
@@ -112,14 +115,19 @@ export const getMySubscription = createServerFn({ method: "GET" })
     const company = await getCompanyById(db, { id: context.company.id });
     if (!company) return null;
 
+    const rawPlan = company.subscriptionPlan ?? "free";
+    const plan = SUBSCRIPTION_PLANS.includes(rawPlan as SubscriptionPlan)
+      ? (rawPlan as SubscriptionPlan)
+      : "free";
+
     return {
-      plan: (company.subscriptionPlan ?? "free") as SubscriptionPlan,
+      plan,
       status: company.subscriptionStatus ?? "inactive",
       currentPeriodEnd: company.subscriptionCurrentPeriodEnd,
       cancelAtPeriodEnd: company.subscriptionCancelAtPeriodEnd,
       hasPolarCustomer: Boolean(company.polarCustomerId),
       isActive: hasActiveSubscription({
-        subscriptionPlan: company.subscriptionPlan,
+        subscriptionPlan: plan,
         subscriptionStatus: company.subscriptionStatus,
       }),
     };

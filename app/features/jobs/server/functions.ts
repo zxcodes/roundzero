@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { generateText, Output } from "ai";
 import { z } from "zod";
-import { hasActiveSubscription } from "@/features/billing/config";
+import { getPlanJobLimit, hasActiveSubscription } from "@/features/billing/config";
 import { getCompanyByMemberUserId } from "@/features/companies/queries/membership-queries_sql";
 import { notifyCompanyTeam } from "@/features/companies/services/company-team-notifications";
 import { getDb } from "@/shared/db";
@@ -27,16 +27,14 @@ async function enforceJobLimit(
   db: ReturnType<typeof getDb>,
   companyId: string,
   subscriptionPlan: string | null,
-  subscriptionStatus: string | null,
 ): Promise<void> {
-  const isPaid = hasActiveSubscription({
-    subscriptionPlan,
-    subscriptionStatus,
-  });
-  if (isPaid) return;
+  const jobLimit = getPlanJobLimit(subscriptionPlan);
+  if (jobLimit === Infinity) return;
   const counts = await countJobsByCompanyAndStatus(db, { companyId });
-  if (counts && counts.openCount >= 3) {
-    throw new Error("Free plan limited to 3 active jobs. Upgrade to Pro to post more.");
+  if (counts && counts.openCount >= jobLimit) {
+    throw new Error(
+      `Your plan includes ${jobLimit} active job${jobLimit === 1 ? "" : "s"}. Upgrade to post more.`,
+    );
   }
 }
 
@@ -48,12 +46,7 @@ export const createJob = createServerFn({ method: "POST" })
 
     // Enforce the 3-job limit for all creations on free plans.
     // Paid plans bypass this check entirely.
-    await enforceJobLimit(
-      db,
-      context.company.id,
-      context.company.subscriptionPlan,
-      context.company.subscriptionStatus,
-    );
+    await enforceJobLimit(db, context.company.id, context.company.subscriptionPlan);
 
     const job = await createJobQuery(db, {
       companyId: context.company.id,
@@ -137,12 +130,7 @@ export const updateJob = createServerFn({ method: "POST" })
     if (data.status === "open") {
       const existing = await getJobById(db, { id: data.id });
       if (existing && existing.status !== "open") {
-        await enforceJobLimit(
-          db,
-          context.company.id,
-          context.company.subscriptionPlan,
-          context.company.subscriptionStatus,
-        );
+        await enforceJobLimit(db, context.company.id, context.company.subscriptionPlan);
       }
     }
 
@@ -217,12 +205,7 @@ export const publishJob = createServerFn({ method: "POST" })
       throw new Error("This job has already expired. Update the deadline before publishing.");
     }
 
-    await enforceJobLimit(
-      db,
-      context.company.id,
-      context.company.subscriptionPlan,
-      context.company.subscriptionStatus,
-    );
+    await enforceJobLimit(db, context.company.id, context.company.subscriptionPlan);
 
     const updated = await updateJobQuery(db, {
       id: data.id,

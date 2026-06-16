@@ -29,7 +29,9 @@ vi.mock("../services/polar", () => ({
 vi.mock("@/shared/env.app", () => ({
   appEnv: {
     POLAR_WEBHOOK_SECRET: "test-secret",
-    POLAR_PRODUCT_ID_PRO: "pro-product-id",
+    POLAR_PRODUCT_ID_STARTER: "starter-product-id",
+    POLAR_PRODUCT_ID_GROWTH: "growth-product-id",
+    POLAR_PRODUCT_ID_SCALE: "scale-product-id",
   },
 }));
 
@@ -57,7 +59,7 @@ function makeSubscription(overrides?: Record<string, unknown>) {
   return {
     id: "sub_123",
     customerId: "cust_123",
-    productId: "pro-product-id",
+    productId: "growth-product-id",
     status: "active",
     currentPeriodEnd: new Date("2026-06-07T00:00:00Z"),
     cancelAtPeriodEnd: false,
@@ -109,10 +111,48 @@ describe("subscription.active webhook", () => {
 
     const updated = await getCompanyByPolarCustomerId(sql, { polarCustomerId: "cust_123" });
     expect(updated).not.toBeNull();
-    expect(updated!.subscriptionPlan).toBe("pro");
+    expect(updated!.subscriptionPlan).toBe("growth");
     expect(updated!.subscriptionStatus).toBe("active");
     expect(updated!.polarSubscriptionId).toBe("sub_123");
-    expect(updated!.polarProductId).toBe("pro-product-id");
+    expect(updated!.polarProductId).toBe("growth-product-id");
+  });
+
+  it("maps starter product id to starter plan", async () => {
+    const owner = await seedUser({ role: "company" });
+    await sql`
+      INSERT INTO companies (owner_id, name, slug, polar_customer_id)
+      VALUES (${owner.id}, ${"Test Co"}, ${`test-co-${crypto.randomUUID().slice(0, 6)}`}, ${"cust_starter"})
+    `;
+
+    mockValidateEvent.mockReturnValue({
+      type: "subscription.active",
+      data: makeSubscription({ customerId: "cust_starter", productId: "starter-product-id" }),
+    });
+
+    const response = await handlePolarWebhook(makeWebhookRequest({ type: "subscription.active" }));
+    expect(response.status).toBe(200);
+
+    const updated = await getCompanyByPolarCustomerId(sql, { polarCustomerId: "cust_starter" });
+    expect(updated!.subscriptionPlan).toBe("starter");
+  });
+
+  it("maps scale product id to scale plan", async () => {
+    const owner = await seedUser({ role: "company" });
+    await sql`
+      INSERT INTO companies (owner_id, name, slug, polar_customer_id)
+      VALUES (${owner.id}, ${"Test Co"}, ${`test-co-${crypto.randomUUID().slice(0, 6)}`}, ${"cust_scale"})
+    `;
+
+    mockValidateEvent.mockReturnValue({
+      type: "subscription.active",
+      data: makeSubscription({ customerId: "cust_scale", productId: "scale-product-id" }),
+    });
+
+    const response = await handlePolarWebhook(makeWebhookRequest({ type: "subscription.active" }));
+    expect(response.status).toBe(200);
+
+    const updated = await getCompanyByPolarCustomerId(sql, { polarCustomerId: "cust_scale" });
+    expect(updated!.subscriptionPlan).toBe("scale");
   });
 });
 
@@ -121,7 +161,7 @@ describe("subscription.updated webhook", () => {
     const owner = await seedUser({ role: "company" });
     await sql`
       INSERT INTO companies (owner_id, name, slug, polar_customer_id, polar_subscription_id, subscription_plan, subscription_status)
-      VALUES (${owner.id}, ${"Test Co"}, ${`test-co-${crypto.randomUUID().slice(0, 6)}`}, ${"cust_456"}, ${"sub_old"}, ${"pro"}, ${"active"})
+      VALUES (${owner.id}, ${"Test Co"}, ${`test-co-${crypto.randomUUID().slice(0, 6)}`}, ${"cust_456"}, ${"sub_old"}, ${"growth"}, ${"active"})
     `;
 
     mockValidateEvent.mockReturnValue({
@@ -151,7 +191,7 @@ describe("subscription.canceled webhook", () => {
     const owner = await seedUser({ role: "company" });
     await sql`
       INSERT INTO companies (owner_id, name, slug, polar_customer_id, polar_subscription_id, subscription_plan, subscription_status)
-      VALUES (${owner.id}, ${"Test Co"}, ${`test-co-${crypto.randomUUID().slice(0, 6)}`}, ${"cust_789"}, ${"sub_123"}, ${"pro"}, ${"active"})
+      VALUES (${owner.id}, ${"Test Co"}, ${`test-co-${crypto.randomUUID().slice(0, 6)}`}, ${"cust_789"}, ${"sub_123"}, ${"growth"}, ${"active"})
     `;
 
     mockValidateEvent.mockReturnValue({
@@ -177,7 +217,7 @@ describe("subscription.revoked webhook", () => {
     const owner = await seedUser({ role: "company" });
     await sql`
       INSERT INTO companies (owner_id, name, slug, polar_customer_id, polar_subscription_id, subscription_plan, subscription_status)
-      VALUES (${owner.id}, ${"Test Co"}, ${`test-co-${crypto.randomUUID().slice(0, 6)}`}, ${"cust_rev"}, ${"sub_123"}, ${"pro"}, ${"active"})
+      VALUES (${owner.id}, ${"Test Co"}, ${`test-co-${crypto.randomUUID().slice(0, 6)}`}, ${"cust_rev"}, ${"sub_123"}, ${"growth"}, ${"active"})
     `;
 
     mockValidateEvent.mockReturnValue({
@@ -218,7 +258,7 @@ describe("checkout.updated webhook", () => {
     expect(mockSubscriptionsGet).toHaveBeenCalledWith({ id: "sub_checkout" });
 
     const updated = await getCompanyByPolarCustomerId(sql, { polarCustomerId: "cust_check" });
-    expect(updated!.subscriptionPlan).toBe("pro");
+    expect(updated!.subscriptionPlan).toBe("growth");
     expect(updated!.polarSubscriptionId).toBe("sub_123");
   });
 

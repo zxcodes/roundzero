@@ -17,7 +17,9 @@ import { getPolar } from "./services/polar";
 
 function planFromProductId(productId: string | null | undefined): SubscriptionPlan {
   if (!productId) return "free";
-  if (productId === appEnv.POLAR_PRODUCT_ID_PRO) return "pro";
+  if (productId === appEnv.POLAR_PRODUCT_ID_STARTER) return "starter";
+  if (productId === appEnv.POLAR_PRODUCT_ID_GROWTH) return "growth";
+  if (productId === appEnv.POLAR_PRODUCT_ID_SCALE) return "scale";
   return "free";
 }
 

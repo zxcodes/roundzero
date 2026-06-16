@@ -144,7 +144,7 @@ export function AppSidebar({
                     >
                       <Link to="/dashboard/billing">
                         <HugeiconsIcon icon={AddCircleIcon} strokeWidth={2} className="size-4" />
-                        <span>Upgrade to Pro</span>
+                        <span>Upgrade plan</span>
                       </Link>
                     </SidebarMenuButton>
                   ) : (

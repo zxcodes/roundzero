@@ -1000,7 +1000,7 @@ type Tier = {
 
 const tiers: Tier[] = [
   {
-    name: "Starter",
+    name: "Free",
     price: "$0",
     period: "forever",
     description: "Try RoundZero on your next hire. No commitment.",
@@ -1008,33 +1008,44 @@ const tiers: Tier[] = [
     href: "/company/login",
   },
   {
-    name: "Pro",
-    price: "$149",
+    name: "Starter",
+    price: "$39",
+    period: "per month",
+    description: "For small teams hiring occasionally.",
+    cta: "Get started",
+    href: "/company/login?redirect=/dashboard/billing",
+  },
+  {
+    name: "Growth",
+    price: "$99",
     period: "per month",
     description: "For teams hiring across multiple roles.",
-    cta: "Start a trial",
+    cta: "Get started",
     href: "/company/login?redirect=/dashboard/billing",
     featured: true,
   },
   {
-    name: "Enterprise",
-    price: "Custom",
-    period: "tailored",
-    description: "High-volume hiring with dedicated support.",
-    cta: "Speak with us",
-    href: "mailto:sales@roundzero.dev",
+    name: "Scale",
+    price: "$249",
+    period: "per month",
+    description: "High-volume hiring with predictable pricing.",
+    cta: "Get started",
+    href: "/company/login?redirect=/dashboard/billing",
   },
 ];
 
 const featureRows = [
-  { label: "Active job postings", values: ["Up to 3", "Unlimited", "Unlimited"] },
-  { label: "AI job creation", values: [NOT_INCLUDED, "Included", "Included"] },
-  { label: "AI pre-evaluation", values: ["All applicants", "All applicants", "All applicants"] },
-  { label: "Deep-evaluated reports", values: ["5 per job", "Top fits", "Top fits"] },
-  { label: "Custom evaluation criteria", values: [NOT_INCLUDED, "Included", "Included"] },
-  { label: "Team seats", values: ["1", "5", "Unlimited"] },
-  { label: "API & integrations", values: [NOT_INCLUDED, NOT_INCLUDED, "Included"] },
-  { label: "Support", values: ["Email", "Priority", "Dedicated AM"] },
+  { label: "Active job postings", values: ["1", "3", "10", "25"] },
+  { label: "AI job creation", values: [NOT_INCLUDED, "Included", "Included", "Included"] },
+  {
+    label: "AI pre-evaluation",
+    values: ["All applicants", "All applicants", "All applicants", "All applicants"],
+  },
+  {
+    label: "Structured evaluation reports",
+    values: ["Included", "Included", "Included", "Included"],
+  },
+  { label: "Support", values: ["Email", "Email", "Email", "Email"] },
 ];
 
 function TierCta({ tier, className }: { tier: Tier; className?: string }) {
@@ -1073,8 +1084,7 @@ function PricingSection() {
         <div className="mt-12 hidden md:block">
           <table className="w-full border-collapse">
             <caption className="sr-only">
-              Compare RoundZero pricing tiers for active jobs, reports, seats, integrations, and
-              support.
+              Compare RoundZero pricing tiers for active jobs, AI features, reports, and support.
             </caption>
             <thead>
               <tr className="border-b border-border">
@@ -1219,10 +1229,10 @@ const costPlatforms = [
     note: "ATS license, no evaluation included",
   },
   {
-    name: "RoundZero Pro",
-    cost: "$149",
-    per: "/ mo",
-    note: "Unlimited jobs, deep evaluations",
+    name: "RoundZero Growth",
+    cost: "$99",
+    per: " / mo",
+    note: "10 jobs, deep evaluations",
   },
 ];
 
@@ -1256,7 +1266,7 @@ function CostComparison() {
                 <span
                   className={cn(
                     "col-span-5 text-[15px] font-medium",
-                    p.name === "RoundZero Pro" ? "text-foreground" : "text-foreground",
+                    p.name === "RoundZero Growth" ? "text-foreground" : "text-foreground",
                   )}
                 >
                   {p.name}
@@ -1264,7 +1274,7 @@ function CostComparison() {
                 <span
                   className={cn(
                     "col-span-3 font-mono text-sm tabular-nums",
-                    p.name === "RoundZero Pro" ? "text-foreground" : "text-muted-foreground",
+                    p.name === "RoundZero Growth" ? "text-foreground" : "text-muted-foreground",
                   )}
                 >
                   {p.cost}

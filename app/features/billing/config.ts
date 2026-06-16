@@ -3,11 +3,12 @@ import { z } from "zod";
 /**
  * Subscription plans available to companies.
  *
- * - `free`: default for every new company. No paid features.
- * - `pro`: $149/mo recurring. Unlocks unlimited active jobs, custom criteria, etc.
- * - `enterprise`: contact-sales, provisioned manually.
+ * - `free`: 1 active job, no paid features.
+ * - `starter`: $39/mo, 3 active jobs.
+ * - `growth`: $99/mo, 10 active jobs.
+ * - `scale`: $249/mo, 25 active jobs.
  */
-export const SUBSCRIPTION_PLANS = ["free", "pro", "enterprise"] as const;
+export const SUBSCRIPTION_PLANS = ["free", "starter", "growth", "scale"] as const;
 export const subscriptionPlanSchema = z.enum(SUBSCRIPTION_PLANS);
 export type SubscriptionPlan = z.infer<typeof subscriptionPlanSchema>;
 
@@ -32,50 +33,72 @@ export type PlanConfig = {
   description: string;
   priceLabel: string;
   periodLabel: string;
+  includedJobs: number;
+  overagePrice?: string;
   features: string[];
 };
 
 export const PLAN_CONFIGS: Record<SubscriptionPlan, PlanConfig> = {
   free: {
     id: "free",
-    name: "Starter",
+    name: "Free",
     description: "Try RoundZero on your next hire. No commitment.",
     priceLabel: "$0",
     periodLabel: "forever",
+    includedJobs: 1,
     features: [
-      "Up to 3 active jobs",
+      "1 active job",
       "AI pre-evaluation on all applicants",
-      "5 deep-evaluated reports per job",
+      "Structured evaluation reports",
       "Email support",
     ],
   },
-  pro: {
-    id: "pro",
-    name: "Pro",
-    description: "For teams hiring across multiple roles.",
-    priceLabel: "$149",
+  starter: {
+    id: "starter",
+    name: "Starter",
+    description: "For small teams hiring occasionally.",
+    priceLabel: "$39",
     periodLabel: "per month",
+    includedJobs: 3,
+    overagePrice: "$12 per extra job",
     features: [
-      "Unlimited active jobs",
+      "3 active jobs",
       "AI job creation",
-      "Reports for top fits across the funnel",
-      "Custom evaluation criteria",
-      "5 team seats",
-      "Priority support",
+      "AI pre-evaluation on all applicants",
+      "Structured evaluation reports",
+      "Email support",
     ],
   },
-  enterprise: {
-    id: "enterprise",
-    name: "Enterprise",
-    description: "High-volume hiring with dedicated support.",
-    priceLabel: "Custom",
-    periodLabel: "tailored",
+  growth: {
+    id: "growth",
+    name: "Growth",
+    description: "For teams hiring across multiple roles.",
+    priceLabel: "$99",
+    periodLabel: "per month",
+    includedJobs: 10,
+    overagePrice: "$9 per extra job",
     features: [
-      "Unlimited everything",
+      "10 active jobs",
       "AI job creation",
-      "Custom evaluation criteria",
-      "API & integrations",
-      "Dedicated account manager",
+      "AI pre-evaluation on all applicants",
+      "Structured evaluation reports",
+      "Email support",
+    ],
+  },
+  scale: {
+    id: "scale",
+    name: "Scale",
+    description: "High-volume hiring with predictable pricing.",
+    priceLabel: "$249",
+    periodLabel: "per month",
+    includedJobs: 25,
+    overagePrice: "$7 per extra job",
+    features: [
+      "25 active jobs",
+      "AI job creation",
+      "AI pre-evaluation on all applicants",
+      "Structured evaluation reports",
+      "Email support",
     ],
   },
 };
@@ -93,6 +116,14 @@ export function hasActiveSubscription(input: {
 }): boolean {
   const plan = input.subscriptionPlan ?? "free";
   if (plan === "free") return false;
-  if (plan === "enterprise") return true;
   return ACTIVE_STATUSES.includes(input.subscriptionStatus as SubscriptionStatus);
+}
+
+/**
+ * Returns the number of active jobs included in a plan.
+ * Free plans get 1 job so a company can genuinely try the platform.
+ */
+export function getPlanJobLimit(plan: string | null | undefined): number {
+  const key = (plan ?? "free") as SubscriptionPlan;
+  return PLAN_CONFIGS[key]?.includedJobs ?? PLAN_CONFIGS.free.includedJobs;
 }
