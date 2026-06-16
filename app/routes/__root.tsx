@@ -153,6 +153,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     "/companies/$slug",
     "/candidate/login",
     "/company/login",
+    "/privacy",
+    "/tos",
   ];
 
   const matchesRoute = (route: string, pathname: string) => {
