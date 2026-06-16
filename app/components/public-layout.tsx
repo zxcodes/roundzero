@@ -6,13 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
-export function PublicHeader({
-  editorial,
-  marketing,
-}: {
-  editorial?: boolean;
-  marketing?: boolean;
-}) {
+export function PublicHeader({ marketing }: { marketing?: boolean }) {
   const { user } = useRouteContext({ from: "__root__" });
 
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -22,10 +16,7 @@ export function PublicHeader({
   };
 
   return (
-    <header
-      className={`border-b ${editorial ? "border-(--ed-rule)" : "border-border/40"}`}
-      style={editorial ? { borderBottomColor: "var(--ed-rule)" } : undefined}
-    >
+    <header className="border-b border-border/40">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-6 lg:px-10">
         <div className="flex items-center">
           <Link to="/" className="flex items-center gap-1">
