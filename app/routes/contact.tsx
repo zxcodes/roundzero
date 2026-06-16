@@ -1,0 +1,161 @@
+import { Loading03Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { useForm } from "@tanstack/react-form";
+import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+import { PublicFooter, PublicHeader } from "@/components/public-layout";
+import { Button } from "@/components/ui/button";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { contactSchema, submitContactForm } from "@/features/contact/server/functions";
+
+export const Route = createFileRoute("/contact")({
+  head: () => ({
+    meta: [
+      { title: "Contact | RoundZero" },
+      {
+        name: "description",
+        content: "Get in touch with the RoundZero team.",
+      },
+    ],
+    links: [
+      {
+        rel: "canonical",
+        href: `${import.meta.env.VITE_APP_URL}/contact`,
+      },
+    ],
+  }),
+  component: ContactPage,
+});
+
+function ContactPage() {
+  const [submitted, setSubmitted] = useState(false);
+
+  const form = useForm({
+    defaultValues: {
+      email: "",
+      query: "",
+    },
+    onSubmit: async ({ value }) => {
+      await submitContactForm({ data: value });
+      setSubmitted(true);
+    },
+  });
+
+  if (submitted) {
+    return (
+      <div className="calm min-h-svh bg-background text-foreground">
+        <PublicHeader />
+        <main className="mx-auto flex max-w-lg flex-col items-center px-6 py-24 text-center lg:px-10">
+          <h1 className="text-[clamp(1.75rem,3.2vw,2.6rem)] font-semibold leading-[1.05] tracking-tight">
+            Message sent
+          </h1>
+          <p className="mt-4 text-[clamp(0.98rem,1.3vw,1.1rem)] leading-relaxed text-muted-foreground">
+            Thanks for reaching out. We'll get back to you at{" "}
+            <span className="text-foreground">{form.getFieldValue("email")}</span> as soon as
+            possible.
+          </p>
+        </main>
+        <PublicFooter />
+      </div>
+    );
+  }
+
+  return (
+    <div className="calm min-h-svh bg-background text-foreground">
+      <PublicHeader />
+      <main className="mx-auto max-w-lg px-6 py-20 lg:px-10">
+        <div className="text-center">
+          <h1 className="text-[clamp(1.75rem,3.2vw,2.6rem)] font-semibold leading-[1.05] tracking-tight">
+            Contact us
+          </h1>
+          <p className="mt-4 text-[clamp(0.98rem,1.3vw,1.1rem)] leading-relaxed text-muted-foreground">
+            Have a question or want to learn more? Send us a message and we'll get back to you.
+          </p>
+        </div>
+
+        <form
+          className="mt-10 space-y-6"
+          onSubmit={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            form.handleSubmit();
+          }}
+        >
+          <form.Field
+            name="email"
+            validators={{
+              onBlur: contactSchema.shape.email,
+            }}
+          >
+            {(field) => {
+              const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <Field data-invalid={isInvalid}>
+                  <FieldLabel htmlFor={field.name}>Email</FieldLabel>
+                  <Input
+                    id={field.name}
+                    type="email"
+                    placeholder="you@example.com"
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    aria-invalid={isInvalid}
+                  />
+                  {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+                </Field>
+              );
+            }}
+          </form.Field>
+
+          <form.Field
+            name="query"
+            validators={{
+              onBlur: contactSchema.shape.query,
+            }}
+          >
+            {(field) => {
+              const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <Field data-invalid={isInvalid}>
+                  <FieldLabel htmlFor={field.name}>Message</FieldLabel>
+                  <Textarea
+                    id={field.name}
+                    placeholder="Tell us what you're looking for..."
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    aria-invalid={isInvalid}
+                    className="max-h-48"
+                  />
+                  {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+                </Field>
+              );
+            }}
+          </form.Field>
+
+          <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+            {([canSubmit, isSubmitting]) => (
+              <Button
+                type="submit"
+                className="w-full rounded-full"
+                disabled={!canSubmit || isSubmitting}
+              >
+                {isSubmitting ? (
+                  <HugeiconsIcon
+                    icon={Loading03Icon}
+                    strokeWidth={2}
+                    className="size-4 animate-spin"
+                  />
+                ) : null}
+                {isSubmitting ? "Sending..." : "Send message"}
+              </Button>
+            )}
+          </form.Subscribe>
+        </form>
+      </main>
+      <PublicFooter />
+    </div>
+  );
+}

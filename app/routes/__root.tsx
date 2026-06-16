@@ -155,6 +155,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     "/company/login",
     "/privacy",
     "/tos",
+    "/contact",
   ];
 
   const matchesRoute = (route: string, pathname: string) => {
