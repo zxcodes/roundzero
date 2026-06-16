@@ -287,7 +287,7 @@ const valueProps = [
 
 function ValueStrip() {
   return (
-    <section className="border-t border-border bg-secondary/40">
+    <section className="border-t border-border">
       <div className={CONTAINER}>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           {valueProps.map((v, i) => (
@@ -405,7 +405,7 @@ const voiceDims = [
 
 function CandidateExperience() {
   return (
-    <section className="border-t border-border bg-secondary/40">
+    <section className="border-t border-border">
       <div className={cn(CONTAINER, SECTION_PAD)}>
         <div className="grid grid-cols-1 items-start gap-x-12 gap-y-12 lg:grid-cols-2">
           <div>
@@ -1077,36 +1077,20 @@ function FaqSection() {
 // ───────────────────────────────────────────────────────────────────────────
 function Closing() {
   return (
-    <section className="calm-closing border-t border-border">
+    <section className="border-t border-border">
       <div className={cn(CONTAINER, SECTION_PAD)}>
         <div className="mx-auto max-w-2xl text-center">
           <Eyebrow>Get started</Eyebrow>
           <h2 className="mt-5 text-[clamp(2rem,4.4vw,3.5rem)] font-semibold leading-[1.04] tracking-[-0.03em]">
             Run RoundZero before <Highlight>round one</Highlight>
           </h2>
-          <p className="closing-lead mx-auto mt-5 max-w-md text-[clamp(1rem,1.4vw,1.15rem)] leading-relaxed">
+          <p className="mx-auto mt-5 max-w-md text-[clamp(1rem,1.4vw,1.15rem)] leading-relaxed text-muted-foreground">
             Start replacing your first interview round today. Post a job and let evaluated
             candidates come to you.
           </p>
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Button
-              size="lg"
-              className="rounded-full bg-background text-foreground hover:bg-background/90"
-              asChild
-            >
-              <Link to="/company/login">
-                Post your first job
-                <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} />
-              </Link>
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="rounded-full border-background/20 bg-transparent text-inherit hover:bg-background/10"
-              asChild
-            >
-              <Link to="/jobs">Browse jobs</Link>
-            </Button>
+            <PrimaryCta to="/company/login">Post your first job</PrimaryCta>
+            <SecondaryCta to="/jobs">Browse jobs</SecondaryCta>
           </div>
         </div>
       </div>
