@@ -7,12 +7,7 @@ import { getDb } from "@/shared/db";
 import { authMiddleware } from "@/shared/middleware";
 import { arrayBufferToBase64, sanitizeResumeFileName } from "@/shared/resume";
 import { type SessionData, sessionConfig } from "@/shared/session";
-import {
-  nullableTrimmedString,
-  optionalTrimmedString,
-  optionalTrimmedUrl,
-  zodValidatorWithFormattedErrors,
-} from "@/shared/validation";
+import { zodValidatorWithFormattedErrors } from "@/shared/validation";
 import {
   createCandidateProfile as createCandidateProfileQuery,
   getCandidateProfileByUserId,
@@ -22,21 +17,11 @@ import {
 // --- Schemas ---
 
 const createCandidateProfileSchema = z.object({
-  headline: optionalTrimmedString(200),
   resumeKey: z.string().min(1).optional(),
 });
 
 const updateCandidateProfileSchema = z.object({
-  headline: nullableTrimmedString(200),
   resumeKey: z.string().min(1).nullable(),
-  skills: z.array(z.string().trim().min(1)).nullable(),
-  links: z
-    .object({
-      linkedin: optionalTrimmedUrl(),
-      github: optionalTrimmedUrl(),
-      portfolio: optionalTrimmedUrl(),
-    })
-    .nullable(),
 });
 
 const allowedResumeTypes = {
@@ -101,7 +86,6 @@ export const createCandidateProfile = createServerFn({ method: "POST" })
 
     const profile = await createCandidateProfileQuery(db, {
       userId: context.userId,
-      headline: data.headline ?? null,
       resumeKey: data.resumeKey ?? null,
     });
 
@@ -135,10 +119,7 @@ export const updateMyCandidateProfile = createServerFn({ method: "POST" })
     }
 
     const profile = await updateCandidateProfileQuery(db, {
-      headline: data.headline,
       resumeKey: data.resumeKey,
-      skills: data.skills,
-      links: data.links,
       userId: context.userId,
     });
 

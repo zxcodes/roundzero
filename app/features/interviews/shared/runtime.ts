@@ -8,7 +8,6 @@ import {
 } from "@/features/interviews/queries/queries_sql";
 import { getJobById } from "@/features/jobs/queries/queries_sql";
 import { getPreEvaluationByApplicationId } from "@/features/pre-evaluations/queries/queries_sql";
-import { buildCandidateProfileSummary } from "@/shared/ai-candidate-profile";
 import { getModelDateContext, LIMITS, sanitizeUntrustedText } from "@/shared/ai-refine";
 
 const applicationMetadataSchema = z
@@ -99,10 +98,7 @@ export async function buildInterviewContextState(
 
   const applicationMetadata =
     applicationMetadataSchema.safeParse(application?.metadata ?? {}).data ?? {};
-  const candidateSummaryRaw =
-    applicationMetadata.resumeText ??
-    applicationMetadata.summary ??
-    buildCandidateProfileSummary(application?.metadata ?? {});
+  const candidateSummaryRaw = applicationMetadata.resumeText ?? applicationMetadata.summary ?? "";
 
   const rawResponse = rawResponseSchema.safeParse(preEvaluation?.rawResponse ?? {}).data;
   const slopCheck = slopCheckSchema.safeParse(rawResponse?.slopCheck ?? {});

@@ -36,6 +36,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -589,7 +590,7 @@ function CandidateJobsList({ data }: { data: Awaited<ReturnType<typeof getOpenJo
 
       {/* Filters */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
+        <div className="relative flex-1 shrink-0 sm:shrink">
           <HugeiconsIcon
             icon={Search01Icon}
             strokeWidth={2}
@@ -602,70 +603,74 @@ function CandidateJobsList({ data }: { data: Awaited<ReturnType<typeof getOpenJo
             className="pl-10"
           />
         </div>
-        <Select value={typeFilter} onValueChange={onTypeChange}>
-          <SelectTrigger className="w-full sm:w-36">
-            <SelectValue placeholder="Job type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All types</SelectItem>
-            {employmentTypeSchema.options.map((value) => (
-              <SelectItem key={value} value={value}>
-                {employmentTypeLabels[value]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={levelFilter} onValueChange={onLevelChange}>
-          <SelectTrigger className="w-full sm:w-36">
-            <SelectValue placeholder="Experience" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All levels</SelectItem>
-            {experienceLevelSchema.options.map((value) => (
-              <SelectItem key={value} value={value}>
-                {experienceLevelLabels[value]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={workplaceFilter} onValueChange={onWorkplaceChange}>
-          <SelectTrigger className="w-full sm:w-36">
-            <SelectValue placeholder="Workplace" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All workplaces</SelectItem>
-            {workplaceTypeSchema.options.map((value) => (
-              <SelectItem key={value} value={value}>
-                {workplaceTypeLabels[value]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={salaryCurrency} onValueChange={onCurrencyChange}>
-          <SelectTrigger className="w-full sm:w-36">
-            <SelectValue placeholder="Currency" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All currencies</SelectItem>
-            {salaryCurrencySchema.options.map((value) => (
-              <SelectItem key={value} value={value}>
-                {salaryCurrencyLabels[value]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={String(salaryMin)} onValueChange={onSalaryChange}>
-          <SelectTrigger className="w-full sm:w-36">
-            <SelectValue placeholder="Salary" />
-          </SelectTrigger>
-          <SelectContent>
-            {brackets.map((bracket) => (
-              <SelectItem key={bracket.value} value={bracket.value}>
-                {bracket.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <ScrollArea orientation="horizontal" className="h-9">
+          <div className="flex gap-3">
+            <Select value={typeFilter} onValueChange={onTypeChange}>
+              <SelectTrigger className="w-36 shrink-0">
+                <SelectValue placeholder="Job type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All types</SelectItem>
+                {employmentTypeSchema.options.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {employmentTypeLabels[value]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={levelFilter} onValueChange={onLevelChange}>
+              <SelectTrigger className="w-36 shrink-0">
+                <SelectValue placeholder="Experience" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All levels</SelectItem>
+                {experienceLevelSchema.options.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {experienceLevelLabels[value]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={workplaceFilter} onValueChange={onWorkplaceChange}>
+              <SelectTrigger className="w-36 shrink-0">
+                <SelectValue placeholder="Workplace" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All workplaces</SelectItem>
+                {workplaceTypeSchema.options.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {workplaceTypeLabels[value]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={salaryCurrency} onValueChange={onCurrencyChange}>
+              <SelectTrigger className="w-36 shrink-0">
+                <SelectValue placeholder="Currency" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All currencies</SelectItem>
+                {salaryCurrencySchema.options.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {salaryCurrencyLabels[value]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={String(salaryMin)} onValueChange={onSalaryChange}>
+              <SelectTrigger className="w-36 shrink-0">
+                <SelectValue placeholder="Salary" />
+              </SelectTrigger>
+              <SelectContent>
+                {brackets.map((bracket) => (
+                  <SelectItem key={bracket.value} value={bracket.value}>
+                    {bracket.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </ScrollArea>
       </div>
 
       {/* Results count */}

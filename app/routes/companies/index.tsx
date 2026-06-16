@@ -117,7 +117,7 @@ function CompaniesPage() {
         {/* Header */}
         <section className="relative overflow-hidden border-b border-border/40">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--color-primary)/6%,transparent_70%)]" />
-          <div className="relative mx-auto max-w-6xl px-6 py-16 lg:px-8 lg:py-20">
+          <div className="relative mx-auto max-w-7xl px-6 py-16 lg:px-10 lg:py-20">
             <div className="space-y-3">
               <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
                 Company directory
@@ -135,7 +135,7 @@ function CompaniesPage() {
 
         {/* Filters */}
         <section className="sticky top-14 z-40 border-b border-border/40 bg-background/80 backdrop-blur-xl backdrop-saturate-150">
-          <div className="mx-auto flex max-w-6xl flex-col gap-3 px-6 py-3.5 sm:flex-row sm:items-center lg:px-8">
+          <div className="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-3.5 sm:flex-row sm:items-center lg:px-10">
             <div className="relative flex-1">
               <HugeiconsIcon
                 icon={Search01Icon}
@@ -179,7 +179,7 @@ function CompaniesPage() {
         </section>
 
         {/* Results count */}
-        <div className="mx-auto max-w-6xl px-6 pt-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-6 pt-6 lg:px-10">
           <p className="text-xs font-medium text-muted-foreground">
             {total} {total === 1 ? "company" : "companies"}
             {hasFilters ? " matching your filters" : ""}
@@ -187,7 +187,7 @@ function CompaniesPage() {
         </div>
 
         {/* Grid */}
-        <section className="mx-auto max-w-6xl px-6 py-4 pb-12 lg:px-8 lg:pb-16">
+        <section className="mx-auto max-w-7xl px-6 py-4 pb-12 lg:px-10 lg:pb-16">
           {items.length === 0 ? (
             <Empty className="border">
               <EmptyHeader>
