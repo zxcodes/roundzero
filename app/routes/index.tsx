@@ -74,6 +74,7 @@ function HomePage() {
 // ───────────────────────────────────────────────────────────────────────────
 const CONTAINER = "mx-auto w-full max-w-7xl px-6 lg:px-10";
 const SECTION_PAD = "py-20 lg:py-28";
+const SECTION_TINT = "bg-muted/30";
 
 function Highlight({ children }: { children: React.ReactNode }) {
   return <span className="highlight">{children}</span>;
@@ -135,9 +136,9 @@ function SecondaryCta({ to, children }: { to: string; children: React.ReactNode 
 
 function ScoreBar({ value }: { value: number }) {
   return (
-    <div className="h-1 w-full overflow-hidden rounded-full bg-border">
+    <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
       <div
-        className="h-full rounded-full bg-foreground"
+        className="h-full rounded-full bg-gradient-to-r from-foreground/75 to-foreground"
         style={{ width: `${(value / 10) * 100}%` }}
       />
     </div>
@@ -587,7 +588,7 @@ function pipelineLogLevelClass(level: PipelineLogLevel) {
 
 function PipelineSection() {
   return (
-    <section className="border-t border-border">
+    <section className={cn("border-t border-border", SECTION_TINT)}>
       <div className={cn(CONTAINER, SECTION_PAD)}>
         <div className="grid grid-cols-1 items-start gap-x-12 gap-y-12 lg:grid-cols-2">
           <div>
@@ -832,7 +833,7 @@ const reportScores = [
 
 function ReportSection() {
   return (
-    <section className="border-t border-border">
+    <section className={cn("border-t border-border", SECTION_TINT)}>
       <div className={cn(CONTAINER, SECTION_PAD)}>
         <div className="grid grid-cols-1 items-start gap-x-12 gap-y-12 lg:grid-cols-12">
           <div className="lg:col-span-5">
@@ -960,7 +961,7 @@ function RankingSection() {
               {ranking.map((r) => (
                 <div
                   key={r.rank}
-                  className="grid grid-cols-12 items-center border-b border-border px-5 py-4 last:border-b-0"
+                  className="grid grid-cols-12 items-center border-b border-border px-5 py-4 transition-colors last:border-b-0 hover:bg-muted/40"
                 >
                   <span className="col-span-2 font-mono text-xs text-muted-foreground">
                     {String(r.rank).padStart(2, "0")}
@@ -1060,7 +1061,7 @@ function TierCta({ tier, className }: { tier: Tier; className?: string }) {
 
 function PricingSection() {
   return (
-    <section className="border-t border-border">
+    <section className={cn("border-t border-border", SECTION_TINT)}>
       <div className={cn(CONTAINER, SECTION_PAD)}>
         <SectionHeading
           eyebrow="Pricing"
@@ -1250,7 +1251,7 @@ function CostComparison() {
             {costPlatforms.map((p) => (
               <div
                 key={p.name}
-                className="grid grid-cols-12 items-baseline border-b border-border px-5 py-4 last:border-b-0"
+                className="grid grid-cols-12 items-baseline border-b border-border px-5 py-4 transition-colors last:border-b-0 hover:bg-muted/40"
               >
                 <span
                   className={cn(
@@ -1368,7 +1369,7 @@ function FaqSection() {
 // ───────────────────────────────────────────────────────────────────────────
 function Closing() {
   return (
-    <section className="border-t border-border">
+    <section className={cn("border-t border-border", SECTION_TINT)}>
       <div className={cn(CONTAINER, SECTION_PAD)}>
         <div className="mx-auto max-w-2xl text-center">
           <Eyebrow>Get started</Eyebrow>

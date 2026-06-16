@@ -243,23 +243,59 @@
   color: var(--muted-foreground);
 }
 
+/* Brushed marker highlight — a fixed-height band sitting behind the lower glyph
+   so it reads as an intentional highlighter accent, not a loose box. */
 .calm .highlight {
-  border-radius: 0.25rem;
-  background: oklch(0.21 0.006 264 / 0.08);
-  padding: 0.08em 0.32em;
+  background-image: linear-gradient(oklch(0.21 0.006 264 / 0.13), oklch(0.21 0.006 264 / 0.13));
+  background-repeat: no-repeat;
+  background-size: 100% 0.42em;
+  background-position: 0 78%;
+  padding: 0 0.06em;
+  border-radius: 0.1em;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
 }
 
+/* Hero atmosphere: soft radial glow + faint dotted grid, masked to fade out.
+   isolate creates a stacking context so the negative z-index layers sit above
+   the section background but below the content. */
 .calm-hero {
+  position: relative;
+  isolation: isolate;
   background: var(--background);
 }
+.calm-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(62% 55% at 78% -5%, oklch(0.21 0.006 264 / 0.06), transparent 70%),
+    radial-gradient(52% 60% at 12% 18%, oklch(0.21 0.006 264 / 0.035), transparent 72%);
+  pointer-events: none;
+}
+.calm-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: radial-gradient(oklch(0.21 0.006 264 / 0.05) 1px, transparent 1.4px);
+  background-size: 26px 26px;
+  mask-image: radial-gradient(72% 62% at 50% 28%, black, transparent 78%);
+  -webkit-mask-image: radial-gradient(72% 62% at 50% 28%, black, transparent 78%);
+  pointer-events: none;
+}
 
+/* Product panels — soft layered elevation so mock UI feels like it floats. */
 .calm .panel {
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: var(--radius-4xl);
   background: var(--background);
+  box-shadow:
+    0 1px 2px oklch(0.21 0.006 264 / 0.04),
+    0 10px 28px -14px oklch(0.21 0.006 264 / 0.14),
+    0 28px 56px -28px oklch(0.21 0.006 264 / 0.12);
 }
 
 .calm .panel-header {
@@ -268,7 +304,7 @@
   justify-content: space-between;
   gap: 0.5rem;
   border-bottom: 1px solid var(--border);
-  background: oklch(0.98 0 0);
+  background: linear-gradient(180deg, oklch(0.992 0 0), oklch(0.973 0 0));
   padding: 0.7rem 1.25rem;
 }
 
@@ -276,6 +312,9 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-4xl);
   background: var(--background);
+  box-shadow:
+    0 1px 2px oklch(0.21 0.006 264 / 0.04),
+    0 14px 36px -18px oklch(0.21 0.006 264 / 0.1);
 }
 
 .calm-skip-link {
