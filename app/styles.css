@@ -375,16 +375,16 @@
 
 /* ==========================================================================
    Calm Document (landing page) theme — light by default, professional,
-   modern-SaaS. Near-white warm paper, warm ink, a single restrained ox-blood
+   modern-SaaS. Pure white surfaces, neutral ink, a single restrained ox-blood
    accent shared with the product (--brand), Geist sans for everything and
    Geist Mono reserved for data/labels. Soft hairline surfaces, small radius.
    Scoped to the marketing landing only; overrides the shadcn semantic tokens
    so Button / Accordion / Badge inherit the palette automatically.
    ========================================================================== */
 .calm {
-  --background: oklch(0.993 0.002 75);
+  --background: oklch(1 0 0);
   --foreground: oklch(0.2 0.004 264);
-  --card: oklch(0.993 0.002 75);
+  --card: oklch(1 0 0);
   --card-foreground: oklch(0.2 0.004 264);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.2 0.004 264);
@@ -429,9 +429,7 @@
 }
 
 .calm-hero {
-  background:
-    radial-gradient(70% 55% at 50% -10%, oklch(0.94 0.006 75 / 0.55), transparent 68%),
-    linear-gradient(to bottom, oklch(0.993 0.002 75), var(--background));
+  background: var(--background);
 }
 
 .calm .panel {
@@ -447,7 +445,7 @@
   justify-content: space-between;
   gap: 0.5rem;
   border-bottom: 1px solid var(--border);
-  background: oklch(0.985 0.002 75);
+  background: oklch(0.98 0 0);
   padding: 0.7rem 1.25rem;
 }
 
@@ -455,23 +453,6 @@
   border: 1px solid var(--border);
   border-radius: calc(var(--radius) - 0.125rem);
   background: var(--background);
-}
-
-.calm-closing {
-  background: oklch(0.19 0.006 264);
-  color: oklch(0.94 0.003 75);
-}
-
-.calm-closing .eyebrow {
-  color: oklch(0.66 0.012 75);
-}
-
-.calm-closing .closing-lead {
-  color: oklch(0.72 0.01 75);
-}
-
-.calm-closing .highlight {
-  background: oklch(0.45 0.13 28 / 0.38);
 }
 
 .calm-skip-link {
