@@ -96,7 +96,7 @@ function AnnouncementPill() {
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
     <span className="eyebrow inline-flex items-center gap-2">
-      <span className="size-1.5 rounded-[2px] bg-brand" />
+      <span className="size-1.5 rounded-xs bg-brand" />
       {children}
     </span>
   );
@@ -116,7 +116,7 @@ function SectionHeading({
   return (
     <div className={cn("max-w-2xl", className)}>
       <Eyebrow>{eyebrow}</Eyebrow>
-      <h2 className="mt-4 text-[clamp(1.75rem,3.2vw,2.6rem)] font-semibold leading-[1.05] tracking-[-0.025em]">
+      <h2 className="mt-4 text-[clamp(1.75rem,3.2vw,2.6rem)] font-semibold leading-[1.05] tracking-tight">
         {title}
       </h2>
       {lead ? (
