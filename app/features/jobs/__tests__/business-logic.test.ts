@@ -169,7 +169,7 @@ describe("company isolation", () => {
 });
 
 // ─── Subscription gating (job limits) ───────────────────────────
-// The server function `createJob` enforces a 3 active job limit on free plans.
+// The server function `createJob` enforces the active job limit for each plan.
 // These tests verify the data layer that supports that check.
 
 describe("job limit enforcement (data layer)", () => {
@@ -192,12 +192,12 @@ describe("job limit enforcement (data layer)", () => {
   it("paid company can have more than 3 open jobs (no DB constraint)", async () => {
     const { company } = await seedCompany();
 
-    // Simulate a pro subscription by updating the company row
+    // Simulate a paid subscription by updating the company row
     await sql`
       UPDATE companies
-      SET subscription_plan = 'pro',
+      SET subscription_plan = 'scale',
           subscription_status = 'active',
-          polar_customer_id = 'cust_paid'
+          polar_customer_id = ${`cust_paid-${crypto.randomUUID().slice(0, 6)}`}
       WHERE id = ${company.id}
     `;
 

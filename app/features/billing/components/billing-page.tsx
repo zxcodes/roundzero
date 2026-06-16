@@ -7,7 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { formatDate } from "@/shared/date";
-import { PLAN_CONFIGS, SUBSCRIPTION_PLANS, type SubscriptionPlan } from "../config";
+import {
+  getPlanJobLimit,
+  PLAN_CONFIGS,
+  SUBSCRIPTION_PLANS,
+  type SubscriptionPlan,
+} from "../config";
 import {
   createBillingPortalSession,
   createCheckoutSession,
@@ -68,7 +73,7 @@ export function BillingPage({
         portalLoading={portalMutation.isPending}
       />
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {SUBSCRIPTION_PLANS.map((id) => (
           <PlanCard
             key={id}
@@ -99,8 +104,9 @@ function CurrentPlanCard({
     ? formatDate(subscription.currentPeriodEnd)
     : null;
   const isFree = subscription.plan === "free";
-  const jobLimit = isFree ? 3 : null;
+  const jobLimit = getPlanJobLimit(subscription.plan);
   const jobUsage = jobCounts?.openCount ?? 0;
+  const atLimit = jobUsage >= jobLimit;
 
   return (
     <Card className="border-primary/20">
@@ -142,25 +148,23 @@ function CurrentPlanCard({
           </p>
         ) : null}
 
-        {jobLimit ? (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-2">
-                <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} className="size-4" />
-                Active jobs
-              </span>
-              <span className="font-medium">
-                {jobUsage} of {jobLimit}
-              </span>
-            </div>
-            <Progress value={(jobUsage / jobLimit) * 100} className="h-2" />
-            {jobUsage >= jobLimit ? (
-              <p className="text-xs text-destructive">
-                You've reached your job limit. Upgrade to Pro for unlimited postings.
-              </p>
-            ) : null}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="flex items-center gap-2">
+              <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} className="size-4" />
+              Active jobs
+            </span>
+            <span className="font-medium">
+              {jobUsage} of {jobLimit}
+            </span>
           </div>
-        ) : null}
+          <Progress value={(jobUsage / jobLimit) * 100} className="h-2" />
+          {atLimit ? (
+            <p className="text-xs text-destructive">
+              You've reached your job limit. Upgrade to a larger plan to post more jobs.
+            </p>
+          ) : null}
+        </div>
 
         <div className="space-y-2">
           <p className="text-sm font-medium">What's included</p>
@@ -196,7 +200,6 @@ function PlanCard({
   const config = PLAN_CONFIGS[plan];
   const isCurrent = plan === currentPlan;
   const isFree = plan === "free";
-  const isEnterprise = plan === "enterprise";
 
   const onClick = () => {
     onCheckout(plan);
@@ -217,6 +220,17 @@ function PlanCard({
       </CardHeader>
       <CardContent className="flex flex-1 flex-col justify-between gap-6">
         <ul className="flex flex-col gap-2 text-sm">
+          <li className="flex items-start gap-2">
+            <HugeiconsIcon
+              icon={Tick02Icon}
+              strokeWidth={2}
+              className="mt-0.5 size-4 shrink-0 text-primary"
+            />
+            <span>
+              {config.includedJobs} active jobs
+              {config.overagePrice ? `, then ${config.overagePrice}` : null}
+            </span>
+          </li>
           {config.features.map((feature) => (
             <li key={feature} className="flex items-start gap-2">
               <HugeiconsIcon
@@ -236,10 +250,6 @@ function PlanCard({
         ) : isFree ? (
           <Button variant="outline" disabled>
             Default plan
-          </Button>
-        ) : isEnterprise ? (
-          <Button variant="outline" asChild>
-            <a href="mailto:sales@roundzero.dev">Contact sales</a>
           </Button>
         ) : (
           <Button onClick={onClick} disabled={checkingOut} className="shadow-sm">

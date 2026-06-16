@@ -55,9 +55,7 @@ function BillingRoute() {
 
   useEffect(() => {
     if (search.reason === "job_limit") {
-      toast.info(
-        "You've reached the 3 active job limit on the free plan. Upgrade to Pro for unlimited postings.",
-      );
+      toast.info("You've reached your active job limit. Upgrade your plan to post more jobs.");
       void navigate({ search: (prev) => ({ ...prev, reason: undefined }), replace: true });
     }
   }, [search.reason, navigate]);

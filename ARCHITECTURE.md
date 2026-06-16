@@ -700,7 +700,9 @@ wrangler hyperdrive create roundzero-db-staging \
 | `AI_GATEWAY_TOKEN` | Cloudflare AI Gateway |
 | `POLAR_ACCESS_TOKEN` | Billing API |
 | `POLAR_WEBHOOK_SECRET` | Billing webhook verification |
-| `POLAR_PRODUCT_ID_PRO` | Stripe product reference |
+| `POLAR_PRODUCT_ID_STARTER` | Polar Starter plan product ID |
+| `POLAR_PRODUCT_ID_GROWTH` | Polar Growth plan product ID |
+| `POLAR_PRODUCT_ID_SCALE` | Polar Scale plan product ID |
 | `ELEVENLABS_API_KEY` | Voice assessment |
 | `ELEVENLABS_AGENT_ID` | Voice agent config |
 | `ELEVENLABS_WEBHOOK_SECRET` | Voice webhook verification |

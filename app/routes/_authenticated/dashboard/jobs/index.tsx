@@ -54,6 +54,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { getPlanJobLimit } from "@/features/billing/config";
 import { useSubscription } from "@/features/billing/hooks/use-subscription";
 import { isJobClosingSoon } from "@/features/jobs/components/job-status-badge";
 import {
@@ -179,8 +180,8 @@ function CompanyJobsList({
   const { tab } = Route.useSearch();
   const navigate = useNavigate({ from: "/dashboard/jobs/" });
   const subscription = useSubscription();
-  const isPaid = subscription?.isActive ?? false;
-  const atLimit = !isPaid && counts.openCount >= 3;
+  const jobLimit = getPlanJobLimit(subscription?.plan);
+  const atLimit = jobLimit !== Infinity && counts.openCount >= jobLimit;
 
   const publishJobFn = useServerFn(publishJob);
   const publishJobMutation = useMutation({
@@ -215,13 +216,15 @@ function CompanyJobsList({
 
       {atLimit ? (
         <Alert variant="destructive">
-          <AlertTitle>Job limit reached ({counts.openCount} of 3 active jobs)</AlertTitle>
+          <AlertTitle>
+            Job limit reached ({counts.openCount} of {jobLimit} active jobs)
+          </AlertTitle>
           <AlertDescription>
-            You've used all your active job slots on the free plan. Archive an existing job or{" "}
+            You've used all your active job slots on your current plan. Archive an existing job or{" "}
             <Link to="/dashboard/billing" className="font-medium underline underline-offset-4">
-              upgrade to Pro
+              upgrade your plan
             </Link>{" "}
-            for unlimited postings.
+            to post more.
           </AlertDescription>
         </Alert>
       ) : null}
@@ -241,6 +244,7 @@ function CompanyJobsList({
             onPublish={onPublish}
             isPending={publishJobMutation.isPending}
             atLimit={atLimit}
+            jobLimit={jobLimit}
           />
         </TabsContent>
 
@@ -277,11 +281,13 @@ function ActiveJobsTable({
   onPublish,
   isPending,
   atLimit,
+  jobLimit,
 }: {
   jobs: PipelineJob[];
   onPublish: (jobId: string) => Promise<void>;
   isPending: boolean;
   atLimit: boolean;
+  jobLimit: number;
 }) {
   if (jobs.length === 0) {
     return (
@@ -305,7 +311,7 @@ function ActiveJobsTable({
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>You've reached the 3 active job limit on the free plan</p>
+                <p>You've reached the {jobLimit} active job limit on your current plan</p>
               </TooltipContent>
             </Tooltip>
           ) : (

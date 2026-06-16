@@ -396,14 +396,14 @@ describe("updateCompanySubscription", () => {
       polarCustomerId: "polar_cust_sub",
       polarSubscriptionId: "sub_123",
       polarProductId: "prod_123",
-      subscriptionPlan: "pro",
+      subscriptionPlan: "starter",
       subscriptionStatus: "active",
       subscriptionCurrentPeriodEnd: periodEnd,
       subscriptionCancelAtPeriodEnd: false,
     });
 
     expect(updated).not.toBeNull();
-    expect(updated!.subscriptionPlan).toBe("pro");
+    expect(updated!.subscriptionPlan).toBe("starter");
     expect(updated!.subscriptionStatus).toBe("active");
     expect(updated!.polarSubscriptionId).toBe("sub_123");
     expect(updated!.polarProductId).toBe("prod_123");
@@ -416,7 +416,7 @@ describe("updateCompanySubscription", () => {
       polarCustomerId: "nonexistent",
       polarSubscriptionId: "sub_123",
       polarProductId: "prod_123",
-      subscriptionPlan: "pro",
+      subscriptionPlan: "starter",
       subscriptionStatus: "active",
       subscriptionCurrentPeriodEnd: null,
       subscriptionCancelAtPeriodEnd: false,
@@ -445,7 +445,7 @@ describe("clearCompanySubscription", () => {
       polarCustomerId: "polar_cust_cancel",
       polarSubscriptionId: "sub_123",
       polarProductId: "prod_123",
-      subscriptionPlan: "pro",
+      subscriptionPlan: "starter",
       subscriptionStatus: "active",
       subscriptionCurrentPeriodEnd: new Date(),
       subscriptionCancelAtPeriodEnd: false,

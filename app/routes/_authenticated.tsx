@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, redirect, useLocation } from "@tanstack/react-router";
 import { DashboardLayoutSkeleton } from "@/components/route-skeletons";
 import { Skeleton } from "@/components/ui/skeleton";
-import { hasActiveSubscription } from "@/features/billing/config";
+import { getPlanJobLimit, hasActiveSubscription } from "@/features/billing/config";
 import { getMyCandidateProfile } from "@/features/candidates/server/functions";
 import { getMyCompanyContext } from "@/features/companies/server/functions";
 import { getMyJobCounts } from "@/features/jobs/server/functions";
@@ -94,7 +94,8 @@ export const Route = createFileRoute("/_authenticated")({
       }
 
       const subscription = company ? buildSubscription(company) : null;
-      const atJobLimit = !subscription?.isActive && (jobCounts?.openCount ?? 0) >= 3;
+      const jobLimit = getPlanJobLimit(subscription?.plan);
+      const atJobLimit = jobLimit !== Infinity && (jobCounts?.openCount ?? 0) >= jobLimit;
 
       if (location.pathname === "/dashboard/jobs/new" && atJobLimit) {
         throw redirect({ to: "/dashboard/billing", search: { reason: "job_limit" } });
