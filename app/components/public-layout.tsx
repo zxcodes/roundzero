@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
-export function PublicHeader({ marketing }: { marketing?: boolean }) {
+export function PublicHeader() {
   const { user } = useRouteContext({ from: "__root__" });
 
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -32,23 +32,9 @@ export function PublicHeader({ marketing }: { marketing?: boolean }) {
         </div>
         <div className="flex items-center gap-2">
           {user?.role ? (
-            <Button size="sm" className={marketing ? "rounded-full" : undefined} asChild>
+            <Button size="sm" asChild>
               <Link to="/dashboard">Dashboard</Link>
             </Button>
-          ) : marketing ? (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                className="hidden rounded-full sm:inline-flex"
-                asChild
-              >
-                <Link to="/jobs">Browse jobs</Link>
-              </Button>
-              <Button size="sm" className="hidden rounded-full sm:inline-flex" asChild>
-                <Link to="/company/login">Post a job</Link>
-              </Button>
-            </>
           ) : (
             <>
               <Button
@@ -80,77 +66,42 @@ export function PublicHeader({ marketing }: { marketing?: boolean }) {
             <SheetContent side="right" className="w-72 p-0">
               <SheetTitle className="sr-only">Navigation</SheetTitle>
               <div className="flex flex-col gap-1 p-4 pt-12">
-                {marketing ? (
-                  <>
-                    <Button
-                      className="justify-start rounded-full"
-                      asChild
-                      onClick={onCloseMobileMenu}
-                    >
-                      <Link to="/company/login">Post a job</Link>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="justify-start rounded-full"
-                      asChild
-                      onClick={onCloseMobileMenu}
-                    >
-                      <Link to="/jobs">Browse jobs</Link>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      className="justify-start text-muted-foreground"
-                      asChild
-                      onClick={onCloseMobileMenu}
-                    >
-                      <Link
-                        to="/candidate/login"
-                        activeProps={{ className: "text-foreground bg-accent" }}
-                      >
-                        For job seekers
-                      </Link>
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button
-                      variant="ghost"
-                      className="justify-start text-muted-foreground"
-                      asChild
-                      onClick={onCloseMobileMenu}
-                    >
-                      <Link
-                        to="/company/login"
-                        activeProps={{ className: "text-foreground bg-accent" }}
-                      >
-                        For Companies
-                      </Link>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      className="justify-start text-muted-foreground"
-                      asChild
-                      onClick={onCloseMobileMenu}
-                    >
-                      <Link
-                        to="/candidate/login"
-                        activeProps={{ className: "text-foreground bg-accent" }}
-                      >
-                        For Candidates
-                      </Link>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      className="justify-start text-muted-foreground"
-                      asChild
-                      onClick={onCloseMobileMenu}
-                    >
-                      <Link to="/jobs" activeProps={{ className: "text-foreground bg-accent" }}>
-                        Jobs
-                      </Link>
-                    </Button>
-                  </>
-                )}
+                <Button
+                  variant="ghost"
+                  className="justify-start text-muted-foreground"
+                  asChild
+                  onClick={onCloseMobileMenu}
+                >
+                  <Link
+                    to="/company/login"
+                    activeProps={{ className: "text-foreground bg-accent" }}
+                  >
+                    For Companies
+                  </Link>
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="justify-start text-muted-foreground"
+                  asChild
+                  onClick={onCloseMobileMenu}
+                >
+                  <Link
+                    to="/candidate/login"
+                    activeProps={{ className: "text-foreground bg-accent" }}
+                  >
+                    For Candidates
+                  </Link>
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="justify-start text-muted-foreground"
+                  asChild
+                  onClick={onCloseMobileMenu}
+                >
+                  <Link to="/jobs" activeProps={{ className: "text-foreground bg-accent" }}>
+                    Jobs
+                  </Link>
+                </Button>
               </div>
             </SheetContent>
           </Sheet>
