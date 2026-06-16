@@ -1,6 +1,7 @@
 import { useRouteContext } from "@tanstack/react-router";
 import { PublicFooter, PublicHeader } from "@/components/public-layout";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /**
@@ -26,14 +27,18 @@ export function JobsListSkeleton() {
         </section>
 
         {/* Filter bar */}
-        <section className="sticky top-14 z-40 border-b border-border/40 bg-background/80 backdrop-blur-xl backdrop-saturate-150">
+        <section className="border-b border-border/40 bg-background">
           <div className="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-3.5 sm:flex-row sm:items-center lg:px-10">
-            <Skeleton className="h-9 flex-1" />
-            <Skeleton className="h-9 w-full sm:w-36" />
-            <Skeleton className="h-9 w-full sm:w-36" />
-            <Skeleton className="h-9 w-full sm:w-36" />
-            <Skeleton className="h-9 w-full sm:w-36" />
-            <Skeleton className="h-9 w-full sm:w-36" />
+            <Skeleton className="h-9 flex-1 shrink-0 sm:shrink" />
+            <ScrollArea orientation="horizontal" className="-mx-6 h-9 px-6 sm:mx-0 sm:px-0">
+              <div className="flex gap-3">
+                <Skeleton className="h-9 w-36 shrink-0" />
+                <Skeleton className="h-9 w-36 shrink-0" />
+                <Skeleton className="h-9 w-36 shrink-0" />
+                <Skeleton className="h-9 w-36 shrink-0" />
+                <Skeleton className="h-9 w-36 shrink-0" />
+              </div>
+            </ScrollArea>
           </div>
         </section>
 
@@ -452,12 +457,16 @@ function CandidateJobsListSkeleton() {
 
       {/* Filter bar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <Skeleton className="h-9 flex-1 rounded-md" />
-        <Skeleton className="h-9 w-full sm:w-36 rounded-md" />
-        <Skeleton className="h-9 w-full sm:w-36 rounded-md" />
-        <Skeleton className="h-9 w-full sm:w-36 rounded-md" />
-        <Skeleton className="h-9 w-full sm:w-36 rounded-md" />
-        <Skeleton className="h-9 w-full sm:w-36 rounded-md" />
+        <Skeleton className="h-9 flex-1 shrink-0 sm:shrink rounded-md" />
+        <ScrollArea orientation="horizontal" className="h-9">
+          <div className="flex gap-3">
+            <Skeleton className="h-9 w-36 shrink-0 rounded-md" />
+            <Skeleton className="h-9 w-36 shrink-0 rounded-md" />
+            <Skeleton className="h-9 w-36 shrink-0 rounded-md" />
+            <Skeleton className="h-9 w-36 shrink-0 rounded-md" />
+            <Skeleton className="h-9 w-36 shrink-0 rounded-md" />
+          </div>
+        </ScrollArea>
       </div>
 
       {/* Results count */}
