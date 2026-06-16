@@ -51,7 +51,7 @@ function HomePage() {
       <a href="#main-content" className="calm-skip-link">
         Skip to main content
       </a>
-      <PublicHeader marketing />
+      <PublicHeader />
       <main id="main-content">
         <Hero />
         <ValueStrip />
