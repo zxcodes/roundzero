@@ -138,7 +138,7 @@ function ScoreBar({ value }: { value: number }) {
   return (
     <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
       <div
-        className="h-full rounded-full bg-gradient-to-r from-foreground/75 to-foreground"
+        className="h-full rounded-full bg-linear-to-r from-foreground/75 to-foreground"
         style={{ width: `${(value / 10) * 100}%` }}
       />
     </div>
