@@ -239,7 +239,7 @@
    Calm Document (landing page) theme — light by default, professional,
    modern-SaaS. Pure white surfaces, neutral ink, a single restrained ox-blood
    accent shared with the product (--brand), Geist sans for everything and
-   Geist Mono reserved for data/labels. Soft hairline surfaces, small radius.
+   Geist Mono reserved for data/labels. Soft hairline surfaces, app-matched radius.
    Scoped to the marketing landing only; overrides the shadcn semantic tokens
    so Button / Accordion / Badge inherit the palette automatically.
    ========================================================================== */
@@ -274,7 +274,7 @@
 .calm .panel {
   overflow: hidden;
   border: 1px solid var(--border);
-  border-radius: calc(var(--radius) - 0.125rem);
+  border-radius: var(--radius-4xl);
   background: var(--background);
 }
 
@@ -290,7 +290,7 @@
 
 .calm .spec-sheet {
   border: 1px solid var(--border);
-  border-radius: calc(var(--radius) - 0.125rem);
+  border-radius: var(--radius-4xl);
   background: var(--background);
 }
 
