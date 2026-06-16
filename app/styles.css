@@ -279,10 +279,48 @@
   position: absolute;
   inset: 0;
   z-index: -1;
-  background-image: radial-gradient(oklch(0.21 0.006 264 / 0.05) 1px, transparent 1.4px);
-  background-size: 26px 26px;
-  mask-image: radial-gradient(72% 62% at 50% 28%, black, transparent 78%);
-  -webkit-mask-image: radial-gradient(72% 62% at 50% 28%, black, transparent 78%);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 13px,
+    oklch(0.21 0.006 264 / 0.05) 13px,
+    oklch(0.21 0.006 264 / 0.05) 14px
+  );
+  mask-image: radial-gradient(85% 78% at 50% 32%, black 35%, transparent 88%);
+  -webkit-mask-image: radial-gradient(85% 78% at 50% 32%, black 35%, transparent 88%);
+  pointer-events: none;
+}
+
+/* Closing section — same hatch atmosphere as hero, mirrored for bottom of page. */
+.calm-closing {
+  position: relative;
+  isolation: isolate;
+  background: var(--background);
+}
+.calm-closing::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(62% 55% at 22% 105%, oklch(0.21 0.006 264 / 0.06), transparent 70%),
+    radial-gradient(52% 60% at 88% 82%, oklch(0.21 0.006 264 / 0.035), transparent 72%);
+  pointer-events: none;
+}
+.calm-closing::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 13px,
+    oklch(0.21 0.006 264 / 0.05) 13px,
+    oklch(0.21 0.006 264 / 0.05) 14px
+  );
+  mask-image: radial-gradient(85% 78% at 50% 68%, black 35%, transparent 88%);
+  -webkit-mask-image: radial-gradient(85% 78% at 50% 68%, black 35%, transparent 88%);
   pointer-events: none;
 }
 

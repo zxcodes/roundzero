@@ -1369,7 +1369,7 @@ function FaqSection() {
 // ───────────────────────────────────────────────────────────────────────────
 function Closing() {
   return (
-    <section className={cn("border-t border-border", SECTION_TINT)}>
+    <section className={cn("border-t border-border", SECTION_TINT, "calm-closing")}>
       <div className={cn(CONTAINER, SECTION_PAD)}>
         <div className="mx-auto max-w-2xl text-center">
           <Eyebrow>Get started</Eyebrow>
