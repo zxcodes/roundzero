@@ -187,16 +187,20 @@ describe("subscription.updated webhook", () => {
 });
 
 describe("subscription.canceled webhook", () => {
-  it("clears subscription and resets to free plan", async () => {
+  it("keeps plan active until period end and sets cancelAtPeriodEnd", async () => {
     const owner = await seedUser({ role: "company" });
     await sql`
-      INSERT INTO companies (owner_id, name, slug, polar_customer_id, polar_subscription_id, subscription_plan, subscription_status)
-      VALUES (${owner.id}, ${"Test Co"}, ${`test-co-${crypto.randomUUID().slice(0, 6)}`}, ${"cust_789"}, ${"sub_123"}, ${"growth"}, ${"active"})
+      INSERT INTO companies (owner_id, name, slug, polar_customer_id, polar_subscription_id, polar_product_id, subscription_plan, subscription_status)
+      VALUES (${owner.id}, ${"Test Co"}, ${`test-co-${crypto.randomUUID().slice(0, 6)}`}, ${"cust_789"}, ${"sub_123"}, ${"growth-product-id"}, ${"growth"}, ${"active"})
     `;
 
     mockValidateEvent.mockReturnValue({
       type: "subscription.canceled",
-      data: { customerId: "cust_789" },
+      data: makeSubscription({
+        customerId: "cust_789",
+        status: "active",
+        cancelAtPeriodEnd: true,
+      }),
     });
 
     const request = makeWebhookRequest({ type: "subscription.canceled" });
@@ -204,11 +208,12 @@ describe("subscription.canceled webhook", () => {
 
     expect(response.status).toBe(200);
 
-    const cleared = await getCompanyByPolarCustomerId(sql, { polarCustomerId: "cust_789" });
-    expect(cleared!.subscriptionPlan).toBe("free");
-    expect(cleared!.subscriptionStatus).toBe("canceled");
-    expect(cleared!.polarSubscriptionId).toBeNull();
-    expect(cleared!.polarProductId).toBeNull();
+    const updated = await getCompanyByPolarCustomerId(sql, { polarCustomerId: "cust_789" });
+    expect(updated!.subscriptionPlan).toBe("growth");
+    expect(updated!.subscriptionStatus).toBe("active");
+    expect(updated!.polarSubscriptionId).toBe("sub_123");
+    expect(updated!.polarProductId).toBe("growth-product-id");
+    expect(updated!.subscriptionCancelAtPeriodEnd).toBe(true);
   });
 });
 

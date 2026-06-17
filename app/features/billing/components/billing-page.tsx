@@ -73,12 +73,19 @@ export function BillingPage({
         portalLoading={portalMutation.isPending}
       />
 
+      {subscription.isActive ? (
+        <p className="text-sm text-muted-foreground">
+          You are on a paid plan. Use "Manage billing" above to change or cancel your subscription.
+        </p>
+      ) : null}
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {SUBSCRIPTION_PLANS.map((id) => (
           <PlanCard
             key={id}
             plan={id}
             currentPlan={subscription.plan}
+            isPaid={subscription.isActive}
             onCheckout={onCheckout}
             checkingOut={checkoutMutation.isPending && checkoutMutation.variables === id}
           />
@@ -189,11 +196,13 @@ function CurrentPlanCard({
 function PlanCard({
   plan,
   currentPlan,
+  isPaid,
   onCheckout,
   checkingOut,
 }: {
   plan: SubscriptionPlan;
   currentPlan: SubscriptionPlan;
+  isPaid: boolean;
   onCheckout: (plan: SubscriptionPlan) => void;
   checkingOut: boolean;
 }) {
@@ -250,6 +259,10 @@ function PlanCard({
         ) : isFree ? (
           <Button variant="outline" disabled>
             Default plan
+          </Button>
+        ) : isPaid ? (
+          <Button variant="outline" disabled>
+            Manage billing to change
           </Button>
         ) : (
           <Button onClick={onClick} disabled={checkingOut} className="shadow-sm">
