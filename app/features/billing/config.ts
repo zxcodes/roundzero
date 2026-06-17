@@ -110,6 +110,7 @@ export const PLAN_CONFIGS: Record<SubscriptionPlan, PlanConfig> = {
 
 /** Statuses that grant access to paid features. */
 const ACTIVE_STATUSES: SubscriptionStatus[] = ["active", "trialing"];
+const ACTIVE_STATUS_SET = new Set<string>(ACTIVE_STATUSES);
 
 /**
  * Returns true when the company currently has a paid plan in good standing.
@@ -121,7 +122,14 @@ export function hasActiveSubscription(input: {
 }): boolean {
   const plan = input.subscriptionPlan ?? "free";
   if (plan === "free") return false;
-  return ACTIVE_STATUSES.includes(input.subscriptionStatus as SubscriptionStatus);
+  const status = input.subscriptionStatus;
+  if (!status) return false;
+  return ACTIVE_STATUS_SET.has(status);
+}
+
+function normalizePlan(plan: string | null | undefined): SubscriptionPlan {
+  const key = plan ?? "free";
+  return SUBSCRIPTION_PLANS.find((p) => p === key) ?? "free";
 }
 
 /**
@@ -129,8 +137,7 @@ export function hasActiveSubscription(input: {
  * Free plans get 1 job so a company can genuinely try the platform.
  */
 export function getPlanJobLimit(plan: string | null | undefined): number {
-  const key = (plan ?? "free") as SubscriptionPlan;
-  return PLAN_CONFIGS[key]?.includedJobs ?? PLAN_CONFIGS.free.includedJobs;
+  return PLAN_CONFIGS[normalizePlan(plan)].includedJobs;
 }
 
 /**
@@ -138,6 +145,5 @@ export function getPlanJobLimit(plan: string | null | undefined): number {
  * This caps `finalReportTarget` on job creation/edit/AI generation.
  */
 export function getPlanReportLimit(plan: string | null | undefined): number {
-  const key = (plan ?? "free") as SubscriptionPlan;
-  return PLAN_CONFIGS[key]?.includedReportsPerJob ?? PLAN_CONFIGS.free.includedReportsPerJob;
+  return PLAN_CONFIGS[normalizePlan(plan)].includedReportsPerJob;
 }

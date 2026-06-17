@@ -60,7 +60,7 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     assertCompanyOwner(context.membership.role);
 
-    const plan = data.plan as SubscriptionPlan;
+    const plan = data.plan;
     const productId = productIdForPlan(plan);
 
     if (!productId) {
@@ -116,9 +116,7 @@ export const getMySubscription = createServerFn({ method: "GET" })
     if (!company) return null;
 
     const rawPlan = company.subscriptionPlan ?? "free";
-    const plan = SUBSCRIPTION_PLANS.includes(rawPlan as SubscriptionPlan)
-      ? (rawPlan as SubscriptionPlan)
-      : "free";
+    const plan = SUBSCRIPTION_PLANS.find((p) => p === rawPlan) ?? "free";
 
     return {
       plan,

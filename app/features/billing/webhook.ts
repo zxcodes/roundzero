@@ -1,10 +1,4 @@
 import type { Subscription } from "@polar-sh/sdk/models/components/subscription";
-import type { WebhookCheckoutUpdatedPayload } from "@polar-sh/sdk/models/components/webhookcheckoutupdatedpayload.js";
-import type { WebhookSubscriptionActivePayload } from "@polar-sh/sdk/models/components/webhooksubscriptionactivepayload.js";
-import type { WebhookSubscriptionCanceledPayload } from "@polar-sh/sdk/models/components/webhooksubscriptioncanceledpayload.js";
-import type { WebhookSubscriptionRevokedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptionrevokedpayload.js";
-import type { WebhookSubscriptionUpdatedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptionupdatedpayload.js";
-
 import { validateEvent, WebhookVerificationError } from "@polar-sh/sdk/webhooks";
 import {
   clearCompanySubscription,
@@ -12,7 +6,7 @@ import {
 } from "@/features/companies/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { appEnv } from "@/shared/env.app";
-import type { SubscriptionPlan, SubscriptionStatus } from "./config";
+import type { SubscriptionPlan } from "./config";
 import { getPolar } from "./services/polar";
 
 function planFromProductId(productId: string | null | undefined): SubscriptionPlan {
@@ -63,7 +57,7 @@ export async function handlePolarWebhook(request: Request): Promise<Response> {
   try {
     switch (event.type) {
       case "checkout.updated": {
-        const checkoutEvent = event as WebhookCheckoutUpdatedPayload;
+        const checkoutEvent = event;
         const checkout = checkoutEvent.data;
         if (checkout.subscriptionId) {
           const polar = getPolar();
@@ -76,19 +70,16 @@ export async function handlePolarWebhook(request: Request): Promise<Response> {
       }
       case "subscription.active":
       case "subscription.updated": {
-        const subEvent = event as
-          | WebhookSubscriptionActivePayload
-          | WebhookSubscriptionUpdatedPayload;
-        await syncSubscription(subEvent.data);
+        await syncSubscription(event.data);
         break;
       }
-      case "subscription.canceled":
+      case "subscription.canceled": {
+        await syncSubscription(event.data);
+        break;
+      }
       case "subscription.revoked": {
-        const subEvent = event as
-          | WebhookSubscriptionCanceledPayload
-          | WebhookSubscriptionRevokedPayload;
         await clearCompanySubscription(getDb(), {
-          polarCustomerId: subEvent.data.customerId,
+          polarCustomerId: event.data.customerId,
         });
         break;
       }
@@ -116,7 +107,7 @@ async function syncSubscription(subscription: Subscription): Promise<void> {
     polarSubscriptionId: subscription.id,
     polarProductId: productId,
     subscriptionPlan: planFromProductId(productId),
-    subscriptionStatus: subscription.status as SubscriptionStatus,
+    subscriptionStatus: subscription.status,
     subscriptionCurrentPeriodEnd: subscription.currentPeriodEnd,
     subscriptionCancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
   });
