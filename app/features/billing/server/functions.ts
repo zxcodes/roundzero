@@ -1,7 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
-import { getCompanyById, setCompanyPolarCustomer } from "@/features/companies/queries/queries_sql";
+import {
+  getCompanyById,
+  setCompanyPolarCustomer,
+  updateCompanySubscription,
+} from "@/features/companies/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { appEnv } from "@/shared/env.app";
 import { assertCompanyOwner } from "@/shared/membership-auth";
@@ -12,6 +16,7 @@ import {
   type SubscriptionPlan,
   subscriptionPlanSchema,
 } from "../config";
+import { sendSubscriptionWelcomeEmail } from "../services/email";
 import { getPolar } from "../services/polar";
 
 const checkoutSchema = z.object({
@@ -67,6 +72,18 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
       throw new Error("This plan is not purchasable");
     }
 
+    if (
+      context.company.polarSubscriptionId &&
+      hasActiveSubscription({
+        subscriptionPlan: context.company.subscriptionPlan,
+        subscriptionStatus: context.company.subscriptionStatus,
+      })
+    ) {
+      throw new Error(
+        "You already have an active subscription. Use the billing portal to change plans.",
+      );
+    }
+
     await ensurePolarCustomer({
       companyId: context.company.id,
       existingCustomerId: context.company.polarCustomerId,
@@ -103,6 +120,57 @@ export const createBillingPortalSession = createServerFn({ method: "POST" })
     });
 
     return { url: session.customerPortalUrl };
+  });
+
+export const syncCheckoutSubscription = createServerFn({ method: "POST" })
+  .middleware([companyMiddleware])
+  .validator(zodValidator(z.object({ checkoutId: z.string() })))
+  .handler(async ({ data, context }) => {
+    assertCompanyOwner(context.membership.role);
+
+    const polar = getPolar();
+    const checkout = await polar.checkouts.get({ id: data.checkoutId });
+    const subscriptionId = checkout.subscriptionId;
+    if (!subscriptionId) {
+      throw new Error("Checkout has no subscription");
+    }
+
+    const subscription = await polar.subscriptions.get({ id: subscriptionId });
+    const productId = subscription.productId;
+    let plan: SubscriptionPlan = "free";
+    if (productId) {
+      if (productId === appEnv.POLAR_PRODUCT_ID_STARTER) plan = "starter";
+      else if (productId === appEnv.POLAR_PRODUCT_ID_GROWTH) plan = "growth";
+      else if (productId === appEnv.POLAR_PRODUCT_ID_SCALE) plan = "scale";
+    }
+
+    await setCompanyPolarCustomer(getDb(), {
+      id: context.company.id,
+      polarCustomerId: subscription.customerId,
+    });
+
+    await updateCompanySubscription(getDb(), {
+      polarCustomerId: subscription.customerId,
+      polarSubscriptionId: subscription.id,
+      polarProductId: productId,
+      subscriptionPlan: plan,
+      subscriptionStatus: subscription.status,
+      subscriptionCurrentPeriodEnd: subscription.currentPeriodEnd,
+      subscriptionCancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
+    });
+
+    if (subscription.status === "active" || subscription.status === "trialing") {
+      await sendSubscriptionWelcomeEmail({
+        to: context.user.email,
+        companyName: context.company.name,
+        plan,
+        polarSubscriptionId: subscription.id,
+      }).catch((error) => {
+        console.error("[billing.syncCheckoutSubscription] failed to send welcome email", error);
+      });
+    }
+
+    return { success: true };
   });
 
 export const getMySubscription = createServerFn({ method: "GET" })

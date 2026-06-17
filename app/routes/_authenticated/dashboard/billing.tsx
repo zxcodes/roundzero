@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { BillingPageSkeleton } from "@/components/route-skeletons";
 import { BillingPage } from "@/features/billing/components/billing-page";
-import { getMySubscription } from "@/features/billing/server/functions";
+import { getMySubscription, syncCheckoutSubscription } from "@/features/billing/server/functions";
 
 const searchSchema = z.object({
   status: z.enum(["success", "cancelled"]).optional(),
@@ -23,7 +23,20 @@ export const Route = createFileRoute("/_authenticated/dashboard/billing")({
       throw redirect({ to: "/dashboard" });
     }
   },
-  loader: async () => {
+  loader: async ({ location }) => {
+    const params = new URLSearchParams(location.searchStr);
+    if (params.get("status") === "success") {
+      const checkoutId = params.get("checkout_id");
+      if (checkoutId) {
+        try {
+          await syncCheckoutSubscription({ data: { checkoutId } });
+        } catch {
+          // Ignore errors here — the webhook will eventually sync. Showing a stale
+          // state briefly is better than crashing the billing page.
+        }
+      }
+    }
+
     const subscription = await getMySubscription();
     if (!subscription) {
       throw redirect({ to: "/onboarding/company" });
