@@ -33,7 +33,6 @@ async function enforceJobLimit(
   subscriptionPlan: string | null,
 ): Promise<void> {
   const jobLimit = getPlanJobLimit(subscriptionPlan);
-  if (jobLimit === Infinity) return;
   const counts = await countJobsByCompanyAndStatus(db, { companyId });
   if (counts && counts.openCount >= jobLimit) {
     throw new Error(
@@ -57,8 +56,6 @@ export const createJob = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const db = getDb();
 
-    // Enforce the 3-job limit for all creations on free plans.
-    // Paid plans bypass this check entirely.
     await enforceJobLimit(db, context.company.id, context.company.subscriptionPlan);
 
     const job = await createJobQuery(db, {

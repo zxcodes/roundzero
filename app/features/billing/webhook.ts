@@ -1,15 +1,19 @@
 import type { Subscription } from "@polar-sh/sdk/models/components/subscription";
 import { validateEvent, WebhookVerificationError } from "@polar-sh/sdk/webhooks";
+import { getUserById } from "@/features/auth/queries/queries_sql";
 import {
   clearCompanySubscription,
+  getCompanyByPolarCustomerId,
   updateCompanySubscription,
 } from "@/features/companies/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { appEnv } from "@/shared/env.app";
-import type { SubscriptionPlan } from "./config";
+import { sendSubscriptionWelcomeEmail } from "./services/email";
 import { getPolar } from "./services/polar";
 
-function planFromProductId(productId: string | null | undefined): SubscriptionPlan {
+function planFromProductId(
+  productId: string | null | undefined,
+): import("./config").SubscriptionPlan {
   if (!productId) return "free";
   if (productId === appEnv.POLAR_PRODUCT_ID_STARTER) return "starter";
   if (productId === appEnv.POLAR_PRODUCT_ID_GROWTH) return "growth";
@@ -69,11 +73,9 @@ export async function handlePolarWebhook(request: Request): Promise<Response> {
         break;
       }
       case "subscription.active":
-      case "subscription.updated": {
-        await syncSubscription(event.data);
-        break;
-      }
-      case "subscription.canceled": {
+      case "subscription.updated":
+      case "subscription.canceled":
+      case "subscription.uncanceled": {
         await syncSubscription(event.data);
         break;
       }
@@ -101,14 +103,34 @@ export async function handlePolarWebhook(request: Request): Promise<Response> {
 
 async function syncSubscription(subscription: Subscription): Promise<void> {
   const productId = subscription.productId;
+  const plan = planFromProductId(productId);
 
   await updateCompanySubscription(getDb(), {
     polarCustomerId: subscription.customerId,
     polarSubscriptionId: subscription.id,
     polarProductId: productId,
-    subscriptionPlan: planFromProductId(productId),
+    subscriptionPlan: plan,
     subscriptionStatus: subscription.status,
     subscriptionCurrentPeriodEnd: subscription.currentPeriodEnd,
     subscriptionCancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
   });
+
+  if (subscription.status === "active" || subscription.status === "trialing") {
+    const company = await getCompanyByPolarCustomerId(getDb(), {
+      polarCustomerId: subscription.customerId,
+    });
+    if (company?.ownerId) {
+      const owner = await getUserById(getDb(), { id: company.ownerId });
+      if (owner?.email) {
+        await sendSubscriptionWelcomeEmail({
+          to: owner.email,
+          companyName: company.name,
+          plan,
+          polarSubscriptionId: subscription.id,
+        }).catch((error) => {
+          console.error("[polar.webhook] failed to send welcome email", error);
+        });
+      }
+    }
+  }
 }

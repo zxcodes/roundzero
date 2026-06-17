@@ -2,6 +2,7 @@ import { Briefcase01Icon, Loading03Icon, Tick02Icon } from "@hugeicons/core-free
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -73,7 +74,7 @@ export function BillingPage({
         portalLoading={portalMutation.isPending}
       />
 
-      {subscription.isActive ? (
+      {subscription.isActive && !subscription.cancelAtPeriodEnd ? (
         <p className="text-sm text-muted-foreground">
           You are on a paid plan. Use "Manage billing" above to change or cancel your subscription.
         </p>
@@ -93,6 +94,60 @@ export function BillingPage({
       </div>
     </div>
   );
+}
+
+function SubscriptionStatusAlert({
+  subscription,
+  periodEnd,
+}: {
+  subscription: Subscription;
+  periodEnd: string | null;
+}) {
+  if (subscription.status === "past_due") {
+    return (
+      <Alert variant="destructive">
+        <AlertTitle>Payment failed</AlertTitle>
+        <AlertDescription>
+          We couldn't process your latest payment. Please update your payment method via "Manage
+          billing" to keep your subscription active.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (subscription.status === "unpaid") {
+    return (
+      <Alert variant="destructive">
+        <AlertTitle>Subscription unpaid</AlertTitle>
+        <AlertDescription>
+          Your subscription is unpaid. Update your payment method via "Manage billing" to restore
+          access.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (subscription.cancelAtPeriodEnd && periodEnd) {
+    return (
+      <Alert variant="default" className="border-amber-500/50 bg-amber-500/10">
+        <AlertTitle>Subscription canceled</AlertTitle>
+        <AlertDescription>
+          Your subscription is canceled and will end on {periodEnd}. You can resubscribe after it
+          expires.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (periodEnd) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        {subscription.cancelAtPeriodEnd ? `Cancels on ${periodEnd}.` : `Renews on ${periodEnd}.`}
+      </p>
+    );
+  }
+
+  return null;
 }
 
 function CurrentPlanCard({
@@ -147,13 +202,7 @@ function CurrentPlanCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {periodEnd ? (
-          <p className="text-sm text-muted-foreground">
-            {subscription.cancelAtPeriodEnd
-              ? `Cancels on ${periodEnd}.`
-              : `Renews on ${periodEnd}.`}
-          </p>
-        ) : null}
+        <SubscriptionStatusAlert subscription={subscription} periodEnd={periodEnd} />
 
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
