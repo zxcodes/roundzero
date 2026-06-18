@@ -4,9 +4,10 @@ import { generateText, Output } from "ai";
 import { z } from "zod";
 import { getCompanyByMemberUserId } from "@/features/companies/queries/membership-queries_sql";
 import { notifyCompanyTeam } from "@/features/companies/services/company-team-notifications";
-import { clampFinalReportTarget, type Entitlements } from "@/features/entitlements/entitlements";
+import type { Entitlements } from "@/features/entitlements/entitlements";
 import {
   enforceCompanyEntitlement,
+  enforceReportTarget,
   lockCompanyEntitlementScope,
   readCompanyEntitlements,
 } from "@/features/entitlements/server/enforcement";
@@ -66,14 +67,14 @@ export const createJob = createServerFn({ method: "POST" })
 
             return createJobQuery(transaction, {
               ...createArgs,
-              finalReportTarget: clampFinalReportTarget(entitlements, data.finalReportTarget),
+              finalReportTarget: enforceReportTarget(entitlements, data.finalReportTarget),
             });
           })
         : await (async () => {
             const entitlements = await readCompanyEntitlements(db, context.company);
             return createJobQuery(db, {
               ...createArgs,
-              finalReportTarget: clampFinalReportTarget(entitlements, data.finalReportTarget),
+              finalReportTarget: enforceReportTarget(entitlements, data.finalReportTarget),
             });
           })();
 
@@ -169,14 +170,14 @@ export const updateJob = createServerFn({ method: "POST" })
 
             return updateJobQuery(transaction, {
               ...updateArgs,
-              finalReportTarget: clampFinalReportTarget(entitlements, data.finalReportTarget),
+              finalReportTarget: enforceReportTarget(entitlements, data.finalReportTarget),
             });
           })
         : await (async () => {
             const entitlements = await readCompanyEntitlements(db, context.company);
             return updateJobQuery(db, {
               ...updateArgs,
-              finalReportTarget: clampFinalReportTarget(entitlements, data.finalReportTarget),
+              finalReportTarget: enforceReportTarget(entitlements, data.finalReportTarget),
             });
           })();
 
@@ -256,7 +257,7 @@ export const publishJob = createServerFn({ method: "POST" })
         salaryCurrency: job.salaryCurrency,
         teamSize: job.teamSize,
         headcount: job.headcount,
-        finalReportTarget: clampFinalReportTarget(entitlements, job.finalReportTarget),
+        finalReportTarget: enforceReportTarget(entitlements, job.finalReportTarget, "clamp"),
         expiresAt: job.expiresAt,
       });
     });
@@ -460,7 +461,7 @@ export const generateJobWithAI = createServerFn({ method: "POST" })
       ...cleaned,
       status: "draft",
       expiresAt: null,
-      finalReportTarget: entitlements.reports.perJobLimit,
+      finalReportTarget: enforceReportTarget(entitlements, null),
     });
 
     if (!validated.success) {

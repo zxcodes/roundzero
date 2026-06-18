@@ -108,10 +108,7 @@ export const PLAN_CONFIGS: Record<SubscriptionPlan, PlanConfig> = {
 const ACTIVE_STATUSES: SubscriptionStatus[] = ["active", "trialing"];
 const ACTIVE_STATUS_SET = new Set<string>(ACTIVE_STATUSES);
 
-/**
- * Returns true when the company currently has a paid plan in good standing.
- * Used everywhere we gate paid features (interviews, custom criteria, etc.).
- */
+/** Returns true when the company has a paid plan in good standing (active or trialing). */
 export function hasActiveSubscription(input: {
   subscriptionPlan: string | null | undefined;
   subscriptionStatus: string | null | undefined;

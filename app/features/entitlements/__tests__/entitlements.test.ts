@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { clampFinalReportTarget, deriveEntitlements } from "../entitlements";
+import { deriveEntitlements, resolveReportTarget } from "../entitlements";
+import { enforceReportTarget } from "../server/enforcement";
 
 describe("deriveEntitlements", () => {
   it("counts only open jobs against the active-job limit", () => {
@@ -32,6 +33,7 @@ describe("deriveEntitlements", () => {
     expect(entitlements.subscription.plan).toBe("free");
     expect(entitlements.jobs.active.limit).toBe(1);
     expect(entitlements.reports.perJobLimit).toBe(1);
+    expect(entitlements.reports.defaultTarget).toBe(1);
     expect(entitlements.aiJobCreation.enabled).toBe(false);
   });
 
@@ -56,7 +58,7 @@ describe("deriveEntitlements", () => {
   });
 });
 
-describe("clampFinalReportTarget", () => {
+describe("resolveReportTarget", () => {
   it("caps the requested target at the plan limit", () => {
     const entitlements = deriveEntitlements({
       subscriptionPlan: "starter",
@@ -64,18 +66,42 @@ describe("clampFinalReportTarget", () => {
       jobCounts: null,
     });
 
-    expect(clampFinalReportTarget(entitlements, 10)).toBe(3);
-    expect(clampFinalReportTarget(entitlements, 2)).toBe(2);
+    expect(resolveReportTarget(entitlements, 10)).toBe(3);
+    expect(resolveReportTarget(entitlements, 2)).toBe(2);
   });
 
-  it("defaults to the plan limit and enforces a minimum of 1", () => {
+  it("defaults to the plan default and enforces a minimum of 1", () => {
     const entitlements = deriveEntitlements({
       subscriptionPlan: "growth",
       subscriptionStatus: "active",
       jobCounts: null,
     });
 
-    expect(clampFinalReportTarget(entitlements, undefined)).toBe(5);
-    expect(clampFinalReportTarget(entitlements, 0)).toBe(1);
+    expect(resolveReportTarget(entitlements, undefined)).toBe(5);
+    expect(resolveReportTarget(entitlements, 0)).toBe(1);
+  });
+});
+
+describe("enforceReportTarget", () => {
+  it("rejects explicit targets outside the plan range in strict mode", () => {
+    const entitlements = deriveEntitlements({
+      subscriptionPlan: "starter",
+      subscriptionStatus: "active",
+      jobCounts: null,
+    });
+
+    expect(() => enforceReportTarget(entitlements, 10)).toThrow(
+      "Your plan allows 1-3 evaluation reports per job.",
+    );
+  });
+
+  it("clamps existing targets in clamp mode", () => {
+    const entitlements = deriveEntitlements({
+      subscriptionPlan: "starter",
+      subscriptionStatus: "active",
+      jobCounts: null,
+    });
+
+    expect(enforceReportTarget(entitlements, 10, "clamp")).toBe(3);
   });
 });

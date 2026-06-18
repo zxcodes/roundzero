@@ -35,9 +35,33 @@ export type Entitlements = {
     /** Drafting is always allowed, even at the active-job limit. */
     canCreateDraft: boolean;
   };
-  reports: { perJobLimit: number };
+  reports: {
+    perJobLimit: number;
+    defaultTarget: number;
+    minTarget: 1;
+  };
   aiJobCreation: { enabled: boolean; disabledReason: string | null };
 };
+
+export const FREE_REPORT_DEFAULTS: Entitlements["reports"] = {
+  perJobLimit: PLAN_CONFIGS.free.includedReportsPerJob,
+  defaultTarget: PLAN_CONFIGS.free.includedReportsPerJob,
+  minTarget: 1,
+};
+
+export function reportTargetRangeLabel(reports: Entitlements["reports"]): string {
+  return `${reports.minTarget}-${reports.perJobLimit}`;
+}
+
+/** Resolve a report target to a plan-valid value, clamping when out of range. */
+export function resolveReportTarget(
+  entitlements: Entitlements,
+  requestedTarget: number | null | undefined,
+): number {
+  const { perJobLimit, minTarget, defaultTarget } = entitlements.reports;
+  const target = typeof requestedTarget === "number" ? requestedTarget : defaultTarget;
+  return Math.max(minTarget, Math.min(target, perJobLimit));
+}
 
 export function deriveEntitlements(input: {
   subscriptionPlan: string | null | undefined;
@@ -63,7 +87,11 @@ export function deriveEntitlements(input: {
       canOpenAnother: !atLimit,
       canCreateDraft: true,
     },
-    reports: { perJobLimit: planConfig.includedReportsPerJob },
+    reports: {
+      perJobLimit: planConfig.includedReportsPerJob,
+      defaultTarget: planConfig.includedReportsPerJob,
+      minTarget: 1,
+    },
     aiJobCreation: {
       enabled: isActive,
       disabledReason: isActive
@@ -71,14 +99,4 @@ export function deriveEntitlements(input: {
         : "AI job creation is available on paid plans. Upgrade to unlock this feature.",
     },
   };
-}
-
-/** Clamp a requested report target to [1, plan limit]. */
-export function clampFinalReportTarget(
-  entitlements: Entitlements,
-  requestedTarget: number | null | undefined,
-): number {
-  const limit = entitlements.reports.perJobLimit;
-  const target = typeof requestedTarget === "number" ? requestedTarget : limit;
-  return Math.max(1, Math.min(target, limit));
 }
