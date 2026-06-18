@@ -1009,7 +1009,7 @@ const tiers: Tier[] = SUBSCRIPTION_PLANS.map((plan) => {
     price: config.priceLabel,
     period: config.periodLabel,
     description: config.description,
-    cta: plan === "free" ? "Begin free" : "Get started",
+    cta: plan === "free" ? "Start free" : "Get started",
     href: plan === "free" ? "/company/login" : "/company/login?redirect=/dashboard/billing",
     featured: plan === "growth",
   };
