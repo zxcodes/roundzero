@@ -54,7 +54,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useSubscription } from "@/features/billing/hooks/use-subscription";
+import { useEntitlements } from "@/features/entitlements/hooks/use-entitlements";
 import { isJobClosingSoon } from "@/features/jobs/components/job-status-badge";
 import {
   getMyArchivedJobs,
@@ -178,9 +178,9 @@ function CompanyJobsList({
   const router = useRouter();
   const { tab } = Route.useSearch();
   const navigate = useNavigate({ from: "/dashboard/jobs/" });
-  const subscription = useSubscription();
-  const isPaid = subscription?.isActive ?? false;
-  const atLimit = !isPaid && counts.openCount >= 3;
+  const entitlements = useEntitlements();
+  const jobLimit = entitlements?.jobs.active.limit ?? counts.openCount;
+  const atLimit = entitlements?.jobs.active.atLimit ?? false;
 
   const publishJobFn = useServerFn(publishJob);
   const publishJobMutation = useMutation({
@@ -190,9 +190,7 @@ function CompanyJobsList({
       await router.invalidate();
     },
     onError: (error) => {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to publish job. Please try again.",
-      );
+      toast.error(error instanceof Error ? error.message : "Failed to publish job.");
     },
   });
 
@@ -215,13 +213,15 @@ function CompanyJobsList({
 
       {atLimit ? (
         <Alert variant="destructive">
-          <AlertTitle>Job limit reached ({counts.openCount} of 3 active jobs)</AlertTitle>
+          <AlertTitle>
+            Job limit reached ({counts.openCount} of {jobLimit} active jobs)
+          </AlertTitle>
           <AlertDescription>
-            You've used all your active job slots on the free plan. Archive an existing job or{" "}
+            You've used all your active job slots on your current plan. Archive an existing job or{" "}
             <Link to="/dashboard/billing" className="font-medium underline underline-offset-4">
-              upgrade to Pro
+              upgrade your plan
             </Link>{" "}
-            for unlimited postings.
+            to post more.
           </AlertDescription>
         </Alert>
       ) : null}
@@ -241,6 +241,7 @@ function CompanyJobsList({
             onPublish={onPublish}
             isPending={publishJobMutation.isPending}
             atLimit={atLimit}
+            jobLimit={jobLimit}
           />
         </TabsContent>
 
@@ -277,11 +278,13 @@ function ActiveJobsTable({
   onPublish,
   isPending,
   atLimit,
+  jobLimit,
 }: {
   jobs: PipelineJob[];
   onPublish: (jobId: string) => Promise<void>;
   isPending: boolean;
   atLimit: boolean;
+  jobLimit: number;
 }) {
   if (jobs.length === 0) {
     return (
@@ -296,26 +299,12 @@ function ActiveJobsTable({
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
-          {atLimit ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button size="sm" disabled>
-                  <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-3.5" />
-                  Post a job
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>You've reached the 3 active job limit on the free plan</p>
-              </TooltipContent>
-            </Tooltip>
-          ) : (
-            <Button size="sm" asChild>
-              <Link to="/dashboard/jobs/new">
-                <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-3.5" />
-                Post a job
-              </Link>
-            </Button>
-          )}
+          <Button size="sm" asChild>
+            <Link to="/dashboard/jobs/new">
+              <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-3.5" />
+              Post a job
+            </Link>
+          </Button>
         </EmptyContent>
       </Empty>
     );
@@ -390,23 +379,49 @@ function ActiveJobsTable({
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-1">
                     {job.status === "draft" ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={onPublishClick}
-                        disabled={isPending}
-                      >
-                        {isPending ? (
-                          <HugeiconsIcon
-                            icon={Loading03Icon}
-                            strokeWidth={2}
-                            className="size-3.5 animate-spin"
-                          />
-                        ) : (
-                          <HugeiconsIcon icon={Rocket01Icon} strokeWidth={2} className="size-3.5" />
-                        )}
-                        {isPending ? "Publishing..." : "Publish"}
-                      </Button>
+                      atLimit ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span>
+                              <Button variant="outline" size="sm" disabled>
+                                <HugeiconsIcon
+                                  icon={Rocket01Icon}
+                                  strokeWidth={2}
+                                  className="size-3.5"
+                                />
+                                Publish
+                              </Button>
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>
+                              You've reached the {jobLimit} active job limit on your current plan
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={onPublishClick}
+                          disabled={isPending}
+                        >
+                          {isPending ? (
+                            <HugeiconsIcon
+                              icon={Loading03Icon}
+                              strokeWidth={2}
+                              className="size-3.5 animate-spin"
+                            />
+                          ) : (
+                            <HugeiconsIcon
+                              icon={Rocket01Icon}
+                              strokeWidth={2}
+                              className="size-3.5"
+                            />
+                          )}
+                          {isPending ? "Publishing..." : "Publish"}
+                        </Button>
+                      )
                     ) : null}
                     <Button variant="outline" size="sm" asChild>
                       <Link to="/dashboard/job-applicants/$jobId" params={{ jobId: job.id }}>

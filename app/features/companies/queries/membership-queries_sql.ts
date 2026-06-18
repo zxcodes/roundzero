@@ -744,3 +744,38 @@ export async function markInvitationAccepted(sql: Sql, args: markInvitationAccep
     };
 }
 
+export const countTeamSlotsByCompanyQuery = `-- name: countTeamSlotsByCompany :one
+SELECT
+  (SELECT COUNT(*)::int
+   FROM company_members cm
+   WHERE cm.company_id = $1
+     AND cm.status = 'active'
+     AND cm.role <> 'owner') AS invited_member_count,
+  (SELECT COUNT(*)::int
+   FROM company_invitations ci
+   WHERE ci.company_id = $1
+     AND ci.accepted_at IS NULL
+     AND ci.revoked_at IS NULL
+     AND ci.expires_at > now()) AS pending_invite_count`;
+
+export interface countTeamSlotsByCompanyArgs {
+    companyId: string;
+}
+
+export interface countTeamSlotsByCompanyRow {
+    invitedMemberCount: number;
+    pendingInviteCount: number;
+}
+
+export async function countTeamSlotsByCompany(sql: Sql, args: countTeamSlotsByCompanyArgs): Promise<countTeamSlotsByCompanyRow | null> {
+    const rows = await sql.unsafe(countTeamSlotsByCompanyQuery, [args.companyId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        invitedMemberCount: row[0],
+        pendingInviteCount: row[1]
+    };
+}
+

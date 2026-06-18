@@ -167,3 +167,17 @@ WHERE id = $1
   AND accepted_at IS NULL
   AND revoked_at IS NULL
 RETURNING id;
+
+-- name: countTeamSlotsByCompany :one
+SELECT
+  (SELECT COUNT(*)::int
+   FROM company_members cm
+   WHERE cm.company_id = $1
+     AND cm.status = 'active'
+     AND cm.role <> 'owner') AS invited_member_count,
+  (SELECT COUNT(*)::int
+   FROM company_invitations ci
+   WHERE ci.company_id = $1
+     AND ci.accepted_at IS NULL
+     AND ci.revoked_at IS NULL
+     AND ci.expires_at > now()) AS pending_invite_count;

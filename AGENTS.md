@@ -2,11 +2,20 @@
 
 ## Key References
 
-- **`platform.md`** — Product spec (what RoundZero does, user types, flow, agents, interviews, reports, MVP scope).
+- **`PLATFORM.md`** — Product spec (what RoundZero does, user types, flow, agents, interviews, reports, billing, MVP scope).
 - **`ARCHITECTURE.md`** — Tech architecture (stack, deployment, directory structure, DB schema, AI models, auth, storage, build phases).
 - **`AI-LAYER.md`** — AI Layer high level reference. This must be checked before starting AI implementation.
 
 Always consult both before making design decisions or implementing features.
+
+## Billing & Entitlements
+
+- Plan config and marketing copy: `app/features/billing/config.ts` (`PLAN_CONFIGS`).
+- Single source of truth: `deriveEntitlements()` in `app/features/entitlements/entitlements.ts`.
+- Server mutations must use `readCompanyEntitlements()` / `enforceCompanyEntitlement(db, companyId, ...)` — never trust stale loader/router snapshots for gating.
+- UI gating reads from `_authenticated` route context via `useEntitlements()`.
+- Report targets: `enforceReportTarget()` (strict on user input, clamp on publish/downgrade).
+- Active jobs = `open` status only; drafts never consume a slot. Team seats count non-owner members + pending invites (owner excluded).
 
 ## Project Structure & Code Quality
 

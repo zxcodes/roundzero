@@ -23,20 +23,9 @@ const config = defineConfig({
     tailwindcss(),
     tanstackStart({ srcDirectory: "app" }),
     viteReact(),
-    babel({ presets: [reactCompilerPreset(), decoratorPreset({ version: "2023-11" })] }),
+    babel({ presets: [reactCompilerPreset()] }),
   ],
 });
 
 // biome-ignore lint/style/noDefaultExport: <uh>
 export default config;
-
-// This is required because somehow vite 8 has issues with decorators.
-function decoratorPreset(options: Record<string, unknown>) {
-  return {
-    preset: () => ({ plugins: [["@babel/plugin-proposal-decorators", options]] }),
-    rolldown: {
-      // Only run this transform if the file contains a decorator.
-      filter: { code: "@" },
-    },
-  };
-}

@@ -62,7 +62,6 @@ function InterviewWorkspaceLayout() {
       >
         <CommandPalette
           isCompany={false}
-          atLimit={false}
           showTeam={false}
           open={commandOpen}
           onOpenChange={setCommandOpen}

@@ -2,10 +2,17 @@ import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { generateText, Output } from "ai";
 import { z } from "zod";
-import { hasActiveSubscription } from "@/features/billing/config";
 import { getCompanyByMemberUserId } from "@/features/companies/queries/membership-queries_sql";
 import { notifyCompanyTeam } from "@/features/companies/services/company-team-notifications";
+import type { Entitlements } from "@/features/entitlements/entitlements";
+import {
+  enforceCompanyEntitlement,
+  enforceReportTarget,
+  lockCompanyEntitlementScope,
+  readCompanyEntitlements,
+} from "@/features/entitlements/server/enforcement";
 import { getDb } from "@/shared/db";
+import { asSqlTransaction } from "@/shared/db-transaction";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
 import { createChatModel } from "@/shared/openrouter";
 import {
@@ -23,39 +30,12 @@ import {
 } from "../queries/queries_sql";
 import { aiJobGenerationSchema, jobFieldsSchema, jobIdSchema, updateJobSchema } from "../schemas";
 
-async function enforceJobLimit(
-  db: ReturnType<typeof getDb>,
-  companyId: string,
-  subscriptionPlan: string | null,
-  subscriptionStatus: string | null,
-): Promise<void> {
-  const isPaid = hasActiveSubscription({
-    subscriptionPlan,
-    subscriptionStatus,
-  });
-  if (isPaid) return;
-  const counts = await countJobsByCompanyAndStatus(db, { companyId });
-  if (counts && counts.openCount >= 3) {
-    throw new Error("Free plan limited to 3 active jobs. Upgrade to Pro to post more.");
-  }
-}
-
 export const createJob = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
   .validator(zodValidator(jobFieldsSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
-
-    // Enforce the 3-job limit for all creations on free plans.
-    // Paid plans bypass this check entirely.
-    await enforceJobLimit(
-      db,
-      context.company.id,
-      context.company.subscriptionPlan,
-      context.company.subscriptionStatus,
-    );
-
-    const job = await createJobQuery(db, {
+    const createArgs = {
       companyId: context.company.id,
       title: data.title,
       description: data.description,
@@ -71,9 +51,32 @@ export const createJob = createServerFn({ method: "POST" })
       salaryCurrency: data.salaryCurrency,
       teamSize: data.teamSize ?? null,
       headcount: data.headcount ?? null,
-      finalReportTarget: data.finalReportTarget,
       expiresAt: data.expiresAt ?? null,
-    });
+    };
+
+    const job =
+      data.status === "open"
+        ? await db.begin(async (tx) => {
+            const transaction = asSqlTransaction(tx);
+            await lockCompanyEntitlementScope(transaction, context.company.id);
+            const entitlements = await enforceCompanyEntitlement(
+              transaction,
+              context.company.id,
+              "jobs.open",
+            );
+
+            return createJobQuery(transaction, {
+              ...createArgs,
+              finalReportTarget: enforceReportTarget(entitlements, data.finalReportTarget),
+            });
+          })
+        : await (async () => {
+            const entitlements = await readCompanyEntitlements(db, context.company.id);
+            return createJobQuery(db, {
+              ...createArgs,
+              finalReportTarget: enforceReportTarget(entitlements, data.finalReportTarget),
+            });
+          })();
 
     if (!job) {
       throw new Error("Failed to create job");
@@ -133,20 +136,7 @@ export const updateJob = createServerFn({ method: "POST" })
   .validator(zodValidator(updateJobSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
-
-    if (data.status === "open") {
-      const existing = await getJobById(db, { id: data.id });
-      if (existing && existing.status !== "open") {
-        await enforceJobLimit(
-          db,
-          context.company.id,
-          context.company.subscriptionPlan,
-          context.company.subscriptionStatus,
-        );
-      }
-    }
-
-    const job = await updateJobQuery(db, {
+    const updateArgs = {
       id: data.id,
       companyId: context.company.id,
       title: data.title,
@@ -163,9 +153,33 @@ export const updateJob = createServerFn({ method: "POST" })
       salaryCurrency: data.salaryCurrency,
       teamSize: data.teamSize ?? null,
       headcount: data.headcount ?? null,
-      finalReportTarget: data.finalReportTarget,
       expiresAt: data.expiresAt ?? null,
-    });
+    };
+
+    const job =
+      data.status === "open"
+        ? await db.begin(async (tx) => {
+            const transaction = asSqlTransaction(tx);
+            await lockCompanyEntitlementScope(transaction, context.company.id);
+
+            const existing = await getJobById(transaction, { id: data.id });
+            const entitlements: Entitlements =
+              existing && existing.status !== "open"
+                ? await enforceCompanyEntitlement(transaction, context.company.id, "jobs.open")
+                : await readCompanyEntitlements(transaction, context.company.id);
+
+            return updateJobQuery(transaction, {
+              ...updateArgs,
+              finalReportTarget: enforceReportTarget(entitlements, data.finalReportTarget),
+            });
+          })
+        : await (async () => {
+            const entitlements = await readCompanyEntitlements(db, context.company.id);
+            return updateJobQuery(db, {
+              ...updateArgs,
+              finalReportTarget: enforceReportTarget(entitlements, data.finalReportTarget),
+            });
+          })();
 
     if (!job) {
       throw new Error("Failed to update job: not found or not authorized");
@@ -203,46 +217,49 @@ export const publishJob = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const db = getDb();
     await db.unsafe(closeExpiredJobsQuery);
+    const updated = await db.begin(async (tx) => {
+      const transaction = asSqlTransaction(tx);
+      await lockCompanyEntitlementScope(transaction, context.company.id);
 
-    const job = await getJobById(db, { id: data.id });
-    if (!job || job.companyId !== context.company.id) {
-      throw new Error("Job not found or not authorized");
-    }
+      const job = await getJobById(transaction, { id: data.id });
+      if (!job || job.companyId !== context.company.id) {
+        throw new Error("Job not found or not authorized");
+      }
 
-    if (job.status !== "draft") {
-      throw new Error("Only draft jobs can be published");
-    }
+      if (job.status !== "draft") {
+        throw new Error("Only draft jobs can be published");
+      }
 
-    if (job.expiresAt && job.expiresAt <= new Date()) {
-      throw new Error("This job has already expired. Update the deadline before publishing.");
-    }
+      if (job.expiresAt && job.expiresAt <= new Date()) {
+        throw new Error("This job has already expired. Update the deadline before publishing.");
+      }
 
-    await enforceJobLimit(
-      db,
-      context.company.id,
-      context.company.subscriptionPlan,
-      context.company.subscriptionStatus,
-    );
+      const entitlements = await enforceCompanyEntitlement(
+        transaction,
+        context.company.id,
+        "jobs.open",
+      );
 
-    const updated = await updateJobQuery(db, {
-      id: data.id,
-      companyId: context.company.id,
-      title: job.title,
-      description: job.description,
-      requirements: job.requirements,
-      screeningQuestions: job.screeningQuestions,
-      status: "open",
-      location: job.location,
-      workplaceType: job.workplaceType,
-      employmentType: job.employmentType,
-      experienceLevel: job.experienceLevel,
-      salaryMin: job.salaryMin,
-      salaryMax: job.salaryMax,
-      salaryCurrency: job.salaryCurrency,
-      teamSize: job.teamSize,
-      headcount: job.headcount,
-      finalReportTarget: job.finalReportTarget,
-      expiresAt: job.expiresAt,
+      return updateJobQuery(transaction, {
+        id: data.id,
+        companyId: context.company.id,
+        title: job.title,
+        description: job.description,
+        requirements: job.requirements,
+        screeningQuestions: job.screeningQuestions,
+        status: "open",
+        location: job.location,
+        workplaceType: job.workplaceType,
+        employmentType: job.employmentType,
+        experienceLevel: job.experienceLevel,
+        salaryMin: job.salaryMin,
+        salaryMax: job.salaryMax,
+        salaryCurrency: job.salaryCurrency,
+        teamSize: job.teamSize,
+        headcount: job.headcount,
+        finalReportTarget: enforceReportTarget(entitlements, job.finalReportTarget, "clamp"),
+        expiresAt: job.expiresAt,
+      });
     });
 
     if (!updated) {
@@ -429,13 +446,11 @@ export const generateJobWithAI = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
   .validator(zodValidator(generateJobPromptSchema))
   .handler(async ({ data, context }) => {
-    const isPaid = hasActiveSubscription({
-      subscriptionPlan: context.company.subscriptionPlan,
-      subscriptionStatus: context.company.subscriptionStatus,
-    });
-    if (!isPaid) {
-      throw new Error("AI job creation is available on Pro. Upgrade to unlock this feature.");
-    }
+    const entitlements = await enforceCompanyEntitlement(
+      getDb(),
+      context.company.id,
+      "aiJobCreation",
+    );
 
     const result = await generateText({
       model: createChatModel("job_creation", { plugins: [{ id: "response-healing" }] }),
@@ -450,7 +465,7 @@ export const generateJobWithAI = createServerFn({ method: "POST" })
       ...cleaned,
       status: "draft",
       expiresAt: null,
-      finalReportTarget: 5,
+      finalReportTarget: enforceReportTarget(entitlements, null),
     });
 
     if (!validated.success) {
