@@ -5,6 +5,7 @@ import { createFileRoute, Link, redirect, useLoaderData, useRouter } from "@tans
 import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { AiJobCreator } from "@/features/jobs/components/ai-job-creator";
@@ -26,7 +27,12 @@ function NewJobPage() {
   const router = useRouter();
   const auth = useLoaderData({ from: "/_authenticated" });
   const companyName = auth.type === "company" ? (auth.company?.name ?? "") : "";
-  const isPaid = auth.type === "company" ? (auth.subscription?.isActive ?? false) : false;
+  const isPaid =
+    auth.type === "company" ? (auth.entitlements?.aiJobCreation.enabled ?? false) : false;
+  const jobLimit = auth.type === "company" ? (auth.entitlements?.jobs.active.limit ?? 0) : 0;
+  const openCount = auth.type === "company" ? (auth.jobCounts?.openCount ?? 0) : 0;
+  const atLimit =
+    auth.type === "company" ? (auth.entitlements?.jobs.active.atLimit ?? false) : false;
   const [draft, setDraft] = useState<JobFormData | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<JobTemplate | null>(null);
@@ -44,7 +50,7 @@ function NewJobPage() {
       });
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to create job. Please try again.");
+      toast.error(error instanceof Error ? error.message : "Failed to create job.");
     },
   });
 
@@ -84,6 +90,22 @@ function NewJobPage() {
           </p>
         </div>
       </div>
+
+      {atLimit ? (
+        <Alert variant="destructive">
+          <AlertTitle>
+            Job limit reached ({openCount} of {jobLimit} active jobs)
+          </AlertTitle>
+          <AlertDescription>
+            You've used all your active job slots on your current plan. You can still create draft
+            jobs here, but you'll need to archive an existing job or{" "}
+            <Link to="/dashboard/billing" className="font-medium underline underline-offset-4">
+              upgrade your plan
+            </Link>{" "}
+            before you can publish another one.
+          </AlertDescription>
+        </Alert>
+      ) : null}
 
       <AiJobCreator isPaid={isPaid} onApply={onApplyDraft} onDiscard={onDiscardDraft} />
 

@@ -126,24 +126,3 @@ export function hasActiveSubscription(input: {
   if (!status) return false;
   return ACTIVE_STATUS_SET.has(status);
 }
-
-function normalizePlan(plan: string | null | undefined): SubscriptionPlan {
-  const key = plan ?? "free";
-  return SUBSCRIPTION_PLANS.find((p) => p === key) ?? "free";
-}
-
-/**
- * Returns the number of active jobs included in a plan.
- * Free plans get 1 job so a company can genuinely try the platform.
- */
-export function getPlanJobLimit(plan: string | null | undefined): number {
-  return PLAN_CONFIGS[normalizePlan(plan)].includedJobs;
-}
-
-/**
- * Returns the maximum number of evaluation reports that can be delivered per job.
- * This caps `finalReportTarget` on job creation/edit/AI generation.
- */
-export function getPlanReportLimit(plan: string | null | undefined): number {
-  return PLAN_CONFIGS[normalizePlan(plan)].includedReportsPerJob;
-}

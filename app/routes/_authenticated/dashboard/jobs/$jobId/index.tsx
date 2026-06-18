@@ -422,8 +422,8 @@ function CompanyActions({
       toast.success("Job published successfully");
       await router.invalidate();
     },
-    onError: () => {
-      toast.error("Failed to publish job. Please try again.");
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Failed to publish job.");
     },
   });
 
@@ -435,8 +435,8 @@ function CompanyActions({
       await router.invalidate();
       await router.navigate({ to: "/dashboard/jobs" });
     },
-    onError: () => {
-      toast.error("Failed to archive job. Please try again.");
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Failed to archive job.");
     },
   });
 

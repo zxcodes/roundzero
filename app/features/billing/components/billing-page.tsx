@@ -8,12 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { formatDate } from "@/shared/date";
-import {
-  getPlanJobLimit,
-  PLAN_CONFIGS,
-  SUBSCRIPTION_PLANS,
-  type SubscriptionPlan,
-} from "../config";
+import { PLAN_CONFIGS, SUBSCRIPTION_PLANS, type SubscriptionPlan } from "../config";
 import {
   createBillingPortalSession,
   createCheckoutSession,
@@ -166,7 +161,7 @@ function CurrentPlanCard({
     ? formatDate(subscription.currentPeriodEnd)
     : null;
   const isFree = subscription.plan === "free";
-  const jobLimit = getPlanJobLimit(subscription.plan);
+  const jobLimit = PLAN_CONFIGS[subscription.plan].includedJobs;
   const jobUsage = jobCounts?.openCount ?? 0;
   const atLimit = jobUsage >= jobLimit;
 

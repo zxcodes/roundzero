@@ -33,7 +33,7 @@ function EditJobPage() {
       await router.navigate({ to: "/dashboard/jobs/$jobId", params: { jobId: job.id } });
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to update job. Please try again.");
+      toast.error(error instanceof Error ? error.message : "Failed to update job.");
     },
   });
 
