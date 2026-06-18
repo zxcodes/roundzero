@@ -1,6 +1,6 @@
 import type { Sql } from "postgres";
 import { countJobsByCompanyAndStatus } from "@/features/jobs/queries/queries_sql";
-import { deriveEntitlements, type Entitlements } from "../entitlements";
+import { deriveEntitlements, type Entitlements, resolveReportTarget } from "../entitlements";
 
 type CompanyForEntitlements = {
   id: string;
@@ -60,4 +60,30 @@ export async function enforceCompanyEntitlement(
   }
 
   return entitlements;
+}
+
+type ReportTargetMode = "strict" | "clamp";
+
+/**
+ * Enforce report-target entitlement at the server boundary.
+ *
+ * - `strict` — rejects explicit values outside the plan range (user-submitted targets).
+ * - `clamp` — silently fits existing values to the plan (e.g. publish after a downgrade).
+ */
+export function enforceReportTarget(
+  entitlements: Entitlements,
+  requestedTarget: number | null | undefined,
+  mode: ReportTargetMode = "strict",
+): number {
+  const resolved = resolveReportTarget(entitlements, requestedTarget);
+  if (mode === "clamp") return resolved;
+
+  if (requestedTarget != null && resolved !== requestedTarget) {
+    const { minTarget, perJobLimit } = entitlements.reports;
+    throw new Error(
+      `Your plan allows ${minTarget}-${perJobLimit} evaluation report${perJobLimit === 1 ? "" : "s"} per job.`,
+    );
+  }
+
+  return resolved;
 }

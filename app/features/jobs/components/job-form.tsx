@@ -18,7 +18,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { UnsavedChangesBar } from "@/components/unsaved-changes-bar";
-import { PLAN_CONFIGS } from "@/features/billing/config";
+import { FREE_REPORT_DEFAULTS, reportTargetRangeLabel } from "@/features/entitlements/entitlements";
 import { useEntitlements } from "@/features/entitlements/hooks/use-entitlements";
 import { JobPreviewDialog } from "@/features/jobs/components/job-preview-dialog";
 import { formatDate } from "@/shared/date";
@@ -149,7 +149,8 @@ export function JobForm({
   const [deadlineOpen, setDeadlineOpen] = useState(false);
 
   const entitlements = useEntitlements();
-  const reportLimit = entitlements?.reports.perJobLimit ?? PLAN_CONFIGS.free.includedReportsPerJob;
+  const reports = entitlements?.reports ?? FREE_REPORT_DEFAULTS;
+  const reportLimit = reports.perJobLimit;
   // Drafts are always allowed; opening a new job is gated. Editing a job that is
   // already open never consumes a new slot, so don't lock it.
   const openLocked =
@@ -157,7 +158,7 @@ export function JobForm({
   const defaultReportTarget =
     defaultValues?.finalReportTarget != null
       ? Math.min(defaultValues.finalReportTarget, reportLimit)
-      : reportLimit;
+      : reports.defaultTarget;
 
   const form = useForm({
     defaultValues: {
@@ -730,7 +731,7 @@ export function JobForm({
                   (val) =>
                     Number.isInteger(Number(val)) && Number(val) >= 1 && Number(val) <= reportLimit,
                   {
-                    message: `Final report target must be between 1 and ${reportLimit} on your current plan`,
+                    message: `Final report target must be between ${reportTargetRangeLabel(reports)} on your current plan`,
                   },
                 ),
             }}
@@ -750,7 +751,8 @@ export function JobForm({
                     aria-invalid={isInvalid}
                   />
                   <p className="text-muted-foreground text-xs">
-                    Maximum evaluation reports for this job on your plan (1-{reportLimit})
+                    Maximum evaluation reports for this job on your plan (
+                    {reportTargetRangeLabel(reports)})
                   </p>
                   {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
                 </Field>
