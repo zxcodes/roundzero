@@ -17,7 +17,8 @@ Implemented in the repo today:
 - Cloudflare Agents SDK interview runtime
 - Voice assessment agent for real-time communication evaluation
 - AI pre-evaluation, interviews, reports, and ranked batch release flow
-- billing plan config and Polar webhook handling
+- billing plan config, Polar checkout/webhooks, and plan-gated entitlements
+- multi-tenant company auth (membership, email invitations, team management)
 
 Important current constraints:
 
@@ -99,6 +100,8 @@ app/routes/
 ├── _authenticated/dashboard/jobs/index.tsx
 ├── _authenticated/dashboard/jobs/$jobId.tsx
 ├── _authenticated/dashboard/settings.tsx
+├── _authenticated/dashboard/team.tsx
+├── _authenticated/onboarding/no-workspace.tsx
 ├── _authenticated/interview.tsx
 ├── _authenticated/interview/index.tsx
 ├── _authenticated/interview/$interviewId.tsx
@@ -109,6 +112,7 @@ app/routes/
 ├── companies/index.tsx
 ├── companies/$slug.tsx
 ├── company/login.tsx
+├── invite/$token.tsx
 ├── index.tsx
 ├── jobs/index.tsx
 ├── jobs/$jobId.tsx
@@ -123,7 +127,8 @@ What exists in practice:
 - candidate application tracking
 - company applicant review, reports, and batch review surfaces
 - dedicated interview workspace
-- billing page for company users
+- billing page and team management for company users
+- invitation accept flow at `/invite/$token`
 
 ---
 
@@ -140,7 +145,7 @@ app/features/
 ├── candidates/
 ├── companies/
 ├── dashboard/
-├── edge/
+├── entitlements/
 ├── interviews/
 ├── jobs/
 ├── notifications/
@@ -153,11 +158,11 @@ High-level responsibilities:
 - `applications`: apply flow, applicant lists, status transitions, workflow triggers
 - `auth`: Google login, session bootstrap, user data
 - `batches`: pooling, launch orchestration, release, batch digest email
-- `billing`: subscription plan config, billing page, Polar webhook integration
+- `billing`: subscription plan config (`PLAN_CONFIGS`), billing page, Polar checkout + webhook integration
 - `candidates`: profile CRUD, work history, resume upload contract
-- `companies`: company profile CRUD, logo handling, public company data
+- `companies`: company profile CRUD, logo handling, public company data, membership, team invites
 - `dashboard`: role-specific metrics and dashboard data
-- `edge`: edge/runtime-specific code surface
+- `entitlements`: `deriveEntitlements()`, server enforcement, `useEntitlements()` hook
 - `interviews`: interview lifecycle, routes, agent chat hooks/components, server functions
 - `jobs`: job CRUD, lifecycle, requirements, screening questions
 - `notifications`: inbox UI, payload rendering, email delivery
@@ -217,10 +222,23 @@ Source of truth:
 
 #### `companies`
 
-- owned by a company user
+- owned by a company user (`owner_id` kept for billing; access is membership-based)
 - stores onboarding and public company profile data
-- includes billing/subscription fields
 - includes public `slug`
+- billing fields: `subscription_plan`, `subscription_status`, `polar_*` IDs, period end, cancel-at-period-end
+
+#### `company_members`
+
+- canonical company access primitive (replaces direct `owner_id` checks)
+- one active membership per user (MVP)
+- roles: `owner`, `admin`, `member`
+- status: `active`, `removed`
+
+#### `company_invitations`
+
+- email invitations with opaque token, 7-day expiry
+- roles: `admin`, `member` (never `owner`)
+- lifecycle: pending → accepted / revoked / expired
 
 #### `candidate_profiles`
 
@@ -365,6 +383,13 @@ Current auth flow:
 4. session cookie is written
 5. role determines onboarding and dashboard paths
 
+Company access uses **membership**, not `owner_id` alone:
+
+- `companyMiddleware` resolves `{ company, membership }` via active `company_members` row
+- `_authenticated` `beforeLoad` derives entitlements for company users with an active workspace
+- invite accept at `/invite/$token` creates membership after Google sign-in + email match
+- MVP blocks: same email as candidate account, existing active membership elsewhere
+
 Characteristics:
 
 - cookie session, not DB-backed session storage
@@ -508,11 +533,54 @@ Batch-oriented evaluation adds:
 - `evaluated_held` until release
 - batch release and backfill logic
 
-`final_report_target` still controls how many reports a company should receive per job, but delivery is batch-aware rather than purely per-candidate.
+`final_report_target` controls how many reports a company should receive per job. The per-job value is clamped to the company's plan limit at create/edit time (see §13). Delivery is batch-aware rather than purely per-candidate.
 
 ---
 
-## 13. Testing Architecture
+## 13. Billing, Plans, and Entitlements
+
+### Plans
+
+Source of truth: `app/features/billing/config.ts` (`PLAN_CONFIGS`).
+
+| Plan | Price | Active jobs | Reports/job | Teammates (+ owner) |
+| --- | --- | --- | --- | --- |
+| Free | $0 | 1 | 1 | 1 |
+| Starter | $39/mo | 5 | 3 | 2 |
+| Growth | $99/mo | 15 | 5 | 4 |
+| Scale | $249/mo | 35 | 10 | 10 |
+
+Paid features require `hasActiveSubscription()` — plan is not `free` and status is `active` or `trialing`.
+
+### Entitlements
+
+`deriveEntitlements()` in `app/features/entitlements/entitlements.ts` is the single source of truth. Inputs: plan, subscription status, open/draft job counts, team slot counts.
+
+Gated capabilities:
+
+| Entitlement | Rule |
+| --- | --- |
+| `jobs.open` | `open` jobs count toward limit; drafts never consume a slot |
+| `reports` per job | `final_report_target` default = plan limit; clamped to `1..perJobLimit` |
+| `team.invite` | non-owner members + pending invites count toward limit |
+| `team.accept` | gated on non-owner member count (owner excluded) |
+| `aiJobCreation` | paid plans only |
+
+### Enforcement layers
+
+1. **Router context** — `_authenticated` `beforeLoad` exposes `entitlements` for UI gating (`useEntitlements()`)
+2. **Server boundary** — `readCompanyEntitlements()` / `enforceCompanyEntitlement()` always read fresh DB state (never stale loader snapshots)
+3. **Report targets** — `enforceReportTarget()` strict on user input, clamp on publish/downgrade
+
+### Polar integration
+
+- Checkout + customer portal via Polar API (`POLAR_ACCESS_TOKEN`)
+- Webhook in `app/server.ts` updates `companies.subscription_*` fields
+- Product IDs: `POLAR_PRODUCT_ID_STARTER`, `POLAR_PRODUCT_ID_GROWTH`, `POLAR_PRODUCT_ID_SCALE`
+
+---
+
+## 14. Testing Architecture
 
 Two local Postgres containers:
 
@@ -537,7 +605,7 @@ Current high-value AI-layer coverage areas:
 
 ---
 
-## 14. AI Architecture
+## 15. AI Architecture
 
 The AI layer runs inside the same Worker as the app.
 
@@ -616,19 +684,19 @@ Batch release is a first-class workflow:
 
 ---
 
-## 15. Near-Term Priorities
+## 16. Near-Term Priorities
 
 See `PLAN.md` for the full build plan. Based on the current architecture, likely near-term hardening areas are:
 
 1. align remaining per-candidate `report_ready` and batch `batch_ready` semantics
 2. polish candidate interview UX and terminal states
 3. continue AI prompt/policy calibration
-4. harden billing and plan-gating behavior
-5. expand end-to-end workflow coverage
+4. expand end-to-end workflow coverage
+5. multi-tenant polish (notification fan-out, owner transfer, leave-org)
 
 ---
 
-## 16. Post-Release Hardening
+## 17. Post-Release Hardening
 
 | Item | Why | Approach |
 | --- | --- | --- |
@@ -639,7 +707,7 @@ See `PLAN.md` for the full build plan. Based on the current architecture, likely
 
 ---
 
-## 17. Deployment
+## 18. Deployment
 
 ### Environments
 
@@ -718,7 +786,7 @@ wrangler hyperdrive create roundzero-db-staging \
 
 ---
 
-## 18. Key Decisions
+## 19. Key Decisions
 
 | Decision | Choice | Rationale |
 | --- | --- | --- |
@@ -732,3 +800,5 @@ wrangler hyperdrive create roundzero-db-staging \
 | Auth | Google OAuth + cookie session | sufficient for current scope |
 | AI orchestration | Cloudflare Workflows | durable multi-step execution |
 | Interview runtime | TanStack server functions + OpenRouter | request-response chat via server functions |
+| Company access | `company_members` membership | supports multi-user teams; `owner_id` kept for billing |
+| Plan gating | `deriveEntitlements()` + server enforcement | single source of truth; fresh DB reads at mutation boundary |
