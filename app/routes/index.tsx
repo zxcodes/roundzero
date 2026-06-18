@@ -1102,11 +1102,11 @@ function PricingSection() {
                         <span className="font-mono text-3xl font-medium tracking-tight">
                           {t.price}
                         </span>
-                        <span className="font-mono text-xs text-muted-foreground">
+                        <span className="font-mono text-xs text-muted-foreground font-medium">
                           / {t.period}
                         </span>
                       </div>
-                      <p className="text-[13px] leading-relaxed text-muted-foreground">
+                      <p className="text-[13px] leading-relaxed text-muted-foreground font-medium">
                         {t.description}
                       </p>
                     </div>
