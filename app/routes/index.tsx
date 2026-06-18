@@ -10,7 +10,12 @@ import {
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { PLAN_CONFIGS, SUBSCRIPTION_PLANS, type SubscriptionPlan } from "@/features/billing/config";
+import {
+  PLAN_CONFIGS,
+  SUBSCRIPTION_PLANS,
+  type SubscriptionPlan,
+  teamMemberFeatureLabel,
+} from "@/features/billing/config";
 import { cn } from "@/lib/utils";
 
 const NOT_INCLUDED = "Not included";
@@ -1028,6 +1033,12 @@ const featureRows = [
   {
     label: "Evaluation reports per job",
     values: SUBSCRIPTION_PLANS.map((plan) => String(PLAN_CONFIGS[plan].includedReportsPerJob)),
+  },
+  {
+    label: "Teammates (+ you)",
+    values: SUBSCRIPTION_PLANS.map((plan) =>
+      teamMemberFeatureLabel(PLAN_CONFIGS[plan].includedTeamMembers),
+    ),
   },
   { label: "Support", values: ["Email", "Email", "Email", "Email"] },
 ];

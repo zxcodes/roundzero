@@ -34,6 +34,7 @@ describe("deriveEntitlements", () => {
     expect(entitlements.jobs.active.limit).toBe(1);
     expect(entitlements.reports.perJobLimit).toBe(1);
     expect(entitlements.reports.defaultTarget).toBe(1);
+    expect(entitlements.team.members.limit).toBe(1);
     expect(entitlements.aiJobCreation.enabled).toBe(false);
   });
 
@@ -79,6 +80,48 @@ describe("resolveReportTarget", () => {
 
     expect(resolveReportTarget(entitlements, undefined)).toBe(5);
     expect(resolveReportTarget(entitlements, 0)).toBe(1);
+  });
+});
+
+describe("team entitlements", () => {
+  it("counts active members and pending invites against the team limit", () => {
+    const entitlements = deriveEntitlements({
+      subscriptionPlan: "starter",
+      subscriptionStatus: "active",
+      jobCounts: null,
+      teamCounts: { invitedMemberCount: 1, pendingInviteCount: 1 },
+    });
+
+    expect(entitlements.team.members.used).toBe(1);
+    expect(entitlements.team.members.limit).toBe(2);
+    expect(entitlements.team.pendingInvites.used).toBe(1);
+    expect(entitlements.team.slotsUsed).toBe(2);
+    expect(entitlements.team.members.remaining).toBe(0);
+    expect(entitlements.team.canInviteAnother).toBe(false);
+  });
+
+  it("blocks invites on free when the one addable seat is already used", () => {
+    const entitlements = deriveEntitlements({
+      subscriptionPlan: "free",
+      subscriptionStatus: "inactive",
+      jobCounts: null,
+      teamCounts: { invitedMemberCount: 1, pendingInviteCount: 0 },
+    });
+
+    expect(entitlements.team.canInviteAnother).toBe(false);
+    expect(entitlements.team.members.atLimit).toBe(true);
+  });
+
+  it("allows one invite on free when only the owner is present", () => {
+    const entitlements = deriveEntitlements({
+      subscriptionPlan: "free",
+      subscriptionStatus: "inactive",
+      jobCounts: null,
+      teamCounts: { invitedMemberCount: 0, pendingInviteCount: 0 },
+    });
+
+    expect(entitlements.team.canInviteAnother).toBe(true);
+    expect(entitlements.team.members.used).toBe(0);
   });
 });
 

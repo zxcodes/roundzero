@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { softDeleteUser } from "@/features/auth/queries/queries_sql";
 import { getTestDb, seedCompany, seedUser } from "@/shared/__tests__/test-utils";
 import {
+  countTeamSlotsByCompany,
   createCompanyMember,
   createInvitation,
   getActiveMemberByCompanyEmail,
@@ -693,6 +694,25 @@ describe("company invitations", () => {
       email: "fresh@acme.com",
     });
     expect(pending).toBeNull();
+  });
+});
+
+describe("countTeamSlotsByCompany", () => {
+  it("counts active members and pending invitations separately", async () => {
+    const { company, owner } = await seedCompany();
+    const invitee = await seedUser({ role: "company", email: "pending-seat@acme.com" });
+
+    await createInvitation(sql, {
+      companyId: company.id,
+      email: invitee.email,
+      role: "member",
+      token: "pending-seat-token",
+      invitedBy: owner.id,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    });
+
+    const counts = await countTeamSlotsByCompany(sql, { companyId: company.id });
+    expect(counts).toEqual({ invitedMemberCount: 0, pendingInviteCount: 1 });
   });
 });
 

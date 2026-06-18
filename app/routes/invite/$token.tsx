@@ -8,6 +8,7 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Logo } from "@/components/public-layout";
 import { InviteAcceptSkeleton } from "@/components/route-skeletons";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -121,6 +122,13 @@ function InviteAcceptPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {!preview.canAccept ? (
+              <Alert variant="destructive">
+                <AlertTitle>Team is full</AlertTitle>
+                <AlertDescription>{preview.capacityMessage}</AlertDescription>
+              </Alert>
+            ) : null}
+
             {user && !sessionMatchesInvite ? (
               <div className="space-y-3 rounded-lg border border-border/60 bg-muted/40 p-4 text-sm">
                 <p>
@@ -134,7 +142,11 @@ function InviteAcceptPage() {
             ) : null}
 
             {sessionMatchesInvite ? (
-              <Button className="w-full" onClick={onAcceptWithSession} disabled={isAccepting}>
+              <Button
+                className="w-full"
+                onClick={onAcceptWithSession}
+                disabled={isAccepting || !preview.canAccept}
+              >
                 {isAccepting ? (
                   <HugeiconsIcon
                     icon={Loading03Icon}
@@ -150,7 +162,7 @@ function InviteAcceptPage() {
                 size="lg"
                 className="w-full gap-3"
                 onClick={onContinueWithGoogle}
-                disabled={isAccepting}
+                disabled={isAccepting || !preview.canAccept}
               >
                 {isAccepting ? (
                   <HugeiconsIcon

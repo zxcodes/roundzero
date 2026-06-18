@@ -35,8 +35,15 @@ export type PlanConfig = {
   periodLabel: string;
   includedJobs: number;
   includedReportsPerJob: number;
+  /** Teammates the company can invite beyond the owner. */
+  includedTeamMembers: number;
   features: string[];
 };
+
+/** Marketing copy: invited teammates in addition to the account owner. */
+export function teamMemberFeatureLabel(count: number): string {
+  return count === 1 ? "1 teammate (+ you)" : `${count} teammates (+ you)`;
+}
 
 export const PLAN_CONFIGS: Record<SubscriptionPlan, PlanConfig> = {
   free: {
@@ -47,9 +54,11 @@ export const PLAN_CONFIGS: Record<SubscriptionPlan, PlanConfig> = {
     periodLabel: "forever",
     includedJobs: 1,
     includedReportsPerJob: 1,
+    includedTeamMembers: 1,
     features: [
       "1 active job",
       "1 evaluation report per job",
+      teamMemberFeatureLabel(1),
       "AI pre-evaluation on all applicants",
       "Email support",
     ],
@@ -62,9 +71,11 @@ export const PLAN_CONFIGS: Record<SubscriptionPlan, PlanConfig> = {
     periodLabel: "per month",
     includedJobs: 5,
     includedReportsPerJob: 3,
+    includedTeamMembers: 2,
     features: [
       "5 active jobs",
       "3 evaluation reports per job",
+      teamMemberFeatureLabel(2),
       "AI job creation",
       "AI pre-evaluation on all applicants",
       "Email support",
@@ -78,9 +89,11 @@ export const PLAN_CONFIGS: Record<SubscriptionPlan, PlanConfig> = {
     periodLabel: "per month",
     includedJobs: 15,
     includedReportsPerJob: 5,
+    includedTeamMembers: 4,
     features: [
       "15 active jobs",
       "5 evaluation reports per job",
+      teamMemberFeatureLabel(4),
       "AI job creation",
       "AI pre-evaluation on all applicants",
       "Email support",
@@ -94,9 +107,11 @@ export const PLAN_CONFIGS: Record<SubscriptionPlan, PlanConfig> = {
     periodLabel: "per month",
     includedJobs: 35,
     includedReportsPerJob: 10,
+    includedTeamMembers: 10,
     features: [
       "35 active jobs",
       "10 evaluation reports per job",
+      teamMemberFeatureLabel(10),
       "AI job creation",
       "AI pre-evaluation on all applicants",
       "Email support",

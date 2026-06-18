@@ -69,30 +69,34 @@ describe("PLAN_CONFIGS", () => {
     }
   });
 
-  it("starter plan is priced at $39/mo with 5 jobs and 3 reports", () => {
+  it("starter plan is priced at $39/mo with 5 jobs, 3 reports, and 2 team members", () => {
     expect(PLAN_CONFIGS.starter.priceLabel).toBe("$39");
     expect(PLAN_CONFIGS.starter.periodLabel).toBe("per month");
     expect(PLAN_CONFIGS.starter.includedJobs).toBe(5);
     expect(PLAN_CONFIGS.starter.includedReportsPerJob).toBe(3);
+    expect(PLAN_CONFIGS.starter.includedTeamMembers).toBe(2);
   });
 
-  it("growth plan is priced at $99/mo with 15 jobs and 5 reports", () => {
+  it("growth plan is priced at $99/mo with 15 jobs, 5 reports, and 4 team members", () => {
     expect(PLAN_CONFIGS.growth.priceLabel).toBe("$99");
     expect(PLAN_CONFIGS.growth.periodLabel).toBe("per month");
     expect(PLAN_CONFIGS.growth.includedJobs).toBe(15);
     expect(PLAN_CONFIGS.growth.includedReportsPerJob).toBe(5);
+    expect(PLAN_CONFIGS.growth.includedTeamMembers).toBe(4);
   });
 
-  it("scale plan is priced at $249/mo with 35 jobs and 10 reports", () => {
+  it("scale plan is priced at $249/mo with 35 jobs, 10 reports, and 10 team members", () => {
     expect(PLAN_CONFIGS.scale.priceLabel).toBe("$249");
     expect(PLAN_CONFIGS.scale.periodLabel).toBe("per month");
     expect(PLAN_CONFIGS.scale.includedJobs).toBe(35);
     expect(PLAN_CONFIGS.scale.includedReportsPerJob).toBe(10);
+    expect(PLAN_CONFIGS.scale.includedTeamMembers).toBe(10);
   });
 
-  it("free plan is $0 with 1 job and 1 report", () => {
+  it("free plan is $0 with 1 job, 1 report, and 1 team member", () => {
     expect(PLAN_CONFIGS.free.priceLabel).toBe("$0");
     expect(PLAN_CONFIGS.free.includedJobs).toBe(1);
     expect(PLAN_CONFIGS.free.includedReportsPerJob).toBe(1);
+    expect(PLAN_CONFIGS.free.includedTeamMembers).toBe(1);
   });
 });

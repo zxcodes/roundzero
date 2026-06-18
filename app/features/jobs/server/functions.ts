@@ -61,7 +61,7 @@ export const createJob = createServerFn({ method: "POST" })
             await lockCompanyEntitlementScope(transaction, context.company.id);
             const entitlements = await enforceCompanyEntitlement(
               transaction,
-              context.company,
+              context.company.id,
               "jobs.open",
             );
 
@@ -71,7 +71,7 @@ export const createJob = createServerFn({ method: "POST" })
             });
           })
         : await (async () => {
-            const entitlements = await readCompanyEntitlements(db, context.company);
+            const entitlements = await readCompanyEntitlements(db, context.company.id);
             return createJobQuery(db, {
               ...createArgs,
               finalReportTarget: enforceReportTarget(entitlements, data.finalReportTarget),
@@ -165,8 +165,8 @@ export const updateJob = createServerFn({ method: "POST" })
             const existing = await getJobById(transaction, { id: data.id });
             const entitlements: Entitlements =
               existing && existing.status !== "open"
-                ? await enforceCompanyEntitlement(transaction, context.company, "jobs.open")
-                : await readCompanyEntitlements(transaction, context.company);
+                ? await enforceCompanyEntitlement(transaction, context.company.id, "jobs.open")
+                : await readCompanyEntitlements(transaction, context.company.id);
 
             return updateJobQuery(transaction, {
               ...updateArgs,
@@ -174,7 +174,7 @@ export const updateJob = createServerFn({ method: "POST" })
             });
           })
         : await (async () => {
-            const entitlements = await readCompanyEntitlements(db, context.company);
+            const entitlements = await readCompanyEntitlements(db, context.company.id);
             return updateJobQuery(db, {
               ...updateArgs,
               finalReportTarget: enforceReportTarget(entitlements, data.finalReportTarget),
@@ -236,7 +236,7 @@ export const publishJob = createServerFn({ method: "POST" })
 
       const entitlements = await enforceCompanyEntitlement(
         transaction,
-        context.company,
+        context.company.id,
         "jobs.open",
       );
 
@@ -446,7 +446,11 @@ export const generateJobWithAI = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
   .validator(zodValidator(generateJobPromptSchema))
   .handler(async ({ data, context }) => {
-    const entitlements = await enforceCompanyEntitlement(getDb(), context.company, "aiJobCreation");
+    const entitlements = await enforceCompanyEntitlement(
+      getDb(),
+      context.company.id,
+      "aiJobCreation",
+    );
 
     const result = await generateText({
       model: createChatModel("job_creation", { plugins: [{ id: "response-healing" }] }),

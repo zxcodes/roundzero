@@ -12,6 +12,11 @@ import {
   markInvitationAccepted,
   reactivateCompanyMember,
 } from "@/features/companies/queries/membership-queries_sql";
+import { getCompanyById } from "@/features/companies/queries/queries_sql";
+import {
+  enforceCompanyEntitlement,
+  lockCompanyEntitlementScope,
+} from "@/features/entitlements/server/enforcement";
 import { getDb } from "@/shared/db";
 import { asSqlTransaction } from "@/shared/db-transaction";
 import { userRoleSchema } from "@/shared/enums";
@@ -184,6 +189,14 @@ export const acceptInvite = createServerFn({ method: "POST" })
         if (existingMembership) {
           throw new Error("You already belong to a company");
         }
+
+        const company = await getCompanyById(transaction, { id: freshInvitation.companyId });
+        if (!company) {
+          throw new Error("Company not found");
+        }
+
+        await lockCompanyEntitlementScope(transaction, company.id);
+        await enforceCompanyEntitlement(transaction, company.id, "team.accept");
 
         const priorMembership = await getMembershipByCompanyAndUser(transaction, {
           companyId: freshInvitation.companyId,
