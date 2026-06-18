@@ -29,4 +29,3 @@ const config = defineConfig({
 
 // biome-ignore lint/style/noDefaultExport: <uh>
 export default config;
-
