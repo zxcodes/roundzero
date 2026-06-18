@@ -137,7 +137,7 @@ export function AppSidebar({
                 <SidebarMenuItem className="flex items-center gap-2">
                   <SidebarMenuButton
                     asChild
-                    className="min-w-8 bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:text-primary-foreground"
+                    className="min-w-8 bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
                   >
                     <Link to="/dashboard/jobs/new">
                       <HugeiconsIcon icon={AddCircleIcon} strokeWidth={2} className="size-4" />
