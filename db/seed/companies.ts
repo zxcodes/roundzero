@@ -155,6 +155,15 @@ async function seedCompanies() {
         social_links = EXCLUDED.social_links,
         updated_at = now()
     `;
+
+    await sql`
+      INSERT INTO company_members (company_id, user_id, role, status)
+      VALUES (${company.id}, ${company.ownerId}, 'owner', 'active')
+      ON CONFLICT (company_id, user_id) DO UPDATE
+      SET role = EXCLUDED.role,
+          status = EXCLUDED.status,
+          updated_at = now()
+    `;
   }
 
   console.log(`Companies seeded/upserted: ${companies.length}`);

@@ -10,6 +10,12 @@ import {
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  PLAN_CONFIGS,
+  SUBSCRIPTION_PLANS,
+  type SubscriptionPlan,
+  teamMemberFeatureLabel,
+} from "@/features/billing/config";
 import { cn } from "@/lib/utils";
 
 const NOT_INCLUDED = "Not included";
@@ -989,6 +995,7 @@ function RankingSection() {
 // Pricing
 // ───────────────────────────────────────────────────────────────────────────
 type Tier = {
+  plan: SubscriptionPlan;
   name: string;
   price: string;
   period: string;
@@ -998,43 +1005,42 @@ type Tier = {
   featured?: boolean;
 };
 
-const tiers: Tier[] = [
-  {
-    name: "Starter",
-    price: "$0",
-    period: "forever",
-    description: "Try RoundZero on your next hire. No commitment.",
-    cta: "Begin free",
-    href: "/company/login",
-  },
-  {
-    name: "Pro",
-    price: "$149",
-    period: "per month",
-    description: "For teams hiring across multiple roles.",
-    cta: "Start a trial",
-    href: "/company/login?redirect=/dashboard/billing",
-    featured: true,
-  },
-  {
-    name: "Enterprise",
-    price: "Custom",
-    period: "tailored",
-    description: "High-volume hiring with dedicated support.",
-    cta: "Speak with us",
-    href: "mailto:sales@roundzero.dev",
-  },
-];
+const tiers: Tier[] = SUBSCRIPTION_PLANS.map((plan) => {
+  const config = PLAN_CONFIGS[plan];
+
+  return {
+    plan,
+    name: config.name,
+    price: config.priceLabel,
+    period: config.periodLabel,
+    description: config.description,
+    cta: plan === "free" ? "Start free" : "Get started",
+    href: plan === "free" ? "/company/login" : "/company/login?redirect=/dashboard/billing",
+    featured: plan === "growth",
+  };
+});
 
 const featureRows = [
-  { label: "Active job postings", values: ["Up to 3", "Unlimited", "Unlimited"] },
-  { label: "AI job creation", values: [NOT_INCLUDED, "Included", "Included"] },
-  { label: "AI pre-evaluation", values: ["All applicants", "All applicants", "All applicants"] },
-  { label: "Deep-evaluated reports", values: ["5 per job", "Top fits", "Top fits"] },
-  { label: "Custom evaluation criteria", values: [NOT_INCLUDED, "Included", "Included"] },
-  { label: "Team seats", values: ["1", "5", "Unlimited"] },
-  { label: "API & integrations", values: [NOT_INCLUDED, NOT_INCLUDED, "Included"] },
-  { label: "Support", values: ["Email", "Priority", "Dedicated AM"] },
+  {
+    label: "Active job postings",
+    values: SUBSCRIPTION_PLANS.map((plan) => String(PLAN_CONFIGS[plan].includedJobs)),
+  },
+  { label: "AI job creation", values: [NOT_INCLUDED, "Included", "Included", "Included"] },
+  {
+    label: "AI pre-evaluation",
+    values: ["All applicants", "All applicants", "All applicants", "All applicants"],
+  },
+  {
+    label: "Evaluation reports per job",
+    values: SUBSCRIPTION_PLANS.map((plan) => String(PLAN_CONFIGS[plan].includedReportsPerJob)),
+  },
+  {
+    label: "Teammates (+ you)",
+    values: SUBSCRIPTION_PLANS.map((plan) =>
+      teamMemberFeatureLabel(PLAN_CONFIGS[plan].includedTeamMembers),
+    ),
+  },
+  { label: "Support", values: ["Email", "Email", "Email", "Email"] },
 ];
 
 function TierCta({ tier, className }: { tier: Tier; className?: string }) {
@@ -1073,8 +1079,7 @@ function PricingSection() {
         <div className="mt-12 hidden md:block">
           <table className="w-full border-collapse">
             <caption className="sr-only">
-              Compare RoundZero pricing tiers for active jobs, reports, seats, integrations, and
-              support.
+              Compare RoundZero pricing tiers for active jobs, AI features, reports, and support.
             </caption>
             <thead>
               <tr className="border-b border-border">
@@ -1095,11 +1100,11 @@ function PricingSection() {
                         <span className="font-mono text-3xl font-medium tracking-tight">
                           {t.price}
                         </span>
-                        <span className="font-mono text-xs text-muted-foreground">
+                        <span className="font-mono text-xs text-muted-foreground font-medium">
                           / {t.period}
                         </span>
                       </div>
-                      <p className="text-[13px] leading-relaxed text-muted-foreground">
+                      <p className="text-[13px] leading-relaxed text-muted-foreground font-medium">
                         {t.description}
                       </p>
                     </div>
@@ -1219,10 +1224,10 @@ const costPlatforms = [
     note: "ATS license, no evaluation included",
   },
   {
-    name: "RoundZero Pro",
-    cost: "$149",
-    per: "/ mo",
-    note: "Unlimited jobs, deep evaluations",
+    name: "RoundZero Growth",
+    cost: "$99",
+    per: " / mo",
+    note: `${PLAN_CONFIGS.growth.includedJobs} jobs, deep evaluations`,
   },
 ];
 
@@ -1256,7 +1261,7 @@ function CostComparison() {
                 <span
                   className={cn(
                     "col-span-5 text-[15px] font-medium",
-                    p.name === "RoundZero Pro" ? "text-foreground" : "text-foreground",
+                    p.name === "RoundZero Growth" ? "text-foreground" : "text-foreground",
                   )}
                 >
                   {p.name}
@@ -1264,7 +1269,7 @@ function CostComparison() {
                 <span
                   className={cn(
                     "col-span-3 font-mono text-sm tabular-nums",
-                    p.name === "RoundZero Pro" ? "text-foreground" : "text-muted-foreground",
+                    p.name === "RoundZero Growth" ? "text-foreground" : "text-muted-foreground",
                   )}
                 >
                   {p.cost}

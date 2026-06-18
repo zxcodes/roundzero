@@ -1,9 +1,7 @@
 ## TODO
 
 - do not let people skip voice interview. or even if they do tell them before hand that it's a deal breaker and will hugely affect their chances.
-- pricing needs a big change. (think about per job, x number of jobs, and pay as you go kind?, make it cheaper too) (IMPORTANT)
 - add an easier copy company jobs profile for companies to link it in their careers page.
-- add retro or technical logs on landing page (pre, post eval) looks nice. 
 - add onCopy, onPaste detectors and evaluate final score based on that.
 - company has redundant steps. if I click a job, first taken to a page where there is jd, I have to click view applicants, which is another redundant page. we can def drop one of these here and make it simple.
 - overall caching seems a bit too aggressive. login/logouts, switching accounts, has stale data.
@@ -12,11 +10,14 @@
 post_eval_already_complete)
 - interview panel padding still sucks (sticks left side completely on mobile and short screens)
 - pretty sure openrouter model fallbacks still don't work. verify in local dev.
-- ~~think about the auth. should it be possible for people to create company and candidate acc with same email?~~ MVP: no — block invite accept when email is already a candidate account (same plan).
 - add score breakdown. 
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- ~~gatekeep number of seats (adding members to the team)~~ Done — plan-gated via entitlements (`team.invite`, `team.accept`).-->
+<!--- ~~pricing needs a big change~~ Done — Free/Starter/Growth/Scale tiers with hard caps. See `app/features/billing/config.ts` and ARCHITECTURE.md §13.-->
+<!--- ~~think about the auth. should it be possible for people to create company and candidate acc with same email?~~ MVP: no — block invite accept when email is already a candidate account (same plan).-->
+<!--- add retro or technical logs on landing page (pre, post eval) looks nice. -->
 <!--- check if candidate profile settings (skills, links, etc are useless since we already have resume and we parse from that.) & from onboarding too.-->
 <!--- ~~we need to be able to invite people with their email. so when they signup they can join that org or something.~~ Done — see [multi-tenant company auth plan](docs/superpowers/specs/2026-06-14-multi-tenant-company-auth-plan.md).-->
 <!--- improve ci. prevent unnecessary runs.-->
@@ -62,7 +63,7 @@ post_eval_already_complete)
 <!--- full report page sucks. flashes twice on refresh, the evidence section has huge gaps between sections. overall sucks 10/10.
 - we need a polished report for easy review by company instead of what we have right now. additionally full report can still exist for everything that happened but the actual report should be very nice, evidence backed, nicely summarized, and we should be able to cycle thru each batch with next and prev buttons. (DONE — polished summary at /applicant-reports/$id with batch prev/next, audit timeline at /applicant-reports/$id/full. Fixed double-fade flash. Removed dead submitted-profile snapshot.)-->
 <!--- the voice interview experience is still not good enough. check using better models (dedicated for voice) and see.-->
-<!--- update relevant docs. almost every doc is stale.-->
+<!--- ~~update relevant docs~~ Done — ARCHITECTURE.md, PLATFORM.md, PLAN.md, AI-LAYER.md aligned.-->
 <!--- swap the entire interview flow (voice & text) from cf to something else better.-->
 <!--- history disappears if I refresh and I speak. keeps disconnecting in between. starts recording as soon as I refresh the page. the voice recording animation and the placeholder text that is shown before a message is committed doesn't seem to be in sync. overall it sucks.-->
 <!--- think about sub agents that can actually be useful for candidate profile research in the bg and provide context to main agent.-->
@@ -102,7 +103,7 @@ post_eval_already_complete)
 <!--- we can prob use cf workflow's waitForEvent method to gather all the reports and then send all at once to the company? (using batch workflow now)-->
 <!--- add pre-built job templates.-->
 <!--- ai job creation (just describe the job, ai completes it, review, if yes, creates a posting. can use voice too to describe.)-->
-<!--- let companies choose how many reports they wanna see per job while creating it etc.-->
+<!--- ~~let companies choose how many reports they wanna see per job~~ Done — `final_report_target` on job create/edit, plan-clamped.-->
 <!--- show number of applicants on each job detail. (done — public job listing, detail, and company page now show applicant count.)-->
 <!--- think about this entire end to end lifecycle of each job on the platform (draft → open → quota-hit → expired/closed → archived). expiry deadline + activeness badge now shown to candidates. -->
 <!--- prevent dark mode from applying to public pages.-->
@@ -110,7 +111,7 @@ post_eval_already_complete)
 <!--- add a tailored tos and privacy policy.-->
 <!--- changing from pre_screening to interview invite for pending roles throws an error.-->
 <!--- show interview invited button in applied job application pages if they have an existing interview, or in progress etc. basically like a status action.-->
-<!--- wire polar and pricing up. make sure to implement a really nice way of checking for an active sub throughout the app (context) perhaps?-->
+<!--- ~~wire polar and pricing up~~ Done — Polar checkout/webhooks + `entitlements` in `_authenticated` context + server enforcement.-->
 <!--- use frontier models for the entire ai layer in prod.-->
 <!--- see shadcn dashboard block for inspiration on company dashboard. (bunx shadcn@latest add dashboard-01)-->
 <!--- configure different r2 buckets based on env.-->
@@ -201,7 +202,7 @@ post_eval_already_complete)
 - send periodic job recommendations to candidates (matches) based on their profile and put it behind a paywall.
 <!--- add guard rails during agent conv, detect short and uninterested answers, detect screenshots, detect ai responses, detect if text was copied, and detect if answers don't align with normal conv tone and more. basically ai beating ai. - this will be another step in post-evaluation.-->
 <!--- show suggested skills based on job description.-->
-<!--- gatekeep ai features using paywall.-->
+<!--- ~~gatekeep ai features using paywall~~ Done — AI job creation gated to paid plans via `aiJobCreation` entitlement.-->
 <!--- auto find and apply to multiple jobs based on the profile (paid feature).-->
 <!--- think about compacting existing user-agent chats and reusing them for similar roles to save time and compute.-->
 <!--- **pre-eval: switch slop + eval steps to OpenRouter (Claude 3.5 Haiku / Llama 3.3 70B)** for reliable structured outputs and deterministic scoring. Keep Workers AI for classify step only. See `pre-evaluation.ts` comments for context. Do this before scaling eval volume. And add temperature: 0 and explicit max_tokens — eliminates score variance.-->
@@ -222,7 +223,7 @@ post_eval_already_complete)
 ## Future Stuff (Not included in initial release)
 - cut bundle size (polar, elevenlabs sdk, etc)
 - prevent people from using diff resumes/profiles for diff jobs. we can use snapshots to compare and decide if we wanna hold them in pre-eval itself. not exactly prevent, it should just act as a guardrail in the background.
-- think about pricing (per job flat fee, or monthly, etc. something that suits a hiring platform. subscription based might not work for this kind of platforms.)
+<!--- ~~think about pricing~~ Resolved — monthly subscription tiers (Free/Starter/Growth/Scale) with hard caps. See PLATFORM.md §10.-->
 
 <!--- add sentry.-->
 <!--- add save job feature for candidates. -->

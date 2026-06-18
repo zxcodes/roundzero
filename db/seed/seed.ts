@@ -12,6 +12,7 @@ try {
   await $`bun ./db/seed/notifications.ts`;
   await $`bun ./db/seed/interviews.ts`;
   await $`bun ./db/seed/reports.ts`;
+  await $`bun ./db/seed/company-dashboard.ts`;
 
   console.log("\nSeed pipeline completed successfully.");
 } catch (error) {

@@ -20,6 +20,11 @@ import {
   updateCompanyOwner,
 } from "@/features/companies/queries/membership-queries_sql";
 import { getCompanyById } from "@/features/companies/queries/queries_sql";
+import {
+  enforceCompanyEntitlement,
+  lockCompanyEntitlementScope,
+  readCompanyEntitlements,
+} from "@/features/entitlements/server/enforcement";
 import { getTestDb, seedCompany, seedUser } from "@/shared/__tests__/test-utils";
 import { asSqlTransaction } from "@/shared/db-transaction";
 import { emailsMatch } from "@/shared/google-userinfo";
@@ -50,6 +55,14 @@ const simulateAcceptInvite = async ({ userId, token }: { userId: string; token: 
       if (existingMembership) {
         throw new Error("You already belong to a company");
       }
+
+      const company = await getCompanyById(transaction, { id: freshInvitation.companyId });
+      if (!company) {
+        throw new Error("Company not found");
+      }
+
+      await lockCompanyEntitlementScope(transaction, company.id);
+      await enforceCompanyEntitlement(transaction, company.id, "team.accept");
 
       const priorMembership = await getMembershipByCompanyAndUser(transaction, {
         companyId: freshInvitation.companyId,
@@ -439,6 +452,127 @@ describe("invite eligibility guards", () => {
 
   it("matches invite emails case-insensitively", () => {
     expect(emailsMatch("Teammate@Acme.COM", "teammate@acme.com")).toBe(true);
+  });
+
+  it("allows invite on free when only the owner is present", async () => {
+    const { company } = await seedCompany();
+    const companyRow = await getCompanyById(sql, { id: company.id });
+    if (!companyRow) throw new Error("Company not found");
+
+    const entitlements = await readCompanyEntitlements(sql, companyRow.id);
+    expect(entitlements.team.canInviteAnother).toBe(true);
+  });
+
+  it("blocks invite when the plan team seat limit is reached", async () => {
+    const { company, owner } = await seedCompany();
+    const companyRow = await getCompanyById(sql, { id: company.id });
+    if (!companyRow) throw new Error("Company not found");
+
+    const member = await seedUser({ role: "company", email: "filled-seat@acme.com" });
+    await createCompanyMember(sql, {
+      companyId: company.id,
+      userId: member.id,
+      role: "member",
+      invitedBy: owner.id,
+    });
+
+    const entitlements = await readCompanyEntitlements(sql, companyRow.id);
+    expect(entitlements.team.canInviteAnother).toBe(false);
+
+    await expect(enforceCompanyEntitlement(sql, companyRow.id, "team.invite")).rejects.toThrow(
+      "Your plan includes 1 team member",
+    );
+  });
+
+  it("counts pending invitations toward the team seat limit", async () => {
+    const { company, owner } = await seedCompany();
+
+    await sql`
+      UPDATE companies
+      SET subscription_plan = 'starter', subscription_status = 'active'
+      WHERE id = ${company.id}
+    `;
+
+    const member = await seedUser({ role: "company", email: "starter-member@acme.com" });
+    await createCompanyMember(sql, {
+      companyId: company.id,
+      userId: member.id,
+      role: "member",
+      invitedBy: owner.id,
+    });
+
+    await createPendingInvite({
+      companyId: company.id,
+      ownerId: owner.id,
+      email: "fills-seat@acme.com",
+      role: "member",
+      token: "fills-seat-token",
+    });
+
+    const entitlements = await readCompanyEntitlements(sql, company.id);
+    expect(entitlements.team.members.used).toBe(1);
+    expect(entitlements.team.pendingInvites.used).toBe(1);
+    expect(entitlements.team.slotsUsed).toBe(2);
+    expect(entitlements.team.members.remaining).toBe(0);
+    expect(entitlements.team.canInviteAnother).toBe(false);
+  });
+
+  it("does not count the owner toward invited member usage", async () => {
+    const { company } = await seedCompany();
+
+    const counts = await readCompanyEntitlements(sql, company.id);
+    expect(counts.team.members.used).toBe(0);
+    expect(counts.team.slotsUsed).toBe(0);
+  });
+
+  it("blocks accept when the team member limit is already reached", async () => {
+    const { company, owner } = await seedCompany();
+    const filled = await seedUser({ role: "company", email: "filled@acme.com" });
+    await createCompanyMember(sql, {
+      companyId: company.id,
+      userId: filled.id,
+      role: "member",
+      invitedBy: owner.id,
+    });
+
+    const invitee = await seedUser({ role: "company", email: "late-joiner@acme.com" });
+    await createPendingInvite({
+      companyId: company.id,
+      ownerId: owner.id,
+      email: invitee.email,
+      role: "member",
+      token: "late-joiner-token",
+    });
+
+    const result = await simulateAcceptInvite({
+      userId: invitee.id,
+      token: "late-joiner-token",
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      error: "This team has reached its member limit. Ask the owner to upgrade the plan.",
+    });
+  });
+
+  it("allows accept when a pending invite still has capacity", async () => {
+    const { company, owner } = await seedCompany();
+    const invitee = await seedUser({ role: "company", email: "welcome@acme.com" });
+
+    await createPendingInvite({
+      companyId: company.id,
+      ownerId: owner.id,
+      email: invitee.email,
+      role: "member",
+      token: "welcome-token",
+    });
+
+    const result = await simulateAcceptInvite({
+      userId: invitee.id,
+      token: "welcome-token",
+    });
+
+    expect(result).toEqual({ ok: true });
   });
 });
 
