@@ -12,8 +12,7 @@
     "vaul",
     "shadcn",
     "@tanstack/router-plugin",
-    "@snaplet/copycat",
-    "@babel/plugin-proposal-decorators"
+    "@snaplet/copycat"
   ],
   "exclude": ["unlisted"],
   "ignoreExportsUsedInFile": true

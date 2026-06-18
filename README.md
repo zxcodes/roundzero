@@ -5,8 +5,9 @@ AI-powered hiring platform that replaces the first round of hiring with structur
 ## Stack
 
 - **Framework:** TanStack Start (React 19 with React Compiler, Vite 8)
-- **Runtime:** Cloudflare Worker (Durable Objects, Workflows, Agents SDK, WebSockets)
-- **AI:** OpenRouter via AI SDK v6 + Cloudflare Workflows + Durable Objects (in `app/`)
+- **Runtime:** Cloudflare Worker (Workflows, scheduled handlers)
+- **AI:** OpenRouter via AI SDK v6 + Cloudflare Workflows (in `app/workflows/`)
+- **Billing:** Polar subscriptions with plan-gated entitlements
 - **Models:** OpenRouter (Claude Haiku/Sonnet in prod; free Llama/Qwen/GPT-OSS in dev)
 - **UI:** shadcn/ui, Tailwind CSS v4, Huge Icons
 - **Linting & Formatting:** Biome
@@ -46,7 +47,6 @@ bun run dev
 app/
 ├── routes/          # TanStack file-based routes
 ├── features/        # Feature modules (auth, jobs, applications, etc.)
-├── agents/          # Durable Object agent classes
 ├── workflows/       # Cloudflare Workflow classes
 ├── shared/          # Cross-cutting utilities (db, auth, middleware)
 ├── components/      # Global UI components + shadcn/ui

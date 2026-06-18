@@ -18,7 +18,9 @@ const envSchema = z.object({
   POLAR_ACCESS_TOKEN: z.string(),
   POLAR_WEBHOOK_SECRET: z.string(),
   POLAR_MODE: z.enum(["sandbox", "production"]).default("sandbox"),
-  POLAR_PRODUCT_ID_PRO: z.string(),
+  POLAR_PRODUCT_ID_STARTER: z.string(),
+  POLAR_PRODUCT_ID_GROWTH: z.string(),
+  POLAR_PRODUCT_ID_SCALE: z.string(),
 });
 
 export const appEnv = envSchema.parse(process.env);

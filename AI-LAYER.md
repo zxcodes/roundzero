@@ -74,7 +74,7 @@ Decide whether a candidate deserves deeper evaluation.
 
 ## Quota Check First
 
-Each job has a `final_report_target` (default: 5, max: 15). The system should deliver that many final reports when enough eligible candidates exist.
+Each job has a `final_report_target` set at create/edit time. The default equals the company's plan `reports/job` limit and is clamped to `1..perJobLimit` (Free: 1, Starter: 3, Growth: 5, Scale: 10). The system delivers that many final reports when enough eligible candidates exist.
 
 Capacity is computed from completed reports and active interviews:
 - `remainingReports = final_report_target - completedReports`
@@ -181,7 +181,7 @@ Structured candidate report
 
 # Report Limits
 
-Companies set `final_report_target` during job creation (default: 5, max: 15). This controls how many final candidate reports RoundZero will deliver for that role.
+Companies set `final_report_target` during job creation. The default and maximum come from the subscription plan (`PLAN_CONFIGS.includedReportsPerJob`). Server enforcement via `enforceReportTarget()` ensures the value stays within `1..perJobLimit`.
 
 Why a limit:
 - Prevents noise for companies with only 1 opening
@@ -238,7 +238,7 @@ Instead of raw applicants, companies see evaluated candidates.
 
 # Application Status Lifecycle (Decided)
 
-> See **platform.md § 15.1** for the full decision.
+> See **PLATFORM.md § 16.1** for the full decision.
 
 **Decided:** Extend `applications.status` to include all 8 statuses in a single enum.
 
@@ -334,7 +334,7 @@ This reduces cost and improves UX.
 
 # Product Decisions (Phase 3.5 Exit Criteria)
 
-> All 5 product decisions are documented in **platform.md § 15**. Refer there for full context.
+> All product decisions are documented in **PLATFORM.md § 16**. Refer there for full context.
 
 ## Decided Decisions
 
@@ -345,7 +345,7 @@ This reduces cost and improves UX.
 | 3 | Medium-Fit Follow-Up | ✅ Use synchronous chat UI (same as full interview) with 2–3 questions |
 | 4 | Company View Pre/Post AI | ✅ Show full pipeline; pre-eval candidates are read-only, post-eval show real scores |
 | 5 | Pre-Evaluation Output Format | ✅ Pipeline live; real-world validation with hiring managers deferred to post-MVP |
-| 6 | Final Report Target | ✅ `final_report_target` per job (default: 5, max: 15). Target reached → stop new evaluations, notify candidates, no auto-reject. |
+| 6 | Final Report Target | ✅ `final_report_target` per job (plan-based default/max). Target reached → stop new evaluations, notify candidates, no auto-reject. |
 
 ---
 

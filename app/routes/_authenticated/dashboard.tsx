@@ -41,11 +41,6 @@ function DashboardLayout() {
   const title = routeTitles[lastMatch?.routeId ?? ""] ?? "Dashboard";
   const [commandOpen, setCommandOpen] = useState(false);
 
-  const atLimit =
-    auth.type === "company" &&
-    !auth.subscription?.isActive &&
-    (auth.jobCounts?.openCount ?? 0) >= 3;
-
   useCommandPaletteShortcut(() => {
     setCommandOpen((prev) => !prev);
   });
@@ -69,12 +64,10 @@ function DashboardLayout() {
           user={user}
           isCompany={isCompany}
           membershipRole={auth.type === "company" ? auth.membershipRole : null}
-          atLimit={atLimit}
           variant="inset"
         />
         <CommandPalette
           isCompany={isCompany}
-          atLimit={atLimit}
           showTeam={
             isCompany && (auth.membershipRole === "owner" || auth.membershipRole === "admin")
           }

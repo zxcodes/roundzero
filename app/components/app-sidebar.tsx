@@ -103,13 +103,11 @@ export function AppSidebar({
   user,
   isCompany,
   membershipRole,
-  atLimit,
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
   user: User;
   isCompany: boolean;
   membershipRole: CompanyMemberRole | null;
-  atLimit: boolean;
 }) {
   const { signOut, isSigningOut } = useAuth();
   const canManageTeam = membershipRole === "owner" || membershipRole === "admin";
@@ -137,27 +135,15 @@ export function AppSidebar({
             <SidebarMenu>
               {isCompany ? (
                 <SidebarMenuItem className="flex items-center gap-2">
-                  {atLimit ? (
-                    <SidebarMenuButton
-                      asChild
-                      className="min-w-8 bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:text-primary-foreground"
-                    >
-                      <Link to="/dashboard/billing">
-                        <HugeiconsIcon icon={AddCircleIcon} strokeWidth={2} className="size-4" />
-                        <span>Upgrade to Pro</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  ) : (
-                    <SidebarMenuButton
-                      asChild
-                      className="min-w-8 bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:text-primary-foreground"
-                    >
-                      <Link to="/dashboard/jobs/new">
-                        <HugeiconsIcon icon={AddCircleIcon} strokeWidth={2} className="size-4" />
-                        <span>Post a job</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  )}
+                  <SidebarMenuButton
+                    asChild
+                    className="min-w-8 bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
+                  >
+                    <Link to="/dashboard/jobs/new">
+                      <HugeiconsIcon icon={AddCircleIcon} strokeWidth={2} className="size-4" />
+                      <span>Post a job</span>
+                    </Link>
+                  </SidebarMenuButton>
                 </SidebarMenuItem>
               ) : null}
             </SidebarMenu>
