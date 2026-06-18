@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { PLAN_CONFIGS, SUBSCRIPTION_PLANS, type SubscriptionPlan } from "@/features/billing/config";
 import { cn } from "@/lib/utils";
 
 const NOT_INCLUDED = "Not included";
@@ -989,6 +990,7 @@ function RankingSection() {
 // Pricing
 // ───────────────────────────────────────────────────────────────────────────
 type Tier = {
+  plan: SubscriptionPlan;
   name: string;
   price: string;
   period: string;
@@ -998,50 +1000,35 @@ type Tier = {
   featured?: boolean;
 };
 
-const tiers: Tier[] = [
-  {
-    name: "Free",
-    price: "$0",
-    period: "forever",
-    description: "Try RoundZero on your next hire. No commitment.",
-    cta: "Begin free",
-    href: "/company/login",
-  },
-  {
-    name: "Starter",
-    price: "$39",
-    period: "per month",
-    description: "For small teams hiring occasionally.",
-    cta: "Get started",
-    href: "/company/login?redirect=/dashboard/billing",
-  },
-  {
-    name: "Growth",
-    price: "$99",
-    period: "per month",
-    description: "For teams hiring across multiple roles.",
-    cta: "Get started",
-    href: "/company/login?redirect=/dashboard/billing",
-    featured: true,
-  },
-  {
-    name: "Scale",
-    price: "$249",
-    period: "per month",
-    description: "High-volume hiring with predictable pricing.",
-    cta: "Get started",
-    href: "/company/login?redirect=/dashboard/billing",
-  },
-];
+const tiers: Tier[] = SUBSCRIPTION_PLANS.map((plan) => {
+  const config = PLAN_CONFIGS[plan];
+
+  return {
+    plan,
+    name: config.name,
+    price: config.priceLabel,
+    period: config.periodLabel,
+    description: config.description,
+    cta: plan === "free" ? "Begin free" : "Get started",
+    href: plan === "free" ? "/company/login" : "/company/login?redirect=/dashboard/billing",
+    featured: plan === "growth",
+  };
+});
 
 const featureRows = [
-  { label: "Active job postings", values: ["1", "3", "10", "25"] },
+  {
+    label: "Active job postings",
+    values: SUBSCRIPTION_PLANS.map((plan) => String(PLAN_CONFIGS[plan].includedJobs)),
+  },
   { label: "AI job creation", values: [NOT_INCLUDED, "Included", "Included", "Included"] },
   {
     label: "AI pre-evaluation",
     values: ["All applicants", "All applicants", "All applicants", "All applicants"],
   },
-  { label: "Evaluation reports per job", values: ["1", "3", "5", "10"] },
+  {
+    label: "Evaluation reports per job",
+    values: SUBSCRIPTION_PLANS.map((plan) => String(PLAN_CONFIGS[plan].includedReportsPerJob)),
+  },
   { label: "Support", values: ["Email", "Email", "Email", "Email"] },
 ];
 
@@ -1229,7 +1216,7 @@ const costPlatforms = [
     name: "RoundZero Growth",
     cost: "$99",
     per: " / mo",
-    note: "10 jobs, deep evaluations",
+    note: `${PLAN_CONFIGS.growth.includedJobs} jobs, deep evaluations`,
   },
 ];
 

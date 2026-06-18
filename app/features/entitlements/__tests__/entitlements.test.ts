@@ -14,9 +14,9 @@ describe("deriveEntitlements", () => {
     });
 
     expect(entitlements.jobs.active.used).toBe(3);
-    expect(entitlements.jobs.active.limit).toBe(3);
-    expect(entitlements.jobs.active.atLimit).toBe(true);
-    expect(entitlements.jobs.canOpenAnother).toBe(false);
+    expect(entitlements.jobs.active.limit).toBe(5);
+    expect(entitlements.jobs.active.atLimit).toBe(false);
+    expect(entitlements.jobs.canOpenAnother).toBe(true);
     expect(entitlements.jobs.canCreateDraft).toBe(true);
     expect(entitlements.jobs.drafts.used).toBe(4);
     expect(entitlements.jobs.totalUnarchived).toBe(7);

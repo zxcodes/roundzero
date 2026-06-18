@@ -273,17 +273,6 @@ function PlanCard({
       </CardHeader>
       <CardContent className="flex flex-1 flex-col justify-between gap-6">
         <ul className="flex flex-col gap-2 text-sm">
-          <li className="flex items-start gap-2">
-            <HugeiconsIcon
-              icon={Tick02Icon}
-              strokeWidth={2}
-              className="mt-0.5 size-4 shrink-0 text-primary"
-            />
-            <span>
-              {config.includedJobs} active jobs
-              {config.overagePrice ? `, then ${config.overagePrice}` : null}
-            </span>
-          </li>
           {config.features.map((feature) => (
             <li key={feature} className="flex items-start gap-2">
               <HugeiconsIcon

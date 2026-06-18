@@ -4,9 +4,9 @@ import { z } from "zod";
  * Subscription plans available to companies.
  *
  * - `free`: 1 active job, no paid features.
- * - `starter`: $39/mo, 3 active jobs.
- * - `growth`: $99/mo, 10 active jobs.
- * - `scale`: $249/mo, 25 active jobs.
+ * - `starter`: $39/mo, 5 active jobs.
+ * - `growth`: $99/mo, 15 active jobs.
+ * - `scale`: $249/mo, 35 active jobs.
  */
 export const SUBSCRIPTION_PLANS = ["free", "starter", "growth", "scale"] as const;
 export const subscriptionPlanSchema = z.enum(SUBSCRIPTION_PLANS);
@@ -35,7 +35,6 @@ export type PlanConfig = {
   periodLabel: string;
   includedJobs: number;
   includedReportsPerJob: number;
-  overagePrice?: string;
   features: string[];
 };
 
@@ -61,11 +60,10 @@ export const PLAN_CONFIGS: Record<SubscriptionPlan, PlanConfig> = {
     description: "For small teams hiring occasionally.",
     priceLabel: "$39",
     periodLabel: "per month",
-    includedJobs: 3,
+    includedJobs: 5,
     includedReportsPerJob: 3,
-    overagePrice: "$12 per extra job",
     features: [
-      "3 active jobs",
+      "5 active jobs",
       "3 evaluation reports per job",
       "AI job creation",
       "AI pre-evaluation on all applicants",
@@ -78,11 +76,10 @@ export const PLAN_CONFIGS: Record<SubscriptionPlan, PlanConfig> = {
     description: "For teams hiring across multiple roles.",
     priceLabel: "$99",
     periodLabel: "per month",
-    includedJobs: 10,
+    includedJobs: 15,
     includedReportsPerJob: 5,
-    overagePrice: "$9 per extra job",
     features: [
-      "10 active jobs",
+      "15 active jobs",
       "5 evaluation reports per job",
       "AI job creation",
       "AI pre-evaluation on all applicants",
@@ -95,11 +92,10 @@ export const PLAN_CONFIGS: Record<SubscriptionPlan, PlanConfig> = {
     description: "High-volume hiring with predictable pricing.",
     priceLabel: "$249",
     periodLabel: "per month",
-    includedJobs: 25,
+    includedJobs: 35,
     includedReportsPerJob: 10,
-    overagePrice: "$7 per extra job",
     features: [
-      "25 active jobs",
+      "35 active jobs",
       "10 evaluation reports per job",
       "AI job creation",
       "AI pre-evaluation on all applicants",
