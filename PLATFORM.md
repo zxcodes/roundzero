@@ -55,6 +55,8 @@ Today, the app is primarily the **core platform layer**:
 - one-click apply
 - applicant review pages and status tracking
 - in-app workflow notifications
+- company billing (Polar) and plan-gated entitlements
+- multi-tenant company teams (email invitations, `/dashboard/team`)
 
 The AI interview, evaluation, report, and ranking systems are now live.
 
@@ -102,10 +104,12 @@ Candidates use RoundZero to:
 Companies use RoundZero to:
 
 - create a company profile
-- post and manage jobs
+- post and manage jobs (within plan limits)
+- invite teammates and manage org access
+- subscribe to paid plans for higher limits and AI job creation
 - review applicants
 - track application pipeline state
-- later review AI interview reports and rankings
+- review AI interview reports and rankings
 
 ---
 
@@ -148,11 +152,14 @@ Current company flow:
    - industry
    - size
 3. Maintain full company profile in settings
-4. Create jobs
-5. Manage open/draft/archived jobs
-6. View applicants per job
-7. Review applicants on dedicated applicant detail pages
-8. Update application statuses
+4. Invite teammates from `/dashboard/team` (owner/admin; plan-gated seat count)
+5. Manage subscription on `/dashboard/billing` (owner only)
+6. Create jobs (drafts always allowed; opening/publishing gated by active-job limit)
+7. Manage open/draft/archived jobs
+8. Set per-job evaluation report target (clamped to plan limit)
+9. View applicants per job
+10. Review applicants on dedicated applicant detail pages
+11. Update application statuses
 
 ### 4.3 Public Experience
 
@@ -319,10 +326,42 @@ Job should contain:
 - headcount
 - expiry info
 - status
+- `final_report_target` (per-job evaluation quota; default and max come from subscription plan)
+
+Company membership:
+
+- `company_members` — who belongs to the org and with what role (`owner`, `admin`, `member`)
+- `company_invitations` — pending email invites with accept flow at `/invite/$token`
 
 ---
 
-## 10. AI Report Structure (Live)
+## 10. Billing and Plans
+
+RoundZero uses subscription plans with hard caps (no overage billing). Plan config lives in `app/features/billing/config.ts`.
+
+| Plan | Price | Active jobs | Reports/job | Teammates (+ owner) |
+| --- | --- | --- | --- | --- |
+| Free | $0 | 1 | 1 | 1 |
+| Starter | $39/mo | 5 | 3 | 2 |
+| Growth | $99/mo | 15 | 5 | 4 |
+| Scale | $249/mo | 35 | 10 | 10 |
+
+### Gated features
+
+- **Active jobs** — only `open` jobs count toward the limit; companies can always create drafts
+- **Evaluation reports** — `final_report_target` per job defaults to the plan's reports/job limit and cannot exceed it
+- **Team seats** — plan limits count invited teammates beyond the owner; pending invites consume invite slots; accept is gated on member count
+- **AI job creation** — paid plans with active/trialing subscription only
+
+### Checkout
+
+- Polar handles checkout, subscription lifecycle, and customer portal
+- Webhook updates `companies.subscription_*` fields
+- Entitlements are derived at runtime via `deriveEntitlements()` and enforced server-side on mutations
+
+---
+
+## 11. AI Report Structure (Live)
 
 The candidate report is the main AI output artifact.
 
@@ -348,7 +387,7 @@ The report is readable by a hiring manager without requiring trust in a hidden s
 
 ---
 
-## 11. Company Workflow Goals
+## 12. Company Workflow Goals
 
 Before AI:
 
@@ -366,7 +405,7 @@ After AI (live):
 
 ---
 
-## 12. Candidate Workflow Goals
+## 13. Candidate Workflow Goals
 
 Before AI:
 
@@ -383,7 +422,7 @@ After AI:
 
 ---
 
-## 13. Notifications and Communication
+## 14. Notifications and Communication
 
 RoundZero will need transactional communication for key workflow events.
 
@@ -406,9 +445,9 @@ Why:
 
 ---
 
-## 14. Success Criteria
+## 15. Success Criteria
 
-### 14.1 Before AI
+### 15.1 Before AI
 
 The core platform is successful when:
 
@@ -416,7 +455,7 @@ The core platform is successful when:
 - a company can create a job, receive applicants, review resumes/profile snapshots, and manage statuses reliably
 - the hiring workflow feels coherent without any AI magic
 
-### 14.2 After AI
+### 15.2 After AI
 
 The AI layer is successful when companies say:
 
@@ -428,11 +467,11 @@ or
 
 ---
 
-## 15. AI Layer Product Decisions
+## 16. AI Layer Product Decisions
 
 The following decisions are required **before Phase 4 (AI Interview)** begins. These define how the AI layer integrates with the existing platform.
 
-### 15.1 Decision 1: Application Status Lifecycle
+### 16.1 Decision 1: Application Status Lifecycle
 
 **Question:** How do we model application statuses when the AI layer introduces new evaluation stages?
 
@@ -461,7 +500,7 @@ The following decisions are required **before Phase 4 (AI Interview)** begins. T
 
 ---
 
-### 15.2 Decision 2: Candidate-Facing Messaging After Apply
+### 16.2 Decision 2: Candidate-Facing Messaging After Apply
 
 **Question:** What messaging do candidates see at each evaluation stage?
 
@@ -487,7 +526,7 @@ The following decisions are required **before Phase 4 (AI Interview)** begins. T
 
 ---
 
-### 15.3 Decision 3: Medium-Fit Follow-Up Medium
+### 16.3 Decision 3: Medium-Fit Follow-Up Medium
 
 **Question:** Where and how do medium-fit candidates answer clarifying questions?
 
@@ -508,7 +547,7 @@ The following decisions are required **before Phase 4 (AI Interview)** begins. T
 
 ---
 
-### 15.4 Decision 4: Company View With and Without AI Reports
+### 16.4 Decision 4: Company View With and Without AI Reports
 
 **Question:** Can companies see (and act on) applications before AI evaluation completes?
 
@@ -528,7 +567,7 @@ The following decisions are required **before Phase 4 (AI Interview)** begins. T
 **Quota-Exhausted State:**
 - Once `final_report_target` reports are generated, new applicants remain in pre-evaluation
 - Companies still see them in the pending list with full profile data
-- No new AI reports are generated until the company increases the limit (future feature)
+- No new AI reports are generated until the company edits the job target (within plan limit) or upgrades their plan
 
 **Minimum Viable Company View:**
 | State | Shows | Actions |
@@ -544,7 +583,7 @@ The following decisions are required **before Phase 4 (AI Interview)** begins. T
 
 ---
 
-### 15.5 Decision 5: Pre-Evaluation Output Format Validation
+### 16.5 Decision 5: Pre-Evaluation Output Format Validation
 
 **Question:** Is the pre-evaluation output (score + missing requirements + confidence + next step) sufficient?
 
@@ -574,19 +613,19 @@ The following decisions are required **before Phase 4 (AI Interview)** begins. T
 
 ---
 
-### 15.6 Decision 6: Final Report Target
+### 16.6 Decision 6: Final Report Target
 
 **Question:** How many final reports should RoundZero deliver per job, and what happens when that target is reached?
 
-**Decision:** Each job has a `final_report_target` (default: 5, max: 15). The system should deliver that many final reports whenever enough eligible candidates exist.
+**Decision:** Each job has a `final_report_target` set at create/edit time. The default equals the company's plan `reports/job` limit; the value is clamped to `1..perJobLimit` (Free: 1, Starter: 3, Growth: 5, Scale: 10). The system delivers that many final reports whenever enough eligible candidates exist.
 
 This target is based on completed reports, not interview invites.
 
 **Rationale:**
 - Prevents evaluation noise for roles with only 1–2 openings
-- Keeps costs predictable for companies
+- Keeps costs predictable for companies (tied to subscription tier)
 - Forces selectivity in the funnel
-- Default of 5 is small enough to review quickly but large enough to find strong matches
+- Per-plan defaults match what each tier is priced for
 
 **When Target Is Reached:**
 - The system stops creating new interviews for that job
@@ -604,14 +643,14 @@ This target is based on completed reports, not interview invites.
   - `availableInviteSlots = remainingReports - activeInterviews(status IN pending|in_progress)`
 
 **Implementation:**
-- Add `final_report_target INTEGER NOT NULL DEFAULT 5` to `jobs` table (max: 15)
-- Add field to job creation/edit form with copy: "How many final candidate reports should RoundZero deliver for this role? (Max 15)"
-- Enforce max 15 in Zod schema and server functions
+- `final_report_target INTEGER NOT NULL DEFAULT 5` on `jobs` (DB default is legacy; app sets plan-based default on create)
+- Job creation/edit form shows plan-valid range via `reportTargetRangeLabel(entitlements)`
+- `enforceReportTarget()` enforces plan limits server-side (strict on user input, clamp on publish/downgrade)
 - Pre-evaluation + lifecycle manager computes invite capacity from report completion and active interviews
 - Background workflow and cron lifecycle manager send `position_filled` when target is reached
 
 ---
 
-## 16. One-Line Definition
+## 17. One-Line Definition
 
 > “A hiring platform that starts with a solid async application workflow and evolves into an explainable AI-driven first-round interview and candidate evaluation system.”
