@@ -14,49 +14,41 @@ describe("hasActiveSubscription", () => {
     ).toBe(false);
   });
 
-  it("enterprise plan is always active regardless of status", () => {
-    expect(
-      hasActiveSubscription({ subscriptionPlan: "enterprise", subscriptionStatus: "active" }),
-    ).toBe(true);
-    expect(
-      hasActiveSubscription({ subscriptionPlan: "enterprise", subscriptionStatus: "canceled" }),
-    ).toBe(true);
-    expect(
-      hasActiveSubscription({ subscriptionPlan: "enterprise", subscriptionStatus: "past_due" }),
-    ).toBe(true);
+  it("paid plans are active only with active or trialing status", () => {
+    for (const plan of ["starter", "growth", "scale"] as const) {
+      expect(hasActiveSubscription({ subscriptionPlan: plan, subscriptionStatus: "active" })).toBe(
+        true,
+      );
+      expect(
+        hasActiveSubscription({ subscriptionPlan: plan, subscriptionStatus: "trialing" }),
+      ).toBe(true);
+    }
   });
 
-  it("pro plan is active only with active or trialing status", () => {
-    expect(hasActiveSubscription({ subscriptionPlan: "pro", subscriptionStatus: "active" })).toBe(
-      true,
-    );
-    expect(hasActiveSubscription({ subscriptionPlan: "pro", subscriptionStatus: "trialing" })).toBe(
-      true,
-    );
-  });
-
-  it("pro plan is inactive with non-active statuses", () => {
-    expect(hasActiveSubscription({ subscriptionPlan: "pro", subscriptionStatus: "inactive" })).toBe(
-      false,
-    );
-    expect(hasActiveSubscription({ subscriptionPlan: "pro", subscriptionStatus: "canceled" })).toBe(
-      false,
-    );
-    expect(hasActiveSubscription({ subscriptionPlan: "pro", subscriptionStatus: "past_due" })).toBe(
-      false,
-    );
-    expect(hasActiveSubscription({ subscriptionPlan: "pro", subscriptionStatus: "unpaid" })).toBe(
-      false,
-    );
-    expect(hasActiveSubscription({ subscriptionPlan: "pro", subscriptionStatus: "paused" })).toBe(
-      false,
-    );
-    expect(
-      hasActiveSubscription({ subscriptionPlan: "pro", subscriptionStatus: "incomplete" }),
-    ).toBe(false);
-    expect(
-      hasActiveSubscription({ subscriptionPlan: "pro", subscriptionStatus: "incomplete_expired" }),
-    ).toBe(false);
+  it("paid plans are inactive with non-active statuses", () => {
+    for (const plan of ["starter", "growth", "scale"] as const) {
+      expect(
+        hasActiveSubscription({ subscriptionPlan: plan, subscriptionStatus: "inactive" }),
+      ).toBe(false);
+      expect(
+        hasActiveSubscription({ subscriptionPlan: plan, subscriptionStatus: "canceled" }),
+      ).toBe(false);
+      expect(
+        hasActiveSubscription({ subscriptionPlan: plan, subscriptionStatus: "past_due" }),
+      ).toBe(false);
+      expect(hasActiveSubscription({ subscriptionPlan: plan, subscriptionStatus: "unpaid" })).toBe(
+        false,
+      );
+      expect(hasActiveSubscription({ subscriptionPlan: plan, subscriptionStatus: "paused" })).toBe(
+        false,
+      );
+      expect(
+        hasActiveSubscription({ subscriptionPlan: plan, subscriptionStatus: "incomplete" }),
+      ).toBe(false);
+      expect(
+        hasActiveSubscription({ subscriptionPlan: plan, subscriptionStatus: "incomplete_expired" }),
+      ).toBe(false);
+    }
   });
 
   it("handles null/undefined plan as free", () => {
@@ -77,16 +69,34 @@ describe("PLAN_CONFIGS", () => {
     }
   });
 
-  it("pro plan is priced at $149/mo", () => {
-    expect(PLAN_CONFIGS.pro.priceLabel).toBe("$149");
-    expect(PLAN_CONFIGS.pro.periodLabel).toBe("per month");
+  it("starter plan is priced at $39/mo with 5 jobs, 3 reports, and 2 team members", () => {
+    expect(PLAN_CONFIGS.starter.priceLabel).toBe("$39");
+    expect(PLAN_CONFIGS.starter.periodLabel).toBe("per month");
+    expect(PLAN_CONFIGS.starter.includedJobs).toBe(5);
+    expect(PLAN_CONFIGS.starter.includedReportsPerJob).toBe(3);
+    expect(PLAN_CONFIGS.starter.includedTeamMembers).toBe(2);
   });
 
-  it("free plan is $0", () => {
+  it("growth plan is priced at $99/mo with 15 jobs, 5 reports, and 4 team members", () => {
+    expect(PLAN_CONFIGS.growth.priceLabel).toBe("$99");
+    expect(PLAN_CONFIGS.growth.periodLabel).toBe("per month");
+    expect(PLAN_CONFIGS.growth.includedJobs).toBe(15);
+    expect(PLAN_CONFIGS.growth.includedReportsPerJob).toBe(5);
+    expect(PLAN_CONFIGS.growth.includedTeamMembers).toBe(4);
+  });
+
+  it("scale plan is priced at $249/mo with 35 jobs, 10 reports, and 10 team members", () => {
+    expect(PLAN_CONFIGS.scale.priceLabel).toBe("$249");
+    expect(PLAN_CONFIGS.scale.periodLabel).toBe("per month");
+    expect(PLAN_CONFIGS.scale.includedJobs).toBe(35);
+    expect(PLAN_CONFIGS.scale.includedReportsPerJob).toBe(10);
+    expect(PLAN_CONFIGS.scale.includedTeamMembers).toBe(10);
+  });
+
+  it("free plan is $0 with 1 job, 1 report, and 1 team member", () => {
     expect(PLAN_CONFIGS.free.priceLabel).toBe("$0");
-  });
-
-  it("enterprise plan shows custom pricing", () => {
-    expect(PLAN_CONFIGS.enterprise.priceLabel).toBe("Custom");
+    expect(PLAN_CONFIGS.free.includedJobs).toBe(1);
+    expect(PLAN_CONFIGS.free.includedReportsPerJob).toBe(1);
+    expect(PLAN_CONFIGS.free.includedTeamMembers).toBe(1);
   });
 });

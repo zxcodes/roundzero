@@ -2,10 +2,11 @@ import { Loading03Icon, Mail01Icon, UserGroupIcon } from "@hugeicons/core-free-i
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
-import { useRouter } from "@tanstack/react-router";
+import { Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useId } from "react";
 import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,6 +46,7 @@ import {
   revokeInvitation,
   transferOwnership,
 } from "@/features/companies/server/team-functions";
+import { useEntitlements } from "@/features/entitlements/hooks/use-entitlements";
 import { formatDate } from "@/shared/date";
 import type { companyInvitationRoleSchema } from "@/shared/enums";
 
@@ -71,6 +73,12 @@ export function CompanyTeamSection({
   isOwner: boolean;
 }) {
   const router = useRouter();
+  const entitlements = useEntitlements();
+  const teamLimit = entitlements?.team.members.limit ?? 1;
+  const invitedMemberCount = team.members.filter((member) => member.role !== "owner").length;
+  const teamSlotsUsed =
+    entitlements?.team.slotsUsed ?? invitedMemberCount + team.invitations.length;
+  const atTeamLimit = !(entitlements?.team.canInviteAnother ?? true);
   const id = useId();
   const emailId = `invite-email-${id}`;
   const roleId = `invite-role-${id}`;
@@ -178,11 +186,29 @@ export function CompanyTeamSection({
 
   return (
     <div className="space-y-6">
+      {atTeamLimit ? (
+        <Alert variant="destructive">
+          <AlertTitle>
+            Team member limit reached ({teamSlotsUsed} of {teamLimit} invited seats used)
+          </AlertTitle>
+          <AlertDescription>
+            You've used all team seats on your current plan. Revoke a pending invitation, remove a
+            member, or{" "}
+            <Link to="/dashboard/billing" className="font-medium underline underline-offset-4">
+              upgrade your plan
+            </Link>{" "}
+            to invite more teammates.
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Invite teammate</CardTitle>
           <CardDescription>
-            Send an email invitation. They will sign in with Google using the invited address.
+            {atTeamLimit
+              ? "Upgrade your plan to invite more teammates."
+              : "Send an email invitation. They will sign in with Google using the invited address."}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -220,6 +246,7 @@ export function CompanyTeamSection({
                       onBlur={field.handleBlur}
                       onChange={(e) => field.handleChange(e.target.value)}
                       aria-invalid={isInvalid}
+                      disabled={atTeamLimit}
                     />
                     {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
                   </Field>
@@ -235,6 +262,7 @@ export function CompanyTeamSection({
                     <Select
                       value={field.state.value}
                       onValueChange={(value) => field.handleChange(value as "admin" | "member")}
+                      disabled={atTeamLimit}
                     >
                       <SelectTrigger id={roleId}>
                         <SelectValue />
@@ -253,7 +281,7 @@ export function CompanyTeamSection({
                   <Button
                     type="submit"
                     className="w-full sm:w-auto"
-                    disabled={!canSubmit || isSubmitting || inviteMutation.isPending}
+                    disabled={atTeamLimit || !canSubmit || isSubmitting || inviteMutation.isPending}
                   >
                     {isSubmitting || inviteMutation.isPending ? (
                       <HugeiconsIcon

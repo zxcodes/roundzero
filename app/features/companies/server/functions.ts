@@ -2,6 +2,7 @@ import { env } from "cloudflare:workers";
 import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { zodValidator } from "@tanstack/zod-adapter";
+import type { Sql } from "postgres";
 import { z } from "zod";
 import { getDb } from "@/shared/db";
 import { asSqlTransaction } from "@/shared/db-transaction";
@@ -20,6 +21,7 @@ import {
 import {
   createCompanyMember,
   getActiveMembershipByUserId,
+  getAnyMembershipByUserId,
 } from "../queries/membership-queries_sql";
 import {
   countCompaniesFiltered,
@@ -146,19 +148,23 @@ const assertLogoKeyBelongsToUser = (logoKey: string, userId: string) => {
   }
 };
 
-const resolveMyCompanyContext = async (userId: string) => {
-  const db = getDb();
+export const resolveMyCompanyContext = async (db: Sql, userId: string) => {
   const membership = await getActiveMembershipByUserId(db, { userId });
-  if (!membership) {
-    return null;
+  if (membership) {
+    const company = await getCompanyById(db, { id: membership.companyId });
+    if (!company) {
+      // Active membership without a company should not happen; treat like removed.
+      return { state: "removed" as const };
+    }
+    return { state: "active" as const, company, membership };
   }
 
-  const company = await getCompanyById(db, { id: membership.companyId });
-  if (!company) {
-    return null;
+  const anyMembership = await getAnyMembershipByUserId(db, { userId });
+  if (anyMembership) {
+    return { state: "removed" as const };
   }
 
-  return { company, membership };
+  return { state: "new" as const };
 };
 
 // --- Server Functions ---
@@ -169,6 +175,10 @@ export const createCompany = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const db = getDb();
 
+    if (context.user.role !== "company") {
+      throw new Error("Only company accounts can create a workspace");
+    }
+
     const existing = await getActiveMembershipByUserId(db, {
       userId: context.userId,
     });
@@ -176,7 +186,10 @@ export const createCompany = createServerFn({ method: "POST" })
       throw new Error("You already belong to a company");
     }
 
-    if (context.user.role === "company") {
+    const priorMembership = await getAnyMembershipByUserId(db, {
+      userId: context.userId,
+    });
+    if (priorMembership) {
       throw new Error(
         "Your account has no active company workspace. Accept an invitation to join a team.",
       );
@@ -217,9 +230,9 @@ export const createCompany = createServerFn({ method: "POST" })
 export const getMyCompanyContext = createServerFn({ method: "GET" }).handler(async () => {
   const session = await useSession<SessionData>(sessionConfig);
   if (!session.data.userId) {
-    return null;
+    return { state: "unauthenticated" as const };
   }
-  return resolveMyCompanyContext(session.data.userId);
+  return resolveMyCompanyContext(getDb(), session.data.userId);
 });
 
 export const getMyCompany = createServerFn({ method: "GET" }).handler(async () => {
@@ -227,8 +240,8 @@ export const getMyCompany = createServerFn({ method: "GET" }).handler(async () =
   if (!session.data.userId) {
     return null;
   }
-  const context = await resolveMyCompanyContext(session.data.userId);
-  return context?.company ?? null;
+  const context = await resolveMyCompanyContext(getDb(), session.data.userId);
+  return context.state === "active" ? context.company : null;
 });
 
 export const updateCompanyProfile = createServerFn({ method: "POST" })

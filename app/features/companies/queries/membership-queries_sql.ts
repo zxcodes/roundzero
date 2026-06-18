@@ -33,6 +33,39 @@ export async function getActiveMembershipByUserId(sql: Sql, args: getActiveMembe
     };
 }
 
+export const getAnyMembershipByUserIdQuery = `-- name: getAnyMembershipByUserId :one
+SELECT id, company_id, user_id, role, status
+FROM company_members
+WHERE user_id = $1
+LIMIT 1`;
+
+export interface getAnyMembershipByUserIdArgs {
+    userId: string;
+}
+
+export interface getAnyMembershipByUserIdRow {
+    id: string;
+    companyId: string;
+    userId: string;
+    role: string;
+    status: string;
+}
+
+export async function getAnyMembershipByUserId(sql: Sql, args: getAnyMembershipByUserIdArgs): Promise<getAnyMembershipByUserIdRow | null> {
+    const rows = await sql.unsafe(getAnyMembershipByUserIdQuery, [args.userId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        companyId: row[1],
+        userId: row[2],
+        role: row[3],
+        status: row[4]
+    };
+}
+
 export const getCompanyByMemberUserIdQuery = `-- name: getCompanyByMemberUserId :one
 SELECT c.id, c.owner_id, c.name, c.slug, c.onboarding_completed_at, c.description, c.logo_key, c.website, c.industry, c.company_size, c.founded_year, c.location, c.tech_stack, c.culture, c.social_links, c.polar_customer_id, c.polar_subscription_id, c.polar_product_id, c.subscription_plan, c.subscription_status, c.subscription_current_period_end, c.subscription_cancel_at_period_end, c.created_at, c.updated_at
 FROM company_members cm
@@ -708,6 +741,41 @@ export async function markInvitationAccepted(sql: Sql, args: markInvitationAccep
     const row = rows[0];
     return {
         id: row[0]
+    };
+}
+
+export const countTeamSlotsByCompanyQuery = `-- name: countTeamSlotsByCompany :one
+SELECT
+  (SELECT COUNT(*)::int
+   FROM company_members cm
+   WHERE cm.company_id = $1
+     AND cm.status = 'active'
+     AND cm.role <> 'owner') AS invited_member_count,
+  (SELECT COUNT(*)::int
+   FROM company_invitations ci
+   WHERE ci.company_id = $1
+     AND ci.accepted_at IS NULL
+     AND ci.revoked_at IS NULL
+     AND ci.expires_at > now()) AS pending_invite_count`;
+
+export interface countTeamSlotsByCompanyArgs {
+    companyId: string;
+}
+
+export interface countTeamSlotsByCompanyRow {
+    invitedMemberCount: number;
+    pendingInviteCount: number;
+}
+
+export async function countTeamSlotsByCompany(sql: Sql, args: countTeamSlotsByCompanyArgs): Promise<countTeamSlotsByCompanyRow | null> {
+    const rows = await sql.unsafe(countTeamSlotsByCompanyQuery, [args.companyId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        invitedMemberCount: row[0],
+        pendingInviteCount: row[1]
     };
 }
 
