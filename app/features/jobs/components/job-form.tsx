@@ -18,8 +18,8 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { UnsavedChangesBar } from "@/components/unsaved-changes-bar";
-import { getPlanReportLimit } from "@/features/billing/config";
-import { useSubscription } from "@/features/billing/hooks/use-subscription";
+import { PLAN_CONFIGS } from "@/features/billing/config";
+import { useEntitlements } from "@/features/entitlements/hooks/use-entitlements";
 import { JobPreviewDialog } from "@/features/jobs/components/job-preview-dialog";
 import { formatDate } from "@/shared/date";
 import {
@@ -148,8 +148,12 @@ export function JobForm({
   const [screeningQuestionInput, setScreeningQuestionInput] = useState("");
   const [deadlineOpen, setDeadlineOpen] = useState(false);
 
-  const subscription = useSubscription();
-  const reportLimit = getPlanReportLimit(subscription?.plan);
+  const entitlements = useEntitlements();
+  const reportLimit = entitlements?.reports.perJobLimit ?? PLAN_CONFIGS.free.includedReportsPerJob;
+  // Drafts are always allowed; opening a new job is gated. Editing a job that is
+  // already open never consumes a new slot, so don't lock it.
+  const openLocked =
+    !(entitlements?.jobs.canOpenAnother ?? true) && defaultValues?.status !== "open";
   const defaultReportTarget =
     defaultValues?.finalReportTarget != null
       ? Math.min(defaultValues.finalReportTarget, reportLimit)
@@ -852,14 +856,20 @@ export function JobForm({
                   </SelectTrigger>
                   <SelectContent>
                     {statusOptions.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
+                      <SelectItem
+                        key={opt.value}
+                        value={opt.value}
+                        disabled={opt.value === "open" && openLocked}
+                      >
                         {opt.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 <p className="text-muted-foreground text-xs">
-                  Only "Open" jobs are visible to candidates.
+                  {openLocked
+                    ? "You've reached your active job limit. Save as a draft, or upgrade your plan to publish."
+                    : 'Only "Open" jobs are visible to candidates.'}
                 </p>
               </Field>
             );

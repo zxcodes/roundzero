@@ -9,8 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { getPlanReportLimit } from "@/features/billing/config";
-import { useSubscription } from "@/features/billing/hooks/use-subscription";
+import { PLAN_CONFIGS } from "@/features/billing/config";
+import { useEntitlements } from "@/features/entitlements/hooks/use-entitlements";
 import type { JobFormData } from "@/features/jobs/components/job-form";
 import type { AiJobGenerationOutput } from "@/features/jobs/schemas";
 import { generateJobWithAI } from "@/features/jobs/server/functions";
@@ -29,8 +29,8 @@ interface AiJobCreatorProps {
 }
 
 export function AiJobCreator({ isPaid, onApply, onDiscard }: AiJobCreatorProps) {
-  const subscription = useSubscription();
-  const reportLimit = getPlanReportLimit(subscription?.plan);
+  const entitlements = useEntitlements();
+  const reportLimit = entitlements?.reports.perJobLimit ?? PLAN_CONFIGS.free.includedReportsPerJob;
 
   const mapAiOutputToFormData = (output: AiJobGenerationOutput): JobFormData => {
     return {

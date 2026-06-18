@@ -1,25 +1,15 @@
 import { createFileRoute, Outlet, redirect, useLocation } from "@tanstack/react-router";
 import { DashboardLayoutSkeleton } from "@/components/route-skeletons";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getPlanJobLimit, hasActiveSubscription } from "@/features/billing/config";
 import { getMyCandidateProfile } from "@/features/candidates/server/functions";
 import { getMyCompanyContext } from "@/features/companies/server/functions";
+import { deriveEntitlements } from "@/features/entitlements/entitlements";
 import { getMyJobCounts } from "@/features/jobs/server/functions";
 import type { CompanyMemberRole } from "@/shared/enums";
 import { parseCompanyMemberRole } from "@/shared/membership-auth";
 
 type CompanyContext = Awaited<ReturnType<typeof getMyCompanyContext>>;
 type Company = Extract<CompanyContext, { state: "active" }>["company"];
-type SubscriptionSummary = { plan: string; status: string; isActive: boolean };
-
-const buildSubscription = (company: Company): SubscriptionSummary => ({
-  plan: company.subscriptionPlan,
-  status: company.subscriptionStatus,
-  isActive: hasActiveSubscription({
-    subscriptionPlan: company.subscriptionPlan,
-    subscriptionStatus: company.subscriptionStatus,
-  }),
-});
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async ({ context, location }) => {
@@ -35,18 +25,30 @@ export const Route = createFileRoute("/_authenticated")({
         membershipRole: null as CompanyMemberRole | null,
         company: null as Company | null,
         hasCompanyWorkspace: false,
+        entitlements: null,
+        jobCounts: null,
       };
     }
 
     const companyContext = await getMyCompanyContext();
 
     switch (companyContext.state) {
-      case "active":
+      case "active": {
+        const jobCounts = await getMyJobCounts();
+        const entitlements = deriveEntitlements({
+          subscriptionPlan: companyContext.company.subscriptionPlan,
+          subscriptionStatus: companyContext.company.subscriptionStatus,
+          jobCounts,
+        });
+
         return {
           membershipRole: parseCompanyMemberRole(companyContext.membership.role),
           company: companyContext.company,
           hasCompanyWorkspace: true,
+          entitlements,
+          jobCounts,
         };
+      }
       case "removed":
         if (!location.pathname.startsWith("/onboarding/no-workspace")) {
           throw redirect({ to: "/onboarding/no-workspace" });
@@ -55,6 +57,8 @@ export const Route = createFileRoute("/_authenticated")({
           membershipRole: null as CompanyMemberRole | null,
           company: null as Company | null,
           hasCompanyWorkspace: false,
+          entitlements: null,
+          jobCounts: null,
         };
       case "new": {
         if (location.pathname !== "/onboarding/company") {
@@ -64,6 +68,8 @@ export const Route = createFileRoute("/_authenticated")({
           membershipRole: null as CompanyMemberRole | null,
           company: null as Company | null,
           hasCompanyWorkspace: false,
+          entitlements: null,
+          jobCounts: null,
         };
       }
       case "unauthenticated":
@@ -83,7 +89,6 @@ export const Route = createFileRoute("/_authenticated")({
 
     if (user.role === "company") {
       const company = context.company;
-      const jobCounts = context.hasCompanyWorkspace ? await getMyJobCounts() : null;
       const onboarded = Boolean(company?.onboardingCompletedAt);
 
       if (context.hasCompanyWorkspace && !onboarded && !isOnboardingRoute) {
@@ -93,21 +98,13 @@ export const Route = createFileRoute("/_authenticated")({
         throw redirect({ to: "/dashboard" });
       }
 
-      const subscription = company ? buildSubscription(company) : null;
-      const jobLimit = getPlanJobLimit(subscription?.plan);
-      const atJobLimit = jobLimit !== Infinity && (jobCounts?.openCount ?? 0) >= jobLimit;
-
-      if (location.pathname === "/dashboard/jobs/new" && atJobLimit) {
-        throw redirect({ to: "/dashboard/billing", search: { reason: "job_limit" } });
-      }
-
       return {
         type: "company" as const,
         user,
         company,
         membershipRole: context.membershipRole,
-        subscription,
-        jobCounts,
+        entitlements: context.entitlements,
+        jobCounts: context.jobCounts,
         candidateProfile: null,
       };
     }
@@ -127,7 +124,7 @@ export const Route = createFileRoute("/_authenticated")({
       user,
       company: null,
       membershipRole: null,
-      subscription: null,
+      entitlements: null,
       jobCounts: null,
       candidateProfile,
     };

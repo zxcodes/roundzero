@@ -1,11 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  getPlanJobLimit,
-  getPlanReportLimit,
-  hasActiveSubscription,
-  PLAN_CONFIGS,
-  SUBSCRIPTION_PLANS,
-} from "../config";
+import { hasActiveSubscription, PLAN_CONFIGS, SUBSCRIPTION_PLANS } from "../config";
 
 describe("hasActiveSubscription", () => {
   it("free plan is never active", () => {
@@ -100,35 +94,5 @@ describe("PLAN_CONFIGS", () => {
     expect(PLAN_CONFIGS.free.priceLabel).toBe("$0");
     expect(PLAN_CONFIGS.free.includedJobs).toBe(1);
     expect(PLAN_CONFIGS.free.includedReportsPerJob).toBe(1);
-  });
-});
-
-describe("getPlanReportLimit", () => {
-  it("returns included reports per job for each plan", () => {
-    expect(getPlanReportLimit("free")).toBe(1);
-    expect(getPlanReportLimit("starter")).toBe(3);
-    expect(getPlanReportLimit("growth")).toBe(5);
-    expect(getPlanReportLimit("scale")).toBe(10);
-  });
-
-  it("falls back to free limit for unknown plans", () => {
-    expect(getPlanReportLimit(null)).toBe(1);
-    expect(getPlanReportLimit(undefined)).toBe(1);
-    expect(getPlanReportLimit("unknown" as unknown as string)).toBe(1);
-  });
-});
-
-describe("getPlanJobLimit", () => {
-  it("returns included jobs for each plan", () => {
-    expect(getPlanJobLimit("free")).toBe(1);
-    expect(getPlanJobLimit("starter")).toBe(3);
-    expect(getPlanJobLimit("growth")).toBe(10);
-    expect(getPlanJobLimit("scale")).toBe(25);
-  });
-
-  it("falls back to free limit for unknown plans", () => {
-    expect(getPlanJobLimit(null)).toBe(1);
-    expect(getPlanJobLimit(undefined)).toBe(1);
-    expect(getPlanJobLimit("unknown" as unknown as string)).toBe(1);
   });
 });

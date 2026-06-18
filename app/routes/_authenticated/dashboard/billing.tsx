@@ -9,7 +9,6 @@ import { getMySubscription, syncCheckoutSubscription } from "@/features/billing/
 const searchSchema = z.object({
   status: z.enum(["success", "cancelled"]).optional(),
   checkout_id: z.string().optional(),
-  reason: z.string().optional(),
 });
 
 export const Route = createFileRoute("/_authenticated/dashboard/billing")({
@@ -65,13 +64,6 @@ function BillingRoute() {
 
     void navigate({ search: {}, replace: true });
   }, [search.status, navigate]);
-
-  useEffect(() => {
-    if (search.reason === "job_limit") {
-      toast.info("You've reached your active job limit. Upgrade your plan to post more jobs.");
-      void navigate({ search: (prev) => ({ ...prev, reason: undefined }), replace: true });
-    }
-  }, [search.reason, navigate]);
 
   const auth = useLoaderData({ from: "/_authenticated" });
   const jobCounts = auth.type === "company" ? auth.jobCounts : null;
