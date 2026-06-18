@@ -4,12 +4,18 @@ import {
   type SubscriptionPlan,
   subscriptionPlanSchema,
 } from "@/features/billing/config";
+import type { countTeamSlotsByCompanyRow } from "@/features/companies/queries/membership-queries_sql";
 import type { countJobsByCompanyAndStatusRow } from "@/features/jobs/queries/queries_sql";
 
 const ZERO_JOB_COUNTS: countJobsByCompanyAndStatusRow = {
   openCount: 0,
   draftCount: 0,
   totalCount: 0,
+};
+
+const ZERO_TEAM_COUNTS: countTeamSlotsByCompanyRow = {
+  invitedMemberCount: 0,
+  pendingInviteCount: 0,
 };
 
 function normalizePlan(plan: string | null | undefined): SubscriptionPlan {
@@ -40,7 +46,24 @@ export type Entitlements = {
     defaultTarget: number;
     minTarget: 1;
   };
+  /** Invite slots beyond the owner — plan limits apply to added members only. */
+  team: {
+    /** Non-owner members currently on the team. */
+    members: { used: number; limit: number; remaining: number; atLimit: boolean };
+    pendingInvites: { used: number };
+    slotsUsed: number;
+    canInviteAnother: boolean;
+  };
   aiJobCreation: { enabled: boolean; disabledReason: string | null };
+};
+
+const freeTeamLimit = PLAN_CONFIGS.free.includedTeamMembers;
+
+export const FREE_TEAM_DEFAULTS: Entitlements["team"] = {
+  members: { used: 0, limit: freeTeamLimit, remaining: freeTeamLimit, atLimit: false },
+  pendingInvites: { used: 0 },
+  slotsUsed: 0,
+  canInviteAnother: true,
 };
 
 export const FREE_REPORT_DEFAULTS: Entitlements["reports"] = {
@@ -67,30 +90,54 @@ export function deriveEntitlements(input: {
   subscriptionPlan: string | null | undefined;
   subscriptionStatus: string | null | undefined;
   jobCounts: countJobsByCompanyAndStatusRow | null;
+  teamCounts?: countTeamSlotsByCompanyRow | null;
 }): Entitlements {
   const plan = normalizePlan(input.subscriptionPlan);
   const status = input.subscriptionStatus ?? "inactive";
   const planConfig = PLAN_CONFIGS[plan];
   const jobCounts = input.jobCounts ?? ZERO_JOB_COUNTS;
+  const teamCounts = input.teamCounts ?? ZERO_TEAM_COUNTS;
   const isActive = hasActiveSubscription({ subscriptionPlan: plan, subscriptionStatus: status });
 
-  const limit = planConfig.includedJobs;
-  const used = jobCounts.openCount;
-  const atLimit = used >= limit;
+  const jobLimit = planConfig.includedJobs;
+  const openJobs = jobCounts.openCount;
+  const jobsAtLimit = openJobs >= jobLimit;
+
+  const teamLimit = planConfig.includedTeamMembers;
+  const invitedMembers = teamCounts.invitedMemberCount;
+  const pendingInvites = teamCounts.pendingInviteCount;
+  const teamSlotsUsed = invitedMembers + pendingInvites;
+  const teamAtLimit = invitedMembers >= teamLimit;
 
   return {
     subscription: { plan, status, isActive },
     jobs: {
-      active: { used, limit, remaining: Math.max(0, limit - used), atLimit },
+      active: {
+        used: openJobs,
+        limit: jobLimit,
+        remaining: Math.max(0, jobLimit - openJobs),
+        atLimit: jobsAtLimit,
+      },
       drafts: { used: jobCounts.draftCount },
       totalUnarchived: jobCounts.totalCount,
-      canOpenAnother: !atLimit,
+      canOpenAnother: !jobsAtLimit,
       canCreateDraft: true,
     },
     reports: {
       perJobLimit: planConfig.includedReportsPerJob,
       defaultTarget: planConfig.includedReportsPerJob,
       minTarget: 1,
+    },
+    team: {
+      members: {
+        used: invitedMembers,
+        limit: teamLimit,
+        remaining: Math.max(0, teamLimit - teamSlotsUsed),
+        atLimit: teamAtLimit,
+      },
+      pendingInvites: { used: pendingInvites },
+      slotsUsed: teamSlotsUsed,
+      canInviteAnother: teamSlotsUsed < teamLimit,
     },
     aiJobCreation: {
       enabled: isActive,

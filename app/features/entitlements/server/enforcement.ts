@@ -1,15 +1,11 @@
 import type { Sql } from "postgres";
+import { countTeamSlotsByCompany } from "@/features/companies/queries/membership-queries_sql";
+import { getCompanyById } from "@/features/companies/queries/queries_sql";
 import { countJobsByCompanyAndStatus } from "@/features/jobs/queries/queries_sql";
 import { deriveEntitlements, type Entitlements, resolveReportTarget } from "../entitlements";
 
-type CompanyForEntitlements = {
-  id: string;
-  subscriptionPlan: string | null;
-  subscriptionStatus: string | null;
-};
-
 /** Entitlements that can be enforced at a server-function boundary. */
-export type CompanyEntitlement = "jobs.open" | "aiJobCreation";
+export type CompanyEntitlement = "jobs.open" | "team.invite" | "team.accept" | "aiJobCreation";
 
 /** Serialize active-job slot allocation for a company inside a transaction. */
 export async function lockCompanyEntitlementScope(db: Sql, companyId: string): Promise<void> {
@@ -21,15 +17,21 @@ export async function lockCompanyEntitlementScope(db: Sql, companyId: string): P
  * authoritative usage snapshot — always derived from the current DB state,
  * never from cached router/loader data.
  */
-export async function readCompanyEntitlements(
-  db: Sql,
-  company: CompanyForEntitlements,
-): Promise<Entitlements> {
-  const jobCounts = await countJobsByCompanyAndStatus(db, { companyId: company.id });
+export async function readCompanyEntitlements(db: Sql, companyId: string): Promise<Entitlements> {
+  const company = await getCompanyById(db, { id: companyId });
+  if (!company) {
+    throw new Error("Company not found");
+  }
+
+  const [jobCounts, teamCounts] = await Promise.all([
+    countJobsByCompanyAndStatus(db, { companyId }),
+    countTeamSlotsByCompany(db, { companyId }),
+  ]);
   return deriveEntitlements({
     subscriptionPlan: company.subscriptionPlan,
     subscriptionStatus: company.subscriptionStatus,
     jobCounts,
+    teamCounts,
   });
 }
 
@@ -40,16 +42,27 @@ export async function readCompanyEntitlements(
  */
 export async function enforceCompanyEntitlement(
   db: Sql,
-  company: CompanyForEntitlements,
+  companyId: string,
   entitlement: CompanyEntitlement,
 ): Promise<Entitlements> {
-  const entitlements = await readCompanyEntitlements(db, company);
+  const entitlements = await readCompanyEntitlements(db, companyId);
 
   if (entitlement === "jobs.open" && !entitlements.jobs.canOpenAnother) {
     const limit = entitlements.jobs.active.limit;
     throw new Error(
       `Your plan includes ${limit} active job${limit === 1 ? "" : "s"}. Upgrade to post more.`,
     );
+  }
+
+  if (entitlement === "team.invite" && !entitlements.team.canInviteAnother) {
+    const limit = entitlements.team.members.limit;
+    throw new Error(
+      `Your plan includes ${limit} team member${limit === 1 ? "" : "s"}. Upgrade to invite more.`,
+    );
+  }
+
+  if (entitlement === "team.accept" && entitlements.team.members.atLimit) {
+    throw new Error("This team has reached its member limit. Ask the owner to upgrade the plan.");
   }
 
   if (entitlement === "aiJobCreation" && !entitlements.aiJobCreation.enabled) {

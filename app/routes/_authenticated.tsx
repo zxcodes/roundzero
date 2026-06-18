@@ -3,6 +3,7 @@ import { DashboardLayoutSkeleton } from "@/components/route-skeletons";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getMyCandidateProfile } from "@/features/candidates/server/functions";
 import { getMyCompanyContext } from "@/features/companies/server/functions";
+import { getMyTeamCounts } from "@/features/companies/server/team-functions";
 import { deriveEntitlements } from "@/features/entitlements/entitlements";
 import { getMyJobCounts } from "@/features/jobs/server/functions";
 import type { CompanyMemberRole } from "@/shared/enums";
@@ -34,11 +35,12 @@ export const Route = createFileRoute("/_authenticated")({
 
     switch (companyContext.state) {
       case "active": {
-        const jobCounts = await getMyJobCounts();
+        const [jobCounts, teamCounts] = await Promise.all([getMyJobCounts(), getMyTeamCounts()]);
         const entitlements = deriveEntitlements({
           subscriptionPlan: companyContext.company.subscriptionPlan,
           subscriptionStatus: companyContext.company.subscriptionStatus,
           jobCounts,
+          teamCounts,
         });
 
         return {

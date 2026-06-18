@@ -4,18 +4,25 @@ import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { getUserByEmail } from "@/features/auth/queries/queries_sql";
 import { sendCompanyInviteEmail } from "@/features/companies/services/invite-email";
+import {
+  enforceCompanyEntitlement,
+  lockCompanyEntitlementScope,
+  readCompanyEntitlements,
+} from "@/features/entitlements/server/enforcement";
 import { getDb } from "@/shared/db";
 import { asSqlTransaction } from "@/shared/db-transaction";
 import { companyInvitationRoleSchema } from "@/shared/enums";
 import { emailsMatch, normalizeEmail } from "@/shared/google-userinfo";
 import { assertCanManageTeam, assertCompanyOwner } from "@/shared/membership-auth";
-import { companyMiddleware } from "@/shared/middleware";
+import { authMiddleware, companyMiddleware } from "@/shared/middleware";
 import { sessionConfig } from "@/shared/session";
 import { zodValidatorWithFormattedErrors } from "@/shared/validation";
 import {
+  countTeamSlotsByCompany,
   createInvitation,
   getActiveMemberByCompanyEmail,
   getActiveMembershipByUserId,
+  getCompanyByMemberUserId,
   getInvitationByToken,
   getMembershipById,
   getPendingInvitationByEmail,
@@ -75,11 +82,30 @@ export const getInvitationPreview = createServerFn({ method: "GET" })
       return null;
     }
 
+    const entitlements = await readCompanyEntitlements(db, invitation.companyId);
+    const canAccept = !entitlements.team.members.atLimit;
+
     return {
       companyName: invitation.companyName,
       email: invitation.email,
       role: invitation.role,
+      canAccept,
+      capacityMessage: canAccept
+        ? null
+        : "This team has reached its member limit. Ask the owner to upgrade the plan before you can join.",
     };
+  });
+
+export const getMyTeamCounts = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }) => {
+    const db = getDb();
+    const company = await getCompanyByMemberUserId(db, { userId: context.userId });
+    if (!company) {
+      return null;
+    }
+
+    return countTeamSlotsByCompany(db, { companyId: company.id });
   });
 
 export const getTeamOverview = createServerFn({ method: "GET" })
@@ -146,13 +172,19 @@ export const inviteMember = createServerFn({ method: "POST" })
     const token = newInviteToken();
     const expiresAt = inviteExpiryAt();
 
-    const invitation = await createInvitation(db, {
-      companyId: context.company.id,
-      email: data.email,
-      role: data.role,
-      token,
-      invitedBy: context.userId,
-      expiresAt,
+    const invitation = await db.begin(async (tx) => {
+      const transaction = asSqlTransaction(tx);
+      await lockCompanyEntitlementScope(transaction, context.company.id);
+      await enforceCompanyEntitlement(transaction, context.company.id, "team.invite");
+
+      return createInvitation(transaction, {
+        companyId: context.company.id,
+        email: data.email,
+        role: data.role,
+        token,
+        invitedBy: context.userId,
+        expiresAt,
+      });
     });
 
     if (!invitation) {
