@@ -6,11 +6,7 @@ import { getMyCompanyContext } from "@/features/companies/server/functions";
 import { getMyTeamCounts } from "@/features/companies/server/team-functions";
 import { deriveEntitlements } from "@/features/entitlements/entitlements";
 import { getMyJobCounts } from "@/features/jobs/server/functions";
-import type { CompanyMemberRole } from "@/shared/enums";
 import { parseCompanyMemberRole } from "@/shared/membership-auth";
-
-type CompanyContext = Awaited<ReturnType<typeof getMyCompanyContext>>;
-type Company = Extract<CompanyContext, { state: "active" }>["company"];
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async ({ context, location }) => {
@@ -23,8 +19,8 @@ export const Route = createFileRoute("/_authenticated")({
 
     if (context.user.role !== "company") {
       return {
-        membershipRole: null as CompanyMemberRole | null,
-        company: null as Company | null,
+        membershipRole: null,
+        company: null,
         hasCompanyWorkspace: false,
         entitlements: null,
         jobCounts: null,
@@ -56,8 +52,8 @@ export const Route = createFileRoute("/_authenticated")({
           throw redirect({ to: "/onboarding/no-workspace" });
         }
         return {
-          membershipRole: null as CompanyMemberRole | null,
-          company: null as Company | null,
+          membershipRole: null,
+          company: null,
           hasCompanyWorkspace: false,
           entitlements: null,
           jobCounts: null,
@@ -67,8 +63,8 @@ export const Route = createFileRoute("/_authenticated")({
           throw redirect({ to: "/onboarding/company" });
         }
         return {
-          membershipRole: null as CompanyMemberRole | null,
-          company: null as Company | null,
+          membershipRole: null,
+          company: null,
           hasCompanyWorkspace: false,
           entitlements: null,
           jobCounts: null,
@@ -101,7 +97,7 @@ export const Route = createFileRoute("/_authenticated")({
       }
 
       return {
-        type: "company" as const,
+        type: "company",
         user,
         company,
         membershipRole: context.membershipRole,
@@ -122,7 +118,7 @@ export const Route = createFileRoute("/_authenticated")({
     }
 
     return {
-      type: "candidate" as const,
+      type: "candidate",
       user,
       company: null,
       membershipRole: null,
