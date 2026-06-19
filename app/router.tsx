@@ -30,6 +30,12 @@ export function getRouter() {
     scrollRestoration: true,
     defaultPreload: "intent",
     defaultPreloadStaleTime: 30_000,
+    // Loader data defaults to staleTime 0 (refetch in background on every
+    // re-match). On Workers each refetch is a real round trip + auth-middleware
+    // DB hit, so rapid back-and-forth navigation thrashes the worker. A modest
+    // window dedupes that; mutations still call `router.invalidate()`, which
+    // overrides staleTime and guarantees fresh data after writes.
+    defaultStaleTime: 10_000,
     defaultViewTransition: true,
     context: {
       user: null,
