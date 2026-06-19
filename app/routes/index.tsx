@@ -1299,7 +1299,7 @@ const faq = [
   },
   {
     q: "Is there a voice component to the interview?",
-    a: "Yes. After the text interview, candidates complete a short ~5 minute voice conversation to assess real-time communication. The voice assessment is blended into the communication score (60% voice, 40% text). The full transcript and per-dimension scores (clarity, articulation, conciseness, listening, confidence) are visible in the report. Candidates can skip the voice check. The report will note it was excluded.",
+    a: "Yes. After the text interview, candidates complete a short ~5 minute voice conversation to assess real-time communication. The voice assessment is blended into the communication score (60% voice, 40% text). The full transcript and per-dimension scores (clarity, articulation, conciseness, listening, confidence) are visible in the report. The voice check is required to complete the interview.",
   },
   {
     q: "Can candidates cheat or use AI to answer?",
