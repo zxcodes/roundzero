@@ -14,15 +14,13 @@ import { asSqlTransaction } from "@/shared/db-transaction";
 import { companyInvitationRoleSchema } from "@/shared/enums";
 import { emailsMatch, normalizeEmail } from "@/shared/google-userinfo";
 import { assertCanManageTeam, assertCompanyOwner } from "@/shared/membership-auth";
-import { authMiddleware, companyMiddleware } from "@/shared/middleware";
+import { companyMiddleware } from "@/shared/middleware";
 import { sessionConfig } from "@/shared/session";
 import { zodValidatorWithFormattedErrors } from "@/shared/validation";
 import {
-  countTeamSlotsByCompany,
   createInvitation,
   getActiveMemberByCompanyEmail,
   getActiveMembershipByUserId,
-  getCompanyByMemberUserId,
   getInvitationByToken,
   getMembershipById,
   getPendingInvitationByEmail,
@@ -94,18 +92,6 @@ export const getInvitationPreview = createServerFn({ method: "GET" })
         ? null
         : "This team has reached its member limit. Ask the owner to upgrade the plan before you can join.",
     };
-  });
-
-export const getMyTeamCounts = createServerFn({ method: "GET" })
-  .middleware([authMiddleware])
-  .handler(async ({ context }) => {
-    const db = getDb();
-    const company = await getCompanyByMemberUserId(db, { userId: context.userId });
-    if (!company) {
-      return null;
-    }
-
-    return countTeamSlotsByCompany(db, { companyId: company.id });
   });
 
 export const getTeamOverview = createServerFn({ method: "GET" })

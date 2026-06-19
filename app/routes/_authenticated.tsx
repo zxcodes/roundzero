@@ -2,15 +2,11 @@ import { createFileRoute, Outlet, redirect, useLocation } from "@tanstack/react-
 import { DashboardLayoutSkeleton } from "@/components/route-skeletons";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getMyCandidateProfile } from "@/features/candidates/server/functions";
-import { getMyCompanyContext } from "@/features/companies/server/functions";
-import { getMyTeamCounts } from "@/features/companies/server/team-functions";
+import { getMyCompanyBootstrap } from "@/features/companies/server/functions";
 import { deriveEntitlements } from "@/features/entitlements/entitlements";
-import { getMyJobCounts } from "@/features/jobs/server/functions";
-import type { CompanyMemberRole } from "@/shared/enums";
 import { parseCompanyMemberRole } from "@/shared/membership-auth";
 
-type CompanyContext = Awaited<ReturnType<typeof getMyCompanyContext>>;
-type Company = Extract<CompanyContext, { state: "active" }>["company"];
+const companyBootstrapQueryKey = ["company-bootstrap"] as const;
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async ({ context, location }) => {
@@ -23,24 +19,30 @@ export const Route = createFileRoute("/_authenticated")({
 
     if (context.user.role !== "company") {
       return {
-        membershipRole: null as CompanyMemberRole | null,
-        company: null as Company | null,
+        membershipRole: null,
+        company: null,
         hasCompanyWorkspace: false,
         entitlements: null,
         jobCounts: null,
       };
     }
 
-    const companyContext = await getMyCompanyContext();
+    // Cache the bootstrap in React Query so the repeated beforeLoad executions
+    // triggered by `defaultPreload: "intent"` (every nav link hover) and client
+    // navigations reuse warm data instead of round-tripping to the worker.
+    const companyContext = await context.queryClient.fetchQuery({
+      queryKey: companyBootstrapQueryKey,
+      queryFn: () => getMyCompanyBootstrap(),
+      staleTime: 30_000,
+    });
 
     switch (companyContext.state) {
       case "active": {
-        const [jobCounts, teamCounts] = await Promise.all([getMyJobCounts(), getMyTeamCounts()]);
         const entitlements = deriveEntitlements({
           subscriptionPlan: companyContext.company.subscriptionPlan,
           subscriptionStatus: companyContext.company.subscriptionStatus,
-          jobCounts,
-          teamCounts,
+          jobCounts: companyContext.jobCounts,
+          teamCounts: companyContext.teamCounts,
         });
 
         return {
@@ -48,7 +50,7 @@ export const Route = createFileRoute("/_authenticated")({
           company: companyContext.company,
           hasCompanyWorkspace: true,
           entitlements,
-          jobCounts,
+          jobCounts: companyContext.jobCounts,
         };
       }
       case "removed":
@@ -56,8 +58,8 @@ export const Route = createFileRoute("/_authenticated")({
           throw redirect({ to: "/onboarding/no-workspace" });
         }
         return {
-          membershipRole: null as CompanyMemberRole | null,
-          company: null as Company | null,
+          membershipRole: null,
+          company: null,
           hasCompanyWorkspace: false,
           entitlements: null,
           jobCounts: null,
@@ -67,8 +69,8 @@ export const Route = createFileRoute("/_authenticated")({
           throw redirect({ to: "/onboarding/company" });
         }
         return {
-          membershipRole: null as CompanyMemberRole | null,
-          company: null as Company | null,
+          membershipRole: null,
+          company: null,
           hasCompanyWorkspace: false,
           entitlements: null,
           jobCounts: null,
@@ -101,7 +103,7 @@ export const Route = createFileRoute("/_authenticated")({
       }
 
       return {
-        type: "company" as const,
+        type: "company",
         user,
         company,
         membershipRole: context.membershipRole,
@@ -122,7 +124,7 @@ export const Route = createFileRoute("/_authenticated")({
     }
 
     return {
-      type: "candidate" as const,
+      type: "candidate",
       user,
       company: null,
       membershipRole: null,
