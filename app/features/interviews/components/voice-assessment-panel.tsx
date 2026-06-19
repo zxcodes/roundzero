@@ -15,7 +15,6 @@ import {
   getMyVoiceAssessmentTranscript,
   getMyVoiceToken,
   registerMyVoiceAssessmentSession,
-  skipMyVoiceAssessment,
 } from "@/features/interviews/server/functions";
 import { voiceRealtimeAdapter } from "@/features/interviews/shared/voice-realtime-adapter";
 import { cn } from "@/lib/utils";
@@ -82,7 +81,6 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
 
   const isTerminal = effectiveStatus === "completed" || effectiveStatus === "skipped";
 
-  const skipFn = useServerFn(skipMyVoiceAssessment);
   const completeFn = useServerFn(completeMyVoiceAssessment);
   const getTokenFn = useServerFn(getMyVoiceToken);
   const registerSessionFn = useServerFn(registerMyVoiceAssessmentSession);
@@ -135,18 +133,6 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
       // Allow a resubmit instead of stranding the candidate on a failed save.
       completeCalledRef.current = false;
       toast.error(error instanceof Error ? error.message : "Could not save voice assessment.");
-    },
-  });
-
-  const skipMutation = useMutation({
-    mutationFn: skipFn,
-    onSuccess: async () => {
-      toast.success("Voice assessment skipped.");
-      queryClient.invalidateQueries({ queryKey: ["voice-assessment", interviewId] });
-      await router.invalidate();
-    },
-    onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Could not skip assessment.");
     },
   });
 
@@ -226,7 +212,7 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
     if (chat.status === "idle" && wasConnectedRef.current) {
       wasConnectedRef.current = false;
       // On an error disconnect the adapter sets `clientError`; let the candidate
-      // dismiss/retry/skip instead of finalising a half-finished transcript.
+      // dismiss/retry instead of finalising a half-finished transcript.
       if (clientError) return;
       setJustEnded(true);
       queryClient.invalidateQueries({ queryKey: ["voice-assessment", interviewId] });
@@ -279,8 +265,9 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
     queryClient.invalidateQueries({ queryKey: ["voice-assessment", interviewId] });
   };
 
-  const onSkip = () => {
-    skipMutation.mutate({ data: { interviewId } });
+  const onRetryAfterError = () => {
+    setClientError(null);
+    onStartCall();
   };
 
   // Manual submit — the guaranteed path to persist the assessment once the call
@@ -465,18 +452,7 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
               <HugeiconsIcon icon={PhoneOff01Icon} strokeWidth={2} className="size-4" />
               End call
             </Button>
-          ) : (
-            <Button variant="ghost" size="sm" onClick={onSkip} disabled={skipMutation.isPending}>
-              {skipMutation.isPending ? (
-                <HugeiconsIcon
-                  icon={Loading03Icon}
-                  strokeWidth={2}
-                  className="size-4 animate-spin"
-                />
-              ) : null}
-              {skipMutation.isPending ? "Skipping..." : "Skip"}
-            </Button>
-          )}
+          ) : null}
         </div>
       </div>
 
@@ -554,8 +530,8 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
               <Button variant="outline" size="sm" onClick={() => setClientError(null)}>
                 Dismiss
               </Button>
-              <Button variant="ghost" size="sm" onClick={onSkip}>
-                Skip
+              <Button size="sm" onClick={onRetryAfterError}>
+                Try again
               </Button>
             </div>
           </div>

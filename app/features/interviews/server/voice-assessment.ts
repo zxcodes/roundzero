@@ -2,9 +2,14 @@ import { env } from "cloudflare:workers";
 import { generateText, Output } from "ai";
 import { z } from "zod";
 import {
+  getApplicationById,
+  updateApplicationStatus,
+} from "@/features/applications/queries/queries_sql";
+import {
   completeCommunicationAssessment,
   createCommunicationAssessment,
   getCommunicationAssessmentByInterviewId,
+  getInterviewContextById,
 } from "@/features/interviews/queries/queries_sql";
 import type { loadVoiceAssessmentContext } from "@/features/interviews/shared/voice-runtime";
 import { getReportByApplicationId } from "@/features/reports/queries/queries_sql";
@@ -12,7 +17,9 @@ import {
   COMMUNICATION_ASSESSMENT_PROMPT,
   type CommunicationAssessmentAnalysis,
   communicationAssessmentSchema,
+  parseCommunicationAssessment,
 } from "@/prompts/communication-assessment";
+import { getDb } from "@/shared/db";
 import { createChatModel } from "@/shared/openrouter";
 import { refineCommunicationAnalysis } from "@/workflows/post-evaluation/refine";
 
@@ -156,7 +163,7 @@ export function normalizeVoiceTranscriptMessages(
  *
  * Instead we save the transcript instantly and let the durable post-evaluation
  * workflow compute the analysis from the stored transcript (with retries) via
- * `loadVoiceAssessment`. The report still generates either way.
+ * `loadVoiceAssessment`. Report generation requires a completed voice assessment.
  */
 export async function finalizeVoiceAssessmentFromTranscript(input: {
   db: Parameters<typeof getCommunicationAssessmentByInterviewId>[0];
@@ -231,6 +238,25 @@ export async function analyzeVoiceTranscript(
   }
 }
 
+function recoverCommunicationAssessmentFromError(
+  error: unknown,
+): CommunicationAssessmentAnalysis | null {
+  if (!error || typeof error !== "object") {
+    return null;
+  }
+
+  const text = "text" in error && typeof error.text === "string" ? error.text : null;
+  if (!text) {
+    return null;
+  }
+
+  try {
+    return parseCommunicationAssessment(JSON.parse(text));
+  } catch {
+    return null;
+  }
+}
+
 async function runVoiceAnalysis(
   transcript: string,
   ctx: Awaited<ReturnType<typeof loadVoiceAssessmentContext>>,
@@ -260,6 +286,11 @@ async function runVoiceAnalysis(
       });
       return result.output;
     } catch (error) {
+      const recovered = recoverCommunicationAssessmentFromError(error);
+      if (recovered) {
+        return recovered;
+      }
+
       console.error(`[voice-assessment] analysis attempt ${attempt + 1} failed:`, error);
       if (attempt < maxAttempts - 1) {
         const delay = 1_000 * 2 ** attempt;
@@ -273,20 +304,87 @@ async function runVoiceAnalysis(
   return null;
 }
 
+async function prepareApplicationForPostEvalResume(
+  db: Parameters<typeof getCommunicationAssessmentByInterviewId>[0],
+  applicationId: string,
+): Promise<boolean> {
+  const existingReport = await getReportByApplicationId(db, { applicationId });
+  if (existingReport) {
+    return false;
+  }
+
+  const application = await getApplicationById(db, { id: applicationId });
+  if (application?.status === "evaluation_failed") {
+    await updateApplicationStatus(db, {
+      id: applicationId,
+      status: "interview_in_progress",
+    });
+  }
+
+  return true;
+}
+
 export async function signalVoiceAssessmentComplete(interviewId: string): Promise<void> {
   try {
     const instance = await env.POST_EVALUATION.get(interviewId);
-    await instance.sendEvent({
-      type: "voice_assessment_complete",
-      payload: { interviewId },
-    });
+    const { status } = await instance.status();
+    if (
+      status === "waiting" ||
+      status === "running" ||
+      status === "queued" ||
+      status === "paused" ||
+      status === "waitingForPause"
+    ) {
+      await instance.sendEvent({
+        type: "voice_assessment_complete",
+        payload: { interviewId },
+      });
+      return;
+    }
+
+    // Workflow exited before voice finished (e.g. wait timeout). Restart if no report yet.
+    if (status === "complete" || status === "errored" || status === "terminated") {
+      const db = getDb();
+      const interview = await getInterviewContextById(db, { id: interviewId });
+      if (!interview) {
+        return;
+      }
+      const shouldResume = await prepareApplicationForPostEvalResume(db, interview.applicationId);
+      if (!shouldResume) {
+        return;
+      }
+      await instance.restart();
+      return;
+    }
   } catch (error) {
     console.error("[voice-assessment] failed to signal post-evaluation workflow", error);
+  }
+
+  // No retained workflow (or unknown state) — start or recover post-evaluation.
+  try {
+    const db = getDb();
+    const interview = await getInterviewContextById(db, { id: interviewId });
+    if (!interview) {
+      return;
+    }
+    const shouldResume = await prepareApplicationForPostEvalResume(db, interview.applicationId);
+    if (!shouldResume) {
+      return;
+    }
+    await startPostEvaluation(db, {
+      interviewId,
+      applicationId: interview.applicationId,
+    });
+  } catch (error) {
+    console.error(
+      "[voice-assessment] failed to resume post-evaluation after voice completion",
+      error,
+    );
   }
 }
 
 /**
- * Seed the optional voice communication-assessment row and start the
+ * Seed the required voice communication-assessment row and start the
  * post-evaluation workflow for a completed interview.
  *
  * Ordering matters: the assessment row is created BEFORE the workflow so the

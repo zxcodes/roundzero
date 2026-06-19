@@ -739,23 +739,13 @@ export function loadVoiceAssessment(
 
 /**
  * Blend the voice communication score into the report's text-derived score.
- * Voice weight depends on signal quality (evidence count). When no voice
- * assessment is present, the text score is returned unchanged.
+ * Voice weight depends on signal quality (evidence count). Callers must
+ * ensure a completed voice assessment exists before invoking.
  */
 export function applyVoiceAssessmentToReport(
   report: ReportModelResponse,
-  voice: CommunicationAssessmentAnalysis | null,
+  voice: CommunicationAssessmentAnalysis,
 ): ReportModelResponse {
-  if (!voice) {
-    return {
-      ...report,
-      scores: {
-        ...report.scores,
-        communication: 0,
-      },
-    };
-  }
-
   const totalEvidence =
     voice.clarity.evidence.length +
     voice.articulation.evidence.length +
