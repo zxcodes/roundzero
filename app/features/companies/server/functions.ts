@@ -4,6 +4,7 @@ import { useSession } from "@tanstack/react-start/server";
 import { zodValidator } from "@tanstack/zod-adapter";
 import type { Sql } from "postgres";
 import { z } from "zod";
+import { countJobsByCompanyAndStatus } from "@/features/jobs/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { asSqlTransaction } from "@/shared/db-transaction";
 import { companySizeSchema, industrySchema, MAX_COMPANY_DESCRIPTION_LENGTH } from "@/shared/enums";
@@ -19,6 +20,7 @@ import {
   zodValidatorWithFormattedErrors,
 } from "@/shared/validation";
 import {
+  countTeamSlotsByCompany,
   createCompanyMember,
   getActiveMembershipByUserId,
   getAnyMembershipByUserId,
@@ -233,6 +235,39 @@ export const getMyCompanyContext = createServerFn({ method: "GET" }).handler(asy
     return { state: "unauthenticated" as const };
   }
   return resolveMyCompanyContext(getDb(), session.data.userId);
+});
+
+/**
+ * Single round-trip bootstrap for the `_authenticated` layout: resolves the
+ * caller's company context AND the job/team counts needed to derive
+ * entitlements. Replaces three separate server-function calls
+ * (getMyCompanyContext + getMyJobCounts + getMyTeamCounts), each of which
+ * otherwise re-ran auth middleware and re-resolved the company. Because the
+ * `_authenticated` beforeLoad re-executes on every preload/navigation, those
+ * three calls fanned out into many serialized worker round-trips in production.
+ */
+export const getMyCompanyBootstrap = createServerFn({ method: "GET" }).handler(async () => {
+  const session = await useSession<SessionData>(sessionConfig);
+  if (!session.data.userId) {
+    return { state: "unauthenticated" as const };
+  }
+
+  const db = getDb();
+  const context = await resolveMyCompanyContext(db, session.data.userId);
+  if (context.state !== "active") {
+    return context;
+  }
+
+  const [jobCounts, teamCounts] = await Promise.all([
+    countJobsByCompanyAndStatus(db, { companyId: context.company.id }),
+    countTeamSlotsByCompany(db, { companyId: context.company.id }),
+  ]);
+
+  return {
+    ...context,
+    jobCounts: jobCounts ?? { openCount: 0, draftCount: 0, totalCount: 0 },
+    teamCounts,
+  };
 });
 
 export const getMyCompany = createServerFn({ method: "GET" }).handler(async () => {
