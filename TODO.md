@@ -1,6 +1,5 @@
 ## TODO
 
-- do not let people skip voice interview. or even if they do tell them before hand that it's a deal breaker and will hugely affect their chances.
 - add an easier copy company jobs profile for companies to link it in their careers page.
 - add onCopy, onPaste detectors and evaluate final score based on that.
 - company has redundant steps. if I click a job, first taken to a page where there is jd, I have to click view applicants, which is another redundant page. we can def drop one of these here and make it simple.
@@ -14,6 +13,7 @@ post_eval_already_complete)
 - add a really good resume and candidate test suite to pass thru the ai.
 
 
+<!--- do not let people skip voice interview. or even if they do tell them before hand that it's a deal breaker and will hugely affect their chances.-->
 <!--- ~~gatekeep number of seats (adding members to the team)~~ Done — plan-gated via entitlements (`team.invite`, `team.accept`).-->
 <!--- ~~pricing needs a big change~~ Done — Free/Starter/Growth/Scale tiers with hard caps. See `app/features/billing/config.ts` and ARCHITECTURE.md §13.-->
 <!--- ~~think about the auth. should it be possible for people to create company and candidate acc with same email?~~ MVP: no — block invite accept when email is already a candidate account (same plan).-->
