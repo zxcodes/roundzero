@@ -1,12 +1,14 @@
 import { Loading03Icon, Mic01Icon, PhoneOff01Icon, Tick01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import type { RealtimeToken } from "@tanstack/ai";
+import { toolDefinition } from "@tanstack/ai";
 import { useRealtimeChat } from "@tanstack/ai-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -25,6 +27,14 @@ type ChatMessage = { role: "assistant" | "user"; text: string };
 
 const normMessage = (m: ChatMessage): string =>
   `${m.role}:${m.text.replace(/\s+/g, " ").trim().toLowerCase()}`;
+
+const completeVoiceAssessmentDef = toolDefinition({
+  name: "complete_voice_assessment",
+  description:
+    "Mark the voice assessment complete and persist the transcript. Call only after delivering a warm closing message.",
+  inputSchema: z.object({ reason: z.string().min(1) }),
+  outputSchema: z.object({ completed: z.boolean(), reason: z.string() }),
+});
 
 export function CompletedInterviewBar({
   title,
@@ -52,7 +62,9 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
   const transcriptEndRef = useRef<HTMLDivElement>(null);
   const completeCalledRef = useRef(false);
   const [clientError, setClientError] = useState<string | null>(null);
-  const [justEnded, setJustEnded] = useState(false);
+  const [callEnded, setCallEnded] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitFailed, setSubmitFailed] = useState(false);
 
   const { data: dbData, isPending: dbPending } = useQuery({
     queryKey: ["voice-assessment", interviewId],
@@ -102,6 +114,14 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
     });
   };
 
+  const completeHandlerRef = useRef<
+    (args: { reason: string }) => Promise<{ completed: boolean; reason: string }>
+  >(async ({ reason }) => ({ completed: false, reason }));
+
+  const voiceClientToolsRef = useRef([
+    completeVoiceAssessmentDef.client((args) => completeHandlerRef.current(args)),
+  ]);
+
   const chat = useRealtimeChat({
     getToken: () =>
       getTokenFn({
@@ -110,29 +130,9 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
     adapter: voiceRealtimeAdapter({
       onConversationStarted: (conversationId) => registerConversationRef.current(conversationId),
     }),
+    tools: voiceClientToolsRef.current,
     onError: (error) => {
       setClientError(error.message);
-    },
-  });
-
-  const completeMutation = useMutation({
-    mutationFn: completeFn,
-    onSuccess: async (result) => {
-      // A race (webhook already finalized, or interview not found) returns
-      // `ok: false`. Clear the guard so the candidate can retry submitting.
-      if (!result?.ok) {
-        completeCalledRef.current = false;
-      }
-      queryClient.invalidateQueries({ queryKey: ["voice-assessment", interviewId] });
-      queryClient.invalidateQueries({
-        queryKey: ["voice-assessment-transcript", interviewId],
-      });
-      await router.invalidate();
-    },
-    onError: (error) => {
-      // Allow a resubmit instead of stranding the candidate on a failed save.
-      completeCalledRef.current = false;
-      toast.error(error instanceof Error ? error.message : "Could not save voice assessment.");
     },
   });
 
@@ -170,10 +170,6 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
     })
     .filter((m): m is ChatMessage => m !== null);
 
-  // Keep the latest live transcript in a ref so the auto-submit effect below
-  // can read it without listing the (always-new) array in its dependencies.
-  // Without this, the 2s dbData refetch re-renders the component and would
-  // continuously reset the auto-submit timer so it never fires.
   const liveTranscriptRef = useRef<ChatMessage[]>([]);
   liveTranscriptRef.current = liveTranscript;
 
@@ -191,78 +187,106 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
     transcriptEndRef.current?.scrollIntoView({ block: "end" });
   });
 
-  // Reset transient flags when the DB confirms a terminal state.
+  const submitTranscriptRef = useRef<() => Promise<boolean>>(async () => false);
+  submitTranscriptRef.current = async () => {
+    if (completeCalledRef.current) {
+      return true;
+    }
+
+    const transcript = liveTranscriptRef.current;
+    if (transcript.length === 0) {
+      return false;
+    }
+
+    completeCalledRef.current = true;
+    setIsSubmitting(true);
+    setSubmitFailed(false);
+
+    try {
+      const result = await completeFn({
+        data: {
+          interviewId,
+          messages: transcript.map((m) => ({ role: m.role, content: m.text })),
+        },
+      });
+
+      if (!result?.ok) {
+        completeCalledRef.current = false;
+        setSubmitFailed(true);
+        return false;
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["voice-assessment", interviewId] });
+      queryClient.invalidateQueries({
+        queryKey: ["voice-assessment-transcript", interviewId],
+      });
+      await router.invalidate();
+      return true;
+    } catch (error) {
+      completeCalledRef.current = false;
+      setSubmitFailed(true);
+      toast.error(error instanceof Error ? error.message : "Could not save voice assessment.");
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  completeHandlerRef.current = async ({ reason }) => {
+    const completed = await submitTranscriptRef.current();
+    return { completed, reason };
+  };
+
   useEffect(() => {
     if (effectiveStatus === "completed" || effectiveStatus === "skipped") {
-      setJustEnded(false);
+      setCallEnded(false);
+      setSubmitFailed(false);
       completeCalledRef.current = false;
     }
   }, [effectiveStatus]);
 
-  // Detect the call ending for ANY reason — the candidate clicking "End call",
-  // the ElevenLabs agent invoking its `end_call` tool, or an unexpected drop.
-  // We mark `justEnded` so the finalisation path below runs regardless of who
-  // hung up. (Manual end also sets this; the flag is idempotent.)
   const wasConnectedRef = useRef(false);
   useEffect(() => {
     if (chat.status === "connected") {
       wasConnectedRef.current = true;
       return;
     }
-    if (chat.status === "idle" && wasConnectedRef.current) {
-      wasConnectedRef.current = false;
-      // On an error disconnect the adapter sets `clientError`; let the candidate
-      // dismiss/retry instead of finalising a half-finished transcript.
-      if (clientError) return;
-      setJustEnded(true);
-      queryClient.invalidateQueries({ queryKey: ["voice-assessment", interviewId] });
+    if (chat.status !== "idle" || !wasConnectedRef.current) {
+      return;
     }
-  }, [chat.status, clientError, queryClient, interviewId]);
 
-  // Give the ElevenLabs webhook a chance to persist the transcript first.
-  // If that never happens, fall back to the browser transcript so local dev
-  // and webhook outages do not permanently strand the assessment.
-  useEffect(() => {
-    if (chat.status !== "idle") return;
-    if (!justEnded) return;
-    if (completeCalledRef.current) return;
-    if (effectiveStatus === "completed" || effectiveStatus === "skipped") return;
-    if (liveTranscriptRef.current.length === 0) return;
+    wasConnectedRef.current = false;
+    if (clientError) {
+      return;
+    }
 
-    const timeoutId = window.setTimeout(() => {
-      const transcript = liveTranscriptRef.current;
-      if (completeCalledRef.current || transcript.length === 0) return;
-      completeCalledRef.current = true;
-      completeMutation.mutate({
-        data: {
-          interviewId,
-          messages: transcript.map((m) => ({ role: m.role, content: m.text })),
-        },
-      });
-    }, 8_000);
+    setCallEnded(true);
+    if (effectiveStatus === "completed" || effectiveStatus === "skipped") {
+      return;
+    }
+    if (completeCalledRef.current) {
+      return;
+    }
 
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [chat.status, justEnded, effectiveStatus, interviewId, completeMutation.mutate]);
+    void submitTranscriptRef.current();
+  }, [chat.status, clientError, effectiveStatus]);
 
   const onStartCall = () => {
     setClientError(null);
+    setCallEnded(false);
+    setSubmitFailed(false);
+    completeCalledRef.current = false;
     chat.connect().catch((error) => {
       const message = error instanceof Error ? error.message : "Could not start voice call.";
       setClientError(message);
     });
   };
 
-  const onEndCall = async () => {
+  const onEndCall = () => {
     setClientError(null);
-    setJustEnded(true);
-    try {
-      await chat.disconnect();
-    } catch {
-      // non-fatal — the fallback effect above still runs once status is idle
-    }
-    queryClient.invalidateQueries({ queryKey: ["voice-assessment", interviewId] });
+    chat.disconnect().catch(() => {
+      // non-fatal — the disconnect effect submits if the agent skipped the tool
+    });
   };
 
   const onRetryAfterError = () => {
@@ -270,23 +294,10 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
     onStartCall();
   };
 
-  // Manual submit — the guaranteed path to persist the assessment once the call
-  // has ended, without waiting on the webhook grace period. Mirrors the text
-  // interview's explicit submit so the candidate is never stranded.
-  const onSubmitTranscript = () => {
-    if (completeCalledRef.current || completeMutation.isPending) return;
-    const transcript = liveTranscriptRef.current;
-    if (transcript.length === 0) {
-      toast.error("No conversation was recorded. Try starting the assessment again.");
-      return;
-    }
-    completeCalledRef.current = true;
-    completeMutation.mutate({
-      data: {
-        interviewId,
-        messages: transcript.map((m) => ({ role: m.role, content: m.text })),
-      },
-    });
+  const onRetrySubmit = () => {
+    completeCalledRef.current = false;
+    setSubmitFailed(false);
+    void submitTranscriptRef.current();
   };
 
   // ---------- Terminal states ----------
@@ -397,7 +408,10 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
 
   // ---------- Active workspace ----------
 
-  const finalising = (justEnded && !isInCall) || completeMutation.isPending;
+  const finalising = callEnded && !isTerminal && !clientError;
+  const showEmptyAfterCall =
+    finalising && !isSubmitting && !submitFailed && liveTranscript.length === 0;
+  const showFinalisingSpinner = finalising && !submitFailed && !showEmptyAfterCall;
   const showStartScreen = !isInCall && !finalising;
   const interim = chat.mode === "listening" ? (chat.pendingUserTranscript?.trim() ?? "") : "";
 
@@ -434,9 +448,7 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
                             ? "Zero is speaking…"
                             : "Connected"
                       : finalising
-                        ? completeMutation.isPending
-                          ? "Finalising results…"
-                          : "Call ended"
+                        ? "Finalising results…"
                         : "Voice communication assessment"}
               </p>
               <p className="text-xs text-muted-foreground">
@@ -537,33 +549,30 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
           </div>
         ) : isInCall ? (
           <ActiveCallFooter audioLevel={chat.inputLevel} mode={chat.mode} />
-        ) : finalising ? (
-          completeMutation.isPending ? (
-            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-              <HugeiconsIcon icon={Loading03Icon} strokeWidth={2} className="size-4 animate-spin" />
-              Finalising results…
-            </div>
-          ) : liveTranscript.length > 0 ? (
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm text-muted-foreground">
-                Call ended. Submit your assessment to finish.
-              </p>
-              <Button size="sm" onClick={onSubmitTranscript} className="px-5">
-                <HugeiconsIcon icon={Tick01Icon} strokeWidth={2} className="size-4" />
-                Submit assessment
-              </Button>
-            </div>
-          ) : (
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm text-muted-foreground">
-                No conversation was recorded. Start the assessment to try again.
-              </p>
-              <Button size="sm" onClick={onStartCall} className="px-5">
-                <HugeiconsIcon icon={Mic01Icon} strokeWidth={2} className="size-4" />
-                Start voice assessment
-              </Button>
-            </div>
-          )
+        ) : showFinalisingSpinner ? (
+          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+            <HugeiconsIcon icon={Loading03Icon} strokeWidth={2} className="size-4 animate-spin" />
+            Finalising results…
+          </div>
+        ) : finalising && submitFailed && liveTranscript.length > 0 ? (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-muted-foreground">
+              Could not save your assessment. Please try again.
+            </p>
+            <Button size="sm" onClick={onRetrySubmit} className="px-5">
+              Try again
+            </Button>
+          </div>
+        ) : showEmptyAfterCall ? (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-muted-foreground">
+              No conversation was recorded. Start the assessment to try again.
+            </p>
+            <Button size="sm" onClick={onStartCall} className="px-5">
+              <HugeiconsIcon icon={Mic01Icon} strokeWidth={2} className="size-4" />
+              Start voice assessment
+            </Button>
+          </div>
         ) : showStartScreen ? (
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-muted-foreground">
