@@ -17,7 +17,6 @@ import {
   getInterviewForCandidateById,
   getInterviewMessagesByInterviewId,
   getInterviewsByCandidate,
-  markCommunicationAssessmentSkipped,
   registerCommunicationAssessmentConversation,
   registerCommunicationAssessmentSession,
   updateInterviewStatus,
@@ -25,7 +24,6 @@ import {
 import { type ExpirableInterview, expireInterviewIfDue } from "@/features/interviews/server/expire";
 import {
   finalizeVoiceAssessmentFromTranscript,
-  signalVoiceAssessmentComplete,
   startPostEvaluation,
 } from "@/features/interviews/server/voice-assessment";
 import {
@@ -572,42 +570,6 @@ export const getMyVoiceAssessmentTranscript = createServerFn({ method: "GET" })
     });
     const parsed = voiceTranscriptDbSchema.safeParse(assessment?.transcript ?? []);
     return { messages: parsed.success ? parsed.data : [] };
-  });
-
-export const skipMyVoiceAssessment = createServerFn({ method: "POST" })
-  .middleware([authMiddleware])
-  .validator(zodValidator(interviewIdSchema))
-  .handler(async ({ data, context }) => {
-    if (context.user.role !== "candidate") {
-      throw new Error("Only candidates can skip voice assessments");
-    }
-
-    const db = getDb();
-    const interview = await getInterviewForCandidateById(db, {
-      id: data.interviewId,
-      candidateId: context.userId,
-    });
-    if (!interview) {
-      return { ok: false };
-    }
-
-    const existing = await getCommunicationAssessmentByInterviewId(db, {
-      interviewId: data.interviewId,
-    });
-    if (existing?.status === "completed" || existing?.status === "skipped") {
-      return { ok: true };
-    }
-    if (!existing) {
-      await createCommunicationAssessment(db, {
-        interviewId: data.interviewId,
-        applicationId: interview.applicationId,
-        status: "pending",
-      });
-    }
-
-    await markCommunicationAssessmentSkipped(db, { interviewId: data.interviewId });
-    await signalVoiceAssessmentComplete(data.interviewId);
-    return { ok: true };
   });
 
 export const registerMyVoiceAssessmentSession = createServerFn({ method: "POST" })

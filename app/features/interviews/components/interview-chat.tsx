@@ -162,15 +162,10 @@ export function InterviewChat({
                   </p>
                 </div>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <Button variant="ghost" size="sm" asChild>
-                  <Link to="/dashboard/applications">Back to applications</Link>
-                </Button>
-                <Button size="sm" onClick={onContinueToVoice}>
-                  <HugeiconsIcon icon={Mic01Icon} strokeWidth={2} className="size-4" />
-                  {voiceCtaLabel ?? "Start voice assessment"}
-                </Button>
-              </div>
+              <Button size="sm" onClick={onContinueToVoice}>
+                <HugeiconsIcon icon={Mic01Icon} strokeWidth={2} className="size-4" />
+                {voiceCtaLabel ?? "Start voice assessment"}
+              </Button>
             </div>
           ) : (
             <div className="flex flex-wrap items-center justify-between gap-3">
