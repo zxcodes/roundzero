@@ -58,7 +58,7 @@ import { useEntitlements } from "@/features/entitlements/hooks/use-entitlements"
 import { isJobClosingSoon } from "@/features/jobs/components/job-status-badge";
 import {
   getMyArchivedJobs,
-  getMyJobCounts,
+  type getMyJobCounts,
   getMyJobsWithPipeline,
   getOpenJobsPaginated,
   publishJob,
@@ -116,10 +116,9 @@ export const Route = createFileRoute("/_authenticated/dashboard/jobs/")({
   loaderDeps: ({ search }) => search,
   loader: async ({ context, deps }) => {
     if (context.isCompany) {
-      const [jobs, counts] = await Promise.all([
-        deps.tab === "archived" ? getMyArchivedJobs() : getMyJobsWithPipeline(),
-        getMyJobCounts(),
-      ]);
+      const jobs =
+        deps.tab === "archived" ? await getMyArchivedJobs() : await getMyJobsWithPipeline();
+      const counts = context.jobCounts ?? { openCount: 0, draftCount: 0, totalCount: 0 };
       return { type: "company" as const, jobs, counts };
     }
     const paginatedJobs = await getOpenJobsPaginated({
