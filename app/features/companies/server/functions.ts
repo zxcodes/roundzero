@@ -181,16 +181,18 @@ export const createCompany = createServerFn({ method: "POST" })
       throw new Error("Only company accounts can create a workspace");
     }
 
-    const existing = await getActiveMembershipByUserId(db, {
-      userId: context.userId,
-    });
+    const [existing, priorMembership] = await Promise.all([
+      getActiveMembershipByUserId(db, {
+        userId: context.userId,
+      }),
+      getAnyMembershipByUserId(db, {
+        userId: context.userId,
+      }),
+    ]);
     if (existing) {
       throw new Error("You already belong to a company");
     }
 
-    const priorMembership = await getAnyMembershipByUserId(db, {
-      userId: context.userId,
-    });
     if (priorMembership) {
       throw new Error(
         "Your account has no active company workspace. Accept an invitation to join a team.",
@@ -236,6 +238,10 @@ export const getMyCompanyContext = createServerFn({ method: "GET" }).handler(asy
   }
   return resolveMyCompanyContext(getDb(), session.data.userId);
 });
+
+// Cache key for the _authenticated beforeLoad bootstrap; invalidated centrally
+// in getRouter() on router.invalidate(). See app/router.tsx.
+export const companyBootstrapQueryKey = ["company-bootstrap"] as const;
 
 /**
  * Single round-trip bootstrap for the `_authenticated` layout: resolves the
