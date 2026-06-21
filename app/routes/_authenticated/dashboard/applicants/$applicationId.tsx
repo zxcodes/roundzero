@@ -63,18 +63,14 @@ export const Route = createFileRoute("/_authenticated/dashboard/applicants/$appl
     validateUuidParams({ applicationId: params.applicationId });
   },
   loader: async ({ params }) => {
-    const data = await getCompanyApplicantReview({
-      data: { applicationId: params.applicationId },
-    });
+    const [data, preEvaluation, reportTimeline] = await Promise.all([
+      getCompanyApplicantReview({ data: { applicationId: params.applicationId } }),
+      getPreEvaluationForApplication({ data: { applicationId: params.applicationId } }),
+      getCompanyApplicantReportTimeline({ data: { applicationId: params.applicationId } }),
+    ]);
     if (!data) {
       throw notFound();
     }
-    const preEvaluation = await getPreEvaluationForApplication({
-      data: { applicationId: params.applicationId },
-    });
-    const reportTimeline = await getCompanyApplicantReportTimeline({
-      data: { applicationId: params.applicationId },
-    });
     return { ...data, preEvaluation, reportTimeline };
   },
   pendingComponent: DashboardApplicantReviewSkeleton,

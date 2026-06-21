@@ -59,7 +59,7 @@ export const getCompanyApplicantReportTimeline = createServerFn({ method: "GET" 
       applicationId: data.applicationId,
     });
     if (interview) {
-      await expireInterviewIfDue({
+      const result = await expireInterviewIfDue({
         db,
         interview: {
           id: interview.id,
@@ -69,24 +69,23 @@ export const getCompanyApplicantReportTimeline = createServerFn({ method: "GET" 
         },
         postEvaluation: env.POST_EVALUATION,
       });
-      interview = await getInterviewByApplicationId(db, {
-        applicationId: data.applicationId,
-      });
+      if (result.expiredNow) {
+        interview = await getInterviewByApplicationId(db, {
+          applicationId: data.applicationId,
+        });
+      }
     }
-    const preEvaluation = await getPreEvaluationByApplicationId(db, {
-      applicationId: data.applicationId,
-    });
-    const reportRow = await getReleasedReportByApplicationId(db, {
-      applicationId: data.applicationId,
-    });
-    const communicationAssessment = await getCommunicationAssessmentByApplicationId(db, {
-      applicationId: data.applicationId,
-    });
-    const interviewMessages = interview
-      ? await getInterviewMessagesByInterviewId(db, {
-          interviewId: interview.id,
-        })
-      : [];
+    const interviewMessagesPromise = interview
+      ? getInterviewMessagesByInterviewId(db, { interviewId: interview.id })
+      : Promise.resolve<Awaited<ReturnType<typeof getInterviewMessagesByInterviewId>>>([]);
+
+    const [preEvaluation, reportRow, communicationAssessment, interviewMessages] =
+      await Promise.all([
+        getPreEvaluationByApplicationId(db, { applicationId: data.applicationId }),
+        getReleasedReportByApplicationId(db, { applicationId: data.applicationId }),
+        getCommunicationAssessmentByApplicationId(db, { applicationId: data.applicationId }),
+        interviewMessagesPromise,
+      ]);
     const interviewState =
       interview && interviewMessages.length > 0
         ? {

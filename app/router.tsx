@@ -5,6 +5,7 @@ import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query
 import { ErrorBoundary } from "./components/error-boundary";
 import { NotFound } from "./components/not-found";
 import type { getCurrentUser } from "./features/auth/server/functions";
+import { companyBootstrapQueryKey } from "./features/companies/server/functions";
 import { routeTree } from "./routeTree.gen";
 
 export type User = NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>;
@@ -53,10 +54,19 @@ export function getRouter() {
     Sentry.init({
       dsn: "https://93220926b2dbb8136dfb5e8d25f7a3fd@o4511527312687104.ingest.us.sentry.io/4511527318388736",
       sendDefaultPii: true,
+      tracesSampleRate: 1.0,
     });
   }
 
   setupRouterSsrQueryIntegration({ router, queryClient });
+
+  // router.invalidate() doesn't bust the React Query cache, so couple it to the
+  // bootstrap query — otherwise entitlements/counts stay stale after writes.
+  const invalidate = router.invalidate.bind(router);
+  router.invalidate = (opts) => {
+    queryClient.invalidateQueries({ queryKey: companyBootstrapQueryKey });
+    return invalidate(opts);
+  };
 
   return router;
 }

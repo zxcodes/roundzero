@@ -205,14 +205,6 @@ WHERE interview_id = $1
   AND analysis IS NULL
 RETURNING *;
 
--- name: markCommunicationAssessmentSkipped :one
-UPDATE communication_assessments
-SET status = 'skipped',
-    completed_at = now(),
-    updated_at = now()
-WHERE interview_id = $1
-RETURNING *;
-
 -- name: createInterviewMessage :one
 INSERT INTO interview_messages (interview_id, role, content)
 VALUES ($1, $2, $3)
