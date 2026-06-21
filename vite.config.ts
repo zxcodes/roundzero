@@ -32,7 +32,7 @@ export default defineConfig(({ mode }) => {
       sentryTanstackStart({
         org: "roundzero-a4",
         project: "roundzero-staging",
-        authToken: env.SENTRY_AUTH_TOKEN,
+        authToken: process.env.SENTRY_AUTH_TOKEN ?? env.SENTRY_AUTH_TOKEN,
       }),
     ],
   };
