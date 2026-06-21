@@ -95,7 +95,6 @@ jobs:
           ELEVENLABS_API_KEY=${{ secrets.ELEVENLABS_API_KEY }}
           ELEVENLABS_AGENT_ID=${{ secrets.ELEVENLABS_AGENT_ID }}
           ELEVENLABS_WEBHOOK_SECRET=${{ secrets.ELEVENLABS_WEBHOOK_SECRET }}
-          SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
           EOF
 
       - name: Run database migrations
@@ -110,3 +109,4 @@ jobs:
           VITE_APP_URL: ${{ secrets.VITE_APP_URL }}
           VITE_PUBLIC_ASSET_BASE_URL: ${{ secrets.VITE_PUBLIC_ASSET_BASE_URL }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
