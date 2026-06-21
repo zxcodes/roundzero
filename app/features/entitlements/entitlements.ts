@@ -57,15 +57,6 @@ export type Entitlements = {
   aiJobCreation: { enabled: boolean; disabledReason: string | null };
 };
 
-const freeTeamLimit = PLAN_CONFIGS.free.includedTeamMembers;
-
-export const FREE_TEAM_DEFAULTS: Entitlements["team"] = {
-  members: { used: 0, limit: freeTeamLimit, remaining: freeTeamLimit, atLimit: false },
-  pendingInvites: { used: 0 },
-  slotsUsed: 0,
-  canInviteAnother: true,
-};
-
 export const FREE_REPORT_DEFAULTS: Entitlements["reports"] = {
   perJobLimit: PLAN_CONFIGS.free.includedReportsPerJob,
   defaultTarget: PLAN_CONFIGS.free.includedReportsPerJob,

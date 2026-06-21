@@ -266,6 +266,72 @@ export async function getApplicationsByJob(sql: Sql, args: getApplicationsByJobA
     }));
 }
 
+export const getApplicationsByJobsQuery = `-- name: getApplicationsByJobs :many
+SELECT a.id, a.job_id, a.candidate_id, a.resume_key, a.metadata, a.status, a.created_at, a.updated_at,
+       u.name AS candidate_name, u.email AS candidate_email, u.picture AS candidate_picture,
+       latest_released_report.id AS report_id,
+       latest_released_report.recommendation AS report_recommendation,
+       latest_released_report.scores AS report_scores,
+       latest_released_report.released_at AS report_released_at,
+       pe.score AS pre_evaluation_score
+FROM applications a
+JOIN users u ON u.id = a.candidate_id AND u.deleted_at IS NULL
+LEFT JOIN LATERAL (
+  SELECT r.id, r.recommendation, r.scores, r.released_at
+  FROM reports r
+  WHERE r.application_id = a.id
+    AND r.released_at IS NOT NULL
+  ORDER BY r.released_at DESC, r.created_at DESC
+  LIMIT 1
+) latest_released_report ON TRUE
+LEFT JOIN pre_evaluations pe ON pe.application_id = a.id
+WHERE a.job_id = ANY($1::uuid[])
+ORDER BY (latest_released_report.released_at IS NOT NULL) DESC, COALESCE((latest_released_report.scores->>'overall')::numeric, 0) DESC, a.created_at DESC`;
+
+export interface getApplicationsByJobsArgs {
+    jobids: string[];
+}
+
+export interface getApplicationsByJobsRow {
+    id: string;
+    jobId: string;
+    candidateId: string;
+    resumeKey: string | null;
+    metadata: any;
+    status: string;
+    createdAt: Date;
+    updatedAt: Date;
+    candidateName: string;
+    candidateEmail: string;
+    candidatePicture: string | null;
+    reportId: string;
+    reportRecommendation: string;
+    reportScores: any;
+    reportReleasedAt: Date | null;
+    preEvaluationScore: number | null;
+}
+
+export async function getApplicationsByJobs(sql: Sql, args: getApplicationsByJobsArgs): Promise<getApplicationsByJobsRow[]> {
+    return (await sql.unsafe(getApplicationsByJobsQuery, [args.jobids]).values()).map(row => ({
+        id: row[0],
+        jobId: row[1],
+        candidateId: row[2],
+        resumeKey: row[3],
+        metadata: row[4],
+        status: row[5],
+        createdAt: row[6],
+        updatedAt: row[7],
+        candidateName: row[8],
+        candidateEmail: row[9],
+        candidatePicture: row[10],
+        reportId: row[11],
+        reportRecommendation: row[12],
+        reportScores: row[13],
+        reportReleasedAt: row[14],
+        preEvaluationScore: row[15]
+    }));
+}
+
 export const getApplicationByIdQuery = `-- name: getApplicationById :one
 SELECT a.id, a.job_id, a.candidate_id, a.resume_key, a.metadata, a.status, a.created_at, a.updated_at,
        j.title AS job_title, j.status AS job_status,

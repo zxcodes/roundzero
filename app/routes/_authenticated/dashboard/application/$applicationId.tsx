@@ -46,15 +46,13 @@ export const Route = createFileRoute("/_authenticated/dashboard/application/$app
     validateUuidParams({ applicationId: params.applicationId });
   },
   loader: async ({ params }) => {
-    const application = await getMyApplicationDetail({
-      data: { applicationId: params.applicationId },
-    });
+    const [application, interview] = await Promise.all([
+      getMyApplicationDetail({ data: { applicationId: params.applicationId } }),
+      getInterviewForApplication({ data: { applicationId: params.applicationId } }),
+    ]);
     if (!application) {
       throw notFound();
     }
-    const interview = await getInterviewForApplication({
-      data: { applicationId: params.applicationId },
-    });
     return { application, interview };
   },
   pendingComponent: DashboardApplicationDetailSkeleton,

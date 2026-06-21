@@ -3,7 +3,7 @@ import {
   countApplicationsByCandidate,
   countApplicationsByCompany,
   getApplicationsByCandidate,
-  getApplicationsByJob,
+  getApplicationsByJobs,
   getRecentApplicationsByCandidate,
 } from "@/features/applications/queries/queries_sql";
 import { hasShortlistNextSteps, parseShortlistDetails } from "@/features/applications/shortlist";
@@ -106,8 +106,23 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
         overallScore: number | null;
       }[] = [];
 
-      for (const role of roleHealth.slice(0, 4)) {
-        const jobApplicants = await getApplicationsByJob(db, { jobId: role.jobId });
+      const topRoles = roleHealth.slice(0, 4);
+      const allJobApplicants =
+        topRoles.length > 0
+          ? await getApplicationsByJobs(db, { jobids: topRoles.map((r) => r.jobId) })
+          : [];
+      const appByJobId = new Map<string, (typeof allJobApplicants)[number][]>();
+      for (const app of allJobApplicants) {
+        const group = appByJobId.get(app.jobId);
+        if (group) {
+          group.push(app);
+        } else {
+          appByJobId.set(app.jobId, [app]);
+        }
+      }
+
+      for (const role of topRoles) {
+        const jobApplicants = appByJobId.get(role.jobId) ?? [];
 
         for (const applicant of jobApplicants) {
           if (applicant.reportId === null || applicant.reportReleasedAt === null) {

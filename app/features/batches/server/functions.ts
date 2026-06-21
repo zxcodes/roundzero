@@ -29,17 +29,18 @@ export const getActiveBatchForJobServer = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const db = getDb();
 
-    const company = await getCompanyByMemberUserId(db, { userId: context.userId });
+    const [company, job, batch] = await Promise.all([
+      getCompanyByMemberUserId(db, { userId: context.userId }),
+      getJobById(db, { id: data.jobId }),
+      getActiveBatchForJob(db, { jobId: data.jobId }),
+    ]);
     if (!company) {
       throw new Error("No company found");
     }
-
-    const job = await getJobById(db, { id: data.jobId });
     if (!job || job.companyId !== company.id) {
       throw new Error("Job not found or not authorized");
     }
 
-    const batch = await getActiveBatchForJob(db, { jobId: data.jobId });
     return batch;
   });
 
@@ -49,26 +50,25 @@ export const getBatchOverview = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const db = getDb();
 
-    const batch = await getBatchDetail(db, { id: data.batchId });
+    const [batch, company] = await Promise.all([
+      getBatchDetail(db, { id: data.batchId }),
+      getCompanyByMemberUserId(db, { userId: context.userId }),
+    ]);
     if (!batch) {
       return null;
     }
-
-    // Verify the requester owns the company that owns the job
-    const company = await getCompanyByMemberUserId(db, { userId: context.userId });
     if (!company) {
       throw new Error("Not authorized to view this batch");
     }
 
-    const job = await getJobById(db, { id: batch.jobId });
-    if (!job || job.companyId !== company.id) {
-      throw new Error("Not authorized to view this batch");
-    }
-
-    const [reports, interviews] = await Promise.all([
+    const [job, reports, interviews] = await Promise.all([
+      getJobById(db, { id: batch.jobId }),
       getReportsByBatchId(db, { batchId: data.batchId }),
       getInterviewsByBatchWithCandidate(db, { batchId: data.batchId }),
     ]);
+    if (!job || job.companyId !== company.id) {
+      throw new Error("Not authorized to view this batch");
+    }
 
     return {
       batch,

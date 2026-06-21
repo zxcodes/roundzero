@@ -20,9 +20,14 @@ export const Route = createFileRoute("/_authenticated/dashboard/jobs/$jobId")({
       return { type: "company" as const, job: jobResult, applicants };
     }
 
-    const alreadyApplied =
-      jobResult.status === "open" ? await hasApplied({ data: { jobId: params.jobId } }) : false;
-    const candidateProfile = await getMyCandidateProfile();
+    const alreadyAppliedPromise =
+      jobResult.status === "open"
+        ? hasApplied({ data: { jobId: params.jobId } })
+        : (Promise.resolve(false as const) as Promise<boolean>);
+    const [alreadyApplied, candidateProfile] = await Promise.all([
+      alreadyAppliedPromise,
+      getMyCandidateProfile(),
+    ]);
     return { type: "candidate" as const, job: jobResult, alreadyApplied, candidateProfile };
   },
   pendingComponent: DashboardJobDetailSkeleton,

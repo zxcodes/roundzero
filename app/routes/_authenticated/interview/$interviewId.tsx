@@ -12,13 +12,13 @@ export const Route = createFileRoute("/_authenticated/interview/$interviewId")({
     validateUuidParams({ interviewId: params.interviewId });
   },
   loader: async ({ params }) => {
-    const interview = await getMyInterview({ data: { interviewId: params.interviewId } });
+    const [interview, chatState] = await Promise.all([
+      getMyInterview({ data: { interviewId: params.interviewId } }),
+      getMyInterviewMessages({ data: { interviewId: params.interviewId } }),
+    ]);
     if (!interview) {
       throw notFound();
     }
-    const chatState = await getMyInterviewMessages({
-      data: { interviewId: params.interviewId },
-    });
     if (!chatState) {
       throw notFound();
     }
