@@ -239,6 +239,10 @@ export const getMyCompanyContext = createServerFn({ method: "GET" }).handler(asy
   return resolveMyCompanyContext(getDb(), session.data.userId);
 });
 
+// Cache key for the _authenticated beforeLoad bootstrap; invalidated centrally
+// in getRouter() on router.invalidate(). See app/router.tsx.
+export const companyBootstrapQueryKey = ["company-bootstrap"] as const;
+
 /**
  * Single round-trip bootstrap for the `_authenticated` layout: resolves the
  * caller's company context AND the job/team counts needed to derive

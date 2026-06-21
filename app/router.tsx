@@ -5,6 +5,7 @@ import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query
 import { ErrorBoundary } from "./components/error-boundary";
 import { NotFound } from "./components/not-found";
 import type { getCurrentUser } from "./features/auth/server/functions";
+import { companyBootstrapQueryKey } from "./features/companies/server/functions";
 import { routeTree } from "./routeTree.gen";
 
 export type User = NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>;
@@ -58,6 +59,14 @@ export function getRouter() {
   }
 
   setupRouterSsrQueryIntegration({ router, queryClient });
+
+  // router.invalidate() doesn't bust the React Query cache, so couple it to the
+  // bootstrap query — otherwise entitlements/counts stay stale after writes.
+  const invalidate = router.invalidate.bind(router);
+  router.invalidate = (opts) => {
+    queryClient.invalidateQueries({ queryKey: companyBootstrapQueryKey });
+    return invalidate(opts);
+  };
 
   return router;
 }

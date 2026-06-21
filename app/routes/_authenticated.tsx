@@ -2,11 +2,12 @@ import { createFileRoute, Outlet, redirect, useLocation } from "@tanstack/react-
 import { DashboardLayoutSkeleton } from "@/components/route-skeletons";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getMyCandidateProfile } from "@/features/candidates/server/functions";
-import { getMyCompanyBootstrap } from "@/features/companies/server/functions";
+import {
+  companyBootstrapQueryKey,
+  getMyCompanyBootstrap,
+} from "@/features/companies/server/functions";
 import { deriveEntitlements } from "@/features/entitlements/entitlements";
 import { parseCompanyMemberRole } from "@/shared/membership-auth";
-
-const companyBootstrapQueryKey = ["company-bootstrap"] as const;
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async ({ context, location }) => {
