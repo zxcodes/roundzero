@@ -95,6 +95,7 @@ jobs:
           ELEVENLABS_API_KEY=${{ secrets.ELEVENLABS_API_KEY }}
           ELEVENLABS_AGENT_ID=${{ secrets.ELEVENLABS_AGENT_ID }}
           ELEVENLABS_WEBHOOK_SECRET=${{ secrets.ELEVENLABS_WEBHOOK_SECRET }}
+          SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
           EOF
 
       - name: Run database migrations
