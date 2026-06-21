@@ -21,12 +21,14 @@ import { emailsMatch } from "@/shared/google-userinfo";
 
 export const Route = createFileRoute("/invite/$token")({
   loader: async ({ params }) => {
-    const preview = await getInvitationPreview({ data: { token: params.token } });
+    const [preview, user] = await Promise.all([
+      getInvitationPreview({ data: { token: params.token } }),
+      getCurrentUser(),
+    ]);
     if (!preview) {
       throw notFound();
     }
 
-    const user = await getCurrentUser();
     return { preview, user };
   },
   pendingComponent: InviteAcceptSkeleton,

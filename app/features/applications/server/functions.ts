@@ -112,17 +112,21 @@ export const getJobApplicants = createServerFn({ method: "GET" })
     const db = getDb();
 
     // Verify this user owns the company that owns the job
-    const company = await getCompanyByMemberUserId(db, { userId: context.userId });
+    const [company, job] = await Promise.all([
+      getCompanyByMemberUserId(db, { userId: context.userId }),
+      getJobById(db, { id: data.jobId }),
+    ]);
     if (!company) {
       throw new Error("No company found");
     }
-
-    const job = await getJobById(db, { id: data.jobId });
     if (!job || job.companyId !== company.id) {
       throw new Error("Job not found or not authorized");
     }
 
-    const activeInterviews = await getActiveInterviewsByJob(db, { jobId: data.jobId });
+    const [activeInterviews, applicants] = await Promise.all([
+      getActiveInterviewsByJob(db, { jobId: data.jobId }),
+      getApplicationsByJob(db, { jobId: data.jobId }),
+    ]);
     await Promise.all(
       activeInterviews.map((interview) =>
         expireInterviewIfDue({
@@ -138,7 +142,6 @@ export const getJobApplicants = createServerFn({ method: "GET" })
       ),
     );
 
-    const applicants = await getApplicationsByJob(db, { jobId: data.jobId });
     return applicants;
   });
 

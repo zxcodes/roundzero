@@ -4,28 +4,22 @@ import { CandidateSettings } from "@/features/candidates/components/candidate-se
 import { getMyCandidateProfile } from "@/features/candidates/server/functions";
 import { CompanyLeaveSection } from "@/features/companies/components/company-leave-section";
 import { CompanySettings } from "@/features/companies/components/company-settings";
-import { getMyCompanyContext } from "@/features/companies/server/functions";
 
 export const Route = createFileRoute("/_authenticated/dashboard/settings")({
   loader: async ({ context }) => {
     if (context.isCompany) {
-      const companyContext = await getMyCompanyContext();
-
-      if (companyContext.state === "new") {
-        throw redirect({ to: "/onboarding/company" });
-      }
-      if (companyContext.state !== "active") {
+      if (!context.company) {
         throw redirect({ to: "/onboarding/no-workspace" });
       }
 
-      const { company, membership } = companyContext;
-      const canManageProfile = membership.role === "owner" || membership.role === "admin";
+      const canManageProfile =
+        context.membershipRole === "owner" || context.membershipRole === "admin";
 
       return {
         type: "company" as const,
-        company,
+        company: context.company,
         canManageProfile,
-        canLeaveTeam: membership.role !== "owner",
+        canLeaveTeam: context.membershipRole !== "owner",
       };
     }
     const profile = await getMyCandidateProfile();

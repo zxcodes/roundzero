@@ -26,18 +26,19 @@ export const getPreEvaluationForApplication = createServerFn({ method: "GET" })
       if (application.candidateId !== context.userId) {
         throw new Error("Not authorized to view this pre-evaluation");
       }
+      return getPreEvaluationByApplicationId(db, { applicationId: data.applicationId });
     }
 
     if (context.user.role === "company") {
-      const company = await getCompanyByMemberUserId(db, { userId: context.userId });
+      const [company, preEvaluation] = await Promise.all([
+        getCompanyByMemberUserId(db, { userId: context.userId }),
+        getPreEvaluationByApplicationId(db, { applicationId: data.applicationId }),
+      ]);
       if (!company || company.id !== application.companyId) {
         throw new Error("Not authorized to view this pre-evaluation");
       }
+      return preEvaluation;
     }
 
-    if (context.user.role !== "candidate" && context.user.role !== "company") {
-      throw new Error("Not authorized to view this pre-evaluation");
-    }
-
-    return getPreEvaluationByApplicationId(db, { applicationId: data.applicationId });
+    throw new Error("Not authorized to view this pre-evaluation");
   });
