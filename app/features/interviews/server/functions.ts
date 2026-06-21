@@ -95,10 +95,12 @@ export const getMyInterviewMessages = createServerFn({ method: "GET" })
       return null;
     }
 
-    const expired = await expireInterviewIfNeeded({ db, interview });
-    const messages = await getInterviewMessagesByInterviewId(db, {
-      interviewId: data.interviewId,
-    });
+    const [expired, messages] = await Promise.all([
+      expireInterviewIfNeeded({ db, interview }),
+      getInterviewMessagesByInterviewId(db, {
+        interviewId: data.interviewId,
+      }),
+    ]);
 
     return {
       status: expired.interview.status,
