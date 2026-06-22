@@ -48,9 +48,9 @@ import { formatDate } from "@/shared/date";
 import {
   APPLICATION_STATUS_TRANSITIONS,
   type ApplicationStatus,
-  applicationStatusLabels,
   applicationStatusMeta,
   applicationStatusSchema,
+  getApplicationStatusLabel,
 } from "@/shared/enums";
 import { base64ToBlob } from "@/shared/resume";
 import { validateUuidParams } from "@/shared/validation";
@@ -90,6 +90,10 @@ const stepperSteps: StepperStep[] = [
   { key: "evaluated", label: "Evaluated" },
   { key: "decision", label: "Decision" },
 ];
+
+function getScreeningStepLabel(preEvaluationScore: number | null | undefined): string {
+  return preEvaluationScore != null ? "Screened" : "Screening";
+}
 
 function statusToStepIndex(status: ApplicationStatus): number {
   switch (status) {
@@ -187,6 +191,7 @@ function ApplicantReviewPage() {
   });
 
   const currentStatus = applicationStatusSchema.parse(application.status);
+  const preEvaluationScore = preEvaluation?.score ?? null;
   const isFailed = currentStatus === "evaluation_failed";
   const isWithdrawn = currentStatus === "withdrawn";
   const currentStepIndex = statusToStepIndex(currentStatus);
@@ -299,6 +304,7 @@ function ApplicantReviewPage() {
 
         <ApplicationStatusSection
           currentStatus={currentStatus}
+          preEvaluationScore={preEvaluationScore}
           applicationId={application.id}
           candidateName={application.candidateName}
           canShortlist={canShortlist}
@@ -388,6 +394,7 @@ function ApplicantReviewPage() {
 
 function ApplicationStatusSection({
   currentStatus,
+  preEvaluationScore,
   applicationId,
   candidateName,
   canShortlist,
@@ -415,6 +422,7 @@ function ApplicationStatusSection({
   createdAt,
 }: {
   currentStatus: ApplicationStatus;
+  preEvaluationScore: number | null;
   applicationId: string;
   candidateName: string;
   canShortlist: boolean;
@@ -455,7 +463,7 @@ function ApplicationStatusSection({
             </p>
             <div className="flex flex-wrap items-center gap-1.5">
               <Badge variant="outline" className={tone.badge}>
-                {applicationStatusLabels[currentStatus]}
+                {getApplicationStatusLabel(currentStatus, { preEvaluationScore })}
               </Badge>
               <Badge variant="outline" className="gap-1 font-mono text-[11px]">
                 <HugeiconsIcon icon={Calendar01Icon} strokeWidth={2} className="size-3" />
@@ -550,6 +558,7 @@ function ApplicationStatusSection({
         <div className="grid gap-3 border-y border-border/50 py-3 lg:grid-cols-[minmax(0,1fr)_280px]">
           <CompactStepper
             currentIndex={currentIndex}
+            preEvaluationScore={preEvaluationScore}
             isFailed={isFailed}
             isWithdrawn={isWithdrawn}
             isRejected={isRejected}
@@ -567,7 +576,10 @@ function ApplicationStatusSection({
                   <SelectContent>
                     {allowedStatuses.map((status) => (
                       <SelectItem key={status} value={status}>
-                        {applicationStatusLabels[status]}
+                        {getApplicationStatusLabel(status, {
+                          preEvaluationScore:
+                            status === "pre_screening" ? preEvaluationScore : null,
+                        })}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -592,16 +604,20 @@ function ApplicationStatusSection({
 
 function CompactStepper({
   currentIndex,
+  preEvaluationScore,
   isFailed,
   isWithdrawn,
   isRejected,
 }: {
   currentIndex: number;
+  preEvaluationScore: number | null;
   isFailed: boolean;
   isWithdrawn: boolean;
   isRejected: boolean;
 }) {
-  const progressWidth = currentIndex > 0 ? `${currentIndex * 20}%` : "0%";
+  const screeningComplete = preEvaluationScore != null && currentIndex === 1;
+  const completedSteps = screeningComplete ? 1 : currentIndex > 0 ? currentIndex : 0;
+  const progressWidth = completedSteps > 0 ? `${completedSteps * 20}%` : "0%";
   const progressTone = currentIndex === 4 && isRejected ? "bg-danger/60" : "bg-primary/50";
 
   return (
@@ -615,8 +631,13 @@ function CompactStepper({
       ) : null}
       <div className="relative z-10 grid grid-cols-5 gap-0">
         {stepperSteps.map((step, i) => {
-          const isCurrent = !isFailed && !isWithdrawn && i === currentIndex;
-          const isCompleted = !isFailed && !isWithdrawn && i < currentIndex;
+          const isScreeningStep = step.key === "screening";
+          const isScreeningDone = isScreeningStep && screeningComplete;
+          const isCurrent = !isFailed && !isWithdrawn && i === currentIndex && !isScreeningDone;
+          const isCompleted = !isFailed && !isWithdrawn && (i < currentIndex || isScreeningDone);
+          const stepLabel = isScreeningStep
+            ? getScreeningStepLabel(preEvaluationScore)
+            : step.label;
           // On "decision" step, color reflects shortlisted (primary) vs rejected (danger)
           const dotClass = isFailed
             ? "bg-danger"
@@ -642,7 +663,7 @@ function CompactStepper({
                       : "text-muted-foreground/60"
                 }`}
               >
-                {step.label}
+                {stepLabel}
               </span>
             </div>
           );
