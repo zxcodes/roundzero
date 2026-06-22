@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import { type Recommendation, recommendationBadgeTone, recommendationLabels } from "@/shared/enums";
+import { CANDIDATE_SCORE_MAX, formatCandidateScore } from "@/shared/score";
 
 /**
  * Unified score + recommendation pill. Used wherever we display an evaluation
@@ -50,8 +51,10 @@ export function ScorePill({
       )}
     >
       <span className="flex items-baseline gap-0.5 font-mono font-semibold tabular-nums">
-        <span className={scoreSizeClass}>{score !== null ? Math.round(score) : "—"}</span>
-        <span className={cn("font-medium uppercase opacity-60", slashSizeClass)}>/100</span>
+        <span className={scoreSizeClass}>{formatCandidateScore(score)}</span>
+        <span className={cn("font-medium uppercase opacity-60", slashSizeClass)}>
+          /{CANDIDATE_SCORE_MAX}
+        </span>
       </span>
       {recommendation ? (
         <>

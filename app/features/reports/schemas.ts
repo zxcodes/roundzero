@@ -1,11 +1,11 @@
 import { z } from "zod";
 
 export const reportScoresSchema = z.object({
-  communication: z.number().min(0).max(100),
-  problemSolving: z.number().min(0).max(100),
-  ownership: z.number().min(0).max(100),
-  roleFit: z.number().min(0).max(100),
-  overall: z.number().min(0).max(100),
+  communication: z.number().min(0).max(10),
+  problemSolving: z.number().min(0).max(10),
+  ownership: z.number().min(0).max(10),
+  roleFit: z.number().min(0).max(10),
+  overall: z.number().min(0).max(10),
 });
 
 export const answerAuthenticitySignalSchema = z.object({
@@ -54,4 +54,32 @@ export const reportGenerationSchema = reportSchema.omit({ answerAuthenticity: tr
 export function getOverallScore(scores: unknown): number | null {
   const parsed = reportScoresSchema.safeParse(scores);
   return parsed.success ? parsed.data.overall : null;
+}
+
+type StoredReportInput = {
+  summary: string;
+  strengths: unknown;
+  weaknesses: unknown;
+  insights: unknown;
+  evidence: unknown;
+  screeningAnswers: unknown;
+  scores: unknown;
+  recommendation: unknown;
+  answerAuthenticity: unknown;
+};
+
+export function parseStoredReport(row: StoredReportInput): ReportData | null {
+  const parsed = reportSchema.safeParse({
+    summary: row.summary,
+    strengths: row.strengths,
+    weaknesses: row.weaknesses,
+    insights: row.insights,
+    evidence: row.evidence,
+    screeningAnswers: row.screeningAnswers,
+    scores: row.scores,
+    recommendation: row.recommendation,
+    answerAuthenticity: row.answerAuthenticity,
+  });
+
+  return parsed.success ? parsed.data : null;
 }

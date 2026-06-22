@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { LIMITS } from "@/shared/ai-refine";
+import { clampCandidateScore } from "@/shared/score";
 
 const DIMENSIONS = ["clarity", "articulation", "conciseness", "listening", "confidence"] as const;
 
@@ -7,7 +8,7 @@ type DimensionName = (typeof DIMENSIONS)[number];
 
 const dimension = z
   .object({
-    score: z.number().min(0).max(100),
+    score: z.number().min(0).max(10),
     evidence: z.array(z.string()),
   })
   .strict();
@@ -19,7 +20,7 @@ const communicationAssessmentObjectSchema = z
     conciseness: dimension,
     listening: dimension,
     confidence: dimension,
-    overallScore: z.number().min(0).max(100),
+    overallScore: z.number().min(0).max(10),
     summary: z.string(),
   })
   .strict();
@@ -53,14 +54,15 @@ export function normalizeCommunicationAssessmentInput(raw: unknown): unknown {
     return raw;
   }
 
-  const overallScore = typeof obj.overallScore === "number" ? obj.overallScore : 50;
+  const overallScore =
+    typeof obj.overallScore === "number" ? clampCandidateScore(obj.overallScore) : 5;
   const summary = typeof obj.summary === "string" ? obj.summary : "";
 
   const normalized: Record<string, unknown> = { overallScore, summary };
 
   for (const dim of DIMENSIONS) {
     const scoreRaw = obj[dim];
-    const score = typeof scoreRaw === "number" ? scoreRaw : 50;
+    const score = typeof scoreRaw === "number" ? clampCandidateScore(scoreRaw) : 5;
 
     const evidenceCandidates = [
       obj[evidenceKeyFor(dim)],
@@ -110,7 +112,7 @@ export const COMMUNICATION_ASSESSMENT_PROMPT = Object.freeze({
       "You ONLY judge HOW the candidate spoke — clarity, articulation, conciseness, listening, and confidence.",
       "You do NOT judge their technical knowledge, accuracy, or experience depth.",
       "",
-      "Definitions (score each 0-100):",
+      "Definitions (score each 0-10, one decimal allowed):",
       "- clarity: Are answers well-structured and easy to follow?",
       "- articulation: Do they express ideas precisely with appropriate vocabulary?",
       "- conciseness: Do they get to the point without rambling?",
@@ -123,7 +125,7 @@ export const COMMUNICATION_ASSESSMENT_PROMPT = Object.freeze({
       "",
       "Rules:",
       "- Each dimension must include 1-3 short evidence quotes near-verbatim from the transcript (use the candidate's own words).",
-      "- If the transcript is too short for a dimension, score it 50 and leave evidence as a single note explaining the gap.",
+      "- If the transcript is too short for a dimension, score it 5.0 and leave evidence as a single note explaining the gap.",
       "- overallScore is a holistic weighted judgement, NOT a simple average.",
       "- summary is 2-4 sentences, written for the hiring team (not the candidate).",
       "- No emojis, no markdown, no advice to the candidate.",

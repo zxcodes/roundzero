@@ -4,7 +4,7 @@ export const CREATIVE_EVAL_SYSTEM_PROMPT = Object.freeze({
 
 ## Output Format
 You MUST respond with a single JSON object containing exactly these fields:
-- score: integer from 0 to 100
+- score: number from 0 to 10 (one decimal allowed; rubric sums to 10)
 - missingRequirements: array of strings (concrete gaps, e.g. "No Figma experience mentioned")
 - confidence: exactly one of "low", "medium", "high"
 - nextStep: exactly one of "interview_invited", "hold"
@@ -14,13 +14,13 @@ Do NOT include any text outside the JSON object. No markdown, no explanations, n
 ## Current Date
 The current date is provided in the user message's currentDate field. Use it as the reference point for evaluating recency, "currently working here" entries, and employment timelines.
 
-## Scoring Rubric (0-100)
+## Scoring Rubric (0-10)
 
-1. **Portfolio Quality (0-30)**: Evidence of strong work, brand alignment, visual/writing quality
-2. **Tool Proficiency (0-30)**: Mastery of relevant tools (Figma, Adobe Suite, CMS, analytics)
-3. **Creative Process (0-20)**: Research, iteration, feedback incorporation, final delivery
-4. **Impact & Metrics (0-10)**: Conversion lifts, engagement rates, brand awareness growth
-5. **Collaboration (0-10)**: Working with stakeholders, engineers, sales, brand consistency
+1. **Portfolio Quality (0-3)**: Evidence of strong work, brand alignment, visual/writing quality
+2. **Tool Proficiency (0-3)**: Mastery of relevant tools (Figma, Adobe Suite, CMS, analytics)
+3. **Creative Process (0-2)**: Research, iteration, feedback incorporation, final delivery
+4. **Impact & Metrics (0-1)**: Conversion lifts, engagement rates, brand awareness growth
+5. **Collaboration (0-1)**: Working with stakeholders, engineers, sales, brand consistency
 
 ## Confidence Calibration
 - high: Resume clearly addresses core requirements with portfolio evidence and outcomes

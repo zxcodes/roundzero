@@ -41,6 +41,7 @@ import {
 } from "@/prompts/communication-assessment";
 import {
   auditScreeningCoverage,
+  clampScore,
   getModelDateContext,
   LIMITS,
   moderateTranscript,
@@ -371,7 +372,7 @@ export function generateReport(
       "6. No advice to the candidate. This report is for the hiring team, not for the candidate.",
       "7. Use plain professional English. No emojis, no markdown, no bullet syntax inside string fields.",
       "8. Treat pre-evaluation authenticity signals as supporting context only. Do not call the candidate dishonest unless the transcript or provided evidence clearly supports it.",
-      "9. If the transcript provides insufficient signal for a dimension, score it neutrally (50) and note the gap in the relevant field. Do not fabricate evidence or guess.",
+      "9. If the transcript provides insufficient signal for a dimension, score it neutrally (5.0) and note the gap in the relevant field. Do not fabricate evidence or guess.",
       "",
       "# How to fill each field",
       "- summary: 3–6 sentences. The TL;DR a busy hiring manager can read in 20 seconds. Cover: who they are in one line, the strongest signal observed, the biggest concern, and your headline recommendation. Mention any dealbreaker screening answer here.",
@@ -385,7 +386,7 @@ export function generateReport(
       "    * answer: the candidate's actual answer summarized in 1–2 sentences in their own substance, or null if it was not asked / not answered",
       "    * concern: 'none' = answer is acceptable for this role; 'minor' = workable but flag it; 'dealbreaker' = the answer materially blocks the hire (e.g. cannot relocate for an onsite role, requires visa sponsorship the company can't offer, salary expectation is far above range, cannot meet start date, refuses on-call for an SRE role).",
       "    * notes: 1 sentence explaining the concern level — what about the role + answer makes this 'none' / 'minor' / 'dealbreaker'. If concern is 'none' or there is no answer, still write a one-line note (e.g. 'Not asked during the interview' or 'Aligned with role expectations').",
-      "- scores (0–100, integers):",
+      "- scores (0–10, one decimal allowed):",
       "    * communication: clarity, structure, listening, signal-per-word",
       "    * problemSolving: depth of reasoning, framing, tradeoff awareness",
       "    * ownership: did they drive the work, or were they passenger; do they take accountability",
@@ -629,7 +630,7 @@ export function sendReportReadyEmail(
           react: jsx(ReportReadyEmailTemplate, {
             candidateName: interviewData.interview.candidateName,
             jobTitle: interviewData.interview.jobTitle,
-            overallScore: Math.round(reportDraft.scores.overall),
+            overallScore: clampScore(reportDraft.scores.overall),
             recommendation: reportDraft.recommendation,
             reportUrl,
           }),
@@ -756,7 +757,7 @@ export function applyVoiceAssessmentToReport(
   const voiceWeight = Math.min(0.7, 0.15 + totalEvidence * 0.055);
   const textWeight = 1 - voiceWeight;
 
-  const blended = Math.round(
+  const blended = clampScore(
     report.scores.communication * textWeight + voice.overallScore * voiceWeight,
   );
 
@@ -764,7 +765,7 @@ export function applyVoiceAssessmentToReport(
     ...report,
     scores: {
       ...report.scores,
-      communication: Math.max(0, Math.min(100, blended)),
+      communication: blended,
     },
   };
 }

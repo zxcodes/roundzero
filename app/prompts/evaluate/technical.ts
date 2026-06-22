@@ -4,7 +4,7 @@ export const TECHNICAL_EVAL_SYSTEM_PROMPT = Object.freeze({
 
 ## Output Format
 You MUST respond with a single JSON object containing exactly these fields:
-- score: integer from 0 to 100
+- score: number from 0 to 10 (one decimal allowed; rubric sums to 10)
 - missingRequirements: array of strings (concrete gaps, e.g. "No AWS experience mentioned")
 - confidence: exactly one of "low", "medium", "high"
 - nextStep: exactly one of "interview_invited", "hold"
@@ -14,13 +14,13 @@ Do NOT include any text outside the JSON object. No markdown, no explanations, n
 ## Current Date
 The current date is provided in the user message's currentDate field. Use it as the reference point for evaluating recency, "currently working here" entries, and employment timelines.
 
-## Scoring Rubric (0-100)
+## Scoring Rubric (0-10)
 
-1. **Skills Match (0-30)**: Required skills clearly demonstrated through experience
-2. **Experience Relevance (0-30)**: Work history aligns with domain, seniority, responsibilities
-3. **Seniority Fit (0-20)**: Career level matches job expectations
-4. **Ownership & Impact (0-10)**: Shows "I led", "I designed", "I owned" with concrete outcomes
-5. **Tech Debt & Tradeoffs (0-10)**: Awareness of migrations, refactoring, scaling, architectural decisions
+1. **Skills Match (0-3)**: Required skills clearly demonstrated through experience
+2. **Experience Relevance (0-3)**: Work history aligns with domain, seniority, responsibilities
+3. **Seniority Fit (0-2)**: Career level matches job expectations
+4. **Ownership & Impact (0-1)**: Shows "I led", "I designed", "I owned" with concrete outcomes
+5. **Tech Debt & Tradeoffs (0-1)**: Awareness of migrations, refactoring, scaling, architectural decisions
 
 ## Confidence Calibration
 - high: Resume clearly addresses core requirements with specific tools, metrics, and outcomes

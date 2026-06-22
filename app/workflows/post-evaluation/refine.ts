@@ -171,7 +171,7 @@ function deterministicReportPass(
   const problemSolving = clampScore(draft.scores?.problemSolving);
   const ownership = clampScore(draft.scores?.ownership);
   const roleFit = clampScore(draft.scores?.roleFit);
-  const cappedCommunication = evidence.length === 0 ? Math.min(communication, 50) : communication;
+  const cappedCommunication = evidence.length === 0 ? Math.min(communication, 5) : communication;
 
   let overall = recomputeOverall(
     [cappedCommunication, problemSolving, ownership, roleFit],
@@ -189,7 +189,7 @@ function deterministicReportPass(
 
   if (dealbreakers > 0) {
     recommendation = "no";
-    overall = Math.min(overall, 45);
+    overall = Math.min(overall, 4.5);
   } else if (evidence.length === 0) {
     // No grounded evidence at all → can't justify a positive recommendation.
     recommendation = recommendation === "strong_yes" ? "lean_no" : recommendation;
@@ -416,7 +416,7 @@ export function refineCommunicationAnalysis(
 
   // Penalise dimensions that ended up with no anchored evidence.
   const penalise = (dim: { score: number; evidence: string[] }) =>
-    dim.evidence.length === 0 ? Math.min(dim.score, 55) : dim.score;
+    dim.evidence.length === 0 ? Math.min(dim.score, 5.5) : dim.score;
 
   const dims = [
     penalise(clarity),
