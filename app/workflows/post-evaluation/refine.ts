@@ -30,7 +30,6 @@ import {
 } from "@/prompts/communication-assessment";
 import {
   auditScreeningCoverage,
-  clampScore,
   cleanBullets,
   filterAnchored,
   LIMITS,
@@ -39,6 +38,7 @@ import {
 } from "@/shared/ai-refine";
 import type { createWorkflowLogger } from "@/shared/logger";
 import { createChatModel } from "@/shared/openrouter";
+import { clampCandidateScore } from "@/shared/score";
 
 type ScreeningConcern = "none" | "minor" | "dealbreaker";
 
@@ -167,15 +167,15 @@ function deterministicReportPass(
   // Score sanity. Clamp everything, recompute overall as a bounded function
   // of dimensions, then apply hard rules: zero evidence caps communication;
   // any dealbreaker forces the recommendation down.
-  const communication = clampScore(draft.scores?.communication);
-  const problemSolving = clampScore(draft.scores?.problemSolving);
-  const ownership = clampScore(draft.scores?.ownership);
-  const roleFit = clampScore(draft.scores?.roleFit);
+  const communication = clampCandidateScore(draft.scores?.communication);
+  const problemSolving = clampCandidateScore(draft.scores?.problemSolving);
+  const ownership = clampCandidateScore(draft.scores?.ownership);
+  const roleFit = clampCandidateScore(draft.scores?.roleFit);
   const cappedCommunication = evidence.length === 0 ? Math.min(communication, 5) : communication;
 
   let overall = recomputeOverall(
     [cappedCommunication, problemSolving, ownership, roleFit],
-    clampScore(draft.scores?.overall),
+    clampCandidateScore(draft.scores?.overall),
   );
 
   const dealbreakers = screeningAnswers.filter((s) => s.concern === "dealbreaker").length;
@@ -391,7 +391,7 @@ export function refineCommunicationAnalysis(
       minOverlap: 0.4,
     }).slice(0, MAX_EVIDENCE_PER_DIM);
     return {
-      score: clampScore(dim.score),
+      score: clampCandidateScore(dim.score),
       evidence: anchored,
     };
   };
@@ -425,7 +425,7 @@ export function refineCommunicationAnalysis(
     penalise(listening),
     penalise(confidence),
   ];
-  const overallScore = recomputeOverall(dims, clampScore(analysis.overallScore));
+  const overallScore = recomputeOverall(dims, clampCandidateScore(analysis.overallScore));
 
   const summary =
     typeof analysis.summary === "string" && analysis.summary.trim().length >= 20

@@ -17,7 +17,8 @@
  * later in post-evaluation when there is a transcript to audit against.
  */
 
-import { clampScore, cleanBullets, filterAnchored, isAnchoredTo } from "@/shared/ai-refine";
+import { cleanBullets, filterAnchored, isAnchoredTo } from "@/shared/ai-refine";
+import { clampCandidateScore } from "@/shared/score";
 
 const MAX_MISSING_REQUIREMENTS = 6;
 const MAX_RED_FLAGS = 5;
@@ -71,7 +72,7 @@ export function refinePreEvaluationResult(
       ? filterAnchored(filtered, [jobText], { minRun: 2, minOverlap: 0.3 })
       : filtered;
 
-  const score = clampScore(raw.score);
+  const score = clampCandidateScore(raw.score);
   const confidence: RefinedPreEval["confidence"] =
     raw.confidence === "low" || raw.confidence === "medium" || raw.confidence === "high"
       ? raw.confidence
@@ -110,7 +111,7 @@ export function refineSlopCheck(
   const explanationRaw = typeof raw.explanation === "string" ? raw.explanation.trim() : "";
   const consistencyScore =
     typeof raw.consistencyScore === "number" && Number.isFinite(raw.consistencyScore)
-      ? clampScore(raw.consistencyScore)
+      ? clampCandidateScore(raw.consistencyScore)
       : null;
 
   let explanation =

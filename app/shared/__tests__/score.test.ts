@@ -36,4 +36,9 @@ describe("candidate score scale", () => {
     expect(clampCandidateScore(-3)).toBe(0);
     expect(clampCandidateScore(150)).toBe(10);
   });
+
+  it("uses the fallback for non-numeric input", () => {
+    expect(clampCandidateScore("nope", 4.2)).toBe(4.2);
+    expect(clampCandidateScore(undefined)).toBe(5);
+  });
 });

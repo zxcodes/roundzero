@@ -29,11 +29,12 @@ import { LEADERSHIP_EVAL_SYSTEM_PROMPT } from "@/prompts/evaluate/leadership";
 import { OPERATIONS_EVAL_SYSTEM_PROMPT } from "@/prompts/evaluate/operations";
 import { TECHNICAL_EVAL_SYSTEM_PROMPT } from "@/prompts/evaluate/technical";
 import { SLOP_DETECTION_SYSTEM_PROMPT } from "@/prompts/slop-detection";
-import { clampScore, getModelDateContext, LIMITS, sanitizeUntrustedText } from "@/shared/ai-refine";
+import { getModelDateContext, LIMITS, sanitizeUntrustedText } from "@/shared/ai-refine";
 import { getDb } from "@/shared/db";
 import type { createWorkflowLogger } from "@/shared/logger";
 import { notificationPayloadSchemas } from "@/shared/notifications-config";
 import { createChatModel, getModelChain } from "@/shared/openrouter";
+import { clampCandidateScore } from "@/shared/score";
 import { buildResumeAuthenticityPrompt, shouldInviteFromDeterministicRules } from "./policy";
 import { refinePreEvaluationResult, refineSlopCheck } from "./refine";
 
@@ -286,7 +287,7 @@ export function detectSlop(resumeText: string, log: ReturnType<typeof createWork
 
       const result = refineSlopCheck(
         {
-          consistencyScore: clampScore(raw.consistencyScore),
+          consistencyScore: clampCandidateScore(raw.consistencyScore),
           redFlags: raw.redFlags.filter((r: string) => typeof r === "string"),
           explanation: raw.explanation,
         },
@@ -348,7 +349,7 @@ export function runAiPreEvaluation(
 
       const result: PreEvaluationResult = refinePreEvaluationResult(
         {
-          score: clampScore(raw.score),
+          score: clampCandidateScore(raw.score),
           missingRequirements: raw.missingRequirements.filter((r: string) => typeof r === "string"),
           confidence: raw.confidence,
           modelNextStep: raw.nextStep,

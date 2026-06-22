@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   auditScreeningCoverage,
-  clampScore,
   cleanBullets,
   filterAnchored,
   isAnchoredTo,
@@ -114,19 +113,6 @@ describe("filterAnchored", () => {
   it("passes everything through when no sources are supplied", () => {
     const items = ["anything"];
     expect(filterAnchored(items, [])).toEqual(items);
-  });
-});
-
-describe("clampScore", () => {
-  it("clamps and rounds to one decimal on the 0–10 scale", () => {
-    expect(clampScore(-5)).toBe(0);
-    expect(clampScore(12)).toBe(10);
-    expect(clampScore(7.26)).toBe(7.3);
-  });
-
-  it("uses fallback for non-numeric input", () => {
-    expect(clampScore("nope", 4.2)).toBe(4.2);
-    expect(clampScore(undefined)).toBe(5);
   });
 });
 
