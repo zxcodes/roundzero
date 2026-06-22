@@ -60,10 +60,7 @@ function CompanyLoginPage() {
         <div className="relative flex h-full flex-col justify-between p-10 xl:p-14">
           <Link to="/" className="flex items-center gap-1">
             <Logo />
-            <span
-              className="font-heading text-[19px] leading-none tracking-[-0.01em]"
-              style={{ fontWeight: 400 }}
-            >
+            <span className="font-heading text-[19px] leading-none tracking-[-0.01em] font-medium">
               RoundZero
             </span>
           </Link>
