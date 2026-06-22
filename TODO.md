@@ -9,10 +9,10 @@
 - still a few rough edges around failed eval. retry eval button doesnt seem to work. better to kill it? (says Retry skipped
 post_eval_already_complete)
 - pretty sure openrouter model fallbacks still don't work. verify in local dev.
-- add score breakdown. 
 - add a really good resume and candidate test suite to pass thru the ai. (WIP in other branch)
 
 
+<!--- add score breakdown. -->
 <!--- overall caching seems a bit too aggressive. login/logouts, switching accounts, has stale data.-->
 <!--- interview panel padding still sucks (sticks left side completely on mobile and short screens)-->
 <!--- do not let people skip voice interview. or even if they do tell them before hand that it's a deal breaker and will hugely affect their chances.-->
