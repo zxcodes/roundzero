@@ -22,6 +22,7 @@ import {
 } from "@/features/notifications/services/email";
 import { getDb } from "@/shared/db";
 import { notificationPayloadSchemas } from "@/shared/notifications-config";
+import { disposeRpcResource } from "@/shared/workflow-rpc";
 import { sendBatchDigestEmail } from "./email";
 import { type BatchReleaseSummary, releaseBatch } from "./release";
 
@@ -185,10 +186,11 @@ export async function checkAndLaunchBatch(jobId: string): Promise<PoolCheckResul
     }
 
     try {
-      await env.BATCH_ORCHESTRATION.create({
+      const instance = await env.BATCH_ORCHESTRATION.create({
         id: batch.id,
         params: { batchId: batch.id, jobId: job.id },
       });
+      disposeRpcResource(instance);
     } catch (error) {
       console.error(`Failed to trigger batch orchestration for batch ${batch.id}`, error);
     }
