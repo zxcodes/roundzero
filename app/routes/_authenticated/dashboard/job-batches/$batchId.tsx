@@ -1,5 +1,4 @@
 import {
-  ArrowLeft02Icon,
   CheckmarkCircle02Icon,
   Clock01Icon,
   RankingIcon,
@@ -10,7 +9,6 @@ import { createFileRoute, Link, notFound, redirect } from "@tanstack/react-route
 import { BatchDetailSkeleton } from "@/components/route-skeletons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Empty,
@@ -106,17 +104,6 @@ function BatchDetailPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="space-y-1">
-          <Button
-            asChild
-            variant="ghost"
-            size="sm"
-            className="-ml-2 h-7 px-2 text-muted-foreground"
-          >
-            <Link to="/dashboard">
-              <HugeiconsIcon icon={ArrowLeft02Icon} strokeWidth={2} className="size-3.5" />
-              Back to dashboard
-            </Link>
-          </Button>
           <h2 className="text-2xl font-bold tracking-tight">{batch.jobTitle}</h2>
           <p className="text-sm text-muted-foreground">
             Batch of {batch.targetSize} candidate{batch.targetSize === 1 ? "" : "s"} ·{" "}

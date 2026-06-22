@@ -8,6 +8,11 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { getMyNotificationsFeed } from "@/features/notifications/server/functions";
 import { useCommandPaletteShortcut } from "@/hooks/use-command-palette-shortcut";
+import {
+  breadcrumbSegmentCount,
+  isDashboardBreadcrumbPending,
+  resolveDashboardBreadcrumbs,
+} from "@/shared/dashboard-breadcrumbs";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   loader: async () => {
@@ -19,18 +24,6 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardLayout,
 });
 
-const routeTitles: Record<string, string> = {
-  "/_authenticated/dashboard/": "Overview",
-  "/_authenticated/dashboard/jobs/": "Jobs",
-  "/_authenticated/dashboard/jobs/new": "Post a Job",
-  "/_authenticated/dashboard/jobs/$jobId": "Job Details",
-  "/_authenticated/dashboard/applications": "My Applications",
-  "/_authenticated/dashboard/application/$applicationId": "Application Details",
-  "/_authenticated/dashboard/billing": "Billing",
-  "/_authenticated/dashboard/team": "Team",
-  "/_authenticated/dashboard/settings": "Settings",
-};
-
 function DashboardLayout() {
   const auth = useLoaderData({ from: "/_authenticated" });
   const user = auth.user;
@@ -38,7 +31,15 @@ function DashboardLayout() {
   const { notificationsFeed } = Route.useLoaderData();
   const matches = useMatches();
   const lastMatch = matches[matches.length - 1];
-  const title = routeTitles[lastMatch?.routeId ?? ""] ?? "Dashboard";
+  const routeId = lastMatch?.routeId ?? "";
+  const breadcrumbs = resolveDashboardBreadcrumbs(routeId, isCompany, matches);
+  const breadcrumbSegments = breadcrumbSegmentCount(routeId, breadcrumbs);
+  const isBreadcrumbPending = isDashboardBreadcrumbPending(
+    routeId,
+    matches,
+    breadcrumbs,
+    lastMatch,
+  );
   const [commandOpen, setCommandOpen] = useState(false);
 
   useCommandPaletteShortcut(() => {
@@ -76,7 +77,9 @@ function DashboardLayout() {
         />
         <SidebarInset>
           <SiteHeader
-            title={title}
+            breadcrumbs={breadcrumbs}
+            breadcrumbSegments={breadcrumbSegments}
+            isBreadcrumbPending={isBreadcrumbPending}
             notificationsFeed={notificationsFeed}
             onOpenCommandPalette={onOpenCommandPalette}
           />

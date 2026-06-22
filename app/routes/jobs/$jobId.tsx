@@ -1,6 +1,5 @@
 import {
   Alert02Icon,
-  ArrowLeft01Icon,
   ArrowRight01Icon,
   Briefcase01Icon,
   Building01Icon,
@@ -11,6 +10,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link, notFound, useRouteContext } from "@tanstack/react-router";
+import { AppBreadcrumbs } from "@/components/app-breadcrumbs";
 import { PublicFooter, PublicHeader } from "@/components/public-layout";
 import { JobDetailSkeleton } from "@/components/route-skeletons";
 import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
@@ -23,6 +23,7 @@ import { hasApplied } from "@/features/applications/server/functions";
 import { getMyCandidateProfile } from "@/features/candidates/server/functions";
 import { JobStatusBadge } from "@/features/jobs/components/job-status-badge";
 import { getPublicJobById } from "@/features/jobs/server/functions";
+import { publicJobDetailTrail } from "@/shared/breadcrumb-trails";
 import { formatDate, formatDaysLeft } from "@/shared/date";
 import type { EmploymentType, ExperienceLevel, WorkplaceType } from "@/shared/enums";
 import { employmentTypeLabels, experienceLevelLabels, workplaceTypeLabels } from "@/shared/enums";
@@ -194,13 +195,7 @@ function JobDetailPage() {
         <section className="relative overflow-hidden border-b border-border/40">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--color-primary)/5%,transparent_60%)]" />
           <div className="relative mx-auto max-w-7xl px-6 pb-10 pt-6 lg:px-10 lg:pb-12">
-            <Link
-              to="/jobs"
-              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
-              All jobs
-            </Link>
+            <AppBreadcrumbs items={publicJobDetailTrail(job.title)} />
 
             <div className="mt-8 space-y-5">
               <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">

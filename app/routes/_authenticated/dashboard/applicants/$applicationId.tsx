@@ -125,8 +125,14 @@ const getInitials = (name: string) => {
 };
 
 function ApplicantReviewPage() {
-  const { application, previousApplicant, nextApplicant, preEvaluation, reportTimeline } =
-    Route.useLoaderData();
+  const {
+    application,
+    previousApplicant,
+    nextApplicant,
+    preEvaluation,
+    reportTimeline,
+    evaluationRetry,
+  } = Route.useLoaderData();
   const router = useRouter();
   const [pendingStatus, setPendingStatus] = useState<ApplicationStatus | null>(null);
 
@@ -221,6 +227,12 @@ function ApplicantReviewPage() {
     });
   };
 
+  const onReinviteToInterview = async () => {
+    await updateStatusMutation.mutateAsync({
+      data: { applicationId: application.id, status: "interview_invited" },
+    });
+  };
+
   const onResumeView = async () => {
     await resumeDownloadMutation.mutateAsync({
       data: { applicationId: application.id },
@@ -235,58 +247,54 @@ function ApplicantReviewPage() {
     setPendingStatus(null);
   };
 
+  const hasApplicantNavigation = previousApplicant !== null || nextApplicant !== null;
+
   return (
     <div className="space-y-6">
-      {/* Top breadcrumb / nav row */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <Button variant="ghost" size="sm" asChild className="-ml-2">
-          <Link to="/dashboard/jobs/$jobId" params={{ jobId: application.jobId }}>
-            <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
-            Back to role
-          </Link>
-        </Button>
-        <div className="flex items-center gap-1.5">
-          {previousApplicant ? (
-            <Button variant="outline" size="sm" asChild>
-              <Link
-                to="/dashboard/applicants/$applicationId"
-                params={{ applicationId: previousApplicant.id }}
-              >
-                <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
-                Previous
-              </Link>
-            </Button>
-          ) : null}
-          {nextApplicant ? (
-            <Button variant="outline" size="sm" asChild>
-              <Link
-                to="/dashboard/applicants/$applicationId"
-                params={{ applicationId: nextApplicant.id }}
-              >
-                Next
-                <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-4" />
-              </Link>
-            </Button>
-          ) : null}
-        </div>
-      </div>
-
       <div className="space-y-6 min-w-0">
         {/* Candidate header */}
-        <div className="flex flex-wrap items-start gap-4">
-          <Avatar className="size-14 ring-4 ring-background">
-            <AvatarImage
-              src={application.candidatePicture ?? undefined}
-              alt={application.candidateName}
-            />
-            <AvatarFallback>{getInitials(application.candidateName)}</AvatarFallback>
-          </Avatar>
-          <div className="min-w-0 flex-1 space-y-2">
-            <h2 className="text-2xl font-bold tracking-tight">{application.candidateName}</h2>
-            <p className="text-sm text-muted-foreground">
-              Reviewing for <span className="font-medium">{application.jobTitle}</span>
-            </p>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex min-w-0 flex-1 flex-wrap items-start gap-4">
+            <Avatar className="size-14 ring-4 ring-background">
+              <AvatarImage
+                src={application.candidatePicture ?? undefined}
+                alt={application.candidateName}
+              />
+              <AvatarFallback>{getInitials(application.candidateName)}</AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1 space-y-2">
+              <h2 className="text-2xl font-bold tracking-tight">{application.candidateName}</h2>
+              <p className="text-sm text-muted-foreground">
+                Reviewing for <span className="font-medium">{application.jobTitle}</span>
+              </p>
+            </div>
           </div>
+          {hasApplicantNavigation ? (
+            <div className="flex items-center gap-1.5">
+              {previousApplicant ? (
+                <Button variant="outline" size="sm" asChild>
+                  <Link
+                    to="/dashboard/applicants/$applicationId"
+                    params={{ applicationId: previousApplicant.id }}
+                  >
+                    <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
+                    Previous
+                  </Link>
+                </Button>
+              ) : null}
+              {nextApplicant ? (
+                <Button variant="outline" size="sm" asChild>
+                  <Link
+                    to="/dashboard/applicants/$applicationId"
+                    params={{ applicationId: nextApplicant.id }}
+                  >
+                    Next
+                    <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-4" />
+                  </Link>
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
         <ApplicationStatusSection
@@ -302,6 +310,9 @@ function ApplicantReviewPage() {
           onReject={onRejectClick}
           onRetryEvaluation={onRetryEvaluation}
           retryEvaluationPending={retryEvaluationMutation.isPending}
+          evaluationRetry={evaluationRetry}
+          onReinviteToInterview={onReinviteToInterview}
+          canReinviteToInterview={allowedTransitions.includes("interview_invited")}
           allowedStatuses={allowedStatusOptions}
           onStatusChange={onStatusValueChange}
           hasResume={Boolean(application.resumeKey)}
@@ -388,6 +399,9 @@ function ApplicationStatusSection({
   onReject,
   onRetryEvaluation,
   retryEvaluationPending,
+  evaluationRetry,
+  onReinviteToInterview,
+  canReinviteToInterview,
   allowedStatuses,
   onStatusChange,
   hasResume,
@@ -412,6 +426,11 @@ function ApplicationStatusSection({
   onReject: () => void;
   onRetryEvaluation: () => void | Promise<void>;
   retryEvaluationPending: boolean;
+  evaluationRetry: NonNullable<
+    Awaited<ReturnType<typeof getCompanyApplicantReview>>
+  >["evaluationRetry"];
+  onReinviteToInterview: () => void | Promise<void>;
+  canReinviteToInterview: boolean;
   allowedStatuses: ApplicationStatus[];
   onStatusChange: (value: string) => void | Promise<void>;
   hasResume: boolean;
@@ -461,7 +480,7 @@ function ApplicationStatusSection({
               </Button>
             ) : null}
 
-            {isFailed ? (
+            {isFailed && evaluationRetry?.actionable ? (
               <Button
                 variant="outline"
                 disabled={retryEvaluationPending}
@@ -475,6 +494,22 @@ function ApplicationStatusSection({
                   />
                 ) : null}
                 {retryEvaluationPending ? "Retrying..." : "Retry evaluation"}
+              </Button>
+            ) : null}
+
+            {isFailed &&
+            evaluationRetry?.actionable === false &&
+            evaluationRetry.suggestedAction === "reinvite" &&
+            canReinviteToInterview ? (
+              <Button variant="outline" disabled={isPending} onClick={onReinviteToInterview}>
+                {isPending ? (
+                  <HugeiconsIcon
+                    icon={Loading03Icon}
+                    strokeWidth={2}
+                    className="size-4 animate-spin"
+                  />
+                ) : null}
+                {isPending ? "Inviting..." : "Re-invite to interview"}
               </Button>
             ) : null}
 
