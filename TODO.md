@@ -1,5 +1,6 @@
 ## TODO
 
+- voice interview experience degraded since auto submit introduced. the agent speaks the last message twice but I don't at all see the message on screen.
 - candidate score needs to be 1-10 as landing page shows. right now it's 1-100.
 - add onCopy, onPaste detectors and evaluate final score based on that.
 - check deleted account behaviour for companies, applications, etc. how the entire flow handles it.
