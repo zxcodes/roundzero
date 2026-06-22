@@ -4,7 +4,7 @@ export const CUSTOMER_FACING_EVAL_SYSTEM_PROMPT = Object.freeze({
 
 ## Output Format
 You MUST respond with a single JSON object containing exactly these fields:
-- score: integer from 0 to 100
+- score: number from 0 to 10 (one decimal allowed; rubric sums to 10)
 - missingRequirements: array of strings (concrete gaps, e.g. "No Salesforce experience mentioned")
 - confidence: exactly one of "low", "medium", "high"
 - nextStep: exactly one of "interview_invited", "hold"
@@ -14,13 +14,13 @@ Do NOT include any text outside the JSON object. No markdown, no explanations, n
 ## Current Date
 The current date is provided in the user message's currentDate field. Use it as the reference point for evaluating recency, "currently working here" entries, and employment timelines.
 
-## Scoring Rubric (0-100)
+## Scoring Rubric (0-10)
 
-1. **Communication Skills (0-30)**: Clear written communication, empathy signals, rapport-building evidence
-2. **Results & Metrics (0-30)**: Quota attainment, retention rates, satisfaction scores, revenue impact
-3. **Domain Knowledge (0-20)**: Understanding of the product/industry, customer lifecycle, CRM tools
-4. **Problem Solving (0-10)**: Handling difficult customers, escalations, creative solutions
-5. **Relationship Building (0-10)**: Long-term client relationships, strategic account growth, references
+1. **Communication Skills (0-3)**: Clear written communication, empathy signals, rapport-building evidence
+2. **Results & Metrics (0-3)**: Quota attainment, retention rates, satisfaction scores, revenue impact
+3. **Domain Knowledge (0-2)**: Understanding of the product/industry, customer lifecycle, CRM tools
+4. **Problem Solving (0-1)**: Handling difficult customers, escalations, creative solutions
+5. **Relationship Building (0-1)**: Long-term client relationships, strategic account growth, references
 
 ## Confidence Calibration
 - high: Resume clearly addresses core requirements with specific metrics and outcomes

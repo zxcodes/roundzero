@@ -122,7 +122,7 @@ export function refineSlopCheck(
 
   // Cross-field consistency enforcement: if no grounded red flags remain and
   // the model still claims high consistency, explanation must not allege fraud.
-  if (grounded.length === 0 && consistencyScore !== null && consistencyScore >= 80) {
+  if (grounded.length === 0 && consistencyScore !== null && consistencyScore >= 8) {
     explanation = "No authenticity concerns detected.";
   }
 

@@ -24,7 +24,6 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { z } from "zod";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,22 +42,17 @@ import { InterviewTranscript } from "@/features/interviews/components/interview-
 import { ScorePill } from "@/features/reports/components/score-pill";
 import type { ReportData } from "@/features/reports/schemas";
 import { cn } from "@/lib/utils";
+import {
+  type CommunicationAssessmentAnalysis,
+  parseCommunicationAssessment,
+} from "@/prompts/communication-assessment";
 import { formatDateShort, formatDateTimeUtc } from "@/shared/date";
-
-const voiceDimensionSchema = z.object({
-  score: z.number().default(0),
-  evidence: z.array(z.string()).default([]),
-});
-
-const voiceAnalysisSchema = z.object({
-  clarity: voiceDimensionSchema,
-  articulation: voiceDimensionSchema,
-  conciseness: voiceDimensionSchema,
-  listening: voiceDimensionSchema,
-  confidence: voiceDimensionSchema,
-  overallScore: z.number().default(0),
-  summary: z.string().default(""),
-});
+import {
+  CANDIDATE_SCORE_MAX,
+  candidateScoreProgressPercent,
+  formatCandidateScore,
+  formatCandidateScoreWithScale,
+} from "@/shared/score";
 
 type Recommendation = ReportData["recommendation"];
 
@@ -150,17 +144,8 @@ const concernMeta: Record<
   },
 };
 
-// ---- Voice communication assessment parsing ----
-
-type VoiceAnalysis = z.infer<typeof voiceAnalysisSchema>;
-
-function parseVoiceAnalysis(value: unknown): VoiceAnalysis | null {
-  const parsed = voiceAnalysisSchema.safeParse(value);
-  return parsed.success ? parsed.data : null;
-}
-
 const voiceDimensionMeta: Record<
-  keyof Omit<VoiceAnalysis, "overallScore" | "summary">,
+  keyof Omit<CommunicationAssessmentAnalysis, "overallScore" | "summary">,
   { label: string }
 > = {
   clarity: { label: "Clarity" },
@@ -222,7 +207,7 @@ export function ReportSnapshotCard({
 
         <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
           {(Object.keys(dimensionMeta) as Array<keyof typeof dimensionMeta>).map((key) => {
-            const score = Math.round(report.scores[key]);
+            const rawScore = report.scores[key];
             const dim = dimensionMeta[key];
             return (
               <div key={key} className="rounded-xl border border-border/60 bg-muted/30 px-3 py-2.5">
@@ -236,11 +221,13 @@ export function ReportSnapshotCard({
                     {dim.label}
                   </p>
                 </div>
-                <p className="mt-1 font-mono text-lg font-semibold leading-none">{score}</p>
+                <p className="mt-1 font-mono text-lg font-semibold leading-none">
+                  {formatCandidateScore(rawScore)}
+                </p>
                 <div className="mt-2 h-1 overflow-hidden rounded-full bg-background">
                   <div
                     className="h-full rounded-full bg-foreground"
-                    style={{ width: `${Math.max(0, Math.min(100, score))}%` }}
+                    style={{ width: `${candidateScoreProgressPercent(rawScore)}%` }}
                   />
                 </div>
               </div>
@@ -460,7 +447,9 @@ export function ReportTimeline({
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="flex size-12 items-center justify-center rounded-xl border border-border/60 bg-muted/30">
-                    <span className="font-mono text-base font-semibold">{preEvaluation.score}</span>
+                    <span className="font-mono text-base font-semibold">
+                      {formatCandidateScore(preEvaluation.score)}
+                    </span>
                   </div>
                   <div>
                     <p className="text-sm font-medium">Profile match score</p>
@@ -639,7 +628,7 @@ export function ReportTimeline({
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   {(Object.keys(dimensionMeta) as Array<keyof typeof dimensionMeta>).map((key) => {
-                    const score = Math.round(report.scores[key]);
+                    const rawScore = report.scores[key];
                     const dim = dimensionMeta[key];
                     return (
                       <div key={key} className="space-y-1.5">
@@ -653,13 +642,13 @@ export function ReportTimeline({
                             <span className="text-xs font-medium">{dim.label}</span>
                           </div>
                           <span className="font-mono text-xs text-muted-foreground">
-                            {score}/100
+                            {formatCandidateScoreWithScale(rawScore)}
                           </span>
                         </div>
                         <div className="h-1.5 overflow-hidden rounded-full bg-background">
                           <div
                             className="h-full rounded-full bg-foreground/80"
-                            style={{ width: `${Math.max(0, Math.min(100, score))}%` }}
+                            style={{ width: `${candidateScoreProgressPercent(rawScore)}%` }}
                           />
                         </div>
                       </div>
@@ -837,8 +826,7 @@ function VoiceAssessmentReportCard({
   transcript: Array<{ role: string; content: string }>;
   analysis: unknown;
 }) {
-  const parsed = parseVoiceAnalysis(analysis);
-  const overall = parsed ? Math.round(parsed.overallScore) : 0;
+  const parsed = parseCommunicationAssessment(analysis);
 
   return (
     <div className="space-y-4">
@@ -861,9 +849,11 @@ function VoiceAssessmentReportCard({
             </div>
             {parsed ? (
               <div className="flex size-16 shrink-0 flex-col items-center justify-center rounded-3xl border-2 border-border/70 bg-muted/30">
-                <span className="font-mono text-xl font-semibold leading-none">{overall}</span>
+                <span className="font-mono text-xl font-semibold leading-none">
+                  {formatCandidateScore(parsed.overallScore)}
+                </span>
                 <span className="mt-1 text-[9px] font-medium uppercase tracking-wider text-muted-foreground">
-                  / 100
+                  / {CANDIDATE_SCORE_MAX}
                 </span>
               </div>
             ) : null}
@@ -880,19 +870,18 @@ function VoiceAssessmentReportCard({
                   (key) => {
                     const dim = parsed[key as keyof typeof voiceDimensionMeta];
                     const meta = voiceDimensionMeta[key];
-                    const score = Math.round(dim.score);
                     return (
                       <div key={key} className="space-y-1.5">
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-xs font-medium">{meta.label}</span>
                           <span className="font-mono text-xs text-muted-foreground">
-                            {score}/100
+                            {formatCandidateScoreWithScale(dim.score)}
                           </span>
                         </div>
                         <div className="h-1.5 overflow-hidden rounded-full bg-background">
                           <div
                             className="h-full rounded-full bg-foreground/80"
-                            style={{ width: `${Math.max(0, Math.min(100, score))}%` }}
+                            style={{ width: `${candidateScoreProgressPercent(dim.score)}%` }}
                           />
                         </div>
                       </div>

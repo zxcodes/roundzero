@@ -13,7 +13,7 @@ import { expireInterviewIfDue } from "@/features/interviews/server/expire";
 import { parseInterviewMetadata } from "@/features/interviews/shared/runtime";
 import { getPreEvaluationByApplicationId } from "@/features/pre-evaluations/queries/queries_sql";
 import { getReleasedReportByApplicationId } from "@/features/reports/queries/queries_sql";
-import { reportSchema } from "@/features/reports/schemas";
+import { parseStoredReport } from "@/features/reports/schemas";
 import { getDb } from "@/shared/db";
 import { companyMiddleware } from "@/shared/middleware";
 
@@ -134,19 +134,7 @@ export const getCompanyApplicantReportTimeline = createServerFn({ method: "GET" 
       preEvaluation,
       interview,
       interviewState,
-      report: reportRow
-        ? (reportSchema.safeParse({
-            summary: reportRow.summary,
-            strengths: reportRow.strengths,
-            weaknesses: reportRow.weaknesses,
-            insights: reportRow.insights,
-            evidence: reportRow.evidence,
-            screeningAnswers: reportRow.screeningAnswers,
-            scores: reportRow.scores,
-            recommendation: reportRow.recommendation,
-            answerAuthenticity: reportRow.answerAuthenticity,
-          }).data ?? null)
-        : null,
+      report: reportRow ? parseStoredReport(reportRow) : null,
       reportCreatedAt: reportRow?.createdAt ?? null,
       communicationAssessment,
       batchNavigation,

@@ -53,6 +53,7 @@ import {
   getApplicationStatusLabel,
 } from "@/shared/enums";
 import { base64ToBlob } from "@/shared/resume";
+import { formatCandidateScoreWithScale } from "@/shared/score";
 import { validateUuidParams } from "@/shared/validation";
 
 export const Route = createFileRoute("/_authenticated/dashboard/applicants/$applicationId")({
@@ -345,7 +346,7 @@ function ApplicantReviewPage() {
                     Pre-screening
                   </p>
                   <h3 className="mt-1 text-base font-semibold tracking-tight">
-                    Profile score: {preEvaluation.score}/100
+                    Profile score: {formatCandidateScoreWithScale(preEvaluation.score)}
                   </h3>
                 </div>
                 <Badge variant="outline" className="text-[11px]">

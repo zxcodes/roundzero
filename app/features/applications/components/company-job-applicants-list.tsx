@@ -20,6 +20,7 @@ import {
   type Recommendation,
   recommendationSchema,
 } from "@/shared/enums";
+import { formatCandidateScoreWithScale } from "@/shared/score";
 
 export function CompanyJobApplicantsList({
   applicants,
@@ -115,7 +116,7 @@ export function CompanyJobApplicantsList({
                       variant="outline"
                       className="border-warning/20 bg-warning/10 text-warning text-[11px]"
                     >
-                      AI screened {applicant.preEvaluationScore}/100
+                      AI screened {formatCandidateScoreWithScale(applicant.preEvaluationScore)}
                     </Badge>
                   ) : null}
                 </div>

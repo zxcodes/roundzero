@@ -118,38 +118,36 @@ describe("filterAnchored", () => {
 });
 
 describe("clampScore", () => {
-  it("clamps and rounds", () => {
+  it("clamps and rounds to one decimal on the 0–10 scale", () => {
     expect(clampScore(-5)).toBe(0);
-    expect(clampScore(105)).toBe(100);
-    expect(clampScore(72.6)).toBe(73);
+    expect(clampScore(12)).toBe(10);
+    expect(clampScore(7.26)).toBe(7.3);
   });
 
   it("uses fallback for non-numeric input", () => {
-    expect(clampScore("nope", 42)).toBe(42);
-    expect(clampScore(undefined)).toBe(50);
+    expect(clampScore("nope", 4.2)).toBe(4.2);
+    expect(clampScore(undefined)).toBe(5);
   });
 });
 
 describe("recomputeOverall", () => {
   it("anchors to the mean", () => {
-    // mean = 60, modelOverall = 60 → 60
-    expect(recomputeOverall([60, 60, 60, 60], 60)).toBe(60);
+    expect(recomputeOverall([6, 6, 6, 6], 6)).toBe(6);
   });
 
   it("bounds model overrides within ±maxDelta of the mean", () => {
-    // mean = 60, model says 95 → clamped to 60 + 8 = 68
-    expect(recomputeOverall([60, 60, 60, 60], 95)).toBe(68);
-    // mean = 60, model says 20 → clamped to 60 - 8 = 52
-    expect(recomputeOverall([60, 60, 60, 60], 20)).toBe(52);
+    expect(recomputeOverall([6, 6, 6, 6], 9.5)).toBe(6.8);
+    expect(recomputeOverall([6, 6, 6, 6], 2)).toBe(5.2);
   });
 
-  it("clamps to 0-100", () => {
-    expect(recomputeOverall([0, 0, 0, 0], -100)).toBe(0);
-    expect(recomputeOverall([100, 100, 100, 100], 200)).toBe(100);
+  it("clamps to 0-10", () => {
+    expect(recomputeOverall([0, 0, 0, 0], -1)).toBe(0);
+    expect(recomputeOverall([10, 10, 10, 10], 20)).toBe(10);
+    expect(recomputeOverall([], 78)).toBe(10);
   });
 
   it("falls back to model overall when no dimensions supplied", () => {
-    expect(recomputeOverall([], 73)).toBe(73);
+    expect(recomputeOverall([], 7.3)).toBe(7.3);
   });
 });
 

@@ -9,6 +9,7 @@ import {
 import { getJobById } from "@/features/jobs/queries/queries_sql";
 import { getPreEvaluationByApplicationId } from "@/features/pre-evaluations/queries/queries_sql";
 import { getModelDateContext, LIMITS, sanitizeUntrustedText } from "@/shared/ai-refine";
+import { clampCandidateScore, formatCandidateScoreWithScale } from "@/shared/score";
 
 const applicationMetadataSchema = z
   .object({
@@ -118,9 +119,12 @@ export async function buildInterviewContextState(
     candidateSummary: sanitizeUntrustedText(candidateSummaryRaw, LIMITS.CANDIDATE_SUMMARY),
     customQuestions: filterStrings(job?.screeningQuestions),
     preEvaluation: {
-      score: preEvaluation?.score ?? null,
+      score: preEvaluation?.score != null ? clampCandidateScore(preEvaluation.score) : null,
       missingRequirements: filterStrings(preEvaluation?.missingRequirements),
-      consistencyScore: preEvaluation?.consistencyScore ?? null,
+      consistencyScore:
+        preEvaluation?.consistencyScore != null
+          ? clampCandidateScore(preEvaluation.consistencyScore)
+          : null,
       authenticityFlags: slopCheck.success ? filterStrings(slopCheck.data.redFlags) : [],
       authenticityExplanation: slopCheck.success ? (slopCheck.data.explanation ?? null) : null,
     },
@@ -185,11 +189,13 @@ export function buildInterviewSystemPrompt(args: {
           .join("\n")
       : "(none flagged)";
   const score =
-    contextState.preEvaluation.score == null ? "n/a" : `${contextState.preEvaluation.score}/100`;
+    contextState.preEvaluation.score == null
+      ? "n/a"
+      : formatCandidateScoreWithScale(contextState.preEvaluation.score);
   const authenticityScore =
     contextState.preEvaluation.consistencyScore == null
       ? "n/a"
-      : `${contextState.preEvaluation.consistencyScore}/100`;
+      : formatCandidateScoreWithScale(contextState.preEvaluation.consistencyScore);
   const authenticityFlags =
     contextState.preEvaluation.authenticityFlags.length > 0
       ? contextState.preEvaluation.authenticityFlags.map((flag) => `- ${flag}`).join("\n")

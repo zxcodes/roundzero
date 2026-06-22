@@ -29,7 +29,7 @@ import { LEADERSHIP_EVAL_SYSTEM_PROMPT } from "@/prompts/evaluate/leadership";
 import { OPERATIONS_EVAL_SYSTEM_PROMPT } from "@/prompts/evaluate/operations";
 import { TECHNICAL_EVAL_SYSTEM_PROMPT } from "@/prompts/evaluate/technical";
 import { SLOP_DETECTION_SYSTEM_PROMPT } from "@/prompts/slop-detection";
-import { getModelDateContext, LIMITS, sanitizeUntrustedText } from "@/shared/ai-refine";
+import { clampScore, getModelDateContext, LIMITS, sanitizeUntrustedText } from "@/shared/ai-refine";
 import { getDb } from "@/shared/db";
 import type { createWorkflowLogger } from "@/shared/logger";
 import { notificationPayloadSchemas } from "@/shared/notifications-config";
@@ -66,7 +66,7 @@ type SlopCheckResult = {
 // https://openrouter.ai/docs/guides/features/structured-outputs
 const preEvaluationSchema = z
   .object({
-    score: z.number().min(0).max(100),
+    score: z.number().min(0).max(10),
     missingRequirements: z.array(z.string()),
     confidence: z.enum(["low", "medium", "high"]),
     nextStep: z.enum(["interview_invited", "hold"]),
@@ -75,7 +75,7 @@ const preEvaluationSchema = z
 
 const slopDetectionSchema = z
   .object({
-    consistencyScore: z.number().min(0).max(100),
+    consistencyScore: z.number().min(0).max(10),
     redFlags: z.array(z.string()),
     explanation: z.string(),
   })
@@ -286,7 +286,7 @@ export function detectSlop(resumeText: string, log: ReturnType<typeof createWork
 
       const result = refineSlopCheck(
         {
-          consistencyScore: Math.max(0, Math.min(100, Math.round(raw.consistencyScore))),
+          consistencyScore: clampScore(raw.consistencyScore),
           redFlags: raw.redFlags.filter((r: string) => typeof r === "string"),
           explanation: raw.explanation,
         },
@@ -348,7 +348,7 @@ export function runAiPreEvaluation(
 
       const result: PreEvaluationResult = refinePreEvaluationResult(
         {
-          score: Math.max(0, Math.min(100, Math.round(raw.score))),
+          score: clampScore(raw.score),
           missingRequirements: raw.missingRequirements.filter((r: string) => typeof r === "string"),
           confidence: raw.confidence,
           modelNextStep: raw.nextStep,
@@ -470,7 +470,7 @@ export function decideNextStep(
       const reason =
         aiResult.result.modelNextStep === "hold"
           ? "model_hold"
-          : slopCheck.consistencyScore != null && slopCheck.consistencyScore < 20
+          : slopCheck.consistencyScore != null && slopCheck.consistencyScore < 2
             ? "authenticity_risk"
             : "low_fit";
       log.result("decide", { action: "hold", reason });

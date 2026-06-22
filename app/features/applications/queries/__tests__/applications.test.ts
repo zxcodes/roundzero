@@ -347,7 +347,7 @@ describe("getApplicationsByJob", () => {
         '[]'::jsonb,
         '[]'::jsonb,
         '[]'::jsonb,
-        '{"communication":70,"problemSolving":71,"ownership":72,"roleFit":73,"overall":74}'::jsonb,
+        '{"communication":7,"problemSolving":7.1,"ownership":7.2,"roleFit":7.3,"overall":7.4}'::jsonb,
         'yes',
         'test-model',
         '1.0.0',
@@ -581,9 +581,9 @@ describe("getShortlistedApplicantsByCompany", () => {
 
     await archiveJob(sql, { id: archivedJob.id, companyId: company.id });
 
-    await insertReleasedReport(backendHighApp!.id, 93);
-    await insertReleasedReport(backendLowApp!.id, 81);
-    await insertReleasedReport(frontendApp!.id, 88);
+    await insertReleasedReport(backendHighApp!.id, 9.3);
+    await insertReleasedReport(backendLowApp!.id, 8.1);
+    await insertReleasedReport(frontendApp!.id, 8.8);
 
     const rows = await getShortlistedApplicantsByCompany(sql, { id: company.id });
 
@@ -601,11 +601,11 @@ describe("getShortlistedApplicantsByCompany", () => {
     ]);
     expect(rows[0].candidateEmail).toBe(backendHigh.email);
     expect(rows[0].reportScores).toEqual({
-      communication: 93,
-      problemSolving: 92,
-      ownership: 91,
-      roleFit: 94,
-      overall: 93,
+      communication: 9.3,
+      problemSolving: 9.2,
+      ownership: 9.1,
+      roleFit: 9.4,
+      overall: 9.3,
     });
   });
 });
@@ -686,13 +686,13 @@ async function insertReleasedReport(applicationId: string, overall: number) {
       '[]'::jsonb,
       '[]'::jsonb,
       '[]'::jsonb,
-      jsonb_build_object(
-        'communication', ${overall}::int,
-        'problemSolving', ${overall - 1}::int,
-        'ownership', ${overall - 2}::int,
-        'roleFit', ${overall + 1}::int,
-        'overall', ${overall}::int
-      ),
+      ${sql.json({
+        communication: overall,
+        problemSolving: Math.round((overall - 0.1) * 10) / 10,
+        ownership: Math.round((overall - 0.2) * 10) / 10,
+        roleFit: Math.round((overall + 0.1) * 10) / 10,
+        overall,
+      })},
       'yes',
       'test-model',
       '1.0.0',

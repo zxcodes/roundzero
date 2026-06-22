@@ -116,7 +116,9 @@ describe("APPLICATION_STATUS_TRANSITIONS", () => {
 
 describe("getApplicationStatusLabel", () => {
   it("returns Screened when pre_screening has a score", () => {
-    expect(getApplicationStatusLabel("pre_screening", { preEvaluationScore: 82 })).toBe("Screened");
+    expect(getApplicationStatusLabel("pre_screening", { preEvaluationScore: 8.2 })).toBe(
+      "Screened",
+    );
   });
 
   it("returns Screening when pre_screening has no score yet", () => {
@@ -127,7 +129,7 @@ describe("getApplicationStatusLabel", () => {
   });
 
   it("ignores score for other statuses", () => {
-    expect(getApplicationStatusLabel("interview_invited", { preEvaluationScore: 82 })).toBe(
+    expect(getApplicationStatusLabel("interview_invited", { preEvaluationScore: 8.2 })).toBe(
       "Invited",
     );
   });
