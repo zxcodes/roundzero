@@ -18,7 +18,7 @@ import {
   getApplicationsByJob,
   getShortlistedApplicantsByCompany,
 } from "../queries/queries_sql";
-import { retryEvaluation } from "../services/retry";
+import { previewEvaluationRetry, retryEvaluation } from "../services/retry";
 import {
   applyToJobWorkflow,
   shortlistApplicantWorkflow,
@@ -298,10 +298,19 @@ export const getCompanyApplicantReview = createServerFn({ method: "GET" })
         ? applicants[currentIndex + 1]
         : null;
 
+    const evaluationRetry =
+      application.status === "evaluation_failed"
+        ? await previewEvaluationRetry(db, application.id, {
+            preEvaluation: env.PRE_EVALUATION,
+            postEvaluation: env.POST_EVALUATION,
+          })
+        : null;
+
     return {
       application,
       applicantCount: applicants.length,
       previousApplicant,
       nextApplicant,
+      evaluationRetry,
     };
   });

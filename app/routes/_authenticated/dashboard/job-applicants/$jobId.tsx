@@ -271,8 +271,6 @@ function ActiveBatchPanel({
           </div>
         </CardContent>
       </Card>
-
-      <CompanyJobApplicantsList applicants={applicants} />
     </div>
   );
 }

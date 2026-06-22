@@ -125,8 +125,14 @@ const getInitials = (name: string) => {
 };
 
 function ApplicantReviewPage() {
-  const { application, previousApplicant, nextApplicant, preEvaluation, reportTimeline } =
-    Route.useLoaderData();
+  const {
+    application,
+    previousApplicant,
+    nextApplicant,
+    preEvaluation,
+    reportTimeline,
+    evaluationRetry,
+  } = Route.useLoaderData();
   const router = useRouter();
   const [pendingStatus, setPendingStatus] = useState<ApplicationStatus | null>(null);
 
@@ -221,6 +227,12 @@ function ApplicantReviewPage() {
     });
   };
 
+  const onReinviteToInterview = async () => {
+    await updateStatusMutation.mutateAsync({
+      data: { applicationId: application.id, status: "interview_invited" },
+    });
+  };
+
   const onResumeView = async () => {
     await resumeDownloadMutation.mutateAsync({
       data: { applicationId: application.id },
@@ -298,6 +310,9 @@ function ApplicantReviewPage() {
           onReject={onRejectClick}
           onRetryEvaluation={onRetryEvaluation}
           retryEvaluationPending={retryEvaluationMutation.isPending}
+          evaluationRetry={evaluationRetry}
+          onReinviteToInterview={onReinviteToInterview}
+          canReinviteToInterview={allowedTransitions.includes("interview_invited")}
           allowedStatuses={allowedStatusOptions}
           onStatusChange={onStatusValueChange}
           hasResume={Boolean(application.resumeKey)}
@@ -384,6 +399,9 @@ function ApplicationStatusSection({
   onReject,
   onRetryEvaluation,
   retryEvaluationPending,
+  evaluationRetry,
+  onReinviteToInterview,
+  canReinviteToInterview,
   allowedStatuses,
   onStatusChange,
   hasResume,
@@ -408,6 +426,11 @@ function ApplicationStatusSection({
   onReject: () => void;
   onRetryEvaluation: () => void | Promise<void>;
   retryEvaluationPending: boolean;
+  evaluationRetry: NonNullable<
+    Awaited<ReturnType<typeof getCompanyApplicantReview>>
+  >["evaluationRetry"];
+  onReinviteToInterview: () => void | Promise<void>;
+  canReinviteToInterview: boolean;
   allowedStatuses: ApplicationStatus[];
   onStatusChange: (value: string) => void | Promise<void>;
   hasResume: boolean;
@@ -457,7 +480,7 @@ function ApplicationStatusSection({
               </Button>
             ) : null}
 
-            {isFailed ? (
+            {isFailed && evaluationRetry?.actionable ? (
               <Button
                 variant="outline"
                 disabled={retryEvaluationPending}
@@ -471,6 +494,22 @@ function ApplicationStatusSection({
                   />
                 ) : null}
                 {retryEvaluationPending ? "Retrying..." : "Retry evaluation"}
+              </Button>
+            ) : null}
+
+            {isFailed &&
+            evaluationRetry?.actionable === false &&
+            evaluationRetry.suggestedAction === "reinvite" &&
+            canReinviteToInterview ? (
+              <Button variant="outline" disabled={isPending} onClick={onReinviteToInterview}>
+                {isPending ? (
+                  <HugeiconsIcon
+                    icon={Loading03Icon}
+                    strokeWidth={2}
+                    className="size-4 animate-spin"
+                  />
+                ) : null}
+                {isPending ? "Inviting..." : "Re-invite to interview"}
               </Button>
             ) : null}
 
