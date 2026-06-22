@@ -1,9 +1,4 @@
-import {
-  ArrowLeft01Icon,
-  Briefcase01Icon,
-  RankingIcon,
-  UserGroupIcon,
-} from "@hugeicons/core-free-icons";
+import { Briefcase01Icon, RankingIcon, UserGroupIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link, notFound, redirect } from "@tanstack/react-router";
 import { useState } from "react";
@@ -115,12 +110,12 @@ function JobApplicantsPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Button variant="ghost" size="sm" asChild className="-ml-2">
-          <Link to="/dashboard/jobs/$jobId" params={{ jobId: job.id }}>
-            <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
-            Back to job
-          </Link>
-        </Button>
+        <div className="space-y-1">
+          <h2 className="text-2xl font-bold tracking-tight">{job.title}</h2>
+          <p className="text-sm text-muted-foreground">
+            Review and manage everyone who applied to this role.
+          </p>
+        </div>
         <div className="flex flex-wrap gap-2">
           <Badge variant="secondary" className="gap-1">
             <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} className="size-3" />
@@ -131,13 +126,6 @@ function JobApplicantsPage() {
             {jobStatusLabels[job.status as JobStatus]}
           </Badge>
         </div>
-      </div>
-
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold tracking-tight">{job.title}</h2>
-        <p className="text-sm text-muted-foreground">
-          Review and manage everyone who applied to this role.
-        </p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">

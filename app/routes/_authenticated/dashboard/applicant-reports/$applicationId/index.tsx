@@ -229,49 +229,52 @@ function ApplicantReportSummaryPage() {
     const isInterviewCompleted = interview?.status === "completed";
     const isEvalFailed = application.status === "evaluation_failed";
 
+    const emptyState = isEvalFailed ? (
+      <Empty className={batchNavigation ? "border-0 p-0 shadow-none" : "border"}>
+        <EmptyHeader>
+          <EmptyTitle>Evaluation failed</EmptyTitle>
+          <EmptyDescription>
+            The AI evaluation could not be completed for this applicant. You can reject the
+            application or wait for a manual review.
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    ) : isInterviewCompleted ? (
+      <Empty className={batchNavigation ? "border-0 p-0 shadow-none" : "border"}>
+        <EmptyHeader>
+          <EmptyTitle className="flex items-center gap-2">
+            <HugeiconsIcon icon={Loading03Icon} strokeWidth={2} className="size-4 animate-spin" />
+            Evaluation in progress
+          </EmptyTitle>
+          <EmptyDescription>
+            Zero is generating the post-interview report. Check back in a few minutes.
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    ) : (
+      <Empty className={batchNavigation ? "border-0 p-0 shadow-none" : "border"}>
+        <EmptyHeader>
+          <EmptyTitle>No post-interview report yet</EmptyTitle>
+          <EmptyDescription>
+            This applicant does not have a generated post-evaluation report yet.
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    );
+
     return (
       <div className="space-y-6">
-        <BreadcrumbRow
-          applicationId={application.id}
-          batchNavigation={batchNavigation}
-          showFullLink={false}
-        />
-
-        {isEvalFailed ? (
-          <Empty className="border">
-            <EmptyHeader>
-              <EmptyTitle>Evaluation failed</EmptyTitle>
-              <EmptyDescription>
-                The AI evaluation could not be completed for this applicant. You can reject the
-                application or wait for a manual review.
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
-        ) : isInterviewCompleted ? (
-          <Empty className="border">
-            <EmptyHeader>
-              <EmptyTitle className="flex items-center gap-2">
-                <HugeiconsIcon
-                  icon={Loading03Icon}
-                  strokeWidth={2}
-                  className="size-4 animate-spin"
-                />
-                Evaluation in progress
-              </EmptyTitle>
-              <EmptyDescription>
-                Zero is generating the post-interview report. Check back in a few minutes.
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
+        {batchNavigation ? (
+          <div className="rounded-4xl border border-border/70 bg-card px-5 py-5 shadow-sm md:px-7 md:py-6">
+            <ReportActionsRow
+              applicationId={application.id}
+              batchNavigation={batchNavigation}
+              showFullLink={false}
+            />
+            {emptyState}
+          </div>
         ) : (
-          <Empty className="border">
-            <EmptyHeader>
-              <EmptyTitle>No post-interview report yet</EmptyTitle>
-              <EmptyDescription>
-                This applicant does not have a generated post-evaluation report yet.
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
+          emptyState
         )}
       </div>
     );
@@ -286,14 +289,14 @@ function ApplicantReportSummaryPage() {
 
   return (
     <div className="space-y-6">
-      <BreadcrumbRow
-        applicationId={application.id}
-        batchNavigation={batchNavigation}
-        showFullLink
-      />
-
       {/* Hero — candidate, score, recommendation */}
       <div className="rounded-4xl border border-border/70 bg-card px-5 py-5 shadow-sm md:px-7 md:py-6">
+        <ReportActionsRow
+          applicationId={application.id}
+          batchNavigation={batchNavigation}
+          showFullLink
+        />
+
         <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
           <div className="flex min-w-0 items-center gap-4">
             <Avatar className="size-14 shrink-0 ring-4 ring-background">
@@ -698,7 +701,7 @@ function ApplicantReportSummaryPage() {
   );
 }
 
-function BreadcrumbRow({
+function ReportActionsRow({
   applicationId,
   batchNavigation,
   showFullLink,
@@ -707,81 +710,76 @@ function BreadcrumbRow({
   batchNavigation: NonNullable<LoaderData>["batchNavigation"];
   showFullLink: boolean;
 }) {
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-2">
-      <Button variant="ghost" size="sm" asChild className="-ml-2">
-        <Link to="/dashboard/applicants/$applicationId" params={{ applicationId }}>
-          <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
-          Applicant detail
-        </Link>
-      </Button>
+  if (!batchNavigation && !showFullLink) {
+    return null;
+  }
 
-      <div className="flex flex-wrap items-center gap-2">
-        {batchNavigation ? (
-          <>
-            <Button
-              variant="outline"
-              size="sm"
-              asChild={batchNavigation.previousApplicationId !== null}
-              disabled={batchNavigation.previousApplicationId === null}
-            >
-              {batchNavigation.previousApplicationId ? (
-                <Link
-                  to="/dashboard/applicant-reports/$applicationId"
-                  params={{ applicationId: batchNavigation.previousApplicationId }}
-                >
-                  <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
-                  Previous
-                </Link>
-              ) : (
-                <>
-                  <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
-                  Previous
-                </>
-              )}
-            </Button>
-            <span className="font-mono text-[11px] text-muted-foreground">
-              #{batchNavigation.position} of {batchNavigation.total} in batch
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              asChild={batchNavigation.nextApplicationId !== null}
-              disabled={batchNavigation.nextApplicationId === null}
-            >
-              {batchNavigation.nextApplicationId ? (
-                <Link
-                  to="/dashboard/applicant-reports/$applicationId"
-                  params={{ applicationId: batchNavigation.nextApplicationId }}
-                >
-                  Next
-                  <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-4" />
-                </Link>
-              ) : (
-                <>
-                  Next
-                  <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-4" />
-                </>
-              )}
-            </Button>
-            <Button asChild variant="ghost" size="sm">
+  return (
+    <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
+      {batchNavigation ? (
+        <>
+          <Button
+            variant="outline"
+            size="sm"
+            asChild={batchNavigation.previousApplicationId !== null}
+            disabled={batchNavigation.previousApplicationId === null}
+          >
+            {batchNavigation.previousApplicationId ? (
               <Link
-                to="/dashboard/job-batches/$batchId"
-                params={{ batchId: batchNavigation.batchId }}
+                to="/dashboard/applicant-reports/$applicationId"
+                params={{ applicationId: batchNavigation.previousApplicationId }}
               >
-                Batch
+                <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
+                Previous
               </Link>
-            </Button>
-          </>
-        ) : null}
-        {showFullLink ? (
+            ) : (
+              <>
+                <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
+                Previous
+              </>
+            )}
+          </Button>
+          <span className="font-mono text-[11px] text-muted-foreground">
+            #{batchNavigation.position} of {batchNavigation.total} in batch
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            asChild={batchNavigation.nextApplicationId !== null}
+            disabled={batchNavigation.nextApplicationId === null}
+          >
+            {batchNavigation.nextApplicationId ? (
+              <Link
+                to="/dashboard/applicant-reports/$applicationId"
+                params={{ applicationId: batchNavigation.nextApplicationId }}
+              >
+                Next
+                <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-4" />
+              </Link>
+            ) : (
+              <>
+                Next
+                <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-4" />
+              </>
+            )}
+          </Button>
           <Button asChild variant="ghost" size="sm">
-            <Link to="/dashboard/applicant-reports/$applicationId/full" params={{ applicationId }}>
-              Full audit
+            <Link
+              to="/dashboard/job-batches/$batchId"
+              params={{ batchId: batchNavigation.batchId }}
+            >
+              Batch
             </Link>
           </Button>
-        ) : null}
-      </div>
+        </>
+      ) : null}
+      {showFullLink ? (
+        <Button asChild variant="ghost" size="sm">
+          <Link to="/dashboard/applicant-reports/$applicationId/full" params={{ applicationId }}>
+            Full audit
+          </Link>
+        </Button>
+      ) : null}
     </div>
   );
 }

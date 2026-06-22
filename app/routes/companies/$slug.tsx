@@ -1,5 +1,4 @@
 import {
-  ArrowLeft01Icon,
   ArrowRight01Icon,
   Briefcase01Icon,
   Building01Icon,
@@ -10,6 +9,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { AppBreadcrumbs } from "@/components/app-breadcrumbs";
 import { PublicFooter, PublicHeader } from "@/components/public-layout";
 import { CompanyDetailSkeleton } from "@/components/route-skeletons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -26,6 +26,7 @@ import {
 
 import { getCompanyBySlug } from "@/features/companies/server/functions";
 import { getOpenJobsByCompanyId } from "@/features/jobs/server/functions";
+import { publicCompanyDetailTrail } from "@/shared/breadcrumb-trails";
 import type {
   CompanySize,
   EmploymentType,
@@ -149,13 +150,7 @@ function CompanyProfilePage() {
         <section className="relative overflow-hidden border-b border-border/40">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--color-primary)/5%,transparent_60%)]" />
           <div className="relative mx-auto max-w-7xl px-6 pb-10 pt-6 lg:px-10 lg:pb-12">
-            <Link
-              to="/companies"
-              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
-              All companies
-            </Link>
+            <AppBreadcrumbs items={publicCompanyDetailTrail(company.name)} />
 
             <div className="mt-8 flex flex-col gap-6 sm:flex-row sm:items-start">
               <Avatar className="size-16 rounded-xl">

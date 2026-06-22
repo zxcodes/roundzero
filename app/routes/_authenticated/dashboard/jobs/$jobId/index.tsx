@@ -1,6 +1,5 @@
 import {
   Archive01Icon,
-  ArrowLeft01Icon,
   ArrowRight01Icon,
   Briefcase01Icon,
   Clock01Icon,
@@ -83,40 +82,32 @@ function JobDetailPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start gap-3">
-        <Button variant="ghost" size="icon" className="mt-0.5 shrink-0" asChild>
-          <Link to="/dashboard/jobs">
-            <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
-          </Link>
-        </Button>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-2xl font-bold tracking-tight">{job.title}</h2>
-            <JobStatusBadge job={job} />
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {job.companyName ? (
-              <>
-                <Link
-                  to="/companies/$slug"
-                  params={{ slug: job.companySlug }}
-                  className="font-medium text-foreground transition-colors hover:text-primary"
-                >
-                  {job.companyName}
-                </Link>
-                {" \u00B7 "}
-              </>
-            ) : null}
-            <span className="font-mono">{formatDate(job.createdAt)}</span>
-            {new Date(job.updatedAt).getTime() !== new Date(job.createdAt).getTime() ? (
-              <>
-                {" "}
-                · Updated <span className="font-mono">{formatDate(job.updatedAt)}</span>
-              </>
-            ) : null}
-          </p>
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="text-2xl font-bold tracking-tight">{job.title}</h2>
+          <JobStatusBadge job={job} />
         </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {job.companyName ? (
+            <>
+              <Link
+                to="/companies/$slug"
+                params={{ slug: job.companySlug }}
+                className="font-medium text-foreground transition-colors hover:text-primary"
+              >
+                {job.companyName}
+              </Link>
+              {" \u00B7 "}
+            </>
+          ) : null}
+          <span className="font-mono">{formatDate(job.createdAt)}</span>
+          {new Date(job.updatedAt).getTime() !== new Date(job.createdAt).getTime() ? (
+            <>
+              {" "}
+              · Updated <span className="font-mono">{formatDate(job.updatedAt)}</span>
+            </>
+          ) : null}
+        </p>
       </div>
 
       {isCompany ? (

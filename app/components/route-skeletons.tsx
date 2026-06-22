@@ -1,4 +1,5 @@
 import { useRouteContext } from "@tanstack/react-router";
+import { BreadcrumbSkeleton } from "@/components/app-breadcrumbs";
 import { PublicFooter, PublicHeader } from "@/components/public-layout";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -183,8 +184,7 @@ export function JobDetailSkeleton() {
         <section className="relative overflow-hidden border-b border-border/40">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--color-primary)/5%,transparent_60%)]" />
           <div className="relative mx-auto max-w-7xl px-6 pb-10 pt-6 lg:px-10 lg:pb-12">
-            {/* Back link */}
-            <Skeleton className="h-4 w-20" />
+            <BreadcrumbSkeleton segments={2} />
             <div className="mt-8 space-y-5">
               <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
                 <div className="space-y-2">
@@ -286,7 +286,7 @@ export function CompanyDetailSkeleton() {
         <section className="relative overflow-hidden border-b border-border/40">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--color-primary)/5%,transparent_60%)]" />
           <div className="relative mx-auto max-w-7xl px-6 pb-10 pt-6 lg:px-10 lg:pb-12">
-            <Skeleton className="h-4 w-28" />
+            <BreadcrumbSkeleton segments={2} />
             <div className="mt-8 flex flex-col gap-6 sm:flex-row sm:items-start">
               <Skeleton className="size-16 rounded-xl" />
               <div className="min-w-0 flex-1 space-y-3">
@@ -519,16 +519,12 @@ export function DashboardJobDetailSkeleton() {
 function CompanyJobDetailSkeleton() {
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start gap-3">
-        <Skeleton className="mt-0.5 size-9 shrink-0 rounded-md" />
-        <div className="min-w-0 flex-1 space-y-2">
-          <div className="flex items-center gap-2">
-            <Skeleton className="h-7 w-56" />
-            <Skeleton className="h-5 w-14 rounded-full" />
-          </div>
-          <Skeleton className="h-3.5 w-48" />
+      <div className="min-w-0 space-y-2">
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-7 w-56" />
+          <Skeleton className="h-5 w-14 rounded-full" />
         </div>
+        <Skeleton className="h-3.5 w-48" />
       </div>
 
       {/* Action buttons */}
@@ -619,16 +615,12 @@ function CompanyJobDetailSkeleton() {
 function CandidateJobDetailSkeleton() {
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start gap-3">
-        <Skeleton className="mt-0.5 size-9 shrink-0 rounded-md" />
-        <div className="min-w-0 flex-1 space-y-2">
-          <div className="flex items-center gap-2">
-            <Skeleton className="h-7 w-56" />
-            <Skeleton className="h-5 w-14 rounded-full" />
-          </div>
-          <Skeleton className="h-3.5 w-48" />
+      <div className="min-w-0 space-y-2">
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-7 w-56" />
+          <Skeleton className="h-5 w-14 rounded-full" />
         </div>
+        <Skeleton className="h-3.5 w-48" />
       </div>
 
       {/* 2-col layout */}
@@ -697,24 +689,20 @@ function CandidateJobDetailSkeleton() {
 
 /**
  * Skeleton for /dashboard/job-applicants/$jobId — applicants list page.
- * Matches: back nav + header (title + badges) + 3 summary cards + tabs/filter + applicant list + active batch panel.
+ * Matches: header (title + badges) + 3 summary cards + tabs/filter + applicant list + active batch panel.
  */
 export function DashboardJobApplicantsSkeleton() {
   return (
     <div className="space-y-6">
-      {/* Back nav + badges */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Skeleton className="h-8 w-28 rounded-md" />
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-56" />
+          <Skeleton className="h-4 w-72" />
+        </div>
         <div className="flex gap-2">
           <Skeleton className="h-5 w-24 rounded-full" />
           <Skeleton className="h-5 w-16 rounded-full" />
         </div>
-      </div>
-
-      {/* Title */}
-      <div className="space-y-2">
-        <Skeleton className="h-8 w-56" />
-        <Skeleton className="h-4 w-72" />
       </div>
 
       {/* Summary cards */}
@@ -1280,9 +1268,6 @@ export function DashboardShortlistedSkeleton() {
 export function DashboardApplicationDetailSkeleton() {
   return (
     <div className="space-y-6">
-      {/* Back link */}
-      <Skeleton className="h-8 w-28 rounded-md" />
-
       {/* Header: company + title + badge */}
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="space-y-2">
@@ -1364,21 +1349,17 @@ export function DashboardApplicantReviewSkeleton() {
 function CompanyApplicantReviewSkeleton() {
   return (
     <div className="space-y-6">
-      {/* Back nav with prev/next */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Skeleton className="h-8 w-28 rounded-md" />
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex min-w-0 flex-1 items-start gap-4">
+          <Skeleton className="size-14 rounded-full" />
+          <div className="min-w-0 flex-1 space-y-2">
+            <Skeleton className="h-7 w-48" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+        </div>
         <div className="flex gap-2">
           <Skeleton className="h-8 w-20 rounded-md" />
           <Skeleton className="h-8 w-20 rounded-md" />
-        </div>
-      </div>
-
-      {/* Avatar + name */}
-      <div className="flex items-start gap-4">
-        <Skeleton className="size-14 rounded-full" />
-        <div className="min-w-0 flex-1 space-y-2">
-          <Skeleton className="h-7 w-48" />
-          <Skeleton className="h-4 w-64" />
         </div>
       </div>
 
@@ -1431,25 +1412,21 @@ function CompanyApplicantReviewSkeleton() {
 
 /**
  * Skeleton for /dashboard/applicant-reports/$applicationId — polished report summary.
- * Matches: breadcrumb + batch nav, hero (avatar/name/score/actions),
+ * Matches: hero with batch nav (avatar/name/score/actions),
  * summary + score bars, strengths/weaknesses, evidence, insights,
  * screening questions, pre-screening/voice accordion, full audit link.
  */
 export function DashboardApplicantReportSkeleton() {
   return (
     <div className="space-y-6">
-      {/* Breadcrumb + batch nav */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <Skeleton className="h-8 w-28 rounded-md" />
-        <div className="flex flex-wrap items-center gap-2">
+      {/* Hero */}
+      <div className="rounded-4xl border border-border/70 bg-card px-5 py-5 shadow-sm md:px-7 md:py-6">
+        <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
           <Skeleton className="h-8 w-24 rounded-md" />
           <Skeleton className="h-4 w-24" />
           <Skeleton className="h-8 w-24 rounded-md" />
         </div>
-      </div>
 
-      {/* Hero */}
-      <div className="rounded-4xl border border-border/70 bg-card px-5 py-5 shadow-sm md:px-7 md:py-6">
         <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
           <div className="flex min-w-0 items-center gap-4">
             <Skeleton className="size-14 rounded-full" />
@@ -1691,7 +1668,7 @@ export function DashboardLayoutSkeleton() {
       <div className="flex min-h-0 flex-1 flex-col">
         {/* SiteHeader */}
         <header className="flex shrink-0 items-center justify-between gap-4 border-b border-border/60 bg-card px-4 py-3 md:px-6 md:py-3.5">
-          <Skeleton className="h-6 w-40" />
+          <BreadcrumbSkeleton segments={2} />
           <div className="flex items-center gap-3">
             <Skeleton className="size-8 rounded-md" />
             <Skeleton className="size-8 rounded-full" />
@@ -1781,7 +1758,6 @@ export function BatchDetailSkeleton() {
       {/* Header with status badge */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="space-y-2">
-          <Skeleton className="h-7 w-28" />
           <Skeleton className="h-7 w-72" />
           <Skeleton className="h-4 w-60" />
         </div>
