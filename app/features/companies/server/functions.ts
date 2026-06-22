@@ -231,14 +231,6 @@ export const createCompany = createServerFn({ method: "POST" })
     return { company };
   });
 
-export const getMyCompanyContext = createServerFn({ method: "GET" }).handler(async () => {
-  const session = await useSession<SessionData>(sessionConfig);
-  if (!session.data.userId) {
-    return { state: "unauthenticated" as const };
-  }
-  return resolveMyCompanyContext(getDb(), session.data.userId);
-});
-
 // Cache key for the _authenticated beforeLoad bootstrap; invalidated centrally
 // in getRouter() on router.invalidate(). See app/router.tsx.
 export const companyBootstrapQueryKey = ["company-bootstrap"] as const;
