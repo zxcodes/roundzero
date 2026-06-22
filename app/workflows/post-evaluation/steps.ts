@@ -41,7 +41,6 @@ import {
 } from "@/prompts/communication-assessment";
 import {
   auditScreeningCoverage,
-  clampScore,
   getModelDateContext,
   LIMITS,
   moderateTranscript,
@@ -53,6 +52,7 @@ import type { Recommendation } from "@/shared/enums";
 import type { createWorkflowLogger } from "@/shared/logger";
 import { notificationPayloadSchemas } from "@/shared/notifications-config";
 import { createChatModel, getModelChain } from "@/shared/openrouter";
+import { clampCandidateScore } from "@/shared/score";
 
 // Prompt versions for tracking which prompt was used for each report
 const POST_EVAL_PROMPT_VERSION = "1.1.0";
@@ -630,7 +630,7 @@ export function sendReportReadyEmail(
           react: jsx(ReportReadyEmailTemplate, {
             candidateName: interviewData.interview.candidateName,
             jobTitle: interviewData.interview.jobTitle,
-            overallScore: clampScore(reportDraft.scores.overall),
+            overallScore: clampCandidateScore(reportDraft.scores.overall),
             recommendation: reportDraft.recommendation,
             reportUrl,
           }),
@@ -757,7 +757,7 @@ export function applyVoiceAssessmentToReport(
   const voiceWeight = Math.min(0.7, 0.15 + totalEvidence * 0.055);
   const textWeight = 1 - voiceWeight;
 
-  const blended = clampScore(
+  const blended = clampCandidateScore(
     report.scores.communication * textWeight + voice.overallScore * voiceWeight,
   );
 

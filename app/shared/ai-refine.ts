@@ -9,7 +9,7 @@
  * score sanity.
  */
 
-import { CANDIDATE_SCORE_DEFAULT, clampCandidateScore } from "@/shared/score";
+import { clampCandidateScore } from "@/shared/score";
 
 const WORD_RE = /[a-z0-9]+/g;
 
@@ -350,10 +350,6 @@ export function moderateTranscript(messages: ReadonlyArray<TranscriptMessage>): 
   return { quality: "normal" };
 }
 
-export function clampScore(value: unknown, fallback = CANDIDATE_SCORE_DEFAULT): number {
-  return clampCandidateScore(value, fallback);
-}
-
 // ─── Date context ─────────────────────────────────────────────────────────
 
 /**
@@ -396,8 +392,8 @@ export function recomputeOverall(
   modelOverall: number,
   maxDelta = 0.8,
 ): number {
-  if (dimensions.length === 0) return clampScore(modelOverall);
+  if (dimensions.length === 0) return clampCandidateScore(modelOverall);
   const mean = dimensions.reduce((a, b) => a + b, 0) / dimensions.length;
   const bounded = Math.max(mean - maxDelta, Math.min(mean + maxDelta, modelOverall));
-  return clampScore(bounded);
+  return clampCandidateScore(bounded);
 }
