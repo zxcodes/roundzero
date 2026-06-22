@@ -1,6 +1,7 @@
 import type { Sql } from "postgres";
 import { getInterviewByApplicationId } from "@/features/interviews/queries/queries_sql";
 import { getReportByInterviewId } from "@/features/reports/queries/queries_sql";
+import { disposeRpcResource } from "@/shared/workflow-rpc";
 import {
   claimApplicationForRetry,
   getApplicationById,
@@ -78,13 +79,19 @@ export async function previewEvaluationRetry(
     }
 
     const probe = await probePostEvaluationInstance(bindings.postEvaluation, interview.id);
-    if (probe.action === "create" || probe.action === "restart") {
-      return { actionable: true, kind: "post_eval" };
+    try {
+      if (probe.action === "create" || probe.action === "restart") {
+        return { actionable: true, kind: "post_eval" };
+      }
+      if (probe.reason === "post_eval_already_complete") {
+        return { actionable: false, reason: probe.reason, suggestedAction: "reinvite" };
+      }
+      return { actionable: false, reason: probe.reason };
+    } finally {
+      if (probe.action === "restart") {
+        disposeRpcResource(probe.instance);
+      }
     }
-    if (probe.reason === "post_eval_already_complete") {
-      return { actionable: false, reason: probe.reason, suggestedAction: "reinvite" };
-    }
-    return { actionable: false, reason: probe.reason };
   }
 
   return { actionable: false, reason: `interview_${interview.status}` };
@@ -146,7 +153,11 @@ async function claimAndTriggerPreEval(
 
   try {
     const instance = await bindings.preEvaluation.create({ params: { applicationId } });
-    return { kind: "pre_eval", action: "created", workflowInstanceId: instance.id };
+    try {
+      return { kind: "pre_eval", action: "created", workflowInstanceId: instance.id };
+    } finally {
+      disposeRpcResource(instance);
+    }
   } catch (error) {
     await updateApplicationStatus(db, { id: applicationId, status: "evaluation_failed" });
     throw error;
@@ -184,7 +195,11 @@ async function claimAndTriggerPostEval(
         id: interviewId,
         params: { interviewId },
       });
-      return { kind: "post_eval", action: "created", workflowInstanceId: created.id };
+      try {
+        return { kind: "post_eval", action: "created", workflowInstanceId: created.id };
+      } finally {
+        disposeRpcResource(created);
+      }
     }
 
     await probe.instance.restart();
@@ -192,6 +207,10 @@ async function claimAndTriggerPostEval(
   } catch (error) {
     await updateApplicationStatus(db, { id: applicationId, status: "evaluation_failed" });
     throw error;
+  } finally {
+    if (probe.action === "restart") {
+      disposeRpcResource(probe.instance);
+    }
   }
 }
 
@@ -212,23 +231,37 @@ async function probePostEvaluationInstance(
     return { action: "create" };
   }
 
-  const status = await instance.status();
-  switch (status.status) {
-    case "errored":
-    case "terminated":
-      return { action: "restart", instance };
-    case "complete":
-      // Workflow ran to completion (often the `insufficient_signal` branch).
-      // Restarting against the same data will produce the same outcome, so
-      // skip — operators can intervene differently (e.g. re-invite).
-      return { action: "skip", reason: "post_eval_already_complete" };
-    case "queued":
-    case "running":
-    case "paused":
-    case "waiting":
-    case "waitingForPause":
-      return { action: "skip", reason: `post_eval_${status.status}` };
-    default:
-      return { action: "skip", reason: `post_eval_unknown_status` };
+  let retainInstance = false;
+  try {
+    const statusPayload = await instance.status();
+    try {
+      const workflowStatus = statusPayload.status;
+
+      switch (workflowStatus) {
+        case "errored":
+        case "terminated":
+          retainInstance = true;
+          return { action: "restart", instance };
+        case "complete":
+          // Workflow ran to completion (often the `insufficient_signal` branch).
+          // Restarting against the same data will produce the same outcome, so
+          // skip — operators can intervene differently (e.g. re-invite).
+          return { action: "skip", reason: "post_eval_already_complete" };
+        case "queued":
+        case "running":
+        case "paused":
+        case "waiting":
+        case "waitingForPause":
+          return { action: "skip", reason: `post_eval_${workflowStatus}` };
+        default:
+          return { action: "skip", reason: "post_eval_unknown_status" };
+      }
+    } finally {
+      disposeRpcResource(statusPayload);
+    }
+  } finally {
+    if (!retainInstance) {
+      disposeRpcResource(instance);
+    }
   }
 }
