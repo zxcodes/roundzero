@@ -235,58 +235,54 @@ function ApplicantReviewPage() {
     setPendingStatus(null);
   };
 
+  const hasApplicantNavigation = previousApplicant !== null || nextApplicant !== null;
+
   return (
     <div className="space-y-6">
-      {/* Top breadcrumb / nav row */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <Button variant="ghost" size="sm" asChild className="-ml-2">
-          <Link to="/dashboard/jobs/$jobId" params={{ jobId: application.jobId }}>
-            <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
-            Back to role
-          </Link>
-        </Button>
-        <div className="flex items-center gap-1.5">
-          {previousApplicant ? (
-            <Button variant="outline" size="sm" asChild>
-              <Link
-                to="/dashboard/applicants/$applicationId"
-                params={{ applicationId: previousApplicant.id }}
-              >
-                <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
-                Previous
-              </Link>
-            </Button>
-          ) : null}
-          {nextApplicant ? (
-            <Button variant="outline" size="sm" asChild>
-              <Link
-                to="/dashboard/applicants/$applicationId"
-                params={{ applicationId: nextApplicant.id }}
-              >
-                Next
-                <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-4" />
-              </Link>
-            </Button>
-          ) : null}
-        </div>
-      </div>
-
       <div className="space-y-6 min-w-0">
         {/* Candidate header */}
-        <div className="flex flex-wrap items-start gap-4">
-          <Avatar className="size-14 ring-4 ring-background">
-            <AvatarImage
-              src={application.candidatePicture ?? undefined}
-              alt={application.candidateName}
-            />
-            <AvatarFallback>{getInitials(application.candidateName)}</AvatarFallback>
-          </Avatar>
-          <div className="min-w-0 flex-1 space-y-2">
-            <h2 className="text-2xl font-bold tracking-tight">{application.candidateName}</h2>
-            <p className="text-sm text-muted-foreground">
-              Reviewing for <span className="font-medium">{application.jobTitle}</span>
-            </p>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex min-w-0 flex-1 flex-wrap items-start gap-4">
+            <Avatar className="size-14 ring-4 ring-background">
+              <AvatarImage
+                src={application.candidatePicture ?? undefined}
+                alt={application.candidateName}
+              />
+              <AvatarFallback>{getInitials(application.candidateName)}</AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1 space-y-2">
+              <h2 className="text-2xl font-bold tracking-tight">{application.candidateName}</h2>
+              <p className="text-sm text-muted-foreground">
+                Reviewing for <span className="font-medium">{application.jobTitle}</span>
+              </p>
+            </div>
           </div>
+          {hasApplicantNavigation ? (
+            <div className="flex items-center gap-1.5">
+              {previousApplicant ? (
+                <Button variant="outline" size="sm" asChild>
+                  <Link
+                    to="/dashboard/applicants/$applicationId"
+                    params={{ applicationId: previousApplicant.id }}
+                  >
+                    <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
+                    Previous
+                  </Link>
+                </Button>
+              ) : null}
+              {nextApplicant ? (
+                <Button variant="outline" size="sm" asChild>
+                  <Link
+                    to="/dashboard/applicants/$applicationId"
+                    params={{ applicationId: nextApplicant.id }}
+                  >
+                    Next
+                    <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-4" />
+                  </Link>
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
         <ApplicationStatusSection

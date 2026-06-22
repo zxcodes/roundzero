@@ -1,6 +1,5 @@
 import {
   Alert02Icon,
-  ArrowLeft01Icon,
   CheckmarkCircle02Icon,
   File02Icon,
   Loading03Icon,
@@ -173,18 +172,6 @@ function ApplicantAiReportPage() {
 
     return (
       <div className="space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <Button variant="ghost" size="sm" asChild className="-ml-2">
-            <Link
-              to="/dashboard/applicant-reports/$applicationId"
-              params={{ applicationId: application.id }}
-            >
-              <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
-              Report summary
-            </Link>
-          </Button>
-        </div>
-
         {isEvalFailed ? (
           <Empty className="border">
             <EmptyHeader>
@@ -232,18 +219,6 @@ function ApplicantAiReportPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-wrap items-center gap-3">
-        <Button variant="ghost" size="sm" asChild className="-ml-2">
-          <Link
-            to="/dashboard/applicant-reports/$applicationId"
-            params={{ applicationId: application.id }}
-          >
-            <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
-            Report summary
-          </Link>
-        </Button>
-      </div>
-
       <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-3 text-xs text-muted-foreground">
         This is the full audit timeline — every step Zero took to evaluate{" "}
         <span className="font-medium text-foreground">{application.candidateName}</span>. For a
