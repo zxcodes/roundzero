@@ -23,8 +23,12 @@ import {
 
 export function CompanyJobApplicantsList({
   applicants,
+  emptyTitle,
+  emptyDescription,
 }: {
   applicants: Awaited<ReturnType<typeof getJobApplicants>>;
+  emptyTitle?: string;
+  emptyDescription?: string;
 }) {
   const evaluatedCount = applicants.filter((a) => a.reportId !== null).length;
 
@@ -35,9 +39,9 @@ export function CompanyJobApplicantsList({
           <EmptyMedia variant="icon">
             <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} />
           </EmptyMedia>
-          <EmptyTitle>No applicants yet</EmptyTitle>
+          <EmptyTitle>{emptyTitle ?? "No applicants yet"}</EmptyTitle>
           <EmptyDescription>
-            Candidate submissions for this role will show up here.
+            {emptyDescription ?? "Candidate submissions for this role will show up here."}
           </EmptyDescription>
         </EmptyHeader>
       </Empty>
