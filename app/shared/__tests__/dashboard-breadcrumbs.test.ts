@@ -70,7 +70,7 @@ describe("resolveDashboardBreadcrumbs", () => {
     ]);
   });
 
-  it("includes Applicants in company applicant review trails", () => {
+  it("builds company applicant review trails from the job hub", () => {
     const matches = [
       match("/_authenticated/dashboard/applicants/$applicationId", {
         application: {
@@ -90,9 +90,8 @@ describe("resolveDashboardBreadcrumbs", () => {
       ),
     ).toEqual([
       { label: "Jobs", to: "/dashboard/jobs" },
-      { label: "Senior Engineer", to: "/dashboard/jobs/$jobId", params: { jobId } },
       {
-        label: "Applicants",
+        label: "Senior Engineer",
         to: "/dashboard/job-applicants/$jobId",
         params: { jobId },
       },
@@ -126,7 +125,7 @@ describe("breadcrumbSegmentCount", () => {
 
     expect(
       breadcrumbSegmentCount("/_authenticated/dashboard/applicants/$applicationId", breadcrumbs),
-    ).toBe(4);
+    ).toBe(3);
   });
 
   it("falls back to route-specific counts while pending", () => {

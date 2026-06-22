@@ -43,8 +43,9 @@ function NewJobPage() {
       toast.success("Job created successfully");
       await router.invalidate();
       await router.navigate({
-        to: "/dashboard/jobs/$jobId",
+        to: "/dashboard/job-applicants/$jobId",
         params: { jobId: job.id },
+        search: { tab: "posting" },
       });
     },
     onError: (error) => {
