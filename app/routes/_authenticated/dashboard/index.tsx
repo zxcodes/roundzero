@@ -169,7 +169,11 @@ function buildActionQueue(metrics: CompanyMetrics): ActionItem[] {
       } so far — extend the deadline or close it out.`,
       cta: "Manage",
       link: (
-        <Link to="/dashboard/jobs/$jobId" params={{ jobId: role.jobId }}>
+        <Link
+          to="/dashboard/job-applicants/$jobId"
+          params={{ jobId: role.jobId }}
+          search={{ tab: "posting" }}
+        >
           Manage
           <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-3.5" />
         </Link>

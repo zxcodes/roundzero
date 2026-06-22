@@ -7,7 +7,12 @@ import {
   seedUser,
 } from "@/shared/__tests__/test-utils";
 import { createApplication, getApplicationById } from "../../queries/queries_sql";
-import { EVAL_RETRY_AUTO_CAP, type RetryEvaluationBindings, retryEvaluation } from "../retry";
+import {
+  EVAL_RETRY_AUTO_CAP,
+  previewEvaluationRetry,
+  type RetryEvaluationBindings,
+  retryEvaluation,
+} from "../retry";
 
 const sql = getTestDb();
 
@@ -326,5 +331,43 @@ describe("retryEvaluation failure recovery", () => {
     const reloaded = await getApplicationById(sql, { id: application.id });
     expect(reloaded?.status).toBe("evaluation_failed");
     expect((reloaded?.metadata as Record<string, unknown>).evalRetryCount).toBe(1);
+  });
+});
+
+describe("previewEvaluationRetry", () => {
+  it("returns null when the application is not evaluation_failed", async () => {
+    const { application } = await seedFailedApplication();
+    await sql`UPDATE applications SET status = 'applied' WHERE id = ${application.id}`;
+
+    const preview = await previewEvaluationRetry(sql, application.id, makeBindings());
+    expect(preview).toBeNull();
+  });
+
+  it("marks pre-eval retries as actionable when no interview exists", async () => {
+    const { application } = await seedFailedApplication();
+
+    const preview = await previewEvaluationRetry(sql, application.id, makeBindings());
+    expect(preview).toEqual({ actionable: true, kind: "pre_eval" });
+  });
+
+  it("suggests re-invite when post-eval already completed without a report", async () => {
+    const { application } = await seedFailedApplication();
+    const interview = await attachInterview(application.id, "completed");
+
+    const completeInstance: StubInstance = {
+      id: interview.id,
+      status: async () => ({ status: "complete" }),
+      restart: vi.fn(),
+    };
+    const bindings = makeBindings({
+      postEvalGet: async () => completeInstance,
+    });
+
+    const preview = await previewEvaluationRetry(sql, application.id, bindings);
+    expect(preview).toEqual({
+      actionable: false,
+      reason: "post_eval_already_complete",
+      suggestedAction: "reinvite",
+    });
   });
 });

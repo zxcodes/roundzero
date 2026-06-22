@@ -1,10 +1,8 @@
-import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
-import { createFileRoute, Link, redirect, useRouter } from "@tanstack/react-router";
+import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { DashboardJobEditSkeleton } from "@/components/route-skeletons";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { JobForm, type JobFormData } from "@/features/jobs/components/job-form";
 import { updateJob } from "@/features/jobs/server/functions";
@@ -17,6 +15,7 @@ export const Route = createFileRoute("/_authenticated/dashboard/jobs/$jobId/edit
       throw redirect({ to: "/dashboard" });
     }
   },
+  pendingComponent: DashboardJobEditSkeleton,
   component: EditJobPage,
 });
 
@@ -30,7 +29,11 @@ function EditJobPage() {
     onSuccess: async () => {
       toast.success("Job updated successfully");
       await router.invalidate();
-      await router.navigate({ to: "/dashboard/jobs/$jobId", params: { jobId: job.id } });
+      await router.navigate({
+        to: "/dashboard/job-applicants/$jobId",
+        params: { jobId: job.id },
+        search: { tab: "posting" },
+      });
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : "Failed to update job.");
@@ -47,23 +50,20 @@ function EditJobPage() {
   };
 
   const onCancel = () => {
-    void router.navigate({ to: "/dashboard/jobs/$jobId", params: { jobId: job.id } });
+    void router.navigate({
+      to: "/dashboard/job-applicants/$jobId",
+      params: { jobId: job.id },
+      search: { tab: "posting" },
+    });
   };
 
   return (
     <div className="space-y-6 pb-28">
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" className="shrink-0" asChild>
-          <Link to="/dashboard/jobs/$jobId" params={{ jobId: job.id }}>
-            <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
-          </Link>
-        </Button>
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Edit job</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Make changes to the job posting. Only &quot;Open&quot; jobs are visible to candidates.
-          </p>
-        </div>
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight">Edit job</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Make changes to the job posting. Only &quot;Open&quot; jobs are visible to candidates.
+        </p>
       </div>
 
       <Card>

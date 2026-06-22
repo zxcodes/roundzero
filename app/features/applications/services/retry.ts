@@ -29,6 +29,10 @@ export type RetryEvaluationResult =
   | { kind: "post_eval"; action: "created" | "restarted"; workflowInstanceId: string }
   | { kind: "skipped"; reason: string };
 
+export type EvaluationRetryPreview =
+  | { actionable: true; kind: "pre_eval" | "post_eval" }
+  | { actionable: false; reason: string; suggestedAction?: "reinvite" };
+
 /**
  * Recover an application stuck in `evaluation_failed` by re-triggering the
  * appropriate workflow. Used by both the cron sweep and the manual "Retry
@@ -46,6 +50,46 @@ export type RetryEvaluationResult =
  *     The retry counter stays incremented — it counts attempts, not successes,
  *     which prevents thrashing on a permanently broken application.
  */
+/**
+ * Read-only probe used by the applicant review UI to decide whether to show
+ * "Retry evaluation" or a recovery action (e.g. re-invite after insufficient
+ * signal). Does not claim the row or trigger workflows.
+ */
+export async function previewEvaluationRetry(
+  db: Sql,
+  applicationId: string,
+  bindings: RetryEvaluationBindings,
+): Promise<EvaluationRetryPreview | null> {
+  const application = await getApplicationById(db, { id: applicationId });
+  if (application?.status !== "evaluation_failed") {
+    return null;
+  }
+
+  const interview = await getInterviewByApplicationId(db, { applicationId });
+
+  if (!interview) {
+    return { actionable: true, kind: "pre_eval" };
+  }
+
+  if (interview.status === "completed") {
+    const existingReport = await getReportByInterviewId(db, { interviewId: interview.id });
+    if (existingReport) {
+      return { actionable: false, reason: "report_already_exists" };
+    }
+
+    const probe = await probePostEvaluationInstance(bindings.postEvaluation, interview.id);
+    if (probe.action === "create" || probe.action === "restart") {
+      return { actionable: true, kind: "post_eval" };
+    }
+    if (probe.reason === "post_eval_already_complete") {
+      return { actionable: false, reason: probe.reason, suggestedAction: "reinvite" };
+    }
+    return { actionable: false, reason: probe.reason };
+  }
+
+  return { actionable: false, reason: `interview_${interview.status}` };
+}
+
 export async function retryEvaluation(
   db: Sql,
   applicationId: string,

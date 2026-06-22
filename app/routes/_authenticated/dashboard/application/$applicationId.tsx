@@ -1,5 +1,4 @@
 import {
-  ArrowLeft01Icon,
   Calendar01Icon,
   Cancel01Icon,
   CheckmarkCircle02Icon,
@@ -248,13 +247,6 @@ function CandidateApplicationDetailPage() {
 
   return (
     <div className="space-y-6">
-      <Button variant="ghost" size="sm" asChild className="-ml-2">
-        <Link to="/dashboard/applications">
-          <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
-          Applications
-        </Link>
-      </Button>
-
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
