@@ -1,17 +1,16 @@
 ## TODO
 
-- I see applicants list twice in ActiveBatchPanel job-applicants page on "All applicants" tab.
 - candidate score needs to be 1-10 as landing page shows. right now it's 1-100.
-- add an easier copy company jobs profile for companies to link it in their careers page.
 - add onCopy, onPaste detectors and evaluate final score based on that.
 - company has redundant steps. if I click a job, first taken to a page where there is jd, I have to click view applicants, which is another redundant page. we can def drop one of these here and make it simple.
 - check deleted account behaviour for companies, applications, etc. how the entire flow handles it.
-- still a few rough edges around failed eval. retry eval button doesnt seem to work. better to kill it? (says Retry skipped
-post_eval_already_complete)
 - pretty sure openrouter model fallbacks still don't work. verify in local dev.
 - add a really good resume and candidate test suite to pass thru the ai. (WIP in other branch)
 
 
+<!--- ~~I see applicants list twice in ActiveBatchPanel job-applicants page on "All applicants" tab.~~ Done — ActiveBatchPanel shows progress only.-->
+<!--- ~~add an easier copy company jobs profile for companies to link it in their careers page.~~ Done — copy/open careers link in company settings.-->
+<!--- ~~still a few rough edges around failed eval. retry eval button doesnt seem to work.~~ Done — preview retry eligibility; show re-invite when post_eval_already_complete.-->
 <!--- add score breakdown. -->
 <!--- overall caching seems a bit too aggressive. login/logouts, switching accounts, has stale data.-->
 <!--- interview panel padding still sucks (sticks left side completely on mobile and short screens)-->
