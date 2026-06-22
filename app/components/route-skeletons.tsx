@@ -1,4 +1,4 @@
-import { useRouteContext } from "@tanstack/react-router";
+import { getRouteApi, useRouteContext } from "@tanstack/react-router";
 import { BreadcrumbSkeleton } from "@/components/app-breadcrumbs";
 import { PublicFooter, PublicHeader } from "@/components/public-layout";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -508,106 +508,62 @@ function CandidateJobsListSkeleton() {
 }
 
 /**
- * Skeleton for /dashboard/jobs/$jobId — dashboard job detail page.
- * Matches: back button + title/status + date + action buttons + applicants summary + 2-col layout + apply section.
+ * Skeleton for /dashboard/jobs/$jobId parent layout while the shared loader runs.
+ * Child routes render their own pending skeletons once the parent resolves.
  */
-export function DashboardJobDetailSkeleton() {
-  const { isCompany } = useRouteContext({ from: "/_authenticated/dashboard/jobs/$jobId/" });
-  return isCompany ? <CompanyJobDetailSkeleton /> : <CandidateJobDetailSkeleton />;
-}
-
-function CompanyJobDetailSkeleton() {
+export function DashboardJobOutletSkeleton() {
   return (
     <div className="space-y-6">
-      <div className="min-w-0 space-y-2">
-        <div className="flex items-center gap-2">
-          <Skeleton className="h-7 w-56" />
-          <Skeleton className="h-5 w-14 rounded-full" />
-        </div>
-        <Skeleton className="h-3.5 w-48" />
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-56" />
+        <Skeleton className="h-4 w-72" />
       </div>
-
-      {/* Action buttons */}
-      <div className="flex gap-2">
-        <Skeleton className="h-8 w-36 rounded-md" />
-        <Skeleton className="h-8 w-8 rounded-md" />
-      </div>
-
-      {/* Applicants summary card */}
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Skeleton className="h-5 w-20" />
-              <Skeleton className="h-5 w-8 rounded-full" />
-            </div>
-            <Skeleton className="h-8 w-32 rounded-md" />
-          </div>
-          <Skeleton className="mt-1 h-3 w-64" />
-        </CardHeader>
-        <CardContent>
-          <Card className="bg-muted/20 border-border/70">
-            <CardContent className="space-y-2 p-4">
-              <Skeleton className="h-4 w-48" />
-              <Skeleton className="h-5 w-20 rounded-full" />
-              <Skeleton className="h-3 w-72" />
-            </CardContent>
-          </Card>
+        <CardContent className="space-y-3 py-6">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-5/6" />
+          <Skeleton className="h-4 w-2/3" />
         </CardContent>
       </Card>
+    </div>
+  );
+}
 
-      {/* 2-col layout */}
-      <div className="grid gap-5 lg:grid-cols-3">
-        {/* Left column */}
-        <div className="space-y-5 lg:col-span-2">
-          {/* Description card */}
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-5 w-24" />
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-5/6" />
-              <Skeleton className="h-4 w-3/4" />
-            </CardContent>
-          </Card>
-          {/* Requirements card */}
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-5 w-28" />
-            </CardHeader>
-            <CardContent className="space-y-2.5">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="flex items-start gap-2.5">
-                  <Skeleton className="mt-2 size-1 shrink-0 rounded-full" />
-                  <Skeleton className="h-4 w-full" />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
+/**
+ * Skeleton for /dashboard/jobs/$jobId/ — candidate job detail page.
+ * Company users redirect to the job applicants hub before this renders.
+ */
+export function DashboardJobDetailSkeleton() {
+  return <CandidateJobDetailSkeleton />;
+}
 
-        {/* Right sidebar */}
-        <div className="space-y-5">
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-3 w-20" />
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="flex items-start gap-3">
-                  <Skeleton className="mt-0.5 size-4 shrink-0" />
-                  <div className="space-y-1">
-                    <Skeleton className="h-4 w-28" />
-                    <Skeleton className="h-3 w-20" />
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
+/**
+ * Skeleton for /dashboard/jobs/$jobId/edit — company job edit form.
+ */
+export function DashboardJobEditSkeleton() {
+  return (
+    <div className="space-y-6 pb-28">
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-32" />
+        <Skeleton className="h-4 w-80 max-w-full" />
       </div>
+
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-5 w-24" />
+          <Skeleton className="mt-1 h-3 w-72" />
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Skeleton className="h-9 w-full rounded-md" />
+          <Skeleton className="h-28 w-full rounded-md" />
+          <Skeleton className="h-20 w-full rounded-md" />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Skeleton className="h-9 w-full rounded-md" />
+            <Skeleton className="h-9 w-full rounded-md" />
+          </div>
+          <Skeleton className="h-9 w-32 rounded-md" />
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -687,97 +643,161 @@ function CandidateJobDetailSkeleton() {
   );
 }
 
+const jobApplicantsRouteApi = getRouteApi("/_authenticated/dashboard/job-applicants/$jobId");
+
 /**
- * Skeleton for /dashboard/job-applicants/$jobId — applicants list page.
- * Matches: header (title + badges) + 3 summary cards + tabs/filter + applicant list + active batch panel.
+ * Skeleton for /dashboard/job-applicants/$jobId — company job hub.
+ * Matches: header + manage actions + page tabs + tab-specific body.
  */
 export function DashboardJobApplicantsSkeleton() {
+  const { tab } = jobApplicantsRouteApi.useSearch();
+  const isPostingTab = tab === "posting";
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-2">
           <Skeleton className="h-8 w-56" />
           <Skeleton className="h-4 w-72" />
         </div>
-        <div className="flex gap-2">
-          <Skeleton className="h-5 w-24 rounded-full" />
-          <Skeleton className="h-5 w-16 rounded-full" />
+        <div className="flex flex-wrap items-center gap-2">
+          {isPostingTab ? null : (
+            <>
+              <Skeleton className="h-5 w-24 rounded-full" />
+              <Skeleton className="h-5 w-16 rounded-full" />
+            </>
+          )}
+          <Skeleton className="h-8 w-24 rounded-md" />
         </div>
       </div>
 
-      {/* Summary cards */}
+      <div className="flex gap-2">
+        <Skeleton className="h-9 w-32 rounded-md" />
+        <Skeleton className="h-9 w-32 rounded-md" />
+      </div>
+
+      {isPostingTab ? <JobPostingTabSkeleton /> : <JobApplicantsTabSkeleton />}
+    </div>
+  );
+}
+
+function JobApplicantsTabSkeleton() {
+  return (
+    <>
       <div className="grid gap-3 sm:grid-cols-3">
         {Array.from({ length: 3 }).map((_, i) => (
           <Card key={i} size="sm" className="border-border/60">
             <CardContent className="py-3">
-              <Skeleton className="h-3 w-20" />
+              <Skeleton className="h-3 w-24" />
               <Skeleton className="mt-2 h-7 w-12" />
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {/* View switch + filter */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-2">
-          <Skeleton className="h-9 w-40 rounded-md" />
+          <Skeleton className="h-9 w-44 rounded-md" />
           <Skeleton className="h-9 w-36 rounded-md" />
         </div>
         <Skeleton className="h-9 w-44 rounded-md" />
       </div>
 
-      {/* Applicant list — clickable cards */}
-      <div className="space-y-3">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Card key={i} size="sm" className="ring-foreground/5">
-            <CardContent className="py-0">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex min-w-0 items-center gap-3">
-                  <Skeleton className="size-9 rounded-full" />
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-5 w-16 rounded-full" />
-                    </div>
-                    <Skeleton className="mt-0.5 h-3 w-40" />
-                  </div>
+      <div className="overflow-hidden rounded-4xl border border-border/60 bg-card shadow-sm ring-1 ring-foreground/5">
+        <div className="flex items-center justify-between gap-3 border-b border-border/50 px-5 py-4">
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-5 w-28" />
+          </div>
+          <Skeleton className="h-5 w-20 rounded-full" />
+        </div>
+        <div className="divide-y divide-border/50">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div
+              key={i}
+              className="grid gap-4 px-5 py-4 md:grid-cols-[auto_1fr_auto] md:items-center"
+            >
+              <Skeleton className="size-10 rounded-full" />
+              <div className="min-w-0 space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-5 w-20 rounded-full" />
                 </div>
-                <Skeleton className="size-4" />
+                <Skeleton className="h-3 w-40" />
               </div>
-            </CardContent>
-          </Card>
-        ))}
+              <Skeleton className="h-8 w-24 rounded-full justify-self-end" />
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Active batch panel */}
       <Card size="sm" className="border-border/60">
         <CardContent className="space-y-3 py-4">
           <div className="flex items-center justify-between gap-3">
             <div className="space-y-1">
               <Skeleton className="h-4 w-28" />
-              <Skeleton className="h-3 w-36" />
+              <Skeleton className="h-3 w-48" />
             </div>
             <Skeleton className="h-8 w-24 rounded-md" />
           </div>
           <Skeleton className="h-2 w-full rounded-full" />
         </CardContent>
       </Card>
+    </>
+  );
+}
 
-      {/* Secondary applicant list for batch */}
-      <div className="space-y-3">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <Card key={i} size="sm" className="ring-foreground/5">
-            <CardContent className="py-0">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex min-w-0 items-center gap-3">
-                  <Skeleton className="size-8 rounded-full" />
-                  <Skeleton className="h-4 w-28" />
-                </div>
-                <Skeleton className="h-5 w-16 rounded-full" />
-              </div>
+function JobPostingTabSkeleton() {
+  return (
+    <div className="space-y-5">
+      <div className="space-y-2">
+        <Skeleton className="h-5 w-14 rounded-full" />
+        <Skeleton className="h-3.5 w-40" />
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-3">
+        <div className="space-y-5 lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-5 w-24" />
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-5/6" />
             </CardContent>
           </Card>
-        ))}
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-5 w-28" />
+            </CardHeader>
+            <CardContent className="space-y-2.5">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-start gap-2.5">
+                  <Skeleton className="mt-2 size-1 shrink-0 rounded-full" />
+                  <Skeleton className="h-4 w-full" />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-3 w-20" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-start gap-3">
+                <Skeleton className="mt-0.5 size-4 shrink-0" />
+                <div className="space-y-1">
+                  <Skeleton className="h-4 w-28" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

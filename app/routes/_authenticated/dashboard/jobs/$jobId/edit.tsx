@@ -2,6 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { DashboardJobEditSkeleton } from "@/components/route-skeletons";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { JobForm, type JobFormData } from "@/features/jobs/components/job-form";
 import { updateJob } from "@/features/jobs/server/functions";
@@ -14,6 +15,7 @@ export const Route = createFileRoute("/_authenticated/dashboard/jobs/$jobId/edit
       throw redirect({ to: "/dashboard" });
     }
   },
+  pendingComponent: DashboardJobEditSkeleton,
   component: EditJobPage,
 });
 
@@ -48,7 +50,11 @@ function EditJobPage() {
   };
 
   const onCancel = () => {
-    void router.navigate({ to: "/dashboard/jobs/$jobId", params: { jobId: job.id } });
+    void router.navigate({
+      to: "/dashboard/job-applicants/$jobId",
+      params: { jobId: job.id },
+      search: { tab: "posting" },
+    });
   };
 
   return (
