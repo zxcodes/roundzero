@@ -2,12 +2,12 @@
 
 - candidate score needs to be 1-10 as landing page shows. right now it's 1-100.
 - add onCopy, onPaste detectors and evaluate final score based on that.
-- company has redundant steps. if I click a job, first taken to a page where there is jd, I have to click view applicants, which is another redundant page. we can def drop one of these here and make it simple.
 - check deleted account behaviour for companies, applications, etc. how the entire flow handles it.
 - pretty sure openrouter model fallbacks still don't work. verify in local dev.
 - add a really good resume and candidate test suite to pass thru the ai. (WIP in other branch)
 
 
+<!--- company has redundant steps. if I click a job, first taken to a page where there is jd, I have to click view applicants, which is another redundant page. we can def drop one of these here and make it simple.-->
 <!--- ~~I see applicants list twice in ActiveBatchPanel job-applicants page on "All applicants" tab.~~ Done — ActiveBatchPanel shows progress only.-->
 <!--- ~~add an easier copy company jobs profile for companies to link it in their careers page.~~ Done — copy/open careers link in company settings.-->
 <!--- ~~still a few rough edges around failed eval. retry eval button doesnt seem to work.~~ Done — preview retry eligibility; show re-invite when post_eval_already_complete.-->
