@@ -34,6 +34,7 @@ export default defineConfig(({ mode }) => {
         project: "roundzero-staging",
         authToken: process.env.SENTRY_AUTH_TOKEN ?? env.SENTRY_AUTH_TOKEN,
         sourcemaps: { disable: true }, // Might enable in prod. Not needed now.
+        telemetry: false,
       }),
     ],
   };
