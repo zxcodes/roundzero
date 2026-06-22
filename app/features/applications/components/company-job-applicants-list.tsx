@@ -15,8 +15,8 @@ import { ScorePill } from "@/features/reports/components/score-pill";
 import { getOverallScore } from "@/features/reports/schemas";
 import {
   type ApplicationStatus,
-  applicationStatusLabels,
   applicationStatusMeta,
+  getApplicationStatusLabel,
   type Recommendation,
   recommendationSchema,
 } from "@/shared/enums";
@@ -106,7 +106,9 @@ export function CompanyJobApplicantsList({
                     {applicant.candidateName}
                   </span>
                   <Badge variant="outline" className={statusTone?.badge ?? ""}>
-                    {applicationStatusLabels[status] ?? status}
+                    {getApplicationStatusLabel(status, {
+                      preEvaluationScore: applicant.preEvaluationScore,
+                    })}
                   </Badge>
                   {applicant.status === "pre_screening" && applicant.preEvaluationScore != null ? (
                     <Badge

@@ -9,6 +9,7 @@ import {
   employmentTypeSchema,
   experienceLevelLabels,
   experienceLevelSchema,
+  getApplicationStatusLabel,
   isValidTransition,
   jobStatusSchema,
   userRoleSchema,
@@ -110,6 +111,25 @@ describe("APPLICATION_STATUS_TRANSITIONS", () => {
         expect(validStatuses.has(target)).toBe(true);
       }
     }
+  });
+});
+
+describe("getApplicationStatusLabel", () => {
+  it("returns Screened when pre_screening has a score", () => {
+    expect(getApplicationStatusLabel("pre_screening", { preEvaluationScore: 82 })).toBe("Screened");
+  });
+
+  it("returns Screening when pre_screening has no score yet", () => {
+    expect(getApplicationStatusLabel("pre_screening", { preEvaluationScore: null })).toBe(
+      "Screening",
+    );
+    expect(getApplicationStatusLabel("pre_screening")).toBe("Screening");
+  });
+
+  it("ignores score for other statuses", () => {
+    expect(getApplicationStatusLabel("interview_invited", { preEvaluationScore: 82 })).toBe(
+      "Invited",
+    );
   });
 });
 
