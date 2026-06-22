@@ -1,5 +1,3 @@
-import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link, redirect, useLoaderData, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -45,8 +43,9 @@ function NewJobPage() {
       toast.success("Job created successfully");
       await router.invalidate();
       await router.navigate({
-        to: "/dashboard/jobs/$jobId",
+        to: "/dashboard/job-applicants/$jobId",
         params: { jobId: job.id },
+        search: { tab: "posting" },
       });
     },
     onError: (error) => {
@@ -75,20 +74,21 @@ function NewJobPage() {
     toast.success(`Loaded "${template.title}" template`);
   };
 
+  const onOpenTemplateDialog = () => {
+    setTemplateDialogOpen(true);
+  };
+
+  const onCloseTemplateDialog = () => {
+    setTemplateDialogOpen(false);
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" className="shrink-0" asChild>
-          <Link to="/dashboard/jobs">
-            <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
-          </Link>
-        </Button>
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Post a new job</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Fill in the details below to create a new job posting.
-          </p>
-        </div>
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight">Post a new job</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Fill in the details below to create a new job posting.
+        </p>
       </div>
 
       {atLimit ? (
@@ -120,14 +120,14 @@ function NewJobPage() {
               : "Provide a clear title, description, and requirements to attract the right candidates."}
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => setTemplateDialogOpen(true)}>
+        <Button variant="outline" size="sm" onClick={onOpenTemplateDialog}>
           {selectedTemplate ? "Change template" : "Start from a template"}
         </Button>
       </div>
 
       <TemplateSelectDialog
         isOpen={templateDialogOpen}
-        onClose={() => setTemplateDialogOpen(false)}
+        onClose={onCloseTemplateDialog}
         onSelect={onSelectTemplate}
       />
 

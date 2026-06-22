@@ -337,7 +337,7 @@ function ActiveJobsTable({
                 <TableCell>
                   <div className="space-y-0.5">
                     <Link
-                      to="/dashboard/jobs/$jobId"
+                      to="/dashboard/job-applicants/$jobId"
                       params={{ jobId: job.id }}
                       className="font-medium hover:underline"
                     >
@@ -423,13 +423,12 @@ function ActiveJobsTable({
                       )
                     ) : null}
                     <Button variant="outline" size="sm" asChild>
-                      <Link to="/dashboard/job-applicants/$jobId" params={{ jobId: job.id }}>
-                        Applicants
-                      </Link>
-                    </Button>
-                    <Button variant="outline" size="sm" asChild>
-                      <Link to="/dashboard/jobs/$jobId" params={{ jobId: job.id }}>
-                        View
+                      <Link
+                        to="/dashboard/job-applicants/$jobId"
+                        params={{ jobId: job.id }}
+                        search={{ tab: "posting" }}
+                      >
+                        Job posting
                       </Link>
                     </Button>
                   </div>
@@ -513,7 +512,7 @@ function ArchivedJobsTable({
             <TableRow key={job.id} className="opacity-70">
               <TableCell className="font-medium">
                 <Link
-                  to="/dashboard/jobs/$jobId"
+                  to="/dashboard/job-applicants/$jobId"
                   params={{ jobId: job.id }}
                   className="hover:underline"
                 >
@@ -531,13 +530,7 @@ function ArchivedJobsTable({
               <TableCell className="font-mono text-xs text-muted-foreground">
                 {job.archivedAt ? formatDate(job.archivedAt) : "\u2014"}
               </TableCell>
-              <TableCell className="text-right">
-                <Button variant="ghost" size="sm" asChild>
-                  <Link to="/dashboard/jobs/$jobId" params={{ jobId: job.id }}>
-                    View
-                  </Link>
-                </Button>
-              </TableCell>
+              <TableCell className="text-right text-xs text-muted-foreground">{"\u2014"}</TableCell>
             </TableRow>
           ))}
         </TableBody>

@@ -1,5 +1,10 @@
 import { Search01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  type AppBreadcrumbItem,
+  AppBreadcrumbs,
+  BreadcrumbSkeleton,
+} from "@/components/app-breadcrumbs";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -7,11 +12,15 @@ import { NotificationInbox } from "@/features/notifications/components/notificat
 import type { getMyNotificationsFeed } from "@/features/notifications/server/functions";
 
 export function SiteHeader({
-  title,
+  breadcrumbs,
+  breadcrumbSegments,
+  isBreadcrumbPending,
   notificationsFeed,
   onOpenCommandPalette,
 }: {
-  title: string;
+  breadcrumbs: AppBreadcrumbItem[] | null;
+  breadcrumbSegments: number;
+  isBreadcrumbPending: boolean;
   notificationsFeed: Awaited<ReturnType<typeof getMyNotificationsFeed>>;
   onOpenCommandPalette: () => void;
 }) {
@@ -20,8 +29,14 @@ export function SiteHeader({
       <div className="flex w-full items-center gap-2 px-4 lg:px-6">
         <SidebarTrigger className="-ml-1" />
         <div className="mx-2 h-4 w-px bg-border" />
-        <h1 className="text-sm font-medium tracking-tight">{title}</h1>
-        <div className="ml-auto flex items-center gap-1">
+        <div className="min-w-0 flex-1 overflow-hidden">
+          {isBreadcrumbPending ? (
+            <BreadcrumbSkeleton segments={breadcrumbSegments} />
+          ) : (
+            <AppBreadcrumbs items={breadcrumbs ?? [{ label: "Dashboard" }]} />
+          )}
+        </div>
+        <div className="ml-auto flex shrink-0 items-center gap-1">
           <Button
             variant="outline"
             size="sm"
