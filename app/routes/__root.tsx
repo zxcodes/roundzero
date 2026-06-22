@@ -12,7 +12,6 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/features/auth/provider";
 import { currentUserQueryKey, getCurrentUser } from "@/features/auth/server/functions";
-import { getThemeServerFn } from "@/lib/theme";
 import type { RouterContext } from "@/router";
 import type { FileRoutesByTo } from "@/routeTree.gen";
 import appCss from "../styles.css?url";
@@ -117,31 +116,25 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       return { user: null, isCompany: false, isCandidate: false };
     }
   },
-  loader: () => getThemeServerFn(),
   component: RootComponent,
   shellComponent: RootDocument,
   notFoundComponent: NotFound,
 });
 
 function RootComponent() {
-  const theme = Route.useLoaderData();
-
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? "";
 
   return (
     <GoogleOAuthProvider clientId={googleClientId}>
       <AuthProvider>
-        <ThemeProvider theme={theme}>
-          <Outlet />
-          <Toaster />
-        </ThemeProvider>
+        <Outlet />
+        <Toaster />
       </AuthProvider>
     </GoogleOAuthProvider>
   );
 }
 
 function RootDocument({ children }: { children: React.ReactNode }) {
-  const theme = Route.useLoaderData();
   const { user } = useRouteContext({ from: "__root__" });
   const { pathname } = useLocation();
 
@@ -174,12 +167,12 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   const isPublicRoute = !user && routes.some((route) => matchesRoute(route, pathname));
 
   return (
-    <html className={isPublicRoute ? "light" : theme} lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning data-force-light={isPublicRoute ? "true" : undefined}>
       <head>
         <HeadContent />
       </head>
       <body>
-        {children}
+        <ThemeProvider forceLight={isPublicRoute}>{children}</ThemeProvider>
         <Scripts />
       </body>
     </html>
