@@ -27,7 +27,11 @@ function EditJobPage() {
     onSuccess: async () => {
       toast.success("Job updated successfully");
       await router.invalidate();
-      await router.navigate({ to: "/dashboard/jobs/$jobId", params: { jobId: job.id } });
+      await router.navigate({
+        to: "/dashboard/job-applicants/$jobId",
+        params: { jobId: job.id },
+        search: { tab: "posting" },
+      });
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : "Failed to update job.");

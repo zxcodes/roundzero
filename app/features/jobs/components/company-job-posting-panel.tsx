@@ -1,18 +1,46 @@
 import {
+  Archive01Icon,
   Briefcase01Icon,
   Clock01Icon,
+  Edit02Icon,
+  EyeIcon,
+  Loading03Icon,
   Location01Icon,
   MoneyBag02Icon,
+  MoreVerticalCircle01Icon,
   RankingIcon,
+  Rocket01Icon,
   UserGroupIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { DashboardJobDetailSkeleton } from "@/components/route-skeletons";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useMutation } from "@tanstack/react-query";
+import { Link, useRouter } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
-import { CandidateApplySection } from "@/features/applications/components/candidate-apply-section";
+import { JobPreviewDialog } from "@/features/jobs/components/job-preview-dialog";
 import { JobStatusBadge } from "@/features/jobs/components/job-status-badge";
+import { archiveJob, type getJob, publishJob } from "@/features/jobs/server/functions";
 import { formatDate, formatDaysLeft } from "@/shared/date";
 import {
   type EmploymentType,
@@ -24,51 +52,179 @@ import {
 } from "@/shared/enums";
 import { formatSalaryFull } from "@/shared/format";
 
-import { Route as ParentRoute } from "../$jobId";
+type JobDetail = NonNullable<Awaited<ReturnType<typeof getJob>>>;
 
-export const Route = createFileRoute("/_authenticated/dashboard/jobs/$jobId/")({
-  beforeLoad: ({ context, params }) => {
-    if (context.isCompany) {
-      throw redirect({
-        to: "/dashboard/job-applicants/$jobId",
-        params: { jobId: params.jobId },
-      });
-    }
-  },
-  pendingComponent: DashboardJobDetailSkeleton,
-  component: JobDetailPage,
-});
+export function CompanyJobActions({
+  job,
+  requirements,
+}: {
+  job: JobDetail;
+  requirements: string[];
+}) {
+  const router = useRouter();
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [archiveOpen, setArchiveOpen] = useState(false);
 
-function JobDetailPage() {
-  const data = ParentRoute.useLoaderData();
-  if (data.type !== "candidate") {
-    return null;
+  const publishJobFn = useServerFn(publishJob);
+  const publishJobMutation = useMutation({
+    mutationFn: publishJobFn,
+    onSuccess: async () => {
+      toast.success("Job published successfully");
+      await router.invalidate();
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Failed to publish job.");
+    },
+  });
+
+  const archiveJobFn = useServerFn(archiveJob);
+  const archiveJobMutation = useMutation({
+    mutationFn: archiveJobFn,
+    onSuccess: async () => {
+      toast.success("Job archived successfully");
+      await router.invalidate();
+      await router.navigate({ to: "/dashboard/jobs" });
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Failed to archive job.");
+    },
+  });
+
+  const onPublish = async () => {
+    await publishJobMutation.mutateAsync({ data: { id: job.id } });
+  };
+
+  const onArchive = async () => {
+    await archiveJobMutation.mutateAsync({ data: { id: job.id } });
+  };
+
+  const onOpenPreview = () => setPreviewOpen(true);
+  const onOpenArchive = () => setArchiveOpen(true);
+
+  const previewData = {
+    title: job.title,
+    description: job.description,
+    requirements,
+    companyName: job.companyName ?? "",
+    location: job.location,
+    workplaceType: job.workplaceType,
+    employmentType: job.employmentType,
+    experienceLevel: job.experienceLevel,
+    salaryMin: job.salaryMin,
+    salaryMax: job.salaryMax,
+    salaryCurrency: job.salaryCurrency,
+    teamSize: job.teamSize,
+    headcount: job.headcount,
+  };
+
+  const isArchived = job.status === "closed" && job.archivedAt;
+  const isDraft = job.status === "draft";
+
+  if (isArchived) {
+    return (
+      <div className="flex flex-wrap items-center gap-2">
+        <Button variant="outline" size="sm" onClick={onOpenPreview}>
+          <HugeiconsIcon icon={EyeIcon} strokeWidth={2} className="size-3.5" />
+          Preview
+        </Button>
+        <JobPreviewDialog
+          data={previewData}
+          open={previewOpen}
+          onOpenChange={setPreviewOpen}
+          showDefaultTrigger={false}
+        />
+      </div>
+    );
   }
-  const { job, alreadyApplied, candidateProfile } = data;
 
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {isDraft ? (
+        <Button size="sm" onClick={onPublish} disabled={publishJobMutation.isPending}>
+          {publishJobMutation.isPending ? (
+            <HugeiconsIcon icon={Loading03Icon} strokeWidth={2} className="size-3.5 animate-spin" />
+          ) : (
+            <HugeiconsIcon icon={Rocket01Icon} strokeWidth={2} className="size-3.5" />
+          )}
+          {publishJobMutation.isPending ? "Publishing..." : "Publish"}
+        </Button>
+      ) : null}
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm" aria-label="More job actions">
+            <HugeiconsIcon icon={MoreVerticalCircle01Icon} strokeWidth={2} className="size-4" />
+            Manage
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onSelect={onOpenPreview}>
+            <HugeiconsIcon icon={EyeIcon} strokeWidth={2} className="size-3.5" />
+            Preview
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/dashboard/jobs/$jobId/edit" params={{ jobId: job.id }}>
+              <HugeiconsIcon icon={Edit02Icon} strokeWidth={2} className="size-3.5" />
+              Edit
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            variant="destructive"
+            onSelect={onOpenArchive}
+            disabled={archiveJobMutation.isPending}
+          >
+            {archiveJobMutation.isPending ? (
+              <HugeiconsIcon
+                icon={Loading03Icon}
+                strokeWidth={2}
+                className="size-3.5 animate-spin"
+              />
+            ) : (
+              <HugeiconsIcon icon={Archive01Icon} strokeWidth={2} className="size-3.5" />
+            )}
+            {archiveJobMutation.isPending ? "Archiving..." : "Archive"}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <JobPreviewDialog
+        data={previewData}
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        showDefaultTrigger={false}
+      />
+
+      <AlertDialog open={archiveOpen} onOpenChange={setArchiveOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive this job?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will close the job posting and hide it from candidates. Existing applications
+              will be preserved. You can still view archived jobs.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={onArchive}>Archive</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
+export function CompanyJobPostingPanel({ job }: { job: JobDetail }) {
   const requirements: string[] = Array.isArray(job.requirements) ? job.requirements : [];
   const salary = formatSalaryFull(job.salaryMin, job.salaryMax, job.salaryCurrency);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-2xl font-bold tracking-tight">{job.title}</h2>
           <JobStatusBadge job={job} />
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
-          {job.companyName ? (
-            <>
-              <Link
-                to="/companies/$slug"
-                params={{ slug: job.companySlug }}
-                className="font-medium text-foreground transition-colors hover:text-primary"
-              >
-                {job.companyName}
-              </Link>
-              {" \u00B7 "}
-            </>
-          ) : null}
           <span className="font-mono">{formatDate(job.createdAt)}</span>
           {new Date(job.updatedAt).getTime() !== new Date(job.createdAt).getTime() ? (
             <>
@@ -81,7 +237,7 @@ function JobDetailPage() {
 
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
-          <Card className="stagger-1">
+          <Card>
             <CardHeader>
               <CardTitle>Description</CardTitle>
             </CardHeader>
@@ -91,7 +247,7 @@ function JobDetailPage() {
           </Card>
 
           {requirements.length > 0 ? (
-            <Card className="stagger-2">
+            <Card>
               <CardHeader>
                 <CardTitle>Requirements</CardTitle>
               </CardHeader>
@@ -110,7 +266,7 @@ function JobDetailPage() {
         </div>
 
         <div className="space-y-5">
-          <Card className="stagger-2">
+          <Card>
             <CardHeader>
               <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
                 Job details
@@ -238,29 +394,6 @@ function JobDetailPage() {
               ) : null}
             </CardContent>
           </Card>
-
-          {job.status === "open" ? (
-            <CandidateApplySection
-              jobId={job.id}
-              jobTitle={job.title}
-              companyName={job.companyName ?? "the company"}
-              alreadyApplied={alreadyApplied}
-              hasResume={Boolean(candidateProfile?.resumeKey)}
-            />
-          ) : (
-            <Card className="animate-scale-in">
-              <CardHeader>
-                <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-                  No longer accepting applications
-                </p>
-                <CardDescription className="text-xs">
-                  {job.status === "closed"
-                    ? "This position has been closed by the company."
-                    : "This job is currently in draft status."}
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          )}
         </div>
       </div>
     </div>

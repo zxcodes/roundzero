@@ -13,7 +13,7 @@ const publicJobsRoot: AppBreadcrumbItem = { label: "Jobs", to: "/jobs" };
 const publicCompaniesRoot: AppBreadcrumbItem = { label: "Companies", to: "/companies" };
 
 function companyJobCrumb(jobId: string, jobTitle: string): AppBreadcrumbItem {
-  return { label: jobTitle, to: "/dashboard/jobs/$jobId", params: { jobId } };
+  return { label: jobTitle, to: "/dashboard/job-applicants/$jobId", params: { jobId } };
 }
 
 function companyApplicantCrumb(applicationId: string, candidateName: string): AppBreadcrumbItem {
@@ -45,11 +45,7 @@ export function companyNewJobTrail(): AppBreadcrumbItem[] {
 }
 
 export function companyJobApplicantsTrail(jobId: string, jobTitle: string): AppBreadcrumbItem[] {
-  return [
-    ...companyJobDetailTrail(jobId, jobTitle).slice(0, -1),
-    companyJobCrumb(jobId, jobTitle),
-    { label: "Applicants" },
-  ];
+  return [companyJobsRoot, companyJobCrumb(jobId, jobTitle)];
 }
 
 export function companyApplicantReviewTrail(
@@ -57,16 +53,7 @@ export function companyApplicantReviewTrail(
   jobTitle: string,
   candidateName: string,
 ): AppBreadcrumbItem[] {
-  return [
-    ...companyJobDetailTrail(jobId, jobTitle).slice(0, -1),
-    companyJobCrumb(jobId, jobTitle),
-    {
-      label: "Applicants",
-      to: "/dashboard/job-applicants/$jobId",
-      params: { jobId },
-    },
-    { label: candidateName },
-  ];
+  return [companyJobsRoot, companyJobCrumb(jobId, jobTitle), { label: candidateName }];
 }
 
 export function companyApplicantReportTrail(
