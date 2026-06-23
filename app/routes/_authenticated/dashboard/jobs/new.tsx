@@ -11,6 +11,7 @@ import { JobForm, type JobFormData } from "@/features/jobs/components/job-form";
 import { TemplateSelectDialog } from "@/features/jobs/components/template-select-dialog";
 import { createJob } from "@/features/jobs/server/functions";
 import type { JobTemplate } from "@/shared/job-templates";
+import { PAGE_SEO } from "@/shared/seo";
 
 export const Route = createFileRoute("/_authenticated/dashboard/jobs/new")({
   beforeLoad: ({ context }) => {
@@ -18,6 +19,12 @@ export const Route = createFileRoute("/_authenticated/dashboard/jobs/new")({
       throw redirect({ to: "/dashboard" });
     }
   },
+  head: () => ({
+    meta: [
+      { title: PAGE_SEO.createJob.title },
+      { name: "description", content: PAGE_SEO.createJob.description },
+    ],
+  }),
   component: NewJobPage,
 });
 

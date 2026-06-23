@@ -10,6 +10,7 @@ import {
   Text,
 } from "@react-email/components";
 import { emailTheme } from "@/features/notifications/components/email-theme";
+import { EMAIL_PREVIEW } from "@/shared/seo";
 import { PLAN_CONFIGS, type SubscriptionPlan } from "../config";
 
 type SubscriptionWelcomeEmailProps = {
@@ -25,7 +26,7 @@ export function SubscriptionWelcomeEmail(props: SubscriptionWelcomeEmailProps) {
   return (
     <Html lang="en">
       <Head />
-      <Preview>Welcome to RoundZero {planLabel}</Preview>
+      <Preview>{EMAIL_PREVIEW.welcome}</Preview>
       <Body style={bodyStyle}>
         <Container style={containerStyle}>
           <Section style={headerStyle}>

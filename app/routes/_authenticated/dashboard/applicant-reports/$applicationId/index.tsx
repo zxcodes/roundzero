@@ -78,6 +78,7 @@ import {
   formatCandidateScore,
   formatCandidateScoreWithScale,
 } from "@/shared/score";
+import { PAGE_SEO } from "@/shared/seo";
 import { validateUuidParams } from "@/shared/validation";
 
 export const Route = createFileRoute("/_authenticated/dashboard/applicant-reports/$applicationId/")(
@@ -88,6 +89,12 @@ export const Route = createFileRoute("/_authenticated/dashboard/applicant-report
       }
       validateUuidParams({ applicationId: params.applicationId });
     },
+    head: () => ({
+      meta: [
+        { title: PAGE_SEO.candidateReport.title },
+        { name: "description", content: PAGE_SEO.candidateReport.description },
+      ],
+    }),
     loader: async ({ params }) => {
       const data = await getCompanyApplicantReportTimeline({
         data: { applicationId: params.applicationId },

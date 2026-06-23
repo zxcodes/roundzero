@@ -158,7 +158,10 @@ export async function deliverNotificationEmail(
       fromName: getNotificationFromName(input.notification.type),
       subject: presentation.title,
       react: jsx(NotificationEmailTemplate, {
-        previewText: presentation.title,
+        previewText:
+          "previewText" in presentation && typeof presentation.previewText === "string"
+            ? presentation.previewText
+            : presentation.title,
         body: presentation.body,
         ctaHref: meta.ctaHref ?? link,
         ctaLabel: meta.ctaLabel,
