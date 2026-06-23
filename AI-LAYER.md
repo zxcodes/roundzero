@@ -56,7 +56,7 @@ Decide whether a candidate deserves deeper evaluation.
 
 ## Example Output
 
-- Score: 78
+- Score: 7.8
 - Missing: AWS experience
 - Confidence: High
 - Next Step: Invite to RoundZero

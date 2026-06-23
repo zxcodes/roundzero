@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { clampScore, closeSql, makeUuidFromSeed, pick, sql } from "./util";
 
-const recommendations = ["strong_hire", "consider", "not_recommended"] as const;
+const recommendations = ["strong_yes", "yes", "lean_no", "no"] as const;
 
 const strengthPool = [
   "Strong system design fundamentals",
@@ -46,9 +46,10 @@ async function seedReports() {
 
   const reports = completed.map((interview, index) => {
     const recommendation = pick(recommendations, index);
-    const technical = clampScore(8 - (index % 4));
-    const communication = clampScore(7 + (index % 3));
-    const problemSolving = clampScore(8 - (index % 3));
+    const communication = clampScore(7 + (index % 3) * 0.3);
+    const problemSolving = clampScore(6.8 + (index % 4) * 0.2);
+    const ownership = clampScore(6.5 + (index % 2) * 0.4);
+    const roleFit = clampScore(7.1 + (index % 3) * 0.25);
 
     return {
       id: makeUuidFromSeed(`rz-seed-report-${interview.id}`),
@@ -70,10 +71,11 @@ async function seedReports() {
         },
       ],
       scores: {
-        technical,
         communication,
         problemSolving,
-        overall: clampScore(Math.round((technical + communication + problemSolving) / 3)),
+        ownership,
+        roleFit,
+        overall: clampScore((communication + problemSolving + ownership + roleFit) / 4),
       },
       recommendation,
     };

@@ -45,24 +45,37 @@ const buildRoleSummary = (title: string, seed: string) => {
 const makeReportScores = (seed: string, recommendation: (typeof recommendations)[number]) => {
   const base =
     recommendation === "strong_yes"
-      ? 86
+      ? 8.6
       : recommendation === "yes"
-        ? 74
+        ? 7.4
         : recommendation === "lean_no"
-          ? 62
-          : 48;
+          ? 6.2
+          : 4.8;
 
-  const communication = Math.max(35, Math.min(95, base + randomInt(`${seed}-comm`, -8, 6)));
-  const problemSolving = Math.max(35, Math.min(95, base + randomInt(`${seed}-ps`, -10, 7)));
-  const ownership = Math.max(35, Math.min(95, base + randomInt(`${seed}-own`, -7, 8)));
-  const roleFit = Math.max(35, Math.min(95, base + randomInt(`${seed}-fit`, -9, 9)));
+  const communication = Math.max(
+    3.5,
+    Math.min(9.5, Math.round((base + randomInt(`${seed}-comm`, -8, 6) / 10) * 10) / 10),
+  );
+  const problemSolving = Math.max(
+    3.5,
+    Math.min(9.5, Math.round((base + randomInt(`${seed}-ps`, -10, 7) / 10) * 10) / 10),
+  );
+  const ownership = Math.max(
+    3.5,
+    Math.min(9.5, Math.round((base + randomInt(`${seed}-own`, -7, 8) / 10) * 10) / 10),
+  );
+  const roleFit = Math.max(
+    3.5,
+    Math.min(9.5, Math.round((base + randomInt(`${seed}-fit`, -9, 9) / 10) * 10) / 10),
+  );
 
   return {
     communication,
     problemSolving,
     ownership,
     roleFit,
-    overall: Math.round((communication + problemSolving + ownership + roleFit) / 4),
+    overall:
+      Math.round(((communication + problemSolving + ownership + roleFit) / 4) * 10) / 10,
   };
 };
 
@@ -244,7 +257,7 @@ async function seedApplicationsAndReports(companyId: string, jobs: SeedJob[], ca
             ${applicationId},
             ${`agent-${interviewId}`},
             ${"full"},
-            ${sql.json({ expiresAt: expiresAt.toISOString(), preEvaluationScore: randomInt(`${interviewId}-pre`, 55, 92) })},
+            ${sql.json({ expiresAt: expiresAt.toISOString(), preEvaluationScore: Math.round(randomInt(`${interviewId}-pre`, 55, 92)) / 10 })},
             ${interviewStatus},
             ${startedAt},
             ${completedAt},
@@ -331,7 +344,7 @@ async function seedApplicationsAndReports(companyId: string, jobs: SeedJob[], ca
       a.job_id AS "jobId",
       j.title AS "jobTitle",
       u.name AS "candidateName",
-      COALESCE((r.scores->>'overall')::int, 0) AS score,
+      COALESCE((r.scores->>'overall')::float, 0) AS score,
       r.created_at AS "createdAt"
     FROM reports r
     JOIN applications a ON a.id = r.application_id

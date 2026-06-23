@@ -186,6 +186,17 @@ export const applicationStatusLabels: Record<ApplicationStatus, string> = {
   evaluation_failed: "Eval failed",
 };
 
+/** Contextual label for UI — e.g. pre_screening + score → "Screened". */
+export function getApplicationStatusLabel(
+  status: ApplicationStatus,
+  options?: { preEvaluationScore?: number | null },
+): string {
+  if (status === "pre_screening" && options?.preEvaluationScore != null) {
+    return "Screened";
+  }
+  return applicationStatusLabels[status];
+}
+
 export type ApplicationStatusTone = {
   /** Tailwind classes for a Badge background + border + text. */
   badge: string;

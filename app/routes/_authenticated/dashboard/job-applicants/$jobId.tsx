@@ -102,9 +102,13 @@ function JobApplicantsPage() {
     setFilter(value as ApplicantsFilter);
   };
 
-  const readyForDecisionApplicants = applicants.filter(
+  const releasedReportApplicants = applicants.filter(
     (a: (typeof applicants)[number]) => a.reportReleasedAt !== null,
   );
+  const heldForReleaseCount = applicants.filter(
+    (a: (typeof applicants)[number]) =>
+      a.status === "evaluated_held" || (a.reportId !== null && a.reportReleasedAt === null),
+  ).length;
   const activeInterviewApplicants = applicants.filter(
     (a: (typeof applicants)[number]) =>
       a.status === "interview_invited" ||
@@ -183,7 +187,8 @@ function JobApplicantsPage() {
           activeBatch={activeBatch}
           view={view}
           filter={filter}
-          readyForDecisionApplicants={readyForDecisionApplicants}
+          releasedReportApplicants={releasedReportApplicants}
+          heldForReleaseCount={heldForReleaseCount}
           activeInterviewApplicants={activeInterviewApplicants}
           screeningApplicants={screeningApplicants}
           filteredApplicants={filteredApplicants}
@@ -200,7 +205,8 @@ function ApplicantsTabContent({
   activeBatch,
   view,
   filter,
-  readyForDecisionApplicants,
+  releasedReportApplicants,
+  heldForReleaseCount,
   activeInterviewApplicants,
   screeningApplicants,
   filteredApplicants,
@@ -211,7 +217,8 @@ function ApplicantsTabContent({
   activeBatch: Awaited<ReturnType<typeof getActiveBatchForJobServer>>;
   view: ApplicantsView;
   filter: ApplicantsFilter;
-  readyForDecisionApplicants: Awaited<ReturnType<typeof getJobApplicants>>;
+  releasedReportApplicants: Awaited<ReturnType<typeof getJobApplicants>>;
+  heldForReleaseCount: number;
   activeInterviewApplicants: Awaited<ReturnType<typeof getJobApplicants>>;
   screeningApplicants: Awaited<ReturnType<typeof getJobApplicants>>;
   filteredApplicants: Awaited<ReturnType<typeof getJobApplicants>>;
@@ -232,11 +239,16 @@ function ApplicantsTabContent({
         <Card size="sm" className="border-border/60">
           <CardContent className="py-3">
             <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-              Ready for decision
+              Reports released
             </p>
             <p className="mt-1 font-mono text-xl font-semibold">
-              {readyForDecisionApplicants.length}
+              {releasedReportApplicants.length}
             </p>
+            {heldForReleaseCount > 0 ? (
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                {heldForReleaseCount} held until batch completes
+              </p>
+            ) : null}
           </CardContent>
         </Card>
         <Card size="sm" className="border-border/60">
@@ -256,8 +268,8 @@ function ApplicantsTabContent({
           <TabsList>
             <TabsTrigger value="ready" className="gap-2">
               <HugeiconsIcon icon={RankingIcon} strokeWidth={2} className="size-4" />
-              Ready for decision
-              <Badge variant="secondary">{readyForDecisionApplicants.length}</Badge>
+              Released reports
+              <Badge variant="secondary">{releasedReportApplicants.length}</Badge>
             </TabsTrigger>
             <TabsTrigger value="all" className="gap-2">
               <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} className="size-4" />
@@ -288,7 +300,15 @@ function ApplicantsTabContent({
       </Tabs>
 
       {view === "ready" ? (
-        <CompanyJobApplicantsList applicants={readyForDecisionApplicants} />
+        <CompanyJobApplicantsList
+          applicants={releasedReportApplicants}
+          emptyTitle="No reports released yet"
+          emptyDescription={
+            heldForReleaseCount > 0
+              ? `${heldForReleaseCount} candidate${heldForReleaseCount === 1 ? " has" : "s have"} finished interviews in the current batch. Ranked reports appear here when the batch completes and releases them to your team.`
+              : "Ranked evaluation reports show up here once interviews finish and reports are released to your team."
+          }
+        />
       ) : (
         <CompanyJobApplicantsList applicants={filteredApplicants} />
       )}

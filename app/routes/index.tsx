@@ -461,7 +461,7 @@ const pipelineLogs: PipelineLogLine[] = [
     runId: "d2e765a6",
     level: "INFO",
     message:
-      "check_authenticity completed → consistencyScore=94 redFlags=0 explanation=No authenticity concerns",
+      "check_authenticity completed → consistencyScore=9.4 redFlags=0 explanation=No authenticity concerns",
   },
   {
     workflow: "pre-eval",
@@ -480,7 +480,7 @@ const pipelineLogs: PipelineLogLine[] = [
     runId: "d2e765a6",
     level: "INFO",
     message:
-      "evaluate completed → score=52 confidence=medium modelNextStep=interview_invited missingCount=4",
+      "evaluate completed → score=5.2 confidence=medium modelNextStep=interview_invited missingCount=4",
   },
   {
     workflow: "pre-eval",
@@ -492,7 +492,7 @@ const pipelineLogs: PipelineLogLine[] = [
     workflow: "pre-eval",
     runId: "d2e765a6",
     level: "INFO",
-    message: "save_pre_eval completed → status=pre_screening consistencyScore=94",
+    message: "save_pre_eval completed → status=pre_screening consistencyScore=9.4",
   },
   {
     workflow: "pre-eval",
@@ -510,7 +510,7 @@ const pipelineLogs: PipelineLogLine[] = [
     workflow: "pre-eval",
     runId: "d2e765a6",
     level: "INFO",
-    message: "Workflow complete: score=52, modelNextStep=interview_invited, decision=pooled",
+    message: "Workflow complete: score=5.2, modelNextStep=interview_invited, decision=pooled",
   },
   {
     workflow: "batch",
