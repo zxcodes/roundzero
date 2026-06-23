@@ -4,6 +4,7 @@ import handler from "@tanstack/react-start/server-entry";
 import { handlePolarWebhook } from "./features/billing/webhook";
 import { getDb } from "./shared/db";
 import { isDev } from "./shared/env.app";
+import { disposeRpcResource } from "./shared/workflow-rpc";
 
 export { BatchOrchestrationWorkflow } from "./workflows/batch-orchestration/workflow";
 export { EvalRetryWorkflow } from "./workflows/eval-retry/workflow";
@@ -77,11 +78,19 @@ ${companies.map((c) => `  <url><loc>${siteUrl}/companies/${c.slug}</loc><lastmod
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
     switch (event.cron) {
       case "0 */6 * * *": {
-        ctx.waitUntil(env.POOL_CHECK.create({ id: `pool-check-${event.scheduledTime}` }));
+        ctx.waitUntil(
+          env.POOL_CHECK.create({ id: `pool-check-${event.scheduledTime}` }).then((instance) => {
+            disposeRpcResource(instance);
+          }),
+        );
         break;
       }
       case "0 */3 * * *": {
-        ctx.waitUntil(env.EVAL_RETRY.create({ id: `eval-retry-${event.scheduledTime}` }));
+        ctx.waitUntil(
+          env.EVAL_RETRY.create({ id: `eval-retry-${event.scheduledTime}` }).then((instance) => {
+            disposeRpcResource(instance);
+          }),
+        );
         break;
       }
     }

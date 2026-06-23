@@ -14,6 +14,14 @@ import { AuthProvider } from "@/features/auth/provider";
 import { currentUserQueryKey, getCurrentUser } from "@/features/auth/server/functions";
 import type { RouterContext } from "@/router";
 import type { FileRoutesByTo } from "@/routeTree.gen";
+import {
+  DEFAULT_META_DESCRIPTION,
+  DEFAULT_META_TITLE,
+  OG_DESCRIPTION,
+  OG_TITLE,
+  TWITTER_DESCRIPTION,
+  TWITTER_TITLE,
+} from "@/shared/seo";
 import appCss from "../styles.css?url";
 
 export const Route = createRootRouteWithContext<RouterContext>()({
@@ -27,12 +35,11 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         content: "width=device-width, initial-scale=1",
       },
       {
-        title: "RoundZero | Replace Your First Interview Round with AI",
+        title: DEFAULT_META_TITLE,
       },
       {
         name: "description",
-        content:
-          "Run AI-driven first-round interviews and get ranked candidates with structured evaluation reports.",
+        content: DEFAULT_META_DESCRIPTION,
       },
       {
         name: "keywords",
@@ -40,12 +47,11 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       },
       {
         property: "og:title",
-        content: "RoundZero | Replace Your First Interview Round with AI",
+        content: OG_TITLE,
       },
       {
         property: "og:description",
-        content:
-          "Run AI-driven first-round interviews and get ranked candidates with structured evaluation reports.",
+        content: OG_DESCRIPTION,
       },
       {
         property: "og:type",
@@ -81,12 +87,11 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       },
       {
         name: "twitter:title",
-        content: "RoundZero | Replace Your First Interview Round with AI",
+        content: TWITTER_TITLE,
       },
       {
         name: "twitter:description",
-        content:
-          "Run AI-driven first-round interviews and get ranked candidates with structured evaluation reports.",
+        content: TWITTER_DESCRIPTION,
       },
     ],
     links: [

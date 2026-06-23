@@ -12,6 +12,7 @@ import type { IconSvgElement } from "@hugeicons/react";
 import { z } from "zod";
 import { type applicationStatusSchema, notificationTypeSchema } from "@/shared/enums";
 import { notificationPayloadSchemas } from "@/shared/notifications-config";
+import { EMAIL_PREVIEW } from "@/shared/seo";
 
 export { notificationPayloadSchemas };
 
@@ -216,6 +217,7 @@ export const getNotificationPresentation = (notification: { type: string; payloa
       tone: notificationTone[type],
       icon: BubbleChatIcon,
       title: `Zero invited you to an interview`,
+      previewText: EMAIL_PREVIEW.interviewInvitation,
       body: `You have been invited to complete an interview for ${payload.data.jobTitle}. Complete it before the deadline to keep your evaluation slot.`,
       to: "/interview/$interviewId" as const,
       params: { interviewId: payload.data.interviewId },

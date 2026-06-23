@@ -10,6 +10,8 @@ import {
   Text,
 } from "@react-email/components";
 import { type Recommendation, recommendationLabels } from "@/shared/enums";
+import { formatCandidateScoreWithScale } from "@/shared/score";
+import { EMAIL_PREVIEW } from "@/shared/seo";
 import { emailTheme } from "./email-theme";
 
 type ReportReadyEmailTemplateProps = {
@@ -24,9 +26,7 @@ export function ReportReadyEmailTemplate(props: ReportReadyEmailTemplateProps) {
   return (
     <Html lang="en">
       <Head />
-      <Preview>
-        Evaluation ready for {props.candidateName} – {props.jobTitle}
-      </Preview>
+      <Preview>{EMAIL_PREVIEW.candidateReportReady}</Preview>
       <Body style={bodyStyle}>
         <Container style={containerStyle}>
           <Section style={headerStyle}>
@@ -40,7 +40,9 @@ export function ReportReadyEmailTemplate(props: ReportReadyEmailTemplateProps) {
             </Text>
             <Text style={scoresContainerStyle}>
               <span style={scoreLabelStyle}>Overall Score</span>
-              <span style={scoreValueStyle}>{props.overallScore}/100</span>
+              <span style={scoreValueStyle}>
+                {formatCandidateScoreWithScale(props.overallScore)}
+              </span>
             </Text>
             <Text style={recommendationStyle}>
               Recommendation: {recommendationLabels[props.recommendation]}
@@ -68,7 +70,7 @@ export function ReportReadyEmailTemplate(props: ReportReadyEmailTemplateProps) {
 ReportReadyEmailTemplate.PreviewProps = {
   candidateName: "John Doe",
   jobTitle: "Senior Frontend Engineer",
-  overallScore: 82,
+  overallScore: 8.2,
   recommendation: "yes" as const,
   reportUrl: "https://roundzero.dev/dashboard/applicant-reports/123",
 } satisfies ReportReadyEmailTemplateProps;

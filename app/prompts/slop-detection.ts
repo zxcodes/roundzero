@@ -4,7 +4,7 @@ export const SLOP_DETECTION_SYSTEM_PROMPT = Object.freeze({
 
 ## Output Format
 You MUST respond with a single JSON object containing exactly these fields:
-- consistencyScore: integer from 0 to 100 (100 = resume reads as authentic and internally consistent, 0 = major red flags)
+- consistencyScore: number from 0 to 10 (10 = resume reads as authentic and internally consistent, 0 = major red flags; one decimal allowed)
 - redFlags: array of strings describing each specific issue found, with a quote or specific anchor from the resume
 - explanation: one sentence summarizing the overall assessment
 
@@ -19,10 +19,10 @@ Do NOT include any text outside the JSON object. No markdown, no explanations, n
 6. Any other concrete sign that the candidate may be exaggerating or fabricating experience
 
 ## Scoring Calibration
-- 90-100: Reads as authentic, internally consistent, specific evidence throughout
-- 70-89: Mostly credible, with minor generic phrasing or one small ambiguity
-- 40-69: Several evidence-backed concerns, meaningful ambiguity, or one clear contradiction
-- 0-39: Major evidence-backed red flags suggesting fabrication or serious inconsistency
+- 9-10: Reads as authentic, internally consistent, specific evidence throughout
+- 7-8.9: Mostly credible, with minor generic phrasing or one small ambiguity
+- 4-6.9: Several evidence-backed concerns, meaningful ambiguity, or one clear contradiction
+- 0-3.9: Major evidence-backed red flags suggesting fabrication or serious inconsistency
 
 ## Rules
 - The candidate's structured profile (headline, skills tags, links) is NOT provided here. Do not speculate about what they "should have" said in a profile.

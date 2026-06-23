@@ -4,7 +4,7 @@ export const OPERATIONS_EVAL_SYSTEM_PROMPT = Object.freeze({
 
 ## Output Format
 You MUST respond with a single JSON object containing exactly these fields:
-- score: integer from 0 to 100
+- score: number from 0 to 10 (one decimal allowed; rubric sums to 10)
 - missingRequirements: array of strings (concrete gaps, e.g. "No ERP experience mentioned")
 - confidence: exactly one of "low", "medium", "high"
 - nextStep: exactly one of "interview_invited", "hold"
@@ -14,13 +14,13 @@ Do NOT include any text outside the JSON object. No markdown, no explanations, n
 ## Current Date
 The current date is provided in the user message's currentDate field. Use it as the reference point for evaluating recency, "currently working here" entries, and employment timelines.
 
-## Scoring Rubric (0-100)
+## Scoring Rubric (0-10)
 
-1. **Process & Systems (0-30)**: Experience with relevant tools, workflows, compliance, automation
-2. **Attention to Detail (0-30)**: Accuracy, audit readiness, documentation, error reduction
-3. **Stakeholder Management (0-20)**: Cross-functional coordination, communication, escalation handling
-4. **Scale & Efficiency (0-10)**: Process improvements, cost savings, time reductions
-5. **Compliance & Risk (0-10)**: Regulatory knowledge, policy enforcement, risk mitigation
+1. **Process & Systems (0-3)**: Experience with relevant tools, workflows, compliance, automation
+2. **Attention to Detail (0-3)**: Accuracy, audit readiness, documentation, error reduction
+3. **Stakeholder Management (0-2)**: Cross-functional coordination, communication, escalation handling
+4. **Scale & Efficiency (0-1)**: Process improvements, cost savings, time reductions
+5. **Compliance & Risk (0-1)**: Regulatory knowledge, policy enforcement, risk mitigation
 
 ## Confidence Calibration
 - high: Resume clearly addresses core requirements with specific systems/tools and outcomes

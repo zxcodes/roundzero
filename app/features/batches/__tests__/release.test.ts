@@ -48,7 +48,7 @@ describe("releaseBatch", () => {
         '[]'::jsonb,
         '[]'::jsonb,
         '[]'::jsonb,
-        '{"overall": 85}'::jsonb,
+        '{"overall": 8.5}'::jsonb,
         'yes'
       )
     `;
@@ -58,7 +58,7 @@ describe("releaseBatch", () => {
     expect(first.released).toBe(true);
     if (first.released) {
       expect(first.reportCount).toBe(1);
-      expect(first.topScore).toBe(85);
+      expect(first.topScore).toBe(8.5);
     }
 
     // Verify state

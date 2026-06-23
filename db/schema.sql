@@ -274,17 +274,17 @@ CREATE TABLE public.notifications (
 CREATE TABLE public.pre_evaluations (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     application_id uuid NOT NULL,
-    score integer NOT NULL,
+    score double precision NOT NULL,
     missing_requirements jsonb DEFAULT '[]'::jsonb NOT NULL,
     confidence text NOT NULL,
     next_step text NOT NULL,
-    consistency_score integer,
+    consistency_score double precision,
     raw_response jsonb,
     model text,
     prompt_version text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT pre_evaluations_consistency_score_check CHECK (((consistency_score >= 0) AND (consistency_score <= 100))),
-    CONSTRAINT pre_evaluations_score_check CHECK (((score >= 0) AND (score <= 100)))
+    CONSTRAINT pre_evaluations_consistency_score_check CHECK (((consistency_score IS NULL) OR ((consistency_score >= ((0)::numeric)::double precision) AND (consistency_score <= ((10)::numeric)::double precision)))),
+    CONSTRAINT pre_evaluations_score_check CHECK (((score >= ((0)::numeric)::double precision) AND (score <= ((10)::numeric)::double precision)))
 );
 
 
@@ -940,4 +940,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260612120000'),
     ('20260614000000'),
     ('20260614010000'),
-    ('20260615042817');
+    ('20260615042817'),
+    ('20260622161816');

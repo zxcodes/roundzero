@@ -21,6 +21,7 @@ import {
 } from "@/prompts/communication-assessment";
 import { getDb } from "@/shared/db";
 import { createChatModel } from "@/shared/openrouter";
+import { disposeRpcResource } from "@/shared/workflow-rpc";
 import { refineCommunicationAnalysis } from "@/workflows/post-evaluation/refine";
 
 const elevenLabsTranscriptEventSchema = z.object({
@@ -327,34 +328,46 @@ async function prepareApplicationForPostEvalResume(
 export async function signalVoiceAssessmentComplete(interviewId: string): Promise<void> {
   try {
     const instance = await env.POST_EVALUATION.get(interviewId);
-    const { status } = await instance.status();
-    if (
-      status === "waiting" ||
-      status === "running" ||
-      status === "queued" ||
-      status === "paused" ||
-      status === "waitingForPause"
-    ) {
-      await instance.sendEvent({
-        type: "voice_assessment_complete",
-        payload: { interviewId },
-      });
-      return;
-    }
+    try {
+      const statusPayload = await instance.status();
+      try {
+        const { status } = statusPayload;
+        if (
+          status === "waiting" ||
+          status === "running" ||
+          status === "queued" ||
+          status === "paused" ||
+          status === "waitingForPause"
+        ) {
+          await instance.sendEvent({
+            type: "voice_assessment_complete",
+            payload: { interviewId },
+          });
+          return;
+        }
 
-    // Workflow exited before voice finished (e.g. wait timeout). Restart if no report yet.
-    if (status === "complete" || status === "errored" || status === "terminated") {
-      const db = getDb();
-      const interview = await getInterviewContextById(db, { id: interviewId });
-      if (!interview) {
-        return;
+        // Workflow exited before voice finished (e.g. wait timeout). Restart if no report yet.
+        if (status === "complete" || status === "errored" || status === "terminated") {
+          const db = getDb();
+          const interview = await getInterviewContextById(db, { id: interviewId });
+          if (!interview) {
+            return;
+          }
+          const shouldResume = await prepareApplicationForPostEvalResume(
+            db,
+            interview.applicationId,
+          );
+          if (!shouldResume) {
+            return;
+          }
+          await instance.restart();
+          return;
+        }
+      } finally {
+        disposeRpcResource(statusPayload);
       }
-      const shouldResume = await prepareApplicationForPostEvalResume(db, interview.applicationId);
-      if (!shouldResume) {
-        return;
-      }
-      await instance.restart();
-      return;
+    } finally {
+      disposeRpcResource(instance);
     }
   } catch (error) {
     console.error("[voice-assessment] failed to signal post-evaluation workflow", error);
@@ -426,12 +439,13 @@ export async function startPostEvaluation(
   }
 
   try {
-    await env.POST_EVALUATION.create({
+    const instance = await env.POST_EVALUATION.create({
       // Stable id so completeMyVoiceAssessment / the webhook can signal this
       // workflow, and so a duplicate create is a no-op rather than a fork.
       id: input.interviewId,
       params: { interviewId: input.interviewId },
     });
+    disposeRpcResource(instance);
   } catch (error) {
     console.error(
       `[startPostEvaluation] failed to trigger post-evaluation for ${input.interviewId}`,

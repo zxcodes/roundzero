@@ -370,7 +370,7 @@ Live sections:
 - candidate header (name, job, apply date)
 - summary
 - recommendation badge (strong yes / yes / lean no / no)
-- overall score (0–100)
+- overall score (0–10)
 - dimension scores (communication, problem solving, ownership, role fit)
 - strengths
 - weaknesses
@@ -588,7 +588,7 @@ The following decisions are required **before Phase 4 (AI Interview)** begins. T
 **Question:** Is the pre-evaluation output (score + missing requirements + confidence + next step) sufficient?
 
 **Current Spec:**
-- **Score:** 0–100 (overall fit)
+- **Score:** 0–10 (overall fit)
 - **Missing Requirements:** List of role requirements not met
 - **Confidence:** High/Medium/Low
 - **Next Step:** "Invite to RoundZero" | "Ask follow-ups" | "Hold / Reject"
@@ -600,7 +600,7 @@ The following decisions are required **before Phase 4 (AI Interview)** begins. T
    - Would you trust this to decide "invite" vs. "ask follow-ups"?
    - Are missing requirements useful, or want different dimensions?
    - Should confidence be visible to company or internal only?
-   - Is 0–100 score clear, or prefer tier (Strong/Medium/Low)?
+   - Is 0–10 score clear, or prefer tier (Strong/Medium/Low)?
 3. Adjust output based on feedback
 4. Document final schema in `AI-LAYER.md`
 

@@ -6,7 +6,7 @@ describe("pre-evaluation routing rules", () => {
   it("allows strong-fit interview candidates through deterministic routing", () => {
     expect(
       shouldInviteFromDeterministicRules({
-        score: 78,
+        score: 7.8,
         consistencyScore: null,
         modelNextStep: "interview_invited",
       }),
@@ -16,8 +16,8 @@ describe("pre-evaluation routing rules", () => {
   it("allows strong resumes through even when the model returned hold", () => {
     expect(
       shouldInviteFromDeterministicRules({
-        score: 83,
-        consistencyScore: 92,
+        score: 8.3,
+        consistencyScore: 9.2,
         modelNextStep: "hold",
       }),
     ).toBe(true);
@@ -26,8 +26,8 @@ describe("pre-evaluation routing rules", () => {
   it("still blocks weak resumes the model marked as hold", () => {
     expect(
       shouldInviteFromDeterministicRules({
-        score: 62,
-        consistencyScore: 92,
+        score: 6.2,
+        consistencyScore: 9.2,
         modelNextStep: "hold",
       }),
     ).toBe(false);
@@ -36,8 +36,8 @@ describe("pre-evaluation routing rules", () => {
   it("blocks severe authenticity-risk cases even when fit is otherwise high", () => {
     expect(
       shouldInviteFromDeterministicRules({
-        score: 82,
-        consistencyScore: 12,
+        score: 8.2,
+        consistencyScore: 1.2,
         modelNextStep: "interview_invited",
       }),
     ).toBe(false);
@@ -46,11 +46,69 @@ describe("pre-evaluation routing rules", () => {
   it("blocks low-consistency hold cases even with a strong score", () => {
     expect(
       shouldInviteFromDeterministicRules({
-        score: 83,
-        consistencyScore: 40,
+        score: 8.3,
+        consistencyScore: 4,
         modelNextStep: "hold",
       }),
     ).toBe(false);
+  });
+
+  it("blocks scores below the minimum invite threshold", () => {
+    expect(
+      shouldInviteFromDeterministicRules({
+        score: 4.9,
+        consistencyScore: 9,
+        modelNextStep: "interview_invited",
+      }),
+    ).toBe(false);
+    expect(
+      shouldInviteFromDeterministicRules({
+        score: 5,
+        consistencyScore: 9,
+        modelNextStep: "interview_invited",
+      }),
+    ).toBe(true);
+  });
+
+  it("applies the strong-fit override only at the 7.5 boundary with sufficient consistency", () => {
+    expect(
+      shouldInviteFromDeterministicRules({
+        score: 7.4,
+        consistencyScore: 7,
+        modelNextStep: "hold",
+      }),
+    ).toBe(false);
+    expect(
+      shouldInviteFromDeterministicRules({
+        score: 7.5,
+        consistencyScore: 7,
+        modelNextStep: "hold",
+      }),
+    ).toBe(true);
+    expect(
+      shouldInviteFromDeterministicRules({
+        score: 7.5,
+        consistencyScore: 6.9,
+        modelNextStep: "hold",
+      }),
+    ).toBe(false);
+  });
+
+  it("blocks severe authenticity risk below the 2.0 consistency threshold", () => {
+    expect(
+      shouldInviteFromDeterministicRules({
+        score: 9,
+        consistencyScore: 1.9,
+        modelNextStep: "interview_invited",
+      }),
+    ).toBe(false);
+    expect(
+      shouldInviteFromDeterministicRules({
+        score: 9,
+        consistencyScore: 2,
+        modelNextStep: "interview_invited",
+      }),
+    ).toBe(true);
   });
 });
 

@@ -15,16 +15,21 @@ import { ScorePill } from "@/features/reports/components/score-pill";
 import { getOverallScore } from "@/features/reports/schemas";
 import {
   type ApplicationStatus,
-  applicationStatusLabels,
   applicationStatusMeta,
+  getApplicationStatusLabel,
   type Recommendation,
   recommendationSchema,
 } from "@/shared/enums";
+import { formatCandidateScoreWithScale } from "@/shared/score";
 
 export function CompanyJobApplicantsList({
   applicants,
+  emptyTitle,
+  emptyDescription,
 }: {
   applicants: Awaited<ReturnType<typeof getJobApplicants>>;
+  emptyTitle?: string;
+  emptyDescription?: string;
 }) {
   const evaluatedCount = applicants.filter((a) => a.reportId !== null).length;
 
@@ -35,9 +40,9 @@ export function CompanyJobApplicantsList({
           <EmptyMedia variant="icon">
             <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} />
           </EmptyMedia>
-          <EmptyTitle>No applicants yet</EmptyTitle>
+          <EmptyTitle>{emptyTitle ?? "No applicants yet"}</EmptyTitle>
           <EmptyDescription>
-            Candidate submissions for this role will show up here.
+            {emptyDescription ?? "Candidate submissions for this role will show up here."}
           </EmptyDescription>
         </EmptyHeader>
       </Empty>
@@ -102,14 +107,16 @@ export function CompanyJobApplicantsList({
                     {applicant.candidateName}
                   </span>
                   <Badge variant="outline" className={statusTone?.badge ?? ""}>
-                    {applicationStatusLabels[status] ?? status}
+                    {getApplicationStatusLabel(status, {
+                      preEvaluationScore: applicant.preEvaluationScore,
+                    })}
                   </Badge>
                   {applicant.status === "pre_screening" && applicant.preEvaluationScore != null ? (
                     <Badge
                       variant="outline"
                       className="border-warning/20 bg-warning/10 text-warning text-[11px]"
                     >
-                      AI screened {applicant.preEvaluationScore}/100
+                      AI screened {formatCandidateScoreWithScale(applicant.preEvaluationScore)}
                     </Badge>
                   ) : null}
                 </div>

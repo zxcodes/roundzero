@@ -138,7 +138,7 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
             candidateName: applicant.candidateName,
             candidateEmail: applicant.candidateEmail,
             recommendation: applicant.reportRecommendation ?? "unknown",
-            overallScore: score !== null ? Math.round(score) : null,
+            overallScore: score !== null ? Math.round(score * 10) / 10 : null,
           });
         }
       }

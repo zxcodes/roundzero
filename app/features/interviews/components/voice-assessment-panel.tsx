@@ -1,14 +1,12 @@
 import { Loading03Icon, Mic01Icon, PhoneOff01Icon, Tick01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import type { RealtimeToken } from "@tanstack/ai";
-import { toolDefinition } from "@tanstack/ai";
 import { useRealtimeChat } from "@tanstack/ai-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -28,13 +26,13 @@ type ChatMessage = { role: "assistant" | "user"; text: string };
 const normMessage = (m: ChatMessage): string =>
   `${m.role}:${m.text.replace(/\s+/g, " ").trim().toLowerCase()}`;
 
-const completeVoiceAssessmentDef = toolDefinition({
-  name: "complete_voice_assessment",
-  description:
-    "Mark the voice assessment complete and persist the transcript. Call only after delivering a warm closing message.",
-  inputSchema: z.object({ reason: z.string().min(1) }),
-  outputSchema: z.object({ completed: z.boolean(), reason: z.string() }),
-});
+// Grace window after the call ends before we fall back to the browser
+// transcript. ElevenLabs' `post_call_transcription` webhook delivers the
+// authoritative, complete transcript (including the agent's closing line);
+// the in-browser transcript can be clipped because the final message event
+// races the disconnect. We let the webhook win, and only submit the browser
+// transcript if it never lands (e.g. local dev or a webhook outage).
+const WEBHOOK_GRACE_MS = 8_000;
 
 export function CompletedInterviewBar({
   title,
@@ -114,14 +112,6 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
     });
   };
 
-  const completeHandlerRef = useRef<
-    (args: { reason: string }) => Promise<{ completed: boolean; reason: string }>
-  >(async ({ reason }) => ({ completed: false, reason }));
-
-  const voiceClientToolsRef = useRef([
-    completeVoiceAssessmentDef.client((args) => completeHandlerRef.current(args)),
-  ]);
-
   const chat = useRealtimeChat({
     getToken: () =>
       getTokenFn({
@@ -130,7 +120,6 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
     adapter: voiceRealtimeAdapter({
       onConversationStarted: (conversationId) => registerConversationRef.current(conversationId),
     }),
-    tools: voiceClientToolsRef.current,
     onError: (error) => {
       setClientError(error.message);
     },
@@ -232,11 +221,6 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
     }
   };
 
-  completeHandlerRef.current = async ({ reason }) => {
-    const completed = await submitTranscriptRef.current();
-    return { completed, reason };
-  };
-
   useEffect(() => {
     if (effectiveStatus === "completed" || effectiveStatus === "skipped") {
       setCallEnded(false);
@@ -245,6 +229,11 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
     }
   }, [effectiveStatus]);
 
+  // Detect the call ending for ANY reason — the candidate clicking "End call",
+  // the agent's `end_call` system tool (a warm closing message + clean hang-up,
+  // per ElevenLabs' recommended pattern), or an unexpected drop. Nudge the DB
+  // poll so a webhook-completed assessment is picked up promptly; the grace
+  // effect below handles the browser fallback.
   const wasConnectedRef = useRef(false);
   useEffect(() => {
     if (chat.status === "connected") {
@@ -261,15 +250,34 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
     }
 
     setCallEnded(true);
-    if (effectiveStatus === "completed" || effectiveStatus === "skipped") {
+    queryClient.invalidateQueries({ queryKey: ["voice-assessment", interviewId] });
+  }, [chat.status, clientError, queryClient, interviewId]);
+
+  // Webhook-first finalisation: once the call has ended, give ElevenLabs'
+  // post-call webhook a window to persist the authoritative transcript (which
+  // flips the DB status to completed). If it never arrives, fall back to the
+  // browser transcript so local dev and webhook outages don't strand the
+  // candidate. Deps are all primitives that don't change on the 2s DB poll, so
+  // the timer isn't continuously reset.
+  useEffect(() => {
+    if (!callEnded || chat.status !== "idle") {
       return;
     }
-    if (completeCalledRef.current) {
+    if (isTerminal || clientError || completeCalledRef.current) {
       return;
     }
 
-    void submitTranscriptRef.current();
-  }, [chat.status, clientError, effectiveStatus]);
+    const timeoutId = window.setTimeout(() => {
+      if (completeCalledRef.current || liveTranscriptRef.current.length === 0) {
+        return;
+      }
+      void submitTranscriptRef.current();
+    }, WEBHOOK_GRACE_MS);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [callEnded, chat.status, isTerminal, clientError]);
 
   const onStartCall = () => {
     setClientError(null);
@@ -285,7 +293,7 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
   const onEndCall = () => {
     setClientError(null);
     chat.disconnect().catch(() => {
-      // non-fatal — the disconnect effect submits if the agent skipped the tool
+      // non-fatal — the disconnect effect + grace fallback still finalise
     });
   };
 

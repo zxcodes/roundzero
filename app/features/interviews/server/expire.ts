@@ -5,6 +5,7 @@ import {
 } from "@/features/applications/queries/queries_sql";
 import { expireInterview } from "@/features/interviews/queries/queries_sql";
 import { shouldAutoExpireInterview } from "@/features/interviews/shared/expiry";
+import { disposeRpcResource } from "@/shared/workflow-rpc";
 
 export type ExpirableInterview = {
   id: string;
@@ -57,10 +58,11 @@ export const expireInterviewIfDue = async <T extends ExpirableInterview>(input: 
       // workflow is single-sourced per interview. If an instance is already
       // retained (unlikely on first expiry), the create throws — log and
       // move on so the calling request still resolves cleanly.
-      await input.postEvaluation.create({
+      const instance = await input.postEvaluation.create({
         id: input.interview.id,
         params: { interviewId: input.interview.id },
       });
+      disposeRpcResource(instance);
       postEvalTriggered = true;
     } catch (error) {
       console.error(

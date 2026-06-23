@@ -697,7 +697,7 @@ function JobApplicantsTabSkeleton() {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-2">
-          <Skeleton className="h-9 w-44 rounded-md" />
+          <Skeleton className="h-9 w-40 rounded-md" />
           <Skeleton className="h-9 w-36 rounded-md" />
         </div>
         <Skeleton className="h-9 w-44 rounded-md" />
