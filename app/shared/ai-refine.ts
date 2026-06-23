@@ -9,6 +9,8 @@
  * score sanity.
  */
 
+import { clampCandidateScore } from "@/shared/score";
+
 const WORD_RE = /[a-z0-9]+/g;
 
 const PLATITUDE_PATTERNS: RegExp[] = [
@@ -348,11 +350,6 @@ export function moderateTranscript(messages: ReadonlyArray<TranscriptMessage>): 
   return { quality: "normal" };
 }
 
-export function clampScore(value: unknown, fallback = 50): number {
-  const n = typeof value === "number" && Number.isFinite(value) ? value : fallback;
-  return Math.max(0, Math.min(100, Math.round(n)));
-}
-
 // ─── Date context ─────────────────────────────────────────────────────────
 
 /**
@@ -390,9 +387,13 @@ export const LIMITS = {
  * mean. Allows the model's own holistic judgement to nudge the average within
  * `maxDelta` points, but never wildly disagree (no marketing-fluff bumps).
  */
-export function recomputeOverall(dimensions: number[], modelOverall: number, maxDelta = 8): number {
-  if (dimensions.length === 0) return clampScore(modelOverall);
+export function recomputeOverall(
+  dimensions: number[],
+  modelOverall: number,
+  maxDelta = 0.8,
+): number {
+  if (dimensions.length === 0) return clampCandidateScore(modelOverall);
   const mean = dimensions.reduce((a, b) => a + b, 0) / dimensions.length;
   const bounded = Math.max(mean - maxDelta, Math.min(mean + maxDelta, modelOverall));
-  return clampScore(bounded);
+  return clampCandidateScore(bounded);
 }

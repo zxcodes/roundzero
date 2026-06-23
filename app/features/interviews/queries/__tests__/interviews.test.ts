@@ -125,7 +125,7 @@ describe("report-ready notification payload", () => {
         jobId: crypto.randomUUID(),
         jobTitle: "Platform Engineer",
         candidateName: "Amina Shah",
-        score: 84,
+        score: 8.4,
       },
     });
 
@@ -139,7 +139,7 @@ describe("report-ready notification payload", () => {
     expect(items).toHaveLength(1);
     expect(items[0].type).toBe("report_ready");
     const payload = items[0].payload as { score?: number; candidateName?: string };
-    expect(payload.score).toBe(84);
+    expect(payload.score).toBe(8.4);
     expect(payload.candidateName).toBe("Amina Shah");
   });
 });

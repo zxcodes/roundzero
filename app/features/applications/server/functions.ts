@@ -10,6 +10,7 @@ import { getDb } from "@/shared/db";
 import { applicationStatusSchema } from "@/shared/enums";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
 import { arrayBufferToBase64 } from "@/shared/resume";
+import { disposeRpcResource } from "@/shared/workflow-rpc";
 import {
   getApplicationById,
   getApplicationByJobAndCandidate,
@@ -59,7 +60,11 @@ export const applyToJob = createServerFn({ method: "POST" })
         triggerPreEvaluation: async (applicationId: string) => {
           try {
             const instance = await env.PRE_EVALUATION.create({ params: { applicationId } });
-            return { workflowInstanceId: instance.id };
+            try {
+              return { workflowInstanceId: instance.id };
+            } finally {
+              disposeRpcResource(instance);
+            }
           } catch (error) {
             console.error(`Failed to trigger pre-evaluation for ${applicationId}`, error);
           }

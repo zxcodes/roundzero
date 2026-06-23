@@ -62,6 +62,7 @@ import { parseShortlistDetails } from "@/features/applications/shortlist";
 import { ScorePill } from "@/features/reports/components/score-pill";
 import { getCompanyApplicantReportTimeline } from "@/features/reports/server/functions";
 import { cn } from "@/lib/utils";
+import { parseCommunicationAssessment } from "@/prompts/communication-assessment";
 import { formatDateTime } from "@/shared/date";
 import {
   APPLICATION_STATUS_TRANSITIONS,
@@ -72,6 +73,12 @@ import {
   recommendationSchema,
 } from "@/shared/enums";
 import { base64ToBlob } from "@/shared/resume";
+import {
+  candidateScoreProgressPercent,
+  formatCandidateScore,
+  formatCandidateScoreWithScale,
+} from "@/shared/score";
+import { PAGE_SEO } from "@/shared/seo";
 import { validateUuidParams } from "@/shared/validation";
 
 export const Route = createFileRoute("/_authenticated/dashboard/applicant-reports/$applicationId/")(
@@ -82,6 +89,12 @@ export const Route = createFileRoute("/_authenticated/dashboard/applicant-report
       }
       validateUuidParams({ applicationId: params.applicationId });
     },
+    head: () => ({
+      meta: [
+        { title: PAGE_SEO.candidateReport.title },
+        { name: "description", content: PAGE_SEO.candidateReport.description },
+      ],
+    }),
     loader: async ({ params }) => {
       const data = await getCompanyApplicantReportTimeline({
         data: { applicationId: params.applicationId },
@@ -443,7 +456,7 @@ function ApplicantReportSummaryPage() {
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {(Object.keys(dimensionMeta) as Array<keyof typeof dimensionMeta>).map((key) => {
             const dim = dimensionMeta[key];
-            const score = Math.round(report.scores[key]);
+            const rawScore = report.scores[key];
             return (
               <div key={key} className="space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
@@ -455,12 +468,14 @@ function ApplicantReportSummaryPage() {
                     />
                     <span className="text-xs font-medium">{dim.label}</span>
                   </div>
-                  <span className="font-mono text-xs text-muted-foreground">{score}</span>
+                  <span className="font-mono text-xs text-muted-foreground">
+                    {formatCandidateScore(rawScore)}
+                  </span>
                 </div>
                 <div className="h-1.5 overflow-hidden rounded-full bg-muted">
                   <div
                     className="h-full rounded-full bg-foreground/80"
-                    style={{ width: `${Math.max(0, Math.min(100, score))}%` }}
+                    style={{ width: `${candidateScoreProgressPercent(rawScore)}%` }}
                   />
                 </div>
               </div>
@@ -638,7 +653,7 @@ function ApplicantReportSummaryPage() {
                   />
                   Pre-screening
                   <Badge variant="outline" className="ml-1 font-mono text-[11px]">
-                    {preEvaluation.score}/100
+                    {formatCandidateScoreWithScale(preEvaluation.score)}
                   </Badge>
                 </div>
               </AccordionTrigger>
@@ -861,56 +876,53 @@ function PreScreeningPanel({
   );
 }
 
-type VoiceDimension = { score: number; evidence: string[] };
+const voiceDimensionLabels = {
+  clarity: "Clarity",
+  articulation: "Articulation",
+  conciseness: "Conciseness",
+  listening: "Listening",
+  confidence: "Confidence",
+} as const;
 
 function VoiceSummary({ analysis }: { analysis: unknown }) {
-  if (!analysis || typeof analysis !== "object") {
+  const parsed = parseCommunicationAssessment(analysis);
+
+  if (!parsed) {
     return <p className="text-sm text-muted-foreground">No voice analysis captured.</p>;
   }
-  const a = analysis as Record<string, unknown>;
-  const overall = typeof a.overallScore === "number" ? Math.round(a.overallScore as number) : null;
-  const summary = typeof a.summary === "string" ? a.summary : "";
-  const dimensions: Array<{ key: string; label: string; dim: VoiceDimension }> = [
-    { key: "clarity", label: "Clarity" },
-    { key: "articulation", label: "Articulation" },
-    { key: "conciseness", label: "Conciseness" },
-    { key: "listening", label: "Listening" },
-    { key: "confidence", label: "Confidence" },
-  ]
-    .map((d) => ({
-      ...d,
-      dim: (a[d.key] ?? { score: 0, evidence: [] }) as VoiceDimension,
-    }))
-    .filter((d) => d.dim);
 
   return (
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-3">
-        {summary ? <p className="text-sm leading-6 text-foreground">{summary}</p> : null}
-        {overall !== null ? (
-          <Badge variant="outline" className="font-mono text-xs">
-            {overall}/100
-          </Badge>
+        {parsed.summary ? (
+          <p className="text-sm leading-6 text-foreground">{parsed.summary}</p>
         ) : null}
+        <Badge variant="outline" className="font-mono text-xs">
+          {formatCandidateScoreWithScale(parsed.overallScore)}
+        </Badge>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        {dimensions.map(({ key, label, dim }) => {
-          const score = Math.round(dim.score ?? 0);
-          return (
-            <div key={key} className="space-y-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-medium">{label}</span>
-                <span className="font-mono text-muted-foreground">{score}/100</span>
+        {(Object.keys(voiceDimensionLabels) as Array<keyof typeof voiceDimensionLabels>).map(
+          (key) => {
+            const dim = parsed[key];
+            return (
+              <div key={key} className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-medium">{voiceDimensionLabels[key]}</span>
+                  <span className="font-mono text-muted-foreground">
+                    {formatCandidateScoreWithScale(dim.score)}
+                  </span>
+                </div>
+                <div className="h-1 overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full bg-foreground/80"
+                    style={{ width: `${candidateScoreProgressPercent(dim.score)}%` }}
+                  />
+                </div>
               </div>
-              <div className="h-1 overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full bg-foreground/80"
-                  style={{ width: `${Math.max(0, Math.min(100, score))}%` }}
-                />
-              </div>
-            </div>
-          );
-        })}
+            );
+          },
+        )}
       </div>
     </div>
   );

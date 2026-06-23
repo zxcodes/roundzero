@@ -5,16 +5,16 @@ export function shouldInviteFromDeterministicRules(args: {
   consistencyScore: number | null;
   modelNextStep: "interview_invited" | "hold";
 }) {
-  if (args.consistencyScore != null && args.consistencyScore < 20) {
+  if (args.consistencyScore != null && args.consistencyScore < 2) {
     return false;
   }
-  if (args.score < 50) {
+  if (args.score < 5) {
     return false;
   }
   if (args.modelNextStep === "interview_invited") {
     return true;
   }
-  if (args.score >= 75 && (args.consistencyScore == null || args.consistencyScore >= 70)) {
+  if (args.score >= 7.5 && (args.consistencyScore == null || args.consistencyScore >= 7)) {
     return true;
   }
   return false;

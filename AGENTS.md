@@ -30,11 +30,12 @@ Every client-side server-function call is a real worker round trip (+ an `authMi
 
 ## Database + SQLC
 
-- Single dbmate init migration in `db/migrations/`; schema in `db/init.sql` + `db/schema.sql`. New migrations: `dbmate new <name>`, empty `migrate:down` body.
+- Ordered dbmate migrations in `db/migrations/`; `db/schema.sql` is the dbmate-generated dump (never hand-edit). Staging/prod are deployed — never edit an already-applied migration. New change: `dbmate new <name>` (empty `migrate:down` body), `bunx dbmate up`, then `bun run sqlgen`.
 - SQLC generates `*_sql.ts` — never hand-edit. Use generated types or infer from server-fn/loader responses; never re-declare row/payload shapes, no type assertions.
-- Pure schema only: no triggers/functions/procedures, no DB enums/CHECKs (use `TEXT` + Zod in `app/shared/enums.ts`). Set `updated_at = now()` explicitly in every UPDATE.
+- Pure schema only: no triggers/functions/procedures, no DB enums (use `TEXT` + Zod in `app/shared/enums.ts`). Set `updated_at = now()` explicitly in every UPDATE.
+- Decimals: use `DOUBLE PRECISION`, never `NUMERIC`/`DECIMAL` — the `postgres` driver returns NUMERIC as strings (OID 1700 isn't parsed as a number) even though SQLC types it `number`, which silently breaks numeric reads.
 - JSONB: pass/read raw JS values; never `JSON.stringify`/`JSON.parse` (the `postgres` driver handles it — pre-stringifying double-encodes).
-- Local Postgres via Docker; `postgres` client (`app/db.ts`), `DATABASE_URL` in `.env`.
+- Local Postgres via Docker; `postgres` client (`app/shared/db.ts`), `DATABASE_URL` in `.env`.
 
 ## Server Functions + Route Loaders
 
