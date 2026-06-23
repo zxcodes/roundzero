@@ -1,12 +1,12 @@
 ## TODO
 
-- voice interview experience degraded since auto submit introduced. the agent speaks the last message twice but I don't at all see the message on screen.
 - add onCopy, onPaste detectors and evaluate final score based on that.
 - check deleted account behaviour for companies, applications, etc. how the entire flow handles it. (add a workflow that cleans up deleted accounts)
 - pretty sure openrouter model fallbacks still don't work. verify in local dev.
 - add a really good resume and candidate test suite to pass thru the ai. (WIP in other branch)
 
 
+<!--- voice interview experience degraded since auto submit introduced. the agent speaks the last message twice but I don't at all see the message on screen.-->
 <!--- candidate score needs to be 1-10 as landing page shows. right now it's 1-100.-->
 <!--- company has redundant steps. if I click a job, first taken to a page where there is jd, I have to click view applicants, which is another redundant page. we can def drop one of these here and make it simple.-->
 <!--- ~~I see applicants list twice in ActiveBatchPanel job-applicants page on "All applicants" tab.~~ Done — ActiveBatchPanel shows progress only.-->
