@@ -2,7 +2,7 @@
 
 - voice interview experience degraded since auto submit introduced. the agent speaks the last message twice but I don't at all see the message on screen.
 - add onCopy, onPaste detectors and evaluate final score based on that.
-- check deleted account behaviour for companies, applications, etc. how the entire flow handles it.
+- check deleted account behaviour for companies, applications, etc. how the entire flow handles it. (add a workflow that cleans up deleted accounts)
 - pretty sure openrouter model fallbacks still don't work. verify in local dev.
 - add a really good resume and candidate test suite to pass thru the ai. (WIP in other branch)
 
