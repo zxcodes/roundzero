@@ -5,6 +5,7 @@ import { z } from "zod";
 import { BillingPageSkeleton } from "@/components/route-skeletons";
 import { BillingPage } from "@/features/billing/components/billing-page";
 import { getMySubscription, syncCheckoutSubscription } from "@/features/billing/server/functions";
+import { PAGE_SEO } from "@/shared/seo";
 
 const searchSchema = z.object({
   status: z.enum(["success", "cancelled"]).optional(),
@@ -13,6 +14,12 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/_authenticated/dashboard/billing")({
   validateSearch: searchSchema,
+  head: () => ({
+    meta: [
+      { title: PAGE_SEO.pricing.title },
+      { name: "description", content: PAGE_SEO.pricing.description },
+    ],
+  }),
   beforeLoad: ({ context }) => {
     if (!context.isCompany) {
       throw redirect({ to: "/dashboard" });

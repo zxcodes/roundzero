@@ -46,6 +46,7 @@ import {
   workplaceTypeSchema,
 } from "@/shared/enums";
 import { formatSalary, SALARY_BRACKETS } from "@/shared/format";
+import { PAGE_SEO } from "@/shared/seo";
 
 const searchDefaults = {
   search: "",
@@ -81,11 +82,10 @@ export const Route = createFileRoute("/jobs/")({
   loaderDeps: ({ search }) => search,
   head: () => ({
     meta: [
-      { title: "Browse Jobs | RoundZero" },
+      { title: PAGE_SEO.jobs.title },
       {
         name: "description",
-        content:
-          "Browse open positions from companies hiring on RoundZero. Apply with one click and interview on your schedule with AI-driven evaluations.",
+        content: PAGE_SEO.jobs.description,
       },
       {
         property: "og:url",

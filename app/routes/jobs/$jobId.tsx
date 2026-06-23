@@ -28,6 +28,7 @@ import { formatDate, formatDaysLeft } from "@/shared/date";
 import type { EmploymentType, ExperienceLevel, WorkplaceType } from "@/shared/enums";
 import { employmentTypeLabels, experienceLevelLabels, workplaceTypeLabels } from "@/shared/enums";
 import { formatSalaryFull } from "@/shared/format";
+import { PAGE_SEO } from "@/shared/seo";
 import { validateUuidParams } from "@/shared/validation";
 
 type JobDetail = NonNullable<Awaited<ReturnType<typeof getPublicJobById>>>;
@@ -45,17 +46,14 @@ const employmentTypeToSchema = (type: string): string => {
 function jobMeta(job: JobDetail | null) {
   if (!job) return [];
 
-  const location = job.location ? ` — ${job.location}` : "";
-  const ogDescription = `${job.title} at ${job.companyName}${location}. Apply with one click.`;
-
   return [
     {
       name: "description",
-      content: `${job.title} at ${job.companyName}${location}. Apply with one click and get an AI-driven interview on your schedule.`,
+      content: PAGE_SEO.apply.description,
     },
-    { property: "og:description", content: ogDescription },
+    { property: "og:description", content: PAGE_SEO.apply.description },
     { property: "og:url", content: `${import.meta.env.VITE_APP_URL}/jobs/${job.id}` },
-    { name: "twitter:description", content: ogDescription },
+    { name: "twitter:description", content: PAGE_SEO.apply.description },
   ];
 }
 
@@ -133,9 +131,7 @@ export const Route = createFileRoute("/jobs/$jobId")({
     return {
       meta: [
         {
-          title: job
-            ? `${job.title} at ${job.companyName} | RoundZero`
-            : "Job Not Found | RoundZero",
+          title: job ? PAGE_SEO.apply.title : "Job Not Found | RoundZero",
         },
         ...jobMeta(job),
       ],

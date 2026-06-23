@@ -11,6 +11,7 @@ import { z } from "zod";
 import { Logo } from "@/components/public-layout";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/features/auth/provider";
+import { PAGE_SEO } from "@/shared/seo";
 
 function sanitizeRedirect(url: unknown): string | undefined {
   if (typeof url !== "string" || !url.startsWith("/") || url.startsWith("//")) {
@@ -32,11 +33,10 @@ export const Route = createFileRoute("/candidate/login")({
   },
   head: () => ({
     meta: [
-      { title: "Sign In as Candidate | RoundZero" },
+      { title: PAGE_SEO.signIn.title },
       {
         name: "description",
-        content:
-          "Sign in to RoundZero as a candidate. Browse jobs, apply with one click, and interview on your schedule. Skip the resume black hole.",
+        content: PAGE_SEO.signIn.description,
       },
     ],
     links: [{ rel: "canonical", href: `${import.meta.env.VITE_APP_URL}/candidate/login` }],

@@ -11,6 +11,7 @@ import {
 } from "@react-email/components";
 import { type Recommendation, recommendationLabels } from "@/shared/enums";
 import { formatCandidateScoreWithScale } from "@/shared/score";
+import { EMAIL_PREVIEW } from "@/shared/seo";
 import { emailTheme } from "./email-theme";
 
 type ReportReadyEmailTemplateProps = {
@@ -25,9 +26,7 @@ export function ReportReadyEmailTemplate(props: ReportReadyEmailTemplateProps) {
   return (
     <Html lang="en">
       <Head />
-      <Preview>
-        Evaluation ready for {props.candidateName} – {props.jobTitle}
-      </Preview>
+      <Preview>{EMAIL_PREVIEW.candidateReportReady}</Preview>
       <Body style={bodyStyle}>
         <Container style={containerStyle}>
           <Section style={headerStyle}>

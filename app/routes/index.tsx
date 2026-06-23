@@ -17,6 +17,7 @@ import {
   teamMemberFeatureLabel,
 } from "@/features/billing/config";
 import { cn } from "@/lib/utils";
+import { DEFAULT_META_TITLE, HOMEPAGE_META_DESCRIPTION } from "@/shared/seo";
 
 const NOT_INCLUDED = "Not included";
 
@@ -29,12 +30,11 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       {
-        title: "RoundZero | Replace Your First Interview Round with AI",
+        title: DEFAULT_META_TITLE,
       },
       {
         name: "description",
-        content:
-          "Run AI-driven first-round interviews and get ranked candidates with structured evaluation reports. Skip resume screening. Evaluate how candidates actually think.",
+        content: HOMEPAGE_META_DESCRIPTION,
       },
       {
         property: "og:url",
@@ -160,17 +160,17 @@ function Hero() {
       <div className={cn(CONTAINER, SECTION_PAD)}>
         <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-16">
           <div className="rise max-w-xl">
-            <Eyebrow>Async AI interviews · Ranked reports</Eyebrow>
-            <h1 className="mt-6 text-[clamp(2.6rem,5.6vw,4.75rem)] font-bold leading-[1.02] tracking-[-0.035em]">
-              Replace your first interview round with <Highlight>AI</Highlight>
+            <h1 className="text-[clamp(2.6rem,5.6vw,4.75rem)] font-bold leading-[1.02] tracking-[-0.035em]">
+              Review candidates, not <Highlight>resumes</Highlight>
             </h1>
             <p className="mt-6 max-w-lg text-[clamp(1.05rem,1.4vw,1.2rem)] leading-relaxed text-muted-foreground">
-              Post a job and get ranked candidates with structured, evidence-backed reports. No
-              résumés to sift through, no scheduling. Candidates arrive already evaluated.
+              Every applicant is evaluated through adaptive interviews and structured assessment.
+              Get ranked candidates, evidence-backed reports, and clear hiring recommendations
+              before the first human interview.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <PrimaryCta to="/company/login">Post a job</PrimaryCta>
-              <SecondaryCta to="/jobs">Browse jobs</SecondaryCta>
+              <PrimaryCta to="/company/login">Post a Job</PrimaryCta>
+              <SecondaryCta to="/jobs">Browse Jobs</SecondaryCta>
             </div>
             <p className="eyebrow mt-6">Free to start · No credit card</p>
           </div>

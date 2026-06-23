@@ -25,6 +25,7 @@ import { getDashboardMetrics } from "@/features/dashboard/server/functions";
 import { ScorePill } from "@/features/reports/components/score-pill";
 import { formatRelativeTime } from "@/shared/date";
 import { recommendationSchema, recommendationSurfaceTone } from "@/shared/enums";
+import { PAGE_SEO } from "@/shared/seo";
 
 type DashboardMetrics = Awaited<ReturnType<typeof getDashboardMetrics>>;
 type CompanyMetrics = Extract<DashboardMetrics, { type: "company" }>;
@@ -67,6 +68,12 @@ type RecentActivityItem = {
 };
 
 export const Route = createFileRoute("/_authenticated/dashboard/")({
+  head: () => ({
+    meta: [
+      { title: PAGE_SEO.dashboard.title },
+      { name: "description", content: PAGE_SEO.dashboard.description },
+    ],
+  }),
   loader: async () => {
     const metrics = await getDashboardMetrics();
     return { metrics };
