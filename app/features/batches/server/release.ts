@@ -18,6 +18,7 @@ import {
 } from "@/features/companies/services/company-team-notifications";
 import { asSqlTransaction } from "@/shared/db-transaction";
 import { notificationPayloadSchemas } from "@/shared/notifications-config";
+import { clampCandidateScore } from "@/shared/score";
 
 export type BatchReleaseSummary =
   | { released: false; reason: "not_found" | "already_released" }
@@ -74,7 +75,7 @@ export async function releaseBatch(sql: Sql, batchId: string): Promise<BatchRele
     const topCandidateName =
       typeof topReport?.candidateName === "string" ? topReport.candidateName : null;
     const topScoreRaw = topReport?.scores?.overall;
-    const topScore = typeof topScoreRaw === "number" ? topScoreRaw : null;
+    const topScore = typeof topScoreRaw === "number" ? clampCandidateScore(topScoreRaw) : null;
 
     const payload = notificationPayloadSchemas.batch_ready.parse({
       batchId,

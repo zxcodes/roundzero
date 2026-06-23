@@ -9,6 +9,7 @@ import {
   Section,
   Text,
 } from "@react-email/components";
+import { formatCandidateScoreWithScale } from "@/shared/score";
 import { emailTheme } from "./email-theme";
 
 type BatchDigestEmailTemplateProps = {
@@ -45,7 +46,7 @@ export function BatchDigestEmailTemplate(props: BatchDigestEmailTemplateProps) {
               <Text style={highlightStyle}>
                 <span style={highlightLabelStyle}>Top candidate</span>
                 <span style={highlightValueStyle}>
-                  {props.topCandidateName} — {props.topScore}/100
+                  {props.topCandidateName} — {formatCandidateScoreWithScale(props.topScore)}
                 </span>
               </Text>
             ) : null}
@@ -77,7 +78,7 @@ export function BatchDigestEmailTemplate(props: BatchDigestEmailTemplateProps) {
 BatchDigestEmailTemplate.PreviewProps = {
   jobTitle: "Senior Frontend Engineer",
   reportCount: 5,
-  topScore: 92,
+  topScore: 9.2,
   topCandidateName: "Sarah Chen",
   batchUrl: "https://roundzero.dev/dashboard/job-batches/123",
 } satisfies BatchDigestEmailTemplateProps;

@@ -7,6 +7,7 @@ import {
 } from "@/features/interviews/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { createWorkflowLogger } from "@/shared/logger";
+import { disposeRpcResource } from "@/shared/workflow-rpc";
 import { refineReport } from "./refine";
 import {
   applyVoiceAssessmentToReport,
@@ -218,11 +219,15 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
           await step.do("signal_batch_complete", async () => {
             try {
               const instance = await env.BATCH_ORCHESTRATION.get(batchId);
-              await instance.sendEvent({
-                type: "batch-reports-complete",
-                payload: { batchId },
-              });
-              log.info(`Sent early completion signal to batch ${batchId}`);
+              try {
+                await instance.sendEvent({
+                  type: "batch-reports-complete",
+                  payload: { batchId },
+                });
+                log.info(`Sent early completion signal to batch ${batchId}`);
+              } finally {
+                disposeRpcResource(instance);
+              }
             } catch {
               // Batch may have already timed out and released — this is fine
               log.info(`Batch ${batchId} already released, no signal needed`);

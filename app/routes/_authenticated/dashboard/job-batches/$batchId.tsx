@@ -27,6 +27,7 @@ import {
   recommendationLabels,
   recommendationSchema,
 } from "@/shared/enums";
+import { formatCandidateScore } from "@/shared/score";
 import { validateUuidParams } from "@/shared/validation";
 
 export const Route = createFileRoute("/_authenticated/dashboard/job-batches/$batchId")({
@@ -89,9 +90,9 @@ function BatchDetailPage() {
   const scoresWithValue = reports
     .map((r) => getOverallScore(r.scores))
     .filter((n): n is number => n !== null);
-  const avgScore =
+  const avgScoreRaw =
     scoresWithValue.length > 0
-      ? Math.round(scoresWithValue.reduce((a, b) => a + b, 0) / scoresWithValue.length)
+      ? scoresWithValue.reduce((a, b) => a + b, 0) / scoresWithValue.length
       : null;
   const recCounts = reports.reduce<Record<string, number>>((acc, r) => {
     acc[r.recommendation] = (acc[r.recommendation] ?? 0) + 1;
@@ -135,10 +136,12 @@ function BatchDetailPage() {
               {reports.length}/{batch.targetSize}
             </span>
           </div>
-          {avgScore !== null ? (
+          {avgScoreRaw !== null ? (
             <div className="flex items-center gap-2">
               <span className="font-semibold text-muted-foreground">Avg score</span>
-              <span className="font-mono text-sm font-semibold">{avgScore}</span>
+              <span className="font-mono text-sm font-semibold">
+                {formatCandidateScore(avgScoreRaw)}
+              </span>
             </div>
           ) : null}
           {topRec ? (

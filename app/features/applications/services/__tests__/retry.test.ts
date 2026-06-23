@@ -25,6 +25,25 @@ type StubInstance = {
   id: string;
   status: () => Promise<{ status: string }>;
   restart: () => Promise<void>;
+  disposed?: boolean;
+  [Symbol.dispose]?: () => void;
+};
+
+const makeStubInstance = (input: {
+  id: string;
+  status: () => Promise<{ status: string }>;
+  restart?: () => Promise<void>;
+}): StubInstance => {
+  const instance: StubInstance = {
+    id: input.id,
+    status: input.status,
+    restart: input.restart ?? vi.fn(async () => undefined),
+    disposed: false,
+  };
+  instance[Symbol.dispose] = () => {
+    instance.disposed = true;
+  };
+  return instance;
 };
 
 const makeBindings = (overrides?: {
@@ -202,11 +221,11 @@ describe("retryEvaluation post-eval probing", () => {
     const { application } = await seedFailedApplication();
     const interview = await attachInterview(application.id, "completed");
 
-    const restartedInstance: StubInstance = {
+    const restartedInstance = makeStubInstance({
       id: interview.id,
       status: async () => ({ status: "errored" }),
       restart: vi.fn(async () => undefined),
-    };
+    });
     const bindings = makeBindings({
       postEvalGet: async () => restartedInstance,
     });
@@ -222,6 +241,7 @@ describe("retryEvaluation post-eval probing", () => {
       workflowInstanceId: interview.id,
     });
     expect(restartedInstance.restart).toHaveBeenCalledOnce();
+    expect(restartedInstance.disposed).toBe(true);
     expect(bindings.postCreate).not.toHaveBeenCalled();
   });
 
@@ -229,11 +249,10 @@ describe("retryEvaluation post-eval probing", () => {
     const { application } = await seedFailedApplication();
     const interview = await attachInterview(application.id, "completed");
 
-    const runningInstance: StubInstance = {
+    const runningInstance = makeStubInstance({
       id: interview.id,
       status: async () => ({ status: "running" }),
-      restart: vi.fn(),
-    };
+    });
     const bindings = makeBindings({
       postEvalGet: async () => runningInstance,
     });
@@ -244,6 +263,7 @@ describe("retryEvaluation post-eval probing", () => {
     });
 
     expect(result).toEqual({ kind: "skipped", reason: "post_eval_running" });
+    expect(runningInstance.disposed).toBe(true);
     expect(bindings.postCreate).not.toHaveBeenCalled();
 
     // Counter should NOT have incremented since the skip happened before the
@@ -258,11 +278,10 @@ describe("retryEvaluation post-eval probing", () => {
     const { application } = await seedFailedApplication();
     const interview = await attachInterview(application.id, "completed");
 
-    const completeInstance: StubInstance = {
+    const completeInstance = makeStubInstance({
       id: interview.id,
       status: async () => ({ status: "complete" }),
-      restart: vi.fn(),
-    };
+    });
     const bindings = makeBindings({
       postEvalGet: async () => completeInstance,
     });
@@ -273,6 +292,27 @@ describe("retryEvaluation post-eval probing", () => {
     });
 
     expect(result).toEqual({ kind: "skipped", reason: "post_eval_already_complete" });
+    expect(completeInstance.disposed).toBe(true);
+  });
+
+  it("disposes the instance when status() throws", async () => {
+    const { application } = await seedFailedApplication();
+    const interview = await attachInterview(application.id, "completed");
+
+    const brokenInstance = makeStubInstance({
+      id: interview.id,
+      status: async () => {
+        throw new Error("status unavailable");
+      },
+    });
+    const bindings = makeBindings({
+      postEvalGet: async () => brokenInstance,
+    });
+
+    await expect(
+      retryEvaluation(sql, application.id, bindings, { cap: 3, source: "cron" }),
+    ).rejects.toThrow("status unavailable");
+    expect(brokenInstance.disposed).toBe(true);
   });
 });
 
@@ -354,11 +394,10 @@ describe("previewEvaluationRetry", () => {
     const { application } = await seedFailedApplication();
     const interview = await attachInterview(application.id, "completed");
 
-    const completeInstance: StubInstance = {
+    const completeInstance = makeStubInstance({
       id: interview.id,
       status: async () => ({ status: "complete" }),
-      restart: vi.fn(),
-    };
+    });
     const bindings = makeBindings({
       postEvalGet: async () => completeInstance,
     });
@@ -369,5 +408,23 @@ describe("previewEvaluationRetry", () => {
       reason: "post_eval_already_complete",
       suggestedAction: "reinvite",
     });
+    expect(completeInstance.disposed).toBe(true);
+  });
+
+  it("disposes the restart probe instance after preview", async () => {
+    const { application } = await seedFailedApplication();
+    const interview = await attachInterview(application.id, "completed");
+
+    const erroredInstance = makeStubInstance({
+      id: interview.id,
+      status: async () => ({ status: "errored" }),
+    });
+    const bindings = makeBindings({
+      postEvalGet: async () => erroredInstance,
+    });
+
+    const preview = await previewEvaluationRetry(sql, application.id, bindings);
+    expect(preview).toEqual({ actionable: true, kind: "post_eval" });
+    expect(erroredInstance.disposed).toBe(true);
   });
 });

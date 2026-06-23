@@ -183,11 +183,11 @@ CREATE INDEX idx_interview_messages_interview_position
 CREATE TABLE pre_evaluations (
   id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   application_id        UUID NOT NULL REFERENCES applications(id) ON DELETE RESTRICT UNIQUE,
-  score                 INTEGER NOT NULL CHECK (score >= 0 AND score <= 100),
+  score                 NUMERIC(4,1) NOT NULL CHECK (score >= 0 AND score <= 10),
   missing_requirements  JSONB NOT NULL DEFAULT '[]',
   confidence            TEXT NOT NULL,
   next_step             TEXT NOT NULL,
-  consistency_score     INTEGER CHECK (consistency_score >= 0 AND consistency_score <= 100),
+  consistency_score     NUMERIC(4,1) CHECK (consistency_score IS NULL OR (consistency_score >= 0 AND consistency_score <= 10)),
   raw_response          JSONB,
   model                 TEXT,
   prompt_version        TEXT,
