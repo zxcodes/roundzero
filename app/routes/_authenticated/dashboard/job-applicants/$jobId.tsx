@@ -22,6 +22,7 @@ import { getActiveBatchForJobServer } from "@/features/batches/server/functions"
 import {
   CompanyJobActions,
   CompanyJobPostingPanel,
+  JobMetaChip,
 } from "@/features/jobs/components/company-job-posting-panel";
 import { getJob } from "@/features/jobs/server/functions";
 import type { JobStatus } from "@/shared/enums";
@@ -139,8 +140,8 @@ function JobApplicantsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-1">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 space-y-1">
           <h2 className="text-2xl font-bold tracking-tight">{job.title}</h2>
           <p className="text-sm text-muted-foreground">
             {tab === "posting"
@@ -148,17 +149,21 @@ function JobApplicantsPage() {
               : "Review and manage everyone who applied to this role."}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
           {tab === "applicants" ? (
             <>
-              <Badge variant="secondary" className="gap-1">
-                <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} className="size-3" />
+              <JobMetaChip
+                icon={<HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} />}
+                variant="secondary"
+              >
                 {applicants.length} applicant{applicants.length !== 1 ? "s" : ""}
-              </Badge>
-              <Badge variant="outline" className="gap-1 text-[11px]">
-                <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} className="size-3" />
+              </JobMetaChip>
+              <JobMetaChip
+                icon={<HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} />}
+                variant="outline"
+              >
                 {jobStatusLabels[job.status as JobStatus]}
-              </Badge>
+              </JobMetaChip>
             </>
           ) : null}
           <CompanyJobActions job={job} requirements={requirements} />
