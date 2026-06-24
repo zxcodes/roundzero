@@ -18,9 +18,7 @@ import {
   DEFAULT_META_DESCRIPTION,
   DEFAULT_META_TITLE,
   OG_DESCRIPTION,
-  OG_TITLE,
   TWITTER_DESCRIPTION,
-  TWITTER_TITLE,
 } from "@/shared/seo";
 import appCss from "../styles.css?url";
 
@@ -47,7 +45,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       },
       {
         property: "og:title",
-        content: OG_TITLE,
+        content: DEFAULT_META_TITLE,
       },
       {
         property: "og:description",
@@ -87,7 +85,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       },
       {
         name: "twitter:title",
-        content: TWITTER_TITLE,
+        content: DEFAULT_META_TITLE,
       },
       {
         name: "twitter:description",
