@@ -330,16 +330,34 @@ async function seedApplicationsAndReports(
     const heldCount = template.heldCount ?? 0;
     const plans = buildApplicantPlans(template.reportCount, heldCount);
 
+    // Mirror prod: every evaluated cohort belongs to a job batch. Released jobs get a
+    // completed batch; Backend Platform keeps an active in-flight batch for the demo.
     let batchId: string | null = null;
-    if (template.activeBatch) {
+    if (template.reportCount > 0 || template.activeBatch) {
       batchId = makeUuidFromSeed(`dashboard-seed-batch-${job.id}`);
+      const batchStatus = template.activeBatch ? "active" : "released";
+      const launchedAt = new Date(
+        Date.now() - (template.activeBatch ? 2 : 10) * 24 * 60 * 60 * 1000,
+      );
+      const releasedAt = template.activeBatch
+        ? null
+        : new Date(Date.now() - 5 * 24 * 60 * 60 * 1000);
+
       await sql`
-        INSERT INTO job_batches (id, job_id, status, target_size, launched_at)
-        VALUES (${batchId}, ${job.id}, ${"active"}, ${template.target}, ${new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)})
+        INSERT INTO job_batches (id, job_id, status, target_size, launched_at, released_at)
+        VALUES (
+          ${batchId},
+          ${job.id},
+          ${batchStatus},
+          ${template.target},
+          ${launchedAt},
+          ${releasedAt}
+        )
         ON CONFLICT (id) DO UPDATE
         SET status = EXCLUDED.status,
             target_size = EXCLUDED.target_size,
-            launched_at = EXCLUDED.launched_at
+            launched_at = EXCLUDED.launched_at,
+            released_at = EXCLUDED.released_at
       `;
     }
 
@@ -423,7 +441,7 @@ async function seedApplicationsAndReports(
           ? new Date(startedAt.getTime() + randomInt(`${interviewId}-dur`, 28, 68) * 60 * 1000)
           : null;
 
-      const linkToBatch = plan.status === "evaluated_held" && batchId !== null;
+      const linkToBatch = batchId !== null && interviewStatus === "completed";
 
       await sql`
         INSERT INTO interviews (
