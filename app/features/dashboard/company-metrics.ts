@@ -242,10 +242,3 @@ export function buildActivitySummary(
     occurredAt: item.updatedAt,
   }));
 }
-
-export const dashboardRecommendationLabels: Record<Recommendation, string> = {
-  strong_yes: "Strong hire",
-  yes: "Hire",
-  lean_no: "Maybe",
-  no: "Reject",
-};
