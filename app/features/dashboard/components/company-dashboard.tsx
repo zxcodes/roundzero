@@ -21,6 +21,8 @@ import { CANDIDATE_SCORE_MAX, formatCandidateScore } from "@/shared/score";
 
 type CompanyMetrics = Extract<Awaited<ReturnType<typeof getDashboardMetrics>>, { type: "company" }>;
 
+const dashboardCardGridClass = "grid gap-4 sm:grid-cols-2 lg:grid-cols-3";
+
 function getTimeGreeting(): string {
   const hour = new Date().getHours();
   if (hour < 12) {
@@ -151,6 +153,38 @@ function HeroSection({ firstName, metrics }: { firstName: string; metrics: Compa
   );
 }
 
+function AwaitingReviewCard({ candidate }: { candidate: DashboardCandidateReport }) {
+  const highlight = candidate.strengths[0] ?? candidate.topConcern;
+
+  return (
+    <article className="flex min-h-52 flex-col rounded-xl bg-muted/25 p-4">
+      <RecommendationBadge recommendation={candidate.recommendation} size="lg" />
+      <div className="mt-3 min-w-0 space-y-1">
+        <h3 className="truncate text-base font-semibold tracking-tight">
+          {candidate.candidateName}
+        </h3>
+        <p className="truncate text-xs text-muted-foreground">{candidate.jobTitle}</p>
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+        <span className="font-mono font-medium tabular-nums text-foreground">
+          {formatCandidateScore(candidate.overallScore)}/{CANDIDATE_SCORE_MAX}
+        </span>
+        {candidate.confidence ? <span>{candidate.confidence} confidence</span> : null}
+      </div>
+      {highlight ? (
+        <p className="mt-3 line-clamp-2 flex-1 text-xs leading-relaxed text-muted-foreground">
+          {highlight}
+        </p>
+      ) : (
+        <div className="flex-1" />
+      )}
+      <div className="mt-4">
+        <ReviewButton applicationId={candidate.applicationId} label="Open report" />
+      </div>
+    </article>
+  );
+}
+
 function AwaitingReviewSection({
   candidates,
   heroSummary,
@@ -196,7 +230,7 @@ function AwaitingReviewSection({
         <div className="space-y-1">
           <h2 className="text-xl font-semibold tracking-tight">Candidates awaiting review</h2>
           <p className="text-sm text-muted-foreground">
-            Decide who to advance — each summary includes why the system recommended them.
+            Top recommendations waiting on your decision — open a report for the full evaluation.
           </p>
         </div>
         <span className="font-mono text-sm text-muted-foreground">
@@ -204,61 +238,9 @@ function AwaitingReviewSection({
         </span>
       </div>
 
-      <div className="space-y-4">
+      <div className={dashboardCardGridClass}>
         {candidates.map((candidate) => (
-          <article
-            key={candidate.applicationId}
-            className="rounded-2xl bg-muted/25 px-6 py-6 sm:px-8 sm:py-7"
-          >
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-              <div className="min-w-0 flex-1 space-y-5">
-                <div className="space-y-1">
-                  <h3 className="text-xl font-semibold tracking-tight">
-                    {candidate.candidateName}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">{candidate.jobTitle}</p>
-                </div>
-
-                <div className="space-y-2">
-                  <RecommendationBadge recommendation={candidate.recommendation} size="lg" />
-                  <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                    <span className="font-mono font-medium tabular-nums text-foreground">
-                      {formatCandidateScore(candidate.overallScore)}/{CANDIDATE_SCORE_MAX}
-                    </span>
-                    {candidate.confidence ? <span>Confidence: {candidate.confidence}</span> : null}
-                  </div>
-                </div>
-
-                {candidate.strengths.length > 0 ? (
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-                      Why they stood out
-                    </p>
-                    <ul className="mt-2 list-disc space-y-1.5 pl-4">
-                      {candidate.strengths.map((strength) => (
-                        <li key={strength} className="text-sm text-foreground">
-                          {strength}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
-
-                {candidate.topConcern ? (
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-                      Concern
-                    </p>
-                    <p className="mt-2 text-sm text-foreground">{candidate.topConcern}</p>
-                  </div>
-                ) : null}
-              </div>
-
-              <div className="shrink-0">
-                <ReviewButton applicationId={candidate.applicationId} />
-              </div>
-            </div>
-          </article>
+          <AwaitingReviewCard key={candidate.applicationId} candidate={candidate} />
         ))}
       </div>
 
@@ -276,6 +258,52 @@ function AwaitingReviewSection({
         </div>
       ) : null}
     </section>
+  );
+}
+
+function RoleAttentionCard({ role }: { role: RoleAttention }) {
+  return (
+    <article className="flex min-h-44 flex-col rounded-xl bg-muted/20 p-4">
+      <h3 className="truncate text-base font-semibold tracking-tight">{role.title}</h3>
+      <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
+        <span className="inline-flex items-center gap-1">
+          <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} className="size-3.5" />
+          {role.applicants} applicant{role.applicants === 1 ? "" : "s"}
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <HugeiconsIcon icon={RankingIcon} strokeWidth={2} className="size-3.5" />
+          {role.reportsReady} report{role.reportsReady === 1 ? "" : "s"}
+        </span>
+      </div>
+      <div className="mt-3 flex flex-1 flex-wrap items-start gap-1.5">
+        {role.strongHire > 0 ? (
+          <Badge variant="outline" className={recommendationBadgeTone.strong_yes}>
+            {role.strongHire} strong hire
+          </Badge>
+        ) : null}
+        {role.hire > 0 ? (
+          <Badge variant="outline" className={recommendationBadgeTone.yes}>
+            {role.hire} hire
+          </Badge>
+        ) : null}
+        {role.maybe > 0 ? (
+          <Badge variant="outline" className="border-border/60 text-muted-foreground">
+            {role.maybe} maybe
+          </Badge>
+        ) : null}
+        {role.reject > 0 ? (
+          <span className="text-xs text-muted-foreground/70">{role.reject} reject</span>
+        ) : null}
+      </div>
+      <div className="mt-4">
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/dashboard/job-applicants/$jobId" params={{ jobId: role.jobId }}>
+            Review candidates
+            <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-3.5" />
+          </Link>
+        </Button>
+      </div>
+    </article>
   );
 }
 
@@ -303,55 +331,30 @@ function RolesAttentionSection({ roles }: { roles: RoleAttention[] }) {
         </p>
       </div>
 
-      <div className="space-y-2">
+      <div className={dashboardCardGridClass}>
         {roles.map((role) => (
-          <article
-            key={role.jobId}
-            className="flex flex-col gap-3 rounded-xl bg-muted/20 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
-          >
-            <div className="min-w-0 flex-1 space-y-2">
-              <p className="truncate font-medium">{role.title}</p>
-              <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                <span className="inline-flex items-center gap-1">
-                  <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} className="size-3.5" />
-                  {role.applicants} applicant{role.applicants === 1 ? "" : "s"}
-                </span>
-                <span className="inline-flex items-center gap-1">
-                  <HugeiconsIcon icon={RankingIcon} strokeWidth={2} className="size-3.5" />
-                  {role.reportsReady} report{role.reportsReady === 1 ? "" : "s"} ready
-                </span>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                {role.strongHire > 0 ? (
-                  <Badge variant="outline" className={recommendationBadgeTone.strong_yes}>
-                    {role.strongHire} strong hire
-                  </Badge>
-                ) : null}
-                {role.hire > 0 ? (
-                  <Badge variant="outline" className={recommendationBadgeTone.yes}>
-                    {role.hire} hire
-                  </Badge>
-                ) : null}
-                {role.maybe > 0 ? (
-                  <Badge variant="outline" className="border-border/60 text-muted-foreground">
-                    {role.maybe} maybe
-                  </Badge>
-                ) : null}
-                {role.reject > 0 ? (
-                  <span className="text-xs text-muted-foreground/70">{role.reject} reject</span>
-                ) : null}
-              </div>
-            </div>
-            <Button variant="outline" size="sm" asChild className="shrink-0">
-              <Link to="/dashboard/job-applicants/$jobId" params={{ jobId: role.jobId }}>
-                Review candidates
-                <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-3.5" />
-              </Link>
-            </Button>
-          </article>
+          <RoleAttentionCard key={role.jobId} role={role} />
         ))}
       </div>
     </section>
+  );
+}
+
+function RecentReportCard({ report }: { report: DashboardCandidateReport }) {
+  return (
+    <article className="flex min-h-44 flex-col rounded-xl bg-muted/15 p-4">
+      <RecommendationBadge recommendation={report.recommendation} />
+      <div className="mt-3 min-w-0 space-y-1">
+        <h3 className="truncate text-base font-semibold tracking-tight">{report.candidateName}</h3>
+        <p className="truncate text-xs text-muted-foreground">{report.jobTitle}</p>
+      </div>
+      <p className="mt-2 flex-1 text-xs text-muted-foreground">
+        Generated {formatRelativeTime(report.releasedAt)}
+      </p>
+      <div className="mt-4">
+        <ReviewButton applicationId={report.applicationId} label="Open report" />
+      </div>
+    </article>
   );
 }
 
@@ -375,46 +378,23 @@ function RecentActivitySection({
         </p>
       </div>
 
-      <ul className="divide-y divide-border/40 rounded-xl bg-muted/15">
-        {evaluatingCount > 0 ? (
-          <li className="flex items-center justify-between gap-4 px-5 py-3.5">
-            <div className="flex min-w-0 items-center gap-3">
-              <span className="size-1.5 shrink-0 rounded-full bg-warning" aria-hidden />
-              <p className="text-sm text-muted-foreground">
-                <span className="font-mono font-medium text-foreground">{evaluatingCount}</span>{" "}
-                candidate{evaluatingCount === 1 ? "" : "s"} currently being evaluated
-              </p>
-            </div>
-          </li>
-        ) : null}
-        {reports.map((report) => (
-          <li
-            key={report.applicationId}
-            className="flex flex-col gap-3 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between"
-          >
-            <div className="flex min-w-0 items-start gap-3">
-              <span className="mt-2 size-1.5 shrink-0 rounded-full bg-border" aria-hidden />
-              <div className="min-w-0 space-y-1">
-                <RecommendationBadge recommendation={report.recommendation} />
-                <p className="truncate text-sm font-medium">{report.candidateName}</p>
-                <p className="truncate text-xs text-muted-foreground">{report.jobTitle}</p>
-                <p className="text-xs text-muted-foreground">
-                  Generated {formatRelativeTime(report.releasedAt)}
-                </p>
-              </div>
-            </div>
-            <Button variant="outline" size="sm" asChild className="shrink-0">
-              <Link
-                to="/dashboard/applicant-reports/$applicationId"
-                params={{ applicationId: report.applicationId }}
-              >
-                Open report
-                <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-3.5" />
-              </Link>
-            </Button>
-          </li>
-        ))}
-      </ul>
+      {evaluatingCount > 0 ? (
+        <div className="flex items-center gap-2 rounded-xl bg-warning/10 px-4 py-3 text-sm text-muted-foreground">
+          <span className="size-1.5 shrink-0 rounded-full bg-warning" aria-hidden />
+          <span>
+            <span className="font-mono font-medium text-foreground">{evaluatingCount}</span>{" "}
+            candidate{evaluatingCount === 1 ? "" : "s"} currently being evaluated
+          </span>
+        </div>
+      ) : null}
+
+      {reports.length > 0 ? (
+        <div className={dashboardCardGridClass}>
+          {reports.map((report) => (
+            <RecentReportCard key={report.applicationId} report={report} />
+          ))}
+        </div>
+      ) : null}
     </section>
   );
 }

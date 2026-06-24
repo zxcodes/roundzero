@@ -72,11 +72,11 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
         .filter((candidate) => candidate.applicationStatus === "evaluated")
         .sort((a, b) => b.overallScore - a.overallScore);
 
-      const awaitingReview = allAwaitingReview.slice(0, 3);
+      const awaitingReview = allAwaitingReview.slice(0, 6);
 
       const recentReports = [...candidates]
         .sort((a, b) => b.releasedAt.getTime() - a.releasedAt.getTime())
-        .slice(0, 5);
+        .slice(0, 6);
 
       const rolesNeedingAttention = buildRoleAttention(jobsWithPipeline, candidates).slice(0, 6);
 
