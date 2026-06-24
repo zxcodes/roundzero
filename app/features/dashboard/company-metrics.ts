@@ -1,6 +1,6 @@
 import type { getReleasedReportsForCompanyDashboardRow } from "@/features/dashboard/queries/queries_sql";
 import type { getJobsWithPipelineByCompanyIdRow } from "@/features/jobs/queries/queries_sql";
-import { getOverallScore, type ReportData, reportScoresSchema } from "@/features/reports/schemas";
+import { getOverallScore, reportScoresSchema } from "@/features/reports/schemas";
 import { type Recommendation, recommendationSchema } from "@/shared/enums";
 
 export type DashboardCandidateReport = {
@@ -248,12 +248,4 @@ export const dashboardRecommendationLabels: Record<Recommendation, string> = {
   yes: "Hire",
   lean_no: "Maybe",
   no: "Reject",
-};
-
-export const compareDimensionLabels: Record<keyof ReportData["scores"], string> = {
-  communication: "Communication",
-  problemSolving: "Reasoning",
-  ownership: "Ownership",
-  roleFit: "Relevant experience",
-  overall: "Overall",
 };
