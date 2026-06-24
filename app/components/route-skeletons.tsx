@@ -417,7 +417,7 @@ function CompanyJobsListSkeleton() {
           <Skeleton className="h-8 w-24 rounded-md" />
         </div>
 
-        <div className="overflow-hidden rounded-xl border">
+        <div className="min-w-0 rounded-xl border">
           <div className="border-b bg-muted/30 px-4 py-3">
             <div className="flex gap-8">
               <Skeleton className="h-3.5 w-12" />
