@@ -72,8 +72,6 @@ type CandidateSummary = {
 };
 
 type RecommendationMeta = {
-  label: string;
-  badge: string;
   scoreRing: string;
   scoreText: string;
   accent: string;
@@ -81,29 +79,21 @@ type RecommendationMeta = {
 
 const recommendationMeta: Record<Recommendation, RecommendationMeta> = {
   strong_yes: {
-    label: "Strong yes",
-    badge: "border-primary/20 bg-primary/5 text-foreground",
     scoreRing: "border-primary/20 bg-primary/5",
     scoreText: "text-foreground",
     accent: "bg-primary/60",
   },
   yes: {
-    label: "Yes",
-    badge: "border-border/70 bg-muted/30 text-foreground",
     scoreRing: "border-border/70 bg-muted/30",
     scoreText: "text-foreground",
     accent: "bg-muted-foreground/70",
   },
   lean_no: {
-    label: "Lean no",
-    badge: "border-border/70 bg-muted/30 text-foreground",
     scoreRing: "border-border/70 bg-muted/30",
     scoreText: "text-foreground",
     accent: "bg-muted-foreground/70",
   },
   no: {
-    label: "No",
-    badge: "border-border/70 bg-muted/30 text-foreground",
     scoreRing: "border-border/70 bg-muted/30",
     scoreText: "text-foreground",
     accent: "bg-muted-foreground/70",

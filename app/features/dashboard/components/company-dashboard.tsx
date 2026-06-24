@@ -9,14 +9,10 @@ import { Link } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
-import {
-  type DashboardCandidateReport,
-  dashboardRecommendationLabels,
-  type RoleAttention,
-} from "@/features/dashboard/company-metrics";
+import type { DashboardCandidateReport, RoleAttention } from "@/features/dashboard/company-metrics";
 import type { getDashboardMetrics } from "@/features/dashboard/server/functions";
 import { formatRelativeTime } from "@/shared/date";
-import { type Recommendation, recommendationBadgeTone } from "@/shared/enums";
+import { type Recommendation, recommendationBadgeTone, recommendationLabels } from "@/shared/enums";
 import { CANDIDATE_SCORE_MAX, formatCandidateScore } from "@/shared/score";
 
 type CompanyMetrics = Extract<Awaited<ReturnType<typeof getDashboardMetrics>>, { type: "company" }>;
@@ -44,7 +40,7 @@ function RecommendationBadge({
   const sizeClass = size === "lg" ? "px-3 py-1 text-sm" : "px-2.5 py-0.5 text-xs";
   return (
     <Badge variant="outline" className={`${recommendationBadgeTone[recommendation]} ${sizeClass}`}>
-      {dashboardRecommendationLabels[recommendation]}
+      {recommendationLabels[recommendation]}
     </Badge>
   );
 }
@@ -78,7 +74,7 @@ function HeroSection({ firstName, metrics }: { firstName: string; metrics: Compa
       ];
       if (heroSummary.strongHireAwaitingCount > 0) {
         lines.push(
-          `${heroSummary.strongHireAwaitingCount} Strong hire recommendation${heroSummary.strongHireAwaitingCount === 1 ? "" : "s"} need${heroSummary.strongHireAwaitingCount === 1 ? "s" : ""} your attention.`,
+          `${heroSummary.strongHireAwaitingCount} ${recommendationLabels.strong_yes.toLowerCase()} recommendation${heroSummary.strongHireAwaitingCount === 1 ? "" : "s"} need${heroSummary.strongHireAwaitingCount === 1 ? "s" : ""} your attention.`,
         );
       }
       return lines;
@@ -206,7 +202,7 @@ function AwaitingReviewSection({
           <h2 className="text-lg font-semibold tracking-tight">You&apos;re all caught up</h2>
         </div>
         <p className="mt-2 text-sm text-muted-foreground">
-          No candidates are waiting for a hire / reject decision right now.
+          No candidates are waiting for a shortlist or reject decision right now.
         </p>
         {activitySummary.length > 0 ? (
           <ul className="mt-6 space-y-2 border-t border-border/40 pt-6">
@@ -278,21 +274,23 @@ function RoleAttentionCard({ role }: { role: RoleAttention }) {
       <div className="mt-3 flex flex-1 flex-wrap items-start gap-1.5">
         {role.strongHire > 0 ? (
           <Badge variant="outline" className={recommendationBadgeTone.strong_yes}>
-            {role.strongHire} strong hire
+            {role.strongHire} {recommendationLabels.strong_yes.toLowerCase()}
           </Badge>
         ) : null}
         {role.hire > 0 ? (
           <Badge variant="outline" className={recommendationBadgeTone.yes}>
-            {role.hire} hire
+            {role.hire} {recommendationLabels.yes.toLowerCase()}
           </Badge>
         ) : null}
         {role.maybe > 0 ? (
           <Badge variant="outline" className="border-border/60 text-muted-foreground">
-            {role.maybe} maybe
+            {role.maybe} {recommendationLabels.lean_no.toLowerCase()}
           </Badge>
         ) : null}
         {role.reject > 0 ? (
-          <span className="text-xs text-muted-foreground/70">{role.reject} reject</span>
+          <span className="text-xs text-muted-foreground/70">
+            {role.reject} {recommendationLabels.no.toLowerCase()}
+          </span>
         ) : null}
       </div>
       <div className="mt-4">
