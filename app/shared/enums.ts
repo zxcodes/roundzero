@@ -270,10 +270,3 @@ export const recommendationBadgeTone: Record<Recommendation, string> = {
   lean_no: "border-warning/20 bg-warning/10 text-warning",
   no: "border-danger/20 bg-danger/10 text-danger",
 };
-
-export const recommendationSurfaceTone: Record<Recommendation, string> = {
-  strong_yes: "bg-success/60",
-  yes: "bg-info/60",
-  lean_no: "bg-warning/60",
-  no: "bg-danger/60",
-};

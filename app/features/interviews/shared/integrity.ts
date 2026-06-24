@@ -31,7 +31,6 @@ export const interviewIntegritySchema = z.object({
   messages: z.array(interviewIntegrityMessageRecordSchema),
 });
 
-export type IntegrityCopySource = z.infer<typeof integrityCopySourceSchema>;
 export type MessageIntegritySnapshot = z.infer<typeof messageIntegritySnapshotSchema>;
 export type InterviewIntegrity = z.infer<typeof interviewIntegritySchema>;
 export type IntegrityRiskLevel = "low" | "medium" | "high";
