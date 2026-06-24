@@ -6,6 +6,7 @@ import {
   type getInterviewContextById,
   updateInterviewMetadata,
 } from "@/features/interviews/queries/queries_sql";
+import { interviewIntegritySchema } from "@/features/interviews/shared/integrity";
 import { getJobById } from "@/features/jobs/queries/queries_sql";
 import { getPreEvaluationByApplicationId } from "@/features/pre-evaluations/queries/queries_sql";
 import { getModelDateContext, LIMITS, sanitizeUntrustedText } from "@/shared/ai-refine";
@@ -59,6 +60,7 @@ export const interviewMetadataSchema = z
     preEvaluationScore: z.number().nullable().optional(),
     contextState: interviewContextStateSchema.optional(),
     screeningCoverage: screeningCoverageSchema.optional(),
+    integrity: interviewIntegritySchema.optional(),
   })
   .loose();
 
