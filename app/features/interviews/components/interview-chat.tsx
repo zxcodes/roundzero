@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { InterviewTranscript } from "@/features/interviews/components/interview-transcript";
 import { CompletedInterviewBar } from "@/features/interviews/components/voice-assessment-panel";
+import type { MessageIntegritySnapshot } from "@/features/interviews/shared/integrity";
 
 type InterviewChatProps = {
   messages: Array<{
@@ -36,8 +37,15 @@ type InterviewChatProps = {
    */
   onContinueToVoice?: () => void;
   voiceCtaLabel?: string;
-  onSend: (content: string) => Promise<void>;
+  onSend: (content: string, integrity: MessageIntegritySnapshot) => Promise<void>;
 };
+
+const emptyComposeIntegrity = (): MessageIntegritySnapshot => ({
+  copyCount: 0,
+  pasteCount: 0,
+  pasteCharCount: 0,
+  submittedCharCount: 0,
+});
 
 export function InterviewChat({
   messages,
@@ -51,6 +59,7 @@ export function InterviewChat({
   onSend,
 }: InterviewChatProps) {
   const [content, setContent] = useState("");
+  const composeIntegrityRef = useRef<MessageIntegritySnapshot>(emptyComposeIntegrity());
   const transcriptRef = useRef<HTMLDivElement | null>(null);
   const transcriptEndRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
@@ -95,17 +104,27 @@ export function InterviewChat({
     }
   }, [isStreaming, canSend]);
 
-  const onSubmit = () => {
+  const onSubmit = async () => {
     const trimmed = content.trim();
     if (!trimmed || !canSend || isStreaming || isThinking) {
       return;
     }
 
-    void onSend(trimmed);
-    setContent("");
-    requestAnimationFrame(() => {
-      composerRef.current?.focus();
-    });
+    const integrity: MessageIntegritySnapshot = {
+      ...composeIntegrityRef.current,
+      submittedCharCount: trimmed.length,
+    };
+
+    try {
+      await onSend(trimmed, integrity);
+      composeIntegrityRef.current = emptyComposeIntegrity();
+      setContent("");
+      requestAnimationFrame(() => {
+        composerRef.current?.focus();
+      });
+    } catch {
+      // Parent surfaces the error; keep content and integrity counters for retry.
+    }
   };
 
   const onComposerKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -114,11 +133,27 @@ export function InterviewChat({
     }
 
     event.preventDefault();
-    onSubmit();
+    void onSubmit();
   };
 
   const onComposerChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setContent(event.target.value);
+  };
+
+  const onComposerCopy = () => {
+    composeIntegrityRef.current = {
+      ...composeIntegrityRef.current,
+      copyCount: composeIntegrityRef.current.copyCount + 1,
+    };
+  };
+
+  const onComposerPaste = (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const pasted = event.clipboardData.getData("text");
+    composeIntegrityRef.current = {
+      ...composeIntegrityRef.current,
+      pasteCount: composeIntegrityRef.current.pasteCount + 1,
+      pasteCharCount: composeIntegrityRef.current.pasteCharCount + pasted.length,
+    };
   };
 
   const onSendMouseDown = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -190,6 +225,8 @@ export function InterviewChat({
               ref={composerRef}
               value={content}
               onChange={onComposerChange}
+              onCopy={onComposerCopy}
+              onPaste={onComposerPaste}
               onKeyDown={onComposerKeyDown}
               placeholder={canSend ? "Write your answer..." : "Start the interview to answer"}
               disabled={!canSend || isThinking}

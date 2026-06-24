@@ -1,6 +1,9 @@
 import type { UIMessage } from "@tanstack/ai";
 import { fetchServerSentEvents, useChat } from "@tanstack/ai-react";
+import { useState } from "react";
+import { flushSync } from "react-dom";
 import type { getMyInterviewMessages } from "@/features/interviews/server/functions";
+import type { MessageIntegritySnapshot } from "@/features/interviews/shared/integrity";
 
 const readMessageText = (message: UIMessage) => {
   if (!Array.isArray(message.parts)) {
@@ -26,9 +29,14 @@ type InitialInterviewMessages = NonNullable<
 >["messages"];
 
 export function useInterviewChat(interviewId: string, initialMessages: InitialInterviewMessages) {
+  const [forwardedProps, setForwardedProps] = useState<{
+    interviewId: string;
+    messageIntegrity?: MessageIntegritySnapshot;
+  }>({ interviewId });
+
   const chat = useChat({
     connection: fetchServerSentEvents("/api/interview-chat"),
-    forwardedProps: { interviewId },
+    forwardedProps,
     initialMessages: initialMessages.map(
       (message): UIMessage => ({
         id: message.id,
@@ -73,9 +81,20 @@ export function useInterviewChat(interviewId: string, initialMessages: InitialIn
     lastMessage?.role === "assistant" && readMessageText(lastMessage).length > 0;
   const isThinking = chat.isLoading && !currentTurnHasAssistantText;
 
+  const sendMessage = async (content: string, integrity: MessageIntegritySnapshot) => {
+    flushSync(() => {
+      setForwardedProps({ interviewId, messageIntegrity: integrity });
+    });
+    try {
+      await chat.sendMessage(content);
+    } finally {
+      setForwardedProps({ interviewId });
+    }
+  };
+
   return {
     messages,
-    sendMessage: chat.sendMessage,
+    sendMessage,
     status: chat.status,
     isStreaming: chat.isLoading,
     isThinking,

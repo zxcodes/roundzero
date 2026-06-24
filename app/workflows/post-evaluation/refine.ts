@@ -21,6 +21,12 @@
 
 import { generateText, Output } from "ai";
 import { z } from "zod";
+import {
+  applyIntegrityScoreAdjustment,
+  getIntegrityInsight,
+  getIntegrityWeaknesses,
+  type InterviewIntegrity,
+} from "@/features/interviews/shared/integrity";
 import type { ScreeningCoverage } from "@/features/interviews/shared/runtime";
 import { reportSchema } from "@/features/reports/schemas";
 import type { AnswerAuthenticity } from "@/prompts/answer-authenticity";
@@ -95,12 +101,32 @@ const auditSchema = z
 
 type AuditOutput = z.infer<typeof auditSchema>;
 
+function appendIntegrityReportProse(
+  report: ReportDraft,
+  integrity?: InterviewIntegrity,
+): ReportDraft {
+  const weaknesses = getIntegrityWeaknesses(integrity);
+  const insight = getIntegrityInsight(integrity);
+  if (weaknesses.length === 0 && insight === null) {
+    return report;
+  }
+
+  return {
+    ...report,
+    weaknesses: cleanBullets([...report.weaknesses, ...weaknesses], { cap: MAX_WEAKNESSES }),
+    insights: cleanBullets(insight ? [...report.insights, insight] : report.insights, {
+      cap: MAX_INSIGHTS,
+    }),
+  };
+}
+
 function deterministicReportPass(
   draft: ReportDraft,
   transcript: string,
   customQuestions: string[],
   messages: ReadonlyArray<TranscriptMessage> = [],
   screeningCoverage: ScreeningCoverage = {},
+  integrity?: InterviewIntegrity,
 ): ReportDraft {
   const strengths = cleanBullets(draft.strengths, { cap: MAX_STRENGTHS });
   const weaknesses = cleanBullets(draft.weaknesses, { cap: MAX_WEAKNESSES });
@@ -169,9 +195,9 @@ function deterministicReportPass(
   // any dealbreaker forces the recommendation down.
   const communication = clampCandidateScore(draft.scores?.communication);
   const problemSolving = clampCandidateScore(draft.scores?.problemSolving);
-  const ownership = clampCandidateScore(draft.scores?.ownership);
+  let ownership = clampCandidateScore(draft.scores?.ownership);
   const roleFit = clampCandidateScore(draft.scores?.roleFit);
-  const cappedCommunication = evidence.length === 0 ? Math.min(communication, 5) : communication;
+  let cappedCommunication = evidence.length === 0 ? Math.min(communication, 5) : communication;
 
   let overall = recomputeOverall(
     [cappedCommunication, problemSolving, ownership, roleFit],
@@ -194,6 +220,20 @@ function deterministicReportPass(
     // No grounded evidence at all → can't justify a positive recommendation.
     recommendation = recommendation === "strong_yes" ? "lean_no" : recommendation;
   }
+
+  const integrityAdjustment = applyIntegrityScoreAdjustment(
+    {
+      communication: cappedCommunication,
+      ownership,
+      overall,
+      recommendation,
+    },
+    integrity,
+  );
+  cappedCommunication = integrityAdjustment.communication;
+  ownership = integrityAdjustment.ownership;
+  overall = integrityAdjustment.overall;
+  recommendation = integrityAdjustment.recommendation;
 
   const summary =
     typeof draft.summary === "string" && draft.summary.trim().length >= 20
@@ -309,6 +349,7 @@ export async function refineReport(args: {
   log: ReturnType<typeof createWorkflowLogger>;
   messages?: ReadonlyArray<TranscriptMessage>;
   screeningCoverage?: ScreeningCoverage;
+  integrity?: InterviewIntegrity;
 }): Promise<ReportDraft> {
   const deterministic = deterministicReportPass(
     args.draft,
@@ -316,6 +357,7 @@ export async function refineReport(args: {
     args.customQuestions,
     args.messages,
     args.screeningCoverage,
+    args.integrity,
   );
 
   const audit = await runLlmAudit({
@@ -332,7 +374,8 @@ export async function refineReport(args: {
     // schema rejects, fall back to the input so the workflow's outer error
     // handler can mark the application as evaluation_failed.
     const parsed = reportSchema.safeParse(deterministic);
-    return parsed.success ? deterministic : args.draft;
+    const base = parsed.success ? deterministic : args.draft;
+    return appendIntegrityReportProse(base, args.integrity);
   }
 
   // Merge: LLM owns the prose, deterministic pass owns the numbers / hard
@@ -355,9 +398,17 @@ export async function refineReport(args: {
     answerAuthenticity: deterministic.answerAuthenticity,
   };
 
-  const finalCleaned = deterministicReportPass(merged, args.transcript, args.customQuestions);
+  const finalCleaned = deterministicReportPass(
+    merged,
+    args.transcript,
+    args.customQuestions,
+    args.messages,
+    args.screeningCoverage,
+    args.integrity,
+  );
   const parsed = reportSchema.safeParse(finalCleaned);
-  return parsed.success ? finalCleaned : deterministic;
+  const base = parsed.success ? finalCleaned : deterministic;
+  return appendIntegrityReportProse(base, args.integrity);
 }
 
 // ─── Voice communication assessment refine ─────────────────────────────────
