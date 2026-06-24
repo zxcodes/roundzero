@@ -7,7 +7,7 @@ import {
   Loading03Icon,
   Location01Icon,
   MoneyBag02Icon,
-  MoreVerticalCircle01Icon,
+  MoreVerticalIcon,
   RankingIcon,
   Rocket01Icon,
   UserGroupIcon,
@@ -28,6 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -53,6 +54,25 @@ import {
 import { formatSalaryFull } from "@/shared/format";
 
 type JobDetail = NonNullable<Awaited<ReturnType<typeof getJob>>>;
+
+const jobToolbarChipClass = "h-8 gap-1.5 px-3 text-xs [&>svg]:size-3.5";
+
+export function JobMetaChip({
+  icon,
+  children,
+  variant = "secondary",
+}: {
+  icon: React.ReactNode;
+  children: React.ReactNode;
+  variant?: "secondary" | "outline";
+}) {
+  return (
+    <Badge variant={variant} className={jobToolbarChipClass}>
+      {icon}
+      {children}
+    </Badge>
+  );
+}
 
 export function CompanyJobActions({
   job,
@@ -138,7 +158,7 @@ export function CompanyJobActions({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex shrink-0 items-center gap-2">
       {isDraft ? (
         <Button size="sm" onClick={onPublish} disabled={publishJobMutation.isPending}>
           {publishJobMutation.isPending ? (
@@ -152,9 +172,13 @@ export function CompanyJobActions({
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" aria-label="More job actions">
-            <HugeiconsIcon icon={MoreVerticalCircle01Icon} strokeWidth={2} className="size-4" />
+          <Button variant="outline" size="sm" aria-label="Job actions">
             Manage
+            <HugeiconsIcon
+              icon={MoreVerticalIcon}
+              strokeWidth={2}
+              className="size-3.5 opacity-70"
+            />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
