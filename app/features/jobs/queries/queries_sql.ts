@@ -156,7 +156,12 @@ SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.screening_q
        count(a.id) FILTER (WHERE a.status = 'evaluated_held')::int AS evaluated_held_count,
        count(a.id) FILTER (WHERE a.status = 'evaluated')::int AS evaluated_count,
        count(a.id) FILTER (WHERE a.status = 'shortlisted')::int AS shortlisted_count,
-       count(a.id) FILTER (WHERE a.status = 'rejected')::int AS rejected_count
+       count(a.id) FILTER (WHERE a.status = 'rejected')::int AS rejected_count,
+       (SELECT count(*)::int
+        FROM reports r
+        JOIN applications a2 ON a2.id = r.application_id
+        WHERE a2.job_id = j.id
+          AND r.released_at IS NOT NULL) AS reports_ready_count
 FROM jobs j
 LEFT JOIN applications a ON a.job_id = j.id
 WHERE j.company_id = $1
@@ -200,6 +205,7 @@ export interface getJobsWithPipelineByCompanyIdRow {
     evaluatedCount: number;
     shortlistedCount: number;
     rejectedCount: number;
+    reportsReadyCount: number;
 }
 
 export async function getJobsWithPipelineByCompanyId(sql: Sql, args: getJobsWithPipelineByCompanyIdArgs): Promise<getJobsWithPipelineByCompanyIdRow[]> {
@@ -234,7 +240,8 @@ export async function getJobsWithPipelineByCompanyId(sql: Sql, args: getJobsWith
         evaluatedHeldCount: row[27],
         evaluatedCount: row[28],
         shortlistedCount: row[29],
-        rejectedCount: row[30]
+        rejectedCount: row[30],
+        reportsReadyCount: row[31]
     }));
 }
 

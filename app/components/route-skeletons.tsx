@@ -422,7 +422,8 @@ function CompanyJobsListSkeleton() {
             <div className="flex gap-8">
               <Skeleton className="h-3.5 w-12" />
               <Skeleton className="h-3.5 w-16" />
-              <Skeleton className="h-3.5 w-10" />
+              <Skeleton className="h-3.5 w-16" />
+              <Skeleton className="h-3.5 w-14" />
               <Skeleton className="h-3.5 w-12" />
               <Skeleton className="h-3.5 w-16" />
               <Skeleton className="ml-auto h-3.5 w-14" />
@@ -432,8 +433,9 @@ function CompanyJobsListSkeleton() {
             <div key={i} className="flex items-center gap-8 border-b px-4 py-3.5 last:border-0">
               <Skeleton className="h-4 w-40" />
               <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-8" />
+              <Skeleton className="h-4 w-8" />
               <Skeleton className="h-4 w-20" />
-              <Skeleton className="h-5 w-14 rounded-full" />
               <Skeleton className="h-4 w-20" />
               <div className="ml-auto flex gap-1">
                 <Skeleton className="h-7 w-20 rounded-md" />
