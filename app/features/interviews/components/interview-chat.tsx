@@ -12,7 +12,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { InterviewTranscript } from "@/features/interviews/components/interview-transcript";
 import { CompletedInterviewBar } from "@/features/interviews/components/voice-assessment-panel";
-import type { MessageIntegritySnapshot } from "@/features/interviews/shared/integrity";
+import {
+  appendCopySource,
+  emptyComposeIntegritySnapshot,
+  type MessageIntegritySnapshot,
+} from "@/features/interviews/shared/integrity";
 
 type InterviewChatProps = {
   messages: Array<{
@@ -40,13 +44,6 @@ type InterviewChatProps = {
   onSend: (content: string, integrity: MessageIntegritySnapshot) => Promise<void>;
 };
 
-const emptyComposeIntegrity = (): MessageIntegritySnapshot => ({
-  copyCount: 0,
-  pasteCount: 0,
-  pasteCharCount: 0,
-  submittedCharCount: 0,
-});
-
 export function InterviewChat({
   messages,
   canSend,
@@ -59,7 +56,7 @@ export function InterviewChat({
   onSend,
 }: InterviewChatProps) {
   const [content, setContent] = useState("");
-  const composeIntegrityRef = useRef<MessageIntegritySnapshot>(emptyComposeIntegrity());
+  const composeIntegrityRef = useRef<MessageIntegritySnapshot>(emptyComposeIntegritySnapshot());
   const transcriptRef = useRef<HTMLDivElement | null>(null);
   const transcriptEndRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
@@ -114,16 +111,22 @@ export function InterviewChat({
       ...composeIntegrityRef.current,
       submittedCharCount: trimmed.length,
     };
+    const integrityBackup: MessageIntegritySnapshot = {
+      ...integrity,
+      copiedFrom: integrity.copiedFrom.map((entry) => ({ ...entry })),
+    };
+
+    composeIntegrityRef.current = emptyComposeIntegritySnapshot();
+    setContent("");
 
     try {
       await onSend(trimmed, integrity);
-      composeIntegrityRef.current = emptyComposeIntegrity();
-      setContent("");
       requestAnimationFrame(() => {
         composerRef.current?.focus();
       });
     } catch {
-      // Parent surfaces the error; keep content and integrity counters for retry.
+      composeIntegrityRef.current = integrityBackup;
+      setContent(trimmed);
     }
   };
 
@@ -140,13 +143,6 @@ export function InterviewChat({
     setContent(event.target.value);
   };
 
-  const onComposerCopy = () => {
-    composeIntegrityRef.current = {
-      ...composeIntegrityRef.current,
-      copyCount: composeIntegrityRef.current.copyCount + 1,
-    };
-  };
-
   const onComposerPaste = (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
     const pasted = event.clipboardData.getData("text");
     composeIntegrityRef.current = {
@@ -154,6 +150,14 @@ export function InterviewChat({
       pasteCount: composeIntegrityRef.current.pasteCount + 1,
       pasteCharCount: composeIntegrityRef.current.pasteCharCount + pasted.length,
     };
+  };
+
+  const onCopyFromMessage = (messageId: string, charCount: number) => {
+    composeIntegrityRef.current = appendCopySource(
+      composeIntegrityRef.current,
+      messageId,
+      charCount,
+    );
   };
 
   const onSendMouseDown = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -176,7 +180,11 @@ export function InterviewChat({
         )
       ) : (
         <ScrollArea ref={transcriptRef} className="min-h-0 flex-1">
-          <InterviewTranscript messages={messages} userLabel="You" />
+          <InterviewTranscript
+            messages={messages}
+            userLabel="You"
+            onCopyFromMessage={onCopyFromMessage}
+          />
           {isThinking ? <ThinkingBubble /> : null}
           <div ref={transcriptEndRef} className="h-1" />
         </ScrollArea>
@@ -225,7 +233,6 @@ export function InterviewChat({
               ref={composerRef}
               value={content}
               onChange={onComposerChange}
-              onCopy={onComposerCopy}
               onPaste={onComposerPaste}
               onKeyDown={onComposerKeyDown}
               placeholder={canSend ? "Write your answer..." : "Start the interview to answer"}
