@@ -161,7 +161,8 @@ function Hero() {
         <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-16">
           <div className="rise max-w-xl">
             <h1 className="text-[clamp(2.6rem,5.6vw,4.75rem)] font-bold leading-[1.02] tracking-[-0.035em]">
-              Review candidates, not <Highlight>resumes</Highlight>
+              Review candidates, <br />
+              not <Highlight>resumes</Highlight>.
             </h1>
             <p className="mt-6 max-w-lg text-[clamp(1.05rem,1.4vw,1.2rem)] leading-relaxed text-muted-foreground">
               Every applicant is evaluated through adaptive interviews and structured assessment.
