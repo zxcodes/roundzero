@@ -284,7 +284,7 @@ function ApplicantReportSummaryPage() {
               batchNavigation={batchNavigation}
               showFullLink={false}
             />
-            {emptyState}
+            <div className="pt-5">{emptyState}</div>
           </div>
         ) : (
           emptyState
@@ -299,7 +299,10 @@ function ApplicantReportSummaryPage() {
   const authenticity = report.answerAuthenticity;
   const showAuthenticity =
     authenticity?.riskLevel === "medium" || authenticity?.riskLevel === "high";
-
+  const authenticityRiskTone =
+    authenticity?.riskLevel === "high"
+      ? "border-danger/20 bg-danger/10 text-danger"
+      : "border-border/70 bg-muted/30 text-muted-foreground";
   return (
     <div className="space-y-6">
       {/* Hero — candidate, score, recommendation */}
@@ -310,7 +313,7 @@ function ApplicantReportSummaryPage() {
           showFullLink
         />
 
-        <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-5 pt-5 md:flex-row md:items-center md:justify-between">
           <div className="flex min-w-0 items-center gap-4">
             <Avatar className="size-14 shrink-0 ring-4 ring-background">
               <AvatarImage
@@ -330,10 +333,7 @@ function ApplicantReportSummaryPage() {
                   {applicationStatusLabels[currentStatus]}
                 </Badge>
                 {showAuthenticity ? (
-                  <Badge
-                    variant="outline"
-                    className="gap-1 border-amber-500/30 bg-amber-500/10 text-amber-600"
-                  >
+                  <Badge variant="outline" className={cn("gap-1", authenticityRiskTone)}>
                     <HugeiconsIcon icon={AiMagicIcon} strokeWidth={2} className="size-3" />
                     {authenticity.riskLevel === "high"
                       ? "Likely AI answers"
@@ -486,29 +486,27 @@ function ApplicantReportSummaryPage() {
 
       {/* Answer authenticity — surfaced prominently because it can flip a decision */}
       {showAuthenticity ? (
-        <section className="rounded-4xl border border-amber-500/30 bg-amber-500/3 px-5 py-5 shadow-sm md:px-7 md:py-6">
+        <section className="rounded-4xl border border-border/70 bg-card px-5 py-5 shadow-sm md:px-7 md:py-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="flex items-center gap-2.5">
-              <div className="flex size-7 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/10">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
                 <HugeiconsIcon
                   icon={AiMagicIcon}
                   strokeWidth={2}
-                  className="size-3.5 text-amber-600"
+                  className="size-4 text-muted-foreground"
                 />
-              </div>
-              <div>
-                <h2 className="text-[11px] font-bold uppercase tracking-[0.22em] text-amber-600">
+                <h2 className="text-[11px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
                   Answer authenticity ·{" "}
                   {authenticity.riskLevel === "high" ? "High risk" : "Medium risk"}
                 </h2>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  Independent check for AI-generated answers
-                </p>
               </div>
+              <p className="text-xs text-muted-foreground">
+                Independent check for AI-generated answers
+              </p>
             </div>
-            <span className="shrink-0 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 font-mono text-xs font-bold uppercase text-amber-600">
+            <Badge variant="outline" className="shrink-0 font-mono text-[11px] uppercase">
               {authenticity.signals.length} signal{authenticity.signals.length === 1 ? "" : "s"}
-            </span>
+            </Badge>
           </div>
           <p className="mt-3 text-sm leading-6 text-foreground">{authenticity.explanation}</p>
           {authenticity.signals.length > 0 ? (
@@ -730,9 +728,14 @@ function ReportActionsRow({
   }
 
   return (
-    <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
+    <div
+      className={cn(
+        "flex flex-wrap items-center gap-3 border-b border-border/60 pb-4",
+        batchNavigation ? "justify-between" : "justify-end",
+      )}
+    >
       {batchNavigation ? (
-        <>
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -778,7 +781,11 @@ function ReportActionsRow({
               </>
             )}
           </Button>
-          <Button asChild variant="ghost" size="sm">
+        </div>
+      ) : null}
+      <div className="flex flex-wrap items-center gap-2">
+        {batchNavigation ? (
+          <Button asChild variant="outline" size="sm">
             <Link
               to="/dashboard/job-batches/$batchId"
               params={{ batchId: batchNavigation.batchId }}
@@ -786,15 +793,15 @@ function ReportActionsRow({
               Batch
             </Link>
           </Button>
-        </>
-      ) : null}
-      {showFullLink ? (
-        <Button asChild variant="ghost" size="sm">
-          <Link to="/dashboard/applicant-reports/$applicationId/full" params={{ applicationId }}>
-            Full audit
-          </Link>
-        </Button>
-      ) : null}
+        ) : null}
+        {showFullLink ? (
+          <Button asChild variant="outline" size="sm">
+            <Link to="/dashboard/applicant-reports/$applicationId/full" params={{ applicationId }}>
+              Full audit
+            </Link>
+          </Button>
+        ) : null}
+      </div>
     </div>
   );
 }
