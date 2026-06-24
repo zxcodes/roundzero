@@ -202,7 +202,7 @@ function CompanyJobsList({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Jobs</h2>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -310,11 +310,11 @@ function ActiveJobsTable({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border">
+    <div className="min-w-0 rounded-xl border">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Title</TableHead>
+            <TableHead className="min-w-48">Title</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Pipeline</TableHead>
             <TableHead>Created</TableHead>
@@ -334,7 +334,7 @@ function ActiveJobsTable({
 
             return (
               <TableRow key={job.id}>
-                <TableCell>
+                <TableCell className="whitespace-normal">
                   <div className="space-y-0.5">
                     <Link
                       to="/dashboard/job-applicants/$jobId"
@@ -364,7 +364,7 @@ function ActiveJobsTable({
                     ) : null}
                   </div>
                 </TableCell>
-                <TableCell>
+                <TableCell className="whitespace-normal">
                   <PipelineSummary job={job} />
                 </TableCell>
                 <TableCell className="font-mono text-xs text-muted-foreground">
@@ -450,17 +450,17 @@ function PipelineSummary({ job }: { job: PipelineJob }) {
   const activeSegments = pipelineSegments.filter((s) => job[s.key] > 0);
 
   return (
-    <div className="flex items-center gap-2">
-      {activeSegments.map((segment, i) => (
-        <span
-          key={segment.key}
-          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"
-        >
-          {i > 0 ? <span className="text-border">·</span> : null}
-          <span className={`size-1.5 rounded-full ${segment.tone}`} />
-          <span className="tabular-nums">{job[segment.key]}</span>
-          {segment.label.toLowerCase()}
-        </span>
+    <div className="flex max-w-xs flex-wrap items-center gap-1.5">
+      {activeSegments.map((segment) => (
+        <Tooltip key={segment.key}>
+          <TooltipTrigger asChild>
+            <span className="inline-flex items-center gap-1 rounded-md bg-muted/40 px-1.5 py-0.5 text-xs text-muted-foreground">
+              <span className={`size-1.5 rounded-full ${segment.tone}`} />
+              <span className="font-mono tabular-nums">{job[segment.key]}</span>
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>{segment.label}</TooltipContent>
+        </Tooltip>
       ))}
     </div>
   );
@@ -496,11 +496,11 @@ function ArchivedJobsTable({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border">
+    <div className="min-w-0 rounded-xl border">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Title</TableHead>
+            <TableHead className="min-w-48">Title</TableHead>
             <TableHead>Location</TableHead>
             <TableHead>Type</TableHead>
             <TableHead>Archived</TableHead>
@@ -510,7 +510,7 @@ function ArchivedJobsTable({
         <TableBody>
           {jobs.map((job) => (
             <TableRow key={job.id} className="opacity-70">
-              <TableCell className="font-medium">
+              <TableCell className="whitespace-normal font-medium">
                 <Link
                   to="/dashboard/job-applicants/$jobId"
                   params={{ jobId: job.id }}
