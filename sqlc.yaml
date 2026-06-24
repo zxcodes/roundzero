@@ -113,3 +113,12 @@ sql:
         options:
           runtime: node
           driver: postgres
+  - schema: "db/migrations"
+    queries: "app/features/dashboard/queries/queries.sql"
+    engine: postgresql
+    codegen:
+      - out: app/features/dashboard/queries
+        plugin: ts
+        options:
+          runtime: node
+          driver: postgres
