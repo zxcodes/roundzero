@@ -1,9 +1,21 @@
 import { z } from "zod";
 
 const MAX_INTEGRITY_EVENT_COUNT = 100;
+const MAX_COPY_SOURCES_PER_MESSAGE = 20;
+
+export const integrityCopySourceSchema = z.object({
+  // Transcript bubble id the candidate copied from. This is whatever id the
+  // chat client assigns: a DB UUID for messages hydrated from the server, or a
+  // client-generated id (e.g. `msg-...`) for messages streamed live this
+  // session. It's only an opaque correlation key for dedup/counting, so do NOT
+  // constrain it to a UUID — doing so 400s any send that copies from a live
+  // bubble.
+  messageId: z.string().min(1).max(128),
+  charCount: z.number().int().min(0),
+});
 
 export const messageIntegritySnapshotSchema = z.object({
-  copyCount: z.number().int().min(0),
+  copiedFrom: z.array(integrityCopySourceSchema),
   pasteCount: z.number().int().min(0),
   pasteCharCount: z.number().int().min(0),
   submittedCharCount: z.number().int().min(0),
@@ -14,12 +26,12 @@ export const interviewIntegrityMessageRecordSchema = messageIntegritySnapshotSch
 });
 
 export const interviewIntegritySchema = z.object({
-  copyCount: z.number().int().min(0),
   pasteCount: z.number().int().min(0),
   pasteCharCount: z.number().int().min(0),
   messages: z.array(interviewIntegrityMessageRecordSchema),
 });
 
+export type IntegrityCopySource = z.infer<typeof integrityCopySourceSchema>;
 export type MessageIntegritySnapshot = z.infer<typeof messageIntegritySnapshotSchema>;
 export type InterviewIntegrity = z.infer<typeof interviewIntegritySchema>;
 export type IntegrityRiskLevel = "low" | "medium" | "high";
@@ -31,32 +43,55 @@ export type IntegrityRisk = {
 };
 
 const emptyIntegrity = (): InterviewIntegrity => ({
-  copyCount: 0,
   pasteCount: 0,
   pasteCharCount: 0,
   messages: [],
 });
 
-const emptyIntegritySnapshot = (): MessageIntegritySnapshot => ({
-  copyCount: 0,
+export const emptyComposeIntegritySnapshot = (): MessageIntegritySnapshot => ({
+  copiedFrom: [],
   pasteCount: 0,
   pasteCharCount: 0,
   submittedCharCount: 0,
 });
 
 const sumIntegrityMessages = (messages: InterviewIntegrity["messages"]): InterviewIntegrity => {
-  let copyCount = 0;
   let pasteCount = 0;
   let pasteCharCount = 0;
 
   for (const entry of messages) {
-    copyCount += entry.copyCount;
     pasteCount += entry.pasteCount;
     pasteCharCount += entry.pasteCharCount;
   }
 
-  return { copyCount, pasteCount, pasteCharCount, messages };
+  return { pasteCount, pasteCharCount, messages };
 };
+
+export function appendCopySource(
+  snapshot: MessageIntegritySnapshot,
+  messageId: string,
+  charCount: number,
+): MessageIntegritySnapshot {
+  if (charCount <= 0) {
+    return snapshot;
+  }
+
+  const copiedFrom = [...snapshot.copiedFrom];
+  const existingIndex = copiedFrom.findIndex((entry) => entry.messageId === messageId);
+  if (existingIndex >= 0) {
+    const existing = copiedFrom[existingIndex];
+    if (existing) {
+      copiedFrom[existingIndex] = {
+        messageId,
+        charCount: existing.charCount + charCount,
+      };
+    }
+  } else if (copiedFrom.length < MAX_COPY_SOURCES_PER_MESSAGE) {
+    copiedFrom.push({ messageId, charCount });
+  }
+
+  return { ...snapshot, copiedFrom };
+}
 
 export function clampMessageIntegritySnapshot(
   snapshot: MessageIntegritySnapshot,
@@ -64,11 +99,19 @@ export function clampMessageIntegritySnapshot(
 ): MessageIntegritySnapshot {
   const submittedCharCount = messageText.length;
   if (submittedCharCount === 0) {
-    return emptyIntegritySnapshot();
+    return emptyComposeIntegritySnapshot();
   }
 
+  const copiedFrom = snapshot.copiedFrom
+    .slice(0, MAX_COPY_SOURCES_PER_MESSAGE)
+    .map((entry) => ({
+      messageId: entry.messageId,
+      charCount: Math.min(entry.charCount, submittedCharCount),
+    }))
+    .filter((entry) => entry.charCount > 0);
+
   return {
-    copyCount: Math.min(snapshot.copyCount, MAX_INTEGRITY_EVENT_COUNT),
+    copiedFrom,
     pasteCount: Math.min(snapshot.pasteCount, MAX_INTEGRITY_EVENT_COUNT),
     pasteCharCount: Math.min(snapshot.pasteCharCount, submittedCharCount),
     submittedCharCount,
@@ -79,6 +122,15 @@ const HIGH_INTEGRITY_WEAKNESS =
   "Multiple pasted answers were detected during the text interview, which weakens confidence that the responses were composed live.";
 const MEDIUM_INTEGRITY_WEAKNESS =
   "Some pasted content was detected during the text interview, which may reduce confidence in live ownership of the answers.";
+
+const totalCopiedChars = (integrity: InterviewIntegrity): number =>
+  integrity.messages.reduce(
+    (sum, entry) => sum + entry.copiedFrom.reduce((inner, source) => inner + source.charCount, 0),
+    0,
+  );
+
+const copySourceCount = (integrity: InterviewIntegrity): number =>
+  integrity.messages.reduce((sum, entry) => sum + entry.copiedFrom.length, 0);
 
 export function getIntegrityWeaknesses(integrity: InterviewIntegrity | undefined): string[] {
   const risk = assessIntegrityRisk(integrity);
@@ -131,11 +183,18 @@ export function assessIntegrityRisk(integrity: InterviewIntegrity | undefined): 
     return Math.max(max, entry.pasteCharCount / entry.submittedCharCount);
   }, 0);
 
+  const copiedSources = copySourceCount(integrity);
+  const copiedChars = totalCopiedChars(integrity);
+  const copyContext =
+    copiedSources > 0
+      ? ` Copied from ${copiedSources} transcript message(s) (${copiedChars} chars) while composing answers.`
+      : "";
+
   if (integrity.pasteCount >= 3 || pasteRatio >= 0.35 || maxMessagePasteRatio >= 0.6) {
     return {
       level: "high",
       pasteRatio,
-      explanation: `Detected ${integrity.pasteCount} paste event(s) covering about ${Math.round(pasteRatio * 100)}% of submitted answer text.`,
+      explanation: `Detected ${integrity.pasteCount} paste event(s) covering about ${Math.round(pasteRatio * 100)}% of submitted answer text.${copyContext}`,
     };
   }
 
@@ -143,15 +202,15 @@ export function assessIntegrityRisk(integrity: InterviewIntegrity | undefined): 
     return {
       level: "medium",
       pasteRatio,
-      explanation: `Detected ${integrity.pasteCount} paste event(s) covering about ${Math.round(pasteRatio * 100)}% of submitted answer text.`,
+      explanation: `Detected ${integrity.pasteCount} paste event(s) covering about ${Math.round(pasteRatio * 100)}% of submitted answer text.${copyContext}`,
     };
   }
 
-  if (integrity.copyCount > 0) {
+  if (copiedSources > 0) {
     return {
       level: "low",
       pasteRatio,
-      explanation: `Recorded ${integrity.copyCount} copy event(s) but no pasted answer content.`,
+      explanation: `Recorded copy from ${copiedSources} transcript message(s) but no pasted content in submitted answers.${copyContext}`,
     };
   }
 

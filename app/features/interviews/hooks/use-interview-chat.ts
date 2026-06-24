@@ -1,7 +1,6 @@
 import type { UIMessage } from "@tanstack/ai";
 import { fetchServerSentEvents, useChat } from "@tanstack/ai-react";
-import { useState } from "react";
-import { flushSync } from "react-dom";
+import { useMemo, useRef } from "react";
 import type { getMyInterviewMessages } from "@/features/interviews/server/functions";
 import type { MessageIntegritySnapshot } from "@/features/interviews/shared/integrity";
 
@@ -29,14 +28,27 @@ type InitialInterviewMessages = NonNullable<
 >["messages"];
 
 export function useInterviewChat(interviewId: string, initialMessages: InitialInterviewMessages) {
-  const [forwardedProps, setForwardedProps] = useState<{
-    interviewId: string;
-    messageIntegrity?: MessageIntegritySnapshot;
-  }>({ interviewId });
+  const pendingIntegrityRef = useRef<MessageIntegritySnapshot | null>(null);
+
+  const connection = useMemo(() => {
+    const base = fetchServerSentEvents("/api/interview-chat");
+    return {
+      connect: async function* (
+        messages: Parameters<typeof base.connect>[0],
+        data: Parameters<typeof base.connect>[1],
+        abortSignal: Parameters<typeof base.connect>[2],
+        runContext: Parameters<typeof base.connect>[3],
+      ) {
+        const messageIntegrity = pendingIntegrityRef.current;
+        const mergedData = messageIntegrity === null ? data : { ...(data ?? {}), messageIntegrity };
+        yield* base.connect(messages, mergedData, abortSignal, runContext);
+      },
+    };
+  }, []);
 
   const chat = useChat({
-    connection: fetchServerSentEvents("/api/interview-chat"),
-    forwardedProps,
+    connection,
+    forwardedProps: { interviewId },
     initialMessages: initialMessages.map(
       (message): UIMessage => ({
         id: message.id,
@@ -82,13 +94,11 @@ export function useInterviewChat(interviewId: string, initialMessages: InitialIn
   const isThinking = chat.isLoading && !currentTurnHasAssistantText;
 
   const sendMessage = async (content: string, integrity: MessageIntegritySnapshot) => {
-    flushSync(() => {
-      setForwardedProps({ interviewId, messageIntegrity: integrity });
-    });
+    pendingIntegrityRef.current = integrity;
     try {
       await chat.sendMessage(content);
     } finally {
-      setForwardedProps({ interviewId });
+      pendingIntegrityRef.current = null;
     }
   };
 
