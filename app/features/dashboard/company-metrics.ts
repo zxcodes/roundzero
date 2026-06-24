@@ -1,0 +1,259 @@
+import type { getReleasedReportsForCompanyDashboardRow } from "@/features/dashboard/queries/queries_sql";
+import type { getJobsWithPipelineByCompanyIdRow } from "@/features/jobs/queries/queries_sql";
+import { getOverallScore, type ReportData, reportScoresSchema } from "@/features/reports/schemas";
+import { type Recommendation, recommendationSchema } from "@/shared/enums";
+
+export type DashboardCandidateReport = {
+  applicationId: string;
+  jobId: string;
+  jobTitle: string;
+  candidateName: string;
+  overallScore: number;
+  recommendation: Recommendation;
+  confidence: string | null;
+  strengths: string[];
+  topConcern: string | null;
+  scores: {
+    communication: number;
+    problemSolving: number;
+    ownership: number;
+    roleFit: number;
+  };
+  releasedAt: Date;
+  applicationStatus: string;
+};
+
+export type RoleAttention = {
+  jobId: string;
+  title: string;
+  applicants: number;
+  reportsReady: number;
+  strongHire: number;
+  hire: number;
+  maybe: number;
+  reject: number;
+};
+
+export type CompanyActivityItem = {
+  id: string;
+  label: string;
+  occurredAt: Date;
+};
+
+export type HeroSummary = {
+  awaitingReviewCount: number;
+  strongHireAwaitingCount: number;
+  applicationsProcessed: number;
+  interviewsCompleted: number;
+  reportsReady: number;
+  evaluatingCount: number;
+  viewAllAwaitingJobId: string | null;
+};
+
+const parseStringArray = (value: unknown): string[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.filter((item): item is string => typeof item === "string");
+};
+
+const formatConfidence = (value: string | null | undefined) => {
+  if (!value) {
+    return null;
+  }
+  return value.charAt(0).toUpperCase() + value.slice(1);
+};
+
+export function mapReleasedReportRow(
+  row: getReleasedReportsForCompanyDashboardRow,
+): DashboardCandidateReport | null {
+  const parsedRecommendation = recommendationSchema.safeParse(row.recommendation);
+  if (!parsedRecommendation.success) {
+    return null;
+  }
+
+  const overallScore = getOverallScore(row.scores);
+  if (overallScore === null) {
+    return null;
+  }
+
+  const parsedScores = reportScoresSchema.safeParse(row.scores);
+  if (!parsedScores.success) {
+    return null;
+  }
+
+  const weaknesses = parseStringArray(row.weaknesses);
+
+  return {
+    applicationId: row.applicationId,
+    jobId: row.jobId,
+    jobTitle: row.jobTitle,
+    candidateName: row.candidateName,
+    overallScore: Math.round(overallScore * 10) / 10,
+    recommendation: parsedRecommendation.data,
+    confidence: formatConfidence(row.preEvaluationConfidence),
+    strengths: parseStringArray(row.strengths).slice(0, 3),
+    topConcern: weaknesses[0] ?? null,
+    scores: {
+      communication: parsedScores.data.communication,
+      problemSolving: parsedScores.data.problemSolving,
+      ownership: parsedScores.data.ownership,
+      roleFit: parsedScores.data.roleFit,
+    },
+    releasedAt: row.releasedAt ?? new Date(0),
+    applicationStatus: row.applicationStatus,
+  };
+}
+
+export function buildHeroSummary(
+  jobs: getJobsWithPipelineByCompanyIdRow[],
+  candidates: DashboardCandidateReport[],
+  awaitingReview: DashboardCandidateReport[],
+  activeBatches: { targetSize: number }[],
+): HeroSummary {
+  const applicationsProcessed = jobs.reduce((sum, job) => sum + job.totalApplicants, 0);
+  const interviewsCompleted = jobs.reduce(
+    (sum, job) =>
+      sum + job.evaluatedCount + job.evaluatedHeldCount + job.shortlistedCount + job.rejectedCount,
+    0,
+  );
+  const reportsReady = candidates.length;
+  const evaluatingCount = activeBatches.reduce((sum, batch) => sum + batch.targetSize, 0);
+
+  const jobCounts = new Map<string, number>();
+  for (const candidate of awaitingReview) {
+    jobCounts.set(candidate.jobId, (jobCounts.get(candidate.jobId) ?? 0) + 1);
+  }
+
+  let viewAllAwaitingJobId: string | null = null;
+  let topCount = 0;
+  for (const [jobId, count] of jobCounts) {
+    if (count > topCount) {
+      topCount = count;
+      viewAllAwaitingJobId = jobId;
+    }
+  }
+
+  return {
+    awaitingReviewCount: awaitingReview.length,
+    strongHireAwaitingCount: awaitingReview.filter(
+      (candidate) => candidate.recommendation === "strong_yes",
+    ).length,
+    applicationsProcessed,
+    interviewsCompleted,
+    reportsReady,
+    evaluatingCount,
+    viewAllAwaitingJobId,
+  };
+}
+
+export function buildRoleAttention(
+  jobs: getJobsWithPipelineByCompanyIdRow[],
+  candidates: DashboardCandidateReport[],
+): RoleAttention[] {
+  const openJobs = jobs.filter((job) => job.status === "open");
+
+  return openJobs
+    .map((job) => {
+      const roleCandidates = candidates.filter((candidate) => candidate.jobId === job.id);
+
+      return {
+        jobId: job.id,
+        title: job.title,
+        applicants: job.totalApplicants,
+        reportsReady: roleCandidates.length,
+        strongHire: roleCandidates.filter((c) => c.recommendation === "strong_yes").length,
+        hire: roleCandidates.filter((c) => c.recommendation === "yes").length,
+        maybe: roleCandidates.filter((c) => c.recommendation === "lean_no").length,
+        reject: roleCandidates.filter((c) => c.recommendation === "no").length,
+      };
+    })
+    .filter((role) => role.applicants > 0 || role.reportsReady > 0)
+    .sort((a, b) => {
+      if (b.reportsReady !== a.reportsReady) {
+        return b.reportsReady - a.reportsReady;
+      }
+      return b.applicants - a.applicants;
+    });
+}
+
+export function buildActivitySummary(
+  candidates: DashboardCandidateReport[],
+  recentApplications: {
+    applicationId: string;
+    status: string;
+    updatedAt: Date;
+    jobTitle: string;
+    candidateName: string;
+  }[],
+): CompanyActivityItem[] {
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const reportsToday = candidates.filter((c) => c.releasedAt >= startOfDay).length;
+  const shortlistedToday = recentApplications.filter(
+    (a) => a.status === "shortlisted" && a.updatedAt >= startOfDay,
+  ).length;
+  const rejectedToday = recentApplications.filter(
+    (a) => a.status === "rejected" && a.updatedAt >= startOfDay,
+  ).length;
+  const invitedToday = recentApplications.filter(
+    (a) => a.status === "interview_invited" && a.updatedAt >= startOfDay,
+  ).length;
+
+  const items: CompanyActivityItem[] = [];
+
+  if (reportsToday > 0) {
+    items.push({
+      id: "reports-today",
+      label: `${reportsToday} report${reportsToday === 1 ? "" : "s"} generated today`,
+      occurredAt: new Date(),
+    });
+  }
+  if (invitedToday > 0) {
+    items.push({
+      id: "invited-today",
+      label: `${invitedToday} candidate${invitedToday === 1 ? "" : "s"} moved to interview`,
+      occurredAt: new Date(),
+    });
+  }
+  if (shortlistedToday > 0) {
+    items.push({
+      id: "shortlisted-today",
+      label: `${shortlistedToday} candidate${shortlistedToday === 1 ? "" : "s"} shortlisted`,
+      occurredAt: new Date(),
+    });
+  }
+  if (rejectedToday > 0) {
+    items.push({
+      id: "rejected-today",
+      label: `${rejectedToday} candidate${rejectedToday === 1 ? "" : "s"} rejected`,
+      occurredAt: new Date(),
+    });
+  }
+
+  if (items.length > 0) {
+    return items;
+  }
+
+  return recentApplications.slice(0, 4).map((item) => ({
+    id: item.applicationId,
+    label: `${item.candidateName} — ${item.jobTitle}`,
+    occurredAt: item.updatedAt,
+  }));
+}
+
+export const dashboardRecommendationLabels: Record<Recommendation, string> = {
+  strong_yes: "Strong hire",
+  yes: "Hire",
+  lean_no: "Maybe",
+  no: "Reject",
+};
+
+export const compareDimensionLabels: Record<keyof ReportData["scores"], string> = {
+  communication: "Communication",
+  problemSolving: "Reasoning",
+  ownership: "Ownership",
+  roleFit: "Relevant experience",
+  overall: "Overall",
+};
