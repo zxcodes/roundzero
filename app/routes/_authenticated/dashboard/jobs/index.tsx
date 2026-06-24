@@ -262,16 +262,6 @@ const isStaleJob = (job: PipelineJob) => {
   return age > STALE_DAYS * 24 * 60 * 60 * 1000;
 };
 
-const pipelineSegments = [
-  { key: "appliedCount", label: "Applied", tone: "bg-info" },
-  { key: "preScreeningCount", label: "Pre-screening", tone: "bg-pending" },
-  { key: "interviewInvitedCount", label: "Interview invited", tone: "bg-active" },
-  { key: "interviewInProgressCount", label: "In progress", tone: "bg-warning" },
-  { key: "evaluatedCount", label: "Evaluated", tone: "bg-success" },
-  { key: "shortlistedCount", label: "Shortlisted", tone: "bg-progress" },
-  { key: "rejectedCount", label: "Closed", tone: "bg-danger" },
-] as const;
-
 function ActiveJobsTable({
   jobs,
   onPublish,
@@ -316,7 +306,8 @@ function ActiveJobsTable({
           <TableRow>
             <TableHead className="min-w-48">Title</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Pipeline</TableHead>
+            <TableHead className="text-right">Applicants</TableHead>
+            <TableHead className="text-right">Reports</TableHead>
             <TableHead>Created</TableHead>
             <TableHead>Expires</TableHead>
             <TableHead className="text-right">Actions</TableHead>
@@ -364,8 +355,11 @@ function ActiveJobsTable({
                     ) : null}
                   </div>
                 </TableCell>
-                <TableCell className="whitespace-normal">
-                  <PipelineSummary job={job} />
+                <TableCell className="text-right font-mono text-sm tabular-nums">
+                  {job.totalApplicants > 0 ? job.totalApplicants : "—"}
+                </TableCell>
+                <TableCell className="text-right">
+                  <JobReportsCell job={job} />
                 </TableCell>
                 <TableCell className="font-mono text-xs text-muted-foreground">
                   {formatDate(job.createdAt)}
@@ -442,26 +436,21 @@ function ActiveJobsTable({
   );
 }
 
-function PipelineSummary({ job }: { job: PipelineJob }) {
-  if (job.totalApplicants === 0) {
+function JobReportsCell({ job }: { job: PipelineJob }) {
+  if (job.reportsReadyCount === 0 && job.evaluatedHeldCount === 0) {
     return <span className="text-xs text-muted-foreground">—</span>;
   }
 
-  const activeSegments = pipelineSegments.filter((s) => job[s.key] > 0);
-
   return (
-    <div className="flex max-w-xs flex-wrap items-center gap-1.5">
-      {activeSegments.map((segment) => (
-        <Tooltip key={segment.key}>
-          <TooltipTrigger asChild>
-            <span className="inline-flex items-center gap-1 rounded-md bg-muted/40 px-1.5 py-0.5 text-xs text-muted-foreground">
-              <span className={`size-1.5 rounded-full ${segment.tone}`} />
-              <span className="font-mono tabular-nums">{job[segment.key]}</span>
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>{segment.label}</TooltipContent>
-        </Tooltip>
-      ))}
+    <div className="space-y-0.5 text-right">
+      {job.reportsReadyCount > 0 ? (
+        <span className="font-mono text-sm tabular-nums">{job.reportsReadyCount}</span>
+      ) : (
+        <span className="text-xs text-muted-foreground">—</span>
+      )}
+      {job.evaluatedHeldCount > 0 ? (
+        <p className="text-[11px] text-muted-foreground">{job.evaluatedHeldCount} evaluating</p>
+      ) : null}
     </div>
   );
 }
