@@ -222,6 +222,7 @@
 - planetscale for db?
 - analytics? stretch? or just have a basic admin dashboard with stats (should be good enough for the start).
 - validate open router models using their api key in prod ci so we detect non existent models beforehand.
+- update brand identity, desc etc in google console. infact just create a new project.
 
 
 
