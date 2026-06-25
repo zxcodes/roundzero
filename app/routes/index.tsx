@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { companyLoginLinkForPlan } from "@/features/auth/signup-search";
 import {
   PLAN_CONFIGS,
   SUBSCRIPTION_PLANS,
@@ -1009,7 +1010,6 @@ type Tier = {
   period: string;
   description: string;
   cta: string;
-  href: string;
   featured?: boolean;
 };
 
@@ -1023,7 +1023,6 @@ const tiers: Tier[] = SUBSCRIPTION_PLANS.map((plan) => {
     period: config.periodLabel,
     description: config.description,
     cta: plan === "free" ? "Start free" : "Get started",
-    href: plan === "free" ? "/company/login" : "/company/login?redirect=/dashboard/billing",
     featured: plan === "growth",
   };
 });
@@ -1059,16 +1058,16 @@ function TierCta({ tier, className }: { tier: Tier; className?: string }) {
     </>
   );
   const classes = cn("w-full rounded-full", className);
-  if (tier.href.startsWith("mailto:")) {
+  if (tier.plan === "free") {
     return (
       <Button variant={tier.featured ? "default" : "outline"} className={classes} asChild>
-        <a href={tier.href}>{content}</a>
+        <Link to="/company/login">{content}</Link>
       </Button>
     );
   }
   return (
     <Button variant={tier.featured ? "default" : "outline"} className={classes} asChild>
-      <Link to={tier.href}>{content}</Link>
+      <Link {...companyLoginLinkForPlan(tier.plan)}>{content}</Link>
     </Button>
   );
 }

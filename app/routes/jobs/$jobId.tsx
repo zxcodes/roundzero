@@ -20,6 +20,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Empty, EmptyContent } from "@/components/ui/empty";
 import { CandidateApplySection } from "@/features/applications/components/candidate-apply-section";
 import { hasApplied } from "@/features/applications/server/functions";
+import { candidateLoginLink } from "@/features/auth/signup-search";
 import { getMyCandidateProfile } from "@/features/candidates/server/functions";
 import { JobStatusBadge } from "@/features/jobs/components/job-status-badge";
 import { getPublicJobById } from "@/features/jobs/server/functions";
@@ -466,7 +467,7 @@ function PublicJobCTA({
         </>
       ) : null}
       <Button size={variant === "header" ? "lg" : "default"} asChild>
-        <Link to="/candidate/login" search={{ redirect: dashboardJobPath }}>
+        <Link {...candidateLoginLink(dashboardJobPath)}>
           Log in to apply
           <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="ml-1.5 size-4" />
         </Link>
