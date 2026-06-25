@@ -18,6 +18,7 @@ const candidateStatusNotifications = new Set([
   "interview_invited",
   "shortlisted",
   "rejected",
+  "evaluated",
 ]);
 
 async function seedNotifications() {
@@ -37,19 +38,18 @@ async function seedNotifications() {
     JOIN jobs j ON j.id = a.job_id
     JOIN companies c ON c.id = j.company_id
     JOIN users u ON u.id = a.candidate_id
+    JOIN users owner ON owner.id = c.owner_id
     WHERE u.google_id LIKE 'rz-seed-candidate-google-%'
+      AND owner.google_id LIKE 'rz-seed-company-google-%'
     ORDER BY a.created_at ASC
   `;
 
-  const notifications = applications.flatMap((application) => {
-    const baseRows = [];
-
+  const notifications = applications.flatMap((application, index) => {
     if (!candidateStatusNotifications.has(application.status)) {
-      return baseRows;
+      return [];
     }
 
     return [
-      ...baseRows,
       {
         id: makeUuidFromSeed(`rz-seed-notification-candidate-${application.id}`),
         userId: application.candidateId,
@@ -61,7 +61,7 @@ async function seedNotifications() {
           companyName: application.companyName,
           status: application.status,
         },
-        readAt: application.status === "evaluated" ? null : application.updatedAt,
+        readAt: index % 3 === 0 ? application.updatedAt : null,
         createdAt: application.updatedAt,
       },
     ];
@@ -74,7 +74,7 @@ async function seedNotifications() {
         ${notification.id},
         ${notification.userId},
         ${notification.type},
-        ${notification.payload},
+        ${sql.json(notification.payload)},
         ${notification.readAt},
         ${notification.createdAt}
       )

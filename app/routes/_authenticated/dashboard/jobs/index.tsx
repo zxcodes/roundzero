@@ -202,7 +202,7 @@ function CompanyJobsList({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Jobs</h2>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -262,16 +262,6 @@ const isStaleJob = (job: PipelineJob) => {
   return age > STALE_DAYS * 24 * 60 * 60 * 1000;
 };
 
-const pipelineSegments = [
-  { key: "appliedCount", label: "Applied", tone: "bg-info" },
-  { key: "preScreeningCount", label: "Pre-screening", tone: "bg-pending" },
-  { key: "interviewInvitedCount", label: "Interview invited", tone: "bg-active" },
-  { key: "interviewInProgressCount", label: "In progress", tone: "bg-warning" },
-  { key: "evaluatedCount", label: "Evaluated", tone: "bg-success" },
-  { key: "shortlistedCount", label: "Shortlisted", tone: "bg-progress" },
-  { key: "rejectedCount", label: "Closed", tone: "bg-danger" },
-] as const;
-
 function ActiveJobsTable({
   jobs,
   onPublish,
@@ -310,13 +300,14 @@ function ActiveJobsTable({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border">
+    <div className="min-w-0 rounded-xl border">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Title</TableHead>
+            <TableHead className="min-w-48">Title</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Pipeline</TableHead>
+            <TableHead className="text-right">Applicants</TableHead>
+            <TableHead className="text-right">Reports</TableHead>
             <TableHead>Created</TableHead>
             <TableHead>Expires</TableHead>
             <TableHead className="text-right">Actions</TableHead>
@@ -334,7 +325,7 @@ function ActiveJobsTable({
 
             return (
               <TableRow key={job.id}>
-                <TableCell>
+                <TableCell className="whitespace-normal">
                   <div className="space-y-0.5">
                     <Link
                       to="/dashboard/job-applicants/$jobId"
@@ -364,8 +355,11 @@ function ActiveJobsTable({
                     ) : null}
                   </div>
                 </TableCell>
-                <TableCell>
-                  <PipelineSummary job={job} />
+                <TableCell className="text-right font-mono text-sm tabular-nums">
+                  {job.totalApplicants > 0 ? job.totalApplicants : "—"}
+                </TableCell>
+                <TableCell className="text-right">
+                  <JobReportsCell job={job} />
                 </TableCell>
                 <TableCell className="font-mono text-xs text-muted-foreground">
                   {formatDate(job.createdAt)}
@@ -442,26 +436,21 @@ function ActiveJobsTable({
   );
 }
 
-function PipelineSummary({ job }: { job: PipelineJob }) {
-  if (job.totalApplicants === 0) {
+function JobReportsCell({ job }: { job: PipelineJob }) {
+  if (job.reportsReadyCount === 0 && job.evaluatedHeldCount === 0) {
     return <span className="text-xs text-muted-foreground">—</span>;
   }
 
-  const activeSegments = pipelineSegments.filter((s) => job[s.key] > 0);
-
   return (
-    <div className="flex items-center gap-2">
-      {activeSegments.map((segment, i) => (
-        <span
-          key={segment.key}
-          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"
-        >
-          {i > 0 ? <span className="text-border">·</span> : null}
-          <span className={`size-1.5 rounded-full ${segment.tone}`} />
-          <span className="tabular-nums">{job[segment.key]}</span>
-          {segment.label.toLowerCase()}
-        </span>
-      ))}
+    <div className="space-y-0.5 text-right">
+      {job.reportsReadyCount > 0 ? (
+        <span className="font-mono text-sm tabular-nums">{job.reportsReadyCount}</span>
+      ) : (
+        <span className="text-xs text-muted-foreground">—</span>
+      )}
+      {job.evaluatedHeldCount > 0 ? (
+        <p className="text-[11px] text-muted-foreground">{job.evaluatedHeldCount} evaluating</p>
+      ) : null}
     </div>
   );
 }
@@ -496,11 +485,11 @@ function ArchivedJobsTable({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border">
+    <div className="min-w-0 rounded-xl border">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Title</TableHead>
+            <TableHead className="min-w-48">Title</TableHead>
             <TableHead>Location</TableHead>
             <TableHead>Type</TableHead>
             <TableHead>Archived</TableHead>
@@ -510,7 +499,7 @@ function ArchivedJobsTable({
         <TableBody>
           {jobs.map((job) => (
             <TableRow key={job.id} className="opacity-70">
-              <TableCell className="font-medium">
+              <TableCell className="whitespace-normal font-medium">
                 <Link
                   to="/dashboard/job-applicants/$jobId"
                   params={{ jobId: job.id }}

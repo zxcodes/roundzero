@@ -1,23 +1,59 @@
 import { createServerFn } from "@tanstack/react-start";
 import {
   countApplicationsByCandidate,
-  countApplicationsByCompany,
   getApplicationsByCandidate,
-  getApplicationsByJobs,
   getRecentApplicationsByCandidate,
 } from "@/features/applications/queries/queries_sql";
 import { hasShortlistNextSteps, parseShortlistDetails } from "@/features/applications/shortlist";
 import { getActiveBatchesByCompany } from "@/features/batches/queries/queries_sql";
 import { getCompanyByMemberUserId } from "@/features/companies/queries/membership-queries_sql";
+import {
+  buildActivitySummary,
+  buildHeroSummary,
+  buildRoleAttention,
+  mapReleasedReportRow,
+} from "@/features/dashboard/company-metrics";
+import {
+  getRecentCompanyApplicationActivity,
+  getReleasedReportsForCompanyDashboard,
+} from "@/features/dashboard/queries/queries_sql";
 import { getInterviewsByCandidate } from "@/features/interviews/queries/queries_sql";
 import { expireInterviewIfDue } from "@/features/interviews/server/expire";
-import {
-  countJobsByCompanyAndStatus,
-  getJobsWithPipelineByCompanyId,
-} from "@/features/jobs/queries/queries_sql";
-import { getOverallScore } from "@/features/reports/schemas";
+import { getJobsWithPipelineByCompanyId } from "@/features/jobs/queries/queries_sql";
 import { getDb } from "@/shared/db";
-import { authMiddleware } from "@/shared/middleware";
+import { authMiddleware, companyMiddleware } from "@/shared/middleware";
+
+const emptyCompanyDashboard = {
+  type: "company" as const,
+  awaitingReview: [],
+  rolesNeedingAttention: [],
+  recentReports: [],
+  activitySummary: [],
+  heroSummary: {
+    awaitingReviewCount: 0,
+    strongHireAwaitingCount: 0,
+    applicationsProcessed: 0,
+    interviewsCompleted: 0,
+    reportsReady: 0,
+    evaluatingCount: 0,
+    viewAllAwaitingJobId: null,
+  },
+};
+
+export const getAwaitingReviewReports = createServerFn({ method: "GET" })
+  .middleware([companyMiddleware])
+  .handler(async ({ context }) => {
+    const db = getDb();
+    const releasedRows = await getReleasedReportsForCompanyDashboard(db, {
+      companyId: context.company.id,
+    });
+
+    return releasedRows
+      .map(mapReleasedReportRow)
+      .filter((row): row is NonNullable<typeof row> => row !== null)
+      .filter((candidate) => candidate.applicationStatus === "evaluated")
+      .sort((a, b) => b.overallScore - a.overallScore);
+  });
 
 export const getDashboardMetrics = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
@@ -31,143 +67,53 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
     if (context.user.role === "company") {
       const company = await getCompanyByMemberUserId(db, { userId: context.userId });
       if (!company) {
-        return {
-          type: "company",
-          openRoles: 0,
-          draftJobs: 0,
-          totalJobs: 0,
-          totalApplicants: 0,
-          evaluatedAwaitingDecision: 0,
-          reportsCompleted: 0,
-          shortlistRate: 0,
-          roleHealth: [],
-          reportHighlights: [],
-          activeBatches: [],
-        };
+        return emptyCompanyDashboard;
       }
 
-      const [jobCounts, appCounts, jobsWithPipeline, activeBatches] = await Promise.all([
-        countJobsByCompanyAndStatus(db, { companyId: company.id }),
-        countApplicationsByCompany(db, { companyId: company.id }),
-        getJobsWithPipelineByCompanyId(db, { companyId: company.id }),
-        getActiveBatchesByCompany(db, { companyId: company.id }),
-      ]);
+      const [jobsWithPipeline, activeBatches, releasedRows, recentActivityRows] = await Promise.all(
+        [
+          getJobsWithPipelineByCompanyId(db, { companyId: company.id }),
+          getActiveBatchesByCompany(db, { companyId: company.id }),
+          getReleasedReportsForCompanyDashboard(db, { companyId: company.id }),
+          getRecentCompanyApplicationActivity(db, { companyId: company.id }),
+        ],
+      );
 
-      const roleHealth = jobsWithPipeline
-        .filter((job) => job.status === "open")
-        .map((job) => {
-          const releasedReports = job.evaluatedCount;
-          const backlog = job.evaluatedCount;
-          const shortlistRate =
-            releasedReports > 0 ? Math.round((job.shortlistedCount / releasedReports) * 100) : 0;
+      const candidates = releasedRows
+        .map(mapReleasedReportRow)
+        .filter((row): row is NonNullable<typeof row> => row !== null);
 
-          const now = Date.now();
-          const expiresAt = job.expiresAt ? job.expiresAt.getTime() : null;
-          const expiresInDays =
-            expiresAt && expiresAt > now
-              ? Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24))
-              : null;
+      const allAwaitingReview = candidates
+        .filter((candidate) => candidate.applicationStatus === "evaluated")
+        .sort((a, b) => b.overallScore - a.overallScore);
 
-          return {
-            jobId: job.id,
-            title: job.title,
-            applicants: job.totalApplicants,
-            applied: job.appliedCount,
-            preScreening: job.preScreeningCount,
-            queuedForBatch: job.queuedForBatchCount ?? 0,
-            invited: job.interviewInvitedCount,
-            inProgress: job.interviewInProgressCount,
-            evaluatedHeld: job.evaluatedHeldCount ?? 0,
-            evaluated: job.evaluatedCount,
-            shortlisted: job.shortlistedCount,
-            rejected: job.rejectedCount,
-            reportsCompleted: releasedReports,
-            finalReportTarget: job.finalReportTarget,
-            backlog,
-            shortlistRate,
-            expiresInDays,
-          };
-        })
-        .sort((a, b) => b.backlog - a.backlog);
+      const awaitingReview = allAwaitingReview.slice(0, 6);
 
-      const evaluatedAwaitingDecision = roleHealth.reduce((sum, role) => sum + role.backlog, 0);
-      const reportsCompleted = roleHealth.reduce((sum, role) => sum + role.reportsCompleted, 0);
-      const shortlistedTotal = roleHealth.reduce((sum, role) => sum + role.shortlisted, 0);
-      const shortlistRate =
-        reportsCompleted > 0 ? Math.round((shortlistedTotal / reportsCompleted) * 100) : 0;
+      const recentReports = [...candidates]
+        .sort((a, b) => b.releasedAt.getTime() - a.releasedAt.getTime())
+        .slice(0, 6);
 
-      const reportHighlights: {
-        applicationId: string;
-        jobId: string;
-        jobTitle: string;
-        candidateName: string;
-        candidateEmail: string;
-        recommendation: string;
-        overallScore: number | null;
-      }[] = [];
+      const rolesNeedingAttention = buildRoleAttention(jobsWithPipeline, candidates).slice(0, 6);
 
-      const topRoles = roleHealth.slice(0, 4);
-      const allJobApplicants =
-        topRoles.length > 0
-          ? await getApplicationsByJobs(db, { jobids: topRoles.map((r) => r.jobId) })
-          : [];
-      const appByJobId = new Map<string, (typeof allJobApplicants)[number][]>();
-      for (const app of allJobApplicants) {
-        const group = appByJobId.get(app.jobId);
-        if (group) {
-          group.push(app);
-        } else {
-          appByJobId.set(app.jobId, [app]);
-        }
-      }
+      const activitySummary = buildActivitySummary(candidates, recentActivityRows);
 
-      for (const role of topRoles) {
-        const jobApplicants = appByJobId.get(role.jobId) ?? [];
-
-        for (const applicant of jobApplicants) {
-          if (applicant.reportId === null || applicant.reportReleasedAt === null) {
-            continue;
-          }
-
-          const score = getOverallScore(applicant.reportScores);
-
-          reportHighlights.push({
-            applicationId: applicant.id,
-            jobId: role.jobId,
-            jobTitle: role.title,
-            candidateName: applicant.candidateName,
-            candidateEmail: applicant.candidateEmail,
-            recommendation: applicant.reportRecommendation ?? "unknown",
-            overallScore: score !== null ? Math.round(score * 10) / 10 : null,
-          });
-        }
-      }
-
-      reportHighlights.sort((a, b) => {
-        const scoreA = a.overallScore ?? 0;
-        const scoreB = b.overallScore ?? 0;
-        if (scoreA !== scoreB) {
-          return scoreB - scoreA;
-        }
-        return a.candidateName.localeCompare(b.candidateName);
-      });
+      const heroSummary = buildHeroSummary(
+        jobsWithPipeline,
+        candidates,
+        allAwaitingReview,
+        (activeBatches ?? []).map((batch) => ({ targetSize: batch.targetSize })),
+      );
 
       return {
-        type: "company",
-        openRoles: jobCounts?.openCount ?? 0,
-        draftJobs: jobCounts?.draftCount ?? 0,
-        totalJobs: jobCounts?.totalCount ?? 0,
-        totalApplicants: appCounts?.totalCount ?? 0,
-        evaluatedAwaitingDecision,
-        reportsCompleted,
-        shortlistRate,
-        roleHealth,
-        reportHighlights: reportHighlights.slice(0, 8),
-        activeBatches: activeBatches ?? [],
+        type: "company" as const,
+        awaitingReview,
+        rolesNeedingAttention,
+        recentReports,
+        activitySummary,
+        heroSummary,
       };
     }
 
-    // Candidate
     const counts = await countApplicationsByCandidate(db, { candidateId: context.userId });
 
     const [rawInterviews, rawApplications, recentApplications] = await Promise.all([
@@ -198,7 +144,6 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
         expiresAt: iv.expiresAt ?? null,
       }))
       .sort((a, b) => {
-        // Soonest expiry first; nulls (no expiry) last
         if (!a.expiresAt && !b.expiresAt) return 0;
         if (!a.expiresAt) return 1;
         if (!b.expiresAt) return -1;
