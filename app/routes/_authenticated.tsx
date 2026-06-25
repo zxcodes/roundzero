@@ -1,6 +1,11 @@
 import { createFileRoute, Outlet, redirect, useLocation } from "@tanstack/react-router";
 import { DashboardLayoutSkeleton } from "@/components/route-skeletons";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  parseSignupSearch,
+  redirectAfterSignup,
+  toSignupRouteSearch,
+} from "@/features/auth/signup-search";
 import { getMyCandidateProfile } from "@/features/candidates/server/functions";
 import {
   companyBootstrapQueryKey,
@@ -67,7 +72,10 @@ export const Route = createFileRoute("/_authenticated")({
         };
       case "new": {
         if (location.pathname !== "/onboarding/company") {
-          throw redirect({ to: "/onboarding/company" });
+          throw redirect({
+            to: "/onboarding/company",
+            search: toSignupRouteSearch(parseSignupSearch(location.search)),
+          });
         }
         return {
           membershipRole: null,
@@ -88,19 +96,18 @@ export const Route = createFileRoute("/_authenticated")({
     }
 
     const isOnboardingRoute = location.pathname.startsWith("/onboarding");
-    const redirectParam =
-      "redirect" in location.search ? String(location.search.redirect) : undefined;
-    const search = redirectParam ? { redirect: redirectParam } : {};
+    const signupSearch = parseSignupSearch(location.search);
+    const onboardingSearch = toSignupRouteSearch(signupSearch);
 
     if (user.role === "company") {
       const company = context.company;
       const onboarded = Boolean(company?.onboardingCompletedAt);
 
       if (context.hasCompanyWorkspace && !onboarded && !isOnboardingRoute) {
-        throw redirect({ to: "/onboarding/company", search });
+        throw redirect({ to: "/onboarding/company", search: onboardingSearch });
       }
       if (onboarded && isOnboardingRoute && location.pathname !== "/onboarding/no-workspace") {
-        throw redirect({ to: "/dashboard" });
+        throw redirect(redirectAfterSignup(signupSearch));
       }
 
       return {
@@ -118,10 +125,10 @@ export const Route = createFileRoute("/_authenticated")({
     const onboarded = Boolean(candidateProfile?.onboardingCompletedAt);
 
     if (!onboarded && !isOnboardingRoute) {
-      throw redirect({ to: "/onboarding/candidate", search });
+      throw redirect({ to: "/onboarding/candidate", search: onboardingSearch });
     }
     if (onboarded && isOnboardingRoute) {
-      throw redirect({ to: "/dashboard" });
+      throw redirect(redirectAfterSignup(signupSearch));
     }
 
     return {
