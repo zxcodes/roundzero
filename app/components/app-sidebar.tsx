@@ -31,51 +31,81 @@ import type { User } from "@/router";
 import type { CompanyMemberRole } from "@/shared/enums";
 import { Logo } from "./public-layout";
 
-const buildCompanyMain = (showBilling: boolean, showTeam: boolean) => [
-  {
-    title: "Overview",
-    url: "/dashboard",
-    icon: <HugeiconsIcon icon={House01Icon} strokeWidth={2} className="size-4" />,
-  },
-  {
-    title: "Jobs",
-    url: "/dashboard/jobs",
-    icon: <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} className="size-4" />,
-  },
-  {
-    title: "Awaiting review",
-    url: "/dashboard/awaiting-review",
-    icon: <HugeiconsIcon icon={RankingIcon} strokeWidth={2} className="size-4" />,
-  },
-  {
-    title: "Shortlisted",
-    url: "/dashboard/shortlisted",
-    icon: <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-4" />,
-  },
-  ...(showTeam
-    ? [
+type SidebarNavItem = {
+  title: string;
+  url: string;
+  icon: React.ReactNode;
+};
+
+type SidebarNavSection = {
+  label: string;
+  items: SidebarNavItem[];
+};
+
+const buildCompanyNavSections = (showBilling: boolean, showTeam: boolean): SidebarNavSection[] => {
+  const sections: SidebarNavSection[] = [
+    {
+      label: "Hiring",
+      items: [
         {
-          title: "Team",
-          url: "/dashboard/team",
-          icon: <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} className="size-4" />,
+          title: "Overview",
+          url: "/dashboard",
+          icon: <HugeiconsIcon icon={House01Icon} strokeWidth={2} className="size-4" />,
         },
-      ]
-    : []),
-  ...(showBilling
-    ? [
         {
-          title: "Billing",
-          url: "/dashboard/billing",
-          icon: <HugeiconsIcon icon={CreditCardIcon} strokeWidth={2} className="size-4" />,
+          title: "Jobs",
+          url: "/dashboard/jobs",
+          icon: <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} className="size-4" />,
         },
-      ]
-    : []),
-  {
-    title: "Settings",
-    url: "/dashboard/settings",
-    icon: <HugeiconsIcon icon={Setting06Icon} strokeWidth={2} className="size-4" />,
-  },
-];
+      ],
+    },
+    {
+      label: "Review",
+      items: [
+        {
+          title: "Awaiting review",
+          url: "/dashboard/awaiting-review",
+          icon: <HugeiconsIcon icon={RankingIcon} strokeWidth={2} className="size-4" />,
+        },
+        {
+          title: "Shortlisted",
+          url: "/dashboard/shortlisted",
+          icon: <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-4" />,
+        },
+      ],
+    },
+    {
+      label: "Company",
+      items: [
+        ...(showTeam
+          ? [
+              {
+                title: "Team",
+                url: "/dashboard/team",
+                icon: <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} className="size-4" />,
+              },
+            ]
+          : []),
+        ...(showBilling
+          ? [
+              {
+                title: "Billing",
+                url: "/dashboard/billing",
+                icon: <HugeiconsIcon icon={CreditCardIcon} strokeWidth={2} className="size-4" />,
+              },
+            ]
+          : []),
+        {
+          title: "Settings",
+          url: "/dashboard/settings",
+          icon: <HugeiconsIcon icon={Setting06Icon} strokeWidth={2} className="size-4" />,
+        },
+      ],
+    },
+  ];
+
+  return sections.filter((section) => section.items.length > 0);
+};
 
 const candidateMain = [
   {
@@ -117,9 +147,9 @@ export function AppSidebar({
 }) {
   const { signOut, isSigningOut } = useAuth();
   const canManageTeam = membershipRole === "owner" || membershipRole === "admin";
-  const mainItems = isCompany
-    ? buildCompanyMain(membershipRole === "owner", canManageTeam)
-    : candidateMain;
+  const navSections = isCompany
+    ? buildCompanyNavSections(membershipRole === "owner", canManageTeam)
+    : [{ label: "Candidate", items: candidateMain }];
 
   return (
     <Sidebar collapsible="offcanvas" {...props} variant="floating">
@@ -153,7 +183,7 @@ export function AppSidebar({
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <NavMain sections={[{ items: mainItems }]} />
+        <NavMain sections={navSections} />
       </SidebarContent>
 
       <SidebarFooter className="flex flex-col gap-2">
