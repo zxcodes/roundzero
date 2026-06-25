@@ -2,7 +2,7 @@ import { Briefcase01Icon, RankingIcon, UserGroupIcon } from "@hugeicons/core-fre
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link, notFound, redirect, useNavigate } from "@tanstack/react-router";
 import { zodValidator } from "@tanstack/zod-adapter";
-import { useState } from "react";
+
 import { z } from "zod";
 import { DashboardJobApplicantsSkeleton } from "@/components/route-skeletons";
 import { Badge } from "@/components/ui/badge";
@@ -37,8 +37,23 @@ const jobStatusLabels = {
 
 const searchDefaults = { tab: "applicants" } as const;
 
+const applicantsViewSchema = z.enum(["ready", "all"]);
+const applicantsFilterSchema = z.enum([
+  "all",
+  "screening",
+  "queued",
+  "active_interview",
+  "awaiting_decision",
+  "shortlisted",
+  "rejected",
+  "withdrawn",
+  "evaluation_failed",
+]);
+
 const jobApplicantsSearchSchema = z.object({
   tab: z.enum(["applicants", "posting"]).default(searchDefaults.tab).catch(searchDefaults.tab),
+  view: applicantsViewSchema.optional().catch(undefined),
+  filter: applicantsFilterSchema.optional().catch(undefined),
 });
 
 export const Route = createFileRoute("/_authenticated/dashboard/job-applicants/$jobId")({
@@ -80,10 +95,10 @@ type ApplicantsFilter =
 
 function JobApplicantsPage() {
   const { job, applicants, activeBatch } = Route.useLoaderData();
-  const { tab } = Route.useSearch();
+  const { tab, view: searchView, filter: searchFilter } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
-  const [view, setView] = useState<ApplicantsView>("ready");
-  const [filter, setFilter] = useState<ApplicantsFilter>("all");
+  const view: ApplicantsView = searchView ?? (searchFilter ? "all" : "ready");
+  const filter: ApplicantsFilter = searchFilter ?? "all";
 
   const requirements: string[] = Array.isArray(job.requirements) ? job.requirements : [];
 
@@ -97,10 +112,24 @@ function JobApplicantsPage() {
   };
 
   const onViewChange = (value: string) => {
-    setView(value as ApplicantsView);
+    const nextView = value as ApplicantsView;
+    void navigate({
+      search: (prev) => ({
+        ...prev,
+        view: nextView === "ready" ? undefined : nextView,
+        filter: nextView === "ready" ? undefined : prev.filter,
+      }),
+    });
   };
   const onFilterChange = (value: string) => {
-    setFilter(value as ApplicantsFilter);
+    const nextFilter = value as ApplicantsFilter;
+    void navigate({
+      search: (prev) => ({
+        ...prev,
+        view: "all",
+        filter: nextFilter === "all" ? undefined : nextFilter,
+      }),
+    });
   };
 
   const releasedReportApplicants = applicants.filter(

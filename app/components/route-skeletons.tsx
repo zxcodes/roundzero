@@ -1238,6 +1238,59 @@ export function DashboardShortlistedSkeleton() {
 }
 
 /**
+ * Skeleton for /dashboard/awaiting-review — accordion role sections with candidate cards.
+ */
+export function DashboardAwaitingReviewSkeleton() {
+  return (
+    <div className="space-y-10">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="space-y-2">
+          <Skeleton className="h-6 w-40" />
+          <Skeleton className="h-4 w-full max-w-md" />
+        </div>
+        <Skeleton className="h-4 w-16" />
+      </div>
+
+      <div className="space-y-3">
+        {Array.from({ length: 2 }).map((_, sectionIndex) => (
+          <div
+            key={`awaiting-section-${sectionIndex}`}
+            className="overflow-hidden rounded-2xl border bg-card"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 md:px-6">
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-52" />
+                <Skeleton className="h-3 w-36" />
+              </div>
+              <Skeleton className="h-5 w-8 rounded-full" />
+            </div>
+            <div className="px-5 pb-5 md:px-6">
+              <div className="divide-y divide-border/50 overflow-hidden rounded-3xl border border-border/60">
+                {Array.from({ length: 2 }).map((_, rowIndex) => (
+                  <div
+                    key={`awaiting-row-${sectionIndex}-${rowIndex}`}
+                    className="px-4 py-4 md:px-5"
+                  >
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-48" />
+                      </div>
+                      <Skeleton className="h-6 w-28 shrink-0 rounded-full" />
+                      <Skeleton className="h-8 w-28 rounded-4xl" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
  * Skeleton for /dashboard/application/$applicationId — candidate application detail.
  * Matches: back link + header (company, title, badge) + date + status pipeline + interview card + actions.
  */

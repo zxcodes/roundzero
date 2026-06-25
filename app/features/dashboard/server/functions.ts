@@ -21,7 +21,7 @@ import { getInterviewsByCandidate } from "@/features/interviews/queries/queries_
 import { expireInterviewIfDue } from "@/features/interviews/server/expire";
 import { getJobsWithPipelineByCompanyId } from "@/features/jobs/queries/queries_sql";
 import { getDb } from "@/shared/db";
-import { authMiddleware } from "@/shared/middleware";
+import { authMiddleware, companyMiddleware } from "@/shared/middleware";
 
 const emptyCompanyDashboard = {
   type: "company" as const,
@@ -39,6 +39,21 @@ const emptyCompanyDashboard = {
     viewAllAwaitingJobId: null,
   },
 };
+
+export const getAwaitingReviewReports = createServerFn({ method: "GET" })
+  .middleware([companyMiddleware])
+  .handler(async ({ context }) => {
+    const db = getDb();
+    const releasedRows = await getReleasedReportsForCompanyDashboard(db, {
+      companyId: context.company.id,
+    });
+
+    return releasedRows
+      .map(mapReleasedReportRow)
+      .filter((row): row is NonNullable<typeof row> => row !== null)
+      .filter((candidate) => candidate.applicationStatus === "evaluated")
+      .sort((a, b) => b.overallScore - a.overallScore);
+  });
 
 export const getDashboardMetrics = createServerFn({ method: "GET" })
   .middleware([authMiddleware])

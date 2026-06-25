@@ -208,6 +208,8 @@ export function resolveDashboardBreadcrumbs(
       return flatCrumb(isCompany ? "Jobs" : "Browse jobs");
     case "/_authenticated/dashboard/applications":
       return flatCrumb("My applications");
+    case "/_authenticated/dashboard/awaiting-review":
+      return flatCrumb("Awaiting review");
     case "/_authenticated/dashboard/shortlisted":
       return flatCrumb("Shortlisted");
     case "/_authenticated/dashboard/billing":

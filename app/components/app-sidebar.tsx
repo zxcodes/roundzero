@@ -5,6 +5,7 @@ import {
   CheckmarkCircle02Icon,
   CreditCardIcon,
   House01Icon,
+  RankingIcon,
   Search01Icon,
   Setting06Icon,
   UserGroupIcon,
@@ -40,6 +41,11 @@ const buildCompanyMain = (showBilling: boolean, showTeam: boolean) => [
     title: "Jobs",
     url: "/dashboard/jobs",
     icon: <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} className="size-4" />,
+  },
+  {
+    title: "Awaiting review",
+    url: "/dashboard/awaiting-review",
+    icon: <HugeiconsIcon icon={RankingIcon} strokeWidth={2} className="size-4" />,
   },
   {
     title: "Shortlisted",

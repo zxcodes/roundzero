@@ -63,9 +63,7 @@ function ReviewButton({
 }
 
 function HeroSection({ firstName, metrics }: { firstName: string; metrics: CompanyMetrics }) {
-  const { heroSummary, awaitingReview, rolesNeedingAttention } = metrics;
-  const firstAwaiting = awaitingReview[0];
-  const firstRole = rolesNeedingAttention[0];
+  const { heroSummary } = metrics;
 
   const heroLines = (() => {
     if (heroSummary.awaitingReviewCount > 0) {
@@ -114,25 +112,10 @@ function HeroSection({ firstName, metrics }: { firstName: string; metrics: Compa
         </div>
         {heroSummary.awaitingReviewCount > 0 ? (
           <Button asChild>
-            {firstAwaiting ? (
-              <Link
-                to="/dashboard/applicant-reports/$applicationId"
-                params={{ applicationId: firstAwaiting.applicationId }}
-              >
-                Review candidates
-                <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-3.5" />
-              </Link>
-            ) : firstRole ? (
-              <Link to="/dashboard/job-applicants/$jobId" params={{ jobId: firstRole.jobId }}>
-                Review candidates
-                <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-3.5" />
-              </Link>
-            ) : (
-              <Link to="/dashboard/jobs/new">
-                Review candidates
-                <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-3.5" />
-              </Link>
-            )}
+            <Link to="/dashboard/awaiting-review">
+              Review awaiting
+              <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-3.5" />
+            </Link>
           </Button>
         ) : null}
       </div>
@@ -240,13 +223,10 @@ function AwaitingReviewSection({
         ))}
       </div>
 
-      {heroSummary.awaitingReviewCount > candidates.length && heroSummary.viewAllAwaitingJobId ? (
+      {heroSummary.awaitingReviewCount > 0 ? (
         <div className="flex justify-center pt-1">
           <Button variant="ghost" size="sm" asChild>
-            <Link
-              to="/dashboard/job-applicants/$jobId"
-              params={{ jobId: heroSummary.viewAllAwaitingJobId }}
-            >
+            <Link to="/dashboard/awaiting-review">
               View all awaiting review
               <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-3.5" />
             </Link>
@@ -295,8 +275,12 @@ function RoleAttentionCard({ role }: { role: RoleAttention }) {
       </div>
       <div className="mt-4">
         <Button variant="outline" size="sm" asChild>
-          <Link to="/dashboard/job-applicants/$jobId" params={{ jobId: role.jobId }}>
-            Review candidates
+          <Link
+            to="/dashboard/job-applicants/$jobId"
+            params={{ jobId: role.jobId }}
+            search={{ tab: "applicants", view: "all", filter: "awaiting_decision" }}
+          >
+            Review role
             <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-3.5" />
           </Link>
         </Button>
