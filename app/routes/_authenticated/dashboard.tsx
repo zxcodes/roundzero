@@ -72,6 +72,7 @@ function DashboardLayout() {
           showTeam={
             isCompany && (auth.membershipRole === "owner" || auth.membershipRole === "admin")
           }
+          showBilling={isCompany && auth.membershipRole === "owner"}
           open={commandOpen}
           onOpenChange={setCommandOpen}
         />
