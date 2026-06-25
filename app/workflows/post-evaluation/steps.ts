@@ -15,6 +15,10 @@ import {
 } from "@/features/interviews/queries/queries_sql";
 import { analyzeVoiceTranscript } from "@/features/interviews/server/voice-assessment";
 import {
+  assessIntegrityRisk,
+  type InterviewIntegrity,
+} from "@/features/interviews/shared/integrity";
+import {
   ensureInterviewRuntimeMetadata,
   type InterviewContextState,
   type ScreeningCoverage,
@@ -112,6 +116,7 @@ type ReadInterviewDataResult =
       transcript: string;
       messages: TranscriptMessage[];
       screeningCoverage: ScreeningCoverage;
+      integrity?: InterviewIntegrity;
       moderation: { quality: "normal" | "low"; reason?: string };
       contextState: InterviewContextState;
     }
@@ -300,6 +305,7 @@ export function readInterviewData(
       transcript,
       messages,
       screeningCoverage: metadata.screeningCoverage ?? {},
+      integrity: metadata.integrity,
       moderation,
       contextState,
     };
@@ -319,6 +325,7 @@ export function generateReport(
     contextState: InterviewContextState;
     voiceAssessment?: CommunicationAssessmentAnalysis | null;
     answerAuthenticity?: AnswerAuthenticity | null;
+    integrity?: InterviewIntegrity;
   },
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
@@ -406,6 +413,11 @@ export function generateReport(
       "You will receive an `answerAuthenticitySignal` alongside the transcript. This is an independent assessment of whether the candidate's answers may have been AI-generated.",
       "If riskLevel is 'high', mention it prominently in `summary` and include a specific weakness about answer authenticity. If riskLevel is 'medium', mention it in `summary` or `weaknesses` depending on your judgment. If riskLevel is 'low', mention it only if relevant in context.",
       "Do NOT fabricate authenticity concerns. The signal is provided as supporting context — ground any authenticity-related claims in the transcript itself.",
+      "",
+      "# Copy/Paste Integrity Signal",
+      "You may receive an `integritySignal` with client-reported copy/paste telemetry from the text interview composer.",
+      "If riskLevel is 'high', mention it in `summary` and add a weakness about reduced confidence that answers were composed live. If riskLevel is 'medium', mention it in `summary` or `weaknesses`. For 'low', ignore unless it adds useful context.",
+      "This is soft telemetry, not proof of cheating — phrase it as reduced confidence, not accusation.",
     ].join("\n");
 
     const voiceSignal = interviewData.voiceAssessment
@@ -450,6 +462,7 @@ export function generateReport(
       },
       requiredScreeningQuestions: customQuestionsBlock,
       answerAuthenticitySignal: interviewData.answerAuthenticity ?? null,
+      integritySignal: assessIntegrityRisk(interviewData.integrity),
       transcript: interviewData.transcript.slice(0, LIMITS.TRANSCRIPT),
     });
 

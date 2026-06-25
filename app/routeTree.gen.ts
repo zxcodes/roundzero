@@ -36,6 +36,7 @@ import { Route as AuthenticatedDashboardTeamRouteImport } from './routes/_authen
 import { Route as AuthenticatedDashboardShortlistedRouteImport } from './routes/_authenticated/dashboard/shortlisted'
 import { Route as AuthenticatedDashboardSettingsRouteImport } from './routes/_authenticated/dashboard/settings'
 import { Route as AuthenticatedDashboardBillingRouteImport } from './routes/_authenticated/dashboard/billing'
+import { Route as AuthenticatedDashboardAwaitingReviewRouteImport } from './routes/_authenticated/dashboard/awaiting-review'
 import { Route as AuthenticatedDashboardApplicationsRouteImport } from './routes/_authenticated/dashboard/applications'
 import { Route as AuthenticatedInterviewInterviewIdIndexRouteImport } from './routes/_authenticated/interview/$interviewId/index'
 import { Route as AuthenticatedDashboardJobsIndexRouteImport } from './routes/_authenticated/dashboard/jobs/index'
@@ -194,6 +195,12 @@ const AuthenticatedDashboardBillingRoute =
     path: '/billing',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
+const AuthenticatedDashboardAwaitingReviewRoute =
+  AuthenticatedDashboardAwaitingReviewRouteImport.update({
+    id: '/awaiting-review',
+    path: '/awaiting-review',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
 const AuthenticatedDashboardApplicationsRoute =
   AuthenticatedDashboardApplicationsRouteImport.update({
     id: '/applications',
@@ -291,6 +298,7 @@ export interface FileRoutesByFullPath {
   '/companies/': typeof CompaniesIndexRoute
   '/jobs/': typeof JobsIndexRoute
   '/dashboard/applications': typeof AuthenticatedDashboardApplicationsRoute
+  '/dashboard/awaiting-review': typeof AuthenticatedDashboardAwaitingReviewRoute
   '/dashboard/billing': typeof AuthenticatedDashboardBillingRoute
   '/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
   '/dashboard/shortlisted': typeof AuthenticatedDashboardShortlistedRoute
@@ -330,6 +338,7 @@ export interface FileRoutesByTo {
   '/companies': typeof CompaniesIndexRoute
   '/jobs': typeof JobsIndexRoute
   '/dashboard/applications': typeof AuthenticatedDashboardApplicationsRoute
+  '/dashboard/awaiting-review': typeof AuthenticatedDashboardAwaitingReviewRoute
   '/dashboard/billing': typeof AuthenticatedDashboardBillingRoute
   '/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
   '/dashboard/shortlisted': typeof AuthenticatedDashboardShortlistedRoute
@@ -371,6 +380,7 @@ export interface FileRoutesById {
   '/companies/': typeof CompaniesIndexRoute
   '/jobs/': typeof JobsIndexRoute
   '/_authenticated/dashboard/applications': typeof AuthenticatedDashboardApplicationsRoute
+  '/_authenticated/dashboard/awaiting-review': typeof AuthenticatedDashboardAwaitingReviewRoute
   '/_authenticated/dashboard/billing': typeof AuthenticatedDashboardBillingRoute
   '/_authenticated/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
   '/_authenticated/dashboard/shortlisted': typeof AuthenticatedDashboardShortlistedRoute
@@ -414,6 +424,7 @@ export interface FileRouteTypes {
     | '/companies/'
     | '/jobs/'
     | '/dashboard/applications'
+    | '/dashboard/awaiting-review'
     | '/dashboard/billing'
     | '/dashboard/settings'
     | '/dashboard/shortlisted'
@@ -453,6 +464,7 @@ export interface FileRouteTypes {
     | '/companies'
     | '/jobs'
     | '/dashboard/applications'
+    | '/dashboard/awaiting-review'
     | '/dashboard/billing'
     | '/dashboard/settings'
     | '/dashboard/shortlisted'
@@ -493,6 +505,7 @@ export interface FileRouteTypes {
     | '/companies/'
     | '/jobs/'
     | '/_authenticated/dashboard/applications'
+    | '/_authenticated/dashboard/awaiting-review'
     | '/_authenticated/dashboard/billing'
     | '/_authenticated/dashboard/settings'
     | '/_authenticated/dashboard/shortlisted'
@@ -725,6 +738,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardBillingRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
+    '/_authenticated/dashboard/awaiting-review': {
+      id: '/_authenticated/dashboard/awaiting-review'
+      path: '/awaiting-review'
+      fullPath: '/dashboard/awaiting-review'
+      preLoaderRoute: typeof AuthenticatedDashboardAwaitingReviewRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
     '/_authenticated/dashboard/applications': {
       id: '/_authenticated/dashboard/applications'
       path: '/applications'
@@ -839,6 +859,7 @@ const AuthenticatedDashboardJobsJobIdRouteWithChildren =
 
 interface AuthenticatedDashboardRouteChildren {
   AuthenticatedDashboardApplicationsRoute: typeof AuthenticatedDashboardApplicationsRoute
+  AuthenticatedDashboardAwaitingReviewRoute: typeof AuthenticatedDashboardAwaitingReviewRoute
   AuthenticatedDashboardBillingRoute: typeof AuthenticatedDashboardBillingRoute
   AuthenticatedDashboardSettingsRoute: typeof AuthenticatedDashboardSettingsRoute
   AuthenticatedDashboardShortlistedRoute: typeof AuthenticatedDashboardShortlistedRoute
@@ -859,6 +880,8 @@ const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
   {
     AuthenticatedDashboardApplicationsRoute:
       AuthenticatedDashboardApplicationsRoute,
+    AuthenticatedDashboardAwaitingReviewRoute:
+      AuthenticatedDashboardAwaitingReviewRoute,
     AuthenticatedDashboardBillingRoute: AuthenticatedDashboardBillingRoute,
     AuthenticatedDashboardSettingsRoute: AuthenticatedDashboardSettingsRoute,
     AuthenticatedDashboardShortlistedRoute:

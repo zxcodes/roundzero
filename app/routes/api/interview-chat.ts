@@ -23,6 +23,11 @@ import {
 import { expireInterviewIfDue } from "@/features/interviews/server/expire";
 import { startPostEvaluation } from "@/features/interviews/server/voice-assessment";
 import {
+  clampMessageIntegritySnapshot,
+  mergeInterviewIntegrity,
+  messageIntegritySnapshotSchema,
+} from "@/features/interviews/shared/integrity";
+import {
   buildInterviewSystemPrompt,
   ensureInterviewRuntimeMetadata,
   type InterviewMetadata,
@@ -34,6 +39,7 @@ import { type SessionData, sessionConfig } from "@/shared/session";
 
 const requestSchema = z.object({
   interviewId: z.string().uuid(),
+  messageIntegrity: messageIntegritySnapshotSchema.optional(),
 });
 
 const checkResumeGapDef = toolDefinition({
@@ -168,6 +174,22 @@ export const Route = createFileRoute("/api/interview-chat")({
           db,
           interviewContext,
         );
+        let integrityMetadataDirty = false;
+
+        const messageIntegrity = parsedRequest.data.messageIntegrity;
+        if (messageIntegrity) {
+          const clampedIntegrity = clampMessageIntegritySnapshot(messageIntegrity, candidateText);
+          runtimeMetadata = {
+            ...runtimeMetadata,
+            integrity: mergeInterviewIntegrity(
+              runtimeMetadata.integrity,
+              savedCandidateMessage.id,
+              clampedIntegrity,
+            ),
+          };
+          integrityMetadataDirty = true;
+        }
+
         const contextState = runtimeMetadata.contextState;
         if (!contextState) {
           return new Response("Interview context is unavailable", { status: 500 });
@@ -188,6 +210,18 @@ export const Route = createFileRoute("/api/interview-chat")({
         const systemPrompt = userRequestedEnd
           ? `${basePrompt}\n\nThe candidate just explicitly asked to end. Close warmly in one short message and call end_interview this turn. Ask no further questions.`
           : basePrompt;
+
+        const flushIntegrityMetadata = async () => {
+          if (!integrityMetadataDirty) {
+            return;
+          }
+
+          await updateInterviewMetadata(db, {
+            id: interviewId,
+            metadata: runtimeMetadata,
+          });
+          integrityMetadataDirty = false;
+        };
 
         const { model, fallbacks } = getModelChain("interview");
         const abortController = new AbortController();
@@ -231,6 +265,7 @@ export const Route = createFileRoute("/api/interview-chat")({
                 id: interviewId,
                 metadata: runtimeMetadata,
               });
+              integrityMetadataDirty = false;
 
               return { ok: true };
             }),
@@ -254,6 +289,18 @@ export const Route = createFileRoute("/api/interview-chat")({
             maxCompletionTokens: 150,
           },
           middleware: [
+            {
+              name: "flush-integrity-metadata",
+              onFinish: async () => {
+                await flushIntegrityMetadata();
+              },
+              onAbort: async () => {
+                await flushIntegrityMetadata();
+              },
+              onError: async () => {
+                await flushIntegrityMetadata();
+              },
+            },
             {
               name: "persist-assistant-message",
               onFinish: async (_context, info) => {

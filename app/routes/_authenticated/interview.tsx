@@ -63,6 +63,7 @@ function InterviewWorkspaceLayout() {
         <CommandPalette
           isCompany={false}
           showTeam={false}
+          showBilling={false}
           open={commandOpen}
           onOpenChange={setCommandOpen}
         />

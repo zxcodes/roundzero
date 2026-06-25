@@ -53,3 +53,41 @@ export function randomInt(seed: string, min: number, max: number): number {
 export function clampScore(value: number): number {
   return Math.max(1, Math.min(10, value));
 }
+
+export type DevUser = {
+  id: string;
+  email: string;
+  name: string;
+  picture: string | null;
+  role: "company" | "candidate";
+};
+
+/** Real dev accounts created via Google sign-in — excludes synthetic rz-seed users. */
+export async function loadDevUser(
+  role: "company" | "candidate",
+  email?: string,
+): Promise<DevUser | null> {
+  if (email) {
+    const rows = await sql<DevUser[]>`
+      SELECT id, email, name, picture, role
+      FROM users
+      WHERE email = ${email}
+        AND role = ${role}
+        AND deleted_at IS NULL
+      LIMIT 1
+    `;
+    return rows[0] ?? null;
+  }
+
+  const rows = await sql<DevUser[]>`
+    SELECT id, email, name, picture, role
+    FROM users
+    WHERE role = ${role}
+      AND deleted_at IS NULL
+      AND (google_id IS NULL OR google_id NOT LIKE 'rz-seed-%')
+    ORDER BY updated_at DESC
+    LIMIT 1
+  `;
+
+  return rows[0] ?? null;
+}

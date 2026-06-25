@@ -76,6 +76,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsSigningIn(false);
       toast.error("Google sign in failed");
     },
+    onNonOAuthError: (e) => {
+      if (e.type === "popup_closed") {
+        setIsSigningIn(false);
+      }
+    },
   });
 
   const signIn = (role?: UserRole, redirectTo?: string) => {

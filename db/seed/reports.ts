@@ -1,87 +1,63 @@
 // @ts-nocheck
-import { clampScore, closeSql, makeUuidFromSeed, pick, sql } from "./util";
-
-const recommendations = ["strong_yes", "yes", "lean_no", "no"] as const;
-
-const strengthPool = [
-  "Strong system design fundamentals",
-  "Clear communication under ambiguity",
-  "High ownership and follow-through",
-  "Thoughtful tradeoff analysis",
-  "Good test strategy and quality mindset",
-  "Pragmatic product sense",
-] as const;
-
-const weaknessPool = [
-  "Needs stronger depth in distributed systems",
-  "Can improve query optimization patterns",
-  "Limited examples of mentoring scale",
-  "Occasional over-index on implementation details",
-  "Needs clearer prioritization in ambiguous scenarios",
-] as const;
-
-const insightPool = [
-  "Performs best when scope and ownership are explicit",
-  "Likely to ramp quickly in TypeScript-heavy codebases",
-  "Would benefit from onboarding into incident response practices",
-  "Demonstrates collaborative behavior with cross-functional teams",
-  "Shows strong curiosity and coachability",
-] as const;
+import {
+  buildReportContent,
+  makeScoresFromOverall,
+  spreadScores,
+} from "./demo-data";
+import { closeSql, makeUuidFromSeed, sql } from "./util";
 
 async function seedReports() {
-  const completed = await sql<{ id: string; application_id: string }[]>`
-    SELECT i.id, i.application_id
+  const completed = await sql<
+    { id: string; application_id: string; status: string; candidate_name: string; job_title: string }[]
+  >`
+    SELECT
+      i.id,
+      i.application_id,
+      a.status,
+      u.name AS candidate_name,
+      j.title AS job_title
     FROM interviews i
     JOIN applications a ON a.id = i.application_id
+    JOIN jobs j ON j.id = a.job_id
     JOIN users u ON u.id = a.candidate_id
+    JOIN companies c ON c.id = j.company_id
+    JOIN users owner ON owner.id = c.owner_id
     WHERE i.status = 'completed'
       AND u.google_id LIKE 'rz-seed-candidate-google-%'
+      AND owner.google_id LIKE 'rz-seed-company-google-%'
     ORDER BY i.created_at ASC
-    LIMIT 20
   `;
 
-  if (completed.length < 20) {
-    throw new Error("Expected at least 20 completed seeded interviews. Run interviews seed first.");
+  if (completed.length < 15) {
+    throw new Error("Expected at least 15 completed seeded interviews. Run interviews seed first.");
   }
 
-  const reports = completed.map((interview, index) => {
-    const recommendation = pick(recommendations, index);
-    const communication = clampScore(7 + (index % 3) * 0.3);
-    const problemSolving = clampScore(6.8 + (index % 4) * 0.2);
-    const ownership = clampScore(6.5 + (index % 2) * 0.4);
-    const roleFit = clampScore(7.1 + (index % 3) * 0.25);
+  const releasedScores = spreadScores(
+    completed.filter((row) => row.status !== "evaluated_held").length,
+    9.2,
+    4.5,
+  );
+  let releasedIndex = 0;
 
-    return {
-      id: makeUuidFromSeed(`rz-seed-report-${interview.id}`),
-      interviewId: interview.id,
-      applicationId: interview.application_id,
-      summary:
-        "Candidate demonstrated solid fundamentals and structured reasoning across technical and behavioral prompts. Performance indicates readiness for scoped ownership with support on domain-specific ramp-up.",
-      strengths: [pick(strengthPool, index), pick(strengthPool, index + 2)],
-      weaknesses: [pick(weaknessPool, index)],
-      insights: [pick(insightPool, index), pick(insightPool, index + 1)],
-      evidence: [
-        {
-          competency: "system_design",
-          note: "Provided a coherent service decomposition and data model with clear API boundaries.",
-        },
-        {
-          competency: "collaboration",
-          note: "Asked clarifying questions and validated assumptions before implementation choices.",
-        },
-      ],
-      scores: {
-        communication,
-        problemSolving,
-        ownership,
-        roleFit,
-        overall: clampScore((communication + problemSolving + ownership + roleFit) / 4),
-      },
-      recommendation,
-    };
-  });
+  for (let index = 0; index < completed.length; index++) {
+    const interview = completed[index]!;
+    const releaseReport = interview.status !== "evaluated_held";
+    const overall = releaseReport
+      ? releasedScores[releasedIndex++]!
+      : spreadScores(1, 7.4, 7.4)[0]!;
 
-  for (const report of reports) {
+    const reportContent = buildReportContent({
+      candidateName: interview.candidate_name,
+      jobTitle: interview.job_title,
+      overall,
+      index,
+    });
+    const scores = makeScoresFromOverall(overall, interview.id);
+    const completedAt = new Date(Date.now() - (index + 1) * 86_400_000);
+    const releasedAt = releaseReport
+      ? new Date(completedAt.getTime() + 2 * 60 * 60 * 1000)
+      : null;
+
     await sql`
       INSERT INTO reports (
         id,
@@ -92,20 +68,32 @@ async function seedReports() {
         weaknesses,
         insights,
         evidence,
+        screening_answers,
         scores,
-        recommendation
+        recommendation,
+        model,
+        prompt_version,
+        refine_version,
+        released_at,
+        created_at
       )
       VALUES (
-        ${report.id},
-        ${report.interviewId},
-        ${report.applicationId},
-        ${report.summary},
-        ${sql.json(report.strengths)},
-        ${sql.json(report.weaknesses)},
-        ${sql.json(report.insights)},
-        ${sql.json(report.evidence)},
-        ${sql.json(report.scores)},
-        ${report.recommendation}
+        ${makeUuidFromSeed(`rz-seed-report-${interview.id}`)},
+        ${interview.id},
+        ${interview.application_id},
+        ${reportContent.summary},
+        ${sql.json(reportContent.strengths)},
+        ${sql.json(reportContent.weaknesses)},
+        ${sql.json(reportContent.insights)},
+        ${sql.json(reportContent.evidence)},
+        ${sql.json(reportContent.screeningAnswers)},
+        ${sql.json(scores)},
+        ${reportContent.recommendation},
+        ${"seed/demo"},
+        ${"1.0.0"},
+        ${"1.0.0"},
+        ${releasedAt},
+        ${completedAt}
       )
       ON CONFLICT (interview_id) DO UPDATE
       SET
@@ -115,12 +103,17 @@ async function seedReports() {
         weaknesses = EXCLUDED.weaknesses,
         insights = EXCLUDED.insights,
         evidence = EXCLUDED.evidence,
+        screening_answers = EXCLUDED.screening_answers,
         scores = EXCLUDED.scores,
-        recommendation = EXCLUDED.recommendation
+        recommendation = EXCLUDED.recommendation,
+        model = EXCLUDED.model,
+        prompt_version = EXCLUDED.prompt_version,
+        refine_version = EXCLUDED.refine_version,
+        released_at = EXCLUDED.released_at
     `;
   }
 
-  console.log(`Reports seeded/upserted: ${reports.length}`);
+  console.log(`Reports seeded/upserted: ${completed.length}`);
 }
 
 try {

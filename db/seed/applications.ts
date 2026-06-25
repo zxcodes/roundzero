@@ -1,9 +1,51 @@
 // @ts-nocheck
 import { closeSql, copycat, makeUuid, pick, randomInt, sql } from "./util";
 
-const applicationStatuses = ["applied", "interviewing", "evaluated", "rejected"] as const;
-
 const portfolioDomains = ["dev", "engineering", "portfolio", "studio"] as const;
+
+/** Realistic pipeline mix for 40 seeded applications. */
+const statusByIndex = [
+  "applied",
+  "applied",
+  "applied",
+  "pre_screening",
+  "pre_screening",
+  "pre_screening",
+  "queued_for_batch",
+  "queued_for_batch",
+  "interview_invited",
+  "interview_invited",
+  "interview_in_progress",
+  "interview_in_progress",
+  "evaluated_held",
+  "evaluated_held",
+  "evaluated_held",
+  "evaluated",
+  "evaluated",
+  "evaluated",
+  "evaluated",
+  "evaluated",
+  "evaluated",
+  "evaluated",
+  "evaluated",
+  "evaluated",
+  "evaluated",
+  "shortlisted",
+  "shortlisted",
+  "shortlisted",
+  "shortlisted",
+  "rejected",
+  "rejected",
+  "rejected",
+  "rejected",
+  "evaluation_failed",
+  "evaluation_failed",
+  "applied",
+  "pre_screening",
+  "interview_invited",
+  "evaluated",
+  "shortlisted",
+] as const;
 
 function buildRoleAwareLinks(input: {
   nameSlug: string;
@@ -79,7 +121,7 @@ async function seedApplications() {
     candidateId: string;
     resumeKey: string | null;
     metadata: Record<string, unknown>;
-    status: (typeof applicationStatuses)[number];
+    status: (typeof statusByIndex)[number];
   }>;
 
   for (let i = 0; i < 20; i++) {
@@ -107,17 +149,14 @@ async function seedApplications() {
           seed: `rz-seed-links-${candidate.id}-a`,
         }),
       },
-      status: pick(applicationStatuses, i),
+      status: statusByIndex[i % statusByIndex.length]!,
     });
 
     applications.push({
       id: makeUuid("rz-seed-application", i * 2 + 2),
       jobId: jobB.id,
       candidateId: candidate.id,
-      resumeKey:
-        i % 4 === 0
-          ? null
-          : `resumes/${candidate.id}/${baseSlug}-resume-v2.pdf`,
+      resumeKey: i % 4 === 0 ? null : `resumes/${candidate.id}/${baseSlug}-resume-v2.pdf`,
       metadata: {
         links: buildRoleAwareLinks({
           nameSlug: baseSlug,
@@ -128,7 +167,7 @@ async function seedApplications() {
           seed: `rz-seed-links-${candidate.id}-b`,
         }),
       },
-      status: pick(applicationStatuses, i + 2),
+      status: statusByIndex[(i + 5) % statusByIndex.length]!,
     });
   }
 
@@ -149,7 +188,8 @@ async function seedApplications() {
         candidate_id = EXCLUDED.candidate_id,
         resume_key = EXCLUDED.resume_key,
         metadata = EXCLUDED.metadata,
-        status = EXCLUDED.status
+        status = EXCLUDED.status,
+        updated_at = now()
     `;
   }
 

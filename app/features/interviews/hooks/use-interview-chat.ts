@@ -1,6 +1,8 @@
 import type { UIMessage } from "@tanstack/ai";
 import { fetchServerSentEvents, useChat } from "@tanstack/ai-react";
+import { useMemo, useRef } from "react";
 import type { getMyInterviewMessages } from "@/features/interviews/server/functions";
+import type { MessageIntegritySnapshot } from "@/features/interviews/shared/integrity";
 
 const readMessageText = (message: UIMessage) => {
   if (!Array.isArray(message.parts)) {
@@ -26,8 +28,26 @@ type InitialInterviewMessages = NonNullable<
 >["messages"];
 
 export function useInterviewChat(interviewId: string, initialMessages: InitialInterviewMessages) {
+  const pendingIntegrityRef = useRef<MessageIntegritySnapshot | null>(null);
+
+  const connection = useMemo(() => {
+    const base = fetchServerSentEvents("/api/interview-chat");
+    return {
+      connect: async function* (
+        messages: Parameters<typeof base.connect>[0],
+        data: Parameters<typeof base.connect>[1],
+        abortSignal: Parameters<typeof base.connect>[2],
+        runContext: Parameters<typeof base.connect>[3],
+      ) {
+        const messageIntegrity = pendingIntegrityRef.current;
+        const mergedData = messageIntegrity === null ? data : { ...(data ?? {}), messageIntegrity };
+        yield* base.connect(messages, mergedData, abortSignal, runContext);
+      },
+    };
+  }, []);
+
   const chat = useChat({
-    connection: fetchServerSentEvents("/api/interview-chat"),
+    connection,
     forwardedProps: { interviewId },
     initialMessages: initialMessages.map(
       (message): UIMessage => ({
@@ -73,9 +93,18 @@ export function useInterviewChat(interviewId: string, initialMessages: InitialIn
     lastMessage?.role === "assistant" && readMessageText(lastMessage).length > 0;
   const isThinking = chat.isLoading && !currentTurnHasAssistantText;
 
+  const sendMessage = async (content: string, integrity: MessageIntegritySnapshot) => {
+    pendingIntegrityRef.current = integrity;
+    try {
+      await chat.sendMessage(content);
+    } finally {
+      pendingIntegrityRef.current = null;
+    }
+  };
+
   return {
     messages,
-    sendMessage: chat.sendMessage,
+    sendMessage,
     status: chat.status,
     isStreaming: chat.isLoading,
     isThinking,

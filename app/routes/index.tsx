@@ -17,6 +17,7 @@ import {
   teamMemberFeatureLabel,
 } from "@/features/billing/config";
 import { cn } from "@/lib/utils";
+import { recommendationLabels } from "@/shared/enums";
 import { DEFAULT_META_TITLE, HOMEPAGE_META_DESCRIPTION } from "@/shared/seo";
 
 const NOT_INCLUDED = "Not included";
@@ -186,9 +187,15 @@ function Hero() {
 }
 
 const heroRanking = [
-  { rank: 1, name: "Sarah Chen", score: 8.4, rec: "Strong hire", active: true },
-  { rank: 2, name: "Marcus Johnson", score: 7.9, rec: "Strong hire", active: false },
-  { rank: 3, name: "Priya Patel", score: 7.2, rec: "Consider", active: false },
+  { rank: 1, name: "Sarah Chen", score: 8.4, rec: recommendationLabels.strong_yes, active: true },
+  {
+    rank: 2,
+    name: "Marcus Johnson",
+    score: 7.9,
+    rec: recommendationLabels.strong_yes,
+    active: false,
+  },
+  { rank: 3, name: "Priya Patel", score: 7.2, rec: recommendationLabels.yes, active: false },
 ];
 
 const heroDims = [
@@ -246,7 +253,7 @@ function HeroProductWindow() {
               </div>
             </div>
             <span className="inline-flex items-center rounded-full bg-success/10 px-2.5 py-1 font-mono text-[11px] font-medium tracking-wide text-success">
-              Strong hire
+              {recommendationLabels.strong_yes}
             </span>
           </div>
           <div className="mt-3.5 space-y-2.5">
@@ -584,7 +591,7 @@ const pipelineLogs: PipelineLogLine[] = [
     workflow: "post-eval",
     runId: "88683432",
     level: "INFO",
-    message: "report saved → overallScore=8.4 recommendation=strong_hire ranked=01",
+    message: "report saved → overallScore=8.4 recommendation=strong_yes ranked=01",
   },
 ];
 
@@ -861,7 +868,7 @@ function ReportSection() {
                   <span className="font-mono text-xs text-muted-foreground">/ 10</span>
                 </div>
                 <span className="inline-flex items-center rounded-full bg-success/10 px-2.5 py-1 font-mono text-[11px] font-medium tracking-wide text-success">
-                  Strong hire
+                  {recommendationLabels.strong_yes}
                 </span>
               </div>
             </div>
@@ -927,16 +934,16 @@ function ReportSection() {
 // Ranking
 // ───────────────────────────────────────────────────────────────────────────
 const ranking = [
-  { rank: 1, name: "Sarah Chen", score: 8.4, rec: "Strong hire" },
-  { rank: 2, name: "Marcus Johnson", score: 7.9, rec: "Strong hire" },
-  { rank: 3, name: "Priya Patel", score: 7.2, rec: "Consider" },
-  { rank: 4, name: "Alex Kim", score: 5.8, rec: "Pass" },
-  { rank: 5, name: "Diego Alvarez", score: 5.4, rec: "Pass" },
+  { rank: 1, name: "Sarah Chen", score: 8.4, rec: recommendationLabels.strong_yes },
+  { rank: 2, name: "Marcus Johnson", score: 7.9, rec: recommendationLabels.strong_yes },
+  { rank: 3, name: "Priya Patel", score: 7.2, rec: recommendationLabels.yes },
+  { rank: 4, name: "Alex Kim", score: 5.8, rec: recommendationLabels.no },
+  { rank: 5, name: "Diego Alvarez", score: 5.4, rec: recommendationLabels.no },
 ];
 
 function recClass(rec: string) {
-  if (rec === "Strong hire") return "text-success";
-  if (rec === "Consider") return "text-foreground";
+  if (rec === recommendationLabels.strong_yes) return "text-success";
+  if (rec === recommendationLabels.yes) return "text-foreground";
   return "text-muted-foreground";
 }
 
@@ -1296,7 +1303,7 @@ const faq = [
   },
   {
     q: "What does a candidate report include?",
-    a: "Each report scores candidates across technical depth, communication, and experience credibility. It includes specific strengths, areas of concern, key insights from the interview, and a clear hire / consider / pass recommendation. Every score is linked to evidence in the actual conversation.",
+    a: "Each report scores candidates across technical depth, communication, and experience credibility. It includes specific strengths, areas of concern, key insights from the interview, and a clear shortlist / borderline / reject recommendation. Every score is linked to evidence in the actual conversation.",
   },
   {
     q: "Is there a voice component to the interview?",
