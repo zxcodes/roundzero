@@ -1190,10 +1190,10 @@ export function DashboardShortlistedSkeleton() {
           >
             <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 md:px-6">
               <div className="space-y-2">
-                <Skeleton className="h-3 w-20" />
                 <Skeleton className="h-5 w-52" />
+                <Skeleton className="h-3 w-36" />
               </div>
-              <Skeleton className="h-5 w-24 rounded-full" />
+              <Skeleton className="h-5 w-8 rounded-full" />
             </div>
 
             <div className="px-5 pb-5 md:px-6">

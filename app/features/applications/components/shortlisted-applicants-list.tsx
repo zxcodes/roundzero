@@ -2,12 +2,7 @@ import { Copy01Icon, UserGroupIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { RoleAccordionPanel } from "@/components/role-accordion-panel";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,7 +36,7 @@ export function ShortlistedApplicantsList({
 }) {
   if (applicants.length === 0) {
     return (
-      <Empty className="border">
+      <Empty className="rounded-2xl border-0 bg-muted/30">
         <EmptyHeader>
           <EmptyMedia variant="icon">
             <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} />
@@ -59,33 +54,19 @@ export function ShortlistedApplicantsList({
   const groups = buildShortlistedGroups(applicants);
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col gap-3">
       {groups.map((group) => (
-        <Accordion key={group.jobId} type="multiple">
-          <AccordionItem value={group.jobId}>
-            <AccordionTrigger className="px-5 py-4 text-left hover:no-underline md:px-6">
-              <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-3 pr-3">
-                <div className="min-w-0">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">
-                    Shortlisted
-                  </p>
-                  <h3 className="truncate text-lg font-semibold">{group.jobTitle}</h3>
-                </div>
-                <Badge variant="secondary">
-                  {group.applicants.length} candidate
-                  {group.applicants.length === 1 ? "" : "s"}
-                </Badge>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-5 pb-5 md:px-6">
-              <div className="divide-y divide-border/50 rounded-3xl border border-border/60">
-                {group.applicants.map((applicant) => (
-                  <ShortlistedApplicantRow key={applicant.id} applicant={applicant} />
-                ))}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
+        <RoleAccordionPanel
+          key={group.jobId}
+          jobId={group.jobId}
+          jobTitle={group.jobTitle}
+          count={group.applicants.length}
+          countLabel={`candidate${group.applicants.length === 1 ? "" : "s"} shortlisted`}
+        >
+          {group.applicants.map((applicant) => (
+            <ShortlistedApplicantRow key={applicant.id} applicant={applicant} />
+          ))}
+        </RoleAccordionPanel>
       ))}
     </div>
   );
@@ -197,7 +178,7 @@ function buildShortlistedGroups(applicants: ShortlistedApplicant[]): Shortlisted
     });
   }
 
-  return Array.from(map.values());
+  return Array.from(map.values()).sort((a, b) => a.jobTitle.localeCompare(b.jobTitle));
 }
 
 function getInitials(name: string) {

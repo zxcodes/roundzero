@@ -1,13 +1,7 @@
 import { ArrowRight01Icon, RankingIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useRouter } from "@tanstack/react-router";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Badge } from "@/components/ui/badge";
+import { RoleAccordionPanel } from "@/components/role-accordion-panel";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -51,35 +45,19 @@ export function AwaitingReviewApplicantsList({
   const groups = buildAwaitingReviewGroups(candidates);
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col gap-3">
       {groups.map((group) => (
-        <Accordion key={group.jobId} type="multiple">
-          <AccordionItem value={group.jobId}>
-            <AccordionTrigger className="px-5 py-4 text-left hover:no-underline md:px-6">
-              <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-3 pr-3">
-                <div className="min-w-0">
-                  <h3 className="truncate text-lg font-semibold tracking-tight">
-                    {group.jobTitle}
-                  </h3>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {group.candidates.length} candidate
-                    {group.candidates.length === 1 ? "" : "s"} awaiting review
-                  </p>
-                </div>
-                <Badge variant="secondary" className="shrink-0">
-                  {group.candidates.length}
-                </Badge>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-5 pb-5 md:px-6">
-              <div className="divide-y divide-border/50 rounded-3xl border border-border/60">
-                {group.candidates.map((candidate) => (
-                  <AwaitingReviewRow key={candidate.applicationId} candidate={candidate} />
-                ))}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
+        <RoleAccordionPanel
+          key={group.jobId}
+          jobId={group.jobId}
+          jobTitle={group.jobTitle}
+          count={group.candidates.length}
+          countLabel={`candidate${group.candidates.length === 1 ? "" : "s"} awaiting review`}
+        >
+          {group.candidates.map((candidate) => (
+            <AwaitingReviewRow key={candidate.applicationId} candidate={candidate} />
+          ))}
+        </RoleAccordionPanel>
       ))}
     </div>
   );

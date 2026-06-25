@@ -54,7 +54,11 @@ function ReviewButton({
 }) {
   return (
     <Button size="sm" asChild>
-      <Link to="/dashboard/applicant-reports/$applicationId" params={{ applicationId }}>
+      <Link
+        to="/dashboard/applicant-reports/$applicationId"
+        params={{ applicationId }}
+        className="no-underline hover:no-underline"
+      >
         {label}
         <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-3.5" />
       </Link>
@@ -112,7 +116,7 @@ function HeroSection({ firstName, metrics }: { firstName: string; metrics: Compa
         </div>
         {heroSummary.awaitingReviewCount > 0 ? (
           <Button asChild>
-            <Link to="/dashboard/awaiting-review">
+            <Link to="/dashboard/awaiting-review" className="no-underline hover:no-underline">
               Review awaiting
               <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-3.5" />
             </Link>
@@ -226,7 +230,7 @@ function AwaitingReviewSection({
       {heroSummary.awaitingReviewCount > 0 ? (
         <div className="flex justify-center pt-1">
           <Button variant="ghost" size="sm" asChild>
-            <Link to="/dashboard/awaiting-review">
+            <Link to="/dashboard/awaiting-review" className="no-underline hover:no-underline">
               View all awaiting review
               <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-3.5" />
             </Link>
@@ -279,6 +283,7 @@ function RoleAttentionCard({ role }: { role: RoleAttention }) {
             to="/dashboard/job-applicants/$jobId"
             params={{ jobId: role.jobId }}
             search={{ tab: "applicants", view: "all", filter: "awaiting_decision" }}
+            className="no-underline hover:no-underline"
           >
             Review role
             <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-3.5" />

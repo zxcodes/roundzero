@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { PageInlineStats } from "@/components/page-inline-stats";
+import { CompanyInboxPageShell } from "@/components/company-inbox-page-shell";
 import { DashboardShortlistedSkeleton } from "@/components/route-skeletons";
 import { ShortlistedApplicantsList } from "@/features/applications/components/shortlisted-applicants-list";
 import { getShortlistedApplicants } from "@/features/applications/server/functions";
@@ -33,20 +33,12 @@ function ShortlistedPage() {
       : [];
 
   return (
-    <div className="space-y-10">
-      <section className="space-y-5">
-        <div className="space-y-1">
-          <h1 className="text-xl font-semibold tracking-tight">Shortlisted</h1>
-          <p className="max-w-2xl text-sm text-muted-foreground">
-            Shortlisted candidates across your open roles — copy contact details and manage outreach
-            notes.
-          </p>
-        </div>
-
-        <PageInlineStats items={statItems} />
-
-        <ShortlistedApplicantsList applicants={applicants} />
-      </section>
-    </div>
+    <CompanyInboxPageShell
+      title="Shortlisted"
+      description="Shortlisted candidates across your open roles — copy contact details and manage outreach notes."
+      statItems={statItems}
+    >
+      <ShortlistedApplicantsList applicants={applicants} />
+    </CompanyInboxPageShell>
   );
 }
