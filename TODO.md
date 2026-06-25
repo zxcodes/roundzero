@@ -1,5 +1,6 @@
 ## TODO
 
+- check why this happens with some reports: "Evaluation in progress Zero is generating the post-interview report. Check back in a few minutes."
 - harden pre-eval prompts. easily invites the user to an interview even the role is irrelevant.
 - see if we need candidate summary in interview table's metadata. audit other tables that are storing huge data like this and if we can derive on demand instead of storing in db.
 - check deleted account behaviour for companies, applications, etc. how the entire flow handles it. (add a workflow that cleans up deleted accounts)
