@@ -315,7 +315,7 @@ function ApplicantReportSummaryPage() {
 
         <div className="flex flex-col gap-5 pt-5 md:flex-row md:items-center md:justify-between">
           <div className="flex min-w-0 items-center gap-4">
-            <Avatar className="size-14 shrink-0 ring-4 ring-background">
+            <Avatar className="size-14 shrink-0">
               <AvatarImage
                 src={application.candidatePicture ?? undefined}
                 alt={application.candidateName}

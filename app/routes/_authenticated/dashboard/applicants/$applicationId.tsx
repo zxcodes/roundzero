@@ -261,7 +261,7 @@ function ApplicantReviewPage() {
         {/* Candidate header */}
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex min-w-0 flex-1 flex-wrap items-start gap-4">
-            <Avatar className="size-14 ring-4 ring-background">
+            <Avatar className="size-14">
               <AvatarImage
                 src={application.candidatePicture ?? undefined}
                 alt={application.candidateName}
