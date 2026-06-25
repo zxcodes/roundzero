@@ -78,7 +78,7 @@ ORDER BY (latest_released_report.released_at IS NOT NULL) DESC, COALESCE((latest
 -- name: getApplicationById :one
 SELECT a.id, a.job_id, a.candidate_id, a.resume_key, a.metadata, a.status, a.created_at, a.updated_at,
        j.title AS job_title, j.status AS job_status,
-       c.name AS company_name
+       c.name AS company_name,
        u.deleted_at IS NOT NULL AS company_owner_deleted
 FROM applications a
 JOIN jobs j ON j.id = a.job_id

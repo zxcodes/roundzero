@@ -17,18 +17,18 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CompanyJobApplicantsList } from "@/features/applications/components/company-job-applicants-list";
-import { getJobApplicants } from "@/features/applications/server/functions";
-import { getActiveBatchForJobServer } from "@/features/batches/server/functions";
+import { getJobApplicantsView } from "@/features/applications/server/functions";
 import {
   CompanyJobActions,
   CompanyJobPostingPanel,
   JobMetaChip,
 } from "@/features/jobs/components/company-job-posting-panel";
-import { getJob } from "@/features/jobs/server/functions";
 import type { JobStatus } from "@/shared/enums";
 import { validateUuidParams } from "@/shared/validation";
 
-type JobDetail = NonNullable<Awaited<ReturnType<typeof getJob>>>;
+type JobApplicantsView = NonNullable<Awaited<ReturnType<typeof getJobApplicantsView>>>;
+type JobApplicants = JobApplicantsView["applicants"];
+type JobActiveBatch = JobApplicantsView["activeBatch"];
 const jobStatusLabels = {
   draft: "Draft",
   open: "Open",
@@ -65,17 +65,11 @@ export const Route = createFileRoute("/_authenticated/dashboard/job-applicants/$
     validateUuidParams({ jobId: params.jobId });
   },
   loader: async ({ params }) => {
-    const jobResult = await getJob({ data: { id: params.jobId } });
-    if (!jobResult) {
+    const view = await getJobApplicantsView({ data: { jobId: params.jobId } });
+    if (!view) {
       throw notFound();
     }
-    const job: JobDetail = jobResult;
-
-    const [applicants, activeBatch] = await Promise.all([
-      getJobApplicants({ data: { jobId: params.jobId } }),
-      getActiveBatchForJobServer({ data: { jobId: params.jobId } }),
-    ]);
-    return { job, applicants, activeBatch };
+    return view;
   },
   pendingComponent: DashboardJobApplicantsSkeleton,
   component: JobApplicantsPage,
@@ -247,15 +241,15 @@ function ApplicantsTabContent({
   onViewChange,
   onFilterChange,
 }: {
-  applicants: Awaited<ReturnType<typeof getJobApplicants>>;
-  activeBatch: Awaited<ReturnType<typeof getActiveBatchForJobServer>>;
+  applicants: JobApplicants;
+  activeBatch: JobActiveBatch;
   view: ApplicantsView;
   filter: ApplicantsFilter;
-  releasedReportApplicants: Awaited<ReturnType<typeof getJobApplicants>>;
+  releasedReportApplicants: JobApplicants;
   heldForReleaseCount: number;
-  activeInterviewApplicants: Awaited<ReturnType<typeof getJobApplicants>>;
-  screeningApplicants: Awaited<ReturnType<typeof getJobApplicants>>;
-  filteredApplicants: Awaited<ReturnType<typeof getJobApplicants>>;
+  activeInterviewApplicants: JobApplicants;
+  screeningApplicants: JobApplicants;
+  filteredApplicants: JobApplicants;
   onViewChange: (value: string) => void;
   onFilterChange: (value: string) => void;
 }) {
@@ -369,7 +363,7 @@ function ActiveBatchPanel({
   applicants,
   batchId,
 }: {
-  applicants: Awaited<ReturnType<typeof getJobApplicants>>;
+  applicants: JobApplicants;
   batchId: string | null;
 }) {
   if (applicants.length === 0) {

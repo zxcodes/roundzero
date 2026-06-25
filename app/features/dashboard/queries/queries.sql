@@ -1,5 +1,10 @@
 -- name: getReleasedReportsForCompanyDashboard :many
-SELECT
+-- One row per application: the latest released report. An application can have
+-- multiple released reports (multiple interviews across batches), so dedupe
+-- with DISTINCT ON to avoid double-counting candidates on the dashboard. The
+-- caller re-sorts (by score / released_at), so the a.id-first ordering here is
+-- only to satisfy DISTINCT ON.
+SELECT DISTINCT ON (a.id)
   r.id AS report_id,
   r.application_id,
   r.recommendation,
@@ -20,7 +25,7 @@ LEFT JOIN pre_evaluations pe ON pe.application_id = a.id
 WHERE j.company_id = $1
   AND j.archived_at IS NULL
   AND r.released_at IS NOT NULL
-ORDER BY r.released_at DESC;
+ORDER BY a.id, r.released_at DESC, r.created_at DESC;
 
 -- name: getRecentCompanyApplicationActivity :many
 SELECT

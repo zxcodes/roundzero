@@ -1,7 +1,7 @@
 import { Sql } from "postgres";
 
 export const getReleasedReportsForCompanyDashboardQuery = `-- name: getReleasedReportsForCompanyDashboard :many
-SELECT
+SELECT DISTINCT ON (a.id)
   r.id AS report_id,
   r.application_id,
   r.recommendation,
@@ -22,7 +22,7 @@ LEFT JOIN pre_evaluations pe ON pe.application_id = a.id
 WHERE j.company_id = $1
   AND j.archived_at IS NULL
   AND r.released_at IS NOT NULL
-ORDER BY r.released_at DESC`;
+ORDER BY a.id, r.released_at DESC, r.created_at DESC`;
 
 export interface getReleasedReportsForCompanyDashboardArgs {
     companyId: string;
