@@ -227,8 +227,8 @@
 
 
 ## Future Stuff (Not included in initial release)
-- cut bundle size (polar, elevenlabs sdk, etc)
-- prevent people from using diff resumes/profiles for diff jobs. we can use snapshots to compare and decide if we wanna hold them in pre-eval itself. not exactly prevent, it should just act as a guardrail in the background.
+<!--- cut bundle size (polar, elevenlabs sdk, etc)-->
+<!--- prevent people from using diff resumes/profiles for diff jobs. we can use snapshots to compare and decide if we wanna hold them in pre-eval itself. not exactly prevent, it should just act as a guardrail in the background.-->
 <!--- ~~think about pricing~~ Resolved — monthly subscription tiers (Free/Starter/Growth/Scale) with hard caps. See PLATFORM.md §10.-->
 
 <!--- add sentry.-->
