@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
 import { formatDate } from "@/shared/date";
 import { PLAN_CONFIGS, SUBSCRIPTION_PLANS, type SubscriptionPlan } from "../config";
 import {
@@ -22,9 +23,11 @@ type JobCounts = { openCount: number; totalCount: number } | null;
 export function BillingPage({
   subscription,
   jobCounts,
+  highlightedPlan,
 }: {
   subscription: Subscription;
   jobCounts: JobCounts;
+  highlightedPlan?: SubscriptionPlan;
 }) {
   const checkoutMutation = useMutation({
     mutationFn: async (plan: SubscriptionPlan) => {
@@ -82,6 +85,7 @@ export function BillingPage({
             plan={id}
             currentPlan={subscription.plan}
             isPaid={subscription.isActive}
+            highlighted={highlightedPlan === id}
             onCheckout={onCheckout}
             checkingOut={checkoutMutation.isPending && checkoutMutation.variables === id}
           />
@@ -241,12 +245,14 @@ function PlanCard({
   plan,
   currentPlan,
   isPaid,
+  highlighted,
   onCheckout,
   checkingOut,
 }: {
   plan: SubscriptionPlan;
   currentPlan: SubscriptionPlan;
   isPaid: boolean;
+  highlighted?: boolean;
   onCheckout: (plan: SubscriptionPlan) => void;
   checkingOut: boolean;
 }) {
@@ -261,10 +267,20 @@ function PlanCard({
   return (
     <Card
       data-current={isCurrent ? "true" : undefined}
-      className={`flex flex-col ${isCurrent ? "border-primary/40 ring-1 ring-primary/10 shadow-sm" : ""}`}
+      data-highlighted={highlighted ? "true" : undefined}
+      className={cn(
+        "flex flex-col",
+        highlighted
+          ? "border border-foreground bg-muted/60 shadow-lg ring-0"
+          : isCurrent
+            ? "ring-2 ring-foreground/30"
+            : null,
+      )}
     >
       <CardHeader>
-        <CardTitle className={isCurrent ? "text-foreground" : ""}>{config.name}</CardTitle>
+        <CardTitle className={isCurrent || highlighted ? "text-foreground" : undefined}>
+          {config.name}
+        </CardTitle>
         <div className="flex items-baseline gap-2">
           <span className="text-3xl font-semibold">{config.priceLabel}</span>
           <span className="text-sm text-muted-foreground">/ {config.periodLabel}</span>

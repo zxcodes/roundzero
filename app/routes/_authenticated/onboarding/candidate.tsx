@@ -11,21 +11,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { currentUserQueryKey, updateUserName } from "@/features/auth/server/functions";
+import { redirectAfterSignup, signupSearchSchema } from "@/features/auth/signup-search";
 import { ResumeUploadField } from "@/features/candidates/components/resume-upload-field";
 import { createCandidateProfile } from "@/features/candidates/server/functions";
 
-const onboardingSearchSchema = z.object({
-  redirect: z.string().optional(),
-});
-
 export const Route = createFileRoute("/_authenticated/onboarding/candidate")({
-  validateSearch: onboardingSearchSchema,
+  validateSearch: signupSearchSchema,
   component: CandidateOnboardingPage,
 });
 
 function CandidateOnboardingPage() {
   const { user } = Route.useRouteContext();
-  const { redirect: redirectTo } = Route.useSearch();
+  const signupSearch = Route.useSearch();
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -39,7 +36,7 @@ function CandidateOnboardingPage() {
     mutationFn: createProfileFn,
     onSuccess: async () => {
       await router.invalidate();
-      await router.navigate({ to: redirectTo ?? "/dashboard" });
+      await router.navigate(redirectAfterSignup(signupSearch));
     },
     onError: () => {
       toast.error("Failed to create profile. Please try again.");

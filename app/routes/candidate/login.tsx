@@ -7,28 +7,17 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { z } from "zod";
 import { Logo } from "@/components/public-layout";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/features/auth/provider";
+import { redirectAfterSignup, signupSearchSchema } from "@/features/auth/signup-search";
 import { PAGE_SEO } from "@/shared/seo";
 
-function sanitizeRedirect(url: unknown): string | undefined {
-  if (typeof url !== "string" || !url.startsWith("/") || url.startsWith("//")) {
-    return undefined;
-  }
-  return url;
-}
-
-const loginSearchSchema = z.object({
-  redirect: z.string().optional().transform(sanitizeRedirect),
-});
-
 export const Route = createFileRoute("/candidate/login")({
-  validateSearch: loginSearchSchema,
-  beforeLoad: ({ context }) => {
+  validateSearch: signupSearchSchema,
+  beforeLoad: ({ context, search }) => {
     if (context.user?.role) {
-      throw redirect({ to: "/dashboard" });
+      throw redirect(redirectAfterSignup(search));
     }
   },
   head: () => ({
@@ -46,10 +35,10 @@ export const Route = createFileRoute("/candidate/login")({
 
 function CandidateLoginPage() {
   const { signIn, isSigningIn } = useAuth();
-  const { redirect: redirectTo } = Route.useSearch();
+  const signupSearch = Route.useSearch();
 
   const onSignIn = () => {
-    signIn("candidate", redirectTo);
+    signIn("candidate", signupSearch);
   };
 
   return (
