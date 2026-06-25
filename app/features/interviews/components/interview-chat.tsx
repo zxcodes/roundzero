@@ -12,6 +12,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { InterviewTranscript } from "@/features/interviews/components/interview-transcript";
 import { CompletedInterviewBar } from "@/features/interviews/components/voice-assessment-panel";
+import {
+  appendCopySource,
+  emptyComposeIntegritySnapshot,
+  type MessageIntegritySnapshot,
+} from "@/features/interviews/shared/integrity";
 
 type InterviewChatProps = {
   messages: Array<{
@@ -36,7 +41,7 @@ type InterviewChatProps = {
    */
   onContinueToVoice?: () => void;
   voiceCtaLabel?: string;
-  onSend: (content: string) => Promise<void>;
+  onSend: (content: string, integrity: MessageIntegritySnapshot) => Promise<void>;
 };
 
 export function InterviewChat({
@@ -51,6 +56,7 @@ export function InterviewChat({
   onSend,
 }: InterviewChatProps) {
   const [content, setContent] = useState("");
+  const composeIntegrityRef = useRef<MessageIntegritySnapshot>(emptyComposeIntegritySnapshot());
   const transcriptRef = useRef<HTMLDivElement | null>(null);
   const transcriptEndRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
@@ -95,17 +101,33 @@ export function InterviewChat({
     }
   }, [isStreaming, canSend]);
 
-  const onSubmit = () => {
+  const onSubmit = async () => {
     const trimmed = content.trim();
     if (!trimmed || !canSend || isStreaming || isThinking) {
       return;
     }
 
-    void onSend(trimmed);
+    const integrity: MessageIntegritySnapshot = {
+      ...composeIntegrityRef.current,
+      submittedCharCount: trimmed.length,
+    };
+    const integrityBackup: MessageIntegritySnapshot = {
+      ...integrity,
+      copiedFrom: integrity.copiedFrom.map((entry) => ({ ...entry })),
+    };
+
+    composeIntegrityRef.current = emptyComposeIntegritySnapshot();
     setContent("");
-    requestAnimationFrame(() => {
-      composerRef.current?.focus();
-    });
+
+    try {
+      await onSend(trimmed, integrity);
+      requestAnimationFrame(() => {
+        composerRef.current?.focus();
+      });
+    } catch {
+      composeIntegrityRef.current = integrityBackup;
+      setContent(trimmed);
+    }
   };
 
   const onComposerKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -114,11 +136,28 @@ export function InterviewChat({
     }
 
     event.preventDefault();
-    onSubmit();
+    void onSubmit();
   };
 
   const onComposerChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setContent(event.target.value);
+  };
+
+  const onComposerPaste = (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const pasted = event.clipboardData.getData("text");
+    composeIntegrityRef.current = {
+      ...composeIntegrityRef.current,
+      pasteCount: composeIntegrityRef.current.pasteCount + 1,
+      pasteCharCount: composeIntegrityRef.current.pasteCharCount + pasted.length,
+    };
+  };
+
+  const onCopyFromMessage = (messageId: string, charCount: number) => {
+    composeIntegrityRef.current = appendCopySource(
+      composeIntegrityRef.current,
+      messageId,
+      charCount,
+    );
   };
 
   const onSendMouseDown = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -141,7 +180,11 @@ export function InterviewChat({
         )
       ) : (
         <ScrollArea ref={transcriptRef} className="min-h-0 flex-1">
-          <InterviewTranscript messages={messages} userLabel="You" />
+          <InterviewTranscript
+            messages={messages}
+            userLabel="You"
+            onCopyFromMessage={onCopyFromMessage}
+          />
           {isThinking ? <ThinkingBubble /> : null}
           <div ref={transcriptEndRef} className="h-1" />
         </ScrollArea>
@@ -190,6 +233,7 @@ export function InterviewChat({
               ref={composerRef}
               value={content}
               onChange={onComposerChange}
+              onPaste={onComposerPaste}
               onKeyDown={onComposerKeyDown}
               placeholder={canSend ? "Write your answer..." : "Start the interview to answer"}
               disabled={!canSend || isThinking}

@@ -222,6 +222,7 @@ async function seedJobs() {
     salaryCurrency: string;
     teamSize: number;
     headcount: number;
+    finalReportTarget: number;
     screeningQuestions: string[];
     expiresAt: Date | null;
   }>;
@@ -274,6 +275,7 @@ async function seedJobs() {
         salaryCurrency: template.compensation.currency,
         teamSize,
         headcount,
+        finalReportTarget: randomInt(`${seed}-report-target`, 5, 8),
         screeningQuestions: buildScreeningQuestions(template, seed),
         expiresAt,
       });
@@ -287,14 +289,15 @@ async function seedJobs() {
       INSERT INTO jobs (
         id, company_id, title, description, requirements, status,
         screening_questions, location, workplace_type, employment_type, experience_level,
-        salary_min, salary_max, salary_currency, team_size, headcount, expires_at
+        salary_min, salary_max, salary_currency, team_size, headcount, final_report_target, expires_at
       )
       VALUES (
         ${job.id}, ${job.companyId}, ${job.title}, ${job.description},
         ${sql.json(job.requirements)}, ${job.status},
         ${sql.json(job.screeningQuestions)},
         ${job.location}, ${job.workplaceType}, ${job.employmentType}, ${job.experienceLevel},
-        ${job.salaryMin}, ${job.salaryMax}, ${job.salaryCurrency}, ${job.teamSize}, ${job.headcount}, ${job.expiresAt}
+        ${job.salaryMin}, ${job.salaryMax}, ${job.salaryCurrency}, ${job.teamSize}, ${job.headcount},
+        ${job.finalReportTarget}, ${job.expiresAt}
       )
       ON CONFLICT (id) DO UPDATE
       SET
@@ -313,6 +316,7 @@ async function seedJobs() {
         salary_currency = EXCLUDED.salary_currency,
         team_size = EXCLUDED.team_size,
         headcount = EXCLUDED.headcount,
+        final_report_target = EXCLUDED.final_report_target,
         expires_at = EXCLUDED.expires_at,
         updated_at = now()
     `;

@@ -1,5 +1,41 @@
 import { differenceInDays, differenceInMinutes, format, isValid, parseISO } from "date-fns";
 
+const MONTHS_SHORT = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+] as const;
+
+const toDate = (value: Date | string | null): Date | null => {
+  if (!value) {
+    return null;
+  }
+
+  return typeof value === "string" ? new Date(value) : value;
+};
+
+/** SSR-safe: always formats using UTC calendar fields (server and browser agree). */
+function formatUtcDateTime12h(value: Date): string {
+  const month = MONTHS_SHORT[value.getUTCMonth()];
+  const day = value.getUTCDate();
+  const year = value.getUTCFullYear();
+  let hours = value.getUTCHours();
+  const minutes = value.getUTCMinutes();
+  const period = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12 || 12;
+  const minuteLabel = String(minutes).padStart(2, "0");
+  return `${month} ${day}, ${year} ${hours}:${minuteLabel} ${period} UTC`;
+}
+
 export function formatDate(date: Date | string | null): string {
   if (!date) return "";
   return format(new Date(date), "MMM d, yyyy");
@@ -11,27 +47,15 @@ export function formatDateShort(date: Date | string | null): string {
 }
 
 export function formatDateTime(date: Date | string | null): string {
-  if (!date) return "";
-  return format(new Date(date), "MMM d, yyyy h:mm a");
+  const value = toDate(date);
+  if (!value) return "";
+  return formatUtcDateTime12h(value);
 }
 
 export function formatDateTimeUtc(date: Date | string | null): string {
-  if (!date) return "Pending";
-  const value = typeof date === "string" ? new Date(date) : date;
-  const month = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ][value.getUTCMonth()];
+  const value = toDate(date);
+  if (!value) return "Pending";
+  const month = MONTHS_SHORT[value.getUTCMonth()];
   const day = value.getUTCDate();
   const year = value.getUTCFullYear();
   const hours = String(value.getUTCHours()).padStart(2, "0");
@@ -84,5 +108,5 @@ export function formatDeadlineLabel(value: string | null): string | null {
   if (!value) return null;
   const date = parseISO(value);
   if (!isValid(date)) return null;
-  return format(date, "MMM d, yyyy h:mm a");
+  return formatUtcDateTime12h(date);
 }

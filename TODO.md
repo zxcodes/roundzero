@@ -1,11 +1,27 @@
 ## TODO
 
-- add onCopy, onPaste detectors and evaluate final score based on that.
+- check why this happens with some reports: "Evaluation in progress Zero is generating the post-interview report. Check back in a few minutes."
+- harden pre-eval prompts. easily invites the user to an interview even the role is irrelevant.
+- see if we need candidate summary in interview table's metadata. audit other tables that are storing huge data like this and if we can derive on demand instead of storing in db.
 - check deleted account behaviour for companies, applications, etc. how the entire flow handles it. (add a workflow that cleans up deleted accounts)
 - pretty sure openrouter model fallbacks still don't work. verify in local dev.
 - add a really good resume and candidate test suite to pass thru the ai. (WIP in other branch)
 
 
+## PROD THINGS
+- add good seo stuff (check skills), basic done. use tanstack dev tools for og stuff it's good. enable them first.
+- check about data retention & allowing people to delete accounts.
+- planetscale for db?
+- analytics? stretch? or just have a basic admin dashboard with stats (should be good enough for the start).
+- validate open router models using their api key in prod ci so we detect non existent models beforehand.
+- update brand identity, desc etc in google console. infact just create a new project.
+
+
+## Future
+- add batch actions for companies (shortlist multiple candidates, and quick actions "shortlist top 3" reject "bottom ones")
+
+
+<!--- add onCopy, onPaste detectors and evaluate final score based on that.-->
 <!--- voice interview experience degraded since auto submit introduced. the agent speaks the last message twice but I don't at all see the message on screen.-->
 <!--- candidate score needs to be 1-10 as landing page shows. right now it's 1-100.-->
 <!--- company has redundant steps. if I click a job, first taken to a page where there is jd, I have to click view applicants, which is another redundant page. we can def drop one of these here and make it simple.-->
@@ -212,19 +228,9 @@
 <!--- enable min release age in prod.-->
 
 
-
-## PROD THINGS
-- add good seo stuff (check skills), basic done. use tanstack dev tools for og stuff it's good. enable them first.
-- check about data retention & allowing people to delete accounts.
-- planetscale for db?
-- analytics? stretch? or just have a basic admin dashboard with stats (should be good enough for the start).
-- validate open router models using their api key in prod ci so we detect non existent models beforehand.
-
-
-
 ## Future Stuff (Not included in initial release)
-- cut bundle size (polar, elevenlabs sdk, etc)
-- prevent people from using diff resumes/profiles for diff jobs. we can use snapshots to compare and decide if we wanna hold them in pre-eval itself. not exactly prevent, it should just act as a guardrail in the background.
+<!--- cut bundle size (polar, elevenlabs sdk, etc)-->
+<!--- prevent people from using diff resumes/profiles for diff jobs. we can use snapshots to compare and decide if we wanna hold them in pre-eval itself. not exactly prevent, it should just act as a guardrail in the background.-->
 <!--- ~~think about pricing~~ Resolved — monthly subscription tiers (Free/Starter/Growth/Scale) with hard caps. See PLATFORM.md §10.-->
 
 <!--- add sentry.-->

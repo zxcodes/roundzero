@@ -2,7 +2,7 @@ import { Briefcase01Icon, RankingIcon, UserGroupIcon } from "@hugeicons/core-fre
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link, notFound, redirect, useNavigate } from "@tanstack/react-router";
 import { zodValidator } from "@tanstack/zod-adapter";
-import { useState } from "react";
+
 import { z } from "zod";
 import { DashboardJobApplicantsSkeleton } from "@/components/route-skeletons";
 import { Badge } from "@/components/ui/badge";
@@ -17,17 +17,18 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CompanyJobApplicantsList } from "@/features/applications/components/company-job-applicants-list";
-import { getJobApplicants } from "@/features/applications/server/functions";
-import { getActiveBatchForJobServer } from "@/features/batches/server/functions";
+import { getJobApplicantsView } from "@/features/applications/server/functions";
 import {
   CompanyJobActions,
   CompanyJobPostingPanel,
+  JobMetaChip,
 } from "@/features/jobs/components/company-job-posting-panel";
-import { getJob } from "@/features/jobs/server/functions";
 import type { JobStatus } from "@/shared/enums";
 import { validateUuidParams } from "@/shared/validation";
 
-type JobDetail = NonNullable<Awaited<ReturnType<typeof getJob>>>;
+type JobApplicantsView = NonNullable<Awaited<ReturnType<typeof getJobApplicantsView>>>;
+type JobApplicants = JobApplicantsView["applicants"];
+type JobActiveBatch = JobApplicantsView["activeBatch"];
 const jobStatusLabels = {
   draft: "Draft",
   open: "Open",
@@ -36,8 +37,23 @@ const jobStatusLabels = {
 
 const searchDefaults = { tab: "applicants" } as const;
 
+const applicantsViewSchema = z.enum(["ready", "all"]);
+const applicantsFilterSchema = z.enum([
+  "all",
+  "screening",
+  "queued",
+  "active_interview",
+  "awaiting_decision",
+  "shortlisted",
+  "rejected",
+  "withdrawn",
+  "evaluation_failed",
+]);
+
 const jobApplicantsSearchSchema = z.object({
   tab: z.enum(["applicants", "posting"]).default(searchDefaults.tab).catch(searchDefaults.tab),
+  view: applicantsViewSchema.optional().catch(undefined),
+  filter: applicantsFilterSchema.optional().catch(undefined),
 });
 
 export const Route = createFileRoute("/_authenticated/dashboard/job-applicants/$jobId")({
@@ -49,17 +65,11 @@ export const Route = createFileRoute("/_authenticated/dashboard/job-applicants/$
     validateUuidParams({ jobId: params.jobId });
   },
   loader: async ({ params }) => {
-    const jobResult = await getJob({ data: { id: params.jobId } });
-    if (!jobResult) {
+    const view = await getJobApplicantsView({ data: { jobId: params.jobId } });
+    if (!view) {
       throw notFound();
     }
-    const job: JobDetail = jobResult;
-
-    const [applicants, activeBatch] = await Promise.all([
-      getJobApplicants({ data: { jobId: params.jobId } }),
-      getActiveBatchForJobServer({ data: { jobId: params.jobId } }),
-    ]);
-    return { job, applicants, activeBatch };
+    return view;
   },
   pendingComponent: DashboardJobApplicantsSkeleton,
   component: JobApplicantsPage,
@@ -79,10 +89,10 @@ type ApplicantsFilter =
 
 function JobApplicantsPage() {
   const { job, applicants, activeBatch } = Route.useLoaderData();
-  const { tab } = Route.useSearch();
+  const { tab, view: searchView, filter: searchFilter } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
-  const [view, setView] = useState<ApplicantsView>("ready");
-  const [filter, setFilter] = useState<ApplicantsFilter>("all");
+  const view: ApplicantsView = searchView ?? (searchFilter ? "all" : "ready");
+  const filter: ApplicantsFilter = searchFilter ?? "all";
 
   const requirements: string[] = Array.isArray(job.requirements) ? job.requirements : [];
 
@@ -96,10 +106,24 @@ function JobApplicantsPage() {
   };
 
   const onViewChange = (value: string) => {
-    setView(value as ApplicantsView);
+    const nextView = value as ApplicantsView;
+    void navigate({
+      search: (prev) => ({
+        ...prev,
+        view: nextView === "ready" ? undefined : nextView,
+        filter: nextView === "ready" ? undefined : prev.filter,
+      }),
+    });
   };
   const onFilterChange = (value: string) => {
-    setFilter(value as ApplicantsFilter);
+    const nextFilter = value as ApplicantsFilter;
+    void navigate({
+      search: (prev) => ({
+        ...prev,
+        view: "all",
+        filter: nextFilter === "all" ? undefined : nextFilter,
+      }),
+    });
   };
 
   const releasedReportApplicants = applicants.filter(
@@ -139,8 +163,8 @@ function JobApplicantsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-1">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 space-y-1">
           <h2 className="text-2xl font-bold tracking-tight">{job.title}</h2>
           <p className="text-sm text-muted-foreground">
             {tab === "posting"
@@ -148,17 +172,21 @@ function JobApplicantsPage() {
               : "Review and manage everyone who applied to this role."}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
           {tab === "applicants" ? (
             <>
-              <Badge variant="secondary" className="gap-1">
-                <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} className="size-3" />
+              <JobMetaChip
+                icon={<HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} />}
+                variant="secondary"
+              >
                 {applicants.length} applicant{applicants.length !== 1 ? "s" : ""}
-              </Badge>
-              <Badge variant="outline" className="gap-1 text-[11px]">
-                <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} className="size-3" />
+              </JobMetaChip>
+              <JobMetaChip
+                icon={<HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} />}
+                variant="outline"
+              >
                 {jobStatusLabels[job.status as JobStatus]}
-              </Badge>
+              </JobMetaChip>
             </>
           ) : null}
           <CompanyJobActions job={job} requirements={requirements} />
@@ -213,15 +241,15 @@ function ApplicantsTabContent({
   onViewChange,
   onFilterChange,
 }: {
-  applicants: Awaited<ReturnType<typeof getJobApplicants>>;
-  activeBatch: Awaited<ReturnType<typeof getActiveBatchForJobServer>>;
+  applicants: JobApplicants;
+  activeBatch: JobActiveBatch;
   view: ApplicantsView;
   filter: ApplicantsFilter;
-  releasedReportApplicants: Awaited<ReturnType<typeof getJobApplicants>>;
+  releasedReportApplicants: JobApplicants;
   heldForReleaseCount: number;
-  activeInterviewApplicants: Awaited<ReturnType<typeof getJobApplicants>>;
-  screeningApplicants: Awaited<ReturnType<typeof getJobApplicants>>;
-  filteredApplicants: Awaited<ReturnType<typeof getJobApplicants>>;
+  activeInterviewApplicants: JobApplicants;
+  screeningApplicants: JobApplicants;
+  filteredApplicants: JobApplicants;
   onViewChange: (value: string) => void;
   onFilterChange: (value: string) => void;
 }) {
@@ -335,7 +363,7 @@ function ActiveBatchPanel({
   applicants,
   batchId,
 }: {
-  applicants: Awaited<ReturnType<typeof getJobApplicants>>;
+  applicants: JobApplicants;
   batchId: string | null;
 }) {
   if (applicants.length === 0) {
