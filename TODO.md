@@ -8,6 +8,15 @@
 - add a really good resume and candidate test suite to pass thru the ai. (WIP in other branch)
 
 
+## PROD THINGS
+- add good seo stuff (check skills), basic done. use tanstack dev tools for og stuff it's good. enable them first.
+- check about data retention & allowing people to delete accounts.
+- planetscale for db?
+- analytics? stretch? or just have a basic admin dashboard with stats (should be good enough for the start).
+- validate open router models using their api key in prod ci so we detect non existent models beforehand.
+- update brand identity, desc etc in google console. infact just create a new project.
+
+
 <!--- add onCopy, onPaste detectors and evaluate final score based on that.-->
 <!--- voice interview experience degraded since auto submit introduced. the agent speaks the last message twice but I don't at all see the message on screen.-->
 <!--- candidate score needs to be 1-10 as landing page shows. right now it's 1-100.-->
@@ -213,17 +222,6 @@
 <!--- **pre-eval: switch slop + eval steps to OpenRouter (Claude 3.5 Haiku / Llama 3.3 70B)** for reliable structured outputs and deterministic scoring. Keep Workers AI for classify step only. See `pre-evaluation.ts` comments for context. Do this before scaling eval volume. And add temperature: 0 and explicit max_tokens — eliminates score variance.-->
 <!--- pre-eval: Delete parseJsonPayload entirely — OpenRouter + Claude actually respects response_format. You’ll get clean objects every time.-->
 <!--- enable min release age in prod.-->
-
-
-
-## PROD THINGS
-- add good seo stuff (check skills), basic done. use tanstack dev tools for og stuff it's good. enable them first.
-- check about data retention & allowing people to delete accounts.
-- planetscale for db?
-- analytics? stretch? or just have a basic admin dashboard with stats (should be good enough for the start).
-- validate open router models using their api key in prod ci so we detect non existent models beforehand.
-- update brand identity, desc etc in google console. infact just create a new project.
-
 
 
 ## Future Stuff (Not included in initial release)
