@@ -1,7 +1,9 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
+import { PageInlineStats } from "@/components/page-inline-stats";
 import { DashboardShortlistedSkeleton } from "@/components/route-skeletons";
 import { ShortlistedApplicantsList } from "@/features/applications/components/shortlisted-applicants-list";
 import { getShortlistedApplicants } from "@/features/applications/server/functions";
+import { hasShortlistNextSteps, parseShortlistDetails } from "@/features/applications/shortlist";
 
 export const Route = createFileRoute("/_authenticated/dashboard/shortlisted")({
   beforeLoad: ({ context }) => {
@@ -16,18 +18,35 @@ export const Route = createFileRoute("/_authenticated/dashboard/shortlisted")({
 
 function ShortlistedPage() {
   const applicants = Route.useLoaderData();
+  const roleCount = new Set(applicants.map((applicant) => applicant.jobId)).size;
+  const withNextStepsCount = applicants.filter((applicant) =>
+    hasShortlistNextSteps(parseShortlistDetails(applicant.metadata)),
+  ).length;
+
+  const statItems =
+    applicants.length > 0
+      ? [
+          { value: applicants.length, label: "shortlisted" },
+          { value: roleCount, label: roleCount === 1 ? "role" : "roles" },
+          { value: withNextStepsCount, label: "with next steps" },
+        ]
+      : [];
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-1">
-        <h2 className="text-2xl font-bold tracking-tight">Shortlisted</h2>
-        <p className="max-w-3xl text-sm text-muted-foreground">
-          Review every shortlisted candidate across your open roles, copy contact details quickly,
-          and update the note or link each candidate sees.
-        </p>
-      </div>
+    <div className="space-y-10">
+      <section className="space-y-5">
+        <div className="space-y-1">
+          <h1 className="text-xl font-semibold tracking-tight">Shortlisted</h1>
+          <p className="max-w-2xl text-sm text-muted-foreground">
+            Shortlisted candidates across your open roles — copy contact details and manage outreach
+            notes.
+          </p>
+        </div>
 
-      <ShortlistedApplicantsList applicants={applicants} />
+        <PageInlineStats items={statItems} />
+
+        <ShortlistedApplicantsList applicants={applicants} />
+      </section>
     </div>
   );
 }
