@@ -96,7 +96,7 @@ function CompanyLoginPage() {
               <ValueProp
                 icon={RankingIcon}
                 title="Ranked shortlists"
-                text="Candidates sorted by fit with clear hire/pass recommendations"
+                text="Candidates sorted by fit with clear shortlist and reject recommendations"
               />
             </div>
           </div>
@@ -203,7 +203,7 @@ function CompanyLoginPage() {
               <div className="min-w-0">
                 <p className="text-sm font-medium">Ranked shortlists</p>
                 <p className="text-xs text-muted-foreground">
-                  Candidates sorted by fit with clear hire/pass recommendations
+                  Candidates sorted by fit with clear shortlist and reject recommendations
                 </p>
               </div>
             </div>
