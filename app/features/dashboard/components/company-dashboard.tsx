@@ -5,10 +5,11 @@ import {
   UserGroupIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Link } from "@tanstack/react-router";
+import { Link, useHydrated } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { DashboardCandidateReport, RoleAttention } from "@/features/dashboard/company-metrics";
 import type { getDashboardMetrics } from "@/features/dashboard/server/functions";
 import { formatRelativeTime } from "@/shared/date";
@@ -28,6 +29,20 @@ function getTimeGreeting(): string {
     return "Good afternoon";
   }
   return "Good evening";
+}
+
+function DashboardGreeting({ firstName }: { firstName: string }) {
+  const hydrated = useHydrated();
+
+  if (!hydrated) {
+    return <Skeleton className="h-9 w-72" />;
+  }
+
+  return (
+    <h1 className="text-3xl font-semibold tracking-tight">
+      {getTimeGreeting()} {firstName},
+    </h1>
+  );
 }
 
 function RecommendationBadge({
@@ -103,9 +118,7 @@ function HeroSection({ firstName, metrics }: { firstName: string; metrics: Compa
     <section className="space-y-6">
       <div className="space-y-4">
         <div className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight">
-            {getTimeGreeting()}, {firstName}.
-          </h1>
+          <DashboardGreeting firstName={firstName} />
           <div className="space-y-1">
             {heroLines.map((line) => (
               <p key={line} className="text-base text-muted-foreground">
