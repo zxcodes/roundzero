@@ -7,38 +7,17 @@
  *
  * Run:
  *   bun run db:seed:me            — seeds both roles (if users exist in DB)
- *   bun run db:seed:me company    — seeds company only
- *   bun run db:seed:me candidate  — seeds candidate only
+ *   bun run db:seed:me company              — seeds company only
+ *   bun run db:seed:me candidate            — seeds candidate only
+ *   bun run db:seed:me company you@email.com — seeds a specific account
  *
  * Requires: A user with the given role must exist in the database.
  *           Sign up in dev mode first, then run this script.
  *           + base seed data (bun run db:seed) for candidate mode
  */
 
-import { closeSql, makeUuidFromSeed, pick, sql } from "./util";
-
-type DevUser = {
-  id: string;
-  email: string;
-  name: string;
-  picture: string | null;
-  role: "company" | "candidate";
-};
-
-async function loadUser(role: "company" | "candidate"): Promise<DevUser | null> {
-  const rows = await sql`
-    SELECT id, email, name, picture, role
-    FROM users
-    WHERE role = ${role}
-    ORDER BY updated_at DESC
-    LIMIT 1
-  `;
-  const user = rows[0];
-  if (!user) {
-    return null;
-  }
-  return user as DevUser;
-}
+import { closeSql, loadDevUser, makeUuidFromSeed, pick, sql } from "./util";
+import type { DevUser } from "./util";
 
 const slug = "round-zero";
 const companyName = "RoundZero";
@@ -347,13 +326,14 @@ async function seedForCandidate(user: DevUser) {
 // ─── Main ───────────────────────────────────────────────────────
 
 const roleArg = process.argv[2] as "company" | "candidate" | undefined;
+const emailArg = process.argv[3];
 const rolesToSeed: ("company" | "candidate")[] = roleArg ? [roleArg] : ["company", "candidate"];
 
 try {
   let seeded = false;
 
   for (const role of rolesToSeed) {
-    const user = await loadUser(role);
+    const user = await loadDevUser(role, emailArg);
     if (!user) {
       if (roleArg) {
         throw new Error(`No ${role} user found in database — sign up as ${role} in dev mode first.`);

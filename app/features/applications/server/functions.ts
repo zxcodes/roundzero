@@ -2,10 +2,11 @@ import { env } from "cloudflare:workers";
 import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
+import { getActiveBatchForJob } from "@/features/batches/queries/queries_sql";
 import { getCompanyByMemberUserId } from "@/features/companies/queries/membership-queries_sql";
 import { getActiveInterviewsByJob } from "@/features/interviews/queries/queries_sql";
 import { expireInterviewIfDue } from "@/features/interviews/server/expire";
-import { getJobById } from "@/features/jobs/queries/queries_sql";
+import { closeExpiredJobsQuery, getJobById } from "@/features/jobs/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { applicationStatusSchema } from "@/shared/enums";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
@@ -148,6 +149,46 @@ export const getJobApplicants = createServerFn({ method: "GET" })
     );
 
     return applicants;
+  });
+
+// Consolidated read for the job-applicants dashboard route: one auth-middleware
+// run + one job lookup, then the applicants and active batch in parallel.
+// Returns null when the job is missing or not owned by the caller's company so
+// the loader can throw notFound() instead of hitting the error boundary.
+export const getJobApplicantsView = createServerFn({ method: "GET" })
+  .middleware([companyMiddleware])
+  .validator(zodValidator(jobIdSchema))
+  .handler(async ({ data, context }) => {
+    const db = getDb();
+    await db.unsafe(closeExpiredJobsQuery);
+
+    const job = await getJobById(db, { id: data.jobId });
+    if (!job || job.companyId !== context.company.id) {
+      return null;
+    }
+
+    const [activeInterviews, applicants, activeBatch] = await Promise.all([
+      getActiveInterviewsByJob(db, { jobId: data.jobId }),
+      getApplicationsByJob(db, { jobId: data.jobId }),
+      getActiveBatchForJob(db, { jobId: data.jobId }),
+    ]);
+
+    await Promise.all(
+      activeInterviews.map((interview) =>
+        expireInterviewIfDue({
+          db,
+          interview: {
+            id: interview.id,
+            applicationId: interview.applicationId,
+            status: interview.status,
+            expiresAt: interview.expiresAt,
+          },
+          postEvaluation: env.POST_EVALUATION,
+        }),
+      ),
+    );
+
+    return { job, applicants, activeBatch };
   });
 
 export const updateApplicationStatus = createServerFn({ method: "POST" })

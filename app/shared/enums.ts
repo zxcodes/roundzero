@@ -258,10 +258,10 @@ export const recommendationSchema = z.enum(["strong_yes", "yes", "lean_no", "no"
 export type Recommendation = z.infer<typeof recommendationSchema>;
 
 export const recommendationLabels: Record<Recommendation, string> = {
-  strong_yes: "Strong yes",
-  yes: "Yes",
-  lean_no: "Lean no",
-  no: "No",
+  strong_yes: "Strong shortlist",
+  yes: "Shortlist",
+  lean_no: "Borderline",
+  no: "Reject",
 };
 
 export const recommendationBadgeTone: Record<Recommendation, string> = {
@@ -269,11 +269,4 @@ export const recommendationBadgeTone: Record<Recommendation, string> = {
   yes: "border-info/20 bg-info/10 text-info",
   lean_no: "border-warning/20 bg-warning/10 text-warning",
   no: "border-danger/20 bg-danger/10 text-danger",
-};
-
-export const recommendationSurfaceTone: Record<Recommendation, string> = {
-  strong_yes: "bg-success/60",
-  yes: "bg-info/60",
-  lean_no: "bg-warning/60",
-  no: "bg-danger/60",
 };

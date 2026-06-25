@@ -72,8 +72,6 @@ type CandidateSummary = {
 };
 
 type RecommendationMeta = {
-  label: string;
-  badge: string;
   scoreRing: string;
   scoreText: string;
   accent: string;
@@ -81,29 +79,21 @@ type RecommendationMeta = {
 
 const recommendationMeta: Record<Recommendation, RecommendationMeta> = {
   strong_yes: {
-    label: "Strong yes",
-    badge: "border-primary/20 bg-primary/5 text-foreground",
     scoreRing: "border-primary/20 bg-primary/5",
     scoreText: "text-foreground",
     accent: "bg-primary/60",
   },
   yes: {
-    label: "Yes",
-    badge: "border-border/70 bg-muted/30 text-foreground",
     scoreRing: "border-border/70 bg-muted/30",
     scoreText: "text-foreground",
     accent: "bg-muted-foreground/70",
   },
   lean_no: {
-    label: "Lean no",
-    badge: "border-border/70 bg-muted/30 text-foreground",
     scoreRing: "border-border/70 bg-muted/30",
     scoreText: "text-foreground",
     accent: "bg-muted-foreground/70",
   },
   no: {
-    label: "No",
-    badge: "border-border/70 bg-muted/30 text-foreground",
     scoreRing: "border-border/70 bg-muted/30",
     scoreText: "text-foreground",
     accent: "bg-muted-foreground/70",
@@ -745,42 +735,26 @@ export function ReportTimeline({
       report.answerAuthenticity?.riskLevel === "high" ? (
         <TimelineNode
           icon={AiMagicIcon}
-          iconClass="text-foreground"
-          dotClassName="ring-border bg-amber-500/10"
+          iconClass="text-muted-foreground"
+          dotClassName="ring-border bg-muted/30"
           title="Answer authenticity concern"
           timestamp={reportCreatedAt}
         >
-          <Card className="border-amber-500/30 bg-amber-500/2">
+          <Card className="border-border/70">
             <CardContent className="space-y-4 pt-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="max-w-xl space-y-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex size-7 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/10">
-                      <HugeiconsIcon
-                        icon={AiMagicIcon}
-                        strokeWidth={2}
-                        className="size-3.5 text-amber-600"
-                      />
-                    </div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-amber-600">
-                      {report.answerAuthenticity.riskLevel === "high" ? "High risk" : "Medium risk"}
-                    </p>
-                  </div>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                    {report.answerAuthenticity.riskLevel === "high" ? "High risk" : "Medium risk"}
+                  </p>
                   <p className="text-sm leading-6 text-foreground">
                     {report.answerAuthenticity.explanation}
                   </p>
                 </div>
-                <div className="flex shrink-0 items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2">
-                  <HugeiconsIcon
-                    icon={AiMagicIcon}
-                    strokeWidth={2}
-                    className="size-4 text-amber-600"
-                  />
-                  <span className="font-mono text-xs font-bold uppercase text-amber-600">
-                    {report.answerAuthenticity.signals.length} signal
-                    {report.answerAuthenticity.signals.length === 1 ? "" : "s"}
-                  </span>
-                </div>
+                <Badge variant="outline" className="shrink-0 font-mono text-[11px] uppercase">
+                  {report.answerAuthenticity.signals.length} signal
+                  {report.answerAuthenticity.signals.length === 1 ? "" : "s"}
+                </Badge>
               </div>
               {report.answerAuthenticity.signals.length > 0 ? (
                 <div className="space-y-2">

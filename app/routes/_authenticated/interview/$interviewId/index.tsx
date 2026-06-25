@@ -20,6 +20,7 @@ import {
   getMyVoiceAssessment,
   startMyInterview,
 } from "@/features/interviews/server/functions";
+import type { MessageIntegritySnapshot } from "@/features/interviews/shared/integrity";
 import { formatDeadlineLabel, formatTimeLeft } from "@/shared/date";
 import { Route as ParentRoute } from "../$interviewId";
 
@@ -207,12 +208,13 @@ function InterviewWorkspaceContent({
     completeMutation.mutate({ data: { interviewId: interview.id } });
   };
 
-  const onSendMessage = async (content: string) => {
+  const onSendMessage = async (content: string, integrity: MessageIntegritySnapshot) => {
     try {
-      await chat.sendMessage(content);
+      await chat.sendMessage(content, integrity);
       await router.invalidate();
     } catch (error) {
       toast.error(getErrorMessage(error, "Could not send your answer. Please try again."));
+      throw error;
     }
   };
 

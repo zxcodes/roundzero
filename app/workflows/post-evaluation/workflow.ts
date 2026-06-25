@@ -190,6 +190,7 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
           transcript: interviewData.transcript,
           messages: interviewData.messages,
           screeningCoverage: interviewData.screeningCoverage,
+          integrity: interviewData.integrity,
           customQuestions: interviewData.contextState.customQuestions,
           log,
         }),

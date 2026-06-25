@@ -72,6 +72,7 @@ function DashboardLayout() {
           showTeam={
             isCompany && (auth.membershipRole === "owner" || auth.membershipRole === "admin")
           }
+          showBilling={isCompany && auth.membershipRole === "owner"}
           open={commandOpen}
           onOpenChange={setCommandOpen}
         />
@@ -83,8 +84,8 @@ function DashboardLayout() {
             notificationsFeed={notificationsFeed}
             onOpenCommandPalette={onOpenCommandPalette}
           />
-          <div className="flex min-h-0 flex-1 flex-col">
-            <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden">
+            <div className="mx-auto flex w-full min-w-0 max-w-[1600px] flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
               <Outlet />
             </div>
           </div>
