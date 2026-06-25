@@ -1,6 +1,5 @@
 ## TODO
 
-- add batch actions for companies (shortlist multiple candidates, and quick actions "shortlist top 3" reject "bottom ones")
 - harden pre-eval prompts. easily invites the user to an interview even the role is irrelevant.
 - see if we need candidate summary in interview table's metadata. audit other tables that are storing huge data like this and if we can derive on demand instead of storing in db.
 - check deleted account behaviour for companies, applications, etc. how the entire flow handles it. (add a workflow that cleans up deleted accounts)
@@ -15,6 +14,10 @@
 - analytics? stretch? or just have a basic admin dashboard with stats (should be good enough for the start).
 - validate open router models using their api key in prod ci so we detect non existent models beforehand.
 - update brand identity, desc etc in google console. infact just create a new project.
+
+
+## Future
+- add batch actions for companies (shortlist multiple candidates, and quick actions "shortlist top 3" reject "bottom ones")
 
 
 <!--- add onCopy, onPaste detectors and evaluate final score based on that.-->
