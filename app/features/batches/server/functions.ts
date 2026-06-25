@@ -10,7 +10,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import {
-  getActiveBatchForJob,
   getBatchDetail,
   getInterviewsByBatchWithCandidate,
   getReportsByBatchId,
@@ -20,29 +19,7 @@ import { getJobById } from "@/features/jobs/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { authMiddleware } from "@/shared/middleware";
 
-const jobIdSchema = z.object({ jobId: z.string().uuid() });
 const batchIdSchema = z.object({ batchId: z.string().uuid() });
-
-export const getActiveBatchForJobServer = createServerFn({ method: "GET" })
-  .middleware([authMiddleware])
-  .validator(zodValidator(jobIdSchema))
-  .handler(async ({ data, context }) => {
-    const db = getDb();
-
-    const [company, job, batch] = await Promise.all([
-      getCompanyByMemberUserId(db, { userId: context.userId }),
-      getJobById(db, { id: data.jobId }),
-      getActiveBatchForJob(db, { jobId: data.jobId }),
-    ]);
-    if (!company) {
-      throw new Error("No company found");
-    }
-    if (!job || job.companyId !== company.id) {
-      throw new Error("Job not found or not authorized");
-    }
-
-    return batch;
-  });
 
 export const getBatchOverview = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
