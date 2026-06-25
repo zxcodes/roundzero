@@ -5,9 +5,15 @@ import { createContext, use, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { UserRole } from "@/shared/enums";
 import { currentUserQueryKey, loginWithGoogle, logout } from "./server/functions";
+import {
+  parseSignupSearch,
+  redirectAfterSignup,
+  type SignupSearch,
+  toSignupRouteSearch,
+} from "./signup-search";
 
 interface AuthContextType {
-  signIn: (role?: UserRole, redirectTo?: string) => void;
+  signIn: (role?: UserRole, signupSearch?: SignupSearch) => void;
   signOut: () => Promise<void>;
   isSigningIn: boolean;
   isSigningOut: boolean;
@@ -19,7 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const pendingRoleRef = useRef<UserRole | undefined>(undefined);
-  const pendingRedirectRef = useRef<string | undefined>(undefined);
+  const pendingSignupSearchRef = useRef<SignupSearch>({});
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
@@ -32,9 +38,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             role: pendingRoleRef.current,
           },
         });
-        const redirectTo = pendingRedirectRef.current;
+        const signupSearch = pendingSignupSearchRef.current;
         pendingRoleRef.current = undefined;
-        pendingRedirectRef.current = undefined;
+        pendingSignupSearchRef.current = {};
 
         // Seed the cache with the freshly-authenticated user so
         // `__root.beforeLoad` hits warm cache instead of round-tripping.
@@ -51,20 +57,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (result.onboardingComplete) {
-          await router.navigate({ to: redirectTo ?? "/dashboard" });
+          await router.navigate(redirectAfterSignup(signupSearch));
         } else {
           const onboardingPath =
             result.user.role === "company" ? "/onboarding/company" : "/onboarding/candidate";
           await router.navigate({
             to: onboardingPath,
-            search: redirectTo ? { redirect: redirectTo } : {},
+            search: toSignupRouteSearch(signupSearch),
           });
         }
         await router.invalidate();
       } catch (error) {
         console.error("Authentication error:", error);
         pendingRoleRef.current = undefined;
-        pendingRedirectRef.current = undefined;
+        pendingSignupSearchRef.current = {};
         toast.error("Failed to sign in with Google");
       } finally {
         setIsSigningIn(false);
@@ -72,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
     onError: () => {
       pendingRoleRef.current = undefined;
-      pendingRedirectRef.current = undefined;
+      pendingSignupSearchRef.current = {};
       setIsSigningIn(false);
       toast.error("Google sign in failed");
     },
@@ -83,10 +89,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
   });
 
-  const signIn = (role?: UserRole, redirectTo?: string) => {
+  const signIn = (role?: UserRole, signupSearch?: SignupSearch) => {
     setIsSigningIn(true);
     pendingRoleRef.current = role;
-    pendingRedirectRef.current = redirectTo;
+    pendingSignupSearchRef.current = parseSignupSearch(signupSearch);
     login();
   };
 

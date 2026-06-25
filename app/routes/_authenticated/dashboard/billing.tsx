@@ -1,19 +1,15 @@
 import { createFileRoute, redirect, useLoaderData, useNavigate } from "@tanstack/react-router";
+import { zodValidator } from "@tanstack/zod-adapter";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { z } from "zod";
 import { BillingPageSkeleton } from "@/components/route-skeletons";
 import { BillingPage } from "@/features/billing/components/billing-page";
+import { billingPageSearchSchema } from "@/features/billing/search";
 import { getMySubscription, syncCheckoutSubscription } from "@/features/billing/server/functions";
 import { PAGE_SEO } from "@/shared/seo";
 
-const searchSchema = z.object({
-  status: z.enum(["success", "cancelled"]).optional(),
-  checkout_id: z.string().optional(),
-});
-
 export const Route = createFileRoute("/_authenticated/dashboard/billing")({
-  validateSearch: searchSchema,
+  validateSearch: zodValidator(billingPageSearchSchema),
   head: () => ({
     meta: [
       { title: PAGE_SEO.pricing.title },
@@ -69,11 +65,13 @@ function BillingRoute() {
       toast.message("Checkout cancelled.");
     }
 
-    void navigate({ search: {}, replace: true });
+    void navigate({ search: (prev) => ({ ...prev, status: undefined, checkout_id: undefined }) });
   }, [search.status, navigate]);
 
   const auth = useLoaderData({ from: "/_authenticated" });
   const jobCounts = auth.type === "company" ? auth.jobCounts : null;
 
-  return <BillingPage subscription={subscription} jobCounts={jobCounts} />;
+  return (
+    <BillingPage subscription={subscription} jobCounts={jobCounts} highlightedPlan={search.plan} />
+  );
 }
