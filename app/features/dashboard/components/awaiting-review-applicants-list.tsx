@@ -1,8 +1,7 @@
 import { ArrowRight01Icon, RankingIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useRouter } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { RoleAccordionPanel } from "@/components/role-accordion-panel";
-import { Button } from "@/components/ui/button";
 import {
   Empty,
   EmptyDescription,
@@ -11,7 +10,10 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import type { getAwaitingReviewReports } from "@/features/dashboard/server/functions";
-import { ScorePill } from "@/features/reports/components/score-pill";
+import { cn } from "@/lib/utils";
+import { formatRelativeTime } from "@/shared/date";
+import { type Recommendation, recommendationLabels } from "@/shared/enums";
+import { CANDIDATE_SCORE_MAX, formatCandidateScore } from "@/shared/score";
 
 type AwaitingReviewCandidate = Awaited<ReturnType<typeof getAwaitingReviewReports>>[number];
 
@@ -19,6 +21,13 @@ type AwaitingReviewGroup = {
   jobId: string;
   jobTitle: string;
   candidates: AwaitingReviewCandidate[];
+};
+
+const recommendationTextTone: Record<Recommendation, string> = {
+  strong_yes: "text-success",
+  yes: "text-info",
+  lean_no: "text-warning",
+  no: "text-destructive",
 };
 
 export function AwaitingReviewApplicantsList({
@@ -54,8 +63,12 @@ export function AwaitingReviewApplicantsList({
           count={group.candidates.length}
           countLabel={`candidate${group.candidates.length === 1 ? "" : "s"} awaiting review`}
         >
-          {group.candidates.map((candidate) => (
-            <AwaitingReviewRow key={candidate.applicationId} candidate={candidate} />
+          {group.candidates.map((candidate, index) => (
+            <AwaitingReviewRow
+              key={candidate.applicationId}
+              candidate={candidate}
+              rank={index + 1}
+            />
           ))}
         </RoleAccordionPanel>
       ))}
@@ -63,40 +76,53 @@ export function AwaitingReviewApplicantsList({
   );
 }
 
-function AwaitingReviewRow({ candidate }: { candidate: AwaitingReviewCandidate }) {
-  const router = useRouter();
-  const highlight = candidate.strengths[0] ?? candidate.topConcern;
-
-  const onOpenReport = () => {
-    router.navigate({
-      to: "/dashboard/applicant-reports/$applicationId",
-      params: { applicationId: candidate.applicationId },
-    });
-  };
-
+function AwaitingReviewRow({
+  candidate,
+  rank,
+}: {
+  candidate: AwaitingReviewCandidate;
+  rank: number;
+}) {
   return (
-    <div className="px-4 py-4 md:px-5">
-      <div className="flex min-w-0 flex-wrap items-center gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold">{candidate.candidateName}</p>
-          {highlight ? (
-            <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">{highlight}</p>
-          ) : null}
-        </div>
+    <Link
+      to="/dashboard/applicant-reports/$applicationId"
+      params={{ applicationId: candidate.applicationId }}
+      className="group flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted/40 md:gap-4 md:px-5"
+    >
+      <span className="w-6 shrink-0 font-mono text-xs text-muted-foreground">#{rank}</span>
 
-        <ScorePill
-          score={candidate.overallScore}
-          recommendation={candidate.recommendation}
-          size="sm"
-          className="md:ml-auto"
-        />
-
-        <Button size="sm" onClick={onOpenReport} className="w-full md:w-auto">
-          Open report
-          <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-3.5" />
-        </Button>
+      <div className="w-[4.5rem] shrink-0 space-y-0.5">
+        <p className="font-mono text-base font-semibold leading-none tabular-nums">
+          <span>{formatCandidateScore(candidate.overallScore)}</span>
+          <span className="text-[10px] font-medium text-muted-foreground">
+            /{CANDIDATE_SCORE_MAX}
+          </span>
+        </p>
+        <p
+          className={cn(
+            "text-[11px] font-medium leading-tight",
+            recommendationTextTone[candidate.recommendation],
+          )}
+        >
+          {recommendationLabels[candidate.recommendation]}
+        </p>
       </div>
-    </div>
+
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold group-hover:text-primary">
+          {candidate.candidateName}
+        </p>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          Released {formatRelativeTime(candidate.releasedAt)}
+        </p>
+      </div>
+
+      <HugeiconsIcon
+        icon={ArrowRight01Icon}
+        strokeWidth={2}
+        className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary"
+      />
+    </Link>
   );
 }
 

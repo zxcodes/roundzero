@@ -36,7 +36,7 @@ export function RoleAccordionPanel({
           </div>
         </AccordionTrigger>
         <AccordionContent className="px-5 pb-5 md:px-6">
-          <div className="divide-y divide-border/50 rounded-3xl border border-border/60">
+          <div className="divide-y divide-border/50 overflow-hidden rounded-3xl border border-border/60">
             {children}
           </div>
         </AccordionContent>
