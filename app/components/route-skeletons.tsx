@@ -1165,22 +1165,21 @@ export function DashboardApplicationsSkeleton() {
 }
 
 /**
- * Skeleton for /dashboard/shortlisted — company shortlist board grouped by role.
- * Matches: page heading + summary metrics + collapsible role sections with candidate rows.
+ * Skeleton for /dashboard/shortlisted — page heading + inline stats + accordion rows.
  */
 export function DashboardShortlistedSkeleton() {
   return (
-    <div className="space-y-6">
-      <div className="grid gap-3 md:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, index) => (
-          <Card key={`shortlisted-metric-${index}`} size="sm">
-            <CardHeader className="gap-1.5">
-              <Skeleton className="h-3 w-20" />
-              <Skeleton className="h-8 w-16" />
-              <Skeleton className="h-3 w-40" />
-            </CardHeader>
-          </Card>
-        ))}
+    <div className="space-y-10">
+      <div className="space-y-5">
+        <div className="space-y-2">
+          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-4 w-full max-w-md" />
+        </div>
+        <div className="flex flex-wrap gap-x-6 gap-y-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-4 w-28" />
+        </div>
       </div>
 
       <div className="space-y-3">
@@ -1238,17 +1237,21 @@ export function DashboardShortlistedSkeleton() {
 }
 
 /**
- * Skeleton for /dashboard/awaiting-review — accordion role sections with candidate cards.
+ * Skeleton for /dashboard/awaiting-review — page heading + inline stats + accordion rows.
  */
 export function DashboardAwaitingReviewSkeleton() {
   return (
     <div className="space-y-10">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      <div className="space-y-5">
         <div className="space-y-2">
           <Skeleton className="h-6 w-40" />
           <Skeleton className="h-4 w-full max-w-md" />
         </div>
-        <Skeleton className="h-4 w-16" />
+        <div className="flex flex-wrap gap-x-6 gap-y-2">
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-4 w-32" />
+        </div>
       </div>
 
       <div className="space-y-3">
