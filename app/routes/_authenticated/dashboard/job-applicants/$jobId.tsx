@@ -4,10 +4,11 @@ import { createFileRoute, Link, notFound, redirect, useNavigate } from "@tanstac
 import { zodValidator } from "@tanstack/zod-adapter";
 
 import { z } from "zod";
+import { PageInlineStats } from "@/components/page-inline-stats";
 import { DashboardJobApplicantsSkeleton } from "@/components/route-skeletons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import {
   Select,
   SelectContent,
@@ -161,16 +162,26 @@ function JobApplicantsPage() {
     return a.status === "evaluation_failed";
   });
 
+  const applicantStatItems =
+    tab === "applicants" && applicants.length > 0
+      ? [
+          { value: applicants.length, label: "applicants" },
+          { value: releasedReportApplicants.length, label: "reports released" },
+          { value: activeInterviewApplicants.length, label: "active interview" },
+        ]
+      : [];
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0 space-y-1">
-          <h2 className="text-2xl font-bold tracking-tight">{job.title}</h2>
+        <div className="min-w-0 space-y-2">
+          <h1 className="text-xl font-semibold tracking-tight">{job.title}</h1>
           <p className="text-sm text-muted-foreground">
             {tab === "posting"
               ? "Review and manage this job posting."
               : "Review and manage everyone who applied to this role."}
           </p>
+          {applicantStatItems.length > 0 ? <PageInlineStats items={applicantStatItems} /> : null}
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:justify-end">
           {tab === "applicants" ? (
@@ -254,42 +265,13 @@ function ApplicantsTabContent({
   onFilterChange: (value: string) => void;
 }) {
   return (
-    <>
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Card size="sm" className="border-border/60">
-          <CardContent className="py-3">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-              Total applicants
-            </p>
-            <p className="mt-1 font-mono text-xl font-semibold">{applicants.length}</p>
-          </CardContent>
-        </Card>
-        <Card size="sm" className="border-border/60">
-          <CardContent className="py-3">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-              Reports released
-            </p>
-            <p className="mt-1 font-mono text-xl font-semibold">
-              {releasedReportApplicants.length}
-            </p>
-            {heldForReleaseCount > 0 ? (
-              <p className="mt-1 text-[11px] text-muted-foreground">
-                {heldForReleaseCount} held until batch completes
-              </p>
-            ) : null}
-          </CardContent>
-        </Card>
-        <Card size="sm" className="border-border/60">
-          <CardContent className="py-3">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-              Active interview
-            </p>
-            <p className="mt-1 font-mono text-xl font-semibold">
-              {activeInterviewApplicants.length}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+    <div className="space-y-5">
+      {heldForReleaseCount > 0 ? (
+        <p className="text-sm text-muted-foreground">
+          <span className="font-medium text-foreground">{heldForReleaseCount}</span> held until
+          batch completes
+        </p>
+      ) : null}
 
       <Tabs value={view} onValueChange={onViewChange}>
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -349,13 +331,16 @@ function ApplicantsTabContent({
       ) : null}
 
       {view === "all" && filter === "screening" && screeningApplicants.length === 0 ? (
-        <Card className="border-dashed border-border/60">
-          <CardContent className="py-6 text-center">
-            <p className="text-sm text-muted-foreground">No applicants in screening right now.</p>
-          </CardContent>
-        </Card>
+        <Empty className="rounded-2xl border-0 bg-muted/30">
+          <EmptyHeader>
+            <EmptyTitle>No applicants in screening</EmptyTitle>
+            <EmptyDescription>
+              Candidates in AI pre-screening will show up here while Zero reviews their profiles.
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : null}
-    </>
+    </div>
   );
 }
 
@@ -368,14 +353,12 @@ function ActiveBatchPanel({
 }) {
   if (applicants.length === 0) {
     return (
-      <Card className="border-dashed border-border/60">
-        <CardContent className="py-6 text-center">
-          <p className="text-sm text-muted-foreground">No active batch right now.</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Candidates will appear here when a batch is launched.
-          </p>
-        </CardContent>
-      </Card>
+      <Empty className="rounded-2xl border-0 bg-muted/30">
+        <EmptyHeader>
+          <EmptyTitle>No active batch</EmptyTitle>
+          <EmptyDescription>Candidates will appear here when a batch is launched.</EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     );
   }
 
@@ -384,33 +367,29 @@ function ActiveBatchPanel({
   const invited = applicants.filter((a) => a.status === "interview_invited").length;
 
   return (
-    <div className="space-y-4">
-      <Card size="sm" className="border-border/60">
-        <CardContent className="space-y-3 py-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-medium">Batch in progress</p>
-              <p className="text-xs text-muted-foreground">
-                {completed} of {applicants.length} completed · {inProgress} in progress · {invited}{" "}
-                invited
-              </p>
-            </div>
-            {batchId ? (
-              <Button variant="outline" size="sm" asChild>
-                <Link to="/dashboard/job-batches/$batchId" params={{ batchId }}>
-                  Open batch
-                </Link>
-              </Button>
-            ) : null}
-          </div>
-          <div className="h-2 overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-primary transition-all"
-              style={{ width: `${(completed / applicants.length) * 100}%` }}
-            />
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+    <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="space-y-1">
+          <h2 className="text-base font-semibold tracking-tight">Batch in progress</h2>
+          <p className="text-sm text-muted-foreground">
+            {completed} of {applicants.length} completed · {inProgress} in progress · {invited}{" "}
+            invited
+          </p>
+        </div>
+        {batchId ? (
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/dashboard/job-batches/$batchId" params={{ batchId }}>
+              Open batch
+            </Link>
+          </Button>
+        ) : null}
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-muted">
+        <div
+          className="h-full rounded-full bg-primary transition-all"
+          style={{ width: `${(completed / applicants.length) * 100}%` }}
+        />
+      </div>
+    </section>
   );
 }

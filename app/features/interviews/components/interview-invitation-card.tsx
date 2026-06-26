@@ -10,12 +10,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { formatDateTime, formatTimeLeft } from "@/shared/date";
-
-const formatInterviewStatusLabel = (status: string) => {
-  return status.replace(/_/g, " ");
-};
 
 type InterviewInvitationCardProps = {
   interviewId: string;
@@ -45,7 +40,7 @@ export function InterviewInvitationCard({
     pending: { label: "Ready", icon: Rocket01Icon, tone: "text-primary" },
     in_progress: { label: "In progress", icon: Clock01Icon, tone: "text-primary" },
     completed: { label: "Completed", icon: CheckmarkCircle02Icon, tone: "text-success" },
-    expired: { label: "Expired", icon: Cancel01Icon, tone: "text-warning" },
+    expired: { label: "Expired", icon: Clock01Icon, tone: "text-warning" },
     cancelled: { label: "Cancelled", icon: Cancel01Icon, tone: "text-muted-foreground" },
   };
 
@@ -56,17 +51,16 @@ export function InterviewInvitationCard({
   };
 
   return (
-    <Card>
-      <CardContent className="space-y-4">
+    <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
+      <div className="space-y-1">
         <div className="flex flex-wrap items-center gap-2">
           <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={2} className="size-5 text-primary" />
-          <p className="text-sm font-medium">RoundZero interview</p>
+          <h2 className="text-sm font-semibold">RoundZero interview</h2>
           <Badge variant="outline" className="gap-1 text-[11px]">
             <HugeiconsIcon icon={config.icon} strokeWidth={2} className={`size-3 ${config.tone}`} />
-            {formatInterviewStatusLabel(status)}
+            {config.label}
           </Badge>
         </div>
-
         <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1">
             <HugeiconsIcon icon={Clock01Icon} strokeWidth={2} className="size-3" />~
@@ -77,32 +71,44 @@ export function InterviewInvitationCard({
             {formatLabel}
           </span>
         </div>
+      </div>
 
-        <p className="text-sm text-muted-foreground">
-          {status === "completed"
-            ? "Your interview is complete. The company will review your evaluation."
-            : status === "expired"
-              ? "This interview window has expired."
-              : status === "cancelled"
-                ? "This interview has been cancelled."
-                : "Complete your RoundZero interview to advance your application."}
-        </p>
+      <p className="text-sm text-muted-foreground">
+        {status === "completed"
+          ? "Your interview is complete. The company will review your evaluation."
+          : status === "expired"
+            ? "This interview window has expired."
+            : status === "cancelled"
+              ? "This interview has been cancelled."
+              : "Complete your RoundZero interview to advance your application."}
+      </p>
 
-        {status === "pending" && timeLeft && deadline ? (
-          <div className="rounded-md border border-warning/20 bg-warning/10 px-3 py-2.5 text-xs text-warning">
-            <p className="font-medium">{timeLeft}</p>
-            <p className="mt-0.5">Deadline: {deadline}</p>
-          </div>
-        ) : null}
+      {status === "pending" && timeLeft && deadline ? (
+        <div className="rounded-2xl border border-warning/20 bg-warning/10 px-4 py-3 text-xs text-warning">
+          <p className="font-medium">{timeLeft}</p>
+          <p className="mt-0.5">Deadline: {deadline}</p>
+        </div>
+      ) : null}
 
-        {isActionable ? (
-          <Button size="sm" asChild>
-            <Link to="/interview/$interviewId" params={{ interviewId }}>
-              {status === "in_progress" ? "Continue interview" : "Start interview"}
-            </Link>
-          </Button>
-        ) : null}
-      </CardContent>
-    </Card>
+      {isActionable ? (
+        <Button size="sm" asChild>
+          <Link to="/interview/$interviewId" params={{ interviewId }}>
+            {status === "in_progress" ? "Continue interview" : "Start interview"}
+          </Link>
+        </Button>
+      ) : status === "completed" ? (
+        <Button size="sm" variant="outline" asChild>
+          <Link to="/interview/$interviewId" params={{ interviewId }}>
+            View interview
+          </Link>
+        </Button>
+      ) : status === "expired" || status === "cancelled" ? (
+        <Button size="sm" variant="outline" asChild>
+          <Link to="/interview/$interviewId" params={{ interviewId }}>
+            View transcript
+          </Link>
+        </Button>
+      ) : null}
+    </section>
   );
 }

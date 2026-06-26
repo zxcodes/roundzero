@@ -10,6 +10,17 @@ WHERE application_id = $1
 ORDER BY created_at DESC
 LIMIT 1;
 
+-- name: getInterviewForCompanyByApplicationId :one
+-- Company-facing projection. Excludes interviews.metadata (job snapshot,
+-- screening coverage, integrity telemetry) and agent_id.
+SELECT i.id, i.application_id, i.batch_id, i.type, i.status, i.invited_at, i.started_at, i.completed_at,
+       i.expired_at, i.cancelled_at, i.cancellation_reason, i.created_at, i.updated_at,
+       i.metadata->>'expiresAt' AS expires_at
+FROM interviews i
+WHERE i.application_id = $1
+ORDER BY i.created_at DESC
+LIMIT 1;
+
 -- name: getInterviewForCandidateById :one
 -- Candidate-facing projection. Deliberately excludes interviews.metadata and
 -- agent_id: metadata holds the AI runtime context (system-prompt inputs, the
@@ -120,6 +131,22 @@ SET metadata = $2,
     updated_at = now()
 WHERE id = $1
 RETURNING *;
+
+-- name: getInterviewRuntimeInputsByApplicationId :one
+SELECT a.metadata AS application_metadata,
+       u.name AS candidate_name,
+       pe.score,
+       pe.missing_requirements,
+       pe.consistency_score,
+       pe.raw_response
+FROM applications a
+JOIN users u ON u.id = a.candidate_id
+LEFT JOIN pre_evaluations pe ON pe.application_id = a.id
+WHERE a.id = $1;
+
+-- name: deleteInterviewMessagesByInterviewId :exec
+DELETE FROM interview_messages
+WHERE interview_id = $1;
 
 -- name: getInterviewContextById :one
 SELECT i.id, i.application_id, i.batch_id, i.agent_id, i.type, i.metadata, i.status, i.invited_at, i.started_at, i.completed_at,

@@ -10,13 +10,22 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
-import { InterviewTranscript } from "@/features/interviews/components/interview-transcript";
-import { CompletedInterviewBar } from "@/features/interviews/components/voice-assessment-panel";
+import {
+  InterviewThinkingBubble,
+  InterviewTranscript,
+  interviewEmptyIconClass,
+} from "@/features/interviews/components/interview-transcript";
+import {
+  CompletedInterviewBar,
+  type InterviewEndVariant,
+  interviewEndVisuals,
+} from "@/features/interviews/components/voice-assessment-panel";
 import {
   appendCopySource,
   emptyComposeIntegritySnapshot,
   type MessageIntegritySnapshot,
 } from "@/features/interviews/shared/integrity";
+import { cn } from "@/lib/utils";
 
 type InterviewChatProps = {
   messages: Array<{
@@ -26,6 +35,7 @@ type InterviewChatProps = {
   }>;
   canSend: boolean;
   isEnded: boolean;
+  isCancelled: boolean;
   isExpired: boolean;
   isStreaming: boolean;
   /**
@@ -48,6 +58,7 @@ export function InterviewChat({
   messages,
   canSend,
   isEnded,
+  isCancelled,
   isExpired,
   isStreaming,
   isThinking,
@@ -164,13 +175,26 @@ export function InterviewChat({
     event.preventDefault();
   };
 
+  const endedVariant: InterviewEndVariant = isCancelled
+    ? "cancelled"
+    : isExpired
+      ? "expired"
+      : "completed";
+
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-muted/30">
       {!messages.length && !isThinking ? (
-        isExpired ? (
+        isCancelled ? (
+          <EmptyInterviewComponent
+            description="This interview was cancelled."
+            title="Interview cancelled"
+            variant="cancelled"
+          />
+        ) : isExpired ? (
           <EmptyInterviewComponent
             description="This interview window has closed."
             title="Interview expired"
+            variant="expired"
           />
         ) : (
           <EmptyInterviewComponent
@@ -185,7 +209,11 @@ export function InterviewChat({
             userLabel="You"
             onCopyFromMessage={onCopyFromMessage}
           />
-          {isThinking ? <ThinkingBubble /> : null}
+          {isThinking ? (
+            <div className="px-5 pb-2 md:px-7">
+              <InterviewThinkingBubble />
+            </div>
+          ) : null}
           <div ref={transcriptEndRef} className="h-1" />
         </ScrollArea>
       )}
@@ -213,11 +241,20 @@ export function InterviewChat({
           ) : (
             <div className="flex flex-wrap items-center justify-between gap-3">
               <CompletedInterviewBar
-                title={isExpired ? "Interview expired" : "Interview complete"}
+                variant={endedVariant}
+                title={
+                  isCancelled
+                    ? "Interview cancelled"
+                    : isExpired
+                      ? "Interview expired"
+                      : "Interview complete"
+                }
                 description={
-                  isExpired
-                    ? "This interview window has closed."
-                    : "Your results are included in the report."
+                  isCancelled
+                    ? "This interview was cancelled. No report will be generated."
+                    : isExpired
+                      ? "This interview window has closed."
+                      : "Your results are included in the report."
                 }
               />
               <Button variant="outline" size="sm" asChild>
@@ -228,7 +265,7 @@ export function InterviewChat({
         </div>
       ) : (
         <div className="shrink-0 bg-card px-4 pb-4 pt-3 md:px-6 md:pb-5">
-          <div className="flex items-end gap-2 rounded-2xl border border-border/70 bg-background px-3 py-2 shadow-sm ring-1 ring-transparent transition-[border-color,box-shadow] focus-within:border-primary/40 focus-within:shadow-md focus-within:ring-primary/20">
+          <div className="flex items-end gap-2 rounded-2xl border border-border/60 bg-background px-3 py-2 transition-colors focus-within:border-primary/40">
             <Textarea
               ref={composerRef}
               value={content}
@@ -243,7 +280,7 @@ export function InterviewChat({
             <Button
               type="button"
               size="icon"
-              className="mb-0.5 size-9 shrink-0 rounded-full bg-primary text-primary-foreground shadow-sm transition-transform hover:scale-[1.02] hover:bg-primary/90 active:scale-[0.98] disabled:scale-100 disabled:bg-muted disabled:text-muted-foreground"
+              className="mb-0.5 size-9 shrink-0 rounded-full bg-primary text-primary-foreground transition-transform hover:scale-[1.02] hover:bg-primary/90 active:scale-[0.98] disabled:scale-100 disabled:bg-muted disabled:text-muted-foreground"
               onMouseDown={onSendMouseDown}
               onClick={onSubmit}
               disabled={!canSend || isStreaming || isThinking || content.trim().length === 0}
@@ -266,38 +303,25 @@ export function InterviewChat({
   );
 }
 
-function ThinkingBubble() {
-  return (
-    <div className="flex justify-start px-5 pb-2 md:px-7" aria-live="polite">
-      <div className="max-w-[86%] md:max-w-[66%]">
-        <p className="mb-1 px-1 text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground/90">
-          Zero
-        </p>
-        <div className="flex items-center justify-center rounded-2xl border border-border/70 bg-background/95 px-4 py-3 text-sm leading-6 text-muted-foreground shadow-sm ring-1 ring-border/35">
-          <span className="sr-only">Awaiting response</span>
-          <span className="inline-flex items-end gap-1" aria-hidden="true">
-            <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground/60 [animation-delay:-0.3s]" />
-            <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground/60 [animation-delay:-0.15s]" />
-            <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground/60" />
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function EmptyInterviewComponent({
   title,
   description,
+  variant = "ready",
 }: {
   title: string;
   description: string;
+  variant?: InterviewEndVariant | "ready";
 }) {
+  const visual =
+    variant === "ready"
+      ? { icon: BubbleChatIcon, bg: "bg-card", tone: "text-primary" }
+      : interviewEndVisuals[variant];
+
   return (
     <div className="flex h-full items-center justify-center">
       <div className="mx-auto flex max-w-md flex-col items-center gap-3 text-center text-muted-foreground">
-        <div className="flex size-12 items-center justify-center rounded-full border border-border/70 bg-card shadow-sm">
-          <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={2} className="size-5 text-primary" />
+        <div className={cn(interviewEmptyIconClass, visual.bg)}>
+          <HugeiconsIcon icon={visual.icon} strokeWidth={2} className={cn("size-5", visual.tone)} />
         </div>
         <p className="text-sm leading-relaxed">{title}.</p>
         <p className="text-xs text-muted-foreground/80">{description}</p>

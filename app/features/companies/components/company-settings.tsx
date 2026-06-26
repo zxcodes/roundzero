@@ -8,7 +8,7 @@ import { useId, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
@@ -124,32 +124,32 @@ export function CompanySettings({
 
   if (!canManageProfile) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
           <h2 className="text-lg font-semibold tracking-tight">Company profile</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Your admin manages the public company profile. Contact them for changes.
           </p>
         </div>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">{company.name}</CardTitle>
-            {company.description ? <CardDescription>{company.description}</CardDescription> : null}
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <CompanyCareersLink slug={company.slug} />
-            {company.website ? (
-              <p className="text-sm text-muted-foreground">{company.website}</p>
+        <section className="space-y-3 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
+          <div className="space-y-1">
+            <h2 className="text-base font-semibold tracking-tight">{company.name}</h2>
+            {company.description ? (
+              <p className="text-sm text-muted-foreground">{company.description}</p>
             ) : null}
-          </CardContent>
-        </Card>
+          </div>
+          <CompanyCareersLink slug={company.slug} />
+          {company.website ? (
+            <p className="text-sm text-muted-foreground">{company.website}</p>
+          ) : null}
+        </section>
         <DeleteAccountSection />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <form.Subscribe
         selector={(state) => ({ isDirty: state.isDirty, isSubmitting: state.isSubmitting })}
       >
@@ -170,14 +170,16 @@ export function CompanySettings({
         </p>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* Basic Info */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Basic Information</CardTitle>
-            <CardDescription>Your company name, logo, and description.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
+          <div className="space-y-1">
+            <h2 className="text-base font-semibold tracking-tight">Basic information</h2>
+            <p className="text-sm text-muted-foreground">
+              Your company name, logo, and description.
+            </p>
+          </div>
+          <div className="space-y-4">
             <form.Field name="logoKey">
               {(field) => (
                 <CompanyLogoUploadField
@@ -237,16 +239,17 @@ export function CompanySettings({
                 );
               }}
             </form.Field>
-          </CardContent>
-        </Card>
+          </div>
+        </section>
 
-        {/* Details */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Company Details</CardTitle>
-            <CardDescription>Industry, size, location, and other details.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
+          <div className="space-y-1">
+            <h2 className="text-base font-semibold tracking-tight">Company details</h2>
+            <p className="text-sm text-muted-foreground">
+              Industry, size, location, and other details.
+            </p>
+          </div>
+          <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <form.Field name="industry">
                 {(field) => {
@@ -357,18 +360,17 @@ export function CompanySettings({
                 );
               }}
             </form.Field>
-          </CardContent>
-        </Card>
+          </div>
+        </section>
 
-        {/* Tech Stack */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Tech Stack</CardTitle>
-            <CardDescription>
+        <section className="space-y-3 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
+          <div className="space-y-1">
+            <h2 className="text-base font-semibold tracking-tight">Tech stack</h2>
+            <p className="text-sm text-muted-foreground">
               Technologies your team works with. Helps candidates find you.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
+            </p>
+          </div>
+          <div className="space-y-3">
             <form.Field name="techStack" mode="array">
               {(techStackField) => {
                 const onTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -437,18 +439,17 @@ export function CompanySettings({
                 );
               }}
             </form.Field>
-          </CardContent>
-        </Card>
+          </div>
+        </section>
 
-        {/* Culture */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Culture & Perks</CardTitle>
-            <CardDescription>
-              What's it like to work at your company? Values, perks, work style.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+        <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
+          <div className="space-y-1">
+            <h2 className="text-base font-semibold tracking-tight">Culture & perks</h2>
+            <p className="text-sm text-muted-foreground">
+              What&apos;s it like to work at your company? Values, perks, work style.
+            </p>
+          </div>
+          <div>
             <form.Field name="culture">
               {(field) => {
                 const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
@@ -470,16 +471,17 @@ export function CompanySettings({
                 );
               }}
             </form.Field>
-          </CardContent>
-        </Card>
+          </div>
+        </section>
 
-        {/* Social Links */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Social Links</CardTitle>
-            <CardDescription>Help candidates connect with your company online.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
+          <div className="space-y-1">
+            <h2 className="text-base font-semibold tracking-tight">Social links</h2>
+            <p className="text-sm text-muted-foreground">
+              Help candidates connect with your company online.
+            </p>
+          </div>
+          <div className="space-y-4">
             <form.Field name="linkedinUrl">
               {(field) => {
                 const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
@@ -542,8 +544,8 @@ export function CompanySettings({
                 );
               }}
             </form.Field>
-          </CardContent>
-        </Card>
+          </div>
+        </section>
 
         <DeleteAccountSection />
       </div>
@@ -567,7 +569,7 @@ function CompanyCareersLink({ slug }: { slug: string }) {
     <div className="space-y-2">
       <FieldLabel>Careers page link</FieldLabel>
       <div className="flex flex-wrap items-center gap-2">
-        <Input value={careersUrl} readOnly className="bg-muted font-mono text-sm" />
+        <Input value={careersUrl} readOnly className="bg-muted text-sm" />
         <Button type="button" variant="outline" size="sm" onClick={onCopyCareersLink}>
           <HugeiconsIcon icon={Copy01Icon} strokeWidth={2} className="size-3.5" />
           Copy link

@@ -8,7 +8,8 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
+import { Card } from "@/components/ui/card";
+import { EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import type { DashboardCandidateReport, RoleAttention } from "@/features/dashboard/company-metrics";
 import { DashboardGreeting } from "@/features/dashboard/components/dashboard-greeting";
 import type { getDashboardMetrics } from "@/features/dashboard/server/functions";
@@ -115,7 +116,7 @@ function HeroSection({ firstName, metrics }: { firstName: string; metrics: Compa
       <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
         {statItems.map((item) => (
           <span key={item.label}>
-            <span className="font-mono font-medium tabular-nums text-foreground">{item.value}</span>{" "}
+            <span className="font-medium tabular-nums text-foreground">{item.value}</span>{" "}
             {item.label}
           </span>
         ))}
@@ -128,7 +129,7 @@ function AwaitingReviewCard({ candidate }: { candidate: DashboardCandidateReport
   const highlight = candidate.strengths[0] ?? candidate.topConcern;
 
   return (
-    <article className="flex min-h-52 flex-col rounded-xl bg-muted/25 p-4">
+    <Card variant="dashboard-tile" tileTone="emphasis" className="flex min-h-52 flex-col">
       <RecommendationBadge recommendation={candidate.recommendation} size="lg" />
       <div className="mt-3 min-w-0 space-y-1">
         <h3 className="truncate text-base font-semibold tracking-tight">
@@ -137,7 +138,7 @@ function AwaitingReviewCard({ candidate }: { candidate: DashboardCandidateReport
         <p className="truncate text-xs text-muted-foreground">{candidate.jobTitle}</p>
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-        <span className="font-mono font-medium tabular-nums text-foreground">
+        <span className="font-medium tabular-nums text-foreground">
           {formatCandidateScore(candidate.overallScore)}/{CANDIDATE_SCORE_MAX}
         </span>
         {candidate.confidence ? <span>{candidate.confidence} confidence</span> : null}
@@ -152,22 +153,20 @@ function AwaitingReviewCard({ candidate }: { candidate: DashboardCandidateReport
       <div className="mt-4">
         <ReviewButton applicationId={candidate.applicationId} label="Open report" />
       </div>
-    </article>
+    </Card>
   );
 }
 
 function AwaitingReviewSection({
   candidates,
   heroSummary,
-  activitySummary,
 }: {
   candidates: DashboardCandidateReport[];
   heroSummary: CompanyMetrics["heroSummary"];
-  activitySummary: CompanyMetrics["activitySummary"];
 }) {
   if (candidates.length === 0) {
     return (
-      <section className="rounded-2xl bg-muted/30 px-6 py-8">
+      <Card variant="dashboard-panel" className="px-6 py-8">
         <div className="flex items-center gap-2">
           <HugeiconsIcon
             icon={CheckmarkCircle02Icon}
@@ -179,19 +178,7 @@ function AwaitingReviewSection({
         <p className="mt-2 text-sm text-muted-foreground">
           No candidates are waiting for a shortlist or reject decision right now.
         </p>
-        {activitySummary.length > 0 ? (
-          <ul className="mt-6 space-y-2 border-t border-border/40 pt-6">
-            {activitySummary.map((item) => (
-              <li key={item.id} className="flex items-center justify-between gap-3 text-sm">
-                <span className="text-muted-foreground">{item.label}</span>
-                <span className="shrink-0 text-xs text-muted-foreground">
-                  {formatRelativeTime(item.occurredAt)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : null}
-      </section>
+      </Card>
     );
   }
 
@@ -204,7 +191,7 @@ function AwaitingReviewSection({
             Top recommendations waiting on your decision — open a report for the full evaluation.
           </p>
         </div>
-        <span className="font-mono text-sm text-muted-foreground">
+        <span className="text-sm text-muted-foreground">
           {heroSummary.awaitingReviewCount} total
         </span>
       </div>
@@ -231,7 +218,7 @@ function AwaitingReviewSection({
 
 function RoleAttentionCard({ role }: { role: RoleAttention }) {
   return (
-    <article className="flex min-h-44 flex-col rounded-xl bg-muted/20 p-4">
+    <Card variant="dashboard-tile" tileTone="default" className="flex min-h-44 flex-col">
       <h3 className="truncate text-base font-semibold tracking-tight">{role.title}</h3>
       <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1">
@@ -278,14 +265,17 @@ function RoleAttentionCard({ role }: { role: RoleAttention }) {
           </Link>
         </Button>
       </div>
-    </article>
+    </Card>
   );
 }
 
 function RolesAttentionSection({ roles }: { roles: RoleAttention[] }) {
   if (roles.length === 0) {
     return (
-      <Empty className="rounded-2xl bg-muted/20">
+      <Card
+        variant="dashboard-panel"
+        className="items-center justify-center gap-4 p-12 text-center"
+      >
         <EmptyHeader>
           <EmptyTitle>No open roles with applicants</EmptyTitle>
           <EmptyDescription>Post a role to start receiving candidates.</EmptyDescription>
@@ -293,7 +283,7 @@ function RolesAttentionSection({ roles }: { roles: RoleAttention[] }) {
         <Button asChild>
           <Link to="/dashboard/jobs/new">Post a job</Link>
         </Button>
-      </Empty>
+      </Card>
     );
   }
 
@@ -317,7 +307,7 @@ function RolesAttentionSection({ roles }: { roles: RoleAttention[] }) {
 
 function RecentReportCard({ report }: { report: DashboardCandidateReport }) {
   return (
-    <article className="flex min-h-44 flex-col rounded-xl bg-muted/15 p-4">
+    <Card variant="dashboard-tile" tileTone="subtle" className="flex min-h-44 flex-col">
       <RecommendationBadge recommendation={report.recommendation} />
       <div className="mt-3 min-w-0 space-y-1">
         <h3 className="truncate text-base font-semibold tracking-tight">{report.candidateName}</h3>
@@ -329,7 +319,7 @@ function RecentReportCard({ report }: { report: DashboardCandidateReport }) {
       <div className="mt-4">
         <ReviewButton applicationId={report.applicationId} label="Open report" />
       </div>
-    </article>
+    </Card>
   );
 }
 
@@ -354,11 +344,11 @@ function RecentActivitySection({
       </div>
 
       {evaluatingCount > 0 ? (
-        <div className="flex items-center gap-2 rounded-xl bg-warning/10 px-4 py-3 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2 rounded-2xl border border-warning/20 bg-warning/10 px-4 py-3 text-sm text-muted-foreground">
           <span className="size-1.5 shrink-0 rounded-full bg-warning" aria-hidden />
           <span>
-            <span className="font-mono font-medium text-foreground">{evaluatingCount}</span>{" "}
-            candidate{evaluatingCount === 1 ? "" : "s"} currently being evaluated
+            <span className="font-medium text-foreground">{evaluatingCount}</span> candidate
+            {evaluatingCount === 1 ? "" : "s"} currently being evaluated
           </span>
         </div>
       ) : null}
@@ -382,12 +372,11 @@ export function CompanyDashboard({
   firstName: string;
 }) {
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       <HeroSection firstName={firstName} metrics={metrics} />
       <AwaitingReviewSection
         candidates={metrics.awaitingReview}
         heroSummary={metrics.heroSummary}
-        activitySummary={metrics.activitySummary}
       />
       <RolesAttentionSection roles={metrics.rolesNeedingAttention} />
       <RecentActivitySection

@@ -16,7 +16,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
 import { currentUserQueryKey, deleteAccount } from "@/features/auth/server/functions";
 
 export function DeleteAccountSection() {
@@ -44,47 +44,47 @@ export function DeleteAccountSection() {
   };
 
   return (
-    <Card className="border-destructive/30">
-      <CardHeader>
-        <CardTitle className="text-base text-destructive">Delete Account</CardTitle>
-        <CardDescription>Permanently remove your account and all associated data.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="destructive" size="sm" disabled={deleteAccountMutation.isPending}>
-              {deleteAccountMutation.isPending ? (
-                <>
-                  <HugeiconsIcon
-                    icon={Loading03Icon}
-                    strokeWidth={2}
-                    className="size-4 animate-spin"
-                  />
-                  Deleting...
-                </>
-              ) : (
-                "Delete account"
-              )}
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete your account?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Your account will be deactivated immediately. If you log back in within 30 days,
-                your account will be restored automatically. After 30 days, your account and all
-                associated data will be permanently deleted and cannot be recovered.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={onDelete} variant="destructive">
-                Delete my account
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </CardContent>
-    </Card>
+    <section className="space-y-4 rounded-3xl border border-destructive/20 px-5 py-4 md:px-6">
+      <div className="space-y-1">
+        <h2 className="text-base font-semibold text-destructive">Delete account</h2>
+        <p className="text-sm text-muted-foreground">
+          Permanently remove your account and all associated data.
+        </p>
+      </div>
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button variant="destructive" size="sm" disabled={deleteAccountMutation.isPending}>
+            {deleteAccountMutation.isPending ? (
+              <>
+                <HugeiconsIcon
+                  icon={Loading03Icon}
+                  strokeWidth={2}
+                  className="size-4 animate-spin"
+                />
+                Deleting...
+              </>
+            ) : (
+              "Delete account"
+            )}
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your account will be deactivated immediately. If you log back in within 30 days, your
+              account will be restored automatically. After 30 days, your account and all associated
+              data will be permanently deleted and cannot be recovered.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={onDelete} variant="destructive">
+              Delete my account
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </section>
   );
 }

@@ -1,18 +1,74 @@
+import { cva, type VariantProps } from "class-variance-authority";
 import type * as React from "react";
 
 import { cn } from "@/lib/utils";
 
+const cardVariants = cva(
+  "group/card flex flex-col text-sm text-card-foreground has-[>img:first-child]:pt-0 data-[size=sm]:gap-4 data-[size=sm]:py-4 *:[img:first-child]:rounded-t-4xl *:[img:last-child]:rounded-b-4xl",
+  {
+    variants: {
+      variant: {
+        default:
+          "gap-6 overflow-hidden rounded-4xl bg-card py-6 shadow-md ring-1 ring-foreground/5 dark:ring-foreground/10",
+        /** Flat bordered card — keep default py for Header/Content/Footer composition. */
+        bordered:
+          "gap-0 overflow-hidden rounded-3xl border border-border/60 shadow-none ring-0",
+        /** Single CardContent supplies p-* / py-* — never pair with CardHeader. */
+        "bordered-inset":
+          "gap-0 overflow-hidden rounded-3xl border border-border/60 bg-muted-foreground/[0.045] py-0 shadow-none ring-0 dark:bg-muted/10",
+        "dashboard-tile": "gap-0 overflow-hidden rounded-xl p-4 shadow-none ring-0",
+        "dashboard-panel":
+          "gap-0 overflow-hidden rounded-2xl bg-muted-foreground/[0.085] shadow-none ring-0 dark:bg-muted/30",
+      },
+      tileTone: {
+        emphasis: "",
+        default: "",
+        subtle: "",
+      },
+    },
+    compoundVariants: [
+      {
+        variant: "dashboard-tile",
+        tileTone: "emphasis",
+        class: "bg-muted-foreground/7 dark:bg-muted/25",
+      },
+      {
+        variant: "dashboard-tile",
+        tileTone: "default",
+        class: "bg-muted-foreground/[0.055] dark:bg-muted/20",
+      },
+      {
+        variant: "dashboard-tile",
+        tileTone: "subtle",
+        class: "bg-muted-foreground/4 dark:bg-muted/15",
+      },
+    ],
+    defaultVariants: {
+      variant: "default",
+      tileTone: "default",
+    },
+  },
+);
+
 function Card({
   className,
+  variant = "default",
+  tileTone,
   size = "default",
   ...props
-}: React.ComponentProps<"div"> & { size?: "default" | "sm" }) {
+}: React.ComponentProps<"div"> &
+  VariantProps<typeof cardVariants> & {
+    size?: "default" | "sm";
+  }) {
   return (
     <div
       data-slot="card"
       data-size={size}
       className={cn(
-        "group/card flex flex-col gap-6 overflow-hidden rounded-4xl bg-card py-6 text-sm text-card-foreground shadow-md ring-1 ring-foreground/5 has-[>img:first-child]:pt-0 data-[size=sm]:gap-4 data-[size=sm]:py-4 dark:ring-foreground/10 *:[img:first-child]:rounded-t-4xl *:[img:last-child]:rounded-b-4xl",
+        cardVariants({
+          variant,
+          tileTone: variant === "dashboard-tile" ? (tileTone ?? "default") : undefined,
+        }),
         className,
       )}
       {...props}

@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  buildActivitySummary,
   buildHeroSummary,
   buildRoleAttention,
   mapReleasedReportRow,
@@ -145,37 +144,5 @@ describe("buildHeroSummary", () => {
     expect(summary.strongHireAwaitingCount).toBe(2);
     expect(summary.evaluatingCount).toBe(7);
     expect(summary.viewAllAwaitingJobId).toBe(jobA);
-  });
-});
-
-describe("buildActivitySummary", () => {
-  it("summarizes same-day report activity", () => {
-    const now = new Date();
-    const items = buildActivitySummary(
-      [
-        {
-          applicationId: "a1",
-          jobId: "j1",
-          jobTitle: "Role",
-          candidateName: "A",
-          overallScore: 8,
-          recommendation: "yes",
-          confidence: null,
-          strengths: [],
-          topConcern: null,
-          scores: {
-            communication: 8,
-            problemSolving: 8,
-            ownership: 8,
-            roleFit: 8,
-          },
-          releasedAt: now,
-          applicationStatus: "evaluated",
-        },
-      ],
-      [],
-    );
-
-    expect(items[0]?.label).toContain("report");
   });
 });

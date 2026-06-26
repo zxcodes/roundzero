@@ -29,6 +29,7 @@ import {
 import {
   buildInterviewSystemPrompt,
   ensureInterviewRuntimeMetadata,
+  loadInterviewRuntimeContext,
 } from "@/features/interviews/shared/runtime";
 import { loadVoiceAssessmentContext } from "@/features/interviews/shared/voice-runtime";
 import { getDb } from "@/shared/db";
@@ -194,10 +195,7 @@ export const startMyInterview = createServerFn({ method: "POST" })
     }
 
     const metadata = await ensureInterviewRuntimeMetadata(db, interviewContext);
-    const contextState = metadata.contextState;
-    if (!contextState) {
-      throw new Error("Interview context is unavailable");
-    }
+    const runtimeContext = await loadInterviewRuntimeContext(db, interviewContext, metadata);
 
     const existingMessages = await getInterviewMessagesByInterviewId(db, {
       interviewId: data.interviewId,
@@ -213,12 +211,12 @@ export const startMyInterview = createServerFn({ method: "POST" })
         messages: [
           {
             role: "user",
-            content: `Open the interview. Greet ${contextState.candidateName || "the candidate"} warmly by name, then ask your first company-supplied screening question. If there are no company questions, start with a question about a specific project, role, or technology from their resume. Plain conversational English only.`,
+            content: `Open the interview. Greet ${runtimeContext.candidateName || "the candidate"} warmly by name, then ask your first company-supplied screening question. If there are no company questions, start with a question about a specific project, role, or technology from their resume. Plain conversational English only.`,
           },
         ],
         systemPrompts: [
           buildInterviewSystemPrompt({
-            contextState,
+            runtimeContext,
             screeningCoverage: metadata.screeningCoverage ?? {},
             assistantTurnCount: existingMessages.filter((message) => message.role === "assistant")
               .length,

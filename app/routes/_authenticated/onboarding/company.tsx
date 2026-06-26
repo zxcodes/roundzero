@@ -7,7 +7,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
@@ -87,14 +86,15 @@ function CompanyOnboardingPage() {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-xl">Set up your company</CardTitle>
-        <CardDescription>
+    <div className="space-y-6">
+      <section className="space-y-1">
+        <h1 className="text-xl font-semibold tracking-tight">Set up your company</h1>
+        <p className="text-sm text-muted-foreground">
           Tell us a bit about your company. You can complete your full profile later in settings.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+        </p>
+      </section>
+
+      <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
         <form onSubmit={onFormSubmit} className="space-y-5">
           <form.Field
             name="name"
@@ -212,7 +212,7 @@ function CompanyOnboardingPage() {
             )}
           </form.Subscribe>
         </form>
-      </CardContent>
-    </Card>
+      </section>
+    </div>
   );
 }
