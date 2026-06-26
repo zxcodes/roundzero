@@ -1693,7 +1693,7 @@ export function BatchDetailSkeleton() {
           {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="flex items-center gap-4 px-4 py-3.5 md:px-5">
               <Skeleton className="h-3 w-6" />
-              <Skeleton className="h-10 w-[4.5rem]" />
+              <Skeleton className="h-10 w-18" />
               <div className="min-w-0 flex-1 space-y-2">
                 <Skeleton className="h-4 w-40" />
                 <Skeleton className="h-3 w-56" />
