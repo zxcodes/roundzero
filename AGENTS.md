@@ -61,6 +61,8 @@ Every client-side server-function call is a real worker round trip (+ an `authMi
 - `ScrollArea` (with explicit `h-`) for contained scroll panels; keep native scroll for page content/sidebars/textareas.
 - All `pendingComponent` skeletons live in `app/components/route-skeletons.tsx` — keep them in sync with layouts. Every route with a `loader` needs one.
 
+- **Design language:** Dashboard uses `text-xl` titles, `CompanyInboxPageShell`/`PageInlineStats`, and bordered or muted panels (see `applications.tsx`). Public `/jobs` & `/companies` use sticky filters and 2-col cards; marketing/login exempt.
+
 ## Tooling
 
 - Biome lint (`biome.json`); SQLC outputs excluded. **Run `bun run check` (lint + types) after every change.**

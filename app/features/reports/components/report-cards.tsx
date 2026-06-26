@@ -79,22 +79,22 @@ type RecommendationMeta = {
 
 const recommendationMeta: Record<Recommendation, RecommendationMeta> = {
   strong_yes: {
-    scoreRing: "border-primary/20 bg-primary/5",
+    scoreRing: "border-border/60 bg-primary/5",
     scoreText: "text-foreground",
     accent: "bg-primary/60",
   },
   yes: {
-    scoreRing: "border-border/70 bg-muted/30",
+    scoreRing: "border-border/60 bg-muted/30",
     scoreText: "text-foreground",
     accent: "bg-muted-foreground/70",
   },
   lean_no: {
-    scoreRing: "border-border/70 bg-muted/30",
+    scoreRing: "border-border/60 bg-muted/30",
     scoreText: "text-foreground",
     accent: "bg-muted-foreground/70",
   },
   no: {
-    scoreRing: "border-border/70 bg-muted/30",
+    scoreRing: "border-border/60 bg-muted/30",
     scoreText: "text-foreground",
     accent: "bg-muted-foreground/70",
   },
@@ -116,20 +116,20 @@ const concernMeta: Record<
 > = {
   none: {
     label: "OK",
-    badge: "border-border/70 bg-muted/20 text-foreground",
-    rowBorder: "border-border/70",
+    badge: "border-border/60 bg-muted/20 text-foreground",
+    rowBorder: "border-border/60",
     icon: CheckmarkCircle02Icon,
   },
   minor: {
     label: "Flag",
-    badge: "border-border/70 bg-muted/20 text-foreground",
-    rowBorder: "border-border/70",
+    badge: "border-border/60 bg-muted/20 text-foreground",
+    rowBorder: "border-border/60",
     icon: HelpCircleIcon,
   },
   dealbreaker: {
     label: "Dealbreaker",
-    badge: "border-border/70 bg-muted/20 text-foreground",
-    rowBorder: "border-border/70",
+    badge: "border-border/60 bg-muted/20 text-foreground",
+    rowBorder: "border-border/60",
     icon: Alert02Icon,
   },
 };
@@ -167,77 +167,67 @@ export function ReportSnapshotCard({
   applicationId: string;
 }) {
   return (
-    <Card className="border-border/70 bg-card">
-      <CardContent className="space-y-5 pt-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-border/70 bg-muted/30">
-              <HugeiconsIcon
-                icon={SparklesIcon}
-                strokeWidth={2}
-                className="size-5 text-muted-foreground"
-              />
-            </div>
-            <div className="space-y-1">
-              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
-                Post-interview evaluation
-              </p>
-              <h3 className="text-lg font-semibold tracking-tight">Zero finished evaluating</h3>
-              <p className="text-sm text-muted-foreground">
-                Recommendation, score breakdown and full transcript are ready.
-              </p>
-            </div>
+    <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-muted/30">
+            <HugeiconsIcon
+              icon={SparklesIcon}
+              strokeWidth={2}
+              className="size-5 text-muted-foreground"
+            />
           </div>
-          <ScorePill
-            score={report.scores.overall}
-            recommendation={report.recommendation}
-            size="lg"
-          />
+          <div className="space-y-1">
+            <h3 className="text-lg font-semibold tracking-tight">Post-interview evaluation</h3>
+            <p className="text-sm font-medium text-foreground">Zero finished evaluating</p>
+            <p className="text-sm text-muted-foreground">
+              Recommendation, score breakdown and full transcript are ready.
+            </p>
+          </div>
         </div>
+        <ScorePill score={report.scores.overall} recommendation={report.recommendation} size="lg" />
+      </div>
 
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-          {(Object.keys(dimensionMeta) as Array<keyof typeof dimensionMeta>).map((key) => {
-            const rawScore = report.scores[key];
-            const dim = dimensionMeta[key];
-            return (
-              <div key={key} className="rounded-xl border border-border/60 bg-muted/30 px-3 py-2.5">
-                <div className="flex items-center gap-1.5">
-                  <HugeiconsIcon
-                    icon={dim.icon}
-                    strokeWidth={2}
-                    className="size-3 text-muted-foreground"
-                  />
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                    {dim.label}
-                  </p>
-                </div>
-                <p className="mt-1 font-mono text-lg font-semibold leading-none">
-                  {formatCandidateScore(rawScore)}
-                </p>
-                <div className="mt-2 h-1 overflow-hidden rounded-full bg-background">
-                  <div
-                    className="h-full rounded-full bg-foreground"
-                    style={{ width: `${candidateScoreProgressPercent(rawScore)}%` }}
-                  />
-                </div>
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+        {(Object.keys(dimensionMeta) as Array<keyof typeof dimensionMeta>).map((key) => {
+          const rawScore = report.scores[key];
+          const dim = dimensionMeta[key];
+          return (
+            <div key={key} className="rounded-xl border border-border/60 bg-muted/30 px-3 py-2.5">
+              <div className="flex items-center gap-1.5">
+                <HugeiconsIcon
+                  icon={dim.icon}
+                  strokeWidth={2}
+                  className="size-3 text-muted-foreground"
+                />
+                <p className="text-xs text-muted-foreground">{dim.label}</p>
               </div>
-            );
-          })}
-        </div>
+              <p className="mt-1 text-lg font-semibold leading-none">
+                {formatCandidateScore(rawScore)}
+              </p>
+              <div className="mt-2 h-1 overflow-hidden rounded-full bg-background">
+                <div
+                  className="h-full rounded-full bg-foreground"
+                  style={{ width: `${candidateScoreProgressPercent(rawScore)}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-4">
-          <p className="line-clamp-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            {report.summary}
-          </p>
-          <Button asChild size="default" className="shrink-0 shadow-sm">
-            <Link to="/dashboard/applicant-reports/$applicationId" params={{ applicationId }}>
-              View full report
-              <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2.2} className="size-4" />
-            </Link>
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-4">
+        <p className="line-clamp-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+          {report.summary}
+        </p>
+        <Button asChild size="default" className="shrink-0">
+          <Link to="/dashboard/applicant-reports/$applicationId" params={{ applicationId }}>
+            View full report
+            <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2.2} className="size-4" />
+          </Link>
+        </Button>
+      </div>
+    </section>
   );
 }
 
@@ -265,7 +255,7 @@ function TimelineNode({
       <div className="flex flex-col items-center">
         <div
           className={cn(
-            "z-10 flex size-8 shrink-0 items-center justify-center rounded-full border-2 border-background bg-card shadow-sm ring-1 ring-border md:size-10",
+            "z-10 flex size-8 shrink-0 items-center justify-center rounded-full border-2 border-background bg-card ring-1 ring-border md:size-10",
             dotClassName,
           )}
         >
@@ -281,9 +271,7 @@ function TimelineNode({
       <div className={cn("min-w-0 flex-1 pb-6", isLast && "pb-0")}>
         <div className="flex flex-wrap items-center justify-between gap-3 pb-3">
           <h4 className="text-base font-semibold tracking-tight">{title}</h4>
-          <span className="font-mono text-[11px] text-muted-foreground">
-            {formatDateTimeUtc(timestamp)}
-          </span>
+          <span className="text-[11px] text-muted-foreground">{formatDateTimeUtc(timestamp)}</span>
         </div>
         {children}
       </div>
@@ -307,16 +295,14 @@ function SignalSection({
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2.5">
-        <div className="flex size-7 items-center justify-center rounded-full border border-border/70 bg-muted/30">
+        <div className="flex size-7 items-center justify-center rounded-full border border-border/60 bg-muted/30">
           <HugeiconsIcon
             icon={icon}
             strokeWidth={2}
             className={cn("size-3.5 text-muted-foreground", iconToneClass)}
           />
         </div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-          {title}
-        </p>
+        <p className="text-base font-semibold tracking-tight">{title}</p>
       </div>
       {items.length > 0 ? (
         <ul className="space-y-2">
@@ -404,8 +390,8 @@ export function ReportTimeline({
         title="Application submitted"
         timestamp={application.createdAt}
       >
-        <Card size="sm" className="border-border/60">
-          <CardContent className="flex flex-wrap items-center gap-3 py-0">
+        <Card variant="bordered-inset" size="sm">
+          <CardContent className="flex flex-wrap items-center gap-3 px-4 py-3">
             <Avatar className="size-10">
               <AvatarImage src={candidate.picture ?? undefined} alt={candidate.name} />
               <AvatarFallback>{getInitials(candidate.name)}</AvatarFallback>
@@ -416,7 +402,7 @@ export function ReportTimeline({
                 Applied for <span className="font-medium">{application.jobTitle}</span>
               </p>
             </div>
-            <Badge variant="outline" className="gap-1 font-mono text-[10px]">
+            <Badge variant="outline" className="gap-1 text-[10px]">
               <HugeiconsIcon icon={Calendar01Icon} strokeWidth={2} className="size-3" />
               {formatDateShort(application.createdAt)}
             </Badge>
@@ -432,12 +418,12 @@ export function ReportTimeline({
         timestamp={preEvaluation?.createdAt ?? null}
       >
         {preEvaluation ? (
-          <Card size="sm" className="border-border/60">
-            <CardContent className="space-y-3 py-0">
+          <Card variant="bordered-inset" size="sm">
+            <CardContent className="space-y-3 px-4 py-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="flex size-12 items-center justify-center rounded-xl border border-border/60 bg-muted/30">
-                    <span className="font-mono text-base font-semibold">
+                    <span className="text-base font-semibold">
                       {formatCandidateScore(preEvaluation.score)}
                     </span>
                   </div>
@@ -456,8 +442,8 @@ export function ReportTimeline({
                 </Badge>
               </div>
               {missingRequirements.length > 0 ? (
-                <div className="rounded-lg border border-border/70 bg-muted/20 p-3">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                  <p className="text-sm font-semibold text-muted-foreground">
                     {missingRequirements.length} gap
                     {missingRequirements.length === 1 ? "" : "s"} detected
                   </p>
@@ -475,8 +461,8 @@ export function ReportTimeline({
             </CardContent>
           </Card>
         ) : (
-          <Card size="sm" className="border-dashed border-border/60">
-            <CardContent className="py-0 text-xs text-muted-foreground">
+          <Card size="sm" variant="bordered-inset" className="border-dashed">
+            <CardContent className="px-4 py-3 text-xs text-muted-foreground">
               No pre-screening record found for this application.
             </CardContent>
           </Card>
@@ -493,8 +479,8 @@ export function ReportTimeline({
         }
       >
         {interview ? (
-          <Card size="sm" className="border-border/60">
-            <CardContent className="space-y-3 py-0">
+          <Card variant="bordered-inset" size="sm">
+            <CardContent className="space-y-3 px-4 py-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="outline" className="text-[11px] capitalize">
@@ -514,8 +500,8 @@ export function ReportTimeline({
             </CardContent>
           </Card>
         ) : (
-          <Card size="sm" className="border-dashed border-border/60">
-            <CardContent className="py-0 text-xs text-muted-foreground">
+          <Card size="sm" variant="bordered-inset" className="border-dashed">
+            <CardContent className="px-4 py-3 text-xs text-muted-foreground">
               No interview record found for this application.
             </CardContent>
           </Card>
@@ -543,8 +529,8 @@ export function ReportTimeline({
           title="Voice Communication Assessment"
           timestamp={communicationAssessment.completedAt}
         >
-          <Card size="sm" className="border-dashed border-border/60">
-            <CardContent className="py-0 text-xs text-muted-foreground">
+          <Card size="sm" variant="bordered-inset" className="border-dashed">
+            <CardContent className="px-4 py-3 text-xs text-muted-foreground">
               Candidate chose to skip the voice assessment.
             </CardContent>
           </Card>
@@ -557,8 +543,8 @@ export function ReportTimeline({
           title="Voice Communication Assessment"
           timestamp={null}
         >
-          <Card size="sm" className="border-dashed border-border/60">
-            <CardContent className="py-0 text-xs text-muted-foreground">
+          <Card size="sm" variant="bordered-inset" className="border-dashed">
+            <CardContent className="px-4 py-3 text-xs text-muted-foreground">
               Voice assessment was not completed within the interview window.
             </CardContent>
           </Card>
@@ -573,21 +559,19 @@ export function ReportTimeline({
         timestamp={reportCreatedAt}
       >
         <div className="space-y-4">
-          <Card className="overflow-hidden border-border/70">
-            <CardContent className="space-y-6 pt-6">
+          <Card variant="bordered-inset" className="overflow-hidden">
+            <CardContent className="space-y-4 px-5 py-4 md:px-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="max-w-xl space-y-3">
                   <div className="flex items-center gap-2.5">
-                    <div className="flex size-8 items-center justify-center rounded-full border border-border/70 bg-muted/30">
+                    <div className="flex size-8 items-center justify-center rounded-full border border-border/60 bg-muted/30">
                       <HugeiconsIcon
                         icon={SparklesIcon}
                         strokeWidth={2}
                         className="size-3.5 text-muted-foreground"
                       />
                     </div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
-                      Recommendation & score
-                    </p>
+                    <p className="text-base font-semibold tracking-tight">Recommendation & score</p>
                   </div>
                   <p className="text-sm leading-6 text-foreground">{report.summary}</p>
                 </div>
@@ -602,7 +586,7 @@ export function ReportTimeline({
                 <div className="flex items-center gap-2">
                   <div
                     className={cn(
-                      "flex size-7 items-center justify-center rounded-full border border-border/70 bg-muted/30",
+                      "flex size-7 items-center justify-center rounded-full border border-border/60 bg-muted/30",
                       meta.accent,
                     )}
                   >
@@ -612,9 +596,7 @@ export function ReportTimeline({
                       className="size-3.5 text-foreground"
                     />
                   </div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                    Dimension scores
-                  </p>
+                  <p className="text-base font-semibold tracking-tight">Dimension scores</p>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   {(Object.keys(dimensionMeta) as Array<keyof typeof dimensionMeta>).map((key) => {
@@ -631,7 +613,7 @@ export function ReportTimeline({
                             />
                             <span className="text-xs font-medium">{dim.label}</span>
                           </div>
-                          <span className="font-mono text-xs text-muted-foreground">
+                          <span className="text-xs text-muted-foreground">
                             {formatCandidateScoreWithScale(rawScore)}
                           </span>
                         </div>
@@ -647,7 +629,7 @@ export function ReportTimeline({
                 </div>
               </div>
 
-              <div className="grid gap-6 lg:grid-cols-2">
+              <div className="grid gap-4 lg:grid-cols-2">
                 <SignalSection
                   title="Strengths"
                   icon={CheckmarkCircle02Icon}
@@ -677,8 +659,8 @@ export function ReportTimeline({
           </Card>
 
           {report.screeningAnswers.length > 0 ? (
-            <Card className="border-border/60">
-              <CardContent className="space-y-4">
+            <Card variant="bordered-inset">
+              <CardContent className="space-y-4 px-5 py-4 md:px-6">
                 <div className="flex items-center gap-2">
                   <HugeiconsIcon
                     icon={ClipboardIcon}
@@ -740,18 +722,18 @@ export function ReportTimeline({
           title="Answer authenticity concern"
           timestamp={reportCreatedAt}
         >
-          <Card className="border-border/70">
-            <CardContent className="space-y-4 pt-6">
+          <Card variant="bordered-inset">
+            <CardContent className="space-y-4 px-5 py-4 md:px-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="max-w-xl space-y-3">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                  <p className="text-base font-semibold tracking-tight">
                     {report.answerAuthenticity.riskLevel === "high" ? "High risk" : "Medium risk"}
                   </p>
                   <p className="text-sm leading-6 text-foreground">
                     {report.answerAuthenticity.explanation}
                   </p>
                 </div>
-                <Badge variant="outline" className="shrink-0 font-mono text-[11px] uppercase">
+                <Badge variant="outline" className="shrink-0 text-[11px]">
                   {report.answerAuthenticity.signals.length} signal
                   {report.answerAuthenticity.signals.length === 1 ? "" : "s"}
                 </Badge>
@@ -804,8 +786,8 @@ function VoiceAssessmentReportCard({
 
   return (
     <div className="space-y-4">
-      <Card className="border-border/70">
-        <CardContent className="space-y-5 pt-6">
+      <Card variant="bordered-inset">
+        <CardContent className="space-y-4 px-5 py-4 md:px-6">
           {/* Summary + overall */}
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-xl space-y-2">
@@ -822,13 +804,11 @@ function VoiceAssessmentReportCard({
               )}
             </div>
             {parsed ? (
-              <div className="flex size-16 shrink-0 flex-col items-center justify-center rounded-3xl border-2 border-border/70 bg-muted/30">
-                <span className="font-mono text-xl font-semibold leading-none">
+              <div className="flex size-16 shrink-0 flex-col items-center justify-center rounded-3xl border border-border/60 bg-muted/30">
+                <span className="text-xl font-semibold leading-none">
                   {formatCandidateScore(parsed.overallScore)}
                 </span>
-                <span className="mt-1 text-[9px] font-medium uppercase tracking-wider text-muted-foreground">
-                  / {CANDIDATE_SCORE_MAX}
-                </span>
+                <span className="mt-1 text-xs text-muted-foreground">/ {CANDIDATE_SCORE_MAX}</span>
               </div>
             ) : null}
           </div>
@@ -836,9 +816,7 @@ function VoiceAssessmentReportCard({
           {/* Dimension scores */}
           {parsed ? (
             <div className="space-y-3 rounded-3xl border border-border/60 bg-muted/20 p-5">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                Dimension scores
-              </p>
+              <p className="text-base font-semibold tracking-tight">Dimension scores</p>
               <div className="grid gap-4 sm:grid-cols-2">
                 {(Object.keys(voiceDimensionMeta) as Array<keyof typeof voiceDimensionMeta>).map(
                   (key) => {
@@ -848,7 +826,7 @@ function VoiceAssessmentReportCard({
                       <div key={key} className="space-y-1.5">
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-xs font-medium">{meta.label}</span>
-                          <span className="font-mono text-xs text-muted-foreground">
+                          <span className="text-xs text-muted-foreground">
                             {formatCandidateScoreWithScale(dim.score)}
                           </span>
                         </div>
@@ -869,9 +847,7 @@ function VoiceAssessmentReportCard({
           {/* Key moments — deduplicated evidence across all dimensions */}
           {parsed ? (
             <div className="space-y-2">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                Key moments
-              </p>
+              <p className="text-base font-semibold tracking-tight">Key moments</p>
               <div className="space-y-2">
                 {(() => {
                   const allEvidence = new Set<string>();
@@ -908,9 +884,7 @@ function VoiceAssessmentReportCard({
           {/* Transcript */}
           {transcript.length > 0 ? (
             <div className="space-y-2">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                Transcript
-              </p>
+              <p className="text-base font-semibold tracking-tight">Transcript</p>
               <ScrollArea className="h-48 rounded-xl border border-border/60 bg-muted/15 p-3">
                 <div className="space-y-2 pr-3">
                   {transcript
@@ -949,9 +923,9 @@ function TranscriptDialog({
         </Button>
       </DialogTrigger>
       <DialogContent className="flex max-h-[88vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
-        <DialogHeader className="space-y-4 border-b border-border/70 bg-card px-6 py-5">
+        <DialogHeader className="space-y-4 border-b border-border/60 bg-card px-6 py-5">
           <div className="flex items-start gap-4">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-border/70 bg-muted/30">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-muted/30">
               <HugeiconsIcon
                 icon={BotIcon}
                 strokeWidth={2}
@@ -966,10 +940,10 @@ function TranscriptDialog({
                 </DialogDescription>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <div className="rounded-full border border-border/70 bg-muted/20 px-3 py-1 font-mono text-[11px] text-muted-foreground">
+                <div className="rounded-full border border-border/60 bg-muted/20 px-3 py-1 text-[11px] text-muted-foreground">
                   {messages.length} message{messages.length === 1 ? "" : "s"}
                 </div>
-                <div className="rounded-full border border-border/70 bg-muted/20 px-3 py-1 font-mono text-[11px] text-muted-foreground">
+                <div className="rounded-full border border-border/60 bg-muted/20 px-3 py-1 text-[11px] text-muted-foreground">
                   Candidate: {candidate.name}
                 </div>
               </div>

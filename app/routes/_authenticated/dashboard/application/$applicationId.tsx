@@ -24,7 +24,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   getApplicationResume,
   getMyApplicationDetail,
@@ -33,6 +32,7 @@ import {
 import { hasShortlistNextSteps, parseShortlistDetails } from "@/features/applications/shortlist";
 import { InterviewInvitationCard } from "@/features/interviews/components/interview-invitation-card";
 import { getInterviewForApplication } from "@/features/interviews/server/functions";
+import { resolveInterviewAwareCandidateMeta } from "@/features/interviews/shared/candidate-display";
 import { formatDate, formatDateShort } from "@/shared/date";
 import { base64ToBlob } from "@/shared/resume";
 import { validateUuidParams } from "@/shared/validation";
@@ -122,13 +122,6 @@ const stageCopy = {
   },
 } as const;
 
-const underReviewMeta = {
-  badge: "Awaiting company decision",
-  tone: "border-success/20 bg-success/10 text-success",
-  summary: "Your interview is complete and the company is now reviewing your evaluation.",
-  nextStep: "You are waiting on a decision after review.",
-} as const;
-
 const toApplicationStage = (status: string): keyof typeof stageCopy => {
   switch (status) {
     case "queued_for_batch":
@@ -155,11 +148,8 @@ const getDisplayMeta = ({
   status: string;
   interviewStatus: string | null;
 }) => {
-  if (status === "interview_in_progress" && interviewStatus === "completed") {
-    return underReviewMeta;
-  }
-
-  return stageCopy[toApplicationStage(status)];
+  const baseMeta = stageCopy[toApplicationStage(status)];
+  return resolveInterviewAwareCandidateMeta(status, interviewStatus, baseMeta);
 };
 
 const isTerminalStage = (stage: string): stage is "rejected" | "withdrawn" => {
@@ -246,47 +236,54 @@ function CandidateApplicationDetailPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">
-              {application.companyName}
-            </p>
-            <Badge variant="outline" className="font-mono text-[11px]">
-              {jobStateLabel}
-            </Badge>
+    <div className="space-y-5">
+      <section className="space-y-4">
+        <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+          <div className="min-w-0 space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-sm text-muted-foreground">{application.companyName}</p>
+              <Badge variant="outline" className="text-[11px]">
+                {jobStateLabel}
+              </Badge>
+            </div>
+            <h1 className="text-xl font-semibold tracking-tight">{application.jobTitle}</h1>
           </div>
-          <h2 className="text-2xl font-bold tracking-tight">{application.jobTitle}</h2>
+          <Badge variant="outline" className={meta.tone}>
+            {meta.badge}
+          </Badge>
         </div>
-        <Badge className={meta.tone}>{meta.badge}</Badge>
-      </div>
 
-      <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">
-        <span className="inline-flex items-center gap-1.5">
-          <HugeiconsIcon icon={Calendar01Icon} strokeWidth={2} className="size-3.5" />
-          Applied {formatDate(application.createdAt)}
-        </span>
-        {application.createdAt !== application.updatedAt ? (
-          <span>Updated {formatDateShort(application.updatedAt)}</span>
-        ) : null}
-      </div>
+        <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5">
+            <HugeiconsIcon icon={Calendar01Icon} strokeWidth={2} className="size-3.5" />
+            Applied {formatDate(application.createdAt)}
+          </span>
+          {application.createdAt !== application.updatedAt ? (
+            <span>Updated {formatDateShort(application.updatedAt)}</span>
+          ) : null}
+        </div>
+      </section>
 
       {application.companyOwnerDeleted ? (
-        <Card size="sm" className="border-destructive/30 bg-destructive/5">
-          <CardContent className="space-y-1 py-0">
-            <p className="text-sm font-medium text-destructive">
-              This company account has been deleted
-            </p>
-            <p className="text-xs text-muted-foreground">
-              The company that posted this role is no longer active on RoundZero. This application
-              is no longer moving forward.
-            </p>
-          </CardContent>
-        </Card>
+        <section className="rounded-2xl border border-destructive/20 bg-destructive/5 px-5 py-4">
+          <p className="text-sm font-medium text-destructive">
+            This company account has been deleted
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            The company that posted this role is no longer active on RoundZero. This application is
+            no longer moving forward.
+          </p>
+        </section>
       ) : null}
 
-      <div className="space-y-3">
+      <section className="space-y-4">
+        <div className="space-y-1">
+          <h2 className="text-lg font-semibold tracking-tight">Application progress</h2>
+          <p className="text-sm text-muted-foreground">
+            Where this application sits in the pipeline.
+          </p>
+        </div>
+
         <div className="flex gap-8">
           {HAPPY_PATH_STAGES.map((stage) => {
             const stageIndex = HAPPY_PATH_STAGES.indexOf(stage);
@@ -307,58 +304,52 @@ function CandidateApplicationDetailPage() {
             return (
               <div key={stage} className="flex-1 space-y-1.5">
                 <div className={`h-1.5 rounded-full ${barClass}`} />
-                <p className={`text-[11px] font-medium uppercase tracking-widest ${labelClass}`}>
-                  {stageCopy[stage].label}
-                </p>
+                <p className={`text-[11px] font-medium ${labelClass}`}>{stageCopy[stage].label}</p>
               </div>
             );
           })}
         </div>
 
         {isTerminalStage(currentStage) ? (
-          <Badge className={`${meta.tone} text-xs`}>{meta.badge}</Badge>
+          <Badge variant="outline" className={`${meta.tone} text-xs`}>
+            {meta.badge}
+          </Badge>
         ) : null}
 
-        <Card size="sm">
-          <CardContent className="space-y-1 py-0">
-            <p className="text-sm text-foreground">
-              {application.companyOwnerDeleted ? "This application is closed." : meta.summary}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {application.companyOwnerDeleted
-                ? "The company account has been deleted. This application is no longer moving forward."
-                : meta.nextStep}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+        <div className="rounded-2xl bg-muted/30 px-5 py-4">
+          <p className="text-sm text-foreground">
+            {application.companyOwnerDeleted ? "This application is closed." : meta.summary}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {application.companyOwnerDeleted
+              ? "The company account has been deleted. This application is no longer moving forward."
+              : meta.nextStep}
+          </p>
+        </div>
+      </section>
 
       {hasShortlistActions ? (
-        <Card>
-          <CardContent className="space-y-3">
-            <div className="flex items-center gap-2">
-              <HugeiconsIcon
-                icon={CheckmarkCircle02Icon}
-                strokeWidth={2}
-                className="size-4 text-success"
-              />
-              <p className="text-sm font-medium text-foreground">
-                Follow-up from {application.companyName}
-              </p>
-            </div>
+        <section className="space-y-3 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
+          <div className="flex items-center gap-2">
+            <HugeiconsIcon
+              icon={CheckmarkCircle02Icon}
+              strokeWidth={2}
+              className="size-4 text-success"
+            />
+            <p className="text-sm font-semibold text-foreground">
+              Follow-up from {application.companyName}
+            </p>
+          </div>
 
-            {shortlistDetails?.note ? (
-              <div className="rounded-2xl bg-muted/60 px-4 py-3 text-sm text-foreground">
-                {shortlistDetails.note}
-              </div>
-            ) : null}
-          </CardContent>
-        </Card>
+          {shortlistDetails?.note ? (
+            <div className="rounded-2xl bg-muted/60 px-4 py-3 text-sm text-foreground">
+              {shortlistDetails.note}
+            </div>
+          ) : null}
+        </section>
       ) : null}
 
-      {interview &&
-      !application.companyOwnerDeleted &&
-      (interview.status === "pending" || interview.status === "in_progress") ? (
+      {interview && !application.companyOwnerDeleted ? (
         <InterviewInvitationCard
           interviewId={interview.id}
           interviewType={interview.type}
@@ -367,7 +358,7 @@ function CandidateApplicationDetailPage() {
         />
       ) : null}
 
-      <div className="flex flex-wrap gap-2">
+      <section className="flex flex-wrap gap-2">
         {application.resumeKey ? (
           <Button
             variant="outline"
@@ -424,7 +415,7 @@ function CandidateApplicationDetailPage() {
             </AlertDialogContent>
           </AlertDialog>
         ) : null}
-      </div>
+      </section>
     </div>
   );
 }

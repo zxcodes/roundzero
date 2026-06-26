@@ -20,7 +20,8 @@ import {
 } from "@/features/interviews/shared/integrity";
 import {
   ensureInterviewRuntimeMetadata,
-  type InterviewContextState,
+  type InterviewRuntimeContext,
+  loadInterviewRuntimeContext,
   type ScreeningCoverage,
 } from "@/features/interviews/shared/runtime";
 import { loadVoiceAssessmentContext } from "@/features/interviews/shared/voice-runtime";
@@ -118,12 +119,12 @@ type ReadInterviewDataResult =
       screeningCoverage: ScreeningCoverage;
       integrity?: InterviewIntegrity;
       moderation: { quality: "normal" | "low"; reason?: string };
-      contextState: InterviewContextState;
+      runtimeContext: InterviewRuntimeContext;
     }
   | {
       kind: "insufficient_signal";
       interview: NonNullable<Awaited<ReturnType<typeof getInterviewContextById>>>;
-      contextState: InterviewContextState;
+      runtimeContext: InterviewRuntimeContext;
       reason: string;
     };
 
@@ -248,10 +249,7 @@ export function readInterviewData(
     }
 
     const metadata = await ensureInterviewRuntimeMetadata(db, interview);
-    const contextState = metadata.contextState;
-    if (!contextState) {
-      throw new Error(`Interview metadata is missing context for ${interviewId}`);
-    }
+    const runtimeContext = await loadInterviewRuntimeContext(db, interview, metadata);
 
     const storedMessages = await getInterviewMessagesByInterviewId(db, {
       interviewId,
@@ -270,21 +268,21 @@ export function readInterviewData(
       return {
         kind: "insufficient_signal",
         interview,
-        contextState,
+        runtimeContext,
         reason: signal.reason,
       };
     }
     const coveredScreeningQuestions = auditScreeningCoverage(
-      contextState.customQuestions,
+      runtimeContext.customQuestions,
       messages,
     );
-    const minScreeningCoverage = requiredScreeningCoverage(contextState.customQuestions.length);
+    const minScreeningCoverage = requiredScreeningCoverage(runtimeContext.customQuestions.length);
     if (coveredScreeningQuestions.size < minScreeningCoverage) {
       return {
         kind: "insufficient_signal",
         interview,
-        contextState,
-        reason: `covered ${coveredScreeningQuestions.size}/${contextState.customQuestions.length} required screening question(s); need at least ${minScreeningCoverage}`,
+        runtimeContext,
+        reason: `covered ${coveredScreeningQuestions.size}/${runtimeContext.customQuestions.length} required screening question(s); need at least ${minScreeningCoverage}`,
       };
     }
 
@@ -307,7 +305,7 @@ export function readInterviewData(
       screeningCoverage: metadata.screeningCoverage ?? {},
       integrity: metadata.integrity,
       moderation,
-      contextState,
+      runtimeContext,
     };
   };
 }
@@ -322,7 +320,7 @@ export function generateReport(
     transcript: string;
     screeningCoverage: ScreeningCoverage;
     moderation: { quality: "normal" | "low"; reason?: string };
-    contextState: InterviewContextState;
+    runtimeContext: InterviewRuntimeContext;
     voiceAssessment?: CommunicationAssessmentAnalysis | null;
     answerAuthenticity?: AnswerAuthenticity | null;
     integrity?: InterviewIntegrity;
@@ -332,7 +330,7 @@ export function generateReport(
   return async () => {
     log.info("Generating structured interview report with OpenRouter");
 
-    const customQuestions = interviewData.contextState.customQuestions;
+    const customQuestions = interviewData.runtimeContext.customQuestions;
     const agentCoveredCount = Object.keys(interviewData.screeningCoverage).length;
     const customQuestionsBlock =
       customQuestions.length > 0
@@ -340,19 +338,19 @@ export function generateReport(
         : "  (none — the company supplied no specific screening questions)";
 
     const requirementsBlock =
-      interviewData.contextState.jobRequirements.length > 0
-        ? interviewData.contextState.jobRequirements.map((r) => `  - ${r}`).join("\n")
+      interviewData.runtimeContext.jobRequirements.length > 0
+        ? interviewData.runtimeContext.jobRequirements.map((r) => `  - ${r}`).join("\n")
         : "  (none provided)";
 
     const missingRequirementsBlock =
-      interviewData.contextState.preEvaluation.missingRequirements.length > 0
-        ? interviewData.contextState.preEvaluation.missingRequirements
+      interviewData.runtimeContext.preEvaluation.missingRequirements.length > 0
+        ? interviewData.runtimeContext.preEvaluation.missingRequirements
             .map((r) => `  - ${r}`)
             .join("\n")
         : "  (none flagged)";
     const authenticityFlagsBlock =
-      interviewData.contextState.preEvaluation.authenticityFlags.length > 0
-        ? interviewData.contextState.preEvaluation.authenticityFlags
+      interviewData.runtimeContext.preEvaluation.authenticityFlags.length > 0
+        ? interviewData.runtimeContext.preEvaluation.authenticityFlags
             .map((flag) => `  - ${flag}`)
             .join("\n")
         : "  (no direct contradictions flagged)";
@@ -442,15 +440,15 @@ export function generateReport(
         company: interviewData.interview.companyName,
         candidate: interviewData.interview.candidateName,
       },
-      jobDescription: interviewData.contextState.jobDescription || "(not provided)",
+      jobDescription: interviewData.runtimeContext.jobDescription || "(not provided)",
       jobRequirements: requirementsBlock,
-      candidateSummary: interviewData.contextState.candidateSummary || "(not provided)",
+      candidateSummary: interviewData.runtimeContext.candidateSummary || "(not provided)",
       preEvaluationSignal: {
-        fitScore: interviewData.contextState.preEvaluation.score,
-        consistencyScore: interviewData.contextState.preEvaluation.consistencyScore,
+        fitScore: interviewData.runtimeContext.preEvaluation.score,
+        consistencyScore: interviewData.runtimeContext.preEvaluation.consistencyScore,
         missingRequirements: missingRequirementsBlock,
         authenticityExplanation:
-          interviewData.contextState.preEvaluation.authenticityExplanation ||
+          interviewData.runtimeContext.preEvaluation.authenticityExplanation ||
           "No additional authenticity note.",
         authenticityFlags: authenticityFlagsBlock,
       },

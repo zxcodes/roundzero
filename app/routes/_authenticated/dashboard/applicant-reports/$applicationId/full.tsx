@@ -173,7 +173,7 @@ function ApplicantAiReportPage() {
     return (
       <div className="space-y-6">
         {isEvalFailed ? (
-          <Empty className="border">
+          <Empty className="rounded-2xl border-0 bg-muted/30">
             <EmptyHeader>
               <EmptyTitle>Evaluation failed</EmptyTitle>
               <EmptyDescription>
@@ -183,7 +183,7 @@ function ApplicantAiReportPage() {
             </EmptyHeader>
           </Empty>
         ) : isInterviewCompleted ? (
-          <Empty className="border">
+          <Empty className="rounded-2xl border-0 bg-muted/30">
             <EmptyHeader>
               <EmptyTitle className="flex items-center gap-2">
                 <HugeiconsIcon
@@ -199,7 +199,7 @@ function ApplicantAiReportPage() {
             </EmptyHeader>
           </Empty>
         ) : (
-          <Empty className="border">
+          <Empty className="rounded-2xl border-0 bg-muted/30">
             <EmptyHeader>
               <EmptyTitle>No post-interview report yet</EmptyTitle>
               <EmptyDescription>
@@ -218,8 +218,8 @@ function ApplicantAiReportPage() {
   const recommendation = parsedRecommendation.success ? parsedRecommendation.data : null;
 
   return (
-    <div className="space-y-8">
-      <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-3 text-xs text-muted-foreground">
+    <div className="space-y-5">
+      <div className="rounded-2xl border border-dashed border-border/60 bg-muted/20 px-4 py-3 text-xs text-muted-foreground">
         This is the full audit timeline — every step Zero took to evaluate{" "}
         <span className="font-medium text-foreground">{application.candidateName}</span>. For a
         polished, evidence-backed view, head back to the{" "}
@@ -233,18 +233,18 @@ function ApplicantAiReportPage() {
         .
       </div>
 
-      <div className="rounded-4xl border border-border/70 bg-card px-4 py-4 shadow-sm md:px-6 md:py-6">
+      <div className="rounded-3xl border border-border/60 px-5 py-4 md:px-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <div className="flex size-9 items-center justify-center rounded-xl border border-border/70 bg-muted/30">
+              <div className="flex size-9 items-center justify-center rounded-xl border border-border/60 bg-muted/30">
                 <HugeiconsIcon
                   icon={SparklesIcon}
                   strokeWidth={2}
                   className="size-4 text-muted-foreground"
                 />
               </div>
-              <h1 className="text-2xl font-semibold tracking-tight">{application.candidateName}</h1>
+              <h1 className="text-xl font-semibold tracking-tight">{application.candidateName}</h1>
               <Badge variant="outline" className={statusTone.badge}>
                 {applicationStatusLabels[currentStatus]}
               </Badge>
@@ -345,7 +345,7 @@ function ApplicantAiReportPage() {
         </div>
       </div>
 
-      <div className="rounded-4xl border border-border/60 bg-card/40 px-4 py-4 md:px-6 md:py-6">
+      <div className="rounded-3xl border border-border/60 px-5 py-4 md:px-6">
         <ReportTimeline
           report={report}
           preEvaluation={preEvaluation}

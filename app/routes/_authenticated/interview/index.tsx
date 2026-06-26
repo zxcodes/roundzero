@@ -11,15 +11,17 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { getMyInterviews } from "@/features/interviews/server/functions";
+import { pickPreferredInterviewId } from "@/features/interviews/shared/candidate-display";
 
 export const Route = createFileRoute("/_authenticated/interview/")({
   loader: async () => {
     const interviews = await getMyInterviews();
 
-    if (interviews.length > 0) {
+    const preferredInterviewId = pickPreferredInterviewId(interviews);
+    if (preferredInterviewId) {
       throw redirect({
         to: "/interview/$interviewId",
-        params: { interviewId: interviews[0].id },
+        params: { interviewId: preferredInterviewId },
       });
     }
 
@@ -32,7 +34,7 @@ export const Route = createFileRoute("/_authenticated/interview/")({
 function InterviewIndexPage() {
   return (
     <div className="flex min-h-0 flex-1 items-center justify-center p-6">
-      <Empty>
+      <Empty className="rounded-2xl border-0 bg-muted/30">
         <EmptyHeader>
           <EmptyMedia variant="icon">
             <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={2} />

@@ -19,7 +19,8 @@ TRUNCATE TABLE
   pre_evaluations,
   notifications,
   job_batches,
-  applications
+  applications,
+  jobs
 RESTART IDENTITY CASCADE;
 
 SELECT 'Reset complete' AS result;

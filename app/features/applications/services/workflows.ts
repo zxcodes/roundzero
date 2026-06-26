@@ -1,5 +1,4 @@
 import type { Sql } from "postgres";
-import { z } from "zod";
 import { getUserById } from "@/features/auth/queries/queries_sql";
 import { getCandidateProfileByUserId } from "@/features/candidates/queries/queries_sql";
 import { getCompanyByMemberUserId } from "@/features/companies/queries/membership-queries_sql";
@@ -7,6 +6,7 @@ import { getCompanyById } from "@/features/companies/queries/queries_sql";
 import { notifyCompanyTeam } from "@/features/companies/services/company-team-notifications";
 import {
   createInterview,
+  deleteInterviewMessagesByInterviewId,
   getInterviewByApplicationId,
   getInterviewContextById,
   resetInterviewInvite,
@@ -20,7 +20,6 @@ import {
   type NotificationEmailSender,
   sendNotificationEmailViaResend,
 } from "@/features/notifications/services/email";
-import { getPreEvaluationByApplicationId } from "@/features/pre-evaluations/queries/queries_sql";
 import { type ApplicationStatus, applicationStatusSchema, isValidTransition } from "@/shared/enums";
 import {
   createApplication as createApplicationQuery,
@@ -158,36 +157,37 @@ export const updateApplicationStatusWorkflow = async (
       applicationId: application.id,
     });
 
-    const latestPreEvaluation = await getPreEvaluationByApplicationId(db, {
-      applicationId: application.id,
-    });
-
     const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString();
 
-    const inviteMetadata = { preEvaluationScore: latestPreEvaluation?.score ?? null, expiresAt };
+    const inviteMetadata = { expiresAt };
     const invitedAt = new Date();
+    const isReinvite =
+      existingInterview !== null &&
+      (existingInterview.status === "pending" || existingInterview.status === "in_progress");
 
-    const interview =
-      existingInterview &&
-      (existingInterview.status === "pending" || existingInterview.status === "in_progress")
-        ? await resetInterviewInvite(db, {
-            id: existingInterview.id,
-            metadata: inviteMetadata,
-            invitedAt,
-          })
-        : await createInterview(db, {
-            applicationId: application.id,
-            agentId: null,
-            type: "full",
-            metadata: inviteMetadata,
-            status: "pending",
-            invitedAt,
-            startedAt: null,
-            completedAt: null,
-          });
+    const interview = isReinvite
+      ? await resetInterviewInvite(db, {
+          id: existingInterview.id,
+          metadata: inviteMetadata,
+          invitedAt,
+        })
+      : await createInterview(db, {
+          applicationId: application.id,
+          agentId: null,
+          type: "full",
+          metadata: inviteMetadata,
+          status: "pending",
+          invitedAt,
+          startedAt: null,
+          completedAt: null,
+        });
 
     if (!interview) {
       throw new Error("Failed to create interview invite");
+    }
+
+    if (isReinvite) {
+      await deleteInterviewMessagesByInterviewId(db, { interviewId: interview.id });
     }
 
     const interviewContext = await getInterviewContextById(db, { id: interview.id });
@@ -195,12 +195,11 @@ export const updateApplicationStatusWorkflow = async (
       throw new Error("Failed to load interview context");
     }
 
-    await ensureInterviewRuntimeMetadata(db, interviewContext);
+    await ensureInterviewRuntimeMetadata(db, interviewContext, {
+      forceJobSnapshotRefresh: isReinvite,
+    });
 
-    const metadataSchema = z.object({ expiresAt: z.string().optional() });
-    const parsedMetadata = metadataSchema.safeParse(interview.metadata);
-    const metadata = parsedMetadata.success ? parsedMetadata.data : {};
-    const expiresAtValue = metadata.expiresAt ?? expiresAt;
+    const expiresAtValue = expiresAt;
 
     const payload = notificationPayloadSchemas.interview_invited.parse({
       applicationId: application.id,

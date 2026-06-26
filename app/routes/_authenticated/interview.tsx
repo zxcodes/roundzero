@@ -31,7 +31,7 @@ function InterviewWorkspaceContent() {
         (state === "collapsed" ? " pl-2" : "")
       }
     >
-      <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
+      <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-3xl border border-border/60 bg-card">
         <Outlet />
       </section>
     </div>

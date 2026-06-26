@@ -34,12 +34,6 @@ export type RoleAttention = {
   reject: number;
 };
 
-export type CompanyActivityItem = {
-  id: string;
-  label: string;
-  occurredAt: Date;
-};
-
 export type HeroSummary = {
   awaitingReviewCount: number;
   strongHireAwaitingCount: number;
@@ -175,70 +169,4 @@ export function buildRoleAttention(
       }
       return b.applicants - a.applicants;
     });
-}
-
-export function buildActivitySummary(
-  candidates: DashboardCandidateReport[],
-  recentApplications: {
-    applicationId: string;
-    status: string;
-    updatedAt: Date;
-    jobTitle: string;
-    candidateName: string;
-  }[],
-): CompanyActivityItem[] {
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
-
-  const reportsToday = candidates.filter((c) => c.releasedAt >= startOfDay).length;
-  const shortlistedToday = recentApplications.filter(
-    (a) => a.status === "shortlisted" && a.updatedAt >= startOfDay,
-  ).length;
-  const rejectedToday = recentApplications.filter(
-    (a) => a.status === "rejected" && a.updatedAt >= startOfDay,
-  ).length;
-  const invitedToday = recentApplications.filter(
-    (a) => a.status === "interview_invited" && a.updatedAt >= startOfDay,
-  ).length;
-
-  const items: CompanyActivityItem[] = [];
-
-  if (reportsToday > 0) {
-    items.push({
-      id: "reports-today",
-      label: `${reportsToday} report${reportsToday === 1 ? "" : "s"} generated today`,
-      occurredAt: new Date(),
-    });
-  }
-  if (invitedToday > 0) {
-    items.push({
-      id: "invited-today",
-      label: `${invitedToday} candidate${invitedToday === 1 ? "" : "s"} moved to interview`,
-      occurredAt: new Date(),
-    });
-  }
-  if (shortlistedToday > 0) {
-    items.push({
-      id: "shortlisted-today",
-      label: `${shortlistedToday} candidate${shortlistedToday === 1 ? "" : "s"} shortlisted`,
-      occurredAt: new Date(),
-    });
-  }
-  if (rejectedToday > 0) {
-    items.push({
-      id: "rejected-today",
-      label: `${rejectedToday} candidate${rejectedToday === 1 ? "" : "s"} rejected`,
-      occurredAt: new Date(),
-    });
-  }
-
-  if (items.length > 0) {
-    return items;
-  }
-
-  return recentApplications.slice(0, 4).map((item) => ({
-    id: item.applicationId,
-    label: `${item.candidateName} — ${item.jobTitle}`,
-    occurredAt: item.updatedAt,
-  }));
 }

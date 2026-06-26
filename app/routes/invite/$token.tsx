@@ -10,7 +10,6 @@ import { Logo } from "@/components/public-layout";
 import { InviteAcceptSkeleton } from "@/components/route-skeletons";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   acceptInvite,
   currentUserQueryKey,
@@ -114,16 +113,17 @@ function InviteAcceptPage() {
           </Link>
         </div>
 
-        <Card>
-          <CardHeader className="text-center">
-            <CardTitle>Join {preview.companyName}</CardTitle>
-            <CardDescription>
+        <section className="space-y-5 rounded-3xl border border-border/60 px-5 py-6">
+          <div className="space-y-1 text-center">
+            <h1 className="text-xl font-semibold tracking-tight">Join {preview.companyName}</h1>
+            <p className="text-sm text-muted-foreground">
               You have been invited to join as{" "}
               <strong>{roleLabels[preview.role as keyof typeof roleLabels]}</strong> using{" "}
               <strong>{preview.email}</strong>.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+            </p>
+          </div>
+
+          <div className="space-y-4">
             {!preview.canAccept ? (
               <Alert variant="destructive">
                 <AlertTitle>Team is full</AlertTitle>
@@ -132,7 +132,7 @@ function InviteAcceptPage() {
             ) : null}
 
             {user && !sessionMatchesInvite ? (
-              <div className="space-y-3 rounded-lg border border-border/60 bg-muted/40 p-4 text-sm">
+              <div className="space-y-3 rounded-2xl bg-muted/30 px-4 py-4 text-sm">
                 <p>
                   You are signed in as <strong>{user.email}</strong>. Sign in with{" "}
                   <strong>{preview.email}</strong> to accept this invitation.
@@ -190,8 +190,8 @@ function InviteAcceptPage() {
               </Link>
               .
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </section>
       </div>
     </div>
   );
