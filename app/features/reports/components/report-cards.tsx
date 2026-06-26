@@ -200,9 +200,7 @@ export function ReportSnapshotCard({
                   strokeWidth={2}
                   className="size-3 text-muted-foreground"
                 />
-                <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                  {dim.label}
-                </p>
+                <p className="text-xs text-muted-foreground">{dim.label}</p>
               </div>
               <p className="mt-1 font-mono text-lg font-semibold leading-none">
                 {formatCandidateScore(rawScore)}
@@ -737,7 +735,7 @@ export function ReportTimeline({
                     {report.answerAuthenticity.explanation}
                   </p>
                 </div>
-                <Badge variant="outline" className="shrink-0 font-mono text-[11px] uppercase">
+                <Badge variant="outline" className="shrink-0 font-mono text-[11px]">
                   {report.answerAuthenticity.signals.length} signal
                   {report.answerAuthenticity.signals.length === 1 ? "" : "s"}
                 </Badge>
@@ -812,9 +810,7 @@ function VoiceAssessmentReportCard({
                 <span className="font-mono text-xl font-semibold leading-none">
                   {formatCandidateScore(parsed.overallScore)}
                 </span>
-                <span className="mt-1 text-[9px] font-medium uppercase tracking-wider text-muted-foreground">
-                  / {CANDIDATE_SCORE_MAX}
-                </span>
+                <span className="mt-1 text-xs text-muted-foreground">/ {CANDIDATE_SCORE_MAX}</span>
               </div>
             ) : null}
           </div>
