@@ -8,15 +8,11 @@ import { hasShortlistNextSteps, parseShortlistDetails } from "@/features/applica
 import { getActiveBatchesByCompany } from "@/features/batches/queries/queries_sql";
 import { getCompanyByMemberUserId } from "@/features/companies/queries/membership-queries_sql";
 import {
-  buildActivitySummary,
   buildHeroSummary,
   buildRoleAttention,
   mapReleasedReportRow,
 } from "@/features/dashboard/company-metrics";
-import {
-  getRecentCompanyApplicationActivity,
-  getReleasedReportsForCompanyDashboard,
-} from "@/features/dashboard/queries/queries_sql";
+import { getReleasedReportsForCompanyDashboard } from "@/features/dashboard/queries/queries_sql";
 import { getInterviewsByCandidate } from "@/features/interviews/queries/queries_sql";
 import { expireInterviewIfDue } from "@/features/interviews/server/expire";
 import { getJobsWithPipelineByCompanyId } from "@/features/jobs/queries/queries_sql";
@@ -28,7 +24,6 @@ const emptyCompanyDashboard = {
   awaitingReview: [],
   rolesNeedingAttention: [],
   recentReports: [],
-  activitySummary: [],
   heroSummary: {
     awaitingReviewCount: 0,
     strongHireAwaitingCount: 0,
@@ -70,14 +65,11 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
         return emptyCompanyDashboard;
       }
 
-      const [jobsWithPipeline, activeBatches, releasedRows, recentActivityRows] = await Promise.all(
-        [
-          getJobsWithPipelineByCompanyId(db, { companyId: company.id }),
-          getActiveBatchesByCompany(db, { companyId: company.id }),
-          getReleasedReportsForCompanyDashboard(db, { companyId: company.id }),
-          getRecentCompanyApplicationActivity(db, { companyId: company.id }),
-        ],
-      );
+      const [jobsWithPipeline, activeBatches, releasedRows] = await Promise.all([
+        getJobsWithPipelineByCompanyId(db, { companyId: company.id }),
+        getActiveBatchesByCompany(db, { companyId: company.id }),
+        getReleasedReportsForCompanyDashboard(db, { companyId: company.id }),
+      ]);
 
       const candidates = releasedRows
         .map(mapReleasedReportRow)
@@ -95,8 +87,6 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
 
       const rolesNeedingAttention = buildRoleAttention(jobsWithPipeline, candidates).slice(0, 6);
 
-      const activitySummary = buildActivitySummary(candidates, recentActivityRows);
-
       const heroSummary = buildHeroSummary(
         jobsWithPipeline,
         candidates,
@@ -109,7 +99,6 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
         awaitingReview,
         rolesNeedingAttention,
         recentReports,
-        activitySummary,
         heroSummary,
       };
     }
