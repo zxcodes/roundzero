@@ -227,7 +227,9 @@ function InterviewWorkspaceContent({
           <div className="mb-1 flex items-center gap-2">
             <SidebarTrigger className="-ml-1.5" />
             <p className="truncate text-base font-semibold md:text-lg">{interview.jobTitle}</p>
-            <Badge className={`text-[11px] ${status.tone}`}>{status.label}</Badge>
+            <Badge variant="outline" className={`text-[11px] ${status.tone}`}>
+              {status.label}
+            </Badge>
           </div>
           <p className="truncate text-xs text-muted-foreground md:text-sm">
             {interview.companyName}

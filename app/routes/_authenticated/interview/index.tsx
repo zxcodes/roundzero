@@ -34,7 +34,7 @@ export const Route = createFileRoute("/_authenticated/interview/")({
 function InterviewIndexPage() {
   return (
     <div className="flex min-h-0 flex-1 items-center justify-center p-6">
-      <Empty>
+      <Empty className="rounded-2xl border-0 bg-muted/30">
         <EmptyHeader>
           <EmptyMedia variant="icon">
             <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={2} />
