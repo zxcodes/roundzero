@@ -110,12 +110,6 @@ function JobPreviewContent({ data, salary }: { data: JobPreviewData; salary: str
               {data.location}
             </Badge>
           ) : null}
-          {salary ? (
-            <Badge variant="outline" className="gap-1">
-              <HugeiconsIcon icon={MoneyBag02Icon} strokeWidth={2} className="size-3" />
-              {salary}
-            </Badge>
-          ) : null}
         </div>
       </div>
 

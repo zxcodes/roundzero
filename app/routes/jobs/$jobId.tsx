@@ -209,27 +209,17 @@ function JobDetailPage() {
                     </AvatarFallback>
                   </Avatar>
 
-                  <div className="min-w-0 space-y-2">
+                  <div className="min-w-0 space-y-1">
                     <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
                       {job.title}
                     </h1>
                     <Link
                       to="/companies/$slug"
                       params={{ slug: job.companySlug }}
-                      className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-primary"
+                      className="block text-sm text-muted-foreground transition-colors hover:text-primary"
                     >
                       {job.companyName}
                     </Link>
-                    {salary ? (
-                      <p className="inline-flex items-center gap-1.5 text-sm font-medium tabular-nums text-foreground">
-                        <HugeiconsIcon
-                          icon={MoneyBag02Icon}
-                          strokeWidth={2}
-                          className="size-3.5 text-muted-foreground"
-                        />
-                        {salary}
-                      </p>
-                    ) : null}
                   </div>
                 </div>
 
@@ -306,7 +296,7 @@ function JobDetailPage() {
             ) : null}
 
             {!isCompany && !isClosed ? (
-              <section className="space-y-4 rounded-3xl border border-border/60 bg-muted-foreground/[0.045] px-6 py-5 dark:bg-muted/10">
+              <section className="space-y-4 rounded-3xl border border-border/60 bg-muted-foreground/4.5 px-6 py-5 dark:bg-muted/10">
                 <PublicJobCTA
                   isCandidate={isCandidate}
                   dashboardJobPath={dashboardJobPath}
@@ -320,7 +310,7 @@ function JobDetailPage() {
           </div>
 
           <aside className="space-y-5">
-            <section className="space-y-4 rounded-3xl border border-border/60 bg-muted-foreground/[0.045] px-5 py-4 dark:bg-muted/10 md:px-6">
+            <section className="space-y-4 rounded-3xl border border-border/60 bg-muted-foreground/4.5 px-5 py-4 dark:bg-muted/10 md:px-6">
               <h3 className="text-sm font-semibold tracking-tight">Job details</h3>
               {salary ? <DetailRow icon={MoneyBag02Icon} label="Salary" value={salary} /> : null}
               {job.teamSize ? (
@@ -351,7 +341,7 @@ function JobDetailPage() {
             <Link
               to="/companies/$slug"
               params={{ slug: job.companySlug }}
-              className="group flex items-center gap-3 rounded-3xl border border-border/60 bg-muted-foreground/[0.045] px-5 py-4 transition-all hover:border-primary/25 hover:shadow-md hover:shadow-primary/5 dark:bg-muted/10"
+              className="group flex items-center gap-3 rounded-3xl border border-border/60 bg-muted-foreground/4.5 px-5 py-4 transition-all hover:border-primary/25 hover:shadow-md hover:shadow-primary/5 dark:bg-muted/10"
             >
               <Avatar className="size-11 shrink-0 rounded-2xl">
                 <AvatarFallback className="rounded-2xl bg-muted text-[11px] font-semibold">
