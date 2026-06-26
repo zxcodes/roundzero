@@ -242,7 +242,7 @@ function CandidateApplicationDetailPage() {
           <div className="min-w-0 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-sm text-muted-foreground">{application.companyName}</p>
-              <Badge variant="outline" className="font-mono text-[11px]">
+              <Badge variant="outline" className="text-[11px]">
                 {jobStateLabel}
               </Badge>
             </div>
@@ -265,7 +265,7 @@ function CandidateApplicationDetailPage() {
       </section>
 
       {application.companyOwnerDeleted ? (
-        <section className="rounded-2xl border border-destructive/30 bg-destructive/5 px-5 py-4">
+        <section className="rounded-2xl border border-destructive/20 bg-destructive/5 px-5 py-4">
           <p className="text-sm font-medium text-destructive">
             This company account has been deleted
           </p>

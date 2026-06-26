@@ -126,7 +126,7 @@ export function ResumeUploadField({
       />
       <label
         htmlFor={inputId}
-        className="flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-border bg-muted/30 px-4 py-3 transition-colors hover:border-primary/40 hover:bg-muted/50"
+        className="flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-border/60 bg-muted/30 px-4 py-3 transition-colors hover:border-primary/40 hover:bg-muted/50"
       >
         <div className="flex items-center gap-3">
           <div className="flex size-10 items-center justify-center rounded-lg bg-background shadow-xs">

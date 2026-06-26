@@ -368,17 +368,17 @@ function ActiveJobsTable({
                     ) : null}
                   </div>
                 </TableCell>
-                <TableCell className="text-right font-mono text-sm tabular-nums">
+                <TableCell className="text-right text-sm tabular-nums">
                   {job.totalApplicants > 0 ? job.totalApplicants : "—"}
                 </TableCell>
                 <TableCell className="text-right">
                   <JobReportsCell job={job} />
                 </TableCell>
-                <TableCell className="font-mono text-xs text-muted-foreground">
+                <TableCell className="text-xs text-muted-foreground">
                   {formatDate(job.createdAt)}
                 </TableCell>
                 <TableCell
-                  className={`font-mono text-xs ${closingSoon ? "font-medium text-destructive" : "text-muted-foreground"}`}
+                  className={`text-xs ${closingSoon ? "font-medium text-destructive" : "text-muted-foreground"}`}
                 >
                   {closingLabel ?? "—"}
                 </TableCell>
@@ -457,7 +457,7 @@ function JobReportsCell({ job }: { job: PipelineJob }) {
   return (
     <div className="space-y-0.5 text-right">
       {job.reportsReadyCount > 0 ? (
-        <span className="font-mono text-sm tabular-nums">{job.reportsReadyCount}</span>
+        <span className="text-sm tabular-nums">{job.reportsReadyCount}</span>
       ) : (
         <span className="text-xs text-muted-foreground">—</span>
       )}
@@ -529,7 +529,7 @@ function ArchivedJobsTable({
                   ? employmentTypeLabels[job.employmentType as EmploymentType]
                   : "\u2014"}
               </TableCell>
-              <TableCell className="font-mono text-xs text-muted-foreground">
+              <TableCell className="text-xs text-muted-foreground">
                 {job.archivedAt ? formatDate(job.archivedAt) : "\u2014"}
               </TableCell>
               <TableCell className="text-right text-xs text-muted-foreground">{"\u2014"}</TableCell>

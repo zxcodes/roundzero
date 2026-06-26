@@ -130,7 +130,7 @@ function CompaniesPage() {
                 you.
               </p>
               <p className="text-sm text-muted-foreground">
-                <span className="font-mono font-medium tabular-nums text-foreground">{total}</span>{" "}
+                <span className="font-medium tabular-nums text-foreground">{total}</span>{" "}
                 {total === 1 ? "company" : "companies"}
                 {hasFilters ? " matching your filters" : ""}
               </p>
@@ -231,7 +231,10 @@ function CompanyCard({ company, className }: { company: CompanyFromLoader; class
 
   return (
     <Link to="/companies/$slug" params={{ slug: company.slug }} className={className}>
-      <Card className="group h-full gap-0 rounded-3xl border border-border/60 py-0 shadow-none ring-0 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-lg hover:shadow-primary/5">
+      <Card
+        variant="bordered-inset"
+        className="group h-full transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-lg hover:shadow-primary/5"
+      >
         <CardContent className="flex h-full min-h-48 flex-col gap-4 p-5">
           <div className="flex items-start gap-3">
             <Avatar className="size-11 shrink-0 rounded-2xl">

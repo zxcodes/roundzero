@@ -10,6 +10,12 @@ const cardVariants = cva(
       variant: {
         default:
           "gap-6 overflow-hidden rounded-4xl bg-card py-6 shadow-md ring-1 ring-foreground/5 dark:ring-foreground/10",
+        /** Flat bordered card — keep default py for Header/Content/Footer composition. */
+        bordered:
+          "gap-0 overflow-hidden rounded-3xl border border-border/60 shadow-none ring-0",
+        /** Single CardContent supplies p-* / py-* — never pair with CardHeader. */
+        "bordered-inset":
+          "gap-0 overflow-hidden rounded-3xl border border-border/60 bg-muted-foreground/[0.045] py-0 shadow-none ring-0 dark:bg-muted/10",
         "dashboard-tile": "gap-0 overflow-hidden rounded-xl p-4 shadow-none ring-0",
         "dashboard-panel":
           "gap-0 overflow-hidden rounded-2xl bg-muted-foreground/[0.085] shadow-none ring-0 dark:bg-muted/30",

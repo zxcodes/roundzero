@@ -7,7 +7,7 @@ export function PageInlineStats({ items }: { items: { value: number; label: stri
     <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
       {items.map((item) => (
         <span key={item.label}>
-          <span className="font-mono font-medium tabular-nums text-foreground">{item.value}</span>{" "}
+          <span className="font-medium tabular-nums text-foreground">{item.value}</span>{" "}
           {item.label}
         </span>
       ))}

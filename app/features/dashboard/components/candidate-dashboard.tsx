@@ -331,7 +331,7 @@ function ActionQueueSection({ actions }: { actions: ActionItem[] }) {
             Top things to handle next, in priority order.
           </p>
         </div>
-        <span className="font-mono text-sm text-muted-foreground">{actions.length} pending</span>
+        <span className="text-sm text-muted-foreground">{actions.length} pending</span>
       </div>
 
       <div className="divide-y divide-border/50 overflow-hidden rounded-3xl border border-border/60">

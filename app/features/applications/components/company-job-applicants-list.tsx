@@ -90,7 +90,7 @@ function ApplicantRow({
     >
       {isEvaluated && score != null ? (
         <div className="w-18 shrink-0 space-y-0.5">
-          <p className="font-mono text-base font-semibold leading-none tabular-nums">
+          <p className="text-base font-semibold leading-none tabular-nums">
             <span>{formatCandidateScore(score)}</span>
             <span className="text-[10px] font-medium text-muted-foreground">
               /{CANDIDATE_SCORE_MAX}

@@ -5,7 +5,14 @@ import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/shared/date";
@@ -186,7 +193,7 @@ function CurrentPlanCard({
   const atLimit = jobUsage >= jobLimit;
 
   return (
-    <section className="space-y-4 rounded-3xl border border-primary/20 px-5 py-4 md:px-6">
+    <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-1.5">
           <div className="flex flex-wrap items-center gap-2">
@@ -280,12 +287,13 @@ function PlanCard({
 
   return (
     <Card
+      variant="bordered"
+      size="sm"
       data-current={isCurrent ? "true" : undefined}
       data-highlighted={highlighted ? "true" : undefined}
       className={cn(
-        "flex flex-col gap-0 rounded-3xl border border-border/60 py-0 shadow-none ring-0",
-        highlighted ? "border-foreground/40 bg-muted/40" : null,
-        isCurrent && !highlighted ? "border-foreground/25" : null,
+        highlighted ? "bg-muted/30" : null,
+        isCurrent && !highlighted ? "bg-muted/20" : null,
       )}
     >
       <CardHeader>
@@ -298,7 +306,7 @@ function PlanCard({
         </div>
         <CardDescription>{config.description}</CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-1 flex-col justify-between gap-4">
+      <CardContent className="flex flex-1 flex-col gap-4">
         <ul className="flex flex-col gap-2 text-sm">
           {config.features.map((feature) => (
             <li key={feature} className="flex items-start gap-2">
@@ -311,7 +319,8 @@ function PlanCard({
             </li>
           ))}
         </ul>
-
+      </CardContent>
+      <CardFooter className="mt-auto flex-col items-stretch gap-0">
         {isCurrent ? (
           <Button variant="outline" disabled>
             Current plan
@@ -340,7 +349,7 @@ function PlanCard({
             )}
           </Button>
         )}
-      </CardContent>
+      </CardFooter>
     </Card>
   );
 }

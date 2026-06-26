@@ -85,7 +85,7 @@ export function AiJobCreator({ isPaid, onApply, onDiscard }: AiJobCreatorProps) 
   const isGenerating = generateMutation.isPending;
 
   return (
-    <section className="space-y-4 rounded-3xl border border-primary/25 bg-primary/5 px-5 py-4 md:px-6">
+    <section className="space-y-4 rounded-3xl border border-border/60 bg-muted/20 px-5 py-4 md:px-6">
       <div className="space-y-1">
         <div className="flex items-center gap-2">
           <HugeiconsIcon icon={AiMagicIcon} strokeWidth={2} className="size-5 text-primary" />

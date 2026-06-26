@@ -219,7 +219,7 @@ function ApplicantAiReportPage() {
 
   return (
     <div className="space-y-5">
-      <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-3 text-xs text-muted-foreground">
+      <div className="rounded-2xl border border-dashed border-border/60 bg-muted/20 px-4 py-3 text-xs text-muted-foreground">
         This is the full audit timeline — every step Zero took to evaluate{" "}
         <span className="font-medium text-foreground">{application.candidateName}</span>. For a
         polished, evidence-backed view, head back to the{" "}
@@ -237,7 +237,7 @@ function ApplicantAiReportPage() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <div className="flex size-9 items-center justify-center rounded-xl border border-border/70 bg-muted/30">
+              <div className="flex size-9 items-center justify-center rounded-xl border border-border/60 bg-muted/30">
                 <HugeiconsIcon
                   icon={SparklesIcon}
                   strokeWidth={2}

@@ -456,7 +456,7 @@ function ApplicationStatusSection({
             <Badge variant="outline" className={tone.badge}>
               {getApplicationStatusLabel(currentStatus, { preEvaluationScore })}
             </Badge>
-            <Badge variant="outline" className="gap-1 font-mono text-[11px]">
+            <Badge variant="outline" className="gap-1 text-[11px]">
               <HugeiconsIcon icon={Calendar01Icon} strokeWidth={2} className="size-3" />
               Applied {formatDate(createdAt)}
             </Badge>
@@ -574,7 +574,7 @@ function ApplicationStatusSection({
             <p className="font-medium">Contact</p>
             <a
               href={`mailto:${candidateEmail}`}
-              className="mt-0.5 truncate font-mono text-xs text-foreground hover:underline"
+              className="mt-0.5 truncate text-xs text-foreground hover:underline"
             >
               {candidateEmail}
             </a>

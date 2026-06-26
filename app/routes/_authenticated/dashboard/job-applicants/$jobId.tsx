@@ -268,8 +268,8 @@ function ApplicantsTabContent({
     <div className="space-y-5">
       {heldForReleaseCount > 0 ? (
         <p className="text-sm text-muted-foreground">
-          <span className="font-mono font-medium text-foreground">{heldForReleaseCount}</span> held
-          until batch completes
+          <span className="font-medium text-foreground">{heldForReleaseCount}</span> held until
+          batch completes
         </p>
       ) : null}
 
