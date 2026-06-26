@@ -8,6 +8,7 @@ import { Link } from "@tanstack/react-router";
 import { PageInlineStats } from "@/components/page-inline-stats";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { DashboardGreeting } from "@/features/dashboard/components/dashboard-greeting";
 import type { getDashboardMetrics } from "@/features/dashboard/server/functions";
 import { resolveInterviewAwareCandidateMeta } from "@/features/interviews/shared/candidate-display";
@@ -299,7 +300,7 @@ function ActionQueueRow({ action }: { action: ActionItem }) {
 function ActionQueueSection({ actions }: { actions: ActionItem[] }) {
   if (actions.length === 0) {
     return (
-      <section className="rounded-2xl bg-muted-foreground/8.5 px-6 py-8 dark:bg-muted/30">
+      <Card variant="dashboard-panel" className="px-6 py-8">
         <div className="flex items-center gap-2">
           <HugeiconsIcon
             icon={CheckmarkCircle02Icon}
@@ -317,7 +318,7 @@ function ActionQueueSection({ actions }: { actions: ActionItem[] }) {
             <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-3.5" />
           </Link>
         </Button>
-      </section>
+      </Card>
     );
   }
 
