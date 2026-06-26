@@ -1730,15 +1730,13 @@ export function InviteAcceptSkeleton() {
         <div className="flex justify-center">
           <Skeleton className="size-7 rounded-md" />
         </div>
-        <Card>
-          <CardHeader className="text-center">
+        <section className="space-y-5 rounded-3xl border border-border/60 px-5 py-6">
+          <div className="space-y-2 text-center">
             <Skeleton className="mx-auto h-7 w-48" />
-            <Skeleton className="mx-auto mt-2 h-4 w-64" />
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-11 w-full rounded-md" />
-          </CardContent>
-        </Card>
+            <Skeleton className="mx-auto h-4 w-64" />
+          </div>
+          <Skeleton className="h-11 w-full rounded-md" />
+        </section>
       </div>
     </div>
   );
