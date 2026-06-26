@@ -15,7 +15,7 @@ import { CompanyDetailSkeleton } from "@/components/route-skeletons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+
 import {
   Empty,
   EmptyDescription,
@@ -27,20 +27,8 @@ import {
 import { getCompanyBySlug } from "@/features/companies/server/functions";
 import { getOpenJobsByCompanyId } from "@/features/jobs/server/functions";
 import { publicCompanyDetailTrail } from "@/shared/breadcrumb-trails";
-import type {
-  CompanySize,
-  EmploymentType,
-  ExperienceLevel,
-  Industry,
-  WorkplaceType,
-} from "@/shared/enums";
-import {
-  companySizeLabels,
-  employmentTypeLabels,
-  experienceLevelLabels,
-  industryLabels,
-  workplaceTypeLabels,
-} from "@/shared/enums";
+import type { CompanySize, Industry, WorkplaceType } from "@/shared/enums";
+import { companySizeLabels, industryLabels, workplaceTypeLabels } from "@/shared/enums";
 import { formatSalary } from "@/shared/format";
 import { getPublicAssetUrl } from "@/shared/r2";
 
@@ -159,7 +147,7 @@ function CompanyProfilePage() {
               </Avatar>
               <div className="min-w-0 flex-1 space-y-3">
                 <div>
-                  <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
+                  <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
                     {company.name}
                   </h1>
                   <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted-foreground">
@@ -222,42 +210,32 @@ function CompanyProfilePage() {
           {/* Left column — about + jobs */}
           <div className="space-y-10 lg:col-span-2">
             {company.description ? (
-              <div className="space-y-3">
-                <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                  About
-                </h2>
-                <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-line">
+              <section className="rounded-2xl bg-muted/30 px-6 py-5">
+                <h2 className="text-lg font-semibold tracking-tight">About</h2>
+                <p className="mt-3 text-sm leading-relaxed whitespace-pre-line">
                   {company.description}
                 </p>
-              </div>
+              </section>
             ) : null}
 
             {company.culture ? (
-              <div className="stagger-1 space-y-3">
-                <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                  Culture & Perks
-                </h2>
-                <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-line">
+              <section className="stagger-1 rounded-2xl bg-muted/30 px-6 py-5">
+                <h2 className="text-lg font-semibold tracking-tight">Culture & perks</h2>
+                <p className="mt-3 text-sm leading-relaxed whitespace-pre-line">
                   {company.culture}
                 </p>
-              </div>
+              </section>
             ) : null}
 
             {/* Open jobs */}
             <div className="stagger-2 space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                    Open positions
-                  </h2>
-                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-primary">
-                    {jobs.length}
-                  </span>
-                </div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-semibold tracking-tight">Open positions</h2>
+                <span className="font-mono text-sm text-muted-foreground">{jobs.length}</span>
               </div>
 
               {jobs.length === 0 ? (
-                <Empty className="border">
+                <Empty className="rounded-2xl border-0 bg-muted/30">
                   <EmptyHeader>
                     <EmptyMedia variant="icon">
                       <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} />
@@ -267,7 +245,7 @@ function CompanyProfilePage() {
                   </EmptyHeader>
                 </Empty>
               ) : (
-                <div className="space-y-3 flex flex-col">
+                <div className="divide-y divide-border/50 overflow-hidden rounded-3xl border border-border/60">
                   {jobs.map((job) => (
                     <CompanyJobCard key={job.id} job={job} />
                   ))}
@@ -279,28 +257,21 @@ function CompanyProfilePage() {
           {/* Right sidebar */}
           <aside className="space-y-6">
             {techStack.length > 0 ? (
-              <Card>
-                <CardContent className="space-y-3">
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                    Tech stack
-                  </h3>
-                  <div className="flex flex-wrap gap-1.5">
-                    {techStack.map((tech) => (
-                      <Badge key={tech} variant="outline" className="text-xs">
-                        {tech}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+              <section className="rounded-3xl border border-border/60 px-5 py-5">
+                <h3 className="text-base font-semibold tracking-tight">Tech stack</h3>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {techStack.map((tech) => (
+                    <Badge key={tech} variant="outline" className="text-xs">
+                      {tech}
+                    </Badge>
+                  ))}
+                </div>
+              </section>
             ) : null}
 
-            {/* Quick stats */}
-            <Card>
-              <CardContent className="space-y-3">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                  At a glance
-                </h3>
+            <section className="rounded-3xl border border-border/60 px-5 py-5">
+              <h3 className="text-base font-semibold tracking-tight">At a glance</h3>
+              <div className="mt-3 space-y-3">
                 <div className="space-y-2.5">
                   {company.industry ? (
                     <StatRow
@@ -322,8 +293,8 @@ function CompanyProfilePage() {
                   {company.location ? <StatRow label="Location" value={company.location} /> : null}
                   <StatRow label="Open roles" value={String(jobs.length)} />
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </section>
           </aside>
         </section>
       </main>
@@ -358,53 +329,40 @@ function CompanyJobCard({ job }: { job: JobFromLoader }) {
   const salary = formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency);
 
   return (
-    <Link to="/jobs/$jobId" params={{ jobId: job.id }}>
-      <Card className="group transition-all duration-200 hover:border-primary/30 hover:shadow-md hover:shadow-primary/5">
-        <CardContent className="flex items-center gap-4">
-          <div className="min-w-0 flex-1 space-y-1.5">
-            <p className="text-sm font-semibold transition-colors group-hover:text-primary">
-              {job.title}
-            </p>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-              {job.location ? (
-                <span className="inline-flex items-center gap-1">
-                  <HugeiconsIcon icon={Location01Icon} strokeWidth={2} className="size-3" />
-                  {job.location}
-                </span>
-              ) : null}
-              {job.employmentType ? (
-                <span>
-                  {employmentTypeLabels[job.employmentType as EmploymentType] ?? job.employmentType}
-                </span>
-              ) : null}
-              {job.experienceLevel ? (
-                <span>
-                  {experienceLevelLabels[job.experienceLevel as ExperienceLevel] ??
-                    job.experienceLevel}
-                </span>
-              ) : null}
-              {salary ? (
-                <span className="inline-flex items-center gap-1">
-                  <HugeiconsIcon icon={MoneyBag02Icon} strokeWidth={2} className="size-3" />
-                  {salary}
-                </span>
-              ) : null}
-            </div>
-          </div>
-          <div className="flex shrink-0 items-center gap-1.5">
-            {job.workplaceType ? (
-              <Badge variant="outline" className="text-[11px]">
-                {workplaceTypeLabels[job.workplaceType as WorkplaceType] ?? job.workplaceType}
-              </Badge>
-            ) : null}
-            <HugeiconsIcon
-              icon={ArrowRight01Icon}
-              strokeWidth={2}
-              className="size-4 text-muted-foreground transition-colors group-hover:text-primary"
-            />
-          </div>
-        </CardContent>
-      </Card>
+    <Link
+      to="/jobs/$jobId"
+      params={{ jobId: job.id }}
+      className="group flex items-center gap-3 rounded-3xl border border-border/60 px-4 py-3.5 transition-colors hover:border-primary/25 hover:bg-muted/30 md:px-5"
+    >
+      <div className="min-w-0 flex-1 space-y-1">
+        <p className="truncate text-sm font-semibold group-hover:text-primary">{job.title}</p>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+          {job.location ? (
+            <span className="inline-flex items-center gap-1">
+              <HugeiconsIcon icon={Location01Icon} strokeWidth={2} className="size-3" />
+              {job.location}
+            </span>
+          ) : null}
+          {salary ? (
+            <span className="inline-flex items-center gap-1 font-mono font-medium text-foreground">
+              <HugeiconsIcon icon={MoneyBag02Icon} strokeWidth={2} className="size-3" />
+              {salary}
+            </span>
+          ) : null}
+        </div>
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        {job.workplaceType ? (
+          <Badge variant="outline" className="text-[11px]">
+            {workplaceTypeLabels[job.workplaceType as WorkplaceType] ?? job.workplaceType}
+          </Badge>
+        ) : null}
+        <HugeiconsIcon
+          icon={ArrowRight01Icon}
+          strokeWidth={2}
+          className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary"
+        />
+      </div>
     </Link>
   );
 }

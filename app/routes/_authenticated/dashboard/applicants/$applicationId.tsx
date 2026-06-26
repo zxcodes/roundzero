@@ -25,7 +25,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+
 import {
   Select,
   SelectContent,
@@ -256,9 +256,8 @@ function ApplicantReviewPage() {
   const hasApplicantNavigation = previousApplicant !== null || nextApplicant !== null;
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-6 min-w-0">
-        {/* Candidate header */}
+    <div className="space-y-10">
+      <div className="min-w-0 space-y-10">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex min-w-0 flex-1 flex-wrap items-start gap-4">
             <Avatar className="size-14">
@@ -269,7 +268,7 @@ function ApplicantReviewPage() {
               <AvatarFallback>{getInitials(application.candidateName)}</AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1 space-y-2">
-              <h2 className="text-2xl font-bold tracking-tight">{application.candidateName}</h2>
+              <h1 className="text-xl font-semibold tracking-tight">{application.candidateName}</h1>
               <p className="text-sm text-muted-foreground">
                 Reviewing for <span className="font-medium">{application.jobTitle}</span>
               </p>
@@ -338,39 +337,33 @@ function ApplicantReviewPage() {
 
         {/* Pre-evaluation card — only when there's no full report yet */}
         {!report && preEvaluation ? (
-          <Card>
-            <CardContent className="space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-                    Pre-screening
-                  </p>
-                  <h3 className="mt-1 text-base font-semibold tracking-tight">
-                    Profile score: {formatCandidateScoreWithScale(preEvaluation.score)}
-                  </h3>
-                </div>
-                <Badge variant="outline" className="text-[11px]">
-                  {preEvaluation.confidence}
-                </Badge>
-              </div>
-              {preEvaluation.missingRequirements.length > 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  {preEvaluation.missingRequirements.length} gap
-                  {preEvaluation.missingRequirements.length === 1 ? "" : "s"} detected
+          <section className="space-y-3 rounded-3xl border border-border/60 px-5 py-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="text-base font-semibold tracking-tight">Pre-screening</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Profile score: {formatCandidateScoreWithScale(preEvaluation.score)}
                 </p>
-              ) : (
-                <p className="text-sm text-success">All key requirements matched</p>
-              )}
-            </CardContent>
-          </Card>
+              </div>
+              <Badge variant="outline" className="text-[11px]">
+                {preEvaluation.confidence}
+              </Badge>
+            </div>
+            {preEvaluation.missingRequirements.length > 0 ? (
+              <p className="text-sm text-muted-foreground">
+                {preEvaluation.missingRequirements.length} gap
+                {preEvaluation.missingRequirements.length === 1 ? "" : "s"} detected
+              </p>
+            ) : (
+              <p className="text-sm text-success">All key requirements matched</p>
+            )}
+          </section>
         ) : null}
 
         {!report && !preEvaluation ? (
-          <Card className="border border-dashed border-border/70">
-            <CardContent className="py-6 text-center text-sm text-muted-foreground">
-              Pre-evaluation is in progress. Results will appear here once Zero finishes screening.
-            </CardContent>
-          </Card>
+          <div className="rounded-2xl bg-muted/30 px-6 py-5 text-center text-sm text-muted-foreground">
+            Pre-evaluation is in progress. Results will appear here once Zero finishes screening.
+          </div>
         ) : null}
       </div>
 
@@ -455,151 +448,140 @@ function ApplicationStatusSection({
   const tone = applicationStatusMeta[currentStatus];
 
   return (
-    <Card size="sm" className="border-border/60">
-      <CardContent className="space-y-4 py-4">
-        <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
-          <div className="space-y-1.5">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-              Application status
-            </p>
-            <div className="flex flex-wrap items-center gap-1.5">
-              <Badge variant="outline" className={tone.badge}>
-                {getApplicationStatusLabel(currentStatus, { preEvaluationScore })}
-              </Badge>
-              <Badge variant="outline" className="gap-1 font-mono text-[11px]">
-                <HugeiconsIcon icon={Calendar01Icon} strokeWidth={2} className="size-3" />
-                Applied {formatDate(createdAt)}
-              </Badge>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            {hasResume ? (
-              <Button variant="outline" onClick={onResumeView} disabled={resumeLoading}>
-                {resumeLoading ? (
-                  <HugeiconsIcon
-                    icon={Loading03Icon}
-                    strokeWidth={2}
-                    className="size-4 animate-spin"
-                  />
-                ) : (
-                  <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-4" />
-                )}
-                {resumeLoading ? "Opening..." : "View resume"}
-              </Button>
-            ) : null}
-
-            {isFailed && evaluationRetry?.actionable ? (
-              <Button
-                variant="outline"
-                disabled={retryEvaluationPending}
-                onClick={onRetryEvaluation}
-              >
-                {retryEvaluationPending ? (
-                  <HugeiconsIcon
-                    icon={Loading03Icon}
-                    strokeWidth={2}
-                    className="size-4 animate-spin"
-                  />
-                ) : null}
-                {retryEvaluationPending ? "Retrying..." : "Retry evaluation"}
-              </Button>
-            ) : null}
-
-            {isFailed &&
-            evaluationRetry?.actionable === false &&
-            evaluationRetry.suggestedAction === "reinvite" &&
-            canReinviteToInterview ? (
-              <Button variant="outline" disabled={isPending} onClick={onReinviteToInterview}>
-                {isPending ? (
-                  <HugeiconsIcon
-                    icon={Loading03Icon}
-                    strokeWidth={2}
-                    className="size-4 animate-spin"
-                  />
-                ) : null}
-                {isPending ? "Inviting..." : "Re-invite to interview"}
-              </Button>
-            ) : null}
-
-            {canReject ? (
-              <Button variant="destructive" disabled={isPending} onClick={onReject}>
-                {isPending && isRejectPending ? (
-                  <HugeiconsIcon
-                    icon={Loading03Icon}
-                    strokeWidth={2}
-                    className="size-4 animate-spin"
-                  />
-                ) : null}
-                {isPending && isRejectPending ? "Rejecting..." : "Reject"}
-              </Button>
-            ) : null}
-
-            {canShortlist ? (
-              <ShortlistDialog
-                applicationId={applicationId}
-                candidateName={candidateName}
-                mode="create"
-                trigger={<Button disabled={isPending}>Shortlist</Button>}
-              />
-            ) : null}
-
-            {isShortlisted ? (
-              <ShortlistDialog
-                applicationId={applicationId}
-                candidateName={candidateName}
-                mode="edit"
-                defaultNote={shortlistNote}
-                trigger={<Button variant="outline">Edit note</Button>}
-              />
-            ) : null}
+    <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-5">
+      <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
+        <div className="space-y-1.5">
+          <h2 className="text-base font-semibold tracking-tight">Application status</h2>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Badge variant="outline" className={tone.badge}>
+              {getApplicationStatusLabel(currentStatus, { preEvaluationScore })}
+            </Badge>
+            <Badge variant="outline" className="gap-1 font-mono text-[11px]">
+              <HugeiconsIcon icon={Calendar01Icon} strokeWidth={2} className="size-3" />
+              Applied {formatDate(createdAt)}
+            </Badge>
           </div>
         </div>
 
-        <div className="grid gap-3 border-y border-border/50 py-3 lg:grid-cols-[minmax(0,1fr)_280px]">
-          <CompactStepper
-            currentIndex={currentIndex}
-            preEvaluationScore={preEvaluationScore}
-            isFailed={isFailed}
-            isWithdrawn={isWithdrawn}
-            isRejected={isRejected}
-          />
-          <div className="space-y-2 lg:border-l lg:border-border/50 lg:pl-3">
-            {allowedStatuses.length > 1 ? (
-              <div className="space-y-1.5">
-                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                  Move to
-                </p>
-                <Select value={currentStatus} onValueChange={onStatusChange} disabled={isPending}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {allowedStatuses.map((status) => (
-                      <SelectItem key={status} value={status}>
-                        {getApplicationStatusLabel(status, {
-                          preEvaluationScore:
-                            status === "pre_screening" ? preEvaluationScore : null,
-                        })}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            ) : null}
-            <div className="text-[11px] text-muted-foreground">
-              <p className="font-medium uppercase tracking-wide">Contact</p>
-              <a
-                href={`mailto:${candidateEmail}`}
-                className="mt-0.5 truncate font-mono text-xs text-foreground hover:underline"
-              >
-                {candidateEmail}
-              </a>
+        <div className="flex flex-wrap items-center gap-2">
+          {hasResume ? (
+            <Button variant="outline" onClick={onResumeView} disabled={resumeLoading}>
+              {resumeLoading ? (
+                <HugeiconsIcon
+                  icon={Loading03Icon}
+                  strokeWidth={2}
+                  className="size-4 animate-spin"
+                />
+              ) : (
+                <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-4" />
+              )}
+              {resumeLoading ? "Opening..." : "View resume"}
+            </Button>
+          ) : null}
+
+          {isFailed && evaluationRetry?.actionable ? (
+            <Button variant="outline" disabled={retryEvaluationPending} onClick={onRetryEvaluation}>
+              {retryEvaluationPending ? (
+                <HugeiconsIcon
+                  icon={Loading03Icon}
+                  strokeWidth={2}
+                  className="size-4 animate-spin"
+                />
+              ) : null}
+              {retryEvaluationPending ? "Retrying..." : "Retry evaluation"}
+            </Button>
+          ) : null}
+
+          {isFailed &&
+          evaluationRetry?.actionable === false &&
+          evaluationRetry.suggestedAction === "reinvite" &&
+          canReinviteToInterview ? (
+            <Button variant="outline" disabled={isPending} onClick={onReinviteToInterview}>
+              {isPending ? (
+                <HugeiconsIcon
+                  icon={Loading03Icon}
+                  strokeWidth={2}
+                  className="size-4 animate-spin"
+                />
+              ) : null}
+              {isPending ? "Inviting..." : "Re-invite to interview"}
+            </Button>
+          ) : null}
+
+          {canReject ? (
+            <Button variant="destructive" disabled={isPending} onClick={onReject}>
+              {isPending && isRejectPending ? (
+                <HugeiconsIcon
+                  icon={Loading03Icon}
+                  strokeWidth={2}
+                  className="size-4 animate-spin"
+                />
+              ) : null}
+              {isPending && isRejectPending ? "Rejecting..." : "Reject"}
+            </Button>
+          ) : null}
+
+          {canShortlist ? (
+            <ShortlistDialog
+              applicationId={applicationId}
+              candidateName={candidateName}
+              mode="create"
+              trigger={<Button disabled={isPending}>Shortlist</Button>}
+            />
+          ) : null}
+
+          {isShortlisted ? (
+            <ShortlistDialog
+              applicationId={applicationId}
+              candidateName={candidateName}
+              mode="edit"
+              defaultNote={shortlistNote}
+              trigger={<Button variant="outline">Edit note</Button>}
+            />
+          ) : null}
+        </div>
+      </div>
+
+      <div className="grid gap-3 border-y border-border/50 py-3 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <CompactStepper
+          currentIndex={currentIndex}
+          preEvaluationScore={preEvaluationScore}
+          isFailed={isFailed}
+          isWithdrawn={isWithdrawn}
+          isRejected={isRejected}
+        />
+        <div className="space-y-2 lg:border-l lg:border-border/50 lg:pl-3">
+          {allowedStatuses.length > 1 ? (
+            <div className="space-y-1.5">
+              <p className="text-sm font-medium text-muted-foreground">Move to</p>
+              <Select value={currentStatus} onValueChange={onStatusChange} disabled={isPending}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {allowedStatuses.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {getApplicationStatusLabel(status, {
+                        preEvaluationScore: status === "pre_screening" ? preEvaluationScore : null,
+                      })}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+          ) : null}
+          <div className="text-sm text-muted-foreground">
+            <p className="font-medium">Contact</p>
+            <a
+              href={`mailto:${candidateEmail}`}
+              className="mt-0.5 truncate font-mono text-xs text-foreground hover:underline"
+            >
+              {candidateEmail}
+            </a>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }
 

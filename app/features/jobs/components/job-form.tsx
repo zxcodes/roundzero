@@ -302,9 +302,7 @@ export function JobForm({
       <Separator />
 
       <div className="space-y-4">
-        <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
-          Screening questions
-        </p>
+        <h3 className="text-base font-semibold tracking-tight">Screening questions</h3>
         <form.Field name="screeningQuestions" mode="array">
           {(iqField) => {
             const onScreeningQuestionInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -392,7 +390,7 @@ export function JobForm({
       <Separator />
 
       <div className="space-y-4">
-        <p className="text-[11px] font-bold uppercase tracking-widest text-primary">Job details</p>
+        <h3 className="text-base font-semibold tracking-tight">Job details</h3>
         <div className="grid gap-4 sm:grid-cols-2">
           <form.Field
             name="location"
@@ -580,7 +578,7 @@ export function JobForm({
       <Separator />
 
       <div className="space-y-4">
-        <p className="text-[11px] font-bold uppercase tracking-widest text-primary">Compensation</p>
+        <h3 className="text-base font-semibold tracking-tight">Compensation</h3>
         <form.Subscribe selector={(state) => state.values.salaryCurrency}>
           {(currency) => {
             const placeholders =
@@ -676,7 +674,7 @@ export function JobForm({
       <Separator />
 
       <div className="space-y-4">
-        <p className="text-[11px] font-bold uppercase tracking-widest text-primary">Team</p>
+        <h3 className="text-base font-semibold tracking-tight">Team</h3>
         <div className="grid gap-4 sm:grid-cols-3">
           <form.Field name="teamSize" validators={{ onBlur: optionalPositiveInt }}>
             {(field) => {
@@ -765,9 +763,9 @@ export function JobForm({
       <Separator />
 
       <div className="space-y-4">
-        <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
+        <h3 className="text-base font-semibold tracking-tight">
           Requirements <span className="text-destructive">*</span>
-        </p>
+        </h3>
         <form.Field name="requirements" mode="array">
           {(reqField) => {
             const onRequirementInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {

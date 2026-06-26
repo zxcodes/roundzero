@@ -64,7 +64,14 @@ export function BillingPage({
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="space-y-10 pb-28">
+      <div className="space-y-1">
+        <h1 className="text-xl font-semibold tracking-tight">Billing</h1>
+        <p className="text-sm text-muted-foreground">
+          Manage your subscription, job limits, and plan features.
+        </p>
+      </div>
+
       <CurrentPlanCard
         subscription={subscription}
         jobCounts={jobCounts}
@@ -74,23 +81,32 @@ export function BillingPage({
 
       {subscription.isActive && !subscription.cancelAtPeriodEnd ? (
         <p className="text-sm text-muted-foreground">
-          You are on a paid plan. Use "Manage billing" above to change or cancel your subscription.
+          You are on a paid plan. Use &quot;Manage billing&quot; above to change or cancel your
+          subscription.
         </p>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {SUBSCRIPTION_PLANS.map((id) => (
-          <PlanCard
-            key={id}
-            plan={id}
-            currentPlan={subscription.plan}
-            isPaid={subscription.isActive}
-            highlighted={highlightedPlan === id}
-            onCheckout={onCheckout}
-            checkingOut={checkoutMutation.isPending && checkoutMutation.variables === id}
-          />
-        ))}
-      </div>
+      <section className="space-y-5">
+        <div className="space-y-1">
+          <h2 className="text-lg font-semibold tracking-tight">Plans</h2>
+          <p className="text-sm text-muted-foreground">
+            Compare tiers and upgrade when you need more active jobs or team seats.
+          </p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {SUBSCRIPTION_PLANS.map((id) => (
+            <PlanCard
+              key={id}
+              plan={id}
+              currentPlan={subscription.plan}
+              isPaid={subscription.isActive}
+              highlighted={highlightedPlan === id}
+              onCheckout={onCheckout}
+              checkingOut={checkoutMutation.isPending && checkoutMutation.variables === id}
+            />
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
@@ -170,37 +186,35 @@ function CurrentPlanCard({
   const atLimit = jobUsage >= jobLimit;
 
   return (
-    <Card className="border-primary/20">
-      <CardHeader>
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex flex-col gap-1.5">
-            <CardTitle className="flex items-center gap-2">
-              {config.name}
-              <Badge variant={subscription.isActive || isFree ? "default" : "secondary"}>
-                {isFree ? "active" : subscription.status}
-              </Badge>
-            </CardTitle>
-            <CardDescription>{config.description}</CardDescription>
+    <section className="space-y-4 rounded-3xl border border-primary/20 px-5 py-5">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="space-y-1.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-base font-semibold tracking-tight">{config.name}</h2>
+            <Badge variant={subscription.isActive || isFree ? "default" : "secondary"}>
+              {isFree ? "active" : subscription.status}
+            </Badge>
           </div>
-          {subscription.hasPolarCustomer ? (
-            <Button variant="outline" onClick={onOpenPortal} disabled={portalLoading}>
-              {portalLoading ? (
-                <>
-                  <HugeiconsIcon
-                    icon={Loading03Icon}
-                    strokeWidth={2}
-                    className="size-4 animate-spin"
-                  />
-                  Opening...
-                </>
-              ) : (
-                "Manage billing"
-              )}
-            </Button>
-          ) : null}
+          <p className="text-sm text-muted-foreground">{config.description}</p>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
+        {subscription.hasPolarCustomer ? (
+          <Button variant="outline" onClick={onOpenPortal} disabled={portalLoading}>
+            {portalLoading ? (
+              <>
+                <HugeiconsIcon
+                  icon={Loading03Icon}
+                  strokeWidth={2}
+                  className="size-4 animate-spin"
+                />
+                Opening...
+              </>
+            ) : (
+              "Manage billing"
+            )}
+          </Button>
+        ) : null}
+      </div>
+      <div className="space-y-4">
         <SubscriptionStatusAlert subscription={subscription} periodEnd={periodEnd} />
 
         <div className="space-y-2">
@@ -236,8 +250,8 @@ function CurrentPlanCard({
             ))}
           </ul>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }
 
@@ -269,12 +283,9 @@ function PlanCard({
       data-current={isCurrent ? "true" : undefined}
       data-highlighted={highlighted ? "true" : undefined}
       className={cn(
-        "flex flex-col",
-        highlighted
-          ? "border border-foreground bg-muted/60 shadow-lg ring-0"
-          : isCurrent
-            ? "ring-2 ring-foreground/30"
-            : null,
+        "flex flex-col rounded-3xl border border-border/60 shadow-none ring-0",
+        highlighted ? "border-foreground/40 bg-muted/40" : null,
+        isCurrent && !highlighted ? "border-foreground/25" : null,
       )}
     >
       <CardHeader>
@@ -314,7 +325,7 @@ function PlanCard({
             Manage billing to change
           </Button>
         ) : (
-          <Button onClick={onClick} disabled={checkingOut} className="shadow-sm">
+          <Button onClick={onClick} disabled={checkingOut}>
             {checkingOut ? (
               <>
                 <HugeiconsIcon

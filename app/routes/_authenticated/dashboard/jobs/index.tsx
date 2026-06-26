@@ -2,6 +2,7 @@ import {
   Add01Icon,
   Alert01Icon,
   Archive01Icon,
+  ArrowRight01Icon,
   Briefcase01Icon,
   Loading03Icon,
   Location01Icon,
@@ -21,12 +22,13 @@ import {
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { z } from "zod";
+import { CompanyInboxPageShell } from "@/components/company-inbox-page-shell";
 import { PaginationNav } from "@/components/pagination-nav";
 import { DashboardJobsListSkeleton } from "@/components/route-skeletons";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+
 import {
   Empty,
   EmptyContent,
@@ -201,15 +203,26 @@ function CompanyJobsList({
     void navigate({ search: { tab: value as "active" | "archived" } });
   };
 
-  return (
-    <div className="min-w-0 space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Jobs</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Manage your job postings and track applicants.
-        </p>
-      </div>
+  const statItems = [
+    { value: counts.openCount, label: counts.openCount === 1 ? "open job" : "open jobs" },
+    { value: counts.draftCount, label: counts.draftCount === 1 ? "draft" : "drafts" },
+    { value: counts.totalCount, label: "total" },
+  ];
 
+  return (
+    <CompanyInboxPageShell
+      title="Jobs"
+      description="Manage your job postings and track applicants."
+      statItems={statItems}
+      headerAction={
+        <Button size="sm" asChild>
+          <Link to="/dashboard/jobs/new" className="no-underline hover:no-underline">
+            <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-3.5" />
+            Post a job
+          </Link>
+        </Button>
+      }
+    >
       {atLimit ? (
         <Alert variant="destructive">
           <AlertTitle>
@@ -248,7 +261,7 @@ function CompanyJobsList({
           <ArchivedJobsTable jobs={tab === "archived" ? jobs : []} isLoading={false} />
         </TabsContent>
       </Tabs>
-    </div>
+    </CompanyInboxPageShell>
   );
 }
 
@@ -277,7 +290,7 @@ function ActiveJobsTable({
 }) {
   if (jobs.length === 0) {
     return (
-      <Empty className="border">
+      <Empty className="rounded-2xl border-0 bg-muted/30">
         <EmptyHeader>
           <EmptyMedia variant="icon">
             <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} />
@@ -300,7 +313,7 @@ function ActiveJobsTable({
   }
 
   return (
-    <div className="min-w-0 rounded-xl border">
+    <div className="min-w-0 overflow-hidden rounded-3xl border border-border/60">
       <Table>
         <TableHeader>
           <TableRow>
@@ -472,7 +485,7 @@ function ArchivedJobsTable({
 
   if (jobs.length === 0) {
     return (
-      <Empty className="border">
+      <Empty className="rounded-2xl border-0 bg-muted/30">
         <EmptyHeader>
           <EmptyMedia variant="icon">
             <HugeiconsIcon icon={Archive01Icon} strokeWidth={2} />
@@ -485,7 +498,7 @@ function ArchivedJobsTable({
   }
 
   return (
-    <div className="min-w-0 rounded-xl border">
+    <div className="min-w-0 overflow-hidden rounded-3xl border border-border/60">
       <Table>
         <TableHeader>
           <TableRow>
@@ -578,195 +591,189 @@ function CandidateJobsList({ data }: { data: Awaited<ReturnType<typeof getOpenJo
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Browse Jobs</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Find open positions and apply.</p>
-      </div>
+    <div className="space-y-10">
+      <section className="space-y-1">
+        <h1 className="text-xl font-semibold tracking-tight">Browse roles</h1>
+        <p className="text-sm text-muted-foreground">Find open positions and apply.</p>
+      </section>
 
-      {/* Filters */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative flex-1 shrink-0 sm:shrink">
-          <HugeiconsIcon
-            icon={Search01Icon}
-            strokeWidth={2}
-            className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-          />
-          <Input
-            placeholder="Search by title, company, or location..."
-            value={search}
-            onChange={onSearchInputChange}
-            className="pl-10"
-          />
-        </div>
-        <ScrollArea orientation="horizontal" className="h-9">
-          <div className="flex gap-3">
-            <Select value={typeFilter} onValueChange={onTypeChange}>
-              <SelectTrigger className="w-36 shrink-0">
-                <SelectValue placeholder="Job type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All types</SelectItem>
-                {employmentTypeSchema.options.map((value) => (
-                  <SelectItem key={value} value={value}>
-                    {employmentTypeLabels[value]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={levelFilter} onValueChange={onLevelChange}>
-              <SelectTrigger className="w-36 shrink-0">
-                <SelectValue placeholder="Experience" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All levels</SelectItem>
-                {experienceLevelSchema.options.map((value) => (
-                  <SelectItem key={value} value={value}>
-                    {experienceLevelLabels[value]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={workplaceFilter} onValueChange={onWorkplaceChange}>
-              <SelectTrigger className="w-36 shrink-0">
-                <SelectValue placeholder="Workplace" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All workplaces</SelectItem>
-                {workplaceTypeSchema.options.map((value) => (
-                  <SelectItem key={value} value={value}>
-                    {workplaceTypeLabels[value]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={salaryCurrency} onValueChange={onCurrencyChange}>
-              <SelectTrigger className="w-36 shrink-0">
-                <SelectValue placeholder="Currency" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All currencies</SelectItem>
-                {salaryCurrencySchema.options.map((value) => (
-                  <SelectItem key={value} value={value}>
-                    {salaryCurrencyLabels[value]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={String(salaryMin)} onValueChange={onSalaryChange}>
-              <SelectTrigger className="w-36 shrink-0">
-                <SelectValue placeholder="Salary" />
-              </SelectTrigger>
-              <SelectContent>
-                {brackets.map((bracket) => (
-                  <SelectItem key={bracket.value} value={bracket.value}>
-                    {bracket.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      <section className="space-y-5">
+        {/* Filters */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1 shrink-0 sm:shrink">
+            <HugeiconsIcon
+              icon={Search01Icon}
+              strokeWidth={2}
+              className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            />
+            <Input
+              placeholder="Search by title, company, or location..."
+              value={search}
+              onChange={onSearchInputChange}
+              className="pl-10"
+            />
           </div>
-        </ScrollArea>
+          <ScrollArea orientation="horizontal" className="h-9">
+            <div className="flex gap-3">
+              <Select value={typeFilter} onValueChange={onTypeChange}>
+                <SelectTrigger className="w-36 shrink-0">
+                  <SelectValue placeholder="Job type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All types</SelectItem>
+                  {employmentTypeSchema.options.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {employmentTypeLabels[value]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={levelFilter} onValueChange={onLevelChange}>
+                <SelectTrigger className="w-36 shrink-0">
+                  <SelectValue placeholder="Experience" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All levels</SelectItem>
+                  {experienceLevelSchema.options.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {experienceLevelLabels[value]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={workplaceFilter} onValueChange={onWorkplaceChange}>
+                <SelectTrigger className="w-36 shrink-0">
+                  <SelectValue placeholder="Workplace" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All workplaces</SelectItem>
+                  {workplaceTypeSchema.options.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {workplaceTypeLabels[value]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={salaryCurrency} onValueChange={onCurrencyChange}>
+                <SelectTrigger className="w-36 shrink-0">
+                  <SelectValue placeholder="Currency" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All currencies</SelectItem>
+                  {salaryCurrencySchema.options.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {salaryCurrencyLabels[value]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={String(salaryMin)} onValueChange={onSalaryChange}>
+                <SelectTrigger className="w-36 shrink-0">
+                  <SelectValue placeholder="Salary" />
+                </SelectTrigger>
+                <SelectContent>
+                  {brackets.map((bracket) => (
+                    <SelectItem key={bracket.value} value={bracket.value}>
+                      {bracket.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </ScrollArea>
+        </div>
+
+        {/* Results count */}
+        <p className="text-xs font-medium text-muted-foreground">
+          {data.total} {data.total === 1 ? "position" : "positions"}
+          {hasFilters ? " matching your filters" : ""}
+        </p>
+
+        {data.items.length === 0 ? (
+          <Empty className="rounded-2xl border-0 bg-muted/30">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} />
+              </EmptyMedia>
+              <EmptyTitle>{hasFilters ? "No jobs found" : "No open jobs"}</EmptyTitle>
+              <EmptyDescription>
+                {hasFilters
+                  ? "Try adjusting your search or filters."
+                  : "There are no open positions right now. Check back later."}
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        ) : (
+          <div className="divide-y divide-border/50 overflow-hidden rounded-3xl border border-border/60">
+            {data.items.map((job) => (
+              <CandidateJobRow key={job.id} job={job} />
+            ))}
+          </div>
+        )}
+
+        <PaginationNav currentPage={page} totalPages={data.totalPages} />
+      </section>
+    </div>
+  );
+}
+
+function CandidateJobRow({
+  job,
+}: {
+  job: Awaited<ReturnType<typeof getOpenJobsPaginated>>["items"][number];
+}) {
+  const salary = formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency);
+
+  return (
+    <Link
+      to="/dashboard/jobs/$jobId"
+      params={{ jobId: job.id }}
+      className="group flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted/40 md:gap-4 md:px-5"
+    >
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold group-hover:text-primary">{job.title}</p>
+        <p className="mt-0.5 truncate text-xs text-muted-foreground">{job.companyName}</p>
+        <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+          {job.location ? (
+            <span className="inline-flex items-center gap-1">
+              <HugeiconsIcon icon={Location01Icon} strokeWidth={2} className="size-3.5" />
+              {job.location}
+            </span>
+          ) : null}
+          {salary ? (
+            <span className="inline-flex items-center gap-1">
+              <HugeiconsIcon icon={MoneyBag02Icon} strokeWidth={2} className="size-3.5" />
+              {salary}
+            </span>
+          ) : null}
+        </div>
+        {job.description ? (
+          <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">{job.description}</p>
+        ) : null}
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {job.employmentType ? (
+            <Badge variant="secondary" className="text-[11px]">
+              {employmentTypeLabels[job.employmentType as EmploymentType] ?? job.employmentType}
+            </Badge>
+          ) : null}
+          {job.experienceLevel ? (
+            <Badge variant="secondary" className="text-[11px]">
+              {experienceLevelLabels[job.experienceLevel as ExperienceLevel] ?? job.experienceLevel}
+            </Badge>
+          ) : null}
+          {job.workplaceType ? (
+            <Badge variant="outline" className="text-[11px]">
+              {workplaceTypeLabels[job.workplaceType as WorkplaceType] ?? job.workplaceType}
+            </Badge>
+          ) : null}
+        </div>
       </div>
 
-      {/* Results count */}
-      <p className="text-xs font-medium text-muted-foreground">
-        {data.total} {data.total === 1 ? "position" : "positions"}
-        {hasFilters ? " matching your filters" : ""}
-      </p>
-
-      {data.items.length === 0 ? (
-        <Empty className="border">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} />
-            </EmptyMedia>
-            <EmptyTitle>{hasFilters ? "No jobs found" : "No open jobs"}</EmptyTitle>
-            <EmptyDescription>
-              {hasFilters
-                ? "Try adjusting your search or filters."
-                : "There are no open positions right now. Check back later."}
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {data.items.map((job, i) => {
-            const salary = formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency);
-            return (
-              <Link
-                key={job.id}
-                to="/dashboard/jobs/$jobId"
-                params={{ jobId: job.id }}
-                className={`stagger-${Math.min(i + 1, 6)}`}
-              >
-                <Card className="group h-full ring-foreground/5 transition-all duration-200 hover:ring-primary/30 hover:shadow-md hover:shadow-primary/5">
-                  <CardContent className="flex h-full flex-col space-y-3">
-                    <div>
-                      <p className="text-sm font-semibold transition-colors group-hover:text-primary">
-                        {job.title}
-                      </p>
-                      <p className="text-xs text-muted-foreground">{job.companyName}</p>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
-                      {job.location ? (
-                        <span className="inline-flex items-center gap-1">
-                          <HugeiconsIcon
-                            icon={Location01Icon}
-                            strokeWidth={2}
-                            className="size-3.5"
-                          />
-                          {job.location}
-                        </span>
-                      ) : null}
-                      {salary ? (
-                        <span className="inline-flex items-center gap-1">
-                          <HugeiconsIcon
-                            icon={MoneyBag02Icon}
-                            strokeWidth={2}
-                            className="size-3.5"
-                          />
-                          {salary}
-                        </span>
-                      ) : null}
-                    </div>
-
-                    {job.description ? (
-                      <p className="line-clamp-2 flex-1 text-[13px] leading-relaxed text-muted-foreground">
-                        {job.description}
-                      </p>
-                    ) : null}
-
-                    <div className="flex flex-wrap gap-1.5 border-t border-border/40 pt-3">
-                      {job.employmentType ? (
-                        <Badge variant="secondary">
-                          {employmentTypeLabels[job.employmentType as EmploymentType] ??
-                            job.employmentType}
-                        </Badge>
-                      ) : null}
-                      {job.experienceLevel ? (
-                        <Badge variant="secondary">
-                          {experienceLevelLabels[job.experienceLevel as ExperienceLevel] ??
-                            job.experienceLevel}
-                        </Badge>
-                      ) : null}
-                      {job.workplaceType ? (
-                        <Badge variant="outline" className="text-[11px]">
-                          {workplaceTypeLabels[job.workplaceType as WorkplaceType] ??
-                            job.workplaceType}
-                        </Badge>
-                      ) : null}
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            );
-          })}
-        </div>
-      )}
-
-      <PaginationNav currentPage={page} totalPages={data.totalPages} />
-    </div>
+      <HugeiconsIcon
+        icon={ArrowRight01Icon}
+        strokeWidth={2}
+        className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary"
+      />
+    </Link>
   );
 }

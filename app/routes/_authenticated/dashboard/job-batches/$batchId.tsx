@@ -1,4 +1,5 @@
 import {
+  ArrowRight01Icon,
   CheckmarkCircle02Icon,
   Clock01Icon,
   RankingIcon,
@@ -6,10 +7,9 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link, notFound, redirect } from "@tanstack/react-router";
+import { PageInlineStats } from "@/components/page-inline-stats";
 import { BatchDetailSkeleton } from "@/components/route-skeletons";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Empty,
   EmptyDescription,
@@ -18,8 +18,8 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { getBatchOverview } from "@/features/batches/server/functions";
-import { ScorePill } from "@/features/reports/components/score-pill";
 import { getOverallScore } from "@/features/reports/schemas";
+import { cn } from "@/lib/utils";
 import { formatDateTime } from "@/shared/date";
 import {
   type Recommendation,
@@ -27,7 +27,7 @@ import {
   recommendationLabels,
   recommendationSchema,
 } from "@/shared/enums";
-import { formatCandidateScore } from "@/shared/score";
+import { CANDIDATE_SCORE_MAX, formatCandidateScore } from "@/shared/score";
 import { validateUuidParams } from "@/shared/validation";
 
 export const Route = createFileRoute("/_authenticated/dashboard/job-batches/$batchId")({
@@ -69,14 +69,12 @@ const interviewStatusMeta: Record<string, { label: string; className: string }> 
   },
 };
 
-function initialsOf(name: string) {
-  return name
-    .split(" ")
-    .map((p) => p[0] ?? "")
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-}
+const recommendationTextTone: Record<Recommendation, string> = {
+  strong_yes: "text-success",
+  yes: "text-info",
+  lean_no: "text-warning",
+  no: "text-destructive",
+};
 
 function BatchDetailPage() {
   const { batch, reports, interviews } = Route.useLoaderData();
@@ -86,7 +84,6 @@ function BatchDetailPage() {
   const reportedAppIds = new Set(reports.map((r) => r.applicationId));
   const noReportInterviews = interviews.filter((i) => !reportedAppIds.has(i.applicationId));
 
-  // Summary stats — what someone scanning a batch actually wants.
   const scoresWithValue = reports
     .map((r) => getOverallScore(r.scores))
     .filter((n): n is number => n !== null);
@@ -101,14 +98,38 @@ function BatchDetailPage() {
   const topRecOrder: Recommendation[] = ["strong_yes", "yes", "lean_no", "no"];
   const topRec = topRecOrder.find((r) => (recCounts[r] ?? 0) > 0) ?? null;
 
+  const statItems = [
+    { value: reports.length, label: `of ${batch.targetSize} reports` },
+    ...(avgScoreRaw !== null
+      ? [{ value: Math.round(avgScoreRaw * 10) / 10, label: "avg score" }]
+      : []),
+    ...(topRec
+      ? [{ value: recCounts[topRec] ?? 0, label: recommendationLabels[topRec].toLowerCase() }]
+      : []),
+  ];
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="space-y-1">
-          <h2 className="text-2xl font-bold tracking-tight">{batch.jobTitle}</h2>
+    <div className="space-y-10">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0 space-y-2">
+          <h1 className="text-xl font-semibold tracking-tight">{batch.jobTitle}</h1>
           <p className="text-sm text-muted-foreground">
             Batch of {batch.targetSize} candidate{batch.targetSize === 1 ? "" : "s"} ·{" "}
             {batch.companyName}
+          </p>
+          {statItems.length > 0 ? <PageInlineStats items={statItems} /> : null}
+          <p className="text-xs text-muted-foreground">
+            Created <span className="font-mono">{formatDateTime(batch.createdAt)}</span>
+            {" · "}
+            Launched{" "}
+            <span className="font-mono">
+              {batch.launchedAt ? formatDateTime(batch.launchedAt) : "—"}
+            </span>
+            {" · "}
+            Released{" "}
+            <span className="font-mono">
+              {batch.releasedAt ? formatDateTime(batch.releasedAt) : "—"}
+            </span>
           </p>
         </div>
         <Badge
@@ -128,161 +149,136 @@ function BatchDetailPage() {
         </Badge>
       </div>
 
-      <Card size="sm" className="border-border/60">
-        <CardContent className="flex flex-wrap items-center gap-x-6 gap-y-3 py-3 text-xs">
+      <section className="space-y-5">
+        <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-muted-foreground">Reports</span>
-            <span className="font-mono text-sm font-semibold">
-              {reports.length}/{batch.targetSize}
-            </span>
+            <HugeiconsIcon
+              icon={RankingIcon}
+              strokeWidth={2}
+              className="size-4 text-muted-foreground"
+            />
+            <h2 className="text-lg font-semibold tracking-tight">Ranked candidates</h2>
           </div>
-          {avgScoreRaw !== null ? (
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-muted-foreground">Avg score</span>
-              <span className="font-mono text-sm font-semibold">
-                {formatCandidateScore(avgScoreRaw)}
-              </span>
-            </div>
-          ) : null}
-          {topRec ? (
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-muted-foreground">Top signal</span>
-              <Badge variant="outline" className={recommendationBadgeTone[topRec]}>
-                {recommendationLabels[topRec]} ({recCounts[topRec]})
-              </Badge>
-            </div>
-          ) : null}
-          <div className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-1 text-muted-foreground">
-            <span>
-              <span className="font-semibold">Created</span>{" "}
-              <span className="font-mono">{formatDateTime(batch.createdAt)}</span>
-            </span>
-            <span>
-              <span className="font-semibold">Launched</span>{" "}
-              <span className="font-mono">
-                {batch.launchedAt ? formatDateTime(batch.launchedAt) : "—"}
-              </span>
-            </span>
-            <span>
-              <span className="font-semibold">Released</span>{" "}
-              <span className="font-mono">
-                {batch.releasedAt ? formatDateTime(batch.releasedAt) : "—"}
-              </span>
-            </span>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <HugeiconsIcon icon={RankingIcon} strokeWidth={2} className="size-4" />
-            Ranked Candidates
-          </CardTitle>
-          <CardDescription>
+          <p className="text-sm text-muted-foreground">
             {isReleased
               ? "Reports released — sorted by overall score."
               : "Reports generated so far in this batch (held until release)."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
-          {reports.length === 0 ? (
-            <Empty className="border-0">
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} />
-                </EmptyMedia>
-                <EmptyTitle>No reports yet</EmptyTitle>
-                <EmptyDescription>
-                  Reports will appear here as candidates complete their interviews.
-                </EmptyDescription>
-              </EmptyHeader>
-            </Empty>
-          ) : (
-            <div className="divide-y divide-border/50">
-              {reports.map((report, index) => {
-                const score = getOverallScore(report.scores);
-                const parsedRec = recommendationSchema.safeParse(report.recommendation);
-                const rec = parsedRec.success ? parsedRec.data : null;
-                const interview = interviewMap.get(report.applicationId);
-                const intMeta = interview ? interviewStatusMeta[interview.interviewStatus] : null;
+          </p>
+          {topRec ? (
+            <Badge variant="outline" className={recommendationBadgeTone[topRec]}>
+              Top signal: {recommendationLabels[topRec]}
+            </Badge>
+          ) : null}
+        </div>
 
-                return (
-                  <Link
-                    key={report.id}
-                    to="/dashboard/applicants/$applicationId"
-                    params={{ applicationId: report.applicationId }}
-                    className="group grid items-center gap-4 px-5 py-4 transition-colors hover:bg-muted/40 md:grid-cols-[2.5rem_auto_1fr_auto]"
-                  >
-                    <span className="font-mono text-xs text-muted-foreground">#{index + 1}</span>
-                    <Avatar className="size-10">
-                      <AvatarImage
-                        src={report.candidatePicture ?? undefined}
-                        alt={report.candidateName}
-                      />
-                      <AvatarFallback className="text-[10px]">
-                        {initialsOf(report.candidateName)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0 space-y-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="truncate text-sm font-medium group-hover:text-primary">
-                          {report.candidateName}
+        {reports.length === 0 ? (
+          <Empty className="rounded-2xl border-0 bg-muted/30">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} />
+              </EmptyMedia>
+              <EmptyTitle>No reports yet</EmptyTitle>
+              <EmptyDescription>
+                Reports will appear here as candidates complete their interviews.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        ) : (
+          <div className="divide-y divide-border/50 overflow-hidden rounded-3xl border border-border/60">
+            {reports.map((report, index) => {
+              const score = getOverallScore(report.scores);
+              const parsedRec = recommendationSchema.safeParse(report.recommendation);
+              const rec = parsedRec.success ? parsedRec.data : null;
+              const interview = interviewMap.get(report.applicationId);
+              const intMeta = interview ? interviewStatusMeta[interview.interviewStatus] : null;
+
+              return (
+                <Link
+                  key={report.id}
+                  to="/dashboard/applicant-reports/$applicationId"
+                  params={{ applicationId: report.applicationId }}
+                  className="group flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted/40 md:gap-4 md:px-5"
+                >
+                  <span className="w-6 shrink-0 font-mono text-xs text-muted-foreground">
+                    #{index + 1}
+                  </span>
+
+                  {score != null ? (
+                    <div className="w-[4.5rem] shrink-0 space-y-0.5">
+                      <p className="font-mono text-base font-semibold leading-none tabular-nums">
+                        <span>{formatCandidateScore(score)}</span>
+                        <span className="text-[10px] font-medium text-muted-foreground">
+                          /{CANDIDATE_SCORE_MAX}
                         </span>
-                        {intMeta ? (
-                          <Badge variant="outline" className={intMeta.className}>
-                            {intMeta.label}
-                          </Badge>
-                        ) : null}
-                      </div>
-                      <p className="line-clamp-1 text-xs text-muted-foreground">{report.summary}</p>
+                      </p>
+                      {rec ? (
+                        <p
+                          className={cn(
+                            "text-[11px] font-medium leading-tight",
+                            recommendationTextTone[rec],
+                          )}
+                        >
+                          {recommendationLabels[rec]}
+                        </p>
+                      ) : null}
                     </div>
-                    <ScorePill score={score} recommendation={rec} size="default" />
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  ) : null}
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="truncate text-sm font-semibold group-hover:text-primary">
+                        {report.candidateName}
+                      </p>
+                      {intMeta ? (
+                        <Badge variant="outline" className={intMeta.className}>
+                          {intMeta.label}
+                        </Badge>
+                      ) : null}
+                    </div>
+                    <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+                      {report.summary}
+                    </p>
+                  </div>
+
+                  <HugeiconsIcon
+                    icon={ArrowRight01Icon}
+                    strokeWidth={2}
+                    className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground"
+                  />
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </section>
 
       {noReportInterviews.length > 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Awaiting / Expired</CardTitle>
-            <CardDescription>
+        <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-5">
+          <div className="space-y-1">
+            <h2 className="text-base font-semibold tracking-tight">Awaiting / expired</h2>
+            <p className="text-sm text-muted-foreground">
               Candidates in this batch who have not produced a report yet.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="divide-y divide-border/50">
-              {noReportInterviews.map((i) => {
-                const meta = interviewStatusMeta[i.interviewStatus];
-                return (
-                  <div
-                    key={i.interviewId}
-                    className="flex items-center justify-between gap-3 px-5 py-3"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Avatar className="size-8">
-                        <AvatarImage src={i.candidatePicture ?? undefined} alt={i.candidateName} />
-                        <AvatarFallback className="text-[10px]">
-                          {initialsOf(i.candidateName)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm">{i.candidateName}</span>
-                    </div>
-                    {meta ? (
-                      <Badge variant="outline" className={meta.className}>
-                        {meta.label}
-                      </Badge>
-                    ) : null}
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+            </p>
+          </div>
+          <div className="divide-y divide-border/50 overflow-hidden rounded-2xl border border-border/60">
+            {noReportInterviews.map((i) => {
+              const meta = interviewStatusMeta[i.interviewStatus];
+              return (
+                <div
+                  key={i.interviewId}
+                  className="flex items-center justify-between gap-3 px-4 py-3.5 md:px-5"
+                >
+                  <p className="truncate text-sm font-medium">{i.candidateName}</p>
+                  {meta ? (
+                    <Badge variant="outline" className={meta.className}>
+                      {meta.label}
+                    </Badge>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+        </section>
       ) : null}
     </div>
   );

@@ -167,77 +167,69 @@ export function ReportSnapshotCard({
   applicationId: string;
 }) {
   return (
-    <Card className="border-border/70 bg-card">
-      <CardContent className="space-y-5 pt-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-border/70 bg-muted/30">
-              <HugeiconsIcon
-                icon={SparklesIcon}
-                strokeWidth={2}
-                className="size-5 text-muted-foreground"
-              />
-            </div>
-            <div className="space-y-1">
-              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
-                Post-interview evaluation
-              </p>
-              <h3 className="text-lg font-semibold tracking-tight">Zero finished evaluating</h3>
-              <p className="text-sm text-muted-foreground">
-                Recommendation, score breakdown and full transcript are ready.
-              </p>
-            </div>
+    <section className="space-y-5 rounded-3xl border border-border/60 px-5 py-5">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-muted/30">
+            <HugeiconsIcon
+              icon={SparklesIcon}
+              strokeWidth={2}
+              className="size-5 text-muted-foreground"
+            />
           </div>
-          <ScorePill
-            score={report.scores.overall}
-            recommendation={report.recommendation}
-            size="lg"
-          />
+          <div className="space-y-1">
+            <h3 className="text-lg font-semibold tracking-tight">Post-interview evaluation</h3>
+            <p className="text-sm font-medium text-foreground">Zero finished evaluating</p>
+            <p className="text-sm text-muted-foreground">
+              Recommendation, score breakdown and full transcript are ready.
+            </p>
+          </div>
         </div>
+        <ScorePill score={report.scores.overall} recommendation={report.recommendation} size="lg" />
+      </div>
 
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-          {(Object.keys(dimensionMeta) as Array<keyof typeof dimensionMeta>).map((key) => {
-            const rawScore = report.scores[key];
-            const dim = dimensionMeta[key];
-            return (
-              <div key={key} className="rounded-xl border border-border/60 bg-muted/30 px-3 py-2.5">
-                <div className="flex items-center gap-1.5">
-                  <HugeiconsIcon
-                    icon={dim.icon}
-                    strokeWidth={2}
-                    className="size-3 text-muted-foreground"
-                  />
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                    {dim.label}
-                  </p>
-                </div>
-                <p className="mt-1 font-mono text-lg font-semibold leading-none">
-                  {formatCandidateScore(rawScore)}
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+        {(Object.keys(dimensionMeta) as Array<keyof typeof dimensionMeta>).map((key) => {
+          const rawScore = report.scores[key];
+          const dim = dimensionMeta[key];
+          return (
+            <div key={key} className="rounded-xl border border-border/60 bg-muted/30 px-3 py-2.5">
+              <div className="flex items-center gap-1.5">
+                <HugeiconsIcon
+                  icon={dim.icon}
+                  strokeWidth={2}
+                  className="size-3 text-muted-foreground"
+                />
+                <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                  {dim.label}
                 </p>
-                <div className="mt-2 h-1 overflow-hidden rounded-full bg-background">
-                  <div
-                    className="h-full rounded-full bg-foreground"
-                    style={{ width: `${candidateScoreProgressPercent(rawScore)}%` }}
-                  />
-                </div>
               </div>
-            );
-          })}
-        </div>
+              <p className="mt-1 font-mono text-lg font-semibold leading-none">
+                {formatCandidateScore(rawScore)}
+              </p>
+              <div className="mt-2 h-1 overflow-hidden rounded-full bg-background">
+                <div
+                  className="h-full rounded-full bg-foreground"
+                  style={{ width: `${candidateScoreProgressPercent(rawScore)}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-4">
-          <p className="line-clamp-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            {report.summary}
-          </p>
-          <Button asChild size="default" className="shrink-0 shadow-sm">
-            <Link to="/dashboard/applicant-reports/$applicationId" params={{ applicationId }}>
-              View full report
-              <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2.2} className="size-4" />
-            </Link>
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-4">
+        <p className="line-clamp-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+          {report.summary}
+        </p>
+        <Button asChild size="default" className="shrink-0">
+          <Link to="/dashboard/applicant-reports/$applicationId" params={{ applicationId }}>
+            View full report
+            <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2.2} className="size-4" />
+          </Link>
+        </Button>
+      </div>
+    </section>
   );
 }
 
@@ -314,9 +306,7 @@ function SignalSection({
             className={cn("size-3.5 text-muted-foreground", iconToneClass)}
           />
         </div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-          {title}
-        </p>
+        <p className="text-base font-semibold tracking-tight">{title}</p>
       </div>
       {items.length > 0 ? (
         <ul className="space-y-2">
@@ -457,7 +447,7 @@ export function ReportTimeline({
               </div>
               {missingRequirements.length > 0 ? (
                 <div className="rounded-lg border border-border/70 bg-muted/20 p-3">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <p className="text-sm font-semibold text-muted-foreground">
                     {missingRequirements.length} gap
                     {missingRequirements.length === 1 ? "" : "s"} detected
                   </p>
@@ -585,9 +575,7 @@ export function ReportTimeline({
                         className="size-3.5 text-muted-foreground"
                       />
                     </div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
-                      Recommendation & score
-                    </p>
+                    <p className="text-base font-semibold tracking-tight">Recommendation & score</p>
                   </div>
                   <p className="text-sm leading-6 text-foreground">{report.summary}</p>
                 </div>
@@ -612,9 +600,7 @@ export function ReportTimeline({
                       className="size-3.5 text-foreground"
                     />
                   </div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                    Dimension scores
-                  </p>
+                  <p className="text-base font-semibold tracking-tight">Dimension scores</p>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   {(Object.keys(dimensionMeta) as Array<keyof typeof dimensionMeta>).map((key) => {
@@ -744,7 +730,7 @@ export function ReportTimeline({
             <CardContent className="space-y-4 pt-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="max-w-xl space-y-3">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                  <p className="text-base font-semibold tracking-tight">
                     {report.answerAuthenticity.riskLevel === "high" ? "High risk" : "Medium risk"}
                   </p>
                   <p className="text-sm leading-6 text-foreground">
@@ -836,9 +822,7 @@ function VoiceAssessmentReportCard({
           {/* Dimension scores */}
           {parsed ? (
             <div className="space-y-3 rounded-3xl border border-border/60 bg-muted/20 p-5">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                Dimension scores
-              </p>
+              <p className="text-base font-semibold tracking-tight">Dimension scores</p>
               <div className="grid gap-4 sm:grid-cols-2">
                 {(Object.keys(voiceDimensionMeta) as Array<keyof typeof voiceDimensionMeta>).map(
                   (key) => {
@@ -869,9 +853,7 @@ function VoiceAssessmentReportCard({
           {/* Key moments — deduplicated evidence across all dimensions */}
           {parsed ? (
             <div className="space-y-2">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                Key moments
-              </p>
+              <p className="text-base font-semibold tracking-tight">Key moments</p>
               <div className="space-y-2">
                 {(() => {
                   const allEvidence = new Set<string>();
@@ -908,9 +890,7 @@ function VoiceAssessmentReportCard({
           {/* Transcript */}
           {transcript.length > 0 ? (
             <div className="space-y-2">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                Transcript
-              </p>
+              <p className="text-base font-semibold tracking-tight">Transcript</p>
               <ScrollArea className="h-48 rounded-xl border border-border/60 bg-muted/15 p-3">
                 <div className="space-y-2 pr-3">
                   {transcript

@@ -4,7 +4,7 @@ import { useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { UnsavedChangesBar } from "@/components/unsaved-changes-bar";
@@ -102,20 +102,20 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
         )}
       </form.Subscribe>
 
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Profile Settings</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
+      <section className="space-y-1">
+        <h1 className="text-xl font-semibold tracking-tight">Profile settings</h1>
+        <p className="text-sm text-muted-foreground">
           Manage your name and resume. This information is used when you apply to jobs.
         </p>
-      </div>
+      </section>
 
       <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Basic Information</CardTitle>
-            <CardDescription>Your name and resume.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-5">
+          <div className="space-y-1">
+            <h2 className="text-base font-semibold tracking-tight">Basic information</h2>
+            <p className="text-sm text-muted-foreground">Your name and resume.</p>
+          </div>
+          <div className="space-y-4">
             <form.Field
               name="name"
               validators={{
@@ -154,8 +154,8 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
                 />
               )}
             </form.Field>
-          </CardContent>
-        </Card>
+          </div>
+        </section>
 
         <DeleteAccountSection />
       </div>

@@ -1,7 +1,6 @@
-import { RankingIcon, UserGroupIcon } from "@hugeicons/core-free-icons";
+import { ArrowRight01Icon, UserGroupIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
   Empty,
@@ -11,16 +10,28 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import type { getJobApplicants } from "@/features/applications/server/functions";
-import { ScorePill } from "@/features/reports/components/score-pill";
 import { getOverallScore } from "@/features/reports/schemas";
+import { cn } from "@/lib/utils";
 import {
   type ApplicationStatus,
   applicationStatusMeta,
   getApplicationStatusLabel,
   type Recommendation,
+  recommendationLabels,
   recommendationSchema,
 } from "@/shared/enums";
-import { formatCandidateScoreWithScale } from "@/shared/score";
+import {
+  CANDIDATE_SCORE_MAX,
+  formatCandidateScore,
+  formatCandidateScoreWithScale,
+} from "@/shared/score";
+
+const recommendationTextTone: Record<Recommendation, string> = {
+  strong_yes: "text-success",
+  yes: "text-info",
+  lean_no: "text-warning",
+  no: "text-destructive",
+};
 
 export function CompanyJobApplicantsList({
   applicants,
@@ -31,11 +42,9 @@ export function CompanyJobApplicantsList({
   emptyTitle?: string;
   emptyDescription?: string;
 }) {
-  const evaluatedCount = applicants.filter((a) => a.reportId !== null).length;
-
   if (applicants.length === 0) {
     return (
-      <Empty className="border">
+      <Empty className="rounded-2xl border-0 bg-muted/30">
         <EmptyHeader>
           <EmptyMedia variant="icon">
             <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} />
@@ -50,91 +59,89 @@ export function CompanyJobApplicantsList({
   }
 
   return (
-    <div className="overflow-hidden rounded-4xl border border-border/60 bg-card shadow-sm ring-1 ring-foreground/5">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/50 px-5 py-4">
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-primary">
-            Applicants
-          </p>
-          <h3 className="mt-1 text-base font-semibold">
-            {applicants.length} candidate{applicants.length === 1 ? "" : "s"}
-          </h3>
-        </div>
-        {evaluatedCount > 0 ? (
-          <Badge variant="secondary" className="gap-1">
-            <HugeiconsIcon icon={RankingIcon} strokeWidth={2} className="size-3" />
-            {evaluatedCount} evaluated
-          </Badge>
-        ) : null}
-      </div>
-
-      <div className="divide-y divide-border/50">
-        {applicants.map((applicant) => {
-          const score = getOverallScore(applicant.reportScores);
-          const parsedRec = recommendationSchema.safeParse(applicant.reportRecommendation);
-          const recommendation: Recommendation | null = parsedRec.success ? parsedRec.data : null;
-          const isEvaluated = applicant.reportId !== null;
-          const status = applicant.status as ApplicationStatus;
-          const statusTone = applicationStatusMeta[status];
-
-          return (
-            <Link
-              key={applicant.id}
-              to="/dashboard/applicants/$applicationId"
-              params={{ applicationId: applicant.id }}
-              className="group grid gap-4 px-5 py-4 transition-colors hover:bg-muted/40 md:grid-cols-[auto_1fr_auto] md:items-center"
-            >
-              <div className="flex items-center gap-3">
-                <Avatar className="size-10">
-                  <AvatarImage
-                    src={applicant.candidatePicture ?? undefined}
-                    alt={applicant.candidateName}
-                  />
-                  <AvatarFallback className="text-[10px]">
-                    {applicant.candidateName
-                      .split(" ")
-                      .map((p) => p[0])
-                      .join("")
-                      .toUpperCase()
-                      .slice(0, 2)}
-                  </AvatarFallback>
-                </Avatar>
-              </div>
-
-              <div className="min-w-0 space-y-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="truncate text-sm font-medium group-hover:text-primary">
-                    {applicant.candidateName}
-                  </span>
-                  <Badge variant="outline" className={statusTone?.badge ?? ""}>
-                    {getApplicationStatusLabel(status, {
-                      preEvaluationScore: applicant.preEvaluationScore,
-                    })}
-                  </Badge>
-                  {applicant.status === "pre_screening" && applicant.preEvaluationScore != null ? (
-                    <Badge
-                      variant="outline"
-                      className="border-warning/20 bg-warning/10 text-warning text-[11px]"
-                    >
-                      AI screened {formatCandidateScoreWithScale(applicant.preEvaluationScore)}
-                    </Badge>
-                  ) : null}
-                </div>
-                <p className="truncate text-xs text-muted-foreground">{applicant.candidateEmail}</p>
-              </div>
-
-              <div className="flex items-center justify-end">
-                {isEvaluated ? (
-                  <ScorePill score={score} recommendation={recommendation} size="default" />
-                ) : applicant.status === "pre_screening" &&
-                  applicant.preEvaluationScore != null ? null : (
-                  <span className="text-xs text-muted-foreground">Pending evaluation</span>
-                )}
-              </div>
-            </Link>
-          );
-        })}
-      </div>
+    <div className="divide-y divide-border/50 overflow-hidden rounded-3xl border border-border/60">
+      {applicants.map((applicant) => (
+        <ApplicantRow key={applicant.id} applicant={applicant} />
+      ))}
     </div>
+  );
+}
+
+function ApplicantRow({
+  applicant,
+}: {
+  applicant: Awaited<ReturnType<typeof getJobApplicants>>[number];
+}) {
+  const score = getOverallScore(applicant.reportScores);
+  const parsedRec = recommendationSchema.safeParse(applicant.reportRecommendation);
+  const recommendation: Recommendation | null = parsedRec.success ? parsedRec.data : null;
+  const isEvaluated = applicant.reportId !== null;
+  const status = applicant.status as ApplicationStatus;
+  const statusTone = applicationStatusMeta[status];
+  const statusLabel = getApplicationStatusLabel(status, {
+    preEvaluationScore: applicant.preEvaluationScore,
+  });
+
+  return (
+    <Link
+      to="/dashboard/applicants/$applicationId"
+      params={{ applicationId: applicant.id }}
+      className="group flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted/40 md:gap-4 md:px-5"
+    >
+      {isEvaluated && score != null ? (
+        <div className="w-[4.5rem] shrink-0 space-y-0.5">
+          <p className="font-mono text-base font-semibold leading-none tabular-nums">
+            <span>{formatCandidateScore(score)}</span>
+            <span className="text-[10px] font-medium text-muted-foreground">
+              /{CANDIDATE_SCORE_MAX}
+            </span>
+          </p>
+          {recommendation ? (
+            <p
+              className={cn(
+                "text-[11px] font-medium leading-tight",
+                recommendationTextTone[recommendation],
+              )}
+            >
+              {recommendationLabels[recommendation]}
+            </p>
+          ) : null}
+        </div>
+      ) : (
+        <div className="w-[4.5rem] shrink-0">
+          <Badge variant="outline" className={cn("text-[10px]", statusTone?.badge ?? "")}>
+            {statusLabel}
+          </Badge>
+        </div>
+      )}
+
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="truncate text-sm font-semibold group-hover:text-primary">
+            {applicant.candidateName}
+          </p>
+          {isEvaluated ? (
+            <Badge variant="outline" className={statusTone?.badge ?? ""}>
+              {statusLabel}
+            </Badge>
+          ) : null}
+          {applicant.status === "pre_screening" && applicant.preEvaluationScore != null ? (
+            <Badge
+              variant="outline"
+              className="border-warning/20 bg-warning/10 text-[11px] text-warning"
+            >
+              Screened {formatCandidateScoreWithScale(applicant.preEvaluationScore)}
+            </Badge>
+          ) : null}
+        </div>
+        <p className="mt-0.5 truncate text-xs text-muted-foreground">{applicant.candidateEmail}</p>
+      </div>
+
+      <HugeiconsIcon
+        icon={ArrowRight01Icon}
+        strokeWidth={2}
+        className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground"
+      />
+    </Link>
   );
 }

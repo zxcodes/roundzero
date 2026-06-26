@@ -6,7 +6,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { applyToJob } from "@/features/applications/server/functions";
 
 type CandidateApplySectionProps = {
@@ -16,6 +15,39 @@ type CandidateApplySectionProps = {
   alreadyApplied: boolean;
   hasResume: boolean;
 };
+
+function ApplyStatusPanel({
+  tone,
+  title,
+  description,
+  action,
+}: {
+  tone: "success" | "warning" | "danger";
+  title: string;
+  description?: string;
+  action?: React.ReactNode;
+}) {
+  const toneClass = {
+    success: "text-success",
+    warning: "text-warning",
+    danger: "text-destructive",
+  }[tone];
+
+  return (
+    <section className="space-y-3 rounded-3xl border border-border/60 px-5 py-5">
+      <div className="flex items-center gap-2">
+        <HugeiconsIcon
+          icon={CheckmarkCircle02Icon}
+          strokeWidth={2}
+          className={`size-4 ${toneClass}`}
+        />
+        <p className="text-sm font-semibold">{title}</p>
+      </div>
+      {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
+      {action}
+    </section>
+  );
+}
 
 export function CandidateApplySection({
   jobId,
@@ -55,70 +87,40 @@ export function CandidateApplySection({
   };
 
   if (justApplied) {
-    return (
-      <Card className="animate-scale-in">
-        <CardContent className="flex items-center justify-center gap-2 py-6">
-          <HugeiconsIcon
-            icon={CheckmarkCircle02Icon}
-            strokeWidth={2}
-            className="size-4 text-success"
-          />
-          <p className="text-sm font-medium text-muted-foreground">Application submitted</p>
-        </CardContent>
-      </Card>
-    );
+    return <ApplyStatusPanel tone="success" title="Application submitted" />;
   }
 
   if (alreadyApplied) {
-    return (
-      <Card className="animate-scale-in">
-        <CardContent className="flex items-center justify-center gap-2 py-6">
-          <HugeiconsIcon
-            icon={CheckmarkCircle02Icon}
-            strokeWidth={2}
-            className="size-4 text-success"
-          />
-          <p className="text-sm font-medium text-muted-foreground">You have already applied</p>
-        </CardContent>
-      </Card>
-    );
+    return <ApplyStatusPanel tone="success" title="You have already applied" />;
   }
 
   if (!hasResume) {
     return (
-      <Card className="animate-scale-in">
-        <CardHeader>
-          <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
-            Resume required
-          </p>
-          <CardDescription className="text-xs">
-            Add a resume to your profile before applying to jobs.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      <ApplyStatusPanel
+        tone="warning"
+        title="Resume required"
+        description="Add a resume to your profile before applying to jobs."
+        action={
           <Button className="w-full" asChild>
             <Link to="/dashboard/settings">Add resume in settings</Link>
           </Button>
-        </CardContent>
-      </Card>
+        }
+      />
     );
   }
 
   if (applyError) {
     return (
-      <Card className="animate-scale-in">
-        <CardHeader>
-          <p className="text-[11px] font-bold uppercase tracking-widest text-destructive">
-            Unable to apply
-          </p>
-          <CardDescription className="text-xs">{applyError}</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <ApplyStatusPanel
+        tone="danger"
+        title="Unable to apply"
+        description={applyError}
+        action={
           <Button className="w-full" variant="outline" asChild>
             <Link to="/jobs">Browse other jobs</Link>
           </Button>
-        </CardContent>
-      </Card>
+        }
+      />
     );
   }
 
