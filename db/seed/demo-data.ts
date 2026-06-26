@@ -142,6 +142,12 @@ export function buildRoleSummary(title: string, seed: string) {
   return `Candidate for ${title}. Strong on ${pick(focusAreas, randomInt(`${seed}-focus`, 0, focusAreas.length - 1))}.`;
 }
 
+export {
+  buildCommunicationAnalysis,
+  buildInterviewChatMessages,
+  buildVoiceTranscriptMessages,
+} from "./interview-transcripts";
+
 /** Descending 0–10 scores spread for ranked demo reports. */
 export function spreadScores(count: number, top = 9.4, bottom = 4.2): number[] {
   if (count <= 1) return [clampScore(top)];

@@ -1,15 +1,7 @@
 import type { Sql } from "postgres";
-import { z } from "zod";
 import { getApplicationById } from "@/features/applications/queries/queries_sql";
 import type { getInterviewContextById } from "@/features/interviews/queries/queries_sql";
-import { LIMITS, sanitizeUntrustedText } from "@/shared/ai-refine";
-
-const applicationMetadataSchema = z
-  .object({
-    resumeText: z.string().optional(),
-    summary: z.string().optional(),
-  })
-  .loose();
+import { loadCandidateSummaryFromApplication } from "@/features/interviews/shared/runtime";
 
 export type VoiceAssessmentContext = {
   interviewId: string;
@@ -25,9 +17,6 @@ export async function loadVoiceAssessmentContext(
   interview: NonNullable<Awaited<ReturnType<typeof getInterviewContextById>>>,
 ): Promise<VoiceAssessmentContext> {
   const application = await getApplicationById(db, { id: interview.applicationId });
-  const applicationMetadata =
-    applicationMetadataSchema.safeParse(application?.metadata ?? {}).data ?? {};
-  const candidateSummaryRaw = applicationMetadata.resumeText ?? applicationMetadata.summary ?? "";
 
   return {
     interviewId: interview.id,
@@ -35,6 +24,6 @@ export async function loadVoiceAssessmentContext(
     jobTitle: interview.jobTitle,
     companyName: interview.companyName,
     candidateName: interview.candidateName,
-    candidateSummary: sanitizeUntrustedText(candidateSummaryRaw, LIMITS.CANDIDATE_SUMMARY),
+    candidateSummary: loadCandidateSummaryFromApplication(application?.metadata),
   };
 }

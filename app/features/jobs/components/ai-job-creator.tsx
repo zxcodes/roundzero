@@ -4,8 +4,8 @@ import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -85,69 +85,68 @@ export function AiJobCreator({ isPaid, onApply, onDiscard }: AiJobCreatorProps) 
   const isGenerating = generateMutation.isPending;
 
   return (
-    <Card className="border-primary/20 bg-primary/5">
-      <CardHeader>
+    <section className="space-y-4 rounded-3xl border border-border/60 bg-muted/20 px-5 py-4 md:px-6">
+      <div className="space-y-1">
         <div className="flex items-center gap-2">
           <HugeiconsIcon icon={AiMagicIcon} strokeWidth={2} className="size-5 text-primary" />
-          <CardTitle className="text-base">Create with AI</CardTitle>
+          <h2 className="text-base font-semibold tracking-tight">Create with AI</h2>
         </div>
-        <CardDescription className="text-xs">
+        <p className="text-sm text-muted-foreground">
           Describe the role in a few sentences and we will build the posting for you.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {!result ? (
-          <div className="space-y-3">
-            <Textarea
-              placeholder="e.g. Senior React frontend engineer with 5+ years experience, remote-friendly, $120-160k, working on a design system..."
-              value={prompt}
-              onChange={onPromptChange}
-              rows={3}
-              maxLength={500}
-              disabled={!isPaid || isGenerating}
-              className="bg-background"
-            />
-            {isPaid ? (
-              <Button
-                onClick={onGenerate}
-                disabled={isGenerating || prompt.trim().length < 10}
-                className="gap-2"
-              >
-                {isGenerating ? (
-                  <>
-                    <HugeiconsIcon
-                      icon={Loading03Icon}
-                      strokeWidth={2}
-                      className="size-4 animate-spin"
-                    />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <HugeiconsIcon icon={AiMagicIcon} strokeWidth={2} className="size-4" />
-                    Generate job posting
-                  </>
-                )}
-              </Button>
-            ) : (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button disabled className="gap-2">
-                    <HugeiconsIcon icon={AiMagicIcon} strokeWidth={2} className="size-4" />
-                    Generate job posting
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>AI job creation is available on Pro. Upgrade to unlock.</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
-          </div>
-        ) : (
-          <GeneratedPreview data={result} onUse={onUseDraft} onTryAgain={onTryAgain} />
-        )}
-      </CardContent>
-    </Card>
+        </p>
+      </div>
+
+      {!result ? (
+        <div className="space-y-3">
+          <Textarea
+            placeholder="e.g. Senior React frontend engineer with 5+ years experience, remote-friendly, $120-160k, working on a design system..."
+            value={prompt}
+            onChange={onPromptChange}
+            rows={3}
+            maxLength={500}
+            disabled={!isPaid || isGenerating}
+            className="bg-background"
+          />
+          {isPaid ? (
+            <Button
+              onClick={onGenerate}
+              disabled={isGenerating || prompt.trim().length < 10}
+              className="gap-2"
+            >
+              {isGenerating ? (
+                <>
+                  <HugeiconsIcon
+                    icon={Loading03Icon}
+                    strokeWidth={2}
+                    className="size-4 animate-spin"
+                  />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <HugeiconsIcon icon={AiMagicIcon} strokeWidth={2} className="size-4" />
+                  Generate job posting
+                </>
+              )}
+            </Button>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button disabled className="gap-2">
+                  <HugeiconsIcon icon={AiMagicIcon} strokeWidth={2} className="size-4" />
+                  Generate job posting
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>AI job creation is available on Pro. Upgrade to unlock.</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </div>
+      ) : (
+        <GeneratedPreview data={result} onUse={onUseDraft} onTryAgain={onTryAgain} />
+      )}
+    </section>
   );
 }
 
@@ -170,41 +169,31 @@ function GeneratedPreview({
           <p className="mt-1 line-clamp-3 text-xs text-muted-foreground">{data.description}</p>
         </div>
 
-        <div className="flex flex-wrap gap-2 text-xs">
-          {data.location ? (
-            <span className="rounded-md bg-background px-2 py-1">{data.location}</span>
-          ) : null}
+        <div className="flex flex-wrap gap-2">
+          {data.location ? <Badge variant="secondary">{data.location}</Badge> : null}
           {data.workplaceType ? (
-            <span className="rounded-md bg-background px-2 py-1">
-              {workplaceTypeLabels[data.workplaceType]}
-            </span>
+            <Badge variant="secondary">{workplaceTypeLabels[data.workplaceType]}</Badge>
           ) : null}
           {data.employmentType ? (
-            <span className="rounded-md bg-background px-2 py-1">
-              {employmentTypeLabels[data.employmentType]}
-            </span>
+            <Badge variant="secondary">{employmentTypeLabels[data.employmentType]}</Badge>
           ) : null}
           {data.experienceLevel ? (
-            <span className="rounded-md bg-background px-2 py-1">
-              {experienceLevelLabels[data.experienceLevel]}
-            </span>
+            <Badge variant="outline">{experienceLevelLabels[data.experienceLevel]}</Badge>
           ) : null}
-          {salary ? <span className="rounded-md bg-background px-2 py-1">{salary}</span> : null}
+          {salary ? <Badge variant="outline">{salary}</Badge> : null}
           {data.salaryCurrency && !salary ? (
-            <span className="rounded-md bg-background px-2 py-1">
+            <Badge variant="outline">
               {salaryCurrencyLabels[data.salaryCurrency as keyof typeof salaryCurrencyLabels]}
-            </span>
+            </Badge>
           ) : null}
         </div>
 
         {data.requirements.length > 0 ? (
           <>
             <Separator />
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-                Requirements
-              </p>
-              <ul className="mt-1.5 space-y-1">
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold tracking-tight">Requirements</h3>
+              <ul className="space-y-1">
                 {data.requirements.map((req, i) => (
                   <li key={i} className="flex items-start gap-2 text-xs">
                     <span className="mt-1.5 block size-1 shrink-0 rounded-full bg-primary" />
@@ -219,11 +208,9 @@ function GeneratedPreview({
         {data.screeningQuestions.length > 0 ? (
           <>
             <Separator />
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-                Screening questions
-              </p>
-              <ul className="mt-1.5 space-y-1">
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold tracking-tight">Screening questions</h3>
+              <ul className="space-y-1">
                 {data.screeningQuestions.map((q, i) => (
                   <li key={i} className="flex items-start gap-2 text-xs">
                     <span className="mt-1.5 block size-1 shrink-0 rounded-full bg-primary" />

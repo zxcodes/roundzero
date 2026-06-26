@@ -9,7 +9,6 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -83,12 +82,10 @@ export function JobPreviewDialog({
 function JobPreviewContent({ data, salary }: { data: JobPreviewData; salary: string | null }) {
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="space-y-3">
-        <h3 className="text-xl font-extrabold tracking-tight">{data.title || "Untitled job"}</h3>
+        <h3 className="text-xl font-semibold tracking-tight">{data.title || "Untitled job"}</h3>
         <p className="text-sm text-muted-foreground">{data.companyName}</p>
 
-        {/* Meta badges */}
         <div className="flex flex-wrap gap-2">
           {data.employmentType ? (
             <Badge variant="secondary" className="gap-1">
@@ -113,33 +110,21 @@ function JobPreviewContent({ data, salary }: { data: JobPreviewData; salary: str
               {data.location}
             </Badge>
           ) : null}
-          {salary ? (
-            <Badge variant="outline" className="gap-1">
-              <HugeiconsIcon icon={MoneyBag02Icon} strokeWidth={2} className="size-3" />
-              {salary}
-            </Badge>
-          ) : null}
         </div>
       </div>
 
-      {/* Description */}
       {data.description ? (
-        <div className="space-y-2">
-          <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-            Description
-          </h4>
+        <section className="space-y-3 rounded-2xl bg-muted/30 px-5 py-4">
+          <h4 className="text-sm font-semibold tracking-tight">Description</h4>
           <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-line">
             {data.description}
           </p>
-        </div>
+        </section>
       ) : null}
 
-      {/* Requirements */}
       {data.requirements.length > 0 ? (
-        <div className="space-y-2">
-          <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-            Requirements
-          </h4>
+        <section className="space-y-3 rounded-2xl bg-muted/30 px-5 py-4">
+          <h4 className="text-sm font-semibold tracking-tight">Requirements</h4>
           <ul className="space-y-2">
             {data.requirements.map((req, i) => (
               <li
@@ -151,33 +136,28 @@ function JobPreviewContent({ data, salary }: { data: JobPreviewData; salary: str
               </li>
             ))}
           </ul>
-        </div>
+        </section>
       ) : null}
 
-      {/* Job details sidebar-style card */}
-      <Card>
-        <CardContent className="space-y-3">
-          <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-            Job details
-          </h4>
-          {salary ? <DetailRow icon={MoneyBag02Icon} label="Salary" value={salary} /> : null}
-          {data.teamSize ? (
-            <DetailRow
-              icon={UserGroupIcon}
-              label="Team size"
-              value={`${data.teamSize} ${data.teamSize === 1 ? "person" : "people"}`}
-            />
-          ) : null}
-          {data.headcount ? (
-            <DetailRow
-              icon={Briefcase01Icon}
-              label="Openings"
-              value={`${data.headcount} ${data.headcount === 1 ? "position" : "positions"}`}
-            />
-          ) : null}
-          <DetailRow icon={Clock01Icon} label="Posted" value="Today" />
-        </CardContent>
-      </Card>
+      <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
+        <h4 className="text-sm font-semibold tracking-tight">Job details</h4>
+        {salary ? <DetailRow icon={MoneyBag02Icon} label="Salary" value={salary} /> : null}
+        {data.teamSize ? (
+          <DetailRow
+            icon={UserGroupIcon}
+            label="Team size"
+            value={`${data.teamSize} ${data.teamSize === 1 ? "person" : "people"}`}
+          />
+        ) : null}
+        {data.headcount ? (
+          <DetailRow
+            icon={Briefcase01Icon}
+            label="Openings"
+            value={`${data.headcount} ${data.headcount === 1 ? "position" : "positions"}`}
+          />
+        ) : null}
+        <DetailRow icon={Clock01Icon} label="Posted" value="Today" />
+      </section>
     </div>
   );
 }

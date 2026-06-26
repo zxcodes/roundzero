@@ -5,7 +5,7 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+
 import { AiJobCreator } from "@/features/jobs/components/ai-job-creator";
 import { JobForm, type JobFormData } from "@/features/jobs/components/job-form";
 import { TemplateSelectDialog } from "@/features/jobs/components/template-select-dialog";
@@ -90,10 +90,10 @@ function NewJobPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Post a new job</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
+    <div className="space-y-6 pb-28">
+      <div className="space-y-1">
+        <h1 className="text-xl font-semibold tracking-tight">Post a new job</h1>
+        <p className="text-sm text-muted-foreground">
           Fill in the details below to create a new job posting.
         </p>
       </div>
@@ -138,18 +138,19 @@ function NewJobPage() {
         onSelect={onSelectTemplate}
       />
 
-      <Card ref={formRef} className="stagger-1">
-        <CardContent className="pt-6">
-          <JobForm
-            key={selectedTemplate ? `template-${selectedTemplate.id}` : draft ? "draft" : "empty"}
-            defaultValues={selectedTemplate?.data ?? draft ?? undefined}
-            onSubmit={onSubmit}
-            submitLabel="Create job"
-            companyName={companyName}
-            isSubmitting={createJobMutation.isPending}
-          />
-        </CardContent>
-      </Card>
+      <section
+        ref={formRef}
+        className="stagger-1 rounded-3xl border border-border/60 px-5 py-4 md:px-6"
+      >
+        <JobForm
+          key={selectedTemplate ? `template-${selectedTemplate.id}` : draft ? "draft" : "empty"}
+          defaultValues={selectedTemplate?.data ?? draft ?? undefined}
+          onSubmit={onSubmit}
+          submitLabel="Create job"
+          companyName={companyName}
+          isSubmitting={createJobMutation.isPending}
+        />
+      </section>
     </div>
   );
 }

@@ -191,7 +191,7 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
           messages: interviewData.messages,
           screeningCoverage: interviewData.screeningCoverage,
           integrity: interviewData.integrity,
-          customQuestions: interviewData.contextState.customQuestions,
+          customQuestions: interviewData.runtimeContext.customQuestions,
           log,
         }),
       );

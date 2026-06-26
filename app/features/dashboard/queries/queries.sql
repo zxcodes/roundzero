@@ -26,19 +26,3 @@ WHERE j.company_id = $1
   AND j.archived_at IS NULL
   AND r.released_at IS NOT NULL
 ORDER BY a.id, r.released_at DESC, r.created_at DESC;
-
--- name: getRecentCompanyApplicationActivity :many
-SELECT
-  a.id AS application_id,
-  a.status,
-  a.updated_at,
-  j.title AS job_title,
-  u.name AS candidate_name
-FROM applications a
-JOIN jobs j ON j.id = a.job_id
-JOIN users u ON u.id = a.candidate_id AND u.deleted_at IS NULL
-WHERE j.company_id = $1
-  AND j.archived_at IS NULL
-  AND a.status IN ('shortlisted', 'rejected', 'evaluated', 'interview_invited')
-ORDER BY a.updated_at DESC
-LIMIT 12;

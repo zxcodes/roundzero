@@ -1,4 +1,11 @@
-import { Loading03Icon, Mic01Icon, PhoneOff01Icon, Tick01Icon } from "@hugeicons/core-free-icons";
+import {
+  Cancel01Icon,
+  Clock01Icon,
+  Loading03Icon,
+  Mic01Icon,
+  PhoneOff01Icon,
+  Tick01Icon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import type { RealtimeToken } from "@tanstack/ai";
 import { useRealtimeChat } from "@tanstack/ai-react";
@@ -9,6 +16,12 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  InterviewInterimBubble,
+  InterviewThinkingBubble,
+  interviewEmptyIconClass,
+  TranscriptBubble,
+} from "@/features/interviews/components/interview-transcript";
 import {
   completeMyVoiceAssessment,
   getMyVoiceAssessment,
@@ -34,17 +47,38 @@ const normMessage = (m: ChatMessage): string =>
 // transcript if it never lands (e.g. local dev or a webhook outage).
 const WEBHOOK_GRACE_MS = 8_000;
 
+export type InterviewEndVariant = "completed" | "cancelled" | "expired";
+
+export const interviewEndVisuals: Record<
+  InterviewEndVariant,
+  {
+    icon: typeof Tick01Icon;
+    bg: string;
+    tone: string;
+  }
+> = {
+  completed: { icon: Tick01Icon, bg: "bg-success/10", tone: "text-success" },
+  cancelled: { icon: Cancel01Icon, bg: "bg-muted", tone: "text-muted-foreground" },
+  expired: { icon: Clock01Icon, bg: "bg-warning/10", tone: "text-warning" },
+};
+
 export function CompletedInterviewBar({
   title,
   description,
+  variant = "completed",
 }: {
   title: string;
   description: string;
+  variant?: InterviewEndVariant;
 }) {
+  const visual = interviewEndVisuals[variant];
+
   return (
     <div className="flex items-center gap-3">
-      <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-success/10">
-        <HugeiconsIcon icon={Tick01Icon} strokeWidth={2} className="size-4 text-success" />
+      <div
+        className={cn("flex size-8 shrink-0 items-center justify-center rounded-full", visual.bg)}
+      >
+        <HugeiconsIcon icon={visual.icon} strokeWidth={2} className={cn("size-4", visual.tone)} />
       </div>
       <div>
         <p className="text-sm font-medium">{title}</p>
@@ -321,36 +355,22 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
         {completedMessages.length > 0 ? (
           <ScrollArea className="min-h-0 flex-1">
             <div className="space-y-7 px-5 py-6 md:px-7 md:py-7">
-              {completedMessages.map((msg, i) => {
-                const isCandidate = msg.role === "user";
-                return (
-                  <div
-                    key={`completed-${i}-${msg.role}-${msg.text.length}`}
-                    className={isCandidate ? "flex justify-end" : "flex justify-start"}
-                  >
-                    <div className="max-w-[86%] md:max-w-[66%]">
-                      <p className="mb-1 px-1 text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground/90">
-                        {isCandidate ? "You" : "Zero"}
-                      </p>
-                      <div
-                        className={
-                          isCandidate
-                            ? "whitespace-pre-wrap wrap-break-word rounded-2xl border border-primary/35 bg-primary px-4 py-3 text-sm leading-6 text-primary-foreground shadow-sm ring-1 ring-primary/20"
-                            : "whitespace-pre-wrap wrap-break-word rounded-2xl border border-border/70 bg-background/95 px-4 py-3 text-sm leading-6 text-foreground shadow-sm ring-1 ring-border/35"
-                        }
-                      >
-                        {msg.text}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+              {completedMessages.map((msg, i) => (
+                <TranscriptBubble
+                  key={`completed-${i}-${msg.role}-${msg.text.length}`}
+                  message={{
+                    role: msg.role === "user" ? "candidate" : "assistant",
+                    content: msg.text,
+                  }}
+                  userLabel="You"
+                />
+              ))}
             </div>
           </ScrollArea>
         ) : (
           <div className="flex flex-1 items-center justify-center px-6 py-10">
             <div className="flex flex-col items-center gap-3 text-center text-muted-foreground">
-              <div className="flex size-12 items-center justify-center rounded-full border border-border/70 bg-card shadow-sm">
+              <div className={interviewEmptyIconClass}>
                 <HugeiconsIcon icon={Mic01Icon} strokeWidth={2} className="size-5 text-primary" />
               </div>
               <p className="text-sm text-foreground">Transcript unavailable</p>
@@ -425,7 +445,7 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-muted/30">
-      <div className="shrink-0 border-b border-border/50 bg-card/60 px-5 py-3 md:px-6">
+      <div className="shrink-0 border-b border-border/60 bg-muted/20 px-5 py-3 md:px-6">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <StatusDot
@@ -481,61 +501,20 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
       ) : (
         <ScrollArea className="min-h-0 flex-1">
           <div className="space-y-7 px-5 py-6 md:px-7 md:py-7">
-            {visibleTranscript.map((msg, i) => {
-              const isCandidate = msg.role === "user";
-              return (
-                <div
-                  key={`${i}-${msg.role}-${msg.text.length}`}
-                  className={isCandidate ? "flex justify-end" : "flex justify-start"}
-                >
-                  <div className="max-w-[86%] md:max-w-[66%]">
-                    <p className="mb-1 px-1 text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground/90">
-                      {isCandidate ? "You" : "Zero"}
-                    </p>
-                    <div
-                      className={
-                        isCandidate
-                          ? "whitespace-pre-wrap wrap-break-word rounded-2xl border border-primary/35 bg-primary px-4 py-3 text-sm leading-6 text-primary-foreground shadow-sm ring-1 ring-primary/20"
-                          : "whitespace-pre-wrap wrap-break-word rounded-2xl border border-border/70 bg-background/95 px-4 py-3 text-sm leading-6 text-foreground shadow-sm ring-1 ring-border/35"
-                      }
-                    >
-                      {msg.text}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            {visibleTranscript.map((msg, i) => (
+              <TranscriptBubble
+                key={`${i}-${msg.role}-${msg.text.length}`}
+                message={{
+                  role: msg.role === "user" ? "candidate" : "assistant",
+                  content: msg.text,
+                }}
+                userLabel="You"
+              />
+            ))}
 
-            {chat.mode === "thinking" ? (
-              <div className="flex justify-start">
-                <div className="max-w-[86%] md:max-w-[66%]">
-                  <p className="mb-1 px-1 text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground/90">
-                    Zero
-                  </p>
-                  <div className="flex items-center gap-2 rounded-2xl border border-border/70 bg-background/95 px-4 py-3 text-sm leading-6 text-muted-foreground shadow-sm ring-1 ring-border/35">
-                    <span className="inline-flex items-end gap-1" aria-hidden="true">
-                      <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground/60 [animation-delay:-0.3s]" />
-                      <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground/60 [animation-delay:-0.15s]" />
-                      <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground/60" />
-                    </span>
-                    <span className="text-xs text-muted-foreground/80">Thinking…</span>
-                  </div>
-                </div>
-              </div>
-            ) : null}
+            {chat.mode === "thinking" ? <InterviewThinkingBubble /> : null}
 
-            {interim ? (
-              <div className="flex justify-end">
-                <div className="max-w-[86%] md:max-w-[66%]">
-                  <p className="mb-1 px-1 text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground/90">
-                    You
-                  </p>
-                  <div className="whitespace-pre-wrap wrap-break-word rounded-2xl border border-primary/30 border-dashed bg-primary/5 px-4 py-3 text-sm italic leading-6 text-primary/80 shadow-none">
-                    {interim}
-                  </div>
-                </div>
-              </div>
-            ) : null}
+            {interim ? <InterviewInterimBubble content={interim} /> : null}
 
             <div ref={transcriptEndRef} className="h-1" />
           </div>
@@ -692,7 +671,7 @@ function VoiceEmptyState({ finalising, error }: { finalising: boolean; error: st
   return (
     <div className="flex h-full items-center justify-center px-6 py-10">
       <div className="mx-auto flex max-w-md flex-col items-center gap-3 text-center text-muted-foreground">
-        <div className="flex size-12 items-center justify-center rounded-full border border-border/70 bg-card shadow-sm">
+        <div className={interviewEmptyIconClass}>
           <HugeiconsIcon icon={Mic01Icon} strokeWidth={2} className="size-5 text-primary" />
         </div>
         <p className="text-sm leading-relaxed text-foreground">

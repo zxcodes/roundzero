@@ -1,4 +1,5 @@
 import {
+  ArrowRight01Icon,
   Briefcase01Icon,
   Location01Icon,
   MoneyBag02Icon,
@@ -10,6 +11,7 @@ import { z } from "zod";
 import { PaginationNav } from "@/components/pagination-nav";
 import { PublicFooter, PublicHeader } from "@/components/public-layout";
 import { JobsListSkeleton } from "@/components/route-skeletons";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -117,6 +119,15 @@ export const Route = createFileRoute("/jobs/")({
   component: JobsPage,
 });
 
+function companyInitials(name: string) {
+  return name
+    .split(" ")
+    .map((part) => part[0] ?? "")
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
+
 function JobsPage() {
   const { items, total, totalPages } = Route.useLoaderData();
   const {
@@ -168,29 +179,32 @@ function JobsPage() {
   };
 
   return (
-    <div className="bg-background text-foreground min-h-svh">
+    <div className="min-h-svh bg-background text-foreground">
       <PublicHeader />
 
       <main>
-        {/* Header */}
         <section className="relative overflow-hidden border-b border-border/40">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--color-primary)/6%,transparent_70%)]" />
-          <div className="relative mx-auto max-w-7xl px-6 py-16 lg:px-10 lg:py-20">
-            <div className="space-y-3">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
+          <div className="relative mx-auto max-w-7xl px-6 py-14 lg:px-10 lg:py-16">
+            <div className="max-w-2xl space-y-4">
+              <p className="text-xs font-medium uppercase tracking-widest text-primary">
                 Job board
               </p>
-              <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Open positions</h1>
-              <p className="max-w-lg text-base leading-relaxed text-muted-foreground">
+              <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Open positions</h1>
+              <p className="text-base leading-relaxed text-muted-foreground">
                 Browse roles from companies hiring on RoundZero. Apply with one click and interview
                 on your schedule.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                <span className="font-medium tabular-nums text-foreground">{total}</span> open{" "}
+                {total === 1 ? "position" : "positions"}
+                {hasFilters ? " matching your filters" : ""}
               </p>
             </div>
           </div>
         </section>
 
-        {/* Filters */}
-        <section className="border-b border-border/40 bg-background">
+        <section className="sticky top-0 z-10 border-b border-border/40 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80">
           <div className="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-3.5 sm:flex-row sm:items-center lg:px-10">
             <div className="relative flex-1 shrink-0 sm:shrink">
               <HugeiconsIcon
@@ -276,18 +290,9 @@ function JobsPage() {
           </div>
         </section>
 
-        {/* Results count */}
-        <div className="mx-auto max-w-7xl px-6 pt-6 lg:px-10">
-          <p className="text-xs font-medium text-muted-foreground">
-            {total} {total === 1 ? "position" : "positions"}
-            {hasFilters ? " matching your filters" : ""}
-          </p>
-        </div>
-
-        {/* Grid */}
-        <section className="mx-auto max-w-7xl px-6 py-4 pb-12 lg:px-10 lg:pb-16">
+        <section className="mx-auto max-w-7xl px-6 py-8 pb-14 lg:px-10 lg:pb-20">
           {items.length === 0 ? (
-            <Empty className="border">
+            <Empty className="rounded-2xl border-0 bg-muted/30">
               <EmptyHeader>
                 <EmptyMedia variant="icon">
                   <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} />
@@ -297,15 +302,14 @@ function JobsPage() {
               </EmptyHeader>
             </Empty>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-5 sm:grid-cols-2">
               {items.map((job, i) => (
-                <JobCard key={job.id} job={job} className={i < 3 ? `stagger-${i + 1}` : ""} />
+                <JobCard key={job.id} job={job} className={i < 4 ? `stagger-${i + 1}` : ""} />
               ))}
             </div>
           )}
 
-          {/* Pagination */}
-          <PaginationNav currentPage={page} totalPages={totalPages} className="mt-8" />
+          <PaginationNav currentPage={page} totalPages={totalPages} className="mt-10" />
         </section>
       </main>
 
@@ -333,26 +337,41 @@ function JobCard({ job, className }: { job: JobFromLoader; className?: string })
 
   return (
     <Link to="/jobs/$jobId" params={{ jobId: job.id }} className={className}>
-      <Card className="group h-full ring-foreground/5 transition-all duration-200 hover:ring-primary/30 hover:shadow-md hover:shadow-primary/5">
-        <CardContent className="flex h-full flex-col space-y-3">
-          {/* Title + company */}
-          <div>
-            <p className="text-sm font-semibold transition-colors group-hover:text-primary">
-              {job.title}
-            </p>
-            {/* biome-ignore lint/a11y/useSemanticElements: can't nest <a> inside parent <Link> */}
-            <span
-              role="link"
-              tabIndex={0}
-              onClick={onCompanyClick}
-              onKeyDown={onCompanyKeyDown}
-              className="cursor-pointer text-xs text-muted-foreground transition-colors hover:text-primary"
-            >
-              {job.companyName}
-            </span>
+      <Card
+        variant="bordered-inset"
+        className="group h-full transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-lg hover:shadow-primary/5"
+      >
+        <CardContent className="flex h-full min-h-52 flex-col gap-4 p-5">
+          <div className="flex items-start gap-3">
+            <Avatar className="size-11 shrink-0 rounded-2xl">
+              <AvatarFallback className="rounded-2xl bg-muted text-[11px] font-semibold">
+                {companyInitials(job.companyName)}
+              </AvatarFallback>
+            </Avatar>
+
+            <div className="min-w-0 flex-1 space-y-1">
+              <p className="line-clamp-2 text-base font-semibold leading-snug tracking-tight transition-colors group-hover:text-primary">
+                {job.title}
+              </p>
+              {/* biome-ignore lint/a11y/useSemanticElements: can't nest <a> inside parent <Link> */}
+              <span
+                role="link"
+                tabIndex={0}
+                onClick={onCompanyClick}
+                onKeyDown={onCompanyKeyDown}
+                className="cursor-pointer text-sm text-muted-foreground transition-colors hover:text-primary"
+              >
+                {job.companyName}
+              </span>
+            </div>
+
+            <HugeiconsIcon
+              icon={ArrowRight01Icon}
+              strokeWidth={2}
+              className="size-4 shrink-0 text-muted-foreground/50 transition-all group-hover:translate-x-0.5 group-hover:text-primary"
+            />
           </div>
 
-          {/* Meta */}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
             {job.location ? (
               <span className="inline-flex items-center gap-1">
@@ -360,37 +379,42 @@ function JobCard({ job, className }: { job: JobFromLoader; className?: string })
                 {job.location}
               </span>
             ) : null}
-            {salary ? (
-              <span className="inline-flex items-center gap-1">
-                <HugeiconsIcon icon={MoneyBag02Icon} strokeWidth={2} className="size-3.5" />
-                {salary}
-              </span>
+            {job.workplaceType ? (
+              <Badge variant="outline" className="text-[11px]">
+                {workplaceTypeLabels[job.workplaceType as WorkplaceType] ?? job.workplaceType}
+              </Badge>
             ) : null}
           </div>
 
-          {/* Description */}
-          {job.description ? (
-            <p className="line-clamp-2 flex-1 text-sm leading-relaxed text-muted-foreground">
-              {job.description}
+          {salary ? (
+            <p className="inline-flex items-center gap-1.5 text-sm font-medium tabular-nums text-foreground">
+              <HugeiconsIcon
+                icon={MoneyBag02Icon}
+                strokeWidth={2}
+                className="size-3.5 text-muted-foreground"
+              />
+              {salary}
             </p>
           ) : null}
 
-          {/* Tags */}
+          {job.description ? (
+            <p className="line-clamp-3 flex-1 text-sm leading-relaxed text-muted-foreground">
+              {job.description}
+            </p>
+          ) : (
+            <div className="flex-1" />
+          )}
+
           <div className="flex flex-wrap gap-1.5 border-t border-border/40 pt-3">
             {job.employmentType ? (
-              <Badge variant="secondary">
+              <Badge variant="secondary" className="text-[11px]">
                 {employmentTypeLabels[job.employmentType as EmploymentType] ?? job.employmentType}
               </Badge>
             ) : null}
             {job.experienceLevel ? (
-              <Badge variant="secondary">
+              <Badge variant="secondary" className="text-[11px]">
                 {experienceLevelLabels[job.experienceLevel as ExperienceLevel] ??
                   job.experienceLevel}
-              </Badge>
-            ) : null}
-            {job.workplaceType ? (
-              <Badge variant="outline" className="text-[11px]">
-                {workplaceTypeLabels[job.workplaceType as WorkplaceType] ?? job.workplaceType}
               </Badge>
             ) : null}
           </div>

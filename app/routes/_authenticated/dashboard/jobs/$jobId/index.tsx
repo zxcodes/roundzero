@@ -9,7 +9,6 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { DashboardJobDetailSkeleton } from "@/components/route-skeletons";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { CandidateApplySection } from "@/features/applications/components/candidate-apply-section";
 import { JobStatusBadge } from "@/features/jobs/components/job-status-badge";
@@ -51,12 +50,12 @@ function JobDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div className="min-w-0">
+      <section className="min-w-0 space-y-2">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-2xl font-bold tracking-tight">{job.title}</h2>
+          <h1 className="text-xl font-semibold tracking-tight">{job.title}</h1>
           <JobStatusBadge job={job} />
         </div>
-        <p className="mt-1 text-xs text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           {job.companyName ? (
             <>
               <Link
@@ -69,175 +68,161 @@ function JobDetailPage() {
               {" \u00B7 "}
             </>
           ) : null}
-          <span className="font-mono">{formatDate(job.createdAt)}</span>
+          <span className="">{formatDate(job.createdAt)}</span>
           {new Date(job.updatedAt).getTime() !== new Date(job.createdAt).getTime() ? (
             <>
               {" "}
-              · Updated <span className="font-mono">{formatDate(job.updatedAt)}</span>
+              · Updated <span className="">{formatDate(job.updatedAt)}</span>
             </>
           ) : null}
         </p>
-      </div>
+      </section>
 
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
-          <Card className="stagger-1">
-            <CardHeader>
-              <CardTitle>Description</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm leading-relaxed whitespace-pre-wrap">{job.description}</p>
-            </CardContent>
-          </Card>
+          <section className="space-y-3 rounded-2xl bg-muted/30 px-5 py-4 md:px-6">
+            <h2 className="text-lg font-semibold tracking-tight">Description</h2>
+            <p className="text-sm leading-relaxed whitespace-pre-wrap">{job.description}</p>
+          </section>
 
           {requirements.length > 0 ? (
-            <Card className="stagger-2">
-              <CardHeader>
-                <CardTitle>Requirements</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
-                  {requirements.map((req, i) => (
-                    <li key={`${req}-${i}`} className="flex items-start gap-2.5 text-sm">
-                      <span className="mt-2 block size-1 shrink-0 rounded-full bg-primary" />
-                      {req}
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
+            <section className="space-y-3 rounded-2xl bg-muted/30 px-5 py-4 md:px-6">
+              <h2 className="text-lg font-semibold tracking-tight">Requirements</h2>
+              <ul className="space-y-2">
+                {requirements.map((req, i) => (
+                  <li key={`${req}-${i}`} className="flex items-start gap-2.5 text-sm">
+                    <span className="mt-2 block size-1 shrink-0 rounded-full bg-primary" />
+                    {req}
+                  </li>
+                ))}
+              </ul>
+            </section>
           ) : null}
         </div>
 
         <div className="space-y-5">
-          <Card className="stagger-2">
-            <CardHeader>
-              <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
-                Job details
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {job.location ? (
-                <div className="flex items-start gap-3">
-                  <HugeiconsIcon
-                    icon={Location01Icon}
-                    strokeWidth={2}
-                    className="mt-0.5 size-4 shrink-0 text-muted-foreground"
-                  />
-                  <div>
-                    <p className="text-sm font-medium">{job.location}</p>
-                    {job.workplaceType ? (
-                      <p className="text-xs text-muted-foreground">
-                        {workplaceTypeLabels[job.workplaceType as WorkplaceType]}
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-              ) : null}
+          <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
+            <h2 className="text-sm font-semibold tracking-tight">Job details</h2>
 
-              {job.employmentType ? (
-                <div className="flex items-center gap-3">
-                  <HugeiconsIcon
-                    icon={Briefcase01Icon}
-                    strokeWidth={2}
-                    className="size-4 shrink-0 text-muted-foreground"
-                  />
-                  <p className="text-sm">
-                    {employmentTypeLabels[job.employmentType as EmploymentType]}
-                  </p>
-                </div>
-              ) : null}
-
-              {job.experienceLevel ? (
-                <div className="flex items-center gap-3">
-                  <HugeiconsIcon
-                    icon={RankingIcon}
-                    strokeWidth={2}
-                    className="size-4 shrink-0 text-muted-foreground"
-                  />
-                  <p className="text-sm">
-                    {experienceLevelLabels[job.experienceLevel as ExperienceLevel]}
-                  </p>
-                </div>
-              ) : null}
-
-              {salary ? (
-                <>
-                  <Separator />
-                  <div className="flex items-start gap-3">
-                    <HugeiconsIcon
-                      icon={MoneyBag02Icon}
-                      strokeWidth={2}
-                      className="mt-0.5 size-4 shrink-0 text-muted-foreground"
-                    />
-                    <div>
-                      <p className="font-mono text-sm font-medium">{salary}</p>
-                      <p className="text-xs text-muted-foreground">Annual compensation</p>
-                    </div>
-                  </div>
-                </>
-              ) : null}
-
-              {job.teamSize || job.headcount ? (
-                <>
-                  <Separator />
-                  <div className="flex items-start gap-3">
-                    <HugeiconsIcon
-                      icon={UserGroupIcon}
-                      strokeWidth={2}
-                      className="mt-0.5 size-4 shrink-0 text-muted-foreground"
-                    />
-                    <div className="space-y-0.5">
-                      {job.teamSize ? (
-                        <p className="text-sm">
-                          <span className="font-mono font-medium">{job.teamSize}</span> people on
-                          team
-                        </p>
-                      ) : null}
-                      {job.headcount ? (
-                        <p className="text-xs text-muted-foreground">
-                          <span className="font-mono">{job.headcount}</span> open{" "}
-                          {job.headcount === 1 ? "position" : "positions"}
-                        </p>
-                      ) : null}
-                    </div>
-                  </div>
-                </>
-              ) : null}
-
-              <Separator />
+            {job.location ? (
               <div className="flex items-start gap-3">
                 <HugeiconsIcon
-                  icon={UserGroupIcon}
+                  icon={Location01Icon}
                   strokeWidth={2}
                   className="mt-0.5 size-4 shrink-0 text-muted-foreground"
                 />
                 <div>
-                  <p className="text-sm font-medium">
-                    {job.applicantCount} {job.applicantCount === 1 ? "applicant" : "applicants"}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Total applications</p>
+                  <p className="text-sm font-medium">{job.location}</p>
+                  {job.workplaceType ? (
+                    <p className="text-xs text-muted-foreground">
+                      {workplaceTypeLabels[job.workplaceType as WorkplaceType]}
+                    </p>
+                  ) : null}
                 </div>
               </div>
+            ) : null}
 
-              {job.expiresAt ? (
-                <>
-                  <Separator />
-                  <div className="flex items-start gap-3">
-                    <HugeiconsIcon
-                      icon={Clock01Icon}
-                      strokeWidth={2}
-                      className="mt-0.5 size-4 shrink-0 text-muted-foreground"
-                    />
-                    <div>
-                      <p className="text-sm font-medium">{formatDaysLeft(job.expiresAt)}</p>
-                      <p className="text-xs text-muted-foreground">Application deadline</p>
-                    </div>
+            {job.employmentType ? (
+              <div className="flex items-center gap-3">
+                <HugeiconsIcon
+                  icon={Briefcase01Icon}
+                  strokeWidth={2}
+                  className="size-4 shrink-0 text-muted-foreground"
+                />
+                <p className="text-sm">
+                  {employmentTypeLabels[job.employmentType as EmploymentType]}
+                </p>
+              </div>
+            ) : null}
+
+            {job.experienceLevel ? (
+              <div className="flex items-center gap-3">
+                <HugeiconsIcon
+                  icon={RankingIcon}
+                  strokeWidth={2}
+                  className="size-4 shrink-0 text-muted-foreground"
+                />
+                <p className="text-sm">
+                  {experienceLevelLabels[job.experienceLevel as ExperienceLevel]}
+                </p>
+              </div>
+            ) : null}
+
+            {salary ? (
+              <>
+                <Separator />
+                <div className="flex items-start gap-3">
+                  <HugeiconsIcon
+                    icon={MoneyBag02Icon}
+                    strokeWidth={2}
+                    className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                  />
+                  <div>
+                    <p className="text-sm font-medium">{salary}</p>
+                    <p className="text-xs text-muted-foreground">Annual compensation</p>
                   </div>
-                </>
-              ) : null}
-            </CardContent>
-          </Card>
+                </div>
+              </>
+            ) : null}
+
+            {job.teamSize || job.headcount ? (
+              <>
+                <Separator />
+                <div className="flex items-start gap-3">
+                  <HugeiconsIcon
+                    icon={UserGroupIcon}
+                    strokeWidth={2}
+                    className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                  />
+                  <div className="space-y-0.5">
+                    {job.teamSize ? (
+                      <p className="text-sm">
+                        <span className="font-medium">{job.teamSize}</span> people on team
+                      </p>
+                    ) : null}
+                    {job.headcount ? (
+                      <p className="text-xs text-muted-foreground">
+                        <span className="">{job.headcount}</span> open{" "}
+                        {job.headcount === 1 ? "position" : "positions"}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              </>
+            ) : null}
+
+            <Separator />
+            <div className="flex items-start gap-3">
+              <HugeiconsIcon
+                icon={UserGroupIcon}
+                strokeWidth={2}
+                className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+              />
+              <div>
+                <p className="text-sm font-medium">
+                  {job.applicantCount} {job.applicantCount === 1 ? "applicant" : "applicants"}
+                </p>
+                <p className="text-xs text-muted-foreground">Total applications</p>
+              </div>
+            </div>
+
+            {job.expiresAt ? (
+              <>
+                <Separator />
+                <div className="flex items-start gap-3">
+                  <HugeiconsIcon
+                    icon={Clock01Icon}
+                    strokeWidth={2}
+                    className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                  />
+                  <div>
+                    <p className="text-sm font-medium">{formatDaysLeft(job.expiresAt)}</p>
+                    <p className="text-xs text-muted-foreground">Application deadline</p>
+                  </div>
+                </div>
+              </>
+            ) : null}
+          </section>
 
           {job.status === "open" ? (
             <CandidateApplySection
@@ -248,18 +233,16 @@ function JobDetailPage() {
               hasResume={Boolean(candidateProfile?.resumeKey)}
             />
           ) : (
-            <Card className="animate-scale-in">
-              <CardHeader>
-                <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-                  No longer accepting applications
-                </p>
-                <CardDescription className="text-xs">
-                  {job.status === "closed"
-                    ? "This position has been closed by the company."
-                    : "This job is currently in draft status."}
-                </CardDescription>
-              </CardHeader>
-            </Card>
+            <section className="rounded-3xl border border-border/60 px-5 py-4 md:px-6">
+              <p className="text-sm font-semibold text-muted-foreground">
+                No longer accepting applications
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {job.status === "closed"
+                  ? "This position has been closed by the company."
+                  : "This job is currently in draft status."}
+              </p>
+            </section>
           )}
         </div>
       </div>

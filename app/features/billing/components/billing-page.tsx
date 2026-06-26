@@ -5,7 +5,14 @@ import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/shared/date";
@@ -64,7 +71,14 @@ export function BillingPage({
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="space-y-6 pb-28">
+      <div className="space-y-1">
+        <h1 className="text-xl font-semibold tracking-tight">Billing</h1>
+        <p className="text-sm text-muted-foreground">
+          Manage your subscription, job limits, and plan features.
+        </p>
+      </div>
+
       <CurrentPlanCard
         subscription={subscription}
         jobCounts={jobCounts}
@@ -74,23 +88,32 @@ export function BillingPage({
 
       {subscription.isActive && !subscription.cancelAtPeriodEnd ? (
         <p className="text-sm text-muted-foreground">
-          You are on a paid plan. Use "Manage billing" above to change or cancel your subscription.
+          You are on a paid plan. Use &quot;Manage billing&quot; above to change or cancel your
+          subscription.
         </p>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {SUBSCRIPTION_PLANS.map((id) => (
-          <PlanCard
-            key={id}
-            plan={id}
-            currentPlan={subscription.plan}
-            isPaid={subscription.isActive}
-            highlighted={highlightedPlan === id}
-            onCheckout={onCheckout}
-            checkingOut={checkoutMutation.isPending && checkoutMutation.variables === id}
-          />
-        ))}
-      </div>
+      <section className="space-y-5">
+        <div className="space-y-1">
+          <h2 className="text-lg font-semibold tracking-tight">Plans</h2>
+          <p className="text-sm text-muted-foreground">
+            Compare tiers and upgrade when you need more active jobs or team seats.
+          </p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {SUBSCRIPTION_PLANS.map((id) => (
+            <PlanCard
+              key={id}
+              plan={id}
+              currentPlan={subscription.plan}
+              isPaid={subscription.isActive}
+              highlighted={highlightedPlan === id}
+              onCheckout={onCheckout}
+              checkingOut={checkoutMutation.isPending && checkoutMutation.variables === id}
+            />
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
@@ -170,37 +193,35 @@ function CurrentPlanCard({
   const atLimit = jobUsage >= jobLimit;
 
   return (
-    <Card className="border-primary/20">
-      <CardHeader>
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex flex-col gap-1.5">
-            <CardTitle className="flex items-center gap-2">
-              {config.name}
-              <Badge variant={subscription.isActive || isFree ? "default" : "secondary"}>
-                {isFree ? "active" : subscription.status}
-              </Badge>
-            </CardTitle>
-            <CardDescription>{config.description}</CardDescription>
+    <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="space-y-1.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-base font-semibold tracking-tight">{config.name}</h2>
+            <Badge variant={subscription.isActive || isFree ? "default" : "secondary"}>
+              {isFree ? "active" : subscription.status}
+            </Badge>
           </div>
-          {subscription.hasPolarCustomer ? (
-            <Button variant="outline" onClick={onOpenPortal} disabled={portalLoading}>
-              {portalLoading ? (
-                <>
-                  <HugeiconsIcon
-                    icon={Loading03Icon}
-                    strokeWidth={2}
-                    className="size-4 animate-spin"
-                  />
-                  Opening...
-                </>
-              ) : (
-                "Manage billing"
-              )}
-            </Button>
-          ) : null}
+          <p className="text-sm text-muted-foreground">{config.description}</p>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
+        {subscription.hasPolarCustomer ? (
+          <Button variant="outline" onClick={onOpenPortal} disabled={portalLoading}>
+            {portalLoading ? (
+              <>
+                <HugeiconsIcon
+                  icon={Loading03Icon}
+                  strokeWidth={2}
+                  className="size-4 animate-spin"
+                />
+                Opening...
+              </>
+            ) : (
+              "Manage billing"
+            )}
+          </Button>
+        ) : null}
+      </div>
+      <div className="space-y-4">
         <SubscriptionStatusAlert subscription={subscription} periodEnd={periodEnd} />
 
         <div className="space-y-2">
@@ -236,8 +257,8 @@ function CurrentPlanCard({
             ))}
           </ul>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }
 
@@ -266,15 +287,13 @@ function PlanCard({
 
   return (
     <Card
+      variant="bordered"
+      size="sm"
       data-current={isCurrent ? "true" : undefined}
       data-highlighted={highlighted ? "true" : undefined}
       className={cn(
-        "flex flex-col",
-        highlighted
-          ? "border border-foreground bg-muted/60 shadow-lg ring-0"
-          : isCurrent
-            ? "ring-2 ring-foreground/30"
-            : null,
+        highlighted ? "bg-muted/30" : null,
+        isCurrent && !highlighted ? "bg-muted/20" : null,
       )}
     >
       <CardHeader>
@@ -287,7 +306,7 @@ function PlanCard({
         </div>
         <CardDescription>{config.description}</CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-1 flex-col justify-between gap-6">
+      <CardContent className="flex flex-1 flex-col gap-4">
         <ul className="flex flex-col gap-2 text-sm">
           {config.features.map((feature) => (
             <li key={feature} className="flex items-start gap-2">
@@ -300,7 +319,8 @@ function PlanCard({
             </li>
           ))}
         </ul>
-
+      </CardContent>
+      <CardFooter className="mt-auto flex-col items-stretch gap-0">
         {isCurrent ? (
           <Button variant="outline" disabled>
             Current plan
@@ -314,7 +334,7 @@ function PlanCard({
             Manage billing to change
           </Button>
         ) : (
-          <Button onClick={onClick} disabled={checkingOut} className="shadow-sm">
+          <Button onClick={onClick} disabled={checkingOut}>
             {checkingOut ? (
               <>
                 <HugeiconsIcon
@@ -329,7 +349,7 @@ function PlanCard({
             )}
           </Button>
         )}
-      </CardContent>
+      </CardFooter>
     </Card>
   );
 }
