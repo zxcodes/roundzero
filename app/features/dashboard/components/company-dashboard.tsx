@@ -159,11 +159,9 @@ function AwaitingReviewCard({ candidate }: { candidate: DashboardCandidateReport
 function AwaitingReviewSection({
   candidates,
   heroSummary,
-  activitySummary,
 }: {
   candidates: DashboardCandidateReport[];
   heroSummary: CompanyMetrics["heroSummary"];
-  activitySummary: CompanyMetrics["activitySummary"];
 }) {
   if (candidates.length === 0) {
     return (
@@ -179,18 +177,6 @@ function AwaitingReviewSection({
         <p className="mt-2 text-sm text-muted-foreground">
           No candidates are waiting for a shortlist or reject decision right now.
         </p>
-        {activitySummary.length > 0 ? (
-          <ul className="mt-6 space-y-2 border-t border-border/40 pt-6">
-            {activitySummary.map((item) => (
-              <li key={item.id} className="flex items-center justify-between gap-3 text-sm">
-                <span className="text-muted-foreground">{item.label}</span>
-                <span className="shrink-0 text-xs text-muted-foreground">
-                  {formatRelativeTime(item.occurredAt)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : null}
       </section>
     );
   }
@@ -387,7 +373,6 @@ export function CompanyDashboard({
       <AwaitingReviewSection
         candidates={metrics.awaitingReview}
         heroSummary={metrics.heroSummary}
-        activitySummary={metrics.activitySummary}
       />
       <RolesAttentionSection roles={metrics.rolesNeedingAttention} />
       <RecentActivitySection
