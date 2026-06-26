@@ -105,9 +105,7 @@ export function CompanyLogoUploadField({
                   strokeWidth={1.75}
                   className="size-5 text-primary/80"
                 />
-                <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                  Logo
-                </span>
+                <span className="text-xs text-muted-foreground">Logo</span>
               </div>
             )}
             {isUploading ? (

@@ -128,7 +128,7 @@ function AwaitingReviewCard({ candidate }: { candidate: DashboardCandidateReport
   const highlight = candidate.strengths[0] ?? candidate.topConcern;
 
   return (
-    <article className="flex min-h-52 flex-col rounded-xl bg-muted/25 p-4">
+    <article className="flex min-h-52 flex-col rounded-3xl border border-border/60 px-4 py-4">
       <RecommendationBadge recommendation={candidate.recommendation} size="lg" />
       <div className="mt-3 min-w-0 space-y-1">
         <h3 className="truncate text-base font-semibold tracking-tight">
@@ -231,7 +231,7 @@ function AwaitingReviewSection({
 
 function RoleAttentionCard({ role }: { role: RoleAttention }) {
   return (
-    <article className="flex min-h-44 flex-col rounded-xl bg-muted/20 p-4">
+    <article className="flex min-h-44 flex-col rounded-3xl border border-border/60 px-4 py-4">
       <h3 className="truncate text-base font-semibold tracking-tight">{role.title}</h3>
       <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1">
@@ -317,7 +317,7 @@ function RolesAttentionSection({ roles }: { roles: RoleAttention[] }) {
 
 function RecentReportCard({ report }: { report: DashboardCandidateReport }) {
   return (
-    <article className="flex min-h-44 flex-col rounded-xl bg-muted/15 p-4">
+    <article className="flex min-h-44 flex-col rounded-3xl border border-border/60 px-4 py-4">
       <RecommendationBadge recommendation={report.recommendation} />
       <div className="mt-3 min-w-0 space-y-1">
         <h3 className="truncate text-base font-semibold tracking-tight">{report.candidateName}</h3>
@@ -354,7 +354,7 @@ function RecentActivitySection({
       </div>
 
       {evaluatingCount > 0 ? (
-        <div className="flex items-center gap-2 rounded-xl bg-warning/10 px-4 py-3 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2 rounded-2xl border border-warning/20 bg-warning/10 px-4 py-3 text-sm text-muted-foreground">
           <span className="size-1.5 shrink-0 rounded-full bg-warning" aria-hidden />
           <span>
             <span className="font-mono font-medium text-foreground">{evaluatingCount}</span>{" "}

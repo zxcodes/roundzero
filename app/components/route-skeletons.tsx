@@ -765,7 +765,7 @@ function DashboardCompanyIndexSkeleton() {
     <div className="space-y-10">
       <div className="space-y-6">
         <div className="space-y-3">
-          <Skeleton className="h-9 w-72" />
+          <Skeleton className="h-7 w-56" />
           <Skeleton className="h-4 w-96 max-w-full" />
           <Skeleton className="h-4 w-80 max-w-full" />
         </div>
@@ -784,7 +784,10 @@ function DashboardCompanyIndexSkeleton() {
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="flex min-h-52 flex-col rounded-xl bg-muted/25 p-4">
+            <div
+              key={i}
+              className="flex min-h-52 flex-col rounded-3xl border border-border/60 px-4 py-4"
+            >
               <Skeleton className="h-7 w-24 rounded-full" />
               <Skeleton className="mt-3 h-5 w-36" />
               <Skeleton className="mt-1 h-3 w-28" />
@@ -800,7 +803,10 @@ function DashboardCompanyIndexSkeleton() {
         <Skeleton className="h-5 w-48" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="flex min-h-44 flex-col rounded-xl bg-muted/20 p-4">
+            <div
+              key={i}
+              className="flex min-h-44 flex-col rounded-3xl border border-border/60 px-4 py-4"
+            >
               <Skeleton className="h-5 w-40" />
               <Skeleton className="mt-2 h-3 w-32" />
               <div className="mt-3 flex flex-1 gap-2">
@@ -817,7 +823,10 @@ function DashboardCompanyIndexSkeleton() {
         <Skeleton className="h-5 w-36" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="flex min-h-44 flex-col rounded-xl bg-muted/15 p-4">
+            <div
+              key={i}
+              className="flex min-h-44 flex-col rounded-3xl border border-border/60 px-4 py-4"
+            >
               <Skeleton className="h-5 w-20 rounded-full" />
               <Skeleton className="mt-3 h-5 w-32" />
               <Skeleton className="mt-1 h-3 w-28" />
@@ -836,7 +845,7 @@ function DashboardCandidateIndexSkeleton() {
     <div className="space-y-10">
       <div className="space-y-6">
         <div className="space-y-3">
-          <Skeleton className="h-9 w-72" />
+          <Skeleton className="h-7 w-56" />
           <Skeleton className="h-4 w-96 max-w-full" />
         </div>
         <Skeleton className="h-9 w-40" />
