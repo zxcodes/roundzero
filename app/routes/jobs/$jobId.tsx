@@ -320,7 +320,7 @@ function JobDetailPage() {
           </div>
 
           <aside className="space-y-5">
-            <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-5">
+            <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
               <h3 className="text-sm font-semibold tracking-tight">Job details</h3>
               {salary ? (
                 <DetailRow icon={MoneyBag02Icon} label="Salary" value={salary} mono />

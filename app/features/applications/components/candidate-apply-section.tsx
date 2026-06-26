@@ -34,7 +34,7 @@ function ApplyStatusPanel({
   }[tone];
 
   return (
-    <section className="space-y-3 rounded-3xl border border-border/60 px-5 py-5">
+    <section className="space-y-3 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
       <div className="flex items-center gap-2">
         <HugeiconsIcon
           icon={CheckmarkCircle02Icon}

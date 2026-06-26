@@ -208,7 +208,7 @@ function CompanyProfilePage() {
         {/* Body */}
         <section className="mx-auto grid max-w-7xl gap-10 px-6 py-8 lg:grid-cols-3 lg:px-10 lg:py-12">
           {/* Left column — about + jobs */}
-          <div className="space-y-10 lg:col-span-2">
+          <div className="space-y-6 lg:col-span-2">
             {company.description ? (
               <section className="rounded-2xl bg-muted/30 px-6 py-5">
                 <h2 className="text-lg font-semibold tracking-tight">About</h2>
@@ -257,7 +257,7 @@ function CompanyProfilePage() {
           {/* Right sidebar */}
           <aside className="space-y-6">
             {techStack.length > 0 ? (
-              <section className="rounded-3xl border border-border/60 px-5 py-5">
+              <section className="rounded-3xl border border-border/60 px-5 py-4 md:px-6">
                 <h3 className="text-base font-semibold tracking-tight">Tech stack</h3>
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {techStack.map((tech) => (
@@ -269,7 +269,7 @@ function CompanyProfilePage() {
               </section>
             ) : null}
 
-            <section className="rounded-3xl border border-border/60 px-5 py-5">
+            <section className="rounded-3xl border border-border/60 px-5 py-4 md:px-6">
               <h3 className="text-base font-semibold tracking-tight">At a glance</h3>
               <div className="mt-3 space-y-3">
                 <div className="space-y-2.5">

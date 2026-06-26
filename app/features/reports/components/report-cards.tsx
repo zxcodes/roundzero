@@ -255,7 +255,7 @@ function TimelineNode({
       <div className="flex flex-col items-center">
         <div
           className={cn(
-            "z-10 flex size-8 shrink-0 items-center justify-center rounded-full border-2 border-background bg-card shadow-sm ring-1 ring-border md:size-10",
+            "z-10 flex size-8 shrink-0 items-center justify-center rounded-full border-2 border-background bg-card ring-1 ring-border md:size-10",
             dotClassName,
           )}
         >
@@ -392,8 +392,8 @@ export function ReportTimeline({
         title="Application submitted"
         timestamp={application.createdAt}
       >
-        <Card size="sm" className="border-border/60">
-          <CardContent className="flex flex-wrap items-center gap-3 py-0">
+        <Card size="sm" className="gap-0 rounded-3xl border-border/60 py-0 shadow-none ring-0">
+          <CardContent className="flex flex-wrap items-center gap-3 px-4 py-3">
             <Avatar className="size-10">
               <AvatarImage src={candidate.picture ?? undefined} alt={candidate.name} />
               <AvatarFallback>{getInitials(candidate.name)}</AvatarFallback>
@@ -420,8 +420,8 @@ export function ReportTimeline({
         timestamp={preEvaluation?.createdAt ?? null}
       >
         {preEvaluation ? (
-          <Card size="sm" className="border-border/60">
-            <CardContent className="space-y-3 py-0">
+          <Card size="sm" className="gap-0 rounded-3xl border-border/60 py-0 shadow-none ring-0">
+            <CardContent className="space-y-3 px-4 py-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="flex size-12 items-center justify-center rounded-xl border border-border/60 bg-muted/30">
@@ -463,8 +463,11 @@ export function ReportTimeline({
             </CardContent>
           </Card>
         ) : (
-          <Card size="sm" className="border-dashed border-border/60">
-            <CardContent className="py-0 text-xs text-muted-foreground">
+          <Card
+            size="sm"
+            className="gap-0 rounded-3xl border-dashed border-border/60 py-0 shadow-none ring-0"
+          >
+            <CardContent className="px-4 py-3 text-xs text-muted-foreground">
               No pre-screening record found for this application.
             </CardContent>
           </Card>
@@ -481,8 +484,8 @@ export function ReportTimeline({
         }
       >
         {interview ? (
-          <Card size="sm" className="border-border/60">
-            <CardContent className="space-y-3 py-0">
+          <Card size="sm" className="gap-0 rounded-3xl border-border/60 py-0 shadow-none ring-0">
+            <CardContent className="space-y-3 px-4 py-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="outline" className="text-[11px] capitalize">
@@ -502,8 +505,11 @@ export function ReportTimeline({
             </CardContent>
           </Card>
         ) : (
-          <Card size="sm" className="border-dashed border-border/60">
-            <CardContent className="py-0 text-xs text-muted-foreground">
+          <Card
+            size="sm"
+            className="gap-0 rounded-3xl border-dashed border-border/60 py-0 shadow-none ring-0"
+          >
+            <CardContent className="px-4 py-3 text-xs text-muted-foreground">
               No interview record found for this application.
             </CardContent>
           </Card>
@@ -531,8 +537,11 @@ export function ReportTimeline({
           title="Voice Communication Assessment"
           timestamp={communicationAssessment.completedAt}
         >
-          <Card size="sm" className="border-dashed border-border/60">
-            <CardContent className="py-0 text-xs text-muted-foreground">
+          <Card
+            size="sm"
+            className="gap-0 rounded-3xl border-dashed border-border/60 py-0 shadow-none ring-0"
+          >
+            <CardContent className="px-4 py-3 text-xs text-muted-foreground">
               Candidate chose to skip the voice assessment.
             </CardContent>
           </Card>
@@ -545,8 +554,11 @@ export function ReportTimeline({
           title="Voice Communication Assessment"
           timestamp={null}
         >
-          <Card size="sm" className="border-dashed border-border/60">
-            <CardContent className="py-0 text-xs text-muted-foreground">
+          <Card
+            size="sm"
+            className="gap-0 rounded-3xl border-dashed border-border/60 py-0 shadow-none ring-0"
+          >
+            <CardContent className="px-4 py-3 text-xs text-muted-foreground">
               Voice assessment was not completed within the interview window.
             </CardContent>
           </Card>

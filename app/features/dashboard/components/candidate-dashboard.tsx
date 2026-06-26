@@ -422,7 +422,7 @@ export function CandidateDashboard({
   const activity = metrics.recentActivity ?? [];
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       <HeroSection firstName={firstName} metrics={metrics} />
       <ActionQueueSection actions={actions} />
       <RecentActivitySection activity={activity} />

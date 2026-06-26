@@ -591,7 +591,7 @@ function CandidateJobsList({ data }: { data: Awaited<ReturnType<typeof getOpenJo
   };
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       <section className="space-y-1">
         <h1 className="text-xl font-semibold tracking-tight">Browse roles</h1>
         <p className="text-sm text-muted-foreground">Find open positions and apply.</p>

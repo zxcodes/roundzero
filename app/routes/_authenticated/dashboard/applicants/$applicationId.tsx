@@ -337,7 +337,7 @@ function ApplicantReviewPage() {
 
         {/* Pre-evaluation card — only when there's no full report yet */}
         {!report && preEvaluation ? (
-          <section className="space-y-3 rounded-3xl border border-border/60 px-5 py-5">
+          <section className="space-y-3 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="text-base font-semibold tracking-tight">Pre-screening</h3>
@@ -361,7 +361,7 @@ function ApplicantReviewPage() {
         ) : null}
 
         {!report && !preEvaluation ? (
-          <div className="rounded-2xl bg-muted/30 px-6 py-5 text-center text-sm text-muted-foreground">
+          <div className="rounded-2xl bg-muted/30 px-5 py-4 text-center text-sm text-muted-foreground md:px-6">
             Pre-evaluation is in progress. Results will appear here once Zero finishes screening.
           </div>
         ) : null}
@@ -448,7 +448,7 @@ function ApplicationStatusSection({
   const tone = applicationStatusMeta[currentStatus];
 
   return (
-    <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-5">
+    <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
       <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
         <div className="space-y-1.5">
           <h2 className="text-base font-semibold tracking-tight">Application status</h2>

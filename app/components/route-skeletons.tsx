@@ -210,7 +210,7 @@ export function JobDetailSkeleton() {
         {/* Body — 2-col grid */}
         <section className="mx-auto grid max-w-7xl gap-8 px-6 py-8 lg:grid-cols-3 lg:gap-10 lg:px-10 lg:py-12">
           <div className="space-y-8 lg:col-span-2">
-            <div className="space-y-3 rounded-2xl bg-muted/30 px-6 py-5">
+            <div className="space-y-3 rounded-2xl bg-muted/30 px-5 py-4 md:px-6">
               <Skeleton className="h-5 w-28" />
               <div className="space-y-2">
                 <Skeleton className="h-4 w-full" />
@@ -219,7 +219,7 @@ export function JobDetailSkeleton() {
                 <Skeleton className="h-4 w-3/4" />
               </div>
             </div>
-            <div className="space-y-3 rounded-2xl bg-muted/30 px-6 py-5">
+            <div className="space-y-3 rounded-2xl bg-muted/30 px-5 py-4 md:px-6">
               <Skeleton className="h-5 w-32" />
               {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="flex items-start gap-3">
@@ -228,14 +228,14 @@ export function JobDetailSkeleton() {
                 </div>
               ))}
             </div>
-            <div className="rounded-3xl border border-border/60 bg-muted/20 px-6 py-5">
+            <div className="rounded-3xl border border-border/60 bg-muted/20 px-5 py-4 md:px-6">
               <Skeleton className="h-4 w-40" />
               <Skeleton className="mt-3 h-10 w-full rounded-md" />
             </div>
           </div>
 
           <aside className="space-y-5">
-            <div className="space-y-4 rounded-3xl border border-border/60 px-5 py-5">
+            <div className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
               <Skeleton className="h-4 w-24" />
               {Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="flex items-center justify-between">
@@ -535,13 +535,13 @@ export function DashboardJobDetailSkeleton() {
  */
 export function DashboardJobEditSkeleton() {
   return (
-    <div className="space-y-10 pb-28">
+    <div className="space-y-6 pb-28">
       <div className="space-y-2">
         <Skeleton className="h-6 w-32" />
         <Skeleton className="h-4 w-80 max-w-full" />
       </div>
 
-      <div className="space-y-5 rounded-3xl border border-border/60 px-5 py-5">
+      <div className="space-y-5 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
         <div className="space-y-1">
           <Skeleton className="h-5 w-24" />
           <Skeleton className="h-3.5 w-72" />
@@ -574,13 +574,13 @@ function CandidateJobDetailSkeleton() {
 
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="space-y-8 lg:col-span-2">
-          <div className="space-y-3 rounded-2xl bg-muted/30 px-6 py-5">
+          <div className="space-y-3 rounded-2xl bg-muted/30 px-5 py-4 md:px-6">
             <Skeleton className="h-5 w-24" />
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-5/6" />
           </div>
-          <div className="space-y-3 rounded-2xl bg-muted/30 px-6 py-5">
+          <div className="space-y-3 rounded-2xl bg-muted/30 px-5 py-4 md:px-6">
             <Skeleton className="h-5 w-28" />
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="flex items-start gap-2.5">
@@ -592,7 +592,7 @@ function CandidateJobDetailSkeleton() {
         </div>
 
         <div className="space-y-5">
-          <div className="space-y-4 rounded-3xl border border-border/60 px-5 py-5">
+          <div className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
             <Skeleton className="h-4 w-20" />
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex items-start gap-3">
@@ -681,7 +681,7 @@ function JobApplicantsTabSkeleton() {
         ))}
       </div>
 
-      <div className="space-y-3 rounded-3xl border border-border/60 px-5 py-5">
+      <div className="space-y-3 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
         <div className="flex items-center justify-between gap-3">
           <div className="space-y-1">
             <Skeleton className="h-4 w-28" />
@@ -762,7 +762,7 @@ export function DashboardIndexSkeleton() {
 
 function DashboardCompanyIndexSkeleton() {
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       <div className="space-y-6">
         <div className="space-y-3">
           <Skeleton className="h-7 w-56" />
@@ -784,10 +784,7 @@ function DashboardCompanyIndexSkeleton() {
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className="flex min-h-52 flex-col rounded-3xl border border-border/60 px-4 py-4"
-            >
+            <div key={i} className="flex min-h-52 flex-col rounded-xl bg-muted/25 p-4">
               <Skeleton className="h-7 w-24 rounded-full" />
               <Skeleton className="mt-3 h-5 w-36" />
               <Skeleton className="mt-1 h-3 w-28" />
@@ -803,10 +800,7 @@ function DashboardCompanyIndexSkeleton() {
         <Skeleton className="h-5 w-48" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className="flex min-h-44 flex-col rounded-3xl border border-border/60 px-4 py-4"
-            >
+            <div key={i} className="flex min-h-44 flex-col rounded-xl bg-muted/20 p-4">
               <Skeleton className="h-5 w-40" />
               <Skeleton className="mt-2 h-3 w-32" />
               <div className="mt-3 flex flex-1 gap-2">
@@ -823,10 +817,7 @@ function DashboardCompanyIndexSkeleton() {
         <Skeleton className="h-5 w-36" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className="flex min-h-44 flex-col rounded-3xl border border-border/60 px-4 py-4"
-            >
+            <div key={i} className="flex min-h-44 flex-col rounded-xl bg-muted/15 p-4">
               <Skeleton className="h-5 w-20 rounded-full" />
               <Skeleton className="mt-3 h-5 w-32" />
               <Skeleton className="mt-1 h-3 w-28" />
@@ -842,7 +833,7 @@ function DashboardCompanyIndexSkeleton() {
 
 function DashboardCandidateIndexSkeleton() {
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       <div className="space-y-6">
         <div className="space-y-3">
           <Skeleton className="h-7 w-56" />
@@ -920,7 +911,7 @@ function CandidateDashboardSettingsSkeleton() {
       </div>
 
       <div className="space-y-6">
-        <div className="space-y-4 rounded-3xl border border-border/60 px-5 py-5">
+        <div className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
           <div className="space-y-1">
             <Skeleton className="h-5 w-36" />
             <Skeleton className="h-3.5 w-64" />
@@ -929,7 +920,7 @@ function CandidateDashboardSettingsSkeleton() {
           <Skeleton className="h-24 w-full" />
         </div>
 
-        <div className="space-y-4 rounded-3xl border border-destructive/30 px-5 py-5">
+        <div className="space-y-4 rounded-3xl border border-destructive/30 px-5 py-4 md:px-6">
           <div className="space-y-1">
             <Skeleton className="h-5 w-28" />
             <Skeleton className="h-3.5 w-72" />
@@ -943,7 +934,7 @@ function CandidateDashboardSettingsSkeleton() {
 
 function CompanyDashboardSettingsSkeleton() {
   return (
-    <div className="space-y-10 pb-28">
+    <div className="space-y-6 pb-28">
       <div className="space-y-1">
         <Skeleton className="h-6 w-40" />
         <Skeleton className="h-4 w-96 max-w-full" />
@@ -951,7 +942,7 @@ function CompanyDashboardSettingsSkeleton() {
 
       <div className="space-y-6">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="space-y-4 rounded-3xl border border-border/60 px-5 py-5">
+          <div key={i} className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
             <div className="space-y-1">
               <Skeleton className="h-5 w-36" />
               <Skeleton className="h-3.5 w-64" />
@@ -973,14 +964,14 @@ function CompanyDashboardSettingsSkeleton() {
  */
 export function DashboardTeamSkeleton() {
   return (
-    <div className="space-y-10 pb-28">
+    <div className="space-y-6 pb-28">
       <div className="space-y-1">
         <Skeleton className="h-6 w-24" />
         <Skeleton className="h-4 w-96 max-w-full" />
       </div>
 
       <div className="space-y-6">
-        <div className="space-y-4 rounded-3xl border border-border/60 px-5 py-5">
+        <div className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
           <div className="space-y-1">
             <Skeleton className="h-5 w-32" />
             <Skeleton className="h-3.5 w-80 max-w-full" />
@@ -994,7 +985,7 @@ export function DashboardTeamSkeleton() {
           </div>
         </div>
 
-        <div className="space-y-4 rounded-3xl border border-border/60 px-5 py-5">
+        <div className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
           <div className="space-y-1">
             <Skeleton className="h-5 w-40" />
             <Skeleton className="h-3.5 w-64" />
@@ -1005,7 +996,7 @@ export function DashboardTeamSkeleton() {
           </div>
         </div>
 
-        <div className="space-y-4 rounded-3xl border border-border/60 px-5 py-5">
+        <div className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
           <div className="space-y-1">
             <Skeleton className="h-5 w-32" />
             <Skeleton className="h-3.5 w-72" />
@@ -1229,12 +1220,12 @@ export function DashboardApplicationDetailSkeleton() {
         </div>
       </div>
 
-      <div className="space-y-3 rounded-3xl border border-border/60 px-5 py-5">
+      <div className="space-y-3 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
         <Skeleton className="h-4 w-44" />
         <Skeleton className="h-16 w-full rounded-2xl" />
       </div>
 
-      <div className="space-y-3 rounded-3xl border border-border/60 px-5 py-5">
+      <div className="space-y-3 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
         <Skeleton className="h-4 w-40" />
         <Skeleton className="h-3 w-56" />
         <Skeleton className="h-8 w-28 rounded-md" />
@@ -1277,7 +1268,7 @@ function CompanyApplicantReviewSkeleton() {
         </div>
       </div>
 
-      <div className="space-y-4 rounded-3xl border border-border/60 px-5 py-5">
+      <div className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
         <div className="flex items-center justify-between gap-3">
           <div className="space-y-1.5">
             <Skeleton className="h-4 w-32" />
@@ -1308,7 +1299,7 @@ function CompanyApplicantReviewSkeleton() {
         </div>
       </div>
 
-      <div className="rounded-3xl border border-border/60 px-5 py-5">
+      <div className="rounded-3xl border border-border/60 px-5 py-4 md:px-6">
         <div className="space-y-3">
           <Skeleton className="h-5 w-40" />
           <Skeleton className="h-4 w-full" />
@@ -1327,8 +1318,8 @@ function CompanyApplicantReviewSkeleton() {
  */
 export function DashboardApplicantReportSkeleton() {
   return (
-    <div className="space-y-10">
-      <div className="rounded-3xl border border-border/60 px-5 py-5 md:px-6 md:py-6">
+    <div className="space-y-5">
+      <div className="rounded-3xl border border-border/60 px-5 py-4 md:px-6">
         <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
           <Skeleton className="h-8 w-24 rounded-md" />
           <Skeleton className="h-4 w-24" />
@@ -1357,11 +1348,11 @@ export function DashboardApplicantReportSkeleton() {
         </div>
       </div>
 
-      <div className="rounded-2xl bg-muted/30 px-6 py-5">
+      <div className="rounded-2xl bg-muted/30 px-5 py-4 md:px-6">
         <Skeleton className="h-5 w-24" />
         <Skeleton className="mt-3 h-4 w-full" />
         <Skeleton className="mt-1.5 h-4 w-[88%]" />
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="space-y-1.5">
               <Skeleton className="h-3 w-full" />
@@ -1374,7 +1365,7 @@ export function DashboardApplicantReportSkeleton() {
       {/* Strengths | Weaknesses */}
       <div className="grid gap-4 lg:grid-cols-2">
         {Array.from({ length: 2 }).map((_, i) => (
-          <div key={i} className="rounded-3xl border border-border/60 px-5 py-5 md:px-6 md:py-6">
+          <div key={i} className="rounded-3xl border border-border/60 px-5 py-4 md:px-6">
             <Skeleton className="h-3 w-24" />
             <div className="mt-3 space-y-2">
               <Skeleton className="h-3 w-full" />
@@ -1385,7 +1376,7 @@ export function DashboardApplicantReportSkeleton() {
         ))}
       </div>
 
-      <div className="rounded-3xl border border-border/60 px-5 py-5 md:px-6 md:py-6">
+      <div className="rounded-3xl border border-border/60 px-5 py-4 md:px-6">
         <Skeleton className="h-5 w-20" />
         <div className="mt-4 space-y-2.5">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -1394,7 +1385,7 @@ export function DashboardApplicantReportSkeleton() {
         </div>
       </div>
 
-      <div className="rounded-3xl border border-border/60 px-5 py-5 md:px-6 md:py-6">
+      <div className="rounded-3xl border border-border/60 px-5 py-4 md:px-6">
         <Skeleton className="h-5 w-20" />
         <div className="mt-3 space-y-1.5">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -1406,7 +1397,7 @@ export function DashboardApplicantReportSkeleton() {
         </div>
       </div>
 
-      <div className="rounded-3xl border border-border/60 px-5 py-5 md:px-6 md:py-6">
+      <div className="rounded-3xl border border-border/60 px-5 py-4 md:px-6">
         <Skeleton className="h-5 w-36" />
         <div className="mt-4 space-y-3">
           {Array.from({ length: 2 }).map((_, i) => (
@@ -1472,7 +1463,7 @@ export function InterviewWorkspacePageSkeleton() {
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col">
-        <div className="min-h-0 flex-1 space-y-4 px-4 py-5 md:px-6 md:py-6">
+        <div className="min-h-0 flex-1 space-y-4 px-4 py-4 md:px-6">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className={i % 2 === 0 ? "flex justify-start" : "flex justify-end"}>
               <div className="w-full max-w-[60%] md:max-w-[50%]">
@@ -1638,12 +1629,12 @@ export function InterviewContentSkeleton() {
  */
 export function BillingPageSkeleton() {
   return (
-    <div className="space-y-10 pb-28">
+    <div className="space-y-6 pb-28">
       <div className="space-y-1">
         <Skeleton className="h-6 w-24" />
         <Skeleton className="h-4 w-72" />
       </div>
-      <div className="space-y-4 rounded-3xl border border-primary/20 px-5 py-5">
+      <div className="space-y-4 rounded-3xl border border-primary/20 px-5 py-4 md:px-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-2">
             <Skeleton className="h-5 w-28" />
@@ -1713,7 +1704,7 @@ export function BatchDetailSkeleton() {
         </div>
       </div>
 
-      <div className="space-y-4 rounded-3xl border border-border/60 px-5 py-5">
+      <div className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
         <div className="space-y-1">
           <Skeleton className="h-4 w-32" />
           <Skeleton className="h-3 w-48" />

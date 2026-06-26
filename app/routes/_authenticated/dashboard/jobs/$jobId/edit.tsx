@@ -66,7 +66,7 @@ function EditJobPage() {
         </p>
       </div>
 
-      <section className="space-y-5 rounded-3xl border border-border/60 px-5 py-5">
+      <section className="space-y-5 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
         <div className="space-y-1">
           <h2 className="text-base font-semibold tracking-tight">Job details</h2>
           <p className="text-sm text-muted-foreground">

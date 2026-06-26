@@ -109,7 +109,7 @@ function BatchDetailPage() {
   ];
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 space-y-2">
           <h1 className="text-xl font-semibold tracking-tight">{batch.jobTitle}</h1>
@@ -253,7 +253,7 @@ function BatchDetailPage() {
       </section>
 
       {noReportInterviews.length > 0 ? (
-        <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-5">
+        <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
           <div className="space-y-1">
             <h2 className="text-base font-semibold tracking-tight">Awaiting / expired</h2>
             <p className="text-sm text-muted-foreground">

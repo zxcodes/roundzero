@@ -172,7 +172,7 @@ function JobApplicantsPage() {
       : [];
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 space-y-2">
           <h1 className="text-xl font-semibold tracking-tight">{job.title}</h1>
@@ -367,7 +367,7 @@ function ActiveBatchPanel({
   const invited = applicants.filter((a) => a.status === "interview_invited").length;
 
   return (
-    <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-5">
+    <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="space-y-1">
           <h2 className="text-base font-semibold tracking-tight">Batch in progress</h2>

@@ -296,7 +296,7 @@ function ApplicantReportSummaryPage() {
               batchNavigation={batchNavigation}
               showFullLink={false}
             />
-            <div className="pt-5">{emptyState}</div>
+            <div className="pt-4">{emptyState}</div>
           </div>
         ) : (
           emptyState
@@ -324,7 +324,7 @@ function ApplicantReportSummaryPage() {
           showFullLink
         />
 
-        <div className="flex flex-col gap-5 pt-5 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-4 pt-4 md:flex-row md:items-center md:justify-between">
           <div className="flex min-w-0 items-center gap-4">
             <Avatar className="size-14 shrink-0">
               <AvatarImage
@@ -367,7 +367,7 @@ function ApplicantReportSummaryPage() {
           </div>
         </div>
 
-        <Separator className="my-5" />
+        <Separator className="my-4" />
 
         <div className="flex flex-wrap items-center gap-2">
           {canShortlist ? (
