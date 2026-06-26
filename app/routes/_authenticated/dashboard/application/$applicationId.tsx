@@ -33,6 +33,7 @@ import {
 import { hasShortlistNextSteps, parseShortlistDetails } from "@/features/applications/shortlist";
 import { InterviewInvitationCard } from "@/features/interviews/components/interview-invitation-card";
 import { getInterviewForApplication } from "@/features/interviews/server/functions";
+import { resolveInterviewAwareCandidateMeta } from "@/features/interviews/shared/candidate-display";
 import { formatDate, formatDateShort } from "@/shared/date";
 import { base64ToBlob } from "@/shared/resume";
 import { validateUuidParams } from "@/shared/validation";
@@ -122,13 +123,6 @@ const stageCopy = {
   },
 } as const;
 
-const underReviewMeta = {
-  badge: "Awaiting company decision",
-  tone: "border-success/20 bg-success/10 text-success",
-  summary: "Your interview is complete and the company is now reviewing your evaluation.",
-  nextStep: "You are waiting on a decision after review.",
-} as const;
-
 const toApplicationStage = (status: string): keyof typeof stageCopy => {
   switch (status) {
     case "queued_for_batch":
@@ -155,11 +149,8 @@ const getDisplayMeta = ({
   status: string;
   interviewStatus: string | null;
 }) => {
-  if (status === "interview_in_progress" && interviewStatus === "completed") {
-    return underReviewMeta;
-  }
-
-  return stageCopy[toApplicationStage(status)];
+  const baseMeta = stageCopy[toApplicationStage(status)];
+  return resolveInterviewAwareCandidateMeta(status, interviewStatus, baseMeta);
 };
 
 const isTerminalStage = (stage: string): stage is "rejected" | "withdrawn" => {
@@ -356,9 +347,7 @@ function CandidateApplicationDetailPage() {
         </Card>
       ) : null}
 
-      {interview &&
-      !application.companyOwnerDeleted &&
-      (interview.status === "pending" || interview.status === "in_progress") ? (
+      {interview && !application.companyOwnerDeleted ? (
         <InterviewInvitationCard
           interviewId={interview.id}
           interviewType={interview.type}

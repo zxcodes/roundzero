@@ -130,6 +130,8 @@ function InterviewWorkspaceContent({
     interview.status === "cancelled" ||
     interview.status === "expired";
   const isCompleted = interview.status === "completed";
+  const isCancelled = interview.status === "cancelled";
+  const isExpired = interview.status === "expired";
   const isStarting = isPending && startMutation.isPending;
   const isSubmitting = isInProgress && completeMutation.isPending;
   const deadline = formatDeadlineLabel(expiresAt);
@@ -294,7 +296,7 @@ function InterviewWorkspaceContent({
           <span>
             {isStarting
               ? "Starting interview and preparing your first question..."
-              : "Submitting interview and generating your report..."}
+              : "Submitting your chat interview..."}
           </span>
         </div>
       ) : null}
@@ -316,7 +318,13 @@ function InterviewWorkspaceContent({
                 </span>
               </TooltipTrigger>
               {!voiceTabAvailable ? (
-                <TooltipContent>Available after you submit the chat interview</TooltipContent>
+                <TooltipContent>
+                  {isCancelled
+                    ? "Voice assessment is not available for cancelled interviews"
+                    : isExpired
+                      ? "Voice assessment is not available for expired interviews"
+                      : "Available after you submit the chat interview"}
+                </TooltipContent>
               ) : null}
             </Tooltip>
           </TooltipProvider>
@@ -326,6 +334,7 @@ function InterviewWorkspaceContent({
             messages={chat.messages}
             canSend={canSend}
             isEnded={isEnded}
+            isCancelled={interview.status === "cancelled"}
             isExpired={interview.status === "expired"}
             isStreaming={chat.isStreaming}
             isThinking={chat.isThinking}

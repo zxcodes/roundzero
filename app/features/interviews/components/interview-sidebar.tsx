@@ -117,7 +117,9 @@ export function InterviewSidebar({
                           >
                             {getSessionLabel(item.status)}
                           </Badge>
-                          {item.status === "pending" && deadline && timeLeft ? (
+                          {(item.status === "pending" || item.status === "in_progress") &&
+                          deadline &&
+                          timeLeft ? (
                             <p
                               className={cn(
                                 "mt-1 text-[11px]",

@@ -11,15 +11,17 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { getMyInterviews } from "@/features/interviews/server/functions";
+import { pickPreferredInterviewId } from "@/features/interviews/shared/candidate-display";
 
 export const Route = createFileRoute("/_authenticated/interview/")({
   loader: async () => {
     const interviews = await getMyInterviews();
 
-    if (interviews.length > 0) {
+    const preferredInterviewId = pickPreferredInterviewId(interviews);
+    if (preferredInterviewId) {
       throw redirect({
         to: "/interview/$interviewId",
-        params: { interviewId: interviews[0].id },
+        params: { interviewId: preferredInterviewId },
       });
     }
 

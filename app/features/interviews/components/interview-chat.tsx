@@ -11,12 +11,17 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { InterviewTranscript } from "@/features/interviews/components/interview-transcript";
-import { CompletedInterviewBar } from "@/features/interviews/components/voice-assessment-panel";
+import {
+  CompletedInterviewBar,
+  type InterviewEndVariant,
+  interviewEndVisuals,
+} from "@/features/interviews/components/voice-assessment-panel";
 import {
   appendCopySource,
   emptyComposeIntegritySnapshot,
   type MessageIntegritySnapshot,
 } from "@/features/interviews/shared/integrity";
+import { cn } from "@/lib/utils";
 
 type InterviewChatProps = {
   messages: Array<{
@@ -26,6 +31,7 @@ type InterviewChatProps = {
   }>;
   canSend: boolean;
   isEnded: boolean;
+  isCancelled: boolean;
   isExpired: boolean;
   isStreaming: boolean;
   /**
@@ -48,6 +54,7 @@ export function InterviewChat({
   messages,
   canSend,
   isEnded,
+  isCancelled,
   isExpired,
   isStreaming,
   isThinking,
@@ -164,13 +171,26 @@ export function InterviewChat({
     event.preventDefault();
   };
 
+  const endedVariant: InterviewEndVariant = isCancelled
+    ? "cancelled"
+    : isExpired
+      ? "expired"
+      : "completed";
+
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-muted/30">
       {!messages.length && !isThinking ? (
-        isExpired ? (
+        isCancelled ? (
+          <EmptyInterviewComponent
+            description="This interview was cancelled."
+            title="Interview cancelled"
+            variant="cancelled"
+          />
+        ) : isExpired ? (
           <EmptyInterviewComponent
             description="This interview window has closed."
             title="Interview expired"
+            variant="expired"
           />
         ) : (
           <EmptyInterviewComponent
@@ -213,11 +233,20 @@ export function InterviewChat({
           ) : (
             <div className="flex flex-wrap items-center justify-between gap-3">
               <CompletedInterviewBar
-                title={isExpired ? "Interview expired" : "Interview complete"}
+                variant={endedVariant}
+                title={
+                  isCancelled
+                    ? "Interview cancelled"
+                    : isExpired
+                      ? "Interview expired"
+                      : "Interview complete"
+                }
                 description={
-                  isExpired
-                    ? "This interview window has closed."
-                    : "Your results are included in the report."
+                  isCancelled
+                    ? "This interview was cancelled. No report will be generated."
+                    : isExpired
+                      ? "This interview window has closed."
+                      : "Your results are included in the report."
                 }
               />
               <Button variant="outline" size="sm" asChild>
@@ -289,15 +318,27 @@ function ThinkingBubble() {
 export function EmptyInterviewComponent({
   title,
   description,
+  variant = "ready",
 }: {
   title: string;
   description: string;
+  variant?: InterviewEndVariant | "ready";
 }) {
+  const visual =
+    variant === "ready"
+      ? { icon: BubbleChatIcon, bg: "bg-card", tone: "text-primary" }
+      : interviewEndVisuals[variant];
+
   return (
     <div className="flex h-full items-center justify-center">
       <div className="mx-auto flex max-w-md flex-col items-center gap-3 text-center text-muted-foreground">
-        <div className="flex size-12 items-center justify-center rounded-full border border-border/70 bg-card shadow-sm">
-          <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={2} className="size-5 text-primary" />
+        <div
+          className={cn(
+            "flex size-12 items-center justify-center rounded-full border border-border/70 shadow-sm",
+            visual.bg,
+          )}
+        >
+          <HugeiconsIcon icon={visual.icon} strokeWidth={2} className={cn("size-5", visual.tone)} />
         </div>
         <p className="text-sm leading-relaxed">{title}.</p>
         <p className="text-xs text-muted-foreground/80">{description}</p>
