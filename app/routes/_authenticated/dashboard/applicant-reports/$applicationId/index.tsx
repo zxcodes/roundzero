@@ -243,7 +243,11 @@ function ApplicantReportSummaryPage() {
     const isEvalFailed = application.status === "evaluation_failed";
 
     const emptyState = isEvalFailed ? (
-      <Empty className={batchNavigation ? "border-0 p-0 shadow-none" : "border"}>
+      <Empty
+        className={
+          batchNavigation ? "border-0 p-0 shadow-none" : "rounded-2xl border-0 bg-muted/30"
+        }
+      >
         <EmptyHeader>
           <EmptyTitle>Evaluation failed</EmptyTitle>
           <EmptyDescription>
@@ -253,7 +257,11 @@ function ApplicantReportSummaryPage() {
         </EmptyHeader>
       </Empty>
     ) : isInterviewCompleted ? (
-      <Empty className={batchNavigation ? "border-0 p-0 shadow-none" : "border"}>
+      <Empty
+        className={
+          batchNavigation ? "border-0 p-0 shadow-none" : "rounded-2xl border-0 bg-muted/30"
+        }
+      >
         <EmptyHeader>
           <EmptyTitle className="flex items-center gap-2">
             <HugeiconsIcon icon={Loading03Icon} strokeWidth={2} className="size-4 animate-spin" />
@@ -265,7 +273,11 @@ function ApplicantReportSummaryPage() {
         </EmptyHeader>
       </Empty>
     ) : (
-      <Empty className={batchNavigation ? "border-0 p-0 shadow-none" : "border"}>
+      <Empty
+        className={
+          batchNavigation ? "border-0 p-0 shadow-none" : "rounded-2xl border-0 bg-muted/30"
+        }
+      >
         <EmptyHeader>
           <EmptyTitle>No post-interview report yet</EmptyTitle>
           <EmptyDescription>
@@ -278,7 +290,7 @@ function ApplicantReportSummaryPage() {
     return (
       <div className="space-y-6">
         {batchNavigation ? (
-          <div className="rounded-4xl border border-border/70 bg-card px-5 py-5 shadow-sm md:px-7 md:py-6">
+          <div className="rounded-3xl border border-border/60 px-5 py-5 md:px-6 md:py-6">
             <ReportActionsRow
               applicationId={application.id}
               batchNavigation={batchNavigation}
@@ -304,9 +316,8 @@ function ApplicantReportSummaryPage() {
       ? "border-danger/20 bg-danger/10 text-danger"
       : "border-border/70 bg-muted/30 text-muted-foreground";
   return (
-    <div className="space-y-6">
-      {/* Hero — candidate, score, recommendation */}
-      <div className="rounded-4xl border border-border/70 bg-card px-5 py-5 shadow-sm md:px-7 md:py-6">
+    <div className="space-y-10">
+      <div className="rounded-3xl border border-border/60 px-5 py-5 md:px-6 md:py-6">
         <ReportActionsRow
           applicationId={application.id}
           batchNavigation={batchNavigation}
@@ -326,7 +337,7 @@ function ApplicantReportSummaryPage() {
             </Avatar>
             <div className="min-w-0 space-y-1.5">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="truncate text-2xl font-semibold tracking-tight">
+                <h1 className="truncate text-xl font-semibold tracking-tight">
                   {application.candidateName}
                 </h1>
                 <Badge variant="outline" className={statusTone.badge}>
@@ -440,16 +451,14 @@ function ApplicantReportSummaryPage() {
       </div>
 
       {/* Summary + dimension scores */}
-      <section className="rounded-4xl border border-border/70 bg-card px-5 py-6 shadow-sm md:px-7">
+      <section className="rounded-2xl bg-muted/30 px-6 py-5">
         <div className="flex items-center gap-2">
           <HugeiconsIcon
             icon={SparklesIcon}
             strokeWidth={2}
             className="size-4 text-muted-foreground"
           />
-          <h2 className="text-[11px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
-            Summary
-          </h2>
+          <h2 className="text-lg font-semibold tracking-tight">Summary</h2>
         </div>
         <p className="mt-3 text-sm leading-6 text-foreground">{report.summary}</p>
 
@@ -486,7 +495,7 @@ function ApplicantReportSummaryPage() {
 
       {/* Answer authenticity — surfaced prominently because it can flip a decision */}
       {showAuthenticity ? (
-        <section className="rounded-4xl border border-border/70 bg-card px-5 py-5 shadow-sm md:px-7 md:py-6">
+        <section className="rounded-3xl border border-border/60 px-5 py-5 md:px-6 md:py-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
@@ -495,7 +504,7 @@ function ApplicantReportSummaryPage() {
                   strokeWidth={2}
                   className="size-4 text-muted-foreground"
                 />
-                <h2 className="text-[11px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
+                <h2 className="text-lg font-semibold tracking-tight">
                   Answer authenticity ·{" "}
                   {authenticity.riskLevel === "high" ? "High risk" : "Medium risk"}
                 </h2>
@@ -547,16 +556,14 @@ function ApplicantReportSummaryPage() {
 
       {/* Evidence */}
       {report.evidence.length > 0 ? (
-        <section className="rounded-4xl border border-border/70 bg-card px-5 py-5 shadow-sm md:px-7 md:py-6">
+        <section className="rounded-3xl border border-border/60 px-5 py-5 md:px-6 md:py-6">
           <div className="flex items-center gap-2">
             <HugeiconsIcon
               icon={TickDouble01Icon}
               strokeWidth={2}
               className="size-4 text-muted-foreground"
             />
-            <h2 className="text-[11px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
-              Evidence
-            </h2>
+            <h2 className="text-lg font-semibold tracking-tight">Evidence</h2>
           </div>
           <ul className="mt-4 space-y-2.5">
             {report.evidence.map((item, index) => (
@@ -573,16 +580,14 @@ function ApplicantReportSummaryPage() {
 
       {/* Insights */}
       {report.insights.length > 0 ? (
-        <section className="rounded-4xl border border-border/70 bg-card px-5 py-5 shadow-sm md:px-7 md:py-6">
+        <section className="rounded-3xl border border-border/60 px-5 py-5 md:px-6 md:py-6">
           <div className="flex items-center gap-2">
             <HugeiconsIcon
               icon={FileSearchIcon}
               strokeWidth={2}
               className="size-4 text-muted-foreground"
             />
-            <h2 className="text-[11px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
-              Insights
-            </h2>
+            <h2 className="text-lg font-semibold tracking-tight">Insights</h2>
           </div>
           <ul className="mt-3 space-y-1.5">
             {report.insights.map((item, index) => (
@@ -597,16 +602,14 @@ function ApplicantReportSummaryPage() {
 
       {/* Screening answers */}
       {report.screeningAnswers.length > 0 ? (
-        <section className="rounded-4xl border border-border/70 bg-card px-5 py-5 shadow-sm md:px-7 md:py-6">
+        <section className="rounded-3xl border border-border/60 px-5 py-5 md:px-6 md:py-6">
           <div className="flex items-center gap-2">
             <HugeiconsIcon
               icon={ClipboardIcon}
               strokeWidth={2}
               className="size-4 text-muted-foreground"
             />
-            <h2 className="text-[11px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
-              Screening questions
-            </h2>
+            <h2 className="text-lg font-semibold tracking-tight">Screening questions</h2>
           </div>
           <ul className="mt-4 space-y-3">
             {report.screeningAnswers.map((entry) => {
@@ -639,7 +642,7 @@ function ApplicantReportSummaryPage() {
 
       {/* Pre-screening + Voice — collapsed by default */}
       {preEvaluation || communicationAssessment?.status === "completed" ? (
-        <Accordion type="multiple" className="bg-card">
+        <Accordion type="multiple" className="rounded-3xl border border-border/60">
           {preEvaluation ? (
             <AccordionItem value="pre-screening">
               <AccordionTrigger className="px-5 py-3.5 text-sm md:px-7">
@@ -820,12 +823,10 @@ function SignalPanel({
   emptyText: string;
 }) {
   return (
-    <div className="rounded-4xl border border-border/70 bg-card px-5 py-5 shadow-sm md:px-7 md:py-6">
+    <div className="rounded-3xl border border-border/60 px-5 py-5 md:px-6 md:py-6">
       <div className="flex items-center gap-2">
         <HugeiconsIcon icon={icon} strokeWidth={2} className={cn("size-4", tone)} />
-        <h2 className="text-[11px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
-          {title}
-        </h2>
+        <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
       </div>
       {items.length === 0 ? (
         <p className="mt-3 text-xs text-muted-foreground">{emptyText}</p>
@@ -865,7 +866,7 @@ function PreScreeningPanel({
       </div>
       {missingRequirements.length > 0 ? (
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+          <p className="text-sm font-semibold text-muted-foreground">
             {missingRequirements.length} gap{missingRequirements.length === 1 ? "" : "s"} detected
           </p>
           <ul className="mt-1.5 space-y-1">

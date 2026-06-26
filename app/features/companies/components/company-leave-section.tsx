@@ -16,7 +16,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
 import { leaveCompany } from "@/features/companies/server/team-functions";
 
 export function CompanyLeaveSection() {
@@ -39,14 +39,14 @@ export function CompanyLeaveSection() {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Leave team</CardTitle>
-        <CardDescription>
+    <section className="space-y-4 rounded-3xl border border-destructive/30 px-5 py-5">
+      <div className="space-y-1">
+        <h2 className="text-base font-semibold tracking-tight">Leave team</h2>
+        <p className="text-sm text-muted-foreground">
           Remove your access to this company workspace. You can rejoin if invited again.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+        </p>
+      </div>
+      <div>
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button type="button" variant="outline" disabled={leaveMutation.isPending}>
@@ -84,7 +84,7 @@ export function CompanyLeaveSection() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }

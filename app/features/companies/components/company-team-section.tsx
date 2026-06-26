@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
 import {
   Empty,
   EmptyContent,
@@ -202,16 +202,16 @@ export function CompanyTeamSection({
         </Alert>
       ) : null}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Invite teammate</CardTitle>
-          <CardDescription>
+      <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-5">
+        <div className="space-y-1">
+          <h2 className="text-base font-semibold tracking-tight">Invite teammate</h2>
+          <p className="text-sm text-muted-foreground">
             {atTeamLimit
               ? "Upgrade your plan to invite more teammates."
               : "Send an email invitation. They will sign in with Google using the invited address."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+          </p>
+        </div>
+        <div>
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -298,17 +298,19 @@ export function CompanyTeamSection({
               </form.Subscribe>
             </div>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Pending invitations</CardTitle>
-          <CardDescription>Outstanding invites waiting to be accepted.</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-5">
+        <div className="space-y-1">
+          <h2 className="text-base font-semibold tracking-tight">Pending invitations</h2>
+          <p className="text-sm text-muted-foreground">
+            Outstanding invites waiting to be accepted.
+          </p>
+        </div>
+        <div>
           {team.invitations.length === 0 ? (
-            <Empty className="border border-dashed">
+            <Empty className="rounded-2xl border-0 bg-muted/30">
               <EmptyHeader>
                 <EmptyMedia variant="icon">
                   <HugeiconsIcon icon={Mail01Icon} strokeWidth={2} />
@@ -384,17 +386,19 @@ export function CompanyTeamSection({
               })}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Team members</CardTitle>
-          <CardDescription>People with access to this company workspace.</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-5">
+        <div className="space-y-1">
+          <h2 className="text-base font-semibold tracking-tight">Team members</h2>
+          <p className="text-sm text-muted-foreground">
+            People with access to this company workspace.
+          </p>
+        </div>
+        <div>
           {team.members.length === 0 ? (
-            <Empty className="border border-dashed">
+            <Empty className="rounded-2xl border-0 bg-muted/30">
               <EmptyHeader>
                 <EmptyMedia variant="icon">
                   <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} />
@@ -529,8 +533,8 @@ export function CompanyTeamSection({
               })}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </section>
     </div>
   );
 }

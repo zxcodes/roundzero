@@ -3,7 +3,7 @@ import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { DashboardJobEditSkeleton } from "@/components/route-skeletons";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
 import { JobForm, type JobFormData } from "@/features/jobs/components/job-form";
 import { updateJob } from "@/features/jobs/server/functions";
 import type { EmploymentType, ExperienceLevel, JobStatus, WorkplaceType } from "@/shared/enums";
@@ -58,49 +58,45 @@ function EditJobPage() {
   };
 
   return (
-    <div className="space-y-6 pb-28">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Edit job</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
+    <div className="space-y-10 pb-28">
+      <div className="space-y-1">
+        <h1 className="text-xl font-semibold tracking-tight">Edit job</h1>
+        <p className="text-sm text-muted-foreground">
           Make changes to the job posting. Only &quot;Open&quot; jobs are visible to candidates.
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Job details</CardTitle>
-          <CardDescription className="text-xs">
+      <section className="space-y-5 rounded-3xl border border-border/60 px-5 py-5">
+        <div className="space-y-1">
+          <h2 className="text-base font-semibold tracking-tight">Job details</h2>
+          <p className="text-sm text-muted-foreground">
             Provide a clear title, description, and requirements to attract the right candidates.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <JobForm
-            defaultValues={{
-              title: job.title,
-              description: job.description,
-              requirements: Array.isArray(job.requirements) ? job.requirements : [],
-              screeningQuestions: Array.isArray(job.screeningQuestions)
-                ? job.screeningQuestions
-                : [],
-              status: job.status as JobStatus,
-              location: job.location,
-              workplaceType: (job.workplaceType ?? undefined) as WorkplaceType | undefined,
-              employmentType: (job.employmentType ?? undefined) as EmploymentType | undefined,
-              experienceLevel: (job.experienceLevel ?? undefined) as ExperienceLevel | undefined,
-              salaryMin: job.salaryMin,
-              salaryMax: job.salaryMax,
-              salaryCurrency: job.salaryCurrency,
-              teamSize: job.teamSize,
-              headcount: job.headcount,
-              finalReportTarget: job.finalReportTarget,
-            }}
-            onSubmit={onSubmit}
-            submitLabel="Save changes"
-            companyName={job.companyName ?? ""}
-            onCancel={onCancel}
-          />
-        </CardContent>
-      </Card>
+          </p>
+        </div>
+        <JobForm
+          defaultValues={{
+            title: job.title,
+            description: job.description,
+            requirements: Array.isArray(job.requirements) ? job.requirements : [],
+            screeningQuestions: Array.isArray(job.screeningQuestions) ? job.screeningQuestions : [],
+            status: job.status as JobStatus,
+            location: job.location,
+            workplaceType: (job.workplaceType ?? undefined) as WorkplaceType | undefined,
+            employmentType: (job.employmentType ?? undefined) as EmploymentType | undefined,
+            experienceLevel: (job.experienceLevel ?? undefined) as ExperienceLevel | undefined,
+            salaryMin: job.salaryMin,
+            salaryMax: job.salaryMax,
+            salaryCurrency: job.salaryCurrency,
+            teamSize: job.teamSize,
+            headcount: job.headcount,
+            finalReportTarget: job.finalReportTarget,
+          }}
+          onSubmit={onSubmit}
+          submitLabel="Save changes"
+          companyName={job.companyName ?? ""}
+          onCancel={onCancel}
+        />
+      </section>
     </div>
   );
 }

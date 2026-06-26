@@ -31,9 +31,9 @@ function TeamPage() {
   }
 
   return (
-    <div className="space-y-6 pb-28">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Team</h1>
+    <div className="space-y-10 pb-28">
+      <div className="space-y-1">
+        <h1 className="text-xl font-semibold tracking-tight">Team</h1>
         <p className="text-sm text-muted-foreground">
           Invite teammates, manage roles, and control workspace access.
         </p>
