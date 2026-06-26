@@ -49,7 +49,7 @@ function JobDetailPage() {
   const salary = formatSalaryFull(job.salaryMin, job.salaryMax, job.salaryCurrency);
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       <section className="min-w-0 space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-xl font-semibold tracking-tight">{job.title}</h1>
@@ -78,15 +78,15 @@ function JobDetailPage() {
         </p>
       </section>
 
-      <div className="grid gap-8 lg:grid-cols-3">
-        <div className="space-y-8 lg:col-span-2">
-          <section className="space-y-3 rounded-2xl bg-muted/30 px-6 py-5">
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="space-y-5 lg:col-span-2">
+          <section className="space-y-3 rounded-2xl bg-muted/30 px-5 py-4 md:px-6">
             <h2 className="text-lg font-semibold tracking-tight">Description</h2>
             <p className="text-sm leading-relaxed whitespace-pre-wrap">{job.description}</p>
           </section>
 
           {requirements.length > 0 ? (
-            <section className="space-y-3 rounded-2xl bg-muted/30 px-6 py-5">
+            <section className="space-y-3 rounded-2xl bg-muted/30 px-5 py-4 md:px-6">
               <h2 className="text-lg font-semibold tracking-tight">Requirements</h2>
               <ul className="space-y-2">
                 {requirements.map((req, i) => (
@@ -101,7 +101,7 @@ function JobDetailPage() {
         </div>
 
         <div className="space-y-5">
-          <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-5">
+          <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
             <h2 className="text-sm font-semibold tracking-tight">Job details</h2>
 
             {job.location ? (
@@ -233,7 +233,7 @@ function JobDetailPage() {
               hasResume={Boolean(candidateProfile?.resumeKey)}
             />
           ) : (
-            <section className="rounded-3xl border border-border/60 px-5 py-5">
+            <section className="rounded-3xl border border-border/60 px-5 py-4 md:px-6">
               <p className="text-sm font-semibold text-muted-foreground">
                 No longer accepting applications
               </p>

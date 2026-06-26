@@ -51,7 +51,7 @@ export function InterviewInvitationCard({
   };
 
   return (
-    <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-5">
+    <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
       <div className="space-y-1">
         <div className="flex flex-wrap items-center gap-2">
           <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={2} className="size-5 text-primary" />

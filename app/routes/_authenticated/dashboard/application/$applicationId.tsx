@@ -304,9 +304,7 @@ function CandidateApplicationDetailPage() {
             return (
               <div key={stage} className="flex-1 space-y-1.5">
                 <div className={`h-1.5 rounded-full ${barClass}`} />
-                <p className={`text-[11px] font-medium uppercase tracking-widest ${labelClass}`}>
-                  {stageCopy[stage].label}
-                </p>
+                <p className={`text-[11px] font-medium ${labelClass}`}>{stageCopy[stage].label}</p>
               </div>
             );
           })}
@@ -331,7 +329,7 @@ function CandidateApplicationDetailPage() {
       </section>
 
       {hasShortlistActions ? (
-        <section className="space-y-3 rounded-3xl border border-border/60 px-5 py-5">
+        <section className="space-y-3 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
           <div className="flex items-center gap-2">
             <HugeiconsIcon
               icon={CheckmarkCircle02Icon}

@@ -282,7 +282,7 @@ export function CompanyJobPostingPanel({ job }: { job: JobDetail }) {
         </div>
 
         <div className="space-y-5">
-          <section className="rounded-3xl border border-border/60 px-5 py-5">
+          <section className="rounded-3xl border border-border/60 px-5 py-4 md:px-6">
             <h2 className="text-base font-semibold tracking-tight">Job details</h2>
             <div className="mt-4 space-y-4">
               {job.location ? (

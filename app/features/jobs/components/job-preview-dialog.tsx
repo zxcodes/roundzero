@@ -145,7 +145,7 @@ function JobPreviewContent({ data, salary }: { data: JobPreviewData; salary: str
         </section>
       ) : null}
 
-      <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-5">
+      <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
         <h4 className="text-sm font-semibold tracking-tight">Job details</h4>
         {salary ? <DetailRow icon={MoneyBag02Icon} label="Salary" value={salary} /> : null}
         {data.teamSize ? (

@@ -94,7 +94,7 @@ function CompanyOnboardingPage() {
         </p>
       </section>
 
-      <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-5">
+      <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
         <form onSubmit={onFormSubmit} className="space-y-5">
           <form.Field
             name="name"

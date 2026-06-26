@@ -52,9 +52,7 @@ export function ScorePill({
     >
       <span className="flex items-baseline gap-0.5 font-mono font-semibold tabular-nums">
         <span className={scoreSizeClass}>{formatCandidateScore(score)}</span>
-        <span className={cn("font-medium uppercase opacity-60", slashSizeClass)}>
-          /{CANDIDATE_SCORE_MAX}
-        </span>
+        <span className={cn("font-medium opacity-60", slashSizeClass)}>/{CANDIDATE_SCORE_MAX}</span>
       </span>
       {recommendation ? (
         <>

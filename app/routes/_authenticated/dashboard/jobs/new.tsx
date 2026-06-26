@@ -138,7 +138,10 @@ function NewJobPage() {
         onSelect={onSelectTemplate}
       />
 
-      <section ref={formRef} className="stagger-1 rounded-3xl border border-border/60 px-5 py-5">
+      <section
+        ref={formRef}
+        className="stagger-1 rounded-3xl border border-border/60 px-5 py-4 md:px-6"
+      >
         <JobForm
           key={selectedTemplate ? `template-${selectedTemplate.id}` : draft ? "draft" : "empty"}
           defaultValues={selectedTemplate?.data ?? draft ?? undefined}
