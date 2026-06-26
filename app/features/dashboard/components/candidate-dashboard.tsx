@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DashboardGreeting } from "@/features/dashboard/components/dashboard-greeting";
 import type { getDashboardMetrics } from "@/features/dashboard/server/functions";
+import { resolveInterviewAwareCandidateMeta } from "@/features/interviews/shared/candidate-display";
 import { formatRelativeTime } from "@/shared/date";
 
 type CandidateMetrics = Extract<
@@ -176,7 +177,18 @@ function getRecentStatusMeta(app: RecentActivityItem) {
   const status = app.status;
   const interviewStatus = app.interviewStatus;
 
-  if (status === "interview_in_progress" && interviewStatus === "completed") {
+  const expiredOverride = resolveInterviewAwareCandidateMeta(status, interviewStatus, {
+    badge: "",
+    tone: "",
+  });
+  if (interviewStatus === "expired") {
+    return { badge: expiredOverride.badge, tone: expiredOverride.tone };
+  }
+
+  if (
+    (status === "interview_invited" || status === "interview_in_progress") &&
+    interviewStatus === "completed"
+  ) {
     return {
       badge: "Awaiting company decision",
       tone: "border-success/20 bg-success/10 text-success",

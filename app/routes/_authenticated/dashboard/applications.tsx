@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/empty";
 import { getMyApplications } from "@/features/applications/server/functions";
 import { hasShortlistNextSteps, parseShortlistDetails } from "@/features/applications/shortlist";
+import { resolveInterviewAwareCandidateMeta } from "@/features/interviews/shared/candidate-display";
 import { formatDate } from "@/shared/date";
 
 export const Route = createFileRoute("/_authenticated/dashboard/applications")({
@@ -113,15 +114,13 @@ const toApplicationStage = (status: string): keyof typeof stageCopy => {
 };
 
 const getStatusMeta = (application: Application) => {
-  if (
-    application.status === "interview_in_progress" &&
-    application.interviewStatus === "completed"
-  ) {
-    return stageCopy.under_review;
-  }
-
   const stage = toApplicationStage(application.status);
-  return stageCopy[stage];
+  const baseMeta = stageCopy[stage];
+  return resolveInterviewAwareCandidateMeta(
+    application.status,
+    application.interviewStatus ?? null,
+    baseMeta,
+  );
 };
 
 const getJobStateLabel = (application: Application) => {

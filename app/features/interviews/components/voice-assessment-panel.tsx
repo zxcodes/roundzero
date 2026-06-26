@@ -1,4 +1,11 @@
-import { Loading03Icon, Mic01Icon, PhoneOff01Icon, Tick01Icon } from "@hugeicons/core-free-icons";
+import {
+  Cancel01Icon,
+  Clock01Icon,
+  Loading03Icon,
+  Mic01Icon,
+  PhoneOff01Icon,
+  Tick01Icon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import type { RealtimeToken } from "@tanstack/ai";
 import { useRealtimeChat } from "@tanstack/ai-react";
@@ -34,17 +41,38 @@ const normMessage = (m: ChatMessage): string =>
 // transcript if it never lands (e.g. local dev or a webhook outage).
 const WEBHOOK_GRACE_MS = 8_000;
 
+export type InterviewEndVariant = "completed" | "cancelled" | "expired";
+
+export const interviewEndVisuals: Record<
+  InterviewEndVariant,
+  {
+    icon: typeof Tick01Icon;
+    bg: string;
+    tone: string;
+  }
+> = {
+  completed: { icon: Tick01Icon, bg: "bg-success/10", tone: "text-success" },
+  cancelled: { icon: Cancel01Icon, bg: "bg-muted", tone: "text-muted-foreground" },
+  expired: { icon: Clock01Icon, bg: "bg-warning/10", tone: "text-warning" },
+};
+
 export function CompletedInterviewBar({
   title,
   description,
+  variant = "completed",
 }: {
   title: string;
   description: string;
+  variant?: InterviewEndVariant;
 }) {
+  const visual = interviewEndVisuals[variant];
+
   return (
     <div className="flex items-center gap-3">
-      <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-success/10">
-        <HugeiconsIcon icon={Tick01Icon} strokeWidth={2} className="size-4 text-success" />
+      <div
+        className={cn("flex size-8 shrink-0 items-center justify-center rounded-full", visual.bg)}
+      >
+        <HugeiconsIcon icon={visual.icon} strokeWidth={2} className={cn("size-4", visual.tone)} />
       </div>
       <div>
         <p className="text-sm font-medium">{title}</p>

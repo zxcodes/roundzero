@@ -13,10 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatDateTime, formatTimeLeft } from "@/shared/date";
 
-const formatInterviewStatusLabel = (status: string) => {
-  return status.replace(/_/g, " ");
-};
-
 type InterviewInvitationCardProps = {
   interviewId: string;
   interviewType: string;
@@ -45,7 +41,7 @@ export function InterviewInvitationCard({
     pending: { label: "Ready", icon: Rocket01Icon, tone: "text-primary" },
     in_progress: { label: "In progress", icon: Clock01Icon, tone: "text-primary" },
     completed: { label: "Completed", icon: CheckmarkCircle02Icon, tone: "text-success" },
-    expired: { label: "Expired", icon: Cancel01Icon, tone: "text-warning" },
+    expired: { label: "Expired", icon: Clock01Icon, tone: "text-warning" },
     cancelled: { label: "Cancelled", icon: Cancel01Icon, tone: "text-muted-foreground" },
   };
 
@@ -63,7 +59,7 @@ export function InterviewInvitationCard({
           <p className="text-sm font-medium">RoundZero interview</p>
           <Badge variant="outline" className="gap-1 text-[11px]">
             <HugeiconsIcon icon={config.icon} strokeWidth={2} className={`size-3 ${config.tone}`} />
-            {formatInterviewStatusLabel(status)}
+            {config.label}
           </Badge>
         </div>
 
@@ -99,6 +95,18 @@ export function InterviewInvitationCard({
           <Button size="sm" asChild>
             <Link to="/interview/$interviewId" params={{ interviewId }}>
               {status === "in_progress" ? "Continue interview" : "Start interview"}
+            </Link>
+          </Button>
+        ) : status === "completed" ? (
+          <Button size="sm" variant="outline" asChild>
+            <Link to="/interview/$interviewId" params={{ interviewId }}>
+              View interview
+            </Link>
+          </Button>
+        ) : status === "expired" || status === "cancelled" ? (
+          <Button size="sm" variant="outline" asChild>
+            <Link to="/interview/$interviewId" params={{ interviewId }}>
+              View transcript
             </Link>
           </Button>
         ) : null}
