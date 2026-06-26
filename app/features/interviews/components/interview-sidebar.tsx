@@ -59,15 +59,13 @@ export function InterviewSidebar({
           <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={2} className="size-4 text-primary" />
           <p className="text-sm font-semibold tracking-wide">Interviews</p>
         </div>
-        <p className="px-1 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-          All sessions
-        </p>
+        <p className="px-1 text-xs text-muted-foreground">All sessions</p>
       </SidebarHeader>
 
       <SidebarContent>
         {interviews.length === 0 ? (
           <div className="flex h-full items-center justify-center px-3 py-4">
-            <Empty>
+            <Empty className="rounded-2xl border-0 bg-muted/30">
               <EmptyHeader>
                 <EmptyMedia variant="icon">
                   <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={2} className="size-5" />
