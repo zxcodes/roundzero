@@ -299,7 +299,7 @@ function ActionQueueRow({ action }: { action: ActionItem }) {
 function ActionQueueSection({ actions }: { actions: ActionItem[] }) {
   if (actions.length === 0) {
     return (
-      <section className="rounded-2xl bg-muted/30 px-6 py-8">
+      <section className="rounded-2xl bg-muted-foreground/8.5 px-6 py-8 dark:bg-muted/30">
         <div className="flex items-center gap-2">
           <HugeiconsIcon
             icon={CheckmarkCircle02Icon}

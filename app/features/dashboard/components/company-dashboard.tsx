@@ -128,7 +128,7 @@ function AwaitingReviewCard({ candidate }: { candidate: DashboardCandidateReport
   const highlight = candidate.strengths[0] ?? candidate.topConcern;
 
   return (
-    <article className="flex min-h-52 flex-col rounded-xl bg-muted/25 p-4">
+    <article className="flex min-h-52 flex-col rounded-xl bg-muted-foreground/7 p-4 dark:bg-muted/25">
       <RecommendationBadge recommendation={candidate.recommendation} size="lg" />
       <div className="mt-3 min-w-0 space-y-1">
         <h3 className="truncate text-base font-semibold tracking-tight">
@@ -165,7 +165,7 @@ function AwaitingReviewSection({
 }) {
   if (candidates.length === 0) {
     return (
-      <section className="rounded-2xl bg-muted/30 px-6 py-8">
+      <section className="rounded-2xl bg-muted-foreground/[0.085] px-6 py-8 dark:bg-muted/30">
         <div className="flex items-center gap-2">
           <HugeiconsIcon
             icon={CheckmarkCircle02Icon}
@@ -217,7 +217,7 @@ function AwaitingReviewSection({
 
 function RoleAttentionCard({ role }: { role: RoleAttention }) {
   return (
-    <article className="flex min-h-44 flex-col rounded-xl bg-muted/20 p-4">
+    <article className="flex min-h-44 flex-col rounded-xl bg-muted-foreground/[0.055] p-4 dark:bg-muted/20">
       <h3 className="truncate text-base font-semibold tracking-tight">{role.title}</h3>
       <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1">
@@ -271,7 +271,7 @@ function RoleAttentionCard({ role }: { role: RoleAttention }) {
 function RolesAttentionSection({ roles }: { roles: RoleAttention[] }) {
   if (roles.length === 0) {
     return (
-      <Empty className="rounded-2xl bg-muted/30">
+      <Empty className="rounded-2xl bg-muted-foreground/[0.085] dark:bg-muted/30">
         <EmptyHeader>
           <EmptyTitle>No open roles with applicants</EmptyTitle>
           <EmptyDescription>Post a role to start receiving candidates.</EmptyDescription>
@@ -303,7 +303,7 @@ function RolesAttentionSection({ roles }: { roles: RoleAttention[] }) {
 
 function RecentReportCard({ report }: { report: DashboardCandidateReport }) {
   return (
-    <article className="flex min-h-44 flex-col rounded-xl bg-muted/15 p-4">
+    <article className="flex min-h-44 flex-col rounded-xl bg-muted-foreground/4 p-4 dark:bg-muted/15">
       <RecommendationBadge recommendation={report.recommendation} />
       <div className="mt-3 min-w-0 space-y-1">
         <h3 className="truncate text-base font-semibold tracking-tight">{report.candidateName}</h3>
