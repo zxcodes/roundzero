@@ -16,11 +16,11 @@ export function DashboardGreeting({ firstName }: { firstName: string }) {
   const hydrated = useHydrated();
 
   if (!hydrated) {
-    return <Skeleton className="h-9 w-72" />;
+    return <Skeleton className="h-7 w-56" />;
   }
 
   return (
-    <h1 className="text-3xl font-semibold tracking-tight">
+    <h1 className="text-xl font-semibold tracking-tight">
       {getTimeGreeting()} {firstName},
     </h1>
   );

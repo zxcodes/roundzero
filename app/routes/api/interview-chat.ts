@@ -31,6 +31,7 @@ import {
   buildInterviewSystemPrompt,
   ensureInterviewRuntimeMetadata,
   type InterviewMetadata,
+  loadInterviewRuntimeContext,
 } from "@/features/interviews/shared/runtime";
 import { isAnchoredTo } from "@/shared/ai-refine";
 import { getDb } from "@/shared/db";
@@ -190,10 +191,11 @@ export const Route = createFileRoute("/api/interview-chat")({
           integrityMetadataDirty = true;
         }
 
-        const contextState = runtimeMetadata.contextState;
-        if (!contextState) {
-          return new Response("Interview context is unavailable", { status: 500 });
-        }
+        const runtimeContext = await loadInterviewRuntimeContext(
+          db,
+          interviewContext,
+          runtimeMetadata,
+        );
 
         const history = await getInterviewMessagesByInterviewId(db, { interviewId });
         const assistantTurnCount = history.filter((message) => message.role === "assistant").length;
@@ -202,7 +204,7 @@ export const Route = createFileRoute("/api/interview-chat")({
             candidateText,
           );
         const basePrompt = buildInterviewSystemPrompt({
-          contextState,
+          runtimeContext,
           screeningCoverage: runtimeMetadata.screeningCoverage ?? {},
           assistantTurnCount,
           maxQuestions: 5,
@@ -239,13 +241,13 @@ export const Route = createFileRoute("/api/interview-chat")({
           systemPrompts: [systemPrompt],
           tools: [
             checkResumeGapDef.server(async ({ claim }) => ({
-              matched: isAnchoredTo(claim, contextState.candidateSummary, {
+              matched: isAnchoredTo(claim, runtimeContext.candidateSummary, {
                 minRun: 2,
                 minOverlap: 0.3,
               }),
             })),
             recordScreeningCoverageDef.server(async ({ questionIndex, status }) => {
-              const totalQuestions = contextState.customQuestions.length;
+              const totalQuestions = runtimeContext.customQuestions.length;
               if (questionIndex > totalQuestions) {
                 return {
                   ok: false,

@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -249,11 +249,11 @@ export function CompanyJobPostingPanel({ job }: { job: JobDetail }) {
           <JobStatusBadge job={job} />
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
-          <span className="font-mono">{formatDate(job.createdAt)}</span>
+          <span className="">{formatDate(job.createdAt)}</span>
           {new Date(job.updatedAt).getTime() !== new Date(job.createdAt).getTime() ? (
             <>
               {" "}
-              · Updated <span className="font-mono">{formatDate(job.updatedAt)}</span>
+              · Updated <span className="">{formatDate(job.updatedAt)}</span>
             </>
           ) : null}
         </p>
@@ -261,42 +261,30 @@ export function CompanyJobPostingPanel({ job }: { job: JobDetail }) {
 
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Description</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm leading-relaxed whitespace-pre-wrap">{job.description}</p>
-            </CardContent>
-          </Card>
+          <section className="rounded-2xl bg-muted/30 px-6 py-5">
+            <h2 className="text-lg font-semibold tracking-tight">Description</h2>
+            <p className="mt-3 text-sm leading-relaxed whitespace-pre-wrap">{job.description}</p>
+          </section>
 
           {requirements.length > 0 ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>Requirements</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
-                  {requirements.map((req, i) => (
-                    <li key={`${req}-${i}`} className="flex items-start gap-2.5 text-sm">
-                      <span className="mt-2 block size-1 shrink-0 rounded-full bg-primary" />
-                      {req}
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
+            <section className="rounded-2xl bg-muted/30 px-6 py-5">
+              <h2 className="text-lg font-semibold tracking-tight">Requirements</h2>
+              <ul className="mt-3 space-y-2">
+                {requirements.map((req, i) => (
+                  <li key={`${req}-${i}`} className="flex items-start gap-2.5 text-sm">
+                    <span className="mt-2 block size-1 shrink-0 rounded-full bg-primary" />
+                    {req}
+                  </li>
+                ))}
+              </ul>
+            </section>
           ) : null}
         </div>
 
         <div className="space-y-5">
-          <Card>
-            <CardHeader>
-              <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
-                Job details
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <section className="rounded-3xl border border-border/60 px-5 py-4 md:px-6">
+            <h2 className="text-base font-semibold tracking-tight">Job details</h2>
+            <div className="mt-4 space-y-4">
               {job.location ? (
                 <div className="flex items-start gap-3">
                   <HugeiconsIcon
@@ -351,7 +339,7 @@ export function CompanyJobPostingPanel({ job }: { job: JobDetail }) {
                       className="mt-0.5 size-4 shrink-0 text-muted-foreground"
                     />
                     <div>
-                      <p className="font-mono text-sm font-medium">{salary}</p>
+                      <p className=" text-sm font-medium">{salary}</p>
                       <p className="text-xs text-muted-foreground">Annual compensation</p>
                     </div>
                   </div>
@@ -370,13 +358,12 @@ export function CompanyJobPostingPanel({ job }: { job: JobDetail }) {
                     <div className="space-y-0.5">
                       {job.teamSize ? (
                         <p className="text-sm">
-                          <span className="font-mono font-medium">{job.teamSize}</span> people on
-                          team
+                          <span className=" font-medium">{job.teamSize}</span> people on team
                         </p>
                       ) : null}
                       {job.headcount ? (
                         <p className="text-xs text-muted-foreground">
-                          <span className="font-mono">{job.headcount}</span> open{" "}
+                          <span className="">{job.headcount}</span> open{" "}
                           {job.headcount === 1 ? "position" : "positions"}
                         </p>
                       ) : null}
@@ -416,8 +403,8 @@ export function CompanyJobPostingPanel({ job }: { job: JobDetail }) {
                   </div>
                 </>
               ) : null}
-            </CardContent>
-          </Card>
+            </div>
+          </section>
         </div>
       </div>
     </div>

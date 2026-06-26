@@ -8,8 +8,10 @@ import { Link } from "@tanstack/react-router";
 import { PageInlineStats } from "@/components/page-inline-stats";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { DashboardGreeting } from "@/features/dashboard/components/dashboard-greeting";
 import type { getDashboardMetrics } from "@/features/dashboard/server/functions";
+import { resolveInterviewAwareCandidateMeta } from "@/features/interviews/shared/candidate-display";
 import { formatRelativeTime } from "@/shared/date";
 
 type CandidateMetrics = Extract<
@@ -176,7 +178,18 @@ function getRecentStatusMeta(app: RecentActivityItem) {
   const status = app.status;
   const interviewStatus = app.interviewStatus;
 
-  if (status === "interview_in_progress" && interviewStatus === "completed") {
+  const expiredOverride = resolveInterviewAwareCandidateMeta(status, interviewStatus, {
+    badge: "",
+    tone: "",
+  });
+  if (interviewStatus === "expired") {
+    return { badge: expiredOverride.badge, tone: expiredOverride.tone };
+  }
+
+  if (
+    (status === "interview_invited" || status === "interview_in_progress") &&
+    interviewStatus === "completed"
+  ) {
     return {
       badge: "Awaiting company decision",
       tone: "border-success/20 bg-success/10 text-success",
@@ -287,7 +300,7 @@ function ActionQueueRow({ action }: { action: ActionItem }) {
 function ActionQueueSection({ actions }: { actions: ActionItem[] }) {
   if (actions.length === 0) {
     return (
-      <section className="rounded-2xl bg-muted/30 px-6 py-8">
+      <Card variant="dashboard-panel" className="px-6 py-8">
         <div className="flex items-center gap-2">
           <HugeiconsIcon
             icon={CheckmarkCircle02Icon}
@@ -305,7 +318,7 @@ function ActionQueueSection({ actions }: { actions: ActionItem[] }) {
             <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-3.5" />
           </Link>
         </Button>
-      </section>
+      </Card>
     );
   }
 
@@ -318,7 +331,7 @@ function ActionQueueSection({ actions }: { actions: ActionItem[] }) {
             Top things to handle next, in priority order.
           </p>
         </div>
-        <span className="font-mono text-sm text-muted-foreground">{actions.length} pending</span>
+        <span className="text-sm text-muted-foreground">{actions.length} pending</span>
       </div>
 
       <div className="divide-y divide-border/50 overflow-hidden rounded-3xl border border-border/60">
@@ -410,7 +423,7 @@ export function CandidateDashboard({
   const activity = metrics.recentActivity ?? [];
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       <HeroSection firstName={firstName} metrics={metrics} />
       <ActionQueueSection actions={actions} />
       <RecentActivitySection activity={activity} />

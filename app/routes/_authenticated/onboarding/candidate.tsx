@@ -7,7 +7,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { currentUserQueryKey, updateUserName } from "@/features/auth/server/functions";
@@ -80,12 +79,15 @@ function CandidateOnboardingPage() {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-xl">Complete your profile</CardTitle>
-        <CardDescription>Set up your candidate profile to start applying for jobs.</CardDescription>
-      </CardHeader>
-      <CardContent>
+    <div className="space-y-6">
+      <section className="space-y-1">
+        <h1 className="text-xl font-semibold tracking-tight">Complete your profile</h1>
+        <p className="text-sm text-muted-foreground">
+          Set up your candidate profile to start applying for jobs.
+        </p>
+      </section>
+
+      <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
         <form onSubmit={onFormSubmit} className="space-y-5">
           <form.Field
             name="name"
@@ -145,7 +147,7 @@ function CandidateOnboardingPage() {
             )}
           </form.Subscribe>
         </form>
-      </CardContent>
-    </Card>
+      </section>
+    </div>
   );
 }

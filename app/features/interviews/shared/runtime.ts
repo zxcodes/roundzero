@@ -1,72 +1,78 @@
 import type { Sql } from "postgres";
 import { z } from "zod";
-import { getApplicationById } from "@/features/applications/queries/queries_sql";
-import { getUserById } from "@/features/auth/queries/queries_sql";
 import {
   type getInterviewContextById,
+  getInterviewRuntimeInputsByApplicationId,
   updateInterviewMetadata,
 } from "@/features/interviews/queries/queries_sql";
 import { interviewIntegritySchema } from "@/features/interviews/shared/integrity";
 import { getJobById } from "@/features/jobs/queries/queries_sql";
-import { getPreEvaluationByApplicationId } from "@/features/pre-evaluations/queries/queries_sql";
 import { getModelDateContext, LIMITS, sanitizeUntrustedText } from "@/shared/ai-refine";
 import { clampCandidateScore, formatCandidateScoreWithScale } from "@/shared/score";
 
 const applicationMetadataSchema = z
   .object({
     resumeText: z.string().optional(),
-    summary: z.string().optional(),
-  })
-  .loose();
-
-const rawResponseSchema = z
-  .object({
-    slopCheck: z.unknown().optional(),
   })
   .loose();
 
 const slopCheckSchema = z
   .object({
+    consistencyScore: z.number().nullable().optional(),
     redFlags: z.array(z.string()).optional(),
     explanation: z.string().optional(),
   })
   .loose();
 
-export const screeningCoverageSchema = z.record(z.string(), z.enum(["answered", "skipped"]));
-
-export const interviewContextStateSchema = z.object({
-  interviewId: z.string().uuid(),
-  applicationId: z.string().uuid(),
-  type: z.literal("full"),
-  jobTitle: z.string(),
-  companyName: z.string(),
-  jobDescription: z.string(),
-  jobRequirements: z.array(z.string()),
-  candidateName: z.string(),
-  candidateSummary: z.string(),
-  customQuestions: z.array(z.string()),
-  preEvaluation: z.object({
-    score: z.number().nullable(),
-    missingRequirements: z.array(z.string()),
-    consistencyScore: z.number().nullable(),
-    authenticityFlags: z.array(z.string()),
-    authenticityExplanation: z.string().nullable(),
-  }),
-});
-
-export const interviewMetadataSchema = z
+const legacyContextStateSchema = z
   .object({
-    expiresAt: z.string().optional(),
-    preEvaluationScore: z.number().nullable().optional(),
-    contextState: interviewContextStateSchema.optional(),
-    screeningCoverage: screeningCoverageSchema.optional(),
-    integrity: interviewIntegritySchema.optional(),
+    jobDescription: z.string().optional(),
+    jobRequirements: z.array(z.string()).optional(),
+    customQuestions: z.array(z.string()).optional(),
   })
   .loose();
 
+export const screeningCoverageSchema = z.record(z.string(), z.enum(["answered", "skipped"]));
+
+/** Frozen job context at invite time — the only large payload persisted on interviews. */
+export const interviewJobSnapshotSchema = z.object({
+  jobDescription: z.string(),
+  jobRequirements: z.array(z.string()),
+  customQuestions: z.array(z.string()),
+  snapshottedAt: z.string(),
+});
+
+export const interviewMetadataSchema = z.object({
+  expiresAt: z.string().optional(),
+  jobSnapshot: interviewJobSnapshotSchema.optional(),
+  screeningCoverage: screeningCoverageSchema.optional(),
+  integrity: interviewIntegritySchema.optional(),
+});
+
+export type InterviewJobSnapshot = z.infer<typeof interviewJobSnapshotSchema>;
 export type ScreeningCoverage = z.infer<typeof screeningCoverageSchema>;
-export type InterviewContextState = z.infer<typeof interviewContextStateSchema>;
 export type InterviewMetadata = z.infer<typeof interviewMetadataSchema>;
+
+/** Full in-memory interview context — never persisted on interviews.metadata. */
+export type InterviewRuntimeContext = {
+  interviewId: string;
+  applicationId: string;
+  type: "full";
+  jobTitle: string;
+  companyName: string;
+  jobDescription: string;
+  jobRequirements: string[];
+  candidateName: string;
+  candidateSummary: string;
+  customQuestions: string[];
+  preEvaluation: {
+    score: number | null;
+    missingRequirements: string[];
+    consistencyScore: number | null;
+    authenticityFlags: string[];
+    authenticityExplanation: string | null;
+  };
+};
 
 const filterStrings = (input: unknown): string[] => {
   if (!Array.isArray(input)) {
@@ -80,31 +86,121 @@ const filterStrings = (input: unknown): string[] => {
 };
 
 export const parseInterviewMetadata = (metadata: unknown): InterviewMetadata => {
-  const parsed = interviewMetadataSchema.safeParse(metadata);
-  if (parsed.success) {
-    return parsed.data;
+  if (typeof metadata !== "object" || metadata === null) {
+    return {};
   }
 
-  return interviewMetadataSchema.parse({});
+  const record = metadata as Record<string, unknown>;
+  const result: InterviewMetadata = {};
+
+  if (typeof record.expiresAt === "string") {
+    result.expiresAt = record.expiresAt;
+  }
+
+  const jobSnapshot = interviewJobSnapshotSchema.safeParse(record.jobSnapshot);
+  if (jobSnapshot.success) {
+    result.jobSnapshot = jobSnapshot.data;
+  }
+
+  const screeningCoverage = screeningCoverageSchema.safeParse(record.screeningCoverage);
+  if (screeningCoverage.success) {
+    result.screeningCoverage = screeningCoverage.data;
+  }
+
+  const integrity = interviewIntegritySchema.safeParse(record.integrity);
+  if (integrity.success) {
+    result.integrity = integrity.data;
+  }
+
+  return result;
 };
 
-export async function buildInterviewContextState(
+export function loadCandidateSummaryFromApplication(metadata: unknown): string {
+  const applicationMetadata = applicationMetadataSchema.safeParse(metadata ?? {}).data ?? {};
+  return sanitizeUntrustedText(applicationMetadata.resumeText ?? "", LIMITS.CANDIDATE_SUMMARY);
+}
+
+const parseSlopCheck = (rawResponse: unknown) => {
+  if (typeof rawResponse !== "object" || rawResponse === null) {
+    return null;
+  }
+
+  const record = rawResponse as Record<string, unknown>;
+  if ("slopCheck" in record) {
+    const nested = slopCheckSchema.safeParse(record.slopCheck);
+    return nested.success ? nested.data : null;
+  }
+
+  const direct = slopCheckSchema.safeParse(rawResponse);
+  return direct.success ? direct.data : null;
+};
+
+export function jobSnapshotFromLegacyContextState(metadata: unknown): InterviewJobSnapshot | null {
+  if (typeof metadata !== "object" || metadata === null) {
+    return null;
+  }
+
+  const legacy = legacyContextStateSchema.safeParse(
+    (metadata as Record<string, unknown>).contextState,
+  );
+  if (!legacy.success) {
+    return null;
+  }
+
+  const jobDescription =
+    typeof legacy.data.jobDescription === "string"
+      ? sanitizeUntrustedText(legacy.data.jobDescription, LIMITS.UNTRUSTED_TEXT)
+      : "";
+  const jobRequirements = filterStrings(legacy.data.jobRequirements);
+  const customQuestions = filterStrings(legacy.data.customQuestions);
+
+  if (jobDescription.length === 0 && jobRequirements.length === 0 && customQuestions.length === 0) {
+    return null;
+  }
+
+  return {
+    jobDescription,
+    jobRequirements,
+    customQuestions,
+    snapshottedAt: new Date().toISOString(),
+  };
+}
+
+export async function buildInterviewJobSnapshot(
+  db: Sql,
+  jobId: string,
+): Promise<InterviewJobSnapshot> {
+  const job = await getJobById(db, { id: jobId });
+
+  return {
+    jobDescription:
+      typeof job?.description === "string"
+        ? sanitizeUntrustedText(job.description, LIMITS.UNTRUSTED_TEXT)
+        : "",
+    jobRequirements: filterStrings(job?.requirements),
+    customQuestions: filterStrings(job?.screeningQuestions),
+    snapshottedAt: new Date().toISOString(),
+  };
+}
+
+export async function loadInterviewRuntimeContext(
   db: Sql,
   interview: NonNullable<Awaited<ReturnType<typeof getInterviewContextById>>>,
-): Promise<InterviewContextState> {
-  const application = await getApplicationById(db, { id: interview.applicationId });
-  const job = await getJobById(db, { id: interview.jobId });
-  const candidate = await getUserById(db, { id: interview.candidateId });
-  const preEvaluation = await getPreEvaluationByApplicationId(db, {
-    applicationId: interview.applicationId,
+  metadata: InterviewMetadata,
+): Promise<InterviewRuntimeContext> {
+  const jobSnapshot = metadata.jobSnapshot;
+  if (!jobSnapshot) {
+    throw new Error(`Interview ${interview.id} is missing a job snapshot`);
+  }
+
+  const inputs = await getInterviewRuntimeInputsByApplicationId(db, {
+    id: interview.applicationId,
   });
+  if (!inputs) {
+    throw new Error(`Application ${interview.applicationId} not found for interview runtime`);
+  }
 
-  const applicationMetadata =
-    applicationMetadataSchema.safeParse(application?.metadata ?? {}).data ?? {};
-  const candidateSummaryRaw = applicationMetadata.resumeText ?? applicationMetadata.summary ?? "";
-
-  const rawResponse = rawResponseSchema.safeParse(preEvaluation?.rawResponse ?? {}).data;
-  const slopCheck = slopCheckSchema.safeParse(rawResponse?.slopCheck ?? {});
+  const slopCheck = parseSlopCheck(inputs.rawResponse);
 
   return {
     interviewId: interview.id,
@@ -112,45 +208,53 @@ export async function buildInterviewContextState(
     type: "full",
     jobTitle: interview.jobTitle,
     companyName: interview.companyName,
-    jobDescription:
-      typeof job?.description === "string"
-        ? sanitizeUntrustedText(job.description, LIMITS.UNTRUSTED_TEXT)
-        : "",
-    jobRequirements: filterStrings(job?.requirements),
-    candidateName: candidate?.name ?? interview.candidateName,
-    candidateSummary: sanitizeUntrustedText(candidateSummaryRaw, LIMITS.CANDIDATE_SUMMARY),
-    customQuestions: filterStrings(job?.screeningQuestions),
+    jobDescription: jobSnapshot.jobDescription,
+    jobRequirements: jobSnapshot.jobRequirements,
+    candidateName: inputs.candidateName ?? interview.candidateName,
+    candidateSummary: loadCandidateSummaryFromApplication(inputs.applicationMetadata),
+    customQuestions: jobSnapshot.customQuestions,
     preEvaluation: {
-      score: preEvaluation?.score != null ? clampCandidateScore(preEvaluation.score) : null,
-      missingRequirements: filterStrings(preEvaluation?.missingRequirements),
+      score: inputs.score != null ? clampCandidateScore(inputs.score) : null,
+      missingRequirements: filterStrings(inputs.missingRequirements),
       consistencyScore:
-        preEvaluation?.consistencyScore != null
-          ? clampCandidateScore(preEvaluation.consistencyScore)
-          : null,
-      authenticityFlags: slopCheck.success ? filterStrings(slopCheck.data.redFlags) : [],
-      authenticityExplanation: slopCheck.success ? (slopCheck.data.explanation ?? null) : null,
+        inputs.consistencyScore != null ? clampCandidateScore(inputs.consistencyScore) : null,
+      authenticityFlags: slopCheck ? filterStrings(slopCheck.redFlags) : [],
+      authenticityExplanation: slopCheck?.explanation ?? null,
     },
   };
 }
 
+type EnsureInterviewRuntimeMetadataOptions = {
+  forceJobSnapshotRefresh?: boolean;
+};
+
 export async function ensureInterviewRuntimeMetadata(
   db: Sql,
   interview: NonNullable<Awaited<ReturnType<typeof getInterviewContextById>>>,
+  options?: EnsureInterviewRuntimeMetadataOptions,
 ): Promise<InterviewMetadata> {
   const metadata = parseInterviewMetadata(interview.metadata);
-  if (metadata.contextState) {
+  const screeningCoverage = options?.forceJobSnapshotRefresh
+    ? {}
+    : (metadata.screeningCoverage ?? {});
+
+  if (metadata.jobSnapshot && !options?.forceJobSnapshotRefresh) {
     return {
       ...metadata,
-      screeningCoverage: metadata.screeningCoverage ?? {},
+      screeningCoverage,
     };
   }
 
-  const contextState = await buildInterviewContextState(db, interview);
+  const jobSnapshot =
+    (!options?.forceJobSnapshotRefresh
+      ? (metadata.jobSnapshot ?? jobSnapshotFromLegacyContextState(interview.metadata))
+      : null) ?? (await buildInterviewJobSnapshot(db, interview.jobId));
+
   const nextMetadata: InterviewMetadata = {
-    ...metadata,
-    preEvaluationScore: metadata.preEvaluationScore ?? contextState.preEvaluation.score,
-    contextState,
-    screeningCoverage: metadata.screeningCoverage ?? {},
+    expiresAt: metadata.expiresAt,
+    jobSnapshot,
+    screeningCoverage,
+    integrity: options?.forceJobSnapshotRefresh ? undefined : metadata.integrity,
   };
 
   await updateInterviewMetadata(db, {
@@ -162,19 +266,19 @@ export async function ensureInterviewRuntimeMetadata(
 }
 
 export function buildInterviewSystemPrompt(args: {
-  contextState: InterviewContextState;
+  runtimeContext: InterviewRuntimeContext;
   screeningCoverage: ScreeningCoverage;
   assistantTurnCount: number;
   maxQuestions: number;
 }): string {
-  const { contextState, screeningCoverage, maxQuestions } = args;
+  const { runtimeContext, screeningCoverage, maxQuestions } = args;
   const reqs =
-    contextState.jobRequirements.length > 0
-      ? contextState.jobRequirements.map((requirement) => `- ${requirement}`).join("\n")
+    runtimeContext.jobRequirements.length > 0
+      ? runtimeContext.jobRequirements.map((requirement) => `- ${requirement}`).join("\n")
       : "(not provided)";
   const customQuestions =
-    contextState.customQuestions.length > 0
-      ? contextState.customQuestions
+    runtimeContext.customQuestions.length > 0
+      ? runtimeContext.customQuestions
           .map((question, index) => {
             const questionIndex = String(index + 1);
             const status = screeningCoverage[questionIndex];
@@ -185,30 +289,30 @@ export function buildInterviewSystemPrompt(args: {
           .join("\n")
       : "(none — use your own judgment)";
   const missing =
-    contextState.preEvaluation.missingRequirements.length > 0
-      ? contextState.preEvaluation.missingRequirements
+    runtimeContext.preEvaluation.missingRequirements.length > 0
+      ? runtimeContext.preEvaluation.missingRequirements
           .map((requirement) => `- ${requirement}`)
           .join("\n")
       : "(none flagged)";
   const score =
-    contextState.preEvaluation.score == null
+    runtimeContext.preEvaluation.score == null
       ? "n/a"
-      : formatCandidateScoreWithScale(contextState.preEvaluation.score);
+      : formatCandidateScoreWithScale(runtimeContext.preEvaluation.score);
   const authenticityScore =
-    contextState.preEvaluation.consistencyScore == null
+    runtimeContext.preEvaluation.consistencyScore == null
       ? "n/a"
-      : formatCandidateScoreWithScale(contextState.preEvaluation.consistencyScore);
+      : formatCandidateScoreWithScale(runtimeContext.preEvaluation.consistencyScore);
   const authenticityFlags =
-    contextState.preEvaluation.authenticityFlags.length > 0
-      ? contextState.preEvaluation.authenticityFlags.map((flag) => `- ${flag}`).join("\n")
+    runtimeContext.preEvaluation.authenticityFlags.length > 0
+      ? runtimeContext.preEvaluation.authenticityFlags.map((flag) => `- ${flag}`).join("\n")
       : "(no direct contradictions flagged)";
-  const candidateName = contextState.candidateName || "the candidate";
-  const customQuestionCount = contextState.customQuestions.length;
+  const candidateName = runtimeContext.candidateName || "the candidate";
+  const customQuestionCount = runtimeContext.customQuestions.length;
   const substantiveTarget = maxQuestions;
   const totalTarget = customQuestionCount + substantiveTarget;
   const pacing = `Full interview. Cover every one of the ${customQuestionCount} company question(s) AND ~${substantiveTarget} substantive probing question(s). Aim for ~${totalTarget} total turns.`;
 
-  const uncoveredIndexes = contextState.customQuestions
+  const uncoveredIndexes = runtimeContext.customQuestions
     .map((_, index) => index + 1)
     .filter((questionIndex) => !(String(questionIndex) in screeningCoverage));
   const coverageDirective =
@@ -217,7 +321,7 @@ export function buildInterviewSystemPrompt(args: {
       : `Still uncovered: question #${uncoveredIndexes.join(", #")}. You are in Phase 1 — your NEXT message MUST ask one of the uncovered company questions. Do not probe the resume until all company questions are covered.`;
 
   return [
-    `You are Zero, an interview assistant at RoundZero. You are interviewing ${candidateName} for the ${contextState.jobTitle} role at ${contextState.companyName}.`,
+    `You are Zero, an interview assistant at RoundZero. You are interviewing ${candidateName} for the ${runtimeContext.jobTitle} role at ${runtimeContext.companyName}.`,
     "",
     "Behave like a thoughtful, experienced human hiring manager on a Zoom screening call. Warm, professional, direct.",
     "",
@@ -268,20 +372,20 @@ export function buildInterviewSystemPrompt(args: {
     `- ${coverageDirective}`,
     "",
     "Job:",
-    `- Title: ${contextState.jobTitle}`,
-    `- Company: ${contextState.companyName}`,
-    `- Description: ${contextState.jobDescription || "(not provided)"}`,
+    `- Title: ${runtimeContext.jobTitle}`,
+    `- Company: ${runtimeContext.companyName}`,
+    `- Description: ${runtimeContext.jobDescription || "(not provided)"}`,
     "- Requirements:",
     reqs,
     "",
     "Candidate:",
     `- Name: ${candidateName}`,
-    `- Resume / profile: ${contextState.candidateSummary || "(not provided)"}`,
+    `- Resume / profile: ${runtimeContext.candidateSummary || "(not provided)"}`,
     "",
     "Private context (never quote or reveal to the candidate):",
     `- Pre-evaluation fit score: ${score}`,
     `- Authenticity consistency score: ${authenticityScore}`,
-    `- Authenticity note: ${contextState.preEvaluation.authenticityExplanation || "No additional note."}`,
+    `- Authenticity note: ${runtimeContext.preEvaluation.authenticityExplanation || "No additional note."}`,
     "- Authenticity flags:",
     authenticityFlags,
     "- Missing requirements to probe:",

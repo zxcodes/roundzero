@@ -1,15 +1,10 @@
-import {
-  ArrowRight01Icon,
-  Briefcase01Icon,
-  Clock01Icon,
-  Rocket01Icon,
-} from "@hugeicons/core-free-icons";
+import { ArrowRight01Icon, Briefcase01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { CompanyInboxPageShell } from "@/components/company-inbox-page-shell";
 import { DashboardApplicationsSkeleton } from "@/components/route-skeletons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Empty,
   EmptyContent,
@@ -20,7 +15,8 @@ import {
 } from "@/components/ui/empty";
 import { getMyApplications } from "@/features/applications/server/functions";
 import { hasShortlistNextSteps, parseShortlistDetails } from "@/features/applications/shortlist";
-import { formatDate } from "@/shared/date";
+import { resolveInterviewAwareCandidateMeta } from "@/features/interviews/shared/candidate-display";
+import { formatDate, formatRelativeTime } from "@/shared/date";
 
 export const Route = createFileRoute("/_authenticated/dashboard/applications")({
   beforeLoad: ({ context }) => {
@@ -38,7 +34,7 @@ type Application = Applications[number];
 
 const stageCopy = {
   applied: {
-    badge: "Application Received",
+    badge: "Application received",
     tone: "border-info/20 bg-info/10 text-info",
     blurb: "Waiting on first review",
   },
@@ -48,12 +44,12 @@ const stageCopy = {
     blurb: "Strong fit — queued for the next evaluation batch",
   },
   interview_ready: {
-    badge: "Interview Ready",
+    badge: "Interview ready",
     tone: "border-warning/20 bg-warning/10 text-warning",
     blurb: "You have been invited to a RoundZero interview",
   },
   interview_in_progress: {
-    badge: "Interview in Progress",
+    badge: "Interview in progress",
     tone: "border-warning/20 bg-warning/10 text-warning",
     blurb: "Your RoundZero interview is in progress",
   },
@@ -113,31 +109,13 @@ const toApplicationStage = (status: string): keyof typeof stageCopy => {
 };
 
 const getStatusMeta = (application: Application) => {
-  if (
-    application.status === "interview_in_progress" &&
-    application.interviewStatus === "completed"
-  ) {
-    return stageCopy.under_review;
-  }
-
   const stage = toApplicationStage(application.status);
-  return stageCopy[stage];
-};
-
-const getJobStateLabel = (application: Application) => {
-  if (application.companyOwnerDeleted) {
-    return "Account deleted";
-  }
-
-  if (application.jobStatus === "closed") {
-    return "Role closed";
-  }
-
-  if (application.jobStatus === "draft") {
-    return "Role paused";
-  }
-
-  return "Role open";
+  const baseMeta = stageCopy[stage];
+  return resolveInterviewAwareCandidateMeta(
+    application.status,
+    application.interviewStatus ?? null,
+    baseMeta,
+  );
 };
 
 const isApplicationActive = (application: Application) =>
@@ -149,52 +127,30 @@ const isInInterviewStage = (application: Application) =>
   (application.status === "interview_invited" || application.status === "interview_in_progress") &&
   !application.companyOwnerDeleted;
 
-const buildMetrics = (applications: Applications) => {
-  return [
-    {
-      label: "Total applications",
-      value: String(applications.length),
-      description: "Everything you have submitted so far.",
-      icon: Briefcase01Icon,
-    },
-    {
-      label: "Still active",
-      value: String(applications.filter(isApplicationActive).length),
-      description: "Applications still moving through review.",
-      icon: Rocket01Icon,
-    },
-    {
-      label: "Interview stage",
-      value: String(applications.filter(isInInterviewStage).length),
-      description: "The strongest sign of real traction.",
-      icon: Clock01Icon,
-    },
-  ];
-};
-
 function MyApplicationsPage() {
   const applications = Route.useLoaderData();
-  const metrics = buildMetrics(applications);
+  const statItems = [
+    { value: applications.length, label: "total applications" },
+    { value: applications.filter(isApplicationActive).length, label: "still active" },
+    { value: applications.filter(isInInterviewStage).length, label: "interview stage" },
+  ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="space-y-1">
-          <h2 className="text-2xl font-bold tracking-tight">My Applications</h2>
-          <p className="max-w-2xl text-sm text-muted-foreground">
-            Scan your active submissions quickly, then open any application for the full record.
-          </p>
-        </div>
-        <Button asChild>
-          <Link to="/dashboard/jobs">
-            Browse Jobs
-            <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-4" />
+    <CompanyInboxPageShell
+      title="My applications"
+      description="Scan your active submissions quickly, then open any application for the full record."
+      statItems={statItems}
+      headerAction={
+        <Button size="sm" asChild>
+          <Link to="/dashboard/jobs" className="no-underline hover:no-underline">
+            Browse roles
+            <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-3.5" />
           </Link>
         </Button>
-      </div>
-
+      }
+    >
       {applications.length === 0 ? (
-        <Empty className="border">
+        <Empty className="rounded-2xl border-0 bg-muted/30">
           <EmptyHeader>
             <EmptyMedia variant="icon">
               <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} />
@@ -207,57 +163,22 @@ function MyApplicationsPage() {
           </EmptyHeader>
           <EmptyContent>
             <Button asChild>
-              <Link to="/dashboard/jobs">Browse Jobs</Link>
+              <Link to="/dashboard/jobs">Browse roles</Link>
             </Button>
           </EmptyContent>
         </Empty>
       ) : (
-        <>
-          <div className="grid gap-3 md:grid-cols-3">
-            {metrics.map((metric, index) => (
-              <Card key={metric.label} size="sm" className={`stagger-${index + 1}`}>
-                <CardHeader className="gap-2">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                      {metric.label}
-                    </p>
-                    <div className="flex size-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                      <HugeiconsIcon icon={metric.icon} strokeWidth={2} className="size-4" />
-                    </div>
-                  </div>
-                  <CardTitle className="font-mono text-3xl font-semibold tracking-tight">
-                    {metric.value}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-xs text-muted-foreground">{metric.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          <div className="space-y-3">
-            {applications.map((application, index) => (
-              <ApplicationListCard
-                key={application.id}
-                application={application}
-                className={`stagger-${Math.min(index + 1, 5)}`}
-              />
-            ))}
-          </div>
-        </>
+        <div className="divide-y divide-border/50 overflow-hidden rounded-3xl border border-border/60">
+          {applications.map((application) => (
+            <ApplicationRow key={application.id} application={application} />
+          ))}
+        </div>
       )}
-    </div>
+    </CompanyInboxPageShell>
   );
 }
 
-function ApplicationListCard({
-  application,
-  className,
-}: {
-  application: Application;
-  className?: string;
-}) {
+function ApplicationRow({ application }: { application: Application }) {
   const statusMeta = getStatusMeta(application);
   const shortlistDetails =
     application.status === "shortlisted" && !application.companyOwnerDeleted
@@ -271,42 +192,38 @@ function ApplicationListCard({
       : statusMeta.blurb;
 
   return (
-    <Card size="sm" className={className}>
-      <CardContent>
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="min-w-0 flex-1 space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary">
-                {application.companyName}
-              </p>
-              <Badge variant="outline" className="font-mono text-[11px]">
-                {getJobStateLabel(application)}
-              </Badge>
-              <Badge className={`${statusMeta.tone} text-[11px]`}>{statusMeta.badge}</Badge>
-              {hasNextSteps ? <Badge variant="secondary">Follow-up available</Badge> : null}
-            </div>
-
-            <div className="space-y-1">
-              <CardTitle className="text-lg">{application.jobTitle}</CardTitle>
-              <CardDescription>{description}</CardDescription>
-            </div>
-
-            <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
-              <span>Applied {formatDate(application.createdAt)}</span>
-              <span>Last updated {formatDate(application.updatedAt)}</span>
-            </div>
-          </div>
-
-          <Button variant="outline" asChild>
-            <Link
-              to="/dashboard/application/$applicationId"
-              params={{ applicationId: application.id }}
-            >
-              View application
-            </Link>
-          </Button>
+    <Link
+      to="/dashboard/application/$applicationId"
+      params={{ applicationId: application.id }}
+      className="group flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted/40 md:gap-4 md:px-5"
+    >
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="truncate text-sm font-semibold group-hover:text-primary">
+            {application.jobTitle}
+          </p>
+          <Badge variant="outline" className={statusMeta.tone}>
+            {statusMeta.badge}
+          </Badge>
+          {hasNextSteps ? (
+            <Badge variant="outline" className="border-success/20 text-success">
+              Follow-up available
+            </Badge>
+          ) : null}
         </div>
-      </CardContent>
-    </Card>
+        <p className="mt-0.5 truncate text-xs text-muted-foreground">{application.companyName}</p>
+        <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{description}</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          Applied {formatDate(application.createdAt)} · Updated{" "}
+          {formatRelativeTime(application.updatedAt)}
+        </p>
+      </div>
+
+      <HugeiconsIcon
+        icon={ArrowRight01Icon}
+        strokeWidth={2}
+        className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary"
+      />
+    </Link>
   );
 }
