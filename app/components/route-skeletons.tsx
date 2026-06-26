@@ -784,9 +784,11 @@ function DashboardCompanyIndexSkeleton() {
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div
+            <Card
               key={i}
-              className="flex min-h-52 flex-col rounded-xl bg-muted-foreground/7 p-4 dark:bg-muted/25"
+              variant="dashboard-tile"
+              tileTone="emphasis"
+              className="flex min-h-52 flex-col"
             >
               <Skeleton className="h-7 w-24 rounded-full" />
               <Skeleton className="mt-3 h-5 w-36" />
@@ -794,7 +796,7 @@ function DashboardCompanyIndexSkeleton() {
               <Skeleton className="mt-2 h-4 w-16" />
               <Skeleton className="mt-3 h-8 w-full flex-1" />
               <Skeleton className="mt-4 h-8 w-28" />
-            </div>
+            </Card>
           ))}
         </div>
       </div>
@@ -803,9 +805,11 @@ function DashboardCompanyIndexSkeleton() {
         <Skeleton className="h-5 w-48" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div
+            <Card
               key={i}
-              className="flex min-h-44 flex-col rounded-xl bg-muted-foreground/5.5 p-4 dark:bg-muted/20"
+              variant="dashboard-tile"
+              tileTone="default"
+              className="flex min-h-44 flex-col"
             >
               <Skeleton className="h-5 w-40" />
               <Skeleton className="mt-2 h-3 w-32" />
@@ -814,7 +818,7 @@ function DashboardCompanyIndexSkeleton() {
                 <Skeleton className="h-5 w-16 rounded-full" />
               </div>
               <Skeleton className="mt-4 h-8 w-32" />
-            </div>
+            </Card>
           ))}
         </div>
       </div>
@@ -823,16 +827,18 @@ function DashboardCompanyIndexSkeleton() {
         <Skeleton className="h-5 w-36" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div
+            <Card
               key={i}
-              className="flex min-h-44 flex-col rounded-xl bg-muted-foreground/4 p-4 dark:bg-muted/15"
+              variant="dashboard-tile"
+              tileTone="subtle"
+              className="flex min-h-44 flex-col"
             >
               <Skeleton className="h-5 w-20 rounded-full" />
               <Skeleton className="mt-3 h-5 w-32" />
               <Skeleton className="mt-1 h-3 w-28" />
               <Skeleton className="mt-2 h-3 w-24 flex-1" />
               <Skeleton className="mt-4 h-8 w-28" />
-            </div>
+            </Card>
           ))}
         </div>
       </div>

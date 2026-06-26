@@ -8,7 +8,8 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
+import { Card } from "@/components/ui/card";
+import { EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import type { DashboardCandidateReport, RoleAttention } from "@/features/dashboard/company-metrics";
 import { DashboardGreeting } from "@/features/dashboard/components/dashboard-greeting";
 import type { getDashboardMetrics } from "@/features/dashboard/server/functions";
@@ -128,7 +129,7 @@ function AwaitingReviewCard({ candidate }: { candidate: DashboardCandidateReport
   const highlight = candidate.strengths[0] ?? candidate.topConcern;
 
   return (
-    <article className="flex min-h-52 flex-col rounded-xl bg-muted-foreground/7 p-4 dark:bg-muted/25">
+    <Card variant="dashboard-tile" tileTone="emphasis" className="flex min-h-52 flex-col">
       <RecommendationBadge recommendation={candidate.recommendation} size="lg" />
       <div className="mt-3 min-w-0 space-y-1">
         <h3 className="truncate text-base font-semibold tracking-tight">
@@ -152,7 +153,7 @@ function AwaitingReviewCard({ candidate }: { candidate: DashboardCandidateReport
       <div className="mt-4">
         <ReviewButton applicationId={candidate.applicationId} label="Open report" />
       </div>
-    </article>
+    </Card>
   );
 }
 
@@ -165,7 +166,7 @@ function AwaitingReviewSection({
 }) {
   if (candidates.length === 0) {
     return (
-      <section className="rounded-2xl bg-muted-foreground/[0.085] px-6 py-8 dark:bg-muted/30">
+      <Card variant="dashboard-panel" className="px-6 py-8">
         <div className="flex items-center gap-2">
           <HugeiconsIcon
             icon={CheckmarkCircle02Icon}
@@ -177,7 +178,7 @@ function AwaitingReviewSection({
         <p className="mt-2 text-sm text-muted-foreground">
           No candidates are waiting for a shortlist or reject decision right now.
         </p>
-      </section>
+      </Card>
     );
   }
 
@@ -217,7 +218,7 @@ function AwaitingReviewSection({
 
 function RoleAttentionCard({ role }: { role: RoleAttention }) {
   return (
-    <article className="flex min-h-44 flex-col rounded-xl bg-muted-foreground/[0.055] p-4 dark:bg-muted/20">
+    <Card variant="dashboard-tile" tileTone="default" className="flex min-h-44 flex-col">
       <h3 className="truncate text-base font-semibold tracking-tight">{role.title}</h3>
       <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1">
@@ -264,14 +265,17 @@ function RoleAttentionCard({ role }: { role: RoleAttention }) {
           </Link>
         </Button>
       </div>
-    </article>
+    </Card>
   );
 }
 
 function RolesAttentionSection({ roles }: { roles: RoleAttention[] }) {
   if (roles.length === 0) {
     return (
-      <Empty className="rounded-2xl bg-muted-foreground/[0.085] dark:bg-muted/30">
+      <Card
+        variant="dashboard-panel"
+        className="items-center justify-center gap-4 p-12 text-center"
+      >
         <EmptyHeader>
           <EmptyTitle>No open roles with applicants</EmptyTitle>
           <EmptyDescription>Post a role to start receiving candidates.</EmptyDescription>
@@ -279,7 +283,7 @@ function RolesAttentionSection({ roles }: { roles: RoleAttention[] }) {
         <Button asChild>
           <Link to="/dashboard/jobs/new">Post a job</Link>
         </Button>
-      </Empty>
+      </Card>
     );
   }
 
@@ -303,7 +307,7 @@ function RolesAttentionSection({ roles }: { roles: RoleAttention[] }) {
 
 function RecentReportCard({ report }: { report: DashboardCandidateReport }) {
   return (
-    <article className="flex min-h-44 flex-col rounded-xl bg-muted-foreground/4 p-4 dark:bg-muted/15">
+    <Card variant="dashboard-tile" tileTone="subtle" className="flex min-h-44 flex-col">
       <RecommendationBadge recommendation={report.recommendation} />
       <div className="mt-3 min-w-0 space-y-1">
         <h3 className="truncate text-base font-semibold tracking-tight">{report.candidateName}</h3>
@@ -315,7 +319,7 @@ function RecentReportCard({ report }: { report: DashboardCandidateReport }) {
       <div className="mt-4">
         <ReviewButton applicationId={report.applicationId} label="Open report" />
       </div>
-    </article>
+    </Card>
   );
 }
 
