@@ -256,8 +256,8 @@ function ApplicantReviewPage() {
   const hasApplicantNavigation = previousApplicant !== null || nextApplicant !== null;
 
   return (
-    <div className="space-y-10">
-      <div className="min-w-0 space-y-10">
+    <div className="space-y-5">
+      <div className="min-w-0 space-y-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex min-w-0 flex-1 flex-wrap items-start gap-4">
             <Avatar className="size-14">

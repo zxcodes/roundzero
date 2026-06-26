@@ -109,8 +109,8 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
         </p>
       </section>
 
-      <div className="space-y-6">
-        <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-5">
+      <div className="space-y-4">
+        <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
           <div className="space-y-1">
             <h2 className="text-base font-semibold tracking-tight">Basic information</h2>
             <p className="text-sm text-muted-foreground">Your name and resume.</p>

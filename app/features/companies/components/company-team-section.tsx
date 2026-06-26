@@ -202,7 +202,7 @@ export function CompanyTeamSection({
         </Alert>
       ) : null}
 
-      <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-5">
+      <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
         <div className="space-y-1">
           <h2 className="text-base font-semibold tracking-tight">Invite teammate</h2>
           <p className="text-sm text-muted-foreground">
@@ -301,7 +301,7 @@ export function CompanyTeamSection({
         </div>
       </section>
 
-      <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-5">
+      <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
         <div className="space-y-1">
           <h2 className="text-base font-semibold tracking-tight">Pending invitations</h2>
           <p className="text-sm text-muted-foreground">
@@ -389,7 +389,7 @@ export function CompanyTeamSection({
         </div>
       </section>
 
-      <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-5">
+      <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
         <div className="space-y-1">
           <h2 className="text-base font-semibold tracking-tight">Team members</h2>
           <p className="text-sm text-muted-foreground">

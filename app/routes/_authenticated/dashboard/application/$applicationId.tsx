@@ -236,7 +236,7 @@ function CandidateApplicationDetailPage() {
   };
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-5">
       <section className="space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
           <div className="min-w-0 space-y-2">

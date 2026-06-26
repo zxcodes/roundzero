@@ -290,7 +290,7 @@ function ApplicantReportSummaryPage() {
     return (
       <div className="space-y-6">
         {batchNavigation ? (
-          <div className="rounded-3xl border border-border/60 px-5 py-5 md:px-6 md:py-6">
+          <div className="rounded-3xl border border-border/60 px-5 py-4 md:px-6">
             <ReportActionsRow
               applicationId={application.id}
               batchNavigation={batchNavigation}
@@ -316,8 +316,8 @@ function ApplicantReportSummaryPage() {
       ? "border-danger/20 bg-danger/10 text-danger"
       : "border-border/70 bg-muted/30 text-muted-foreground";
   return (
-    <div className="space-y-10">
-      <div className="rounded-3xl border border-border/60 px-5 py-5 md:px-6 md:py-6">
+    <div className="space-y-5">
+      <div className="rounded-3xl border border-border/60 px-5 py-4 md:px-6">
         <ReportActionsRow
           applicationId={application.id}
           batchNavigation={batchNavigation}
@@ -451,7 +451,7 @@ function ApplicantReportSummaryPage() {
       </div>
 
       {/* Summary + dimension scores */}
-      <section className="rounded-2xl bg-muted/30 px-6 py-5">
+      <section className="rounded-2xl bg-muted/30 px-5 py-4 md:px-6">
         <div className="flex items-center gap-2">
           <HugeiconsIcon
             icon={SparklesIcon}
@@ -462,7 +462,7 @@ function ApplicantReportSummaryPage() {
         </div>
         <p className="mt-3 text-sm leading-6 text-foreground">{report.summary}</p>
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {(Object.keys(dimensionMeta) as Array<keyof typeof dimensionMeta>).map((key) => {
             const dim = dimensionMeta[key];
             const rawScore = report.scores[key];
@@ -495,7 +495,7 @@ function ApplicantReportSummaryPage() {
 
       {/* Answer authenticity — surfaced prominently because it can flip a decision */}
       {showAuthenticity ? (
-        <section className="rounded-3xl border border-border/60 px-5 py-5 md:px-6 md:py-6">
+        <section className="rounded-3xl border border-border/60 px-5 py-4 md:px-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
@@ -513,7 +513,7 @@ function ApplicantReportSummaryPage() {
                 Independent check for AI-generated answers
               </p>
             </div>
-            <Badge variant="outline" className="shrink-0 font-mono text-[11px] uppercase">
+            <Badge variant="outline" className="shrink-0 font-mono text-[11px]">
               {authenticity.signals.length} signal{authenticity.signals.length === 1 ? "" : "s"}
             </Badge>
           </div>
@@ -556,7 +556,7 @@ function ApplicantReportSummaryPage() {
 
       {/* Evidence */}
       {report.evidence.length > 0 ? (
-        <section className="rounded-3xl border border-border/60 px-5 py-5 md:px-6 md:py-6">
+        <section className="rounded-3xl border border-border/60 px-5 py-4 md:px-6">
           <div className="flex items-center gap-2">
             <HugeiconsIcon
               icon={TickDouble01Icon}
@@ -580,7 +580,7 @@ function ApplicantReportSummaryPage() {
 
       {/* Insights */}
       {report.insights.length > 0 ? (
-        <section className="rounded-3xl border border-border/60 px-5 py-5 md:px-6 md:py-6">
+        <section className="rounded-3xl border border-border/60 px-5 py-4 md:px-6">
           <div className="flex items-center gap-2">
             <HugeiconsIcon
               icon={FileSearchIcon}
@@ -602,7 +602,7 @@ function ApplicantReportSummaryPage() {
 
       {/* Screening answers */}
       {report.screeningAnswers.length > 0 ? (
-        <section className="rounded-3xl border border-border/60 px-5 py-5 md:px-6 md:py-6">
+        <section className="rounded-3xl border border-border/60 px-5 py-4 md:px-6">
           <div className="flex items-center gap-2">
             <HugeiconsIcon
               icon={ClipboardIcon}
@@ -823,7 +823,7 @@ function SignalPanel({
   emptyText: string;
 }) {
   return (
-    <div className="rounded-3xl border border-border/60 px-5 py-5 md:px-6 md:py-6">
+    <div className="rounded-3xl border border-border/60 px-5 py-4 md:px-6">
       <div className="flex items-center gap-2">
         <HugeiconsIcon icon={icon} strokeWidth={2} className={cn("size-4", tone)} />
         <h2 className="text-lg font-semibold tracking-tight">{title}</h2>

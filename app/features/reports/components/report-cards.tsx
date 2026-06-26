@@ -167,7 +167,7 @@ export function ReportSnapshotCard({
   applicationId: string;
 }) {
   return (
-    <section className="space-y-5 rounded-3xl border border-border/60 px-5 py-5">
+    <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-start gap-3">
           <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-muted/30">
@@ -561,8 +561,8 @@ export function ReportTimeline({
         timestamp={reportCreatedAt}
       >
         <div className="space-y-4">
-          <Card className="overflow-hidden border-border/70">
-            <CardContent className="space-y-6 pt-6">
+          <Card className="gap-0 overflow-hidden border-border/60 py-0 shadow-none ring-0">
+            <CardContent className="space-y-4 px-5 py-4 md:px-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="max-w-xl space-y-3">
                   <div className="flex items-center gap-2.5">
@@ -631,7 +631,7 @@ export function ReportTimeline({
                 </div>
               </div>
 
-              <div className="grid gap-6 lg:grid-cols-2">
+              <div className="grid gap-4 lg:grid-cols-2">
                 <SignalSection
                   title="Strengths"
                   icon={CheckmarkCircle02Icon}
@@ -661,8 +661,8 @@ export function ReportTimeline({
           </Card>
 
           {report.screeningAnswers.length > 0 ? (
-            <Card className="border-border/60">
-              <CardContent className="space-y-4">
+            <Card className="gap-0 rounded-3xl border-border/60 py-0 shadow-none ring-0">
+              <CardContent className="space-y-4 px-5 py-4 md:px-6">
                 <div className="flex items-center gap-2">
                   <HugeiconsIcon
                     icon={ClipboardIcon}
@@ -724,8 +724,8 @@ export function ReportTimeline({
           title="Answer authenticity concern"
           timestamp={reportCreatedAt}
         >
-          <Card className="border-border/70">
-            <CardContent className="space-y-4 pt-6">
+          <Card className="gap-0 rounded-3xl border-border/60 py-0 shadow-none ring-0">
+            <CardContent className="space-y-4 px-5 py-4 md:px-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="max-w-xl space-y-3">
                   <p className="text-base font-semibold tracking-tight">
@@ -788,8 +788,8 @@ function VoiceAssessmentReportCard({
 
   return (
     <div className="space-y-4">
-      <Card className="border-border/70">
-        <CardContent className="space-y-5 pt-6">
+      <Card className="gap-0 rounded-3xl border-border/60 py-0 shadow-none ring-0">
+        <CardContent className="space-y-4 px-5 py-4 md:px-6">
           {/* Summary + overall */}
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-xl space-y-2">
