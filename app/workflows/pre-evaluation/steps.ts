@@ -412,10 +412,7 @@ export function writePreEvaluation(
           confidence: aiResult.result.confidence,
           nextStep: aiResult.result.modelNextStep,
           consistencyScore: slopCheck.consistencyScore,
-          rawResponse: {
-            preEvaluation: aiResult.rawResponse,
-            slopCheck,
-          },
+          rawResponse: slopCheck,
           model: aiResult.model,
           promptVersion: aiResult.promptVersion,
         });

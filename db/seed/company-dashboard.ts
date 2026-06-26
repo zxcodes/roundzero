@@ -455,7 +455,6 @@ async function seedApplicationsAndReports(
           ${"full"},
           ${sql.json({
             expiresAt: expiresAt.toISOString(),
-            preEvaluationScore: plan.overallScore ?? randomInt(`${interviewId}-pre`, 55, 88) / 10,
           })},
           ${interviewStatus},
           ${invitedAt},

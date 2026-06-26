@@ -6,11 +6,11 @@ import { getApplicationReviewById } from "@/features/applications/queries/querie
 import { getReportsByBatchId } from "@/features/batches/queries/queries_sql";
 import {
   getCommunicationAssessmentByApplicationId,
-  getInterviewByApplicationId,
+  getInterviewForCompanyByApplicationId,
   getInterviewMessagesByInterviewId,
 } from "@/features/interviews/queries/queries_sql";
 import { expireInterviewIfDue } from "@/features/interviews/server/expire";
-import { parseInterviewMetadata } from "@/features/interviews/shared/runtime";
+import { loadCandidateSummaryFromApplication } from "@/features/interviews/shared/runtime";
 import { getPreEvaluationByApplicationId } from "@/features/pre-evaluations/queries/queries_sql";
 import { getReleasedReportByApplicationId } from "@/features/reports/queries/queries_sql";
 import { parseStoredReport } from "@/features/reports/schemas";
@@ -22,11 +22,12 @@ const applicationIdSchema = z.object({
 });
 
 const getInterviewFallbackTimeline = (
-  interview: NonNullable<Awaited<ReturnType<typeof getInterviewByApplicationId>>>,
+  interview: NonNullable<Awaited<ReturnType<typeof getInterviewForCompanyByApplicationId>>>,
+  applicationMetadata: unknown,
 ) => {
-  const metadata = parseInterviewMetadata(interview.metadata);
   const summary =
-    metadata.contextState?.candidateSummary ?? "Interview completed in chat workspace.";
+    loadCandidateSummaryFromApplication(applicationMetadata) ||
+    "Interview completed in chat workspace.";
   const role: "assistant" | "candidate" = "assistant";
 
   return {
@@ -55,7 +56,7 @@ export const getCompanyApplicantReportTimeline = createServerFn({ method: "GET" 
       throw new Error("Not authorized to view this applicant");
     }
 
-    let interview = await getInterviewByApplicationId(db, {
+    let interview = await getInterviewForCompanyByApplicationId(db, {
       applicationId: data.applicationId,
     });
     if (interview) {
@@ -65,12 +66,12 @@ export const getCompanyApplicantReportTimeline = createServerFn({ method: "GET" 
           id: interview.id,
           applicationId: interview.applicationId,
           status: interview.status,
-          expiresAt: interview.metadata?.expiresAt ?? null,
+          expiresAt: interview.expiresAt ?? null,
         },
         postEvaluation: env.POST_EVALUATION,
       });
       if (result.expiredNow) {
-        interview = await getInterviewByApplicationId(db, {
+        interview = await getInterviewForCompanyByApplicationId(db, {
           applicationId: data.applicationId,
         });
       }
@@ -100,7 +101,7 @@ export const getCompanyApplicantReportTimeline = createServerFn({ method: "GET" 
             }),
           }
         : interview
-          ? getInterviewFallbackTimeline(interview)
+          ? getInterviewFallbackTimeline(interview, application.metadata)
           : null;
 
     // Batch navigation — prev/next reports inside the same batch, ranked by score.
