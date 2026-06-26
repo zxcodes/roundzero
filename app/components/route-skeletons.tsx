@@ -784,7 +784,10 @@ function DashboardCompanyIndexSkeleton() {
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="flex min-h-52 flex-col rounded-xl bg-muted/25 p-4">
+            <div
+              key={i}
+              className="flex min-h-52 flex-col rounded-xl bg-muted-foreground/7 p-4 dark:bg-muted/25"
+            >
               <Skeleton className="h-7 w-24 rounded-full" />
               <Skeleton className="mt-3 h-5 w-36" />
               <Skeleton className="mt-1 h-3 w-28" />
@@ -800,7 +803,10 @@ function DashboardCompanyIndexSkeleton() {
         <Skeleton className="h-5 w-48" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="flex min-h-44 flex-col rounded-xl bg-muted/20 p-4">
+            <div
+              key={i}
+              className="flex min-h-44 flex-col rounded-xl bg-muted-foreground/5.5 p-4 dark:bg-muted/20"
+            >
               <Skeleton className="h-5 w-40" />
               <Skeleton className="mt-2 h-3 w-32" />
               <div className="mt-3 flex flex-1 gap-2">
@@ -817,7 +823,10 @@ function DashboardCompanyIndexSkeleton() {
         <Skeleton className="h-5 w-36" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="flex min-h-44 flex-col rounded-xl bg-muted/15 p-4">
+            <div
+              key={i}
+              className="flex min-h-44 flex-col rounded-xl bg-muted-foreground/4 p-4 dark:bg-muted/15"
+            >
               <Skeleton className="h-5 w-20 rounded-full" />
               <Skeleton className="mt-3 h-5 w-32" />
               <Skeleton className="mt-1 h-3 w-28" />
