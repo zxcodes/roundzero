@@ -84,7 +84,7 @@ export function CompanyLogoUploadField({
       <section className="flex flex-col gap-4 rounded-3xl border border-border/60 px-4 py-4 sm:flex-row sm:items-start">
         <label
           htmlFor={inputId}
-          className="group relative flex size-24 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-dashed border-border bg-muted/40 transition-colors hover:border-primary/40 hover:bg-muted/60"
+          className="group relative flex size-24 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-dashed border-border/60 bg-muted/40 transition-colors hover:border-primary/40 hover:bg-muted/60"
         >
           {logoUrl ? (
             <>

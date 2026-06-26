@@ -89,10 +89,10 @@ function AwaitingReviewRow({
       params={{ applicationId: candidate.applicationId }}
       className="group flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted/40 md:gap-4 md:px-5"
     >
-      <span className="w-6 shrink-0 font-mono text-xs text-muted-foreground">#{rank}</span>
+      <span className="w-6 shrink-0 text-xs text-muted-foreground">#{rank}</span>
 
-      <div className="w-[4.5rem] shrink-0 space-y-0.5">
-        <p className="font-mono text-base font-semibold leading-none tabular-nums">
+      <div className="w-18 shrink-0 space-y-0.5">
+        <p className="text-base font-semibold leading-none tabular-nums">
           <span>{formatCandidateScore(candidate.overallScore)}</span>
           <span className="text-[10px] font-medium text-muted-foreground">
             /{CANDIDATE_SCORE_MAX}

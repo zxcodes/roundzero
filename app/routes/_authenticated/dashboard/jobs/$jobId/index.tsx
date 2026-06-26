@@ -68,11 +68,11 @@ function JobDetailPage() {
               {" \u00B7 "}
             </>
           ) : null}
-          <span className="font-mono">{formatDate(job.createdAt)}</span>
+          <span className="">{formatDate(job.createdAt)}</span>
           {new Date(job.updatedAt).getTime() !== new Date(job.createdAt).getTime() ? (
             <>
               {" "}
-              · Updated <span className="font-mono">{formatDate(job.updatedAt)}</span>
+              · Updated <span className="">{formatDate(job.updatedAt)}</span>
             </>
           ) : null}
         </p>
@@ -158,7 +158,7 @@ function JobDetailPage() {
                     className="mt-0.5 size-4 shrink-0 text-muted-foreground"
                   />
                   <div>
-                    <p className="font-mono text-sm font-medium">{salary}</p>
+                    <p className="text-sm font-medium">{salary}</p>
                     <p className="text-xs text-muted-foreground">Annual compensation</p>
                   </div>
                 </div>
@@ -177,12 +177,12 @@ function JobDetailPage() {
                   <div className="space-y-0.5">
                     {job.teamSize ? (
                       <p className="text-sm">
-                        <span className="font-mono font-medium">{job.teamSize}</span> people on team
+                        <span className="font-medium">{job.teamSize}</span> people on team
                       </p>
                     ) : null}
                     {job.headcount ? (
                       <p className="text-xs text-muted-foreground">
-                        <span className="font-mono">{job.headcount}</span> open{" "}
+                        <span className="">{job.headcount}</span> open{" "}
                         {job.headcount === 1 ? "position" : "positions"}
                       </p>
                     ) : null}

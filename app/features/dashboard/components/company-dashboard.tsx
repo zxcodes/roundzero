@@ -116,7 +116,7 @@ function HeroSection({ firstName, metrics }: { firstName: string; metrics: Compa
       <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
         {statItems.map((item) => (
           <span key={item.label}>
-            <span className="font-mono font-medium tabular-nums text-foreground">{item.value}</span>{" "}
+            <span className="font-medium tabular-nums text-foreground">{item.value}</span>{" "}
             {item.label}
           </span>
         ))}
@@ -138,7 +138,7 @@ function AwaitingReviewCard({ candidate }: { candidate: DashboardCandidateReport
         <p className="truncate text-xs text-muted-foreground">{candidate.jobTitle}</p>
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-        <span className="font-mono font-medium tabular-nums text-foreground">
+        <span className="font-medium tabular-nums text-foreground">
           {formatCandidateScore(candidate.overallScore)}/{CANDIDATE_SCORE_MAX}
         </span>
         {candidate.confidence ? <span>{candidate.confidence} confidence</span> : null}
@@ -191,7 +191,7 @@ function AwaitingReviewSection({
             Top recommendations waiting on your decision — open a report for the full evaluation.
           </p>
         </div>
-        <span className="font-mono text-sm text-muted-foreground">
+        <span className="text-sm text-muted-foreground">
           {heroSummary.awaitingReviewCount} total
         </span>
       </div>
@@ -347,8 +347,8 @@ function RecentActivitySection({
         <div className="flex items-center gap-2 rounded-2xl border border-warning/20 bg-warning/10 px-4 py-3 text-sm text-muted-foreground">
           <span className="size-1.5 shrink-0 rounded-full bg-warning" aria-hidden />
           <span>
-            <span className="font-mono font-medium text-foreground">{evaluatingCount}</span>{" "}
-            candidate{evaluatingCount === 1 ? "" : "s"} currently being evaluated
+            <span className="font-medium text-foreground">{evaluatingCount}</span> candidate
+            {evaluatingCount === 1 ? "" : "s"} currently being evaluated
           </span>
         </div>
       ) : null}

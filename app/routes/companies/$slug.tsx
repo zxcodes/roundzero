@@ -231,7 +231,9 @@ function CompanyProfilePage() {
             <div className="stagger-2 space-y-4">
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-semibold tracking-tight">Open positions</h2>
-                <span className="font-mono text-sm text-muted-foreground">{jobs.length}</span>
+                <span className="text-sm font-medium tabular-nums text-muted-foreground">
+                  {jobs.length}
+                </span>
               </div>
 
               {jobs.length === 0 ? (
@@ -245,7 +247,7 @@ function CompanyProfilePage() {
                   </EmptyHeader>
                 </Empty>
               ) : (
-                <div className="divide-y divide-border/50 overflow-hidden rounded-3xl border border-border/60">
+                <div className="space-y-3">
                   {jobs.map((job) => (
                     <CompanyJobCard key={job.id} job={job} />
                   ))}
@@ -257,7 +259,7 @@ function CompanyProfilePage() {
           {/* Right sidebar */}
           <aside className="space-y-6">
             {techStack.length > 0 ? (
-              <section className="rounded-3xl border border-border/60 px-5 py-4 md:px-6">
+              <section className="rounded-3xl border border-border/60 bg-muted-foreground/[0.045] px-5 py-4 dark:bg-muted/10 md:px-6">
                 <h3 className="text-base font-semibold tracking-tight">Tech stack</h3>
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {techStack.map((tech) => (
@@ -269,7 +271,7 @@ function CompanyProfilePage() {
               </section>
             ) : null}
 
-            <section className="rounded-3xl border border-border/60 px-5 py-4 md:px-6">
+            <section className="rounded-3xl border border-border/60 bg-muted-foreground/[0.045] px-5 py-4 dark:bg-muted/10 md:px-6">
               <h3 className="text-base font-semibold tracking-tight">At a glance</h3>
               <div className="mt-3 space-y-3">
                 <div className="space-y-2.5">
@@ -332,7 +334,7 @@ function CompanyJobCard({ job }: { job: JobFromLoader }) {
     <Link
       to="/jobs/$jobId"
       params={{ jobId: job.id }}
-      className="group flex items-center gap-3 rounded-3xl border border-border/60 px-4 py-3.5 transition-colors hover:border-primary/25 hover:bg-muted/30 md:px-5"
+      className="group flex items-center gap-3 rounded-3xl border border-border/60 bg-muted-foreground/[0.045] px-4 py-3.5 transition-colors hover:border-primary/25 hover:bg-muted/30 dark:bg-muted/10 md:px-5"
     >
       <div className="min-w-0 flex-1 space-y-1">
         <p className="truncate text-sm font-semibold group-hover:text-primary">{job.title}</p>
@@ -344,7 +346,7 @@ function CompanyJobCard({ job }: { job: JobFromLoader }) {
             </span>
           ) : null}
           {salary ? (
-            <span className="inline-flex items-center gap-1 font-mono font-medium text-foreground">
+            <span className="inline-flex items-center gap-1 font-medium tabular-nums text-foreground">
               <HugeiconsIcon icon={MoneyBag02Icon} strokeWidth={2} className="size-3" />
               {salary}
             </span>

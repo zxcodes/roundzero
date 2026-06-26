@@ -119,17 +119,13 @@ function BatchDetailPage() {
           </p>
           {statItems.length > 0 ? <PageInlineStats items={statItems} /> : null}
           <p className="text-xs text-muted-foreground">
-            Created <span className="font-mono">{formatDateTime(batch.createdAt)}</span>
+            Created <span className="">{formatDateTime(batch.createdAt)}</span>
             {" · "}
             Launched{" "}
-            <span className="font-mono">
-              {batch.launchedAt ? formatDateTime(batch.launchedAt) : "—"}
-            </span>
+            <span className="">{batch.launchedAt ? formatDateTime(batch.launchedAt) : "—"}</span>
             {" · "}
             Released{" "}
-            <span className="font-mono">
-              {batch.releasedAt ? formatDateTime(batch.releasedAt) : "—"}
-            </span>
+            <span className="">{batch.releasedAt ? formatDateTime(batch.releasedAt) : "—"}</span>
           </p>
         </div>
         <Badge
@@ -199,13 +195,11 @@ function BatchDetailPage() {
                   params={{ applicationId: report.applicationId }}
                   className="group flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted/40 md:gap-4 md:px-5"
                 >
-                  <span className="w-6 shrink-0 font-mono text-xs text-muted-foreground">
-                    #{index + 1}
-                  </span>
+                  <span className="w-6 shrink-0 text-xs text-muted-foreground">#{index + 1}</span>
 
                   {score != null ? (
                     <div className="w-18 shrink-0 space-y-0.5">
-                      <p className="font-mono text-base font-semibold leading-none tabular-nums">
+                      <p className="text-base font-semibold leading-none tabular-nums">
                         <span>{formatCandidateScore(score)}</span>
                         <span className="text-[10px] font-medium text-muted-foreground">
                           /{CANDIDATE_SCORE_MAX}

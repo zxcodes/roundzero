@@ -314,7 +314,7 @@ function ApplicantReportSummaryPage() {
   const authenticityRiskTone =
     authenticity?.riskLevel === "high"
       ? "border-danger/20 bg-danger/10 text-danger"
-      : "border-border/70 bg-muted/30 text-muted-foreground";
+      : "border-border/60 bg-muted/30 text-muted-foreground";
   return (
     <div className="space-y-5">
       <div className="rounded-3xl border border-border/60 px-5 py-4 md:px-6">
@@ -356,7 +356,7 @@ function ApplicantReportSummaryPage() {
                 Post-interview report for{" "}
                 <span className="font-medium text-foreground">{application.jobTitle}</span>
               </p>
-              <p className="font-mono text-[11px] text-muted-foreground">
+              <p className="text-[11px] text-muted-foreground">
                 Generated {reportCreatedAt ? formatDateTime(reportCreatedAt) : "—"}
               </p>
             </div>
@@ -477,7 +477,7 @@ function ApplicantReportSummaryPage() {
                     />
                     <span className="text-xs font-medium">{dim.label}</span>
                   </div>
-                  <span className="font-mono text-xs text-muted-foreground">
+                  <span className="text-xs text-muted-foreground">
                     {formatCandidateScore(rawScore)}
                   </span>
                 </div>
@@ -513,7 +513,7 @@ function ApplicantReportSummaryPage() {
                 Independent check for AI-generated answers
               </p>
             </div>
-            <Badge variant="outline" className="shrink-0 font-mono text-[11px]">
+            <Badge variant="outline" className="shrink-0 text-[11px]">
               {authenticity.signals.length} signal{authenticity.signals.length === 1 ? "" : "s"}
             </Badge>
           </div>
@@ -569,7 +569,7 @@ function ApplicantReportSummaryPage() {
             {report.evidence.map((item, index) => (
               <li
                 key={index}
-                className="border-l-2 border-border/80 bg-muted/30 px-4 py-2.5 text-sm leading-6 text-foreground"
+                className="border-l-2 border-border/60 bg-muted/30 px-4 py-2.5 text-sm leading-6 text-foreground"
               >
                 {item}
               </li>
@@ -653,7 +653,7 @@ function ApplicantReportSummaryPage() {
                     className="size-4 text-muted-foreground"
                   />
                   Pre-screening
-                  <Badge variant="outline" className="ml-1 font-mono text-[11px]">
+                  <Badge variant="outline" className="ml-1 text-[11px]">
                     {formatCandidateScoreWithScale(preEvaluation.score)}
                   </Badge>
                 </div>
@@ -760,7 +760,7 @@ function ReportActionsRow({
               </>
             )}
           </Button>
-          <span className="font-mono text-[11px] text-muted-foreground">
+          <span className="text-[11px] text-muted-foreground">
             #{batchNavigation.position} of {batchNavigation.total} in batch
           </span>
           <Button
@@ -905,7 +905,7 @@ function VoiceSummary({ analysis }: { analysis: unknown }) {
         {parsed.summary ? (
           <p className="text-sm leading-6 text-foreground">{parsed.summary}</p>
         ) : null}
-        <Badge variant="outline" className="font-mono text-xs">
+        <Badge variant="outline" className="text-xs">
           {formatCandidateScoreWithScale(parsed.overallScore)}
         </Badge>
       </div>
@@ -917,7 +917,7 @@ function VoiceSummary({ analysis }: { analysis: unknown }) {
               <div key={key} className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-medium">{voiceDimensionLabels[key]}</span>
-                  <span className="font-mono text-muted-foreground">
+                  <span className="text-muted-foreground">
                     {formatCandidateScoreWithScale(dim.score)}
                   </span>
                 </div>

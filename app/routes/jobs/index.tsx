@@ -196,8 +196,8 @@ function JobsPage() {
                 on your schedule.
               </p>
               <p className="text-sm text-muted-foreground">
-                <span className="font-mono font-medium tabular-nums text-foreground">{total}</span>{" "}
-                open {total === 1 ? "position" : "positions"}
+                <span className="font-medium tabular-nums text-foreground">{total}</span> open{" "}
+                {total === 1 ? "position" : "positions"}
                 {hasFilters ? " matching your filters" : ""}
               </p>
             </div>
@@ -337,7 +337,10 @@ function JobCard({ job, className }: { job: JobFromLoader; className?: string })
 
   return (
     <Link to="/jobs/$jobId" params={{ jobId: job.id }} className={className}>
-      <Card className="group h-full gap-0 rounded-3xl border border-border/60 py-0 shadow-none ring-0 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-lg hover:shadow-primary/5">
+      <Card
+        variant="bordered-inset"
+        className="group h-full transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-lg hover:shadow-primary/5"
+      >
         <CardContent className="flex h-full min-h-52 flex-col gap-4 p-5">
           <div className="flex items-start gap-3">
             <Avatar className="size-11 shrink-0 rounded-2xl">
@@ -384,7 +387,7 @@ function JobCard({ job, className }: { job: JobFromLoader; className?: string })
           </div>
 
           {salary ? (
-            <p className="inline-flex items-center gap-1.5 font-mono text-sm font-medium tabular-nums text-foreground">
+            <p className="inline-flex items-center gap-1.5 text-sm font-medium tabular-nums text-foreground">
               <HugeiconsIcon
                 icon={MoneyBag02Icon}
                 strokeWidth={2}

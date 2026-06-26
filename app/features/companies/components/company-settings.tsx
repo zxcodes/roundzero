@@ -569,7 +569,7 @@ function CompanyCareersLink({ slug }: { slug: string }) {
     <div className="space-y-2">
       <FieldLabel>Careers page link</FieldLabel>
       <div className="flex flex-wrap items-center gap-2">
-        <Input value={careersUrl} readOnly className="bg-muted font-mono text-sm" />
+        <Input value={careersUrl} readOnly className="bg-muted text-sm" />
         <Button type="button" variant="outline" size="sm" onClick={onCopyCareersLink}>
           <HugeiconsIcon icon={Copy01Icon} strokeWidth={2} className="size-3.5" />
           Copy link
