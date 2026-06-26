@@ -89,7 +89,7 @@ function ApplicantRow({
       className="group flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted/40 md:gap-4 md:px-5"
     >
       {isEvaluated && score != null ? (
-        <div className="w-[4.5rem] shrink-0 space-y-0.5">
+        <div className="w-18 shrink-0 space-y-0.5">
           <p className="font-mono text-base font-semibold leading-none tabular-nums">
             <span>{formatCandidateScore(score)}</span>
             <span className="text-[10px] font-medium text-muted-foreground">
@@ -108,7 +108,7 @@ function ApplicantRow({
           ) : null}
         </div>
       ) : (
-        <div className="w-[4.5rem] shrink-0">
+        <div className="w-18 shrink-0">
           <Badge variant="outline" className={cn("text-[10px]", statusTone?.badge ?? "")}>
             {statusLabel}
           </Badge>
