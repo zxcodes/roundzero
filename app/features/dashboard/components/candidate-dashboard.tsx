@@ -312,7 +312,7 @@ function ActionQueueSection({ actions }: { actions: ActionItem[] }) {
         <p className="mt-2 text-sm text-muted-foreground">
           No interviews or shortlists right now. Browse open roles to apply.
         </p>
-        <Button variant="outline" size="sm" className="mt-5" asChild>
+        <Button variant="outline" size="sm" className="mt-5 self-start" asChild>
           <Link to="/dashboard/jobs" className="no-underline hover:no-underline">
             Browse roles
             <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-3.5" />
