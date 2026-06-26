@@ -106,7 +106,7 @@ export async function checkAndLaunchBatch(jobId: string): Promise<PoolCheckResul
           applicationId: candidate.id,
           agentId: null,
           type: "full",
-          metadata: { preEvaluationScore: candidate.preEvaluationScore ?? null, expiresAt },
+          metadata: { expiresAt },
           status: "pending",
           invitedAt: new Date(),
           startedAt: null,

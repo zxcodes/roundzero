@@ -113,6 +113,60 @@ export async function getInterviewByApplicationId(sql: Sql, args: getInterviewBy
     };
 }
 
+export const getInterviewForCompanyByApplicationIdQuery = `-- name: getInterviewForCompanyByApplicationId :one
+SELECT i.id, i.application_id, i.batch_id, i.type, i.status, i.invited_at, i.started_at, i.completed_at,
+       i.expired_at, i.cancelled_at, i.cancellation_reason, i.created_at, i.updated_at,
+       i.metadata->>'expiresAt' AS expires_at
+FROM interviews i
+WHERE i.application_id = $1
+ORDER BY i.created_at DESC
+LIMIT 1`;
+
+export interface getInterviewForCompanyByApplicationIdArgs {
+    applicationId: string;
+}
+
+export interface getInterviewForCompanyByApplicationIdRow {
+    id: string;
+    applicationId: string;
+    batchId: string | null;
+    type: string;
+    status: string;
+    invitedAt: Date | null;
+    startedAt: Date | null;
+    completedAt: Date | null;
+    expiredAt: Date | null;
+    cancelledAt: Date | null;
+    cancellationReason: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    expiresAt: string | null;
+}
+
+export async function getInterviewForCompanyByApplicationId(sql: Sql, args: getInterviewForCompanyByApplicationIdArgs): Promise<getInterviewForCompanyByApplicationIdRow | null> {
+    const rows = await sql.unsafe(getInterviewForCompanyByApplicationIdQuery, [args.applicationId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        applicationId: row[1],
+        batchId: row[2],
+        type: row[3],
+        status: row[4],
+        invitedAt: row[5],
+        startedAt: row[6],
+        completedAt: row[7],
+        expiredAt: row[8],
+        cancelledAt: row[9],
+        cancellationReason: row[10],
+        createdAt: row[11],
+        updatedAt: row[12],
+        expiresAt: row[13]
+    };
+}
+
 export const getInterviewForCandidateByIdQuery = `-- name: getInterviewForCandidateById :one
 SELECT i.id, i.application_id, i.type, i.status, i.invited_at, i.started_at, i.completed_at,
        i.expired_at, i.cancelled_at, i.cancellation_reason, i.created_at, i.updated_at,
@@ -676,6 +730,59 @@ export async function updateInterviewMetadata(sql: Sql, args: updateInterviewMet
         createdAt: row[13],
         updatedAt: row[14]
     };
+}
+
+export const getInterviewRuntimeInputsByApplicationIdQuery = `-- name: getInterviewRuntimeInputsByApplicationId :one
+SELECT a.metadata AS application_metadata,
+       u.name AS candidate_name,
+       pe.score,
+       pe.missing_requirements,
+       pe.consistency_score,
+       pe.raw_response
+FROM applications a
+JOIN users u ON u.id = a.candidate_id
+LEFT JOIN pre_evaluations pe ON pe.application_id = a.id
+WHERE a.id = $1`;
+
+export interface getInterviewRuntimeInputsByApplicationIdArgs {
+    id: string;
+}
+
+export interface getInterviewRuntimeInputsByApplicationIdRow {
+    applicationMetadata: any;
+    candidateName: string;
+    score: number | null;
+    missingRequirements: any | null;
+    consistencyScore: number | null;
+    rawResponse: any | null;
+}
+
+export async function getInterviewRuntimeInputsByApplicationId(sql: Sql, args: getInterviewRuntimeInputsByApplicationIdArgs): Promise<getInterviewRuntimeInputsByApplicationIdRow | null> {
+    const rows = await sql.unsafe(getInterviewRuntimeInputsByApplicationIdQuery, [args.id]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        applicationMetadata: row[0],
+        candidateName: row[1],
+        score: row[2],
+        missingRequirements: row[3],
+        consistencyScore: row[4],
+        rawResponse: row[5]
+    };
+}
+
+export const deleteInterviewMessagesByInterviewIdQuery = `-- name: deleteInterviewMessagesByInterviewId :exec
+DELETE FROM interview_messages
+WHERE interview_id = $1`;
+
+export interface deleteInterviewMessagesByInterviewIdArgs {
+    interviewId: string;
+}
+
+export async function deleteInterviewMessagesByInterviewId(sql: Sql, args: deleteInterviewMessagesByInterviewIdArgs): Promise<void> {
+    await sql.unsafe(deleteInterviewMessagesByInterviewIdQuery, [args.interviewId]);
 }
 
 export const getInterviewContextByIdQuery = `-- name: getInterviewContextById :one
