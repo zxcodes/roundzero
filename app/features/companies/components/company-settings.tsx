@@ -124,14 +124,14 @@ export function CompanySettings({
 
   if (!canManageProfile) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
           <h2 className="text-lg font-semibold tracking-tight">Company profile</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Your admin manages the public company profile. Contact them for changes.
           </p>
         </div>
-        <section className="space-y-3 rounded-3xl border border-border/60 px-5 py-5">
+        <section className="space-y-3 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
           <div className="space-y-1">
             <h2 className="text-base font-semibold tracking-tight">{company.name}</h2>
             {company.description ? (
@@ -149,7 +149,7 @@ export function CompanySettings({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <form.Subscribe
         selector={(state) => ({ isDirty: state.isDirty, isSubmitting: state.isSubmitting })}
       >
@@ -170,9 +170,9 @@ export function CompanySettings({
         </p>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* Basic Info */}
-        <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-5">
+        <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
           <div className="space-y-1">
             <h2 className="text-base font-semibold tracking-tight">Basic information</h2>
             <p className="text-sm text-muted-foreground">
@@ -242,7 +242,7 @@ export function CompanySettings({
           </div>
         </section>
 
-        <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-5">
+        <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
           <div className="space-y-1">
             <h2 className="text-base font-semibold tracking-tight">Company details</h2>
             <p className="text-sm text-muted-foreground">
@@ -363,7 +363,7 @@ export function CompanySettings({
           </div>
         </section>
 
-        <section className="space-y-3 rounded-3xl border border-border/60 px-5 py-5">
+        <section className="space-y-3 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
           <div className="space-y-1">
             <h2 className="text-base font-semibold tracking-tight">Tech stack</h2>
             <p className="text-sm text-muted-foreground">
@@ -442,7 +442,7 @@ export function CompanySettings({
           </div>
         </section>
 
-        <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-5">
+        <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
           <div className="space-y-1">
             <h2 className="text-base font-semibold tracking-tight">Culture & perks</h2>
             <p className="text-sm text-muted-foreground">
@@ -474,7 +474,7 @@ export function CompanySettings({
           </div>
         </section>
 
-        <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-5">
+        <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
           <div className="space-y-1">
             <h2 className="text-base font-semibold tracking-tight">Social links</h2>
             <p className="text-sm text-muted-foreground">

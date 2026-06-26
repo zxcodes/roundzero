@@ -38,7 +38,7 @@ function SettingsPage() {
 
   if (data.type === "company") {
     return (
-      <div className="space-y-10 pb-28">
+      <div className="space-y-6 pb-28">
         <div className="space-y-1">
           <h1 className="text-xl font-semibold tracking-tight">Settings</h1>
           <p className="text-sm text-muted-foreground">Manage your company profile.</p>
