@@ -1,9 +1,10 @@
 import {
+  AiMagicIcon,
   Alert02Icon,
+  ArrowRight01Icon,
   CheckmarkCircle02Icon,
   File02Icon,
   Loading03Icon,
-  SparklesIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
@@ -11,7 +12,7 @@ import { createFileRoute, Link, notFound, redirect, useRouter } from "@tanstack/
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { DashboardApplicantReportSkeleton } from "@/components/route-skeletons";
+import { DashboardApplicantReportTimelineSkeleton } from "@/components/route-skeletons";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,6 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
@@ -39,9 +41,14 @@ import {
 } from "@/features/applications/server/functions";
 import { parseShortlistDetails } from "@/features/applications/shortlist";
 import { ReportTimeline } from "@/features/reports/components/report-cards";
+import {
+  getReportInitials,
+  ReportActionsRow,
+  verdictBandTone,
+} from "@/features/reports/components/report-page-ui";
 import { ScorePill } from "@/features/reports/components/score-pill";
-import { getOverallScore } from "@/features/reports/schemas";
 import { getCompanyApplicantReportTimeline } from "@/features/reports/server/functions";
+import { cn } from "@/lib/utils";
 import { formatDateTime } from "@/shared/date";
 import {
   APPLICATION_STATUS_TRANSITIONS,
@@ -72,7 +79,7 @@ export const Route = createFileRoute(
     }
     return data;
   },
-  pendingComponent: DashboardApplicantReportSkeleton,
+  pendingComponent: DashboardApplicantReportTimelineSkeleton,
   component: ApplicantAiReportPage,
 });
 
@@ -85,6 +92,7 @@ function ApplicantAiReportPage() {
     report,
     reportCreatedAt,
     communicationAssessment,
+    batchNavigation,
   } = Route.useLoaderData();
   const router = useRouter();
   const [pendingStatus, setPendingStatus] = useState<ApplicationStatus | null>(null);
@@ -150,10 +158,6 @@ function ApplicantAiReportPage() {
     setPendingStatus("rejected");
   };
 
-  const onStatusSelectValueChange = async (value: string) => {
-    await onStatusValueChange(value);
-  };
-
   const onRejectConfirm = async () => {
     if (!pendingStatus) return;
     await updateStatusMutation.mutateAsync({
@@ -170,96 +174,138 @@ function ApplicantAiReportPage() {
     const isInterviewCompleted = interview?.status === "completed";
     const isEvalFailed = application.status === "evaluation_failed";
 
+    const emptyState = isEvalFailed ? (
+      <Empty
+        className={
+          batchNavigation ? "border-0 p-0 shadow-none" : "rounded-2xl border-0 bg-muted/30"
+        }
+      >
+        <EmptyHeader>
+          <EmptyTitle>Evaluation failed</EmptyTitle>
+          <EmptyDescription>
+            The AI evaluation could not be completed for this applicant. You can reject the
+            application or wait for a manual review.
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    ) : isInterviewCompleted ? (
+      <Empty
+        className={
+          batchNavigation ? "border-0 p-0 shadow-none" : "rounded-2xl border-0 bg-muted/30"
+        }
+      >
+        <EmptyHeader>
+          <EmptyTitle className="flex items-center gap-2">
+            <HugeiconsIcon icon={Loading03Icon} strokeWidth={2} className="size-4 animate-spin" />
+            Evaluation in progress
+          </EmptyTitle>
+          <EmptyDescription>
+            Zero is generating the post-interview report. Check back in a few minutes.
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    ) : (
+      <Empty
+        className={
+          batchNavigation ? "border-0 p-0 shadow-none" : "rounded-2xl border-0 bg-muted/30"
+        }
+      >
+        <EmptyHeader>
+          <EmptyTitle>No post-interview report yet</EmptyTitle>
+          <EmptyDescription>
+            This applicant does not have a generated post-evaluation report yet.
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    );
+
     return (
-      <div className="space-y-6">
-        {isEvalFailed ? (
-          <Empty className="rounded-2xl border-0 bg-muted/30">
-            <EmptyHeader>
-              <EmptyTitle>Evaluation failed</EmptyTitle>
-              <EmptyDescription>
-                The AI evaluation could not be completed for this applicant. You can reject the
-                application or wait for a manual review.
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
-        ) : isInterviewCompleted ? (
-          <Empty className="rounded-2xl border-0 bg-muted/30">
-            <EmptyHeader>
-              <EmptyTitle className="flex items-center gap-2">
-                <HugeiconsIcon
-                  icon={Loading03Icon}
-                  strokeWidth={2}
-                  className="size-4 animate-spin"
-                />
-                Evaluation in progress
-              </EmptyTitle>
-              <EmptyDescription>
-                Zero is generating the post-interview report. Check back in a few minutes.
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
-        ) : (
-          <Empty className="rounded-2xl border-0 bg-muted/30">
-            <EmptyHeader>
-              <EmptyTitle>No post-interview report yet</EmptyTitle>
-              <EmptyDescription>
-                This applicant does not have a generated post-evaluation report yet.
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
-        )}
+      <div className="overflow-hidden rounded-3xl border border-border/60">
+        {batchNavigation ? (
+          <div className="px-5 py-4 md:px-6">
+            <ReportActionsRow
+              applicationId={application.id}
+              batchNavigation={batchNavigation}
+              linkTarget="summary"
+            />
+          </div>
+        ) : null}
+        <div
+          className={cn("px-5 py-8 md:px-6", batchNavigation ? "border-t border-border/60" : "")}
+        >
+          {emptyState}
+        </div>
       </div>
     );
   }
 
   const messages = interviewState?.messages ?? [];
-  const score = getOverallScore(report.scores);
   const parsedRecommendation = recommendationSchema.safeParse(report.recommendation);
   const recommendation = parsedRecommendation.success ? parsedRecommendation.data : null;
 
-  return (
-    <div className="space-y-5">
-      <div className="rounded-2xl border border-dashed border-border/60 bg-muted/20 px-4 py-3 text-xs text-muted-foreground">
-        This is the full audit timeline — every step Zero took to evaluate{" "}
-        <span className="font-medium text-foreground">{application.candidateName}</span>. For a
-        polished, evidence-backed view, head back to the{" "}
-        <Link
-          to="/dashboard/applicant-reports/$applicationId"
-          params={{ applicationId: application.id }}
-          className="font-medium text-foreground underline-offset-4 hover:underline"
-        >
-          report summary
-        </Link>
-        .
-      </div>
+  const authenticity = report.answerAuthenticity;
+  const showAuthenticity =
+    authenticity?.riskLevel === "medium" || authenticity?.riskLevel === "high";
+  const authenticityRiskTone =
+    authenticity?.riskLevel === "high"
+      ? "border-danger/20 bg-danger/10 text-danger"
+      : "border-border/60 bg-muted/30 text-muted-foreground";
+  const verdictTone = recommendation !== null ? verdictBandTone[recommendation] : "bg-muted/25";
 
-      <div className="rounded-3xl border border-border/60 px-5 py-4 md:px-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0 space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="flex size-9 items-center justify-center rounded-xl border border-border/60 bg-muted/30">
-                <HugeiconsIcon
-                  icon={SparklesIcon}
-                  strokeWidth={2}
-                  className="size-4 text-muted-foreground"
+  return (
+    <div className="overflow-hidden rounded-3xl border border-border/60">
+      <section className={cn(verdictTone)}>
+        <div className="px-5 py-4 md:px-6">
+          <ReportActionsRow
+            applicationId={application.id}
+            batchNavigation={batchNavigation}
+            linkTarget="summary"
+          />
+
+          <div className="flex flex-col gap-4 pt-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex min-w-0 items-center gap-4">
+              <Avatar className="size-14 shrink-0">
+                <AvatarImage
+                  src={application.candidatePicture ?? undefined}
+                  alt={application.candidateName}
                 />
+                <AvatarFallback className="text-sm">
+                  {getReportInitials(application.candidateName)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 space-y-1.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="truncate text-xl font-semibold tracking-tight">
+                    {application.candidateName}
+                  </h1>
+                  <Badge variant="outline" className={statusTone.badge}>
+                    {applicationStatusLabels[currentStatus]}
+                  </Badge>
+                  {showAuthenticity ? (
+                    <Badge variant="outline" className={cn("gap-1", authenticityRiskTone)}>
+                      <HugeiconsIcon icon={AiMagicIcon} strokeWidth={2} className="size-3" />
+                      {authenticity.riskLevel === "high"
+                        ? "Likely AI answers"
+                        : "Possible AI answers"}
+                    </Badge>
+                  ) : null}
+                </div>
+                <p className="truncate text-sm text-muted-foreground">
+                  Full audit timeline for{" "}
+                  <span className="font-medium text-foreground">{application.jobTitle}</span>
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  Generated {reportCreatedAt ? formatDateTime(reportCreatedAt) : "—"}
+                </p>
               </div>
-              <h1 className="text-xl font-semibold tracking-tight">{application.candidateName}</h1>
-              <Badge variant="outline" className={statusTone.badge}>
-                {applicationStatusLabels[currentStatus]}
-              </Badge>
-              <ScorePill score={score} recommendation={recommendation} size="default" />
             </div>
-            <p className="text-sm text-muted-foreground">
-              Post-interview report for{" "}
-              <span className="font-medium text-foreground">{application.jobTitle}</span>
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Generated {reportCreatedAt ? formatDateTime(reportCreatedAt) : "N/A"}
-            </p>
+
+            <div className="md:shrink-0">
+              <ScorePill score={report.scores.overall} recommendation={recommendation} size="lg" />
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border/30 pt-4">
             {canShortlist ? (
               <ShortlistDialog
                 applicationId={application.id}
@@ -306,22 +352,24 @@ function ApplicantAiReportPage() {
                   : "Reject"}
               </Button>
             ) : null}
-            <Select
-              value={currentStatus}
-              onValueChange={onStatusSelectValueChange}
-              disabled={updateStatusMutation.isPending}
-            >
-              <SelectTrigger className="w-47.5">
-                <SelectValue placeholder="Move to status" />
-              </SelectTrigger>
-              <SelectContent>
-                {allowedStatusOptions.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    Move to: {applicationStatusLabels[status]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {allowedStatusOptions.length > 1 ? (
+              <Select
+                value={currentStatus}
+                onValueChange={onStatusValueChange}
+                disabled={updateStatusMutation.isPending}
+              >
+                <SelectTrigger className="w-50">
+                  <SelectValue placeholder="Move to status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {allowedStatusOptions.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      Move to: {applicationStatusLabels[status]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null}
             {application.resumeKey ? (
               <Button
                 variant="outline"
@@ -338,28 +386,46 @@ function ApplicantAiReportPage() {
                 ) : (
                   <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-4" />
                 )}
-                {resumeDownloadMutation.isPending ? "Opening..." : "View submitted resume"}
+                {resumeDownloadMutation.isPending ? "Opening..." : "View resume"}
               </Button>
             ) : null}
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="rounded-3xl border border-border/60 px-5 py-4 md:px-6">
-        <ReportTimeline
-          report={report}
-          preEvaluation={preEvaluation}
-          interview={interview}
-          messages={messages}
-          reportCreatedAt={reportCreatedAt}
-          communicationAssessment={communicationAssessment}
-          application={{
-            candidateName: application.candidateName,
-            candidatePicture: application.candidatePicture,
-            jobTitle: application.jobTitle,
-            createdAt: application.createdAt,
-          }}
-        />
+      <section className="border-t border-border/60 px-5 py-5 md:px-6">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Audit timeline
+        </p>
+        <div className="mt-5">
+          <ReportTimeline
+            report={report}
+            preEvaluation={preEvaluation}
+            interview={interview}
+            messages={messages}
+            reportCreatedAt={reportCreatedAt}
+            communicationAssessment={communicationAssessment}
+            application={{
+              candidateName: application.candidateName,
+              candidatePicture: application.candidatePicture,
+              jobTitle: application.jobTitle,
+              createdAt: application.createdAt,
+            }}
+          />
+        </div>
+      </section>
+
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 px-5 py-4 md:px-6">
+        <p className="text-xs text-muted-foreground">Prefer the condensed executive brief?</p>
+        <Button asChild variant="outline" size="sm">
+          <Link
+            to="/dashboard/applicant-reports/$applicationId"
+            params={{ applicationId: application.id }}
+          >
+            Report summary
+            <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-4" />
+          </Link>
+        </Button>
       </div>
 
       <AlertDialog open={pendingStatus === "rejected"} onOpenChange={onPendingStatusChange}>

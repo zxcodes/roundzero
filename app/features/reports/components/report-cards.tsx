@@ -1,23 +1,17 @@
 import {
   AiMagicIcon,
-  Alert02Icon,
   AnalyticsUpIcon,
   ArrowRight01Icon,
   BotIcon,
   BubbleChatIcon,
   Calendar01Icon,
   CheckmarkCircle02Icon,
-  ClipboardIcon,
   FilesIcon,
-  FilterEditIcon,
-  FlagIcon,
-  HelpCircleIcon,
   Message01Icon,
   Mic01Icon,
   RankingIcon,
   SparklesIcon,
   Target02Icon,
-  TickDouble01Icon,
   type Time04Icon,
   UserCircleIcon,
 } from "@hugeicons/core-free-icons";
@@ -27,7 +21,6 @@ import type { ReactNode } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -39,6 +32,12 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { EmptyInterviewComponent } from "@/features/interviews/components/interview-chat";
 import { InterviewTranscript } from "@/features/interviews/components/interview-transcript";
+import {
+  getReportInitials,
+  ReportEvaluationBrief,
+  TimelineStepEmpty,
+  TimelineStepPanel,
+} from "@/features/reports/components/report-page-ui";
 import { ScorePill } from "@/features/reports/components/score-pill";
 import type { ReportData } from "@/features/reports/schemas";
 import { cn } from "@/lib/utils";
@@ -57,8 +56,6 @@ import {
 type Recommendation = ReportData["recommendation"];
 
 type ReportScores = ReportData["scores"];
-
-type ScreeningConcern = ReportData["screeningAnswers"][number]["concern"];
 
 type TranscriptMessage = {
   role: "assistant" | "candidate";
@@ -110,30 +107,6 @@ const dimensionMeta: Record<
   roleFit: { label: "Role fit", icon: Target02Icon },
 };
 
-const concernMeta: Record<
-  ScreeningConcern,
-  { label: string; badge: string; rowBorder: string; icon: typeof CheckmarkCircle02Icon }
-> = {
-  none: {
-    label: "OK",
-    badge: "border-border/60 bg-muted/20 text-foreground",
-    rowBorder: "border-border/60",
-    icon: CheckmarkCircle02Icon,
-  },
-  minor: {
-    label: "Flag",
-    badge: "border-border/60 bg-muted/20 text-foreground",
-    rowBorder: "border-border/60",
-    icon: HelpCircleIcon,
-  },
-  dealbreaker: {
-    label: "Dealbreaker",
-    badge: "border-border/60 bg-muted/20 text-foreground",
-    rowBorder: "border-border/60",
-    icon: Alert02Icon,
-  },
-};
-
 const voiceDimensionMeta: Record<
   keyof Omit<CommunicationAssessmentAnalysis, "overallScore" | "summary">,
   { label: string }
@@ -143,15 +116,6 @@ const voiceDimensionMeta: Record<
   conciseness: { label: "Conciseness" },
   listening: { label: "Listening" },
   confidence: { label: "Confidence" },
-};
-
-const getInitials = (name: string) => {
-  return name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
 };
 
 /**
@@ -279,52 +243,6 @@ function TimelineNode({
   );
 }
 
-function SignalSection({
-  title,
-  icon,
-  iconToneClass,
-  items,
-  emptyText,
-}: {
-  title: string;
-  icon: typeof Time04Icon;
-  iconToneClass?: string;
-  items: string[];
-  emptyText: string;
-}) {
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2.5">
-        <div className="flex size-7 items-center justify-center rounded-full border border-border/60 bg-muted/30">
-          <HugeiconsIcon
-            icon={icon}
-            strokeWidth={2}
-            className={cn("size-3.5 text-muted-foreground", iconToneClass)}
-          />
-        </div>
-        <p className="text-base font-semibold tracking-tight">{title}</p>
-      </div>
-      {items.length > 0 ? (
-        <ul className="space-y-2">
-          {items.map((item, index) => (
-            <li
-              key={index}
-              className="flex gap-3 rounded-2xl border border-border/60 bg-muted/15 px-4 py-3 text-sm leading-6 text-foreground"
-            >
-              <span className="mt-2 size-1.5 shrink-0 rounded-full bg-muted-foreground/60" />
-              <span>{item}</span>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="rounded-lg border border-dashed border-border/50 px-3 py-2 text-xs text-muted-foreground">
-          {emptyText}
-        </p>
-      )}
-    </div>
-  );
-}
-
 /**
  * Full report rendered as a vertical timeline. Replaces the old stack of
  * generic-looking cards on the applicant-reports page.
@@ -390,24 +308,22 @@ export function ReportTimeline({
         title="Application submitted"
         timestamp={application.createdAt}
       >
-        <Card variant="bordered-inset" size="sm">
-          <CardContent className="flex flex-wrap items-center gap-3 px-4 py-3">
-            <Avatar className="size-10">
-              <AvatarImage src={candidate.picture ?? undefined} alt={candidate.name} />
-              <AvatarFallback>{getInitials(candidate.name)}</AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">{candidate.name}</p>
-              <p className="truncate text-xs text-muted-foreground">
-                Applied for <span className="font-medium">{application.jobTitle}</span>
-              </p>
-            </div>
-            <Badge variant="outline" className="gap-1 text-[10px]">
-              <HugeiconsIcon icon={Calendar01Icon} strokeWidth={2} className="size-3" />
-              {formatDateShort(application.createdAt)}
-            </Badge>
-          </CardContent>
-        </Card>
+        <TimelineStepPanel className="flex flex-wrap items-center gap-3">
+          <Avatar className="size-10">
+            <AvatarImage src={candidate.picture ?? undefined} alt={candidate.name} />
+            <AvatarFallback>{getReportInitials(candidate.name)}</AvatarFallback>
+          </Avatar>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium">{candidate.name}</p>
+            <p className="truncate text-xs text-muted-foreground">
+              Applied for <span className="font-medium">{application.jobTitle}</span>
+            </p>
+          </div>
+          <Badge variant="outline" className="gap-1 text-[10px]">
+            <HugeiconsIcon icon={Calendar01Icon} strokeWidth={2} className="size-3" />
+            {formatDateShort(application.createdAt)}
+          </Badge>
+        </TimelineStepPanel>
       </TimelineNode>
 
       <TimelineNode
@@ -418,54 +334,46 @@ export function ReportTimeline({
         timestamp={preEvaluation?.createdAt ?? null}
       >
         {preEvaluation ? (
-          <Card variant="bordered-inset" size="sm">
-            <CardContent className="space-y-3 px-4 py-3">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="flex size-12 items-center justify-center rounded-xl border border-border/60 bg-muted/30">
-                    <span className="text-base font-semibold">
-                      {formatCandidateScore(preEvaluation.score)}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Profile match score</p>
-                    <p className="text-xs text-muted-foreground">
-                      Confidence:{" "}
-                      <span className="font-medium text-foreground">
-                        {preEvaluation.confidence}
-                      </span>
-                    </p>
-                  </div>
+          <TimelineStepPanel className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="flex size-12 items-center justify-center rounded-xl border border-border/60 bg-muted/30">
+                  <span className="text-base font-semibold">
+                    {formatCandidateScore(preEvaluation.score)}
+                  </span>
                 </div>
-                <Badge variant="outline" className="text-[11px]">
-                  Next: {preEvaluation.nextStep.replace(/_/g, " ")}
-                </Badge>
-              </div>
-              {missingRequirements.length > 0 ? (
-                <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
-                  <p className="text-sm font-semibold text-muted-foreground">
-                    {missingRequirements.length} gap
-                    {missingRequirements.length === 1 ? "" : "s"} detected
+                <div>
+                  <p className="text-sm font-medium">Profile match score</p>
+                  <p className="text-xs text-muted-foreground">
+                    Confidence:{" "}
+                    <span className="font-medium text-foreground">{preEvaluation.confidence}</span>
                   </p>
-                  <ul className="mt-1.5 space-y-1">
-                    {missingRequirements.map((req) => (
-                      <li key={req} className="text-xs text-foreground">
-                        • {req}
-                      </li>
-                    ))}
-                  </ul>
                 </div>
-              ) : (
-                <p className="text-xs text-muted-foreground">All key requirements matched.</p>
-              )}
-            </CardContent>
-          </Card>
+              </div>
+              <Badge variant="outline" className="text-[11px]">
+                Next: {preEvaluation.nextStep.replace(/_/g, " ")}
+              </Badge>
+            </div>
+            {missingRequirements.length > 0 ? (
+              <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                <p className="text-sm font-semibold text-muted-foreground">
+                  {missingRequirements.length} gap
+                  {missingRequirements.length === 1 ? "" : "s"} detected
+                </p>
+                <ul className="mt-1.5 space-y-1">
+                  {missingRequirements.map((req) => (
+                    <li key={req} className="text-xs text-foreground">
+                      • {req}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">All key requirements matched.</p>
+            )}
+          </TimelineStepPanel>
         ) : (
-          <Card size="sm" variant="bordered-inset" className="border-dashed">
-            <CardContent className="px-4 py-3 text-xs text-muted-foreground">
-              No pre-screening record found for this application.
-            </CardContent>
-          </Card>
+          <TimelineStepEmpty>No pre-screening record found for this application.</TimelineStepEmpty>
         )}
       </TimelineNode>
 
@@ -479,32 +387,26 @@ export function ReportTimeline({
         }
       >
         {interview ? (
-          <Card variant="bordered-inset" size="sm">
-            <CardContent className="space-y-3 px-4 py-3">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="outline" className="text-[11px] capitalize">
-                    {interview.type}
-                  </Badge>
-                  <Badge variant="outline" className="text-[11px] capitalize">
-                    {interview.status.replace(/_/g, " ")}
-                  </Badge>
-                  <Badge variant="outline" className="gap-1 text-[11px]">
-                    <HugeiconsIcon icon={Message01Icon} strokeWidth={2} className="size-3" />
-                    {messages.length} message
-                    {messages.length === 1 ? "" : "s"}
-                  </Badge>
-                </div>
-                <TranscriptDialog messages={messages} candidate={candidate} />
+          <TimelineStepPanel>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="outline" className="text-[11px] capitalize">
+                  {interview.type}
+                </Badge>
+                <Badge variant="outline" className="text-[11px] capitalize">
+                  {interview.status.replace(/_/g, " ")}
+                </Badge>
+                <Badge variant="outline" className="gap-1 text-[11px]">
+                  <HugeiconsIcon icon={Message01Icon} strokeWidth={2} className="size-3" />
+                  {messages.length} message
+                  {messages.length === 1 ? "" : "s"}
+                </Badge>
               </div>
-            </CardContent>
-          </Card>
+              <TranscriptDialog messages={messages} candidate={candidate} />
+            </div>
+          </TimelineStepPanel>
         ) : (
-          <Card size="sm" variant="bordered-inset" className="border-dashed">
-            <CardContent className="px-4 py-3 text-xs text-muted-foreground">
-              No interview record found for this application.
-            </CardContent>
-          </Card>
+          <TimelineStepEmpty>No interview record found for this application.</TimelineStepEmpty>
         )}
       </TimelineNode>
 
@@ -529,11 +431,7 @@ export function ReportTimeline({
           title="Voice Communication Assessment"
           timestamp={communicationAssessment.completedAt}
         >
-          <Card size="sm" variant="bordered-inset" className="border-dashed">
-            <CardContent className="px-4 py-3 text-xs text-muted-foreground">
-              Candidate chose to skip the voice assessment.
-            </CardContent>
-          </Card>
+          <TimelineStepEmpty>Candidate chose to skip the voice assessment.</TimelineStepEmpty>
         </TimelineNode>
       ) : communicationAssessment != null ? (
         <TimelineNode
@@ -543,11 +441,9 @@ export function ReportTimeline({
           title="Voice Communication Assessment"
           timestamp={null}
         >
-          <Card size="sm" variant="bordered-inset" className="border-dashed">
-            <CardContent className="px-4 py-3 text-xs text-muted-foreground">
-              Voice assessment was not completed within the interview window.
-            </CardContent>
-          </Card>
+          <TimelineStepEmpty>
+            Voice assessment was not completed within the interview window.
+          </TimelineStepEmpty>
         </TimelineNode>
       ) : null}
 
@@ -558,159 +454,7 @@ export function ReportTimeline({
         title="Evaluation"
         timestamp={reportCreatedAt}
       >
-        <div className="space-y-4">
-          <Card variant="bordered-inset" className="overflow-hidden">
-            <CardContent className="space-y-4 px-5 py-4 md:px-6">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="max-w-xl space-y-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex size-8 items-center justify-center rounded-full border border-border/60 bg-muted/30">
-                      <HugeiconsIcon
-                        icon={SparklesIcon}
-                        strokeWidth={2}
-                        className="size-3.5 text-muted-foreground"
-                      />
-                    </div>
-                    <p className="text-base font-semibold tracking-tight">Recommendation & score</p>
-                  </div>
-                  <p className="text-sm leading-6 text-foreground">{report.summary}</p>
-                </div>
-                <ScorePill
-                  score={report.scores.overall}
-                  recommendation={report.recommendation}
-                  size="lg"
-                />
-              </div>
-
-              <div className="space-y-3 rounded-3xl border border-border/60 bg-muted/20 p-5">
-                <div className="flex items-center gap-2">
-                  <div
-                    className={cn(
-                      "flex size-7 items-center justify-center rounded-full border border-border/60 bg-muted/30",
-                      meta.accent,
-                    )}
-                  >
-                    <HugeiconsIcon
-                      icon={RankingIcon}
-                      strokeWidth={2}
-                      className="size-3.5 text-foreground"
-                    />
-                  </div>
-                  <p className="text-base font-semibold tracking-tight">Dimension scores</p>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {(Object.keys(dimensionMeta) as Array<keyof typeof dimensionMeta>).map((key) => {
-                    const rawScore = report.scores[key];
-                    const dim = dimensionMeta[key];
-                    return (
-                      <div key={key} className="space-y-1.5">
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-1.5">
-                            <HugeiconsIcon
-                              icon={dim.icon}
-                              strokeWidth={2}
-                              className="size-3.5 text-muted-foreground"
-                            />
-                            <span className="text-xs font-medium">{dim.label}</span>
-                          </div>
-                          <span className="text-xs text-muted-foreground">
-                            {formatCandidateScoreWithScale(rawScore)}
-                          </span>
-                        </div>
-                        <div className="h-1.5 overflow-hidden rounded-full bg-background">
-                          <div
-                            className="h-full rounded-full bg-foreground/80"
-                            style={{ width: `${candidateScoreProgressPercent(rawScore)}%` }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="grid gap-4 lg:grid-cols-2">
-                <SignalSection
-                  title="Strengths"
-                  icon={CheckmarkCircle02Icon}
-                  items={report.strengths}
-                  emptyText="No strengths captured."
-                />
-                <SignalSection
-                  title="Weaknesses"
-                  icon={FlagIcon}
-                  items={report.weaknesses}
-                  emptyText="No weaknesses captured."
-                />
-                <SignalSection
-                  title="Insights"
-                  icon={FilterEditIcon}
-                  items={report.insights}
-                  emptyText="No insights captured."
-                />
-                <SignalSection
-                  title="Evidence"
-                  icon={TickDouble01Icon}
-                  items={report.evidence}
-                  emptyText="No evidence captured."
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {report.screeningAnswers.length > 0 ? (
-            <Card variant="bordered-inset">
-              <CardContent className="space-y-4 px-5 py-4 md:px-6">
-                <div className="flex items-center gap-2">
-                  <HugeiconsIcon
-                    icon={ClipboardIcon}
-                    strokeWidth={2}
-                    className="size-4 text-muted-foreground"
-                  />
-                  <div>
-                    <p className="text-sm font-semibold">Screening question answers</p>
-                    <p className="text-xs text-muted-foreground">
-                      How the candidate responded to the questions you required.
-                    </p>
-                  </div>
-                </div>
-                <ul className="space-y-2.5">
-                  {report.screeningAnswers.map((entry) => {
-                    const cm = concernMeta[entry.concern];
-                    return (
-                      <li
-                        key={entry.question}
-                        className={cn("rounded-xl border bg-background/50 p-4", cm.rowBorder)}
-                      >
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                          <p className="max-w-xl text-sm font-medium leading-6 text-foreground">
-                            {entry.question}
-                          </p>
-                          <Badge variant="outline" className={cn("gap-1.5", cm.badge)}>
-                            <HugeiconsIcon icon={cm.icon} strokeWidth={2} className="size-3.5" />
-                            {cm.label}
-                          </Badge>
-                        </div>
-                        <p className="mt-2 text-sm leading-6 text-foreground">
-                          {entry.answer ?? (
-                            <span className="text-muted-foreground italic">
-                              Not asked or candidate did not answer.
-                            </span>
-                          )}
-                        </p>
-                        {entry.notes ? (
-                          <p className="mt-2 rounded-md border-l-2 border-border bg-muted/30 px-2.5 py-1.5 text-xs leading-5 text-muted-foreground">
-                            {entry.notes}
-                          </p>
-                        ) : null}
-                      </li>
-                    );
-                  })}
-                </ul>
-              </CardContent>
-            </Card>
-          ) : null}
-        </div>
+        <ReportEvaluationBrief report={report} compact />
       </TimelineNode>
 
       {report.answerAuthenticity?.riskLevel === "medium" ||
@@ -722,39 +466,34 @@ export function ReportTimeline({
           title="Answer authenticity concern"
           timestamp={reportCreatedAt}
         >
-          <Card variant="bordered-inset">
-            <CardContent className="space-y-4 px-5 py-4 md:px-6">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="max-w-xl space-y-3">
-                  <p className="text-base font-semibold tracking-tight">
-                    {report.answerAuthenticity.riskLevel === "high" ? "High risk" : "Medium risk"}
-                  </p>
-                  <p className="text-sm leading-6 text-foreground">
-                    {report.answerAuthenticity.explanation}
-                  </p>
-                </div>
-                <Badge variant="outline" className="shrink-0 text-[11px]">
-                  {report.answerAuthenticity.signals.length} signal
-                  {report.answerAuthenticity.signals.length === 1 ? "" : "s"}
-                </Badge>
+          <TimelineStepPanel className="space-y-4">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="max-w-xl space-y-3">
+                <p className="text-base font-semibold tracking-tight">
+                  {report.answerAuthenticity.riskLevel === "high" ? "High risk" : "Medium risk"}
+                </p>
+                <p className="text-sm leading-6 text-foreground">
+                  {report.answerAuthenticity.explanation}
+                </p>
               </div>
-              {report.answerAuthenticity.signals.length > 0 ? (
-                <div className="space-y-2">
-                  {report.answerAuthenticity.signals.map((s, i) => (
-                    <div
-                      key={i}
-                      className="rounded-lg border border-border/60 bg-background/50 p-3"
-                    >
-                      <p className="text-sm font-medium text-foreground">{s.signal}</p>
-                      <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                        <span className="font-medium">Evidence:</span> &ldquo;{s.evidence}&rdquo;
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-            </CardContent>
-          </Card>
+              <Badge variant="outline" className="shrink-0 text-[11px]">
+                {report.answerAuthenticity.signals.length} signal
+                {report.answerAuthenticity.signals.length === 1 ? "" : "s"}
+              </Badge>
+            </div>
+            {report.answerAuthenticity.signals.length > 0 ? (
+              <div className="space-y-2">
+                {report.answerAuthenticity.signals.map((s, i) => (
+                  <div key={i} className="rounded-lg border border-border/60 bg-background/50 p-3">
+                    <p className="text-sm font-medium text-foreground">{s.signal}</p>
+                    <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                      <span className="font-medium">Evidence:</span> &ldquo;{s.evidence}&rdquo;
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </TimelineStepPanel>
         </TimelineNode>
       ) : null}
 
@@ -785,125 +524,115 @@ function VoiceAssessmentReportCard({
   const parsed = parseCommunicationAssessment(analysis);
 
   return (
-    <div className="space-y-4">
-      <Card variant="bordered-inset">
-        <CardContent className="space-y-4 px-5 py-4 md:px-6">
-          {/* Summary + overall */}
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="max-w-xl space-y-2">
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="gap-1 text-[11px]">
-                  <HugeiconsIcon icon={Mic01Icon} strokeWidth={2} className="size-3" />
-                  Voice-blended communication score
-                </Badge>
-              </div>
-              {parsed?.summary ? (
-                <p className="text-sm leading-6 text-foreground">{parsed.summary}</p>
-              ) : (
-                <p className="text-sm text-muted-foreground">No summary available.</p>
-              )}
-            </div>
-            {parsed ? (
-              <div className="flex size-16 shrink-0 flex-col items-center justify-center rounded-3xl border border-border/60 bg-muted/30">
-                <span className="text-xl font-semibold leading-none">
-                  {formatCandidateScore(parsed.overallScore)}
-                </span>
-                <span className="mt-1 text-xs text-muted-foreground">/ {CANDIDATE_SCORE_MAX}</span>
-              </div>
-            ) : null}
+    <TimelineStepPanel className="space-y-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="max-w-xl space-y-2">
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="gap-1 text-[11px]">
+              <HugeiconsIcon icon={Mic01Icon} strokeWidth={2} className="size-3" />
+              Voice-blended communication score
+            </Badge>
           </div>
+          {parsed?.summary ? (
+            <p className="text-sm leading-6 text-foreground">{parsed.summary}</p>
+          ) : (
+            <p className="text-sm text-muted-foreground">No summary available.</p>
+          )}
+        </div>
+        {parsed ? (
+          <div className="flex size-16 shrink-0 flex-col items-center justify-center rounded-3xl border border-border/60 bg-muted/30">
+            <span className="text-xl font-semibold leading-none">
+              {formatCandidateScore(parsed.overallScore)}
+            </span>
+            <span className="mt-1 text-xs text-muted-foreground">/ {CANDIDATE_SCORE_MAX}</span>
+          </div>
+        ) : null}
+      </div>
 
-          {/* Dimension scores */}
-          {parsed ? (
-            <div className="space-y-3 rounded-3xl border border-border/60 bg-muted/20 p-5">
-              <p className="text-base font-semibold tracking-tight">Dimension scores</p>
-              <div className="grid gap-4 sm:grid-cols-2">
-                {(Object.keys(voiceDimensionMeta) as Array<keyof typeof voiceDimensionMeta>).map(
-                  (key) => {
-                    const dim = parsed[key as keyof typeof voiceDimensionMeta];
-                    const meta = voiceDimensionMeta[key];
-                    return (
-                      <div key={key} className="space-y-1.5">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs font-medium">{meta.label}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {formatCandidateScoreWithScale(dim.score)}
-                          </span>
-                        </div>
-                        <div className="h-1.5 overflow-hidden rounded-full bg-background">
-                          <div
-                            className="h-full rounded-full bg-foreground/80"
-                            style={{ width: `${candidateScoreProgressPercent(dim.score)}%` }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  },
-                )}
-              </div>
-            </div>
-          ) : null}
-
-          {/* Key moments — deduplicated evidence across all dimensions */}
-          {parsed ? (
-            <div className="space-y-2">
-              <p className="text-base font-semibold tracking-tight">Key moments</p>
-              <div className="space-y-2">
-                {(() => {
-                  const allEvidence = new Set<string>();
-                  (
-                    Object.keys(voiceDimensionMeta) as Array<keyof typeof voiceDimensionMeta>
-                  ).forEach((key) => {
-                    parsed[key as keyof typeof voiceDimensionMeta].evidence.forEach((quote) => {
-                      if (quote.trim().length > 0) {
-                        allEvidence.add(quote.trim());
-                      }
-                    });
-                  });
-                  const uniqueEvidence = Array.from(allEvidence);
-                  if (uniqueEvidence.length === 0) {
-                    return (
-                      <p className="text-xs text-muted-foreground">
-                        No specific evidence recorded.
-                      </p>
-                    );
-                  }
-                  return uniqueEvidence.map((quote, i) => (
-                    <div
-                      key={i}
-                      className="rounded-md border-l-2 border-border bg-muted/30 px-3 py-2 text-xs leading-5 text-muted-foreground"
-                    >
-                      &ldquo;{quote}&rdquo;
+      {parsed ? (
+        <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-4">
+          <p className="text-sm font-semibold tracking-tight">Dimension scores</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {(Object.keys(voiceDimensionMeta) as Array<keyof typeof voiceDimensionMeta>).map(
+              (key) => {
+                const dim = parsed[key as keyof typeof voiceDimensionMeta];
+                const meta = voiceDimensionMeta[key];
+                return (
+                  <div key={key} className="space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-medium">{meta.label}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {formatCandidateScoreWithScale(dim.score)}
+                      </span>
                     </div>
-                  ));
-                })()}
-              </div>
-            </div>
-          ) : null}
+                    <div className="h-1.5 overflow-hidden rounded-full bg-background">
+                      <div
+                        className="h-full rounded-full bg-foreground/80"
+                        style={{ width: `${candidateScoreProgressPercent(dim.score)}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              },
+            )}
+          </div>
+        </div>
+      ) : null}
 
-          {/* Transcript */}
-          {transcript.length > 0 ? (
-            <div className="space-y-2">
-              <p className="text-base font-semibold tracking-tight">Transcript</p>
-              <ScrollArea className="h-48 rounded-xl border border-border/60 bg-muted/15 p-3">
-                <div className="space-y-2 pr-3">
-                  {transcript
-                    .filter((m) => m.content.trim().length > 0)
-                    .map((m, i) => (
-                      <p key={i} className="text-xs leading-5">
-                        <span className="font-medium text-foreground">
-                          {m.role === "assistant" ? "Zero" : "Candidate"}:
-                        </span>{" "}
-                        <span className="text-muted-foreground">{m.content}</span>
-                      </p>
-                    ))}
+      {parsed ? (
+        <div className="space-y-2">
+          <p className="text-sm font-semibold tracking-tight">Key moments</p>
+          <div className="space-y-2">
+            {(() => {
+              const allEvidence = new Set<string>();
+              (Object.keys(voiceDimensionMeta) as Array<keyof typeof voiceDimensionMeta>).forEach(
+                (key) => {
+                  parsed[key as keyof typeof voiceDimensionMeta].evidence.forEach((quote) => {
+                    if (quote.trim().length > 0) {
+                      allEvidence.add(quote.trim());
+                    }
+                  });
+                },
+              );
+              const uniqueEvidence = Array.from(allEvidence);
+              if (uniqueEvidence.length === 0) {
+                return (
+                  <p className="text-xs text-muted-foreground">No specific evidence recorded.</p>
+                );
+              }
+              return uniqueEvidence.map((quote, i) => (
+                <div
+                  key={i}
+                  className="rounded-md border-l-2 border-border bg-muted/30 px-3 py-2 text-xs leading-5 text-muted-foreground"
+                >
+                  &ldquo;{quote}&rdquo;
                 </div>
-              </ScrollArea>
+              ));
+            })()}
+          </div>
+        </div>
+      ) : null}
+
+      {transcript.length > 0 ? (
+        <div className="space-y-2">
+          <p className="text-sm font-semibold tracking-tight">Transcript</p>
+          <ScrollArea className="h-48 rounded-xl border border-border/60 bg-muted/15 p-3">
+            <div className="space-y-2 pr-3">
+              {transcript
+                .filter((m) => m.content.trim().length > 0)
+                .map((m, i) => (
+                  <p key={i} className="text-xs leading-5">
+                    <span className="font-medium text-foreground">
+                      {m.role === "assistant" ? "Zero" : "Candidate"}:
+                    </span>{" "}
+                    <span className="text-muted-foreground">{m.content}</span>
+                  </p>
+                ))}
             </div>
-          ) : null}
-        </CardContent>
-      </Card>
-    </div>
+          </ScrollArea>
+        </div>
+      ) : null}
+    </TimelineStepPanel>
   );
 }
 
