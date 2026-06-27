@@ -1,4 +1,4 @@
-import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
+import { ArrowRight01Icon, ArrowRight02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { PublicFooter, PublicHeader } from "@/components/public-layout";
@@ -145,16 +145,10 @@ function TextLink({ to, children }: { to: string; children: React.ReactNode }) {
   return (
     <Link
       to={to}
-      className="group inline-flex items-center gap-1 text-sm text-foreground transition-colors hover:text-foreground/80"
+      className="inline-flex items-center gap-1 text-sm text-foreground transition-colors hover:text-foreground/80"
     >
-      <span className="underline decoration-border underline-offset-[5px] transition-[text-decoration-color] group-hover:decoration-foreground/40">
-        {children}
-      </span>
-      <HugeiconsIcon
-        icon={ArrowRight01Icon}
-        strokeWidth={2}
-        className="size-3.5 transition-transform group-hover:translate-x-0.5"
-      />
+      {children}
+      <HugeiconsIcon icon={ArrowRight02Icon} strokeWidth={2} className="size-3.5" />
     </Link>
   );
 }
@@ -166,8 +160,8 @@ function Hero() {
   return (
     <section className="calm-hero relative overflow-hidden">
       <div className={cn(CONTAINER, "pb-0 pt-16 lg:pt-24")}>
-        <div className="rise max-w-4xl text-left">
-          <h1 className="max-w-3xl text-[clamp(2.5rem,4.8vw,4.25rem)] font-semibold leading-[1.06] tracking-[-0.035em]">
+        <div className="rise text-left">
+          <h1 className="text-[clamp(2rem,3.6vw,4rem)] font-semibold leading-[1.06] tracking-[-0.035em] sm:whitespace-nowrap">
             Review candidates, not <Highlight>resumes</Highlight>.
           </h1>
           <p className="mt-5 max-w-xl text-[clamp(0.95rem,1.2vw,1.05rem)] leading-relaxed text-muted-foreground">
@@ -180,18 +174,18 @@ function Hero() {
             <TextLink to="/company/login">Post a job</TextLink>
           </div>
         </div>
-      </div>
 
-      <div className="rise calm-hero-shot">
-        <img
-          src="/marketing/dashboard.jpeg"
-          alt="RoundZero dashboard showing candidates awaiting review with scores and recommendations"
-          className="calm-hero-shot__img"
-          width={2400}
-          height={1500}
-          loading="eager"
-          decoding="async"
-        />
+        <div className="rise calm-hero-shot mt-10 lg:mt-14">
+          <img
+            src="/marketing/dashboard.jpeg"
+            alt="RoundZero dashboard showing candidates awaiting review with scores and recommendations"
+            className="calm-hero-shot__img"
+            width={2400}
+            height={1500}
+            loading="eager"
+            decoding="async"
+          />
+        </div>
       </div>
     </section>
   );
