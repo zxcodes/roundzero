@@ -18,7 +18,6 @@ import {
   teamMemberFeatureLabel,
 } from "@/features/billing/config";
 import { cn } from "@/lib/utils";
-import { recommendationLabels } from "@/shared/enums";
 import { DEFAULT_META_TITLE, HOMEPAGE_META_DESCRIPTION } from "@/shared/seo";
 
 const NOT_INCLUDED = "Not included";
@@ -62,12 +61,12 @@ function HomePage() {
       <PublicHeader />
       <main id="main-content">
         <Hero />
+        <ProductIntro />
         <ValueStrip />
         <HowItWorks />
         <PipelineSection />
         <CandidateExperience />
-        <ReportSection />
-        <RankingSection />
+        <ReportScreenshotSection />
         <PricingSection />
         <FaqSection />
         <Closing />
@@ -80,7 +79,7 @@ function HomePage() {
 // ───────────────────────────────────────────────────────────────────────────
 // Shared primitives
 // ───────────────────────────────────────────────────────────────────────────
-const CONTAINER = "mx-auto w-full max-w-7xl px-6 lg:px-10";
+const CONTAINER = "mx-auto w-full max-w-[90rem] px-6 lg:px-12 xl:px-16";
 const SECTION_PAD = "py-20 lg:py-28";
 const SECTION_TINT = "bg-muted/30";
 
@@ -142,14 +141,21 @@ function SecondaryCta({ to, children }: { to: string; children: React.ReactNode 
   );
 }
 
-function ScoreBar({ value }: { value: number }) {
+function TextLink({ to, children }: { to: string; children: React.ReactNode }) {
   return (
-    <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-      <div
-        className="h-full rounded-full bg-linear-to-r from-foreground/75 to-foreground"
-        style={{ width: `${(value / 10) * 100}%` }}
+    <Link
+      to={to}
+      className="group inline-flex items-center gap-1 text-sm text-foreground transition-colors hover:text-foreground/80"
+    >
+      <span className="underline decoration-border underline-offset-[5px] transition-[text-decoration-color] group-hover:decoration-foreground/40">
+        {children}
+      </span>
+      <HugeiconsIcon
+        icon={ArrowRight01Icon}
+        strokeWidth={2}
+        className="size-3.5 transition-transform group-hover:translate-x-0.5"
       />
-    </div>
+    </Link>
   );
 }
 
@@ -159,120 +165,49 @@ function ScoreBar({ value }: { value: number }) {
 function Hero() {
   return (
     <section className="calm-hero relative overflow-hidden">
-      <div className={cn(CONTAINER, SECTION_PAD)}>
-        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-16">
-          <div className="rise max-w-xl">
-            <h1 className="text-[clamp(2.6rem,5.6vw,4.75rem)] font-bold leading-[1.02] tracking-[-0.035em]">
-              Review candidates, <br />
-              not <Highlight>resumes</Highlight>.
-            </h1>
-            <p className="mt-6 max-w-lg text-[clamp(1.05rem,1.4vw,1.2rem)] leading-relaxed text-muted-foreground">
-              Every applicant is evaluated through adaptive interviews and structured assessment.
-              Get ranked candidates, evidence-backed reports, and clear hiring recommendations
-              before the first human interview.
-            </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <PrimaryCta to="/company/login">Post a Job</PrimaryCta>
-              <SecondaryCta to="/jobs">Browse Jobs</SecondaryCta>
-            </div>
-            <p className="eyebrow mt-6">Free to start · No credit card</p>
-          </div>
-
-          <div className="rise">
-            <HeroProductWindow />
+      <div className={cn(CONTAINER, "pb-0 pt-16 lg:pt-24")}>
+        <div className="rise max-w-4xl text-left">
+          <h1 className="max-w-3xl text-[clamp(2.5rem,4.8vw,4.25rem)] font-semibold leading-[1.06] tracking-[-0.035em]">
+            Review candidates, not <Highlight>resumes</Highlight>.
+          </h1>
+          <p className="mt-5 max-w-xl text-[clamp(0.95rem,1.2vw,1.05rem)] leading-relaxed text-muted-foreground">
+            Purpose-built for hiring teams. Evaluation before the first interview.
+          </p>
+          <div className="mt-5 flex items-center gap-2.5 text-sm">
+            <span className="rounded-full border border-border px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+              Free to start
+            </span>
+            <TextLink to="/company/login">Post a job</TextLink>
           </div>
         </div>
+      </div>
+
+      <div className="rise calm-hero-shot">
+        <img
+          src="/marketing/dashboard.jpeg"
+          alt="RoundZero dashboard showing candidates awaiting review with scores and recommendations"
+          className="calm-hero-shot__img"
+          width={2400}
+          height={1500}
+          loading="eager"
+          decoding="async"
+        />
       </div>
     </section>
   );
 }
 
-const heroRanking = [
-  { rank: 1, name: "Sarah Chen", score: 8.4, rec: recommendationLabels.strong_yes, active: true },
-  {
-    rank: 2,
-    name: "Marcus Johnson",
-    score: 7.9,
-    rec: recommendationLabels.strong_yes,
-    active: false,
-  },
-  { rank: 3, name: "Priya Patel", score: 7.2, rec: recommendationLabels.yes, active: false },
-];
-
-const heroDims = [
-  { label: "Technical depth", value: 9.1 },
-  { label: "Communication", value: 7.8 },
-  { label: "Experience", value: 8.2 },
-];
-
-function HeroProductWindow() {
+function ProductIntro() {
   return (
-    <div className="panel">
-      <div className="panel-header">
-        <div className="flex items-center gap-2">
-          <span className="size-2 rounded-full bg-border" />
-          <span className="size-2 rounded-full bg-border" />
-          <span className="size-2 rounded-full bg-border" />
-          <span className="ml-1 font-mono text-[11px] text-muted-foreground">
-            roundzero / senior-backend-engineer
-          </span>
-        </div>
+    <section className="border-t border-border">
+      <div className={cn(CONTAINER, "py-14 lg:py-20")}>
+        <p className="max-w-2xl text-left text-[clamp(0.98rem,1.2vw,1.08rem)] leading-relaxed text-muted-foreground">
+          Every applicant is evaluated through adaptive interviews and structured assessment. Get
+          ranked candidates, evidence-backed reports, and clear hiring recommendations before the
+          first human interview.
+        </p>
       </div>
-
-      <div className="p-4 sm:p-5">
-        <div className="flex items-center justify-between">
-          <span className="eyebrow">Ranked candidates</span>
-          <span className="font-mono text-[10px] text-muted-foreground">87 in pipeline</span>
-        </div>
-        <div className="mt-3 space-y-0.5">
-          {heroRanking.map((r) => (
-            <div
-              key={r.rank}
-              className={cn("flex items-center gap-3 px-2 py-2.5", r.active ? "bg-muted/50" : "")}
-            >
-              <span className="w-5 font-mono text-[11px] text-muted-foreground">
-                {String(r.rank).padStart(2, "0")}
-              </span>
-              <span className="flex-1 text-sm font-medium">{r.name}</span>
-              <span className={cn("text-[12px]", recClass(r.rec))}>{r.rec}</span>
-              <span className="w-9 text-right font-mono text-sm tabular-nums">
-                {r.score.toFixed(1)}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-4 border-t border-border pt-4">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <span className="eyebrow">Report · Sarah Chen</span>
-              <div className="mt-1.5 flex items-baseline gap-1.5">
-                <span className="font-mono text-3xl font-medium tabular-nums tracking-tight">
-                  8.4
-                </span>
-                <span className="font-mono text-[11px] text-muted-foreground">/ 10</span>
-              </div>
-            </div>
-            <span className="inline-flex items-center rounded-full bg-success/10 px-2.5 py-1 font-mono text-[11px] font-medium tracking-wide text-success">
-              {recommendationLabels.strong_yes}
-            </span>
-          </div>
-          <div className="mt-3.5 space-y-2.5">
-            {heroDims.map((d) => (
-              <div key={d.label}>
-                <div className="mb-1 flex items-baseline justify-between">
-                  <span className="text-[12px] text-foreground">{d.label}</span>
-                  <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
-                    {d.value.toFixed(1)}
-                  </span>
-                </div>
-                <ScoreBar value={d.value} />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
+    </section>
   );
 }
 
@@ -839,160 +774,26 @@ function CandidateExperience() {
 // ───────────────────────────────────────────────────────────────────────────
 // Report
 // ───────────────────────────────────────────────────────────────────────────
-const reportScores = [
-  { label: "Technical depth", value: 9.1, note: "System design, distributed tradeoffs" },
-  { label: "Communication", value: 7.8, note: "Concise, structured under pressure" },
-  { label: "Experience", value: 8.2, note: "Validated against four prior roles" },
-  { label: "Ownership", value: 8.5, note: "Drove rollout, handled rollback" },
-];
-
-function ReportSection() {
+function ReportScreenshotSection() {
   return (
     <section className={cn("border-t border-border", SECTION_TINT)}>
       <div className={cn(CONTAINER, SECTION_PAD)}>
-        <div className="grid grid-cols-1 items-start gap-x-12 gap-y-12 lg:grid-cols-12">
-          <div className="lg:col-span-5">
-            <SectionHeading
-              eyebrow="The report"
-              title="See how candidates actually perform"
-              lead="Every candidate arrives with a structured report covering reasoning, communication, and relevant experience, plus strengths, concerns, and a clear recommendation."
+        <div className="grid grid-cols-1 items-center gap-x-12 gap-y-12 lg:grid-cols-2">
+          <SectionHeading
+            eyebrow="The report"
+            title="See how candidates actually perform"
+            lead="Every candidate arrives with a structured report covering reasoning, communication, and relevant experience, plus strengths, concerns, and a clear recommendation."
+          />
+          <div className="calm-report-shot">
+            <img
+              src="/marketing/report.jpeg"
+              alt="RoundZero post-interview report with scores, strengths, gaps, and interview evidence"
+              className="block w-full"
+              width={2400}
+              height={1500}
+              loading="lazy"
+              decoding="async"
             />
-            <div className="mt-8 border-t border-border pt-8">
-              <span className="eyebrow">Dossier no. 0481</span>
-              <h3 className="mt-2 text-2xl font-semibold tracking-[-0.015em]">Sarah Chen</h3>
-              <p className="text-sm text-muted-foreground">for Senior Backend Engineer</p>
-              <div className="mt-5 flex items-end justify-between">
-                <div className="flex items-baseline gap-2">
-                  <span className="font-mono text-5xl font-medium tabular-nums tracking-tight">
-                    8.4
-                  </span>
-                  <span className="font-mono text-xs text-muted-foreground">/ 10</span>
-                </div>
-                <span className="inline-flex items-center rounded-full bg-success/10 px-2.5 py-1 font-mono text-[11px] font-medium tracking-wide text-success">
-                  {recommendationLabels.strong_yes}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="lg:col-span-7">
-            <div className="space-y-5">
-              {reportScores.map((s) => (
-                <div key={s.label}>
-                  <div className="flex items-baseline justify-between gap-4 pb-2">
-                    <span className="text-[15px] font-medium text-foreground">{s.label}</span>
-                    <span className="hidden flex-1 text-[13px] text-muted-foreground md:block">
-                      {s.note}
-                    </span>
-                    <span className="font-mono text-[15px] tabular-nums text-foreground">
-                      {s.value.toFixed(1)}
-                    </span>
-                  </div>
-                  <ScoreBar value={s.value} />
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2">
-              <div>
-                <span className="eyebrow">Strengths</span>
-                <ul className="mt-3 space-y-2.5">
-                  {[
-                    "Deep understanding of distributed systems tradeoffs.",
-                    "Clear, structured communication under pressure.",
-                    "Demonstrated ownership across the rollout cycle.",
-                  ].map((s) => (
-                    <li key={s} className="flex gap-2.5 text-sm leading-relaxed text-foreground">
-                      <span className="mt-2 size-1 shrink-0 rounded-full bg-success" />
-                      {s}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <span className="eyebrow">Areas of concern</span>
-                <ul className="mt-3 space-y-2.5">
-                  {[
-                    "Limited exposure to observability beyond basic logging.",
-                    "Vague answer on CI/CD pipeline design, flagged for follow-up.",
-                  ].map((s) => (
-                    <li key={s} className="flex gap-2.5 text-sm leading-relaxed text-foreground">
-                      <span className="mt-2 size-1 shrink-0 rounded-full bg-muted-foreground/60" />
-                      {s}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ───────────────────────────────────────────────────────────────────────────
-// Ranking
-// ───────────────────────────────────────────────────────────────────────────
-const ranking = [
-  { rank: 1, name: "Sarah Chen", score: 8.4, rec: recommendationLabels.strong_yes },
-  { rank: 2, name: "Marcus Johnson", score: 7.9, rec: recommendationLabels.strong_yes },
-  { rank: 3, name: "Priya Patel", score: 7.2, rec: recommendationLabels.yes },
-  { rank: 4, name: "Alex Kim", score: 5.8, rec: recommendationLabels.no },
-  { rank: 5, name: "Diego Alvarez", score: 5.4, rec: recommendationLabels.no },
-];
-
-function recClass(rec: string) {
-  if (rec === recommendationLabels.strong_yes) return "text-success";
-  if (rec === recommendationLabels.yes) return "text-foreground";
-  return "text-muted-foreground";
-}
-
-function RankingSection() {
-  return (
-    <section className="border-t border-border">
-      <div className={cn(CONTAINER, SECTION_PAD)}>
-        <div className="grid grid-cols-1 gap-x-12 gap-y-10 lg:grid-cols-12">
-          <div className="lg:col-span-4">
-            <SectionHeading
-              eyebrow="Ranking"
-              title={
-                <>
-                  Ranked, not <Highlight>filtered</Highlight>
-                </>
-              }
-              lead="After RoundZero you don't see applicants. You see ranked candidates, ordered by real evaluation rather than keyword matches or résumé polish."
-            />
-          </div>
-
-          <div className="lg:col-span-8">
-            <div className="spec-sheet">
-              <div className="grid grid-cols-12 border-b border-border px-5 py-3 font-mono text-[10.5px] uppercase tracking-[0.16em] text-muted-foreground">
-                <span className="col-span-2">#</span>
-                <span className="col-span-6">Candidate</span>
-                <span className="col-span-2">Rec</span>
-                <span className="col-span-2 text-right">Score</span>
-              </div>
-              {ranking.map((r) => (
-                <div
-                  key={r.rank}
-                  className="grid grid-cols-12 items-center border-b border-border px-5 py-4 transition-colors last:border-b-0 hover:bg-muted/40"
-                >
-                  <span className="col-span-2 font-mono text-xs text-muted-foreground">
-                    {String(r.rank).padStart(2, "0")}
-                  </span>
-                  <span className="col-span-6 text-[15px] font-medium">{r.name}</span>
-                  <span className={cn("col-span-2 text-[13px]", recClass(r.rec))}>{r.rec}</span>
-                  <span className="col-span-2 text-right font-mono text-sm tabular-nums">
-                    {r.score.toFixed(1)}
-                  </span>
-                </div>
-              ))}
-              <div className="flex items-center justify-between px-5 py-3 font-mono text-[11px] text-muted-foreground">
-                <span>5 evaluated</span>
-                <span>87 in pipeline · still readable</span>
-              </div>
-            </div>
           </div>
         </div>
       </div>

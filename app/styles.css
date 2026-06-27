@@ -256,72 +256,9 @@
   -webkit-box-decoration-break: clone;
 }
 
-/* Hero atmosphere: soft radial glow + faint dotted grid, masked to fade out.
-   isolate creates a stacking context so the negative z-index layers sit above
-   the section background but below the content. */
-.calm-hero {
-  position: relative;
-  isolation: isolate;
-  background: var(--background);
-}
-.calm-hero::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background:
-    radial-gradient(62% 55% at 78% -5%, rgba(49, 50, 54, 0.06), transparent 70%),
-    radial-gradient(52% 60% at 12% 18%, rgba(49, 50, 54, 0.035), transparent 72%);
-  pointer-events: none;
-}
-.calm-hero::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background-image: repeating-linear-gradient(
-    -45deg,
-    transparent,
-    transparent 13px,
-    rgba(49, 50, 54, 0.05) 13px,
-    rgba(49, 50, 54, 0.05) 14px
-  );
-  mask-image: radial-gradient(85% 78% at 50% 32%, black 35%, transparent 88%);
-  -webkit-mask-image: radial-gradient(85% 78% at 50% 32%, black 35%, transparent 88%);
-  pointer-events: none;
-}
-
-/* Closing section — same hatch atmosphere as hero, mirrored for bottom of page. */
+.calm-hero,
 .calm-closing {
-  position: relative;
-  isolation: isolate;
   background: var(--background);
-}
-.calm-closing::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background:
-    radial-gradient(62% 55% at 22% 105%, rgba(49, 50, 54, 0.06), transparent 70%),
-    radial-gradient(52% 60% at 88% 82%, rgba(49, 50, 54, 0.035), transparent 72%);
-  pointer-events: none;
-}
-.calm-closing::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background-image: repeating-linear-gradient(
-    -45deg,
-    transparent,
-    transparent 13px,
-    rgba(49, 50, 54, 0.05) 13px,
-    rgba(49, 50, 54, 0.05) 14px
-  );
-  mask-image: radial-gradient(85% 78% at 50% 68%, black 35%, transparent 88%);
-  -webkit-mask-image: radial-gradient(85% 78% at 50% 68%, black 35%, transparent 88%);
-  pointer-events: none;
 }
 
 /* Product panels — soft layered elevation so mock UI feels like it floats. */
@@ -390,6 +327,67 @@
 }
 .calm .rise {
   animation: calm-rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Hero screenshot — bleeds off the right edge (Linear-style), not boxed in a container. */
+.calm-hero-shot {
+  --calm-shot-pad: 1.5rem;
+  position: relative;
+  margin-top: 2.5rem;
+  padding-left: var(--calm-shot-pad);
+  overflow: hidden;
+  mask-image: linear-gradient(to bottom, black 72%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 72%, transparent 100%);
+}
+@media (min-width: 1024px) {
+  .calm-hero-shot {
+    --calm-shot-pad: 3rem;
+    margin-top: 3.5rem;
+  }
+}
+@media (min-width: 1280px) {
+  .calm-hero-shot {
+    --calm-shot-pad: 4rem;
+  }
+}
+@media (min-width: 1440px) {
+  .calm-hero-shot {
+    padding-left: max(4rem, calc((100vw - 90rem) / 2 + 4rem));
+  }
+}
+.calm-hero-shot__img {
+  display: block;
+  width: min(1480px, 118vw);
+  max-width: none;
+  height: auto;
+  border: 1px solid var(--border);
+  border-right: none;
+  border-bottom: none;
+  border-radius: 10px 0 0 0;
+  box-shadow: 0 20px 50px -28px oklch(0.21 0.006 264 / 0.16);
+}
+
+.calm-report-shot {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--background);
+  box-shadow: 0 1px 2px oklch(0.21 0.006 264 / 0.04);
+}
+
+@media (max-width: 639px) {
+  .calm-hero-shot {
+    margin-top: 2rem;
+    height: min(56vw, 320px);
+    mask-image: linear-gradient(to bottom, black 48%, transparent 92%);
+    -webkit-mask-image: linear-gradient(to bottom, black 48%, transparent 92%);
+  }
+  .calm-hero-shot__img {
+    width: 960px;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
