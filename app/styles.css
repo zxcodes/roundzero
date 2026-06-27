@@ -256,84 +256,17 @@
   -webkit-box-decoration-break: clone;
 }
 
-/* Hero atmosphere: soft radial glow + faint dotted grid, masked to fade out.
-   isolate creates a stacking context so the negative z-index layers sit above
-   the section background but below the content. */
-.calm-hero {
-  position: relative;
-  isolation: isolate;
-  background: var(--background);
-}
-.calm-hero::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background:
-    radial-gradient(62% 55% at 78% -5%, rgba(49, 50, 54, 0.06), transparent 70%),
-    radial-gradient(52% 60% at 12% 18%, rgba(49, 50, 54, 0.035), transparent 72%);
-  pointer-events: none;
-}
-.calm-hero::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background-image: repeating-linear-gradient(
-    -45deg,
-    transparent,
-    transparent 13px,
-    rgba(49, 50, 54, 0.05) 13px,
-    rgba(49, 50, 54, 0.05) 14px
-  );
-  mask-image: radial-gradient(85% 78% at 50% 32%, black 35%, transparent 88%);
-  -webkit-mask-image: radial-gradient(85% 78% at 50% 32%, black 35%, transparent 88%);
-  pointer-events: none;
-}
-
-/* Closing section — same hatch atmosphere as hero, mirrored for bottom of page. */
+.calm-hero,
 .calm-closing {
-  position: relative;
-  isolation: isolate;
   background: var(--background);
 }
-.calm-closing::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background:
-    radial-gradient(62% 55% at 22% 105%, rgba(49, 50, 54, 0.06), transparent 70%),
-    radial-gradient(52% 60% at 88% 82%, rgba(49, 50, 54, 0.035), transparent 72%);
-  pointer-events: none;
-}
-.calm-closing::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background-image: repeating-linear-gradient(
-    -45deg,
-    transparent,
-    transparent 13px,
-    rgba(49, 50, 54, 0.05) 13px,
-    rgba(49, 50, 54, 0.05) 14px
-  );
-  mask-image: radial-gradient(85% 78% at 50% 68%, black 35%, transparent 88%);
-  -webkit-mask-image: radial-gradient(85% 78% at 50% 68%, black 35%, transparent 88%);
-  pointer-events: none;
-}
 
-/* Product panels — soft layered elevation so mock UI feels like it floats. */
+/* Product panels — border-only surfaces aligned with in-app panels. */
 .calm .panel {
   overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-4xl);
+  border: 1px solid oklch(from var(--border) l c h / 0.6);
+  border-radius: var(--radius-3xl);
   background: var(--background);
-  box-shadow:
-    0 1px 2px oklch(0.21 0.006 264 / 0.04),
-    0 10px 28px -14px oklch(0.21 0.006 264 / 0.14),
-    0 28px 56px -28px oklch(0.21 0.006 264 / 0.12);
 }
 
 .calm .panel-header {
@@ -347,12 +280,9 @@
 }
 
 .calm .spec-sheet {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-4xl);
+  border: 1px solid oklch(from var(--border) l c h / 0.6);
+  border-radius: var(--radius-3xl);
   background: var(--background);
-  box-shadow:
-    0 1px 2px oklch(0.21 0.006 264 / 0.04),
-    0 14px 36px -18px oklch(0.21 0.006 264 / 0.1);
 }
 
 .calm-skip-link {
@@ -390,6 +320,44 @@
 }
 .calm .rise {
   animation: calm-rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Hero screenshot — full width on desktop; cropped bleed on mobile only.
+   Radius and border match app panels (rounded-3xl border-border/60). */
+.calm-hero-shot {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid oklch(from var(--border) l c h / 0.6);
+  border-bottom: none;
+  border-radius: var(--radius-3xl) var(--radius-3xl) 0 0;
+  mask-image: linear-gradient(to bottom, black 88%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 88%, transparent 100%);
+}
+.calm-hero-shot__img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+@media (max-width: 639px) {
+  .calm-hero-shot {
+    margin-left: -1.5rem;
+    width: 100vw;
+    padding-left: 1.5rem;
+    height: min(82vw, 480px);
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    mask-image: linear-gradient(to bottom, black 82%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 82%, transparent 100%);
+  }
+  .calm-hero-shot__img {
+    width: 840px;
+    max-width: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

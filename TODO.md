@@ -4,7 +4,6 @@
 - right now there's no feedback if there's something wrong with candidate's pdf. they can upload any pdf and the workflow will try to parse it. we need to detect if it's not a resume, and tell the user to add or something? think.
 - check why this happens with some reports: "Evaluation in progress Zero is generating the post-interview report. Check back in a few minutes."
 - harden pre-eval prompts. easily invites the user to an interview even the role is irrelevant.
-- see if we need candidate summary in interview table's metadata. audit other tables that are storing huge data like this and if we can derive on demand instead of storing in db.
 - check deleted account behaviour for companies, applications, etc. how the entire flow handles it. (add a workflow that cleans up deleted accounts)
 - pretty sure openrouter model fallbacks still don't work. verify in local dev.
 - add a really good resume and candidate test suite to pass thru the ai. (WIP in other branch)
@@ -23,6 +22,7 @@
 - add batch actions for companies (shortlist multiple candidates, and quick actions "shortlist top 3" reject "bottom ones")
 
 
+<!--- see if we need candidate summary in interview table's metadata. audit other tables that are storing huge data like this and if we can derive on demand instead of storing in db.-->
 <!--- add onCopy, onPaste detectors and evaluate final score based on that.-->
 <!--- voice interview experience degraded since auto submit introduced. the agent speaks the last message twice but I don't at all see the message on screen.-->
 <!--- candidate score needs to be 1-10 as landing page shows. right now it's 1-100.-->
