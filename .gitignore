@@ -17,3 +17,4 @@ __unconfig*
 todos.json
 user.*.json
 docs/superpowers
+tmp/
