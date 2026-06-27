@@ -59,7 +59,7 @@ Every client-side server-function call is a real worker round trip (+ an `authMi
 - React Compiler is on — never `useCallback`/`useMemo`/`React.memo`. One `useId()` per component, derive IDs.
 - Conditionals: `{x ? (...) : null}`, never `{x && (...)}`. No inline event handlers — define `on*` handlers in scope. `function` for UI components, `const` for non-UI.
 - `ScrollArea` (with explicit `h-`) for contained scroll panels; keep native scroll for page content/sidebars/textareas.
-- All `pendingComponent` skeletons live in `app/components/route-skeletons.tsx` — keep them in sync with layouts. Every route with a `loader` needs one.
+- All `pendingComponent` skeletons live in `app/components/route-skeletons.tsx` — keep them in sync with layouts. Routes with blocking loaders (`await` in the loader) need `pendingComponent`. Deferred loaders that return unawaited promises (`loader: () => ({ key: serverFn() })`) resolve immediately — use `<DeferredSection>` from `@/components/deferred-section` / `<Await fallback={...}>` in the component instead; `pendingComponent` will never show.
 
 - **Design language:** Dashboard uses `text-xl` titles, `CompanyInboxPageShell`/`PageInlineStats`, and bordered or muted panels (see `applications.tsx`). Public `/jobs` & `/companies` use sticky filters and 2-col cards; marketing/login exempt.
 
