@@ -329,41 +329,20 @@
   animation: calm-rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
-/* Hero screenshot — bleeds off the right edge (Linear-style), not boxed in a container. */
+/* Hero screenshot — full width on desktop; cropped bleed on mobile only. */
 .calm-hero-shot {
-  --calm-shot-pad: 1.5rem;
   position: relative;
-  margin-top: 2.5rem;
-  padding-left: var(--calm-shot-pad);
   overflow: hidden;
-  mask-image: linear-gradient(to bottom, black 72%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, black 72%, transparent 100%);
-}
-@media (min-width: 1024px) {
-  .calm-hero-shot {
-    --calm-shot-pad: 3rem;
-    margin-top: 3.5rem;
-  }
-}
-@media (min-width: 1280px) {
-  .calm-hero-shot {
-    --calm-shot-pad: 4rem;
-  }
-}
-@media (min-width: 1440px) {
-  .calm-hero-shot {
-    padding-left: max(4rem, calc((100vw - 90rem) / 2 + 4rem));
-  }
+  mask-image: linear-gradient(to bottom, black 88%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 88%, transparent 100%);
 }
 .calm-hero-shot__img {
   display: block;
-  width: min(1480px, 118vw);
-  max-width: none;
+  width: 100%;
   height: auto;
   border: 1px solid var(--border);
-  border-right: none;
   border-bottom: none;
-  border-radius: 10px 0 0 0;
+  border-radius: 12px 12px 0 0;
   box-shadow: 0 20px 50px -28px oklch(0.21 0.006 264 / 0.16);
 }
 
@@ -377,13 +356,16 @@
 
 @media (max-width: 639px) {
   .calm-hero-shot {
-    margin-top: 2rem;
-    height: min(56vw, 320px);
-    mask-image: linear-gradient(to bottom, black 48%, transparent 92%);
-    -webkit-mask-image: linear-gradient(to bottom, black 48%, transparent 92%);
+    margin-left: -1.5rem;
+    width: 100vw;
+    padding-left: 1.5rem;
+    height: min(82vw, 480px);
+    mask-image: linear-gradient(to bottom, black 82%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 82%, transparent 100%);
   }
   .calm-hero-shot__img {
-    width: 960px;
+    width: 840px;
+    max-width: none;
     border: none;
     border-radius: 0;
     box-shadow: none;
