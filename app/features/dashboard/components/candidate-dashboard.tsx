@@ -5,7 +5,13 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
+import { DeferredSection } from "@/components/deferred-section";
 import { PageInlineStats } from "@/components/page-inline-stats";
+import {
+  DashboardCandidateActionQueueSkeleton,
+  DashboardCandidateHeroSkeleton,
+  DashboardCandidateRecentSkeleton,
+} from "@/components/route-skeletons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -18,10 +24,12 @@ type CandidateMetrics = Extract<
   Awaited<ReturnType<typeof getDashboardMetrics>>,
   { type: "candidate" }
 >;
+type CandidateHero = Awaited<CandidateMetrics["hero"]>;
+type CandidateRecentActivity = Awaited<CandidateMetrics["recentActivity"]>;
 
-type PendingInterview = NonNullable<CandidateMetrics["pendingInterviews"]>[number];
-type ShortlistedApp = NonNullable<CandidateMetrics["shortlistedApplications"]>[number];
-type RecentActivityItem = NonNullable<CandidateMetrics["recentActivity"]>[number];
+type PendingInterview = CandidateHero["pendingInterviews"][number];
+type ShortlistedApp = CandidateHero["shortlistedApplications"][number];
+type RecentActivityItem = CandidateRecentActivity["activity"][number];
 
 type ActionItem = {
   id: string;
@@ -43,15 +51,15 @@ const toneDot: Record<ActionItem["tone"], string> = {
 
 const INTERVIEW_URGENT_HOURS = 4;
 
-function buildHeroLines(metrics: CandidateMetrics): string[] {
-  const pendingCount = metrics.pendingInterviews?.length ?? 0;
+function buildHeroLines(hero: CandidateHero): string[] {
+  const pendingCount = hero.pendingInterviews.length;
   if (pendingCount > 0) {
     return [
       `${pendingCount} interview${pendingCount === 1 ? "" : "s"} ready — complete ${pendingCount === 1 ? "it" : "them"} to move forward.`,
     ];
   }
 
-  const shortlistedCount = metrics.shortlistedCount ?? metrics.shortlistedApplications?.length ?? 0;
+  const shortlistedCount = hero.shortlistedCount;
   if (shortlistedCount > 0) {
     return [
       `You're shortlisted for ${shortlistedCount} role${shortlistedCount === 1 ? "" : "s"}.`,
@@ -59,9 +67,9 @@ function buildHeroLines(metrics: CandidateMetrics): string[] {
     ];
   }
 
-  if (metrics.activeApplications > 0) {
+  if (hero.activeApplications > 0) {
     return [
-      `${metrics.activeApplications} active application${metrics.activeApplications === 1 ? "" : "s"} — ${metrics.interviewInvites} moved to interview.`,
+      `${hero.activeApplications} active application${hero.activeApplications === 1 ? "" : "s"} — ${hero.interviewInvites} moved to interview.`,
     ];
   }
 
@@ -69,9 +77,9 @@ function buildHeroLines(metrics: CandidateMetrics): string[] {
 }
 
 function getPrimaryCta(
-  metrics: CandidateMetrics,
+  hero: CandidateHero,
 ): { to: "/interview/$interviewId"; params: { interviewId: string }; label: string } | null {
-  const pending = metrics.pendingInterviews ?? [];
+  const pending = hero.pendingInterviews;
   const firstPending = pending[0];
   if (!firstPending) {
     return null;
@@ -85,10 +93,10 @@ function getPrimaryCta(
   };
 }
 
-function buildCandidateActionQueue(metrics: CandidateMetrics): ActionItem[] {
+function buildCandidateActionQueue(hero: CandidateHero): ActionItem[] {
   const items: ActionItem[] = [];
-  const pending: PendingInterview[] = metrics.pendingInterviews ?? [];
-  const shortlisted: ShortlistedApp[] = metrics.shortlistedApplications ?? [];
+  const pending: PendingInterview[] = hero.pendingInterviews;
+  const shortlisted: ShortlistedApp[] = hero.shortlistedApplications;
   const now = Date.now();
 
   const expiringSoon = pending.filter((interview) => {
@@ -221,17 +229,14 @@ function getRecentStatusMeta(app: RecentActivityItem) {
   }
 }
 
-function HeroSection({ firstName, metrics }: { firstName: string; metrics: CandidateMetrics }) {
-  const heroLines = buildHeroLines(metrics);
-  const primaryCta = getPrimaryCta(metrics);
+function HeroSection({ firstName, hero }: { firstName: string; hero: CandidateHero }) {
+  const heroLines = buildHeroLines(hero);
+  const primaryCta = getPrimaryCta(hero);
   const statItems = [
-    { value: metrics.activeApplications, label: "active applications" },
-    { value: metrics.pendingInterviews?.length ?? 0, label: "interviews pending" },
-    {
-      value: metrics.shortlistedCount ?? metrics.shortlistedApplications?.length ?? 0,
-      label: "shortlisted",
-    },
-    { value: metrics.evaluationsReceived, label: "evaluations received" },
+    { value: hero.activeApplications, label: "active applications" },
+    { value: hero.pendingInterviews.length, label: "interviews pending" },
+    { value: hero.shortlistedCount, label: "shortlisted" },
+    { value: hero.evaluationsReceived, label: "evaluations received" },
   ];
 
   return (
@@ -419,13 +424,39 @@ export function CandidateDashboard({
   metrics: CandidateMetrics;
   firstName: string;
 }) {
-  const actions = buildCandidateActionQueue(metrics);
-  const activity = metrics.recentActivity ?? [];
-
   return (
     <div className="space-y-8">
-      <HeroSection firstName={firstName} metrics={metrics} />
-      <ActionQueueSection actions={actions} />
+      <DeferredSection
+        promise={metrics.hero}
+        fallback={
+          <div className="space-y-8">
+            <DashboardCandidateHeroSkeleton firstName={firstName} />
+            <DashboardCandidateActionQueueSkeleton />
+          </div>
+        }
+        sectionLabel="dashboard summary"
+      >
+        {(hero) => (
+          <div className="space-y-8">
+            <HeroSection firstName={firstName} hero={hero} />
+            <ActionQueueSection actions={buildCandidateActionQueue(hero)} />
+          </div>
+        )}
+      </DeferredSection>
+      <DeferredSection
+        promise={metrics.recentActivity}
+        fallback={<DashboardCandidateRecentSkeleton />}
+        sectionLabel="recent activity"
+      >
+        {(section) => <CandidateRecentActivityContent activity={section.activity} />}
+      </DeferredSection>
+    </div>
+  );
+}
+
+function CandidateRecentActivityContent({ activity }: { activity: RecentActivityItem[] }) {
+  return (
+    <>
       <RecentActivitySection activity={activity} />
       {activity.length === 0 ? (
         <div className="flex justify-center">
@@ -437,6 +468,6 @@ export function CandidateDashboard({
           </Button>
         </div>
       ) : null}
-    </div>
+    </>
   );
 }
