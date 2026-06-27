@@ -1,11 +1,9 @@
 import {
   AiMagicIcon,
   Alert02Icon,
-  ArrowLeft01Icon,
   ArrowRight01Icon,
   CheckmarkCircle02Icon,
   File02Icon,
-  HelpCircleIcon,
   Loading03Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -49,6 +47,15 @@ import {
   updateApplicationStatus,
 } from "@/features/applications/server/functions";
 import { parseShortlistDetails } from "@/features/applications/shortlist";
+import {
+  DimensionStatChip,
+  getReportInitials,
+  ReportActionsRow,
+  reportDimensionLabels,
+  reportScreeningConcernMeta,
+  SignalColumn,
+  verdictBandTone,
+} from "@/features/reports/components/report-page-ui";
 import { ScorePill } from "@/features/reports/components/score-pill";
 import { getCompanyApplicantReportTimeline } from "@/features/reports/server/functions";
 import { cn } from "@/lib/utils";
@@ -60,16 +67,11 @@ import {
   applicationStatusLabels,
   applicationStatusMeta,
   applicationStatusSchema,
-  type Recommendation,
   recommendationBadgeTone,
   recommendationSchema,
 } from "@/shared/enums";
 import { base64ToBlob } from "@/shared/resume";
-import {
-  candidateScoreProgressPercent,
-  formatCandidateScore,
-  formatCandidateScoreWithScale,
-} from "@/shared/score";
+import { candidateScoreProgressPercent, formatCandidateScoreWithScale } from "@/shared/score";
 import { PAGE_SEO } from "@/shared/seo";
 import { validateUuidParams } from "@/shared/validation";
 
@@ -102,50 +104,6 @@ export const Route = createFileRoute("/_authenticated/dashboard/applicant-report
 );
 
 type LoaderData = Awaited<ReturnType<typeof getCompanyApplicantReportTimeline>>;
-type ReportData = NonNullable<NonNullable<LoaderData>["report"]>;
-
-const dimensionLabels: Record<keyof Omit<ReportData["scores"], "overall">, string> = {
-  communication: "Communication",
-  problemSolving: "Problem solving",
-  ownership: "Ownership",
-  roleFit: "Role fit",
-};
-
-const verdictBandTone: Record<Recommendation, string> = {
-  strong_yes: "bg-success/10",
-  yes: "bg-info/10",
-  lean_no: "bg-warning/10",
-  no: "bg-danger/10",
-};
-
-const concernMeta: Record<
-  ReportData["screeningAnswers"][number]["concern"],
-  { label: string; tone: string; icon: typeof CheckmarkCircle02Icon }
-> = {
-  none: {
-    label: "OK",
-    tone: "border-success/20 bg-success/10 text-success",
-    icon: CheckmarkCircle02Icon,
-  },
-  minor: {
-    label: "Flag",
-    tone: "border-warning/20 bg-warning/10 text-warning",
-    icon: HelpCircleIcon,
-  },
-  dealbreaker: {
-    label: "Dealbreaker",
-    tone: "border-danger/20 bg-danger/10 text-danger",
-    icon: Alert02Icon,
-  },
-};
-
-const getInitials = (name: string) =>
-  name
-    .split(" ")
-    .map((p) => p[0] ?? "")
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
 
 function ApplicantReportSummaryPage() {
   const {
@@ -290,7 +248,7 @@ function ApplicantReportSummaryPage() {
             <ReportActionsRow
               applicationId={application.id}
               batchNavigation={batchNavigation}
-              showFullLink={false}
+              linkTarget={null}
             />
           </div>
         ) : null}
@@ -322,7 +280,7 @@ function ApplicantReportSummaryPage() {
           <ReportActionsRow
             applicationId={application.id}
             batchNavigation={batchNavigation}
-            showFullLink
+            linkTarget="full"
           />
 
           <div className="flex flex-col gap-4 pt-4 md:flex-row md:items-center md:justify-between">
@@ -333,7 +291,7 @@ function ApplicantReportSummaryPage() {
                   alt={application.candidateName}
                 />
                 <AvatarFallback className="text-sm">
-                  {getInitials(application.candidateName)}
+                  {getReportInitials(application.candidateName)}
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0 space-y-1.5">
@@ -461,20 +419,22 @@ function ApplicantReportSummaryPage() {
           </p>
           <p className="mt-2 max-w-3xl text-sm leading-7 text-foreground">{report.summary}</p>
           <div className="mt-4 flex flex-wrap gap-2">
-            {(Object.keys(dimensionLabels) as Array<keyof typeof dimensionLabels>).map((key) => {
-              const rawScore = report.scores[key];
-              const scoreTone =
-                recommendation !== null ? recommendationBadgeTone[recommendation] : undefined;
+            {(Object.keys(reportDimensionLabels) as Array<keyof typeof reportDimensionLabels>).map(
+              (key) => {
+                const rawScore = report.scores[key];
+                const scoreTone =
+                  recommendation !== null ? recommendationBadgeTone[recommendation] : undefined;
 
-              return (
-                <DimensionStatChip
-                  key={key}
-                  label={dimensionLabels[key]}
-                  score={rawScore}
-                  toneClass={scoreTone}
-                />
-              );
-            })}
+                return (
+                  <DimensionStatChip
+                    key={key}
+                    label={reportDimensionLabels[key]}
+                    score={rawScore}
+                    toneClass={scoreTone}
+                  />
+                );
+              },
+            )}
           </div>
         </div>
       </section>
@@ -572,7 +532,7 @@ function ApplicantReportSummaryPage() {
           </p>
           <ul className="mt-4 divide-y divide-border/60">
             {report.screeningAnswers.map((entry) => {
-              const cm = concernMeta[entry.concern];
+              const cm = reportScreeningConcernMeta[entry.concern];
               return (
                 <li key={entry.question} className="space-y-1.5 py-3 first:pt-0 last:pb-0">
                   <div className="flex flex-wrap items-start justify-between gap-3">
@@ -668,162 +628,6 @@ function ApplicantReportSummaryPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
-  );
-}
-
-function ReportActionsRow({
-  applicationId,
-  batchNavigation,
-  showFullLink,
-}: {
-  applicationId: string;
-  batchNavigation: NonNullable<LoaderData>["batchNavigation"];
-  showFullLink: boolean;
-}) {
-  if (!batchNavigation && !showFullLink) {
-    return null;
-  }
-
-  return (
-    <div
-      className={cn(
-        "flex flex-wrap items-center gap-3 border-b border-border/30 pb-4",
-        batchNavigation ? "justify-between" : "justify-end",
-      )}
-    >
-      {batchNavigation ? (
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            asChild={batchNavigation.previousApplicationId !== null}
-            disabled={batchNavigation.previousApplicationId === null}
-          >
-            {batchNavigation.previousApplicationId ? (
-              <Link
-                to="/dashboard/applicant-reports/$applicationId"
-                params={{ applicationId: batchNavigation.previousApplicationId }}
-              >
-                <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
-                Previous
-              </Link>
-            ) : (
-              <>
-                <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" />
-                Previous
-              </>
-            )}
-          </Button>
-          <span className="text-[11px] text-muted-foreground">
-            #{batchNavigation.position} of {batchNavigation.total} in batch
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            asChild={batchNavigation.nextApplicationId !== null}
-            disabled={batchNavigation.nextApplicationId === null}
-          >
-            {batchNavigation.nextApplicationId ? (
-              <Link
-                to="/dashboard/applicant-reports/$applicationId"
-                params={{ applicationId: batchNavigation.nextApplicationId }}
-              >
-                Next
-                <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-4" />
-              </Link>
-            ) : (
-              <>
-                Next
-                <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-4" />
-              </>
-            )}
-          </Button>
-        </div>
-      ) : null}
-      <div className="flex flex-wrap items-center gap-2">
-        {batchNavigation ? (
-          <Button asChild variant="outline" size="sm">
-            <Link
-              to="/dashboard/job-batches/$batchId"
-              params={{ batchId: batchNavigation.batchId }}
-            >
-              Batch
-            </Link>
-          </Button>
-        ) : null}
-        {showFullLink ? (
-          <Button asChild variant="outline" size="sm">
-            <Link to="/dashboard/applicant-reports/$applicationId/full" params={{ applicationId }}>
-              Full audit
-            </Link>
-          </Button>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function DimensionStatChip({
-  label,
-  score,
-  toneClass,
-}: {
-  label: string;
-  score: number;
-  toneClass?: string;
-}) {
-  return (
-    <div
-      className={cn(
-        "inline-flex min-w-0 items-center gap-2 rounded-full border border-border/50 bg-background/50 px-3 py-1.5",
-        toneClass,
-      )}
-    >
-      <span className="truncate text-xs text-muted-foreground">{label}</span>
-      <span className="text-xs font-semibold tabular-nums text-foreground">
-        {formatCandidateScore(score)}
-      </span>
-      <div className="h-1 w-10 overflow-hidden rounded-full bg-muted/80">
-        <div
-          className="h-full rounded-full bg-current opacity-70"
-          style={{ width: `${candidateScoreProgressPercent(score)}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
-function SignalColumn({
-  title,
-  washClass,
-  dotClass,
-  items,
-  emptyText,
-}: {
-  title: string;
-  washClass: string;
-  dotClass: string;
-  items: string[];
-  emptyText: string;
-}) {
-  return (
-    <div className={cn("px-5 py-5 md:px-6", washClass)}>
-      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-        {title}
-      </p>
-      {items.length === 0 ? (
-        <p className="mt-3 text-xs text-muted-foreground">{emptyText}</p>
-      ) : (
-        <ul className="mt-3 space-y-2">
-          {items.map((item, index) => (
-            <li key={index} className="flex gap-2.5 text-sm leading-6 text-foreground">
-              <span className={cn("mt-2.5 size-1.5 shrink-0 rounded-full", dotClass)} />
-              <span>{item}</span>
-            </li>
-          ))}
-        </ul>
-      )}
     </div>
   );
 }

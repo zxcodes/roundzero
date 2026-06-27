@@ -1497,6 +1497,68 @@ export function DashboardApplicantReportSkeleton() {
   );
 }
 
+export function DashboardApplicantReportTimelineSkeleton() {
+  return (
+    <div className="overflow-hidden rounded-3xl border border-border/60">
+      <div className="bg-muted/20">
+        <div className="px-5 py-4 md:px-6">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-border/30 pb-4">
+            <div className="flex gap-2">
+              <Skeleton className="h-8 w-24 rounded-md" />
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-8 w-20 rounded-md" />
+            </div>
+            <div className="flex gap-2">
+              <Skeleton className="h-8 w-16 rounded-md" />
+              <Skeleton className="h-8 w-28 rounded-md" />
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+            <div className="flex min-w-0 items-center gap-4">
+              <Skeleton className="size-14 rounded-full" />
+              <div className="min-w-0 space-y-2">
+                <Skeleton className="h-6 w-56" />
+                <Skeleton className="h-4 w-64" />
+                <Skeleton className="h-3 w-40" />
+              </div>
+            </div>
+            <Skeleton className="h-14 w-36 rounded-full" />
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2 border-t border-border/30 pt-4">
+            <Skeleton className="h-9 w-24 rounded-md" />
+            <Skeleton className="h-9 w-20 rounded-md" />
+            <Skeleton className="h-9 w-48 rounded-md" />
+          </div>
+        </div>
+      </div>
+
+      <div className="border-t border-border/60 px-5 py-5 md:px-6">
+        <Skeleton className="h-3 w-28" />
+        <div className="mt-5 space-y-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex gap-3 md:gap-5">
+              <Skeleton className="size-8 shrink-0 rounded-full md:size-10" />
+              <div className="min-w-0 flex-1 space-y-3 pb-2">
+                <div className="flex items-center justify-between gap-3">
+                  <Skeleton className="h-5 w-40" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+                <Skeleton className="h-20 w-full rounded-lg" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 px-5 py-4 md:px-6">
+        <Skeleton className="h-3 w-52" />
+        <Skeleton className="h-8 w-32 rounded-md" />
+      </div>
+    </div>
+  );
+}
+
 // skeleton for actual interview content.
 export function InterviewWorkspacePageSkeleton() {
   return (
