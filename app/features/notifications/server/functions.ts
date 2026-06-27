@@ -19,7 +19,7 @@ export const getMyNotificationsFeed = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const db = getDb();
     const [items, unread] = await Promise.all([
-      getNotificationsByUser(db, { userId: context.userId, limit: "12" }),
+      getNotificationsByUser(db, { userId: context.userId, limit: "100" }),
       countUnreadNotificationsByUser(db, { userId: context.userId }),
     ]);
 
