@@ -1,6 +1,6 @@
 ## TODO
 
-- lazy load dashboard stuff.
+
 - right now there's no feedback if there's something wrong with candidate's pdf. they can upload any pdf and the workflow will try to parse it. we need to detect if it's not a resume, and tell the user to add or something? think.
 - check why this happens with some reports: "Evaluation in progress Zero is generating the post-interview report. Check back in a few minutes."
 - harden pre-eval prompts. easily invites the user to an interview even the role is irrelevant.

@@ -4,6 +4,7 @@ import { PublicFooter, PublicHeader } from "@/components/public-layout";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DashboardGreeting } from "@/features/dashboard/components/dashboard-greeting";
 
 /**
  * Skeleton for /jobs — public jobs listing page.
@@ -752,156 +753,214 @@ function JobPostingTabSkeleton() {
  * Skeleton for /dashboard — dashboard index page.
  * Matches company and candidate views.
  */
-export function DashboardIndexSkeleton() {
-  const { isCompany } = useRouteContext({ from: "/_authenticated/dashboard/" });
-  return isCompany ? <DashboardCompanyIndexSkeleton /> : <DashboardCandidateIndexSkeleton />;
+export function DashboardIndexContentSkeleton({
+  firstName,
+  isCompany,
+}: {
+  firstName: string;
+  isCompany: boolean;
+}) {
+  return isCompany ? (
+    <DashboardCompanyIndexSkeleton firstName={firstName} />
+  ) : (
+    <DashboardCandidateIndexSkeleton firstName={firstName} />
+  );
 }
 
-function DashboardCompanyIndexSkeleton() {
+export function DashboardCompanyHeroSkeleton({ firstName }: { firstName: string }) {
   return (
-    <div className="space-y-8">
-      <div className="space-y-6">
-        <div className="space-y-3">
-          <Skeleton className="h-7 w-56" />
-          <Skeleton className="h-4 w-96 max-w-full" />
-          <Skeleton className="h-4 w-80 max-w-full" />
+    <section className="space-y-6">
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <DashboardGreeting firstName={firstName} />
+          <div className="space-y-1">
+            <Skeleton className="h-4 w-96 max-w-full" />
+            <Skeleton className="h-4 w-80 max-w-full" />
+          </div>
         </div>
         <Skeleton className="h-9 w-40" />
-        <div className="flex flex-wrap gap-6">
-          <Skeleton className="h-4 w-40" />
-          <Skeleton className="h-4 w-44" />
-          <Skeleton className="h-4 w-28" />
-        </div>
       </div>
-
-      <div className="space-y-5">
-        <div className="space-y-2">
-          <Skeleton className="h-6 w-56" />
-          <Skeleton className="h-4 w-80 max-w-full" />
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Card
-              key={i}
-              variant="dashboard-tile"
-              tileTone="emphasis"
-              className="flex min-h-52 flex-col"
-            >
-              <Skeleton className="h-7 w-24 rounded-full" />
-              <Skeleton className="mt-3 h-5 w-36" />
-              <Skeleton className="mt-1 h-3 w-28" />
-              <Skeleton className="mt-2 h-4 w-16" />
-              <Skeleton className="mt-3 h-8 w-full flex-1" />
-              <Skeleton className="mt-4 h-8 w-28" />
-            </Card>
-          ))}
-        </div>
+      <div className="flex flex-wrap gap-x-6 gap-y-2">
+        <Skeleton className="h-4 w-40" />
+        <Skeleton className="h-4 w-44" />
+        <Skeleton className="h-4 w-28" />
       </div>
+    </section>
+  );
+}
 
-      <div className="space-y-4">
+export function DashboardCompanyAwaitingReviewSkeleton() {
+  return (
+    <section className="space-y-5">
+      <div className="space-y-2">
+        <Skeleton className="h-6 w-56" />
+        <Skeleton className="h-4 w-80 max-w-full" />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Card
+            key={i}
+            variant="dashboard-tile"
+            tileTone="emphasis"
+            className="flex min-h-52 flex-col"
+          >
+            <Skeleton className="h-7 w-24 rounded-full" />
+            <Skeleton className="mt-3 h-5 w-36" />
+            <Skeleton className="mt-1 h-3 w-28" />
+            <Skeleton className="mt-2 h-4 w-16" />
+            <Skeleton className="mt-3 h-8 w-full flex-1" />
+            <Skeleton className="mt-4 h-8 w-28" />
+          </Card>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export function DashboardCompanyRolesSkeleton() {
+  return (
+    <section className="space-y-4">
+      <div className="space-y-1">
         <Skeleton className="h-5 w-48" />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Card
-              key={i}
-              variant="dashboard-tile"
-              tileTone="default"
-              className="flex min-h-44 flex-col"
-            >
-              <Skeleton className="h-5 w-40" />
-              <Skeleton className="mt-2 h-3 w-32" />
-              <div className="mt-3 flex flex-1 gap-2">
-                <Skeleton className="h-5 w-24 rounded-full" />
-                <Skeleton className="h-5 w-16 rounded-full" />
-              </div>
-              <Skeleton className="mt-4 h-8 w-32" />
-            </Card>
-          ))}
-        </div>
+        <Skeleton className="h-4 w-72 max-w-full" />
       </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Card
+            key={i}
+            variant="dashboard-tile"
+            tileTone="default"
+            className="flex min-h-44 flex-col"
+          >
+            <Skeleton className="h-5 w-40" />
+            <Skeleton className="mt-2 h-3 w-32" />
+            <div className="mt-3 flex flex-1 gap-2">
+              <Skeleton className="h-5 w-24 rounded-full" />
+              <Skeleton className="h-5 w-16 rounded-full" />
+            </div>
+            <Skeleton className="mt-4 h-8 w-32" />
+          </Card>
+        ))}
+      </div>
+    </section>
+  );
+}
 
-      <div className="space-y-4">
+export function DashboardCompanyRecentSkeleton() {
+  return (
+    <section className="space-y-4">
+      <div className="space-y-1">
         <Skeleton className="h-5 w-36" />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Card
-              key={i}
-              variant="dashboard-tile"
-              tileTone="subtle"
-              className="flex min-h-44 flex-col"
-            >
-              <Skeleton className="h-5 w-20 rounded-full" />
-              <Skeleton className="mt-3 h-5 w-32" />
-              <Skeleton className="mt-1 h-3 w-28" />
-              <Skeleton className="mt-2 h-3 w-24 flex-1" />
-              <Skeleton className="mt-4 h-8 w-28" />
-            </Card>
-          ))}
-        </div>
+        <Skeleton className="h-4 w-72 max-w-full" />
       </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Card
+            key={i}
+            variant="dashboard-tile"
+            tileTone="subtle"
+            className="flex min-h-44 flex-col"
+          >
+            <Skeleton className="h-5 w-20 rounded-full" />
+            <Skeleton className="mt-3 h-5 w-32" />
+            <Skeleton className="mt-1 h-3 w-28" />
+            <Skeleton className="mt-2 h-3 w-24 flex-1" />
+            <Skeleton className="mt-4 h-8 w-28" />
+          </Card>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export function DashboardCandidateHeroSkeleton({ firstName }: { firstName: string }) {
+  return (
+    <section className="space-y-6">
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <DashboardGreeting firstName={firstName} />
+          <Skeleton className="h-4 w-96 max-w-full" />
+        </div>
+        <Skeleton className="h-9 w-40" />
+      </div>
+      <div className="flex flex-wrap gap-x-6 gap-y-2">
+        <Skeleton className="h-4 w-36" />
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-4 w-40" />
+      </div>
+    </section>
+  );
+}
+
+export function DashboardCandidateActionQueueSkeleton() {
+  return (
+    <section className="space-y-5">
+      <div className="space-y-2">
+        <Skeleton className="h-6 w-36" />
+        <Skeleton className="h-4 w-72 max-w-full" />
+      </div>
+      <div className="divide-y divide-border/50 overflow-hidden rounded-3xl border border-border/60">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-3 px-5 py-3.5">
+            <Skeleton className="size-2 rounded-full" />
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <Skeleton className="h-4 w-64" />
+              <Skeleton className="h-3 w-48" />
+            </div>
+            <Skeleton className="h-4 w-12" />
+            <Skeleton className="size-4" />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export function DashboardCandidateRecentSkeleton() {
+  return (
+    <section className="space-y-5">
+      <div className="space-y-2">
+        <Skeleton className="h-6 w-36" />
+        <Skeleton className="h-4 w-72 max-w-full" />
+      </div>
+      <div className="divide-y divide-border/50 overflow-hidden rounded-3xl border border-border/60">
+        {Array.from({ length: 2 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-3 px-5 py-3.5">
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <Skeleton className="h-4 w-48" />
+              <Skeleton className="h-3 w-32" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+            <Skeleton className="size-4" />
+          </div>
+        ))}
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Skeleton className="h-8 w-40" />
+        <Skeleton className="h-8 w-36" />
+      </div>
+    </section>
+  );
+}
+
+function DashboardCompanyIndexSkeleton({ firstName }: { firstName: string }) {
+  return (
+    <div className="space-y-8">
+      <DashboardCompanyHeroSkeleton firstName={firstName} />
+      <DashboardCompanyAwaitingReviewSkeleton />
+      <DashboardCompanyRolesSkeleton />
+      <DashboardCompanyRecentSkeleton />
     </div>
   );
 }
 
-function DashboardCandidateIndexSkeleton() {
+function DashboardCandidateIndexSkeleton({ firstName }: { firstName: string }) {
   return (
     <div className="space-y-8">
-      <div className="space-y-6">
-        <div className="space-y-3">
-          <Skeleton className="h-7 w-56" />
-          <Skeleton className="h-4 w-96 max-w-full" />
-        </div>
-        <Skeleton className="h-9 w-40" />
-        <div className="flex flex-wrap gap-6">
-          <Skeleton className="h-4 w-36" />
-          <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-4 w-40" />
-        </div>
-      </div>
-
-      <div className="space-y-5">
-        <div className="space-y-2">
-          <Skeleton className="h-6 w-36" />
-          <Skeleton className="h-4 w-72 max-w-full" />
-        </div>
-        <div className="divide-y divide-border/50 overflow-hidden rounded-3xl border border-border/60">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-3 px-5 py-3.5">
-              <Skeleton className="size-2 rounded-full" />
-              <div className="min-w-0 flex-1 space-y-1.5">
-                <Skeleton className="h-4 w-64" />
-                <Skeleton className="h-3 w-48" />
-              </div>
-              <Skeleton className="h-4 w-12" />
-              <Skeleton className="size-4" />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="space-y-5">
-        <div className="space-y-2">
-          <Skeleton className="h-6 w-36" />
-          <Skeleton className="h-4 w-72 max-w-full" />
-        </div>
-        <div className="divide-y divide-border/50 overflow-hidden rounded-3xl border border-border/60">
-          {Array.from({ length: 2 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-3 px-5 py-3.5">
-              <div className="min-w-0 flex-1 space-y-1.5">
-                <Skeleton className="h-4 w-48" />
-                <Skeleton className="h-3 w-32" />
-                <Skeleton className="h-3 w-24" />
-              </div>
-              <Skeleton className="size-4" />
-            </div>
-          ))}
-        </div>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <Skeleton className="h-8 w-40" />
-          <Skeleton className="h-8 w-36" />
-        </div>
-      </div>
+      <DashboardCandidateHeroSkeleton firstName={firstName} />
+      <DashboardCandidateActionQueueSkeleton />
+      <DashboardCandidateRecentSkeleton />
     </div>
   );
 }
