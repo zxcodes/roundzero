@@ -973,7 +973,7 @@ function PricingSection() {
             <div
               key={t.name}
               className={cn(
-                "rounded-4xl border p-5",
+                "rounded-3xl border p-5",
                 t.featured
                   ? "border-x border-foreground/15 border-y-border bg-muted/25"
                   : "border-border",
