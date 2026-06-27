@@ -329,10 +329,15 @@
   animation: calm-rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
-/* Hero screenshot — full width on desktop; cropped bleed on mobile only. */
+/* Hero screenshot — full width on desktop; cropped bleed on mobile only.
+   Radius and border match app panels (rounded-3xl border-border/60). */
 .calm-hero-shot {
   position: relative;
   overflow: hidden;
+  border: 1px solid oklch(from var(--border) l c h / 0.6);
+  border-bottom: none;
+  border-radius: var(--radius-3xl) var(--radius-3xl) 0 0;
+  box-shadow: 0 20px 50px -28px oklch(0.21 0.006 264 / 0.16);
   mask-image: linear-gradient(to bottom, black 88%, transparent 100%);
   -webkit-mask-image: linear-gradient(to bottom, black 88%, transparent 100%);
 }
@@ -340,10 +345,9 @@
   display: block;
   width: 100%;
   height: auto;
-  border: 1px solid var(--border);
-  border-bottom: none;
-  border-radius: 12px 12px 0 0;
-  box-shadow: 0 20px 50px -28px oklch(0.21 0.006 264 / 0.16);
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 @media (max-width: 639px) {
@@ -352,15 +356,15 @@
     width: 100vw;
     padding-left: 1.5rem;
     height: min(82vw, 480px);
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
     mask-image: linear-gradient(to bottom, black 82%, transparent 100%);
     -webkit-mask-image: linear-gradient(to bottom, black 82%, transparent 100%);
   }
   .calm-hero-shot__img {
     width: 840px;
     max-width: none;
-    border: none;
-    border-radius: 0;
-    box-shadow: none;
   }
 }
 
