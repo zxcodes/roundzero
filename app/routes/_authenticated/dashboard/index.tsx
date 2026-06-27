@@ -1,7 +1,8 @@
 import { Alert02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link, useLoaderData } from "@tanstack/react-router";
-import { DashboardIndexSkeleton } from "@/components/route-skeletons";
+import { DeferredSection } from "@/components/deferred-section";
+import { DashboardIndexContentSkeleton } from "@/components/route-skeletons";
 import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { CandidateDashboard } from "@/features/dashboard/components/candidate-dashboard";
@@ -16,17 +17,15 @@ export const Route = createFileRoute("/_authenticated/dashboard/")({
       { name: "description", content: PAGE_SEO.dashboard.description },
     ],
   }),
-  loader: async () => {
-    const metrics = await getDashboardMetrics();
-    return { metrics };
-  },
-  pendingComponent: DashboardIndexSkeleton,
+  loader: () => ({
+    deferredMetrics: getDashboardMetrics(),
+  }),
   component: DashboardIndexPage,
 });
 
 function DashboardIndexPage() {
   const auth = useLoaderData({ from: "/_authenticated" });
-  const { metrics } = Route.useLoaderData();
+  const { deferredMetrics } = Route.useLoaderData();
   const candidateProfile = auth.type === "candidate" ? auth.candidateProfile : null;
   const company = auth.type === "company" ? auth.company : null;
   const showResumeBanner =
@@ -64,11 +63,34 @@ function DashboardIndexPage() {
         </Alert>
       ) : null}
 
-      {metrics.type === "company" ? (
-        <CompanyDashboard metrics={metrics} firstName={firstName} />
-      ) : (
-        <CandidateDashboard metrics={metrics} firstName={firstName} />
-      )}
+      <DeferredSection
+        promise={deferredMetrics}
+        fallback={
+          <DashboardIndexContentSkeleton
+            firstName={firstName}
+            isCompany={auth.type === "company"}
+          />
+        }
+        sectionLabel="dashboard"
+      >
+        {(metrics) => <DashboardMetrics metrics={metrics} firstName={firstName} />}
+      </DeferredSection>
     </div>
   );
+}
+
+type DashboardMetrics = Awaited<ReturnType<typeof getDashboardMetrics>>;
+
+function DashboardMetrics({
+  metrics,
+  firstName,
+}: {
+  metrics: DashboardMetrics;
+  firstName: string;
+}) {
+  if (metrics.type === "company") {
+    return <CompanyDashboard metrics={metrics} firstName={firstName} />;
+  }
+
+  return <CandidateDashboard metrics={metrics} firstName={firstName} />;
 }
