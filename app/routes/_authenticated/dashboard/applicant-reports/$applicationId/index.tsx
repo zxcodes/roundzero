@@ -1,22 +1,12 @@
 import {
   AiMagicIcon,
   Alert02Icon,
-  AnalyticsUpIcon,
   ArrowLeft01Icon,
   ArrowRight01Icon,
-  BubbleChatIcon,
   CheckmarkCircle02Icon,
-  ClipboardIcon,
   File02Icon,
-  FileSearchIcon,
-  FlagIcon,
   HelpCircleIcon,
   Loading03Icon,
-  Mic01Icon,
-  RankingIcon,
-  SparklesIcon,
-  Target02Icon,
-  TickDouble01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
@@ -70,6 +60,8 @@ import {
   applicationStatusLabels,
   applicationStatusMeta,
   applicationStatusSchema,
+  type Recommendation,
+  recommendationBadgeTone,
   recommendationSchema,
 } from "@/shared/enums";
 import { base64ToBlob } from "@/shared/resume";
@@ -112,14 +104,18 @@ export const Route = createFileRoute("/_authenticated/dashboard/applicant-report
 type LoaderData = Awaited<ReturnType<typeof getCompanyApplicantReportTimeline>>;
 type ReportData = NonNullable<NonNullable<LoaderData>["report"]>;
 
-const dimensionMeta: Record<
-  keyof Omit<ReportData["scores"], "overall">,
-  { label: string; icon: typeof Target02Icon }
-> = {
-  communication: { label: "Communication", icon: BubbleChatIcon },
-  problemSolving: { label: "Problem solving", icon: AnalyticsUpIcon },
-  ownership: { label: "Ownership", icon: RankingIcon },
-  roleFit: { label: "Role fit", icon: Target02Icon },
+const dimensionLabels: Record<keyof Omit<ReportData["scores"], "overall">, string> = {
+  communication: "Communication",
+  problemSolving: "Problem solving",
+  ownership: "Ownership",
+  roleFit: "Role fit",
+};
+
+const verdictBandTone: Record<Recommendation, string> = {
+  strong_yes: "bg-success/10",
+  yes: "bg-info/10",
+  lean_no: "bg-warning/10",
+  no: "bg-danger/10",
 };
 
 const concernMeta: Record<
@@ -288,19 +284,21 @@ function ApplicantReportSummaryPage() {
     );
 
     return (
-      <div className="space-y-6">
+      <div className="overflow-hidden rounded-3xl border border-border/60">
         {batchNavigation ? (
-          <div className="rounded-3xl border border-border/60 px-5 py-4 md:px-6">
+          <div className="px-5 py-4 md:px-6">
             <ReportActionsRow
               applicationId={application.id}
               batchNavigation={batchNavigation}
               showFullLink={false}
             />
-            <div className="pt-4">{emptyState}</div>
           </div>
-        ) : (
-          emptyState
-        )}
+        ) : null}
+        <div
+          className={cn("px-5 py-8 md:px-6", batchNavigation ? "border-t border-border/60" : "")}
+        >
+          {emptyState}
+        </div>
       </div>
     );
   }
@@ -315,202 +313,236 @@ function ApplicantReportSummaryPage() {
     authenticity?.riskLevel === "high"
       ? "border-danger/20 bg-danger/10 text-danger"
       : "border-border/60 bg-muted/30 text-muted-foreground";
-  return (
-    <div className="space-y-5">
-      <div className="rounded-3xl border border-border/60 px-5 py-4 md:px-6">
-        <ReportActionsRow
-          applicationId={application.id}
-          batchNavigation={batchNavigation}
-          showFullLink
-        />
+  const verdictTone = recommendation !== null ? verdictBandTone[recommendation] : "bg-muted/25";
 
-        <div className="flex flex-col gap-4 pt-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex min-w-0 items-center gap-4">
-            <Avatar className="size-14 shrink-0">
-              <AvatarImage
-                src={application.candidatePicture ?? undefined}
-                alt={application.candidateName}
-              />
-              <AvatarFallback className="text-sm">
-                {getInitials(application.candidateName)}
-              </AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 space-y-1.5">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="truncate text-xl font-semibold tracking-tight">
-                  {application.candidateName}
-                </h1>
-                <Badge variant="outline" className={statusTone.badge}>
-                  {applicationStatusLabels[currentStatus]}
-                </Badge>
-                {showAuthenticity ? (
-                  <Badge variant="outline" className={cn("gap-1", authenticityRiskTone)}>
-                    <HugeiconsIcon icon={AiMagicIcon} strokeWidth={2} className="size-3" />
-                    {authenticity.riskLevel === "high"
-                      ? "Likely AI answers"
-                      : "Possible AI answers"}
+  return (
+    <div className="overflow-hidden rounded-3xl border border-border/60">
+      <section className={cn(verdictTone)}>
+        <div className="px-5 py-4 md:px-6">
+          <ReportActionsRow
+            applicationId={application.id}
+            batchNavigation={batchNavigation}
+            showFullLink
+          />
+
+          <div className="flex flex-col gap-4 pt-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex min-w-0 items-center gap-4">
+              <Avatar className="size-14 shrink-0">
+                <AvatarImage
+                  src={application.candidatePicture ?? undefined}
+                  alt={application.candidateName}
+                />
+                <AvatarFallback className="text-sm">
+                  {getInitials(application.candidateName)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 space-y-1.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="truncate text-xl font-semibold tracking-tight">
+                    {application.candidateName}
+                  </h1>
+                  <Badge variant="outline" className={statusTone.badge}>
+                    {applicationStatusLabels[currentStatus]}
                   </Badge>
-                ) : null}
+                  {showAuthenticity ? (
+                    <Badge variant="outline" className={cn("gap-1", authenticityRiskTone)}>
+                      <HugeiconsIcon icon={AiMagicIcon} strokeWidth={2} className="size-3" />
+                      {authenticity.riskLevel === "high"
+                        ? "Likely AI answers"
+                        : "Possible AI answers"}
+                    </Badge>
+                  ) : null}
+                </div>
+                <p className="truncate text-sm text-muted-foreground">
+                  Post-interview report for{" "}
+                  <span className="font-medium text-foreground">{application.jobTitle}</span>
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  Generated {reportCreatedAt ? formatDateTime(reportCreatedAt) : "—"}
+                </p>
               </div>
-              <p className="truncate text-sm text-muted-foreground">
-                Post-interview report for{" "}
-                <span className="font-medium text-foreground">{application.jobTitle}</span>
-              </p>
-              <p className="text-[11px] text-muted-foreground">
-                Generated {reportCreatedAt ? formatDateTime(reportCreatedAt) : "—"}
-              </p>
+            </div>
+
+            <div className="md:shrink-0">
+              <ScorePill score={report.scores.overall} recommendation={recommendation} size="lg" />
             </div>
           </div>
 
-          <div className="md:shrink-0">
-            <ScorePill score={report.scores.overall} recommendation={recommendation} size="lg" />
+          <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border/30 pt-4">
+            {canShortlist ? (
+              <ShortlistDialog
+                applicationId={application.id}
+                candidateName={application.candidateName}
+                mode="create"
+                trigger={
+                  <Button>
+                    <HugeiconsIcon
+                      icon={CheckmarkCircle02Icon}
+                      strokeWidth={2}
+                      className="size-4"
+                    />
+                    Shortlist
+                  </Button>
+                }
+              />
+            ) : null}
+            {isShortlisted ? (
+              <ShortlistDialog
+                applicationId={application.id}
+                candidateName={application.candidateName}
+                mode="edit"
+                defaultNote={shortlistDetails?.note ?? null}
+                trigger={<Button variant="outline">Edit note</Button>}
+              />
+            ) : null}
+            {canReject ? (
+              <Button
+                variant="destructive"
+                onClick={onRejectClick}
+                disabled={updateStatusMutation.isPending}
+              >
+                {updateStatusMutation.isPending && pendingStatus !== null ? (
+                  <HugeiconsIcon
+                    icon={Loading03Icon}
+                    strokeWidth={2}
+                    className="size-4 animate-spin"
+                  />
+                ) : (
+                  <HugeiconsIcon icon={Alert02Icon} strokeWidth={2} className="size-4" />
+                )}
+                {updateStatusMutation.isPending && pendingStatus !== null
+                  ? "Rejecting..."
+                  : "Reject"}
+              </Button>
+            ) : null}
+            {allowedStatusOptions.length > 1 ? (
+              <Select
+                value={currentStatus}
+                onValueChange={onStatusValueChange}
+                disabled={updateStatusMutation.isPending}
+              >
+                <SelectTrigger className="w-50">
+                  <SelectValue placeholder="Move to status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {allowedStatusOptions.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      Move to: {applicationStatusLabels[status]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null}
+            {application.resumeKey ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onResumeView}
+                disabled={resumeDownloadMutation.isPending}
+              >
+                {resumeDownloadMutation.isPending ? (
+                  <HugeiconsIcon
+                    icon={Loading03Icon}
+                    strokeWidth={2}
+                    className="size-4 animate-spin"
+                  />
+                ) : (
+                  <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-4" />
+                )}
+                {resumeDownloadMutation.isPending ? "Opening..." : "View resume"}
+              </Button>
+            ) : null}
           </div>
         </div>
 
-        <Separator className="my-4" />
+        <div className="border-t border-border/30 px-5 py-5 md:px-6">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Verdict
+          </p>
+          <p className="mt-2 max-w-3xl text-sm leading-7 text-foreground">{report.summary}</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {(Object.keys(dimensionLabels) as Array<keyof typeof dimensionLabels>).map((key) => {
+              const rawScore = report.scores[key];
+              const scoreTone =
+                recommendation !== null ? recommendationBadgeTone[recommendation] : undefined;
 
-        <div className="flex flex-wrap items-center gap-2">
-          {canShortlist ? (
-            <ShortlistDialog
-              applicationId={application.id}
-              candidateName={application.candidateName}
-              mode="create"
-              trigger={
-                <Button>
-                  <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-4" />
-                  Shortlist
-                </Button>
-              }
-            />
-          ) : null}
-          {isShortlisted ? (
-            <ShortlistDialog
-              applicationId={application.id}
-              candidateName={application.candidateName}
-              mode="edit"
-              defaultNote={shortlistDetails?.note ?? null}
-              trigger={<Button variant="outline">Edit note</Button>}
-            />
-          ) : null}
-          {canReject ? (
-            <Button
-              variant="destructive"
-              onClick={onRejectClick}
-              disabled={updateStatusMutation.isPending}
-            >
-              {updateStatusMutation.isPending && pendingStatus !== null ? (
-                <HugeiconsIcon
-                  icon={Loading03Icon}
-                  strokeWidth={2}
-                  className="size-4 animate-spin"
+              return (
+                <DimensionStatChip
+                  key={key}
+                  label={dimensionLabels[key]}
+                  score={rawScore}
+                  toneClass={scoreTone}
                 />
-              ) : (
-                <HugeiconsIcon icon={Alert02Icon} strokeWidth={2} className="size-4" />
-              )}
-              {updateStatusMutation.isPending && pendingStatus !== null ? "Rejecting..." : "Reject"}
-            </Button>
-          ) : null}
-          {allowedStatusOptions.length > 1 ? (
-            <Select
-              value={currentStatus}
-              onValueChange={onStatusValueChange}
-              disabled={updateStatusMutation.isPending}
-            >
-              <SelectTrigger className="w-50">
-                <SelectValue placeholder="Move to status" />
-              </SelectTrigger>
-              <SelectContent>
-                {allowedStatusOptions.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    Move to: {applicationStatusLabels[status]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : null}
-          {application.resumeKey ? (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onResumeView}
-              disabled={resumeDownloadMutation.isPending}
-            >
-              {resumeDownloadMutation.isPending ? (
-                <HugeiconsIcon
-                  icon={Loading03Icon}
-                  strokeWidth={2}
-                  className="size-4 animate-spin"
-                />
-              ) : (
-                <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-4" />
-              )}
-              {resumeDownloadMutation.isPending ? "Opening..." : "View resume"}
-            </Button>
-          ) : null}
-        </div>
-      </div>
-
-      {/* Summary + dimension scores */}
-      <section className="rounded-2xl bg-muted/30 px-5 py-4 md:px-6">
-        <div className="flex items-center gap-2">
-          <HugeiconsIcon
-            icon={SparklesIcon}
-            strokeWidth={2}
-            className="size-4 text-muted-foreground"
-          />
-          <h2 className="text-lg font-semibold tracking-tight">Summary</h2>
-        </div>
-        <p className="mt-3 text-sm leading-6 text-foreground">{report.summary}</p>
-
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {(Object.keys(dimensionMeta) as Array<keyof typeof dimensionMeta>).map((key) => {
-            const dim = dimensionMeta[key];
-            const rawScore = report.scores[key];
-            return (
-              <div key={key} className="space-y-1.5">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5">
-                    <HugeiconsIcon
-                      icon={dim.icon}
-                      strokeWidth={2}
-                      className="size-3.5 text-muted-foreground"
-                    />
-                    <span className="text-xs font-medium">{dim.label}</span>
-                  </div>
-                  <span className="text-xs text-muted-foreground">
-                    {formatCandidateScore(rawScore)}
-                  </span>
-                </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full bg-foreground/80"
-                    style={{ width: `${candidateScoreProgressPercent(rawScore)}%` }}
-                  />
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </section>
 
-      {/* Answer authenticity — surfaced prominently because it can flip a decision */}
+      <section className="grid border-t border-border/60 lg:grid-cols-2">
+        <SignalColumn
+          title="Strengths"
+          washClass="bg-success/5 lg:border-r lg:border-border/60"
+          dotClass="bg-success"
+          items={report.strengths}
+          emptyText="No strengths captured."
+        />
+        <SignalColumn
+          title="Gaps"
+          washClass="bg-warning/5"
+          dotClass="bg-warning"
+          items={report.weaknesses}
+          emptyText="No gaps captured."
+        />
+      </section>
+
+      {report.evidence.length > 0 ? (
+        <section className="border-t border-border/60 px-5 py-5 md:px-6">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            From the interview
+          </p>
+          <ul className="mt-4 space-y-4">
+            {report.evidence.map((item, index) => (
+              <li
+                key={index}
+                className="border-l-2 border-border/80 pl-4 text-sm leading-7 text-foreground"
+              >
+                &ldquo;{item}&rdquo;
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {report.insights.length > 0 ? (
+        <section className="border-t border-border/60 px-5 py-5 md:px-6">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Notes
+          </p>
+          <ul className="mt-3 space-y-2">
+            {report.insights.map((item, index) => (
+              <li key={index} className="text-sm leading-6 text-foreground">
+                {item}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
       {showAuthenticity ? (
-        <section className="rounded-3xl border border-border/60 px-5 py-4 md:px-6">
-          <div className="flex flex-wrap items-start justify-between gap-4">
+        <section
+          className={cn(
+            "border-t border-border/60 px-5 py-5 md:px-6",
+            authenticity.riskLevel === "high" ? "bg-danger/5" : "bg-warning/5",
+          )}
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <HugeiconsIcon
-                  icon={AiMagicIcon}
-                  strokeWidth={2}
-                  className="size-4 text-muted-foreground"
-                />
-                <h2 className="text-lg font-semibold tracking-tight">
-                  Answer authenticity ·{" "}
-                  {authenticity.riskLevel === "high" ? "High risk" : "Medium risk"}
-                </h2>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Independent check for AI-generated answers
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Answer authenticity
+              </p>
+              <p className="text-sm font-medium text-foreground">
+                {authenticity.riskLevel === "high" ? "High risk" : "Medium risk"}
               </p>
             </div>
             <Badge variant="outline" className="shrink-0 text-[11px]">
@@ -519,15 +551,12 @@ function ApplicantReportSummaryPage() {
           </div>
           <p className="mt-3 text-sm leading-6 text-foreground">{authenticity.explanation}</p>
           {authenticity.signals.length > 0 ? (
-            <ul className="mt-4 space-y-2">
+            <ul className="mt-4 space-y-3">
               {authenticity.signals.map((signal) => (
-                <li
-                  key={signal.signal}
-                  className="rounded-lg border border-border/60 bg-background/50 p-3"
-                >
-                  <p className="text-sm font-medium text-foreground">{signal.signal}</p>
-                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                    <span className="font-medium">Evidence:</span> &ldquo;{signal.evidence}&rdquo;
+                <li key={signal.signal} className="text-sm leading-6">
+                  <p className="font-medium text-foreground">{signal.signal}</p>
+                  <p className="mt-1 border-l-2 border-border/80 pl-3 text-muted-foreground">
+                    &ldquo;{signal.evidence}&rdquo;
                   </p>
                 </li>
               ))}
@@ -536,86 +565,16 @@ function ApplicantReportSummaryPage() {
         </section>
       ) : null}
 
-      {/* Strengths + Weaknesses */}
-      <section className="grid gap-4 lg:grid-cols-2">
-        <SignalPanel
-          title="Strengths"
-          icon={CheckmarkCircle02Icon}
-          tone="text-success"
-          items={report.strengths}
-          emptyText="No strengths captured."
-        />
-        <SignalPanel
-          title="Weaknesses"
-          icon={FlagIcon}
-          tone="text-danger"
-          items={report.weaknesses}
-          emptyText="No weaknesses captured."
-        />
-      </section>
-
-      {/* Evidence */}
-      {report.evidence.length > 0 ? (
-        <section className="rounded-3xl border border-border/60 px-5 py-4 md:px-6">
-          <div className="flex items-center gap-2">
-            <HugeiconsIcon
-              icon={TickDouble01Icon}
-              strokeWidth={2}
-              className="size-4 text-muted-foreground"
-            />
-            <h2 className="text-lg font-semibold tracking-tight">Evidence</h2>
-          </div>
-          <ul className="mt-4 space-y-2.5">
-            {report.evidence.map((item, index) => (
-              <li
-                key={index}
-                className="border-l-2 border-border/60 bg-muted/30 px-4 py-2.5 text-sm leading-6 text-foreground"
-              >
-                {item}
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      {/* Insights */}
-      {report.insights.length > 0 ? (
-        <section className="rounded-3xl border border-border/60 px-5 py-4 md:px-6">
-          <div className="flex items-center gap-2">
-            <HugeiconsIcon
-              icon={FileSearchIcon}
-              strokeWidth={2}
-              className="size-4 text-muted-foreground"
-            />
-            <h2 className="text-lg font-semibold tracking-tight">Insights</h2>
-          </div>
-          <ul className="mt-3 space-y-1.5">
-            {report.insights.map((item, index) => (
-              <li key={index} className="flex gap-2 text-sm leading-6 text-foreground">
-                <span className="mt-2.5 size-1 shrink-0 rounded-full bg-muted-foreground/60" />
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      {/* Screening answers */}
       {report.screeningAnswers.length > 0 ? (
-        <section className="rounded-3xl border border-border/60 px-5 py-4 md:px-6">
-          <div className="flex items-center gap-2">
-            <HugeiconsIcon
-              icon={ClipboardIcon}
-              strokeWidth={2}
-              className="size-4 text-muted-foreground"
-            />
-            <h2 className="text-lg font-semibold tracking-tight">Screening questions</h2>
-          </div>
-          <ul className="mt-4 space-y-3">
+        <section className="border-t border-border/60 px-5 py-5 md:px-6">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Screening responses
+          </p>
+          <ul className="mt-4 divide-y divide-border/60">
             {report.screeningAnswers.map((entry) => {
               const cm = concernMeta[entry.concern];
               return (
-                <li key={entry.question} className="space-y-1.5">
+                <li key={entry.question} className="space-y-1.5 py-3 first:pt-0 last:pb-0">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <p className="max-w-2xl text-sm font-medium leading-6">{entry.question}</p>
                     <Badge variant="outline" className={cn("gap-1", cm.tone)}>
@@ -629,7 +588,7 @@ function ApplicantReportSummaryPage() {
                     )}
                   </p>
                   {entry.notes ? (
-                    <p className="border-l-2 border-border bg-muted/30 px-3 py-1.5 text-xs leading-5 text-muted-foreground">
+                    <p className="border-l-2 border-border/80 pl-3 text-xs leading-5 text-muted-foreground">
                       {entry.notes}
                     </p>
                   ) : null}
@@ -640,43 +599,39 @@ function ApplicantReportSummaryPage() {
         </section>
       ) : null}
 
-      {/* Pre-screening + Voice — collapsed by default */}
       {preEvaluation || communicationAssessment?.status === "completed" ? (
-        <Accordion type="multiple" className="rounded-3xl border border-border/60">
+        <Accordion
+          type="multiple"
+          className="rounded-none border-0 border-t border-border/60 bg-transparent"
+        >
           {preEvaluation ? (
-            <AccordionItem value="pre-screening">
-              <AccordionTrigger className="px-5 py-3.5 text-sm md:px-7">
+            <AccordionItem
+              value="pre-screening"
+              className="border-border/60 border-b px-5 last:border-b-0 md:px-6"
+            >
+              <AccordionTrigger className="px-0 py-3.5 text-sm hover:no-underline">
                 <div className="flex items-center gap-2">
-                  <HugeiconsIcon
-                    icon={Target02Icon}
-                    strokeWidth={2}
-                    className="size-4 text-muted-foreground"
-                  />
                   Pre-screening
-                  <Badge variant="outline" className="ml-1 text-[11px]">
+                  <Badge variant="outline" className="text-[11px]">
                     {formatCandidateScoreWithScale(preEvaluation.score)}
                   </Badge>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="px-5 pb-4 md:px-7">
+              <AccordionContent className="px-0 pb-4">
                 <PreScreeningPanel preEvaluation={preEvaluation} />
               </AccordionContent>
             </AccordionItem>
           ) : null}
 
           {communicationAssessment?.status === "completed" ? (
-            <AccordionItem value="voice">
-              <AccordionTrigger className="px-5 py-3.5 text-sm md:px-7">
-                <div className="flex items-center gap-2">
-                  <HugeiconsIcon
-                    icon={Mic01Icon}
-                    strokeWidth={2}
-                    className="size-4 text-muted-foreground"
-                  />
-                  Voice communication assessment
-                </div>
+            <AccordionItem
+              value="voice"
+              className="border-border/60 border-b px-5 last:border-b-0 md:px-6"
+            >
+              <AccordionTrigger className="px-0 py-3.5 text-sm hover:no-underline">
+                Voice communication assessment
               </AccordionTrigger>
-              <AccordionContent className="px-5 pb-4 md:px-7">
+              <AccordionContent className="px-0 pb-4">
                 <VoiceSummary analysis={communicationAssessment.analysis} />
               </AccordionContent>
             </AccordionItem>
@@ -684,7 +639,7 @@ function ApplicantReportSummaryPage() {
         </Accordion>
       ) : null}
 
-      <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 px-5 py-4 md:px-6">
         <p className="text-xs text-muted-foreground">
           Need the full audit trail of every step Zero took?
         </p>
@@ -733,7 +688,7 @@ function ReportActionsRow({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-3 border-b border-border/60 pb-4",
+        "flex flex-wrap items-center gap-3 border-b border-border/30 pb-4",
         batchNavigation ? "justify-between" : "justify-end",
       )}
     >
@@ -809,32 +764,61 @@ function ReportActionsRow({
   );
 }
 
-function SignalPanel({
+function DimensionStatChip({
+  label,
+  score,
+  toneClass,
+}: {
+  label: string;
+  score: number;
+  toneClass?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "inline-flex min-w-0 items-center gap-2 rounded-full border border-border/50 bg-background/50 px-3 py-1.5",
+        toneClass,
+      )}
+    >
+      <span className="truncate text-xs text-muted-foreground">{label}</span>
+      <span className="text-xs font-semibold tabular-nums text-foreground">
+        {formatCandidateScore(score)}
+      </span>
+      <div className="h-1 w-10 overflow-hidden rounded-full bg-muted/80">
+        <div
+          className="h-full rounded-full bg-current opacity-70"
+          style={{ width: `${candidateScoreProgressPercent(score)}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function SignalColumn({
   title,
-  icon,
-  tone,
+  washClass,
+  dotClass,
   items,
   emptyText,
 }: {
   title: string;
-  icon: typeof CheckmarkCircle02Icon;
-  tone: string;
+  washClass: string;
+  dotClass: string;
   items: string[];
   emptyText: string;
 }) {
   return (
-    <div className="rounded-3xl border border-border/60 px-5 py-4 md:px-6">
-      <div className="flex items-center gap-2">
-        <HugeiconsIcon icon={icon} strokeWidth={2} className={cn("size-4", tone)} />
-        <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
-      </div>
+    <div className={cn("px-5 py-5 md:px-6", washClass)}>
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {title}
+      </p>
       {items.length === 0 ? (
         <p className="mt-3 text-xs text-muted-foreground">{emptyText}</p>
       ) : (
-        <ul className="mt-3 space-y-1.5">
+        <ul className="mt-3 space-y-2">
           {items.map((item, index) => (
-            <li key={index} className="flex gap-2 text-sm leading-6 text-foreground">
-              <span className={cn("mt-2.5 size-1 shrink-0 rounded-full", tone, "opacity-70")} />
+            <li key={index} className="flex gap-2.5 text-sm leading-6 text-foreground">
+              <span className={cn("mt-2.5 size-1.5 shrink-0 rounded-full", dotClass)} />
               <span>{item}</span>
             </li>
           ))}
