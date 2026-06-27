@@ -16,8 +16,8 @@ export function PublicHeader() {
   };
 
   return (
-    <header className="border-b border-border/40">
-      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-6 lg:px-10">
+    <header className="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-md">
+      <div className="mx-auto flex h-14 w-full max-w-[90rem] items-center justify-between px-6 lg:px-12 xl:px-16">
         <div className="flex items-center">
           <Link to="/" className="flex items-center gap-1">
             <Logo />
@@ -40,15 +40,10 @@ export function PublicHeader() {
                 className="hidden rounded-full text-muted-foreground sm:inline-flex"
                 asChild
               >
-                <Link to="/company/login">For companies</Link>
+                <Link to="/company/login">Log in</Link>
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="hidden rounded-full text-muted-foreground sm:inline-flex"
-                asChild
-              >
-                <Link to="/candidate/login">For job seekers</Link>
+              <Button size="sm" className="hidden rounded-full sm:inline-flex" asChild>
+                <Link to="/company/login">Post a job</Link>
               </Button>
             </>
           )}
@@ -63,6 +58,9 @@ export function PublicHeader() {
             <SheetContent side="right" className="w-72 p-0">
               <SheetTitle className="sr-only">Navigation</SheetTitle>
               <div className="flex flex-col gap-1 p-4 pt-12">
+                <Button className="justify-start" asChild onClick={onCloseMobileMenu}>
+                  <Link to="/company/login">Post a job</Link>
+                </Button>
                 <Button
                   variant="ghost"
                   className="justify-start text-muted-foreground"
@@ -73,7 +71,7 @@ export function PublicHeader() {
                     to="/company/login"
                     activeProps={{ className: "text-foreground bg-accent" }}
                   >
-                    For Companies
+                    Log in
                   </Link>
                 </Button>
                 <Button
@@ -86,7 +84,7 @@ export function PublicHeader() {
                     to="/candidate/login"
                     activeProps={{ className: "text-foreground bg-accent" }}
                   >
-                    For Candidates
+                    For job seekers
                   </Link>
                 </Button>
                 <Button
@@ -111,7 +109,7 @@ export function PublicHeader() {
 export function PublicFooter() {
   return (
     <footer className="border-t border-border/40">
-      <div className="mx-auto flex max-w-7xl flex-col items-start gap-3 px-6 py-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between lg:px-10">
+      <div className="mx-auto flex w-full max-w-[90rem] flex-col items-start gap-3 px-6 py-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between lg:px-12 xl:px-16">
         <span>&copy; {new Date().getFullYear()} RoundZero</span>
         <div className="flex gap-6">
           <Link to="/contact" className="hover:text-foreground transition-colors">
