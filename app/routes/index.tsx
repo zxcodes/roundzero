@@ -141,11 +141,22 @@ function SecondaryCta({ to, children }: { to: string; children: React.ReactNode 
   );
 }
 
-function TextLink({ to, children }: { to: string; children: React.ReactNode }) {
+function TextLink({
+  to,
+  children,
+  className,
+}: {
+  to: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
     <Link
       to={to}
-      className="inline-flex items-center gap-1 text-sm text-foreground transition-colors hover:text-foreground/80"
+      className={cn(
+        "inline-flex items-center gap-0.5 text-foreground transition-colors hover:text-foreground/80",
+        className,
+      )}
     >
       {children}
       <HugeiconsIcon icon={ArrowRight02Icon} strokeWidth={2} className="size-3.5" />
@@ -160,18 +171,17 @@ function Hero() {
   return (
     <section className="calm-hero relative overflow-hidden">
       <div className={cn(CONTAINER, "pb-0 pt-16 lg:pt-24")}>
-        <div className="rise text-left">
+        <div className="rise w-full text-left">
           <h1 className="text-[clamp(2rem,3.6vw,4rem)] font-semibold leading-[1.06] tracking-[-0.035em] sm:whitespace-nowrap">
             Review candidates, not <Highlight>resumes</Highlight>.
           </h1>
-          <p className="mt-5 max-w-xl text-[clamp(0.95rem,1.2vw,1.05rem)] leading-relaxed text-muted-foreground">
-            Purpose-built for hiring teams. Evaluation before the first interview.
-          </p>
-          <div className="mt-5 flex items-center gap-2.5 text-sm">
-            <span className="rounded-full border border-border px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-              Free to start
-            </span>
-            <TextLink to="/company/login">Post a job</TextLink>
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
+            <p className="min-w-0 max-w-xl text-[clamp(0.95rem,1.2vw,1.05rem)] leading-relaxed text-muted-foreground">
+              Purpose-built for hiring teams. Evaluation before the first interview.
+            </p>
+            <TextLink to="/company/login" className="shrink-0 text-sm">
+              Post a job
+            </TextLink>
           </div>
         </div>
 
@@ -770,25 +780,28 @@ function CandidateExperience() {
 // ───────────────────────────────────────────────────────────────────────────
 function ReportScreenshotSection() {
   return (
-    <section className={cn("border-t border-border", SECTION_TINT)}>
-      <div className={cn(CONTAINER, SECTION_PAD)}>
-        <div className="grid grid-cols-1 items-center gap-x-12 gap-y-12 lg:grid-cols-2">
+    <section
+      className={cn("overflow-hidden border-t border-border", SECTION_TINT, "pb-20 lg:pb-28")}
+    >
+      <div className={cn(CONTAINER, "pb-0 pt-20 lg:pt-28")}>
+        <div className="w-full text-left">
           <SectionHeading
             eyebrow="The report"
             title="See how candidates actually perform"
             lead="Every candidate arrives with a structured report covering reasoning, communication, and relevant experience, plus strengths, concerns, and a clear recommendation."
           />
-          <div className="calm-report-shot">
-            <img
-              src="/marketing/report.jpeg"
-              alt="RoundZero post-interview report with scores, strengths, gaps, and interview evidence"
-              className="block w-full"
-              width={2400}
-              height={1500}
-              loading="lazy"
-              decoding="async"
-            />
-          </div>
+        </div>
+
+        <div className="calm-hero-shot mt-10 lg:mt-14">
+          <img
+            src="/marketing/report.jpeg"
+            alt="RoundZero post-interview report with scores, strengths, gaps, and interview evidence"
+            className="calm-hero-shot__img"
+            width={2400}
+            height={1500}
+            loading="lazy"
+            decoding="async"
+          />
         </div>
       </div>
     </section>
