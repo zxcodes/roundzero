@@ -6,6 +6,13 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
+import { DeferredSection } from "@/components/deferred-section";
+import {
+  DashboardCompanyAwaitingReviewSkeleton,
+  DashboardCompanyHeroSkeleton,
+  DashboardCompanyRecentSkeleton,
+  DashboardCompanyRolesSkeleton,
+} from "@/components/route-skeletons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -18,6 +25,7 @@ import { type Recommendation, recommendationBadgeTone, recommendationLabels } fr
 import { CANDIDATE_SCORE_MAX, formatCandidateScore } from "@/shared/score";
 
 type CompanyMetrics = Extract<Awaited<ReturnType<typeof getDashboardMetrics>>, { type: "company" }>;
+type CompanyHero = Awaited<CompanyMetrics["hero"]>;
 
 const dashboardCardGridClass = "grid gap-4 sm:grid-cols-2 lg:grid-cols-3";
 
@@ -57,8 +65,8 @@ function ReviewButton({
   );
 }
 
-function HeroSection({ firstName, metrics }: { firstName: string; metrics: CompanyMetrics }) {
-  const { heroSummary } = metrics;
+function HeroSection({ firstName, hero }: { firstName: string; hero: CompanyHero }) {
+  const { heroSummary } = hero;
 
   const heroLines = (() => {
     if (heroSummary.awaitingReviewCount > 0) {
@@ -159,10 +167,10 @@ function AwaitingReviewCard({ candidate }: { candidate: DashboardCandidateReport
 
 function AwaitingReviewSection({
   candidates,
-  heroSummary,
+  awaitingReviewCount,
 }: {
   candidates: DashboardCandidateReport[];
-  heroSummary: CompanyMetrics["heroSummary"];
+  awaitingReviewCount: number;
 }) {
   if (candidates.length === 0) {
     return (
@@ -191,9 +199,7 @@ function AwaitingReviewSection({
             Top recommendations waiting on your decision — open a report for the full evaluation.
           </p>
         </div>
-        <span className="text-sm text-muted-foreground">
-          {heroSummary.awaitingReviewCount} total
-        </span>
+        <span className="text-sm text-muted-foreground">{awaitingReviewCount} total</span>
       </div>
 
       <div className={dashboardCardGridClass}>
@@ -202,7 +208,7 @@ function AwaitingReviewSection({
         ))}
       </div>
 
-      {heroSummary.awaitingReviewCount > 0 ? (
+      {awaitingReviewCount > 0 ? (
         <div className="flex justify-center pt-1">
           <Button variant="ghost" size="sm" asChild>
             <Link to="/dashboard/awaiting-review" className="no-underline hover:no-underline">
@@ -373,16 +379,44 @@ export function CompanyDashboard({
 }) {
   return (
     <div className="space-y-8">
-      <HeroSection firstName={firstName} metrics={metrics} />
-      <AwaitingReviewSection
-        candidates={metrics.awaitingReview}
-        heroSummary={metrics.heroSummary}
-      />
-      <RolesAttentionSection roles={metrics.rolesNeedingAttention} />
-      <RecentActivitySection
-        reports={metrics.recentReports}
-        evaluatingCount={metrics.heroSummary.evaluatingCount}
-      />
+      <DeferredSection
+        promise={metrics.hero}
+        fallback={<DashboardCompanyHeroSkeleton firstName={firstName} />}
+        sectionLabel="dashboard summary"
+      >
+        {(hero) => <HeroSection firstName={firstName} hero={hero} />}
+      </DeferredSection>
+      <DeferredSection
+        promise={metrics.awaitingReview}
+        fallback={<DashboardCompanyAwaitingReviewSkeleton />}
+        sectionLabel="candidates awaiting review"
+      >
+        {(section) => (
+          <AwaitingReviewSection
+            candidates={section.candidates}
+            awaitingReviewCount={section.awaitingReviewCount}
+          />
+        )}
+      </DeferredSection>
+      <DeferredSection
+        promise={metrics.rolesNeedingAttention}
+        fallback={<DashboardCompanyRolesSkeleton />}
+        sectionLabel="roles requiring attention"
+      >
+        {(section) => <RolesAttentionSection roles={section.roles} />}
+      </DeferredSection>
+      <DeferredSection
+        promise={metrics.recentActivity}
+        fallback={<DashboardCompanyRecentSkeleton />}
+        sectionLabel="recent activity"
+      >
+        {(section) => (
+          <RecentActivitySection
+            reports={section.reports}
+            evaluatingCount={section.evaluatingCount}
+          />
+        )}
+      </DeferredSection>
     </div>
   );
 }

@@ -1,13 +1,16 @@
 import { Search01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+
 import {
   type AppBreadcrumbItem,
   AppBreadcrumbs,
   BreadcrumbSkeleton,
 } from "@/components/app-breadcrumbs";
+import { DeferredSection } from "@/components/deferred-section";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { NotificationInbox } from "@/features/notifications/components/notification-inbox";
 import type { getMyNotificationsFeed } from "@/features/notifications/server/functions";
 
@@ -21,7 +24,7 @@ export function SiteHeader({
   breadcrumbs: AppBreadcrumbItem[] | null;
   breadcrumbSegments: number;
   isBreadcrumbPending: boolean;
-  notificationsFeed: Awaited<ReturnType<typeof getMyNotificationsFeed>>;
+  notificationsFeed: Promise<Awaited<ReturnType<typeof getMyNotificationsFeed>>>;
   onOpenCommandPalette: () => void;
 }) {
   return (
@@ -58,10 +61,20 @@ export function SiteHeader({
           >
             <HugeiconsIcon icon={Search01Icon} strokeWidth={2} />
           </Button>
-          <NotificationInbox feed={notificationsFeed} />
+          <DeferredSection
+            promise={notificationsFeed}
+            fallback={<NotificationInboxSkeleton />}
+            sectionLabel="notifications"
+          >
+            {(feed) => <NotificationInbox feed={feed} />}
+          </DeferredSection>
           <ModeToggle />
         </div>
       </div>
     </header>
   );
+}
+
+function NotificationInboxSkeleton() {
+  return <Skeleton className="size-9 shrink-0 rounded-full" />;
 }

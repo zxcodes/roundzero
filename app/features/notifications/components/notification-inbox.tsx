@@ -8,7 +8,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -47,16 +47,44 @@ import { formatDateTime, formatRelativeTime } from "@/shared/date";
 type NotificationFeed = Awaited<ReturnType<typeof getMyNotificationsFeed>>;
 
 export function NotificationInbox({
-  feed = { items: [], unreadCount: 0 },
+  feed: serverFeed = { items: [], unreadCount: 0 },
 }: {
   feed: NotificationFeed;
 }) {
   const { isMobile } = useSidebar();
   const [open, setOpen] = useState(false);
+  const [feed, setFeed] = useState(serverFeed);
   const router = useRouter();
+
+  useEffect(() => {
+    setFeed(serverFeed);
+  }, [serverFeed]);
 
   const markReadFn = useServerFn(markMyNotificationRead);
   const markAllFn = useServerFn(markAllMyNotificationsRead);
+
+  const markAsRead = (notificationId: string) => {
+    setFeed((current) => {
+      const target = current.items.find((item) => item.id === notificationId);
+      if (!target || target.readAt) {
+        return current;
+      }
+
+      return {
+        unreadCount: Math.max(0, current.unreadCount - 1),
+        items: current.items.map((item) =>
+          item.id === notificationId ? { ...item, readAt: new Date() } : item,
+        ),
+      };
+    });
+  };
+
+  const markAllAsRead = () => {
+    setFeed((current) => ({
+      unreadCount: 0,
+      items: current.items.map((item) => (item.readAt ? item : { ...item, readAt: new Date() })),
+    }));
+  };
 
   const markReadMutation = useMutation({
     mutationFn: markReadFn,
@@ -64,9 +92,6 @@ export function NotificationInbox({
 
   const markAllMutation = useMutation({
     mutationFn: markAllFn,
-    onSuccess: async () => {
-      await router.invalidate();
-    },
   });
 
   const onOpenChange = (nextOpen: boolean) => {
@@ -74,6 +99,7 @@ export function NotificationInbox({
   };
 
   const onMarkAllRead = async () => {
+    markAllAsRead();
     await markAllMutation.mutateAsync({});
   };
 
@@ -81,11 +107,11 @@ export function NotificationInbox({
     notificationId: string,
     presentation: NonNullable<ReturnType<typeof getNotificationPresentation>>,
   ) => {
+    markAsRead(notificationId);
     await markReadMutation.mutateAsync({
       data: { notificationId },
     });
     setOpen(false);
-    await router.invalidate();
     await router.navigate({
       to: presentation.to,
       params: presentation.params,
