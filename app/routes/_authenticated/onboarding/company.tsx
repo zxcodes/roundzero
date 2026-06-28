@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { redirectAfterSignup, signupSearchSchema } from "@/features/auth/signup-search";
+import { signupSearchSchema } from "@/features/auth/signup-search";
 import { createCompany } from "@/features/companies/server/functions";
 import {
   type CompanySize,
@@ -36,7 +36,6 @@ const industryOptions = Object.entries(industryLabels).map(([value, label]) => (
 const sizeOptions = Object.entries(companySizeLabels).map(([value, label]) => ({ value, label }));
 
 function CompanyOnboardingPage() {
-  const signupSearch = Route.useSearch();
   const router = useRouter();
 
   const onboardingSchema = z.object({
@@ -51,7 +50,6 @@ function CompanyOnboardingPage() {
     mutationFn: createCompanyFn,
     onSuccess: async () => {
       await router.invalidate();
-      await router.navigate(redirectAfterSignup(signupSearch));
     },
     onError: () => {
       toast.error("Failed to create company. Please try again.");

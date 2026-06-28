@@ -102,8 +102,8 @@ export function CompanyJobActions({
     mutationFn: archiveJobFn,
     onSuccess: async () => {
       toast.success("Job archived successfully");
-      await router.invalidate();
       await router.navigate({ to: "/dashboard/jobs" });
+      await router.invalidate();
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : "Failed to archive job.");
