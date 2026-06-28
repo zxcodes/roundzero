@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
-import { generateText, Output } from "ai";
+import { generateText, NoObjectGeneratedError, NoOutputGeneratedError, Output } from "ai";
 import { z } from "zod";
 import { getCompanyByMemberUserId } from "@/features/companies/queries/membership-queries_sql";
 import { notifyCompanyTeam } from "@/features/companies/services/company-team-notifications";
@@ -369,6 +369,8 @@ const SYSTEM_PROMPT = `You are an expert technical recruiter and job description
 
 IMPORTANT: Do NOT prepend colons (:), dashes (-), bullets, or any markdown formatting to text values. The title should be "Senior UX Designer" not ": Senior UX Designer". The description should be plain paragraphs, not a list.
 
+Never refuse, apologize, or ask for more input in any field. Do not use titles like "Error" or descriptions that explain what information is missing. Even brief prompts should be expanded into a complete posting — infer reasonable role details, requirements, and screening questions when the user omits them.
+
 Guidelines:
 - Write a professional, engaging job description that would attract top-tier candidates
 - Requirements should be specific and actionable (e.g., "5+ years of React experience" not just "React experience")
@@ -442,6 +444,33 @@ function cleanAiJobOutput(output: Record<string, unknown>): Record<string, unkno
   return cleaned;
 }
 
+function looksLikeRefusalOutput(output: { title: string; description: string }): boolean {
+  const title = output.title.trim();
+  const combined = `${title}\n${output.description}`.toLowerCase();
+
+  if (/^error\b/i.test(title)) {
+    return true;
+  }
+
+  if (
+    combined.includes("invalid request") ||
+    combined.includes("does not contain the necessary information") ||
+    combined.includes("please provide") ||
+    combined.includes("unable to generate") ||
+    combined.includes("unable to create") ||
+    combined.includes("cannot generate") ||
+    combined.includes("cannot create") ||
+    combined.includes("insufficient information") ||
+    combined.includes("not enough information") ||
+    combined.includes("i'm unable") ||
+    combined.includes("i am unable")
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
 export const generateJobWithAI = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
   .validator(zodValidator(generateJobPromptSchema))
@@ -452,26 +481,53 @@ export const generateJobWithAI = createServerFn({ method: "POST" })
       "aiJobCreation",
     );
 
-    const result = await generateText({
-      model: createChatModel("job_creation", { plugins: [{ id: "response-healing" }] }),
-      output: Output.object({ schema: aiJobGenerationSchema }),
-      system: SYSTEM_PROMPT,
-      prompt: data.prompt,
-    });
+    try {
+      const result = await generateText({
+        model: createChatModel("job_creation", { plugins: [{ id: "response-healing" }] }),
+        output: Output.object({ schema: aiJobGenerationSchema }),
+        system: SYSTEM_PROMPT,
+        prompt: data.prompt,
+      });
 
-    const cleaned = cleanAiJobOutput(result.output);
+      const cleaned = cleanAiJobOutput(result.output);
 
-    const validated = jobFieldsSchema.safeParse({
-      ...cleaned,
-      status: "draft",
-      expiresAt: null,
-      finalReportTarget: enforceReportTarget(entitlements, null),
-    });
+      const validated = jobFieldsSchema.safeParse({
+        ...cleaned,
+        status: "draft",
+        expiresAt: null,
+        finalReportTarget: enforceReportTarget(entitlements, null),
+      });
 
-    if (!validated.success) {
-      const issues = validated.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`);
-      throw new Error(`Generated job failed validation: ${issues.join("; ")}`);
+      if (!validated.success) {
+        throw new Error(
+          "The draft was incomplete. Add a bit more detail about the role, requirements, and work setup, then try again.",
+        );
+      }
+
+      if (looksLikeRefusalOutput(validated.data)) {
+        throw new Error(
+          "We couldn't turn that into a job posting. Describe the role, seniority, location or remote setup, and compensation if you have it, then try again.",
+        );
+      }
+
+      return validated.data;
+    } catch (error) {
+      if (
+        NoObjectGeneratedError.isInstance(error) ||
+        NoOutputGeneratedError.isInstance(error) ||
+        (error instanceof Error &&
+          (error.message.includes("No object generated") ||
+            error.message.includes("No output generated")))
+      ) {
+        throw new Error(
+          "We couldn't turn that into a job posting. Describe the role, seniority, location or remote setup, and compensation if you have it, then try again.",
+        );
+      }
+
+      if (error instanceof Error && error.message) {
+        throw error;
+      }
+
+      throw new Error("Something went wrong while generating your job posting. Please try again.");
     }
-
-    return validated.data;
   });
