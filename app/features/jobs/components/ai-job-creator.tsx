@@ -57,7 +57,11 @@ export function AiJobCreator({ isPaid, onApply, onDiscard }: AiJobCreatorProps) 
       toast.success("Job draft generated");
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Failed to generate job");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong while generating your job posting. Please try again.",
+      );
     },
   });
 
@@ -72,7 +76,6 @@ export function AiJobCreator({ isPaid, onApply, onDiscard }: AiJobCreatorProps) 
 
   const onTryAgain = () => {
     setResult(null);
-    setPrompt("");
     onDiscard();
   };
 
@@ -89,7 +92,7 @@ export function AiJobCreator({ isPaid, onApply, onDiscard }: AiJobCreatorProps) 
     <section
       className={cn(
         "relative space-y-4 overflow-hidden rounded-3xl border px-5 py-4 md:px-6",
-        "border-primary/15 bg-muted-foreground/[0.045] shadow-sm shadow-primary/[0.04] dark:bg-muted/10",
+        "border-primary/15 bg-muted-foreground/4.5 shadow-sm shadow-primary/4 dark:bg-muted/10",
       )}
     >
       <div
