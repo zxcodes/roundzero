@@ -49,13 +49,11 @@ export function useInterviewChat(interviewId: string, initialMessages: InitialIn
   const chat = useChat({
     connection,
     forwardedProps: { interviewId },
-    initialMessages: initialMessages.map(
-      (message): UIMessage => ({
-        id: message.id,
-        role: message.role === "assistant" ? "assistant" : "user",
-        parts: [{ type: "text", content: message.content }],
-      }),
-    ),
+    initialMessages: initialMessages.map((message) => ({
+      id: message.id,
+      role: message.role === "assistant" ? "assistant" : "user",
+      parts: [{ type: "text", content: message.content }],
+    })),
   });
 
   const messages: Array<{ id: string; role: "assistant" | "candidate"; content: string }> = [];
