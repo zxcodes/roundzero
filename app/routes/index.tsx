@@ -9,7 +9,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { companyLoginLinkForPlan } from "@/features/auth/signup-search";
 import {
   PLAN_CONFIGS,
@@ -61,8 +61,8 @@ function HomePage() {
       <PublicHeader />
       <main id="main-content">
         <Hero />
+        <ProblemSection />
         <ProductIntro />
-        <ValueStrip />
         <HowItWorks />
         <PipelineSection />
         <CandidateExperience />
@@ -201,49 +201,97 @@ function Hero() {
   );
 }
 
-function ProductIntro() {
+const problemPoints = [
+  {
+    title: "Hours lost to screening",
+    body: "Recruiters spend countless hours per role reading résumés, scheduling first calls, and triaging applicants who never should have reached a human.",
+  },
+  {
+    title: "Keyword matching fails",
+    body: "Most ATS pipelines run on regex and keyword rules. They reward buzzwords and PDF formatting, not how someone thinks or solves problems.",
+  },
+  {
+    title: "Pay for collection, not evaluation",
+    body: "You license an ATS to gather applications, then your team still runs the entire first round, including screening, interviews, and ranking.",
+  },
+];
+
+function ProblemSection() {
   return (
-    <section className="border-t border-border">
-      <div className={cn(CONTAINER, "py-14 lg:py-20")}>
-        <p className="max-w-2xl text-left text-[clamp(0.98rem,1.2vw,1.08rem)] leading-relaxed text-muted-foreground">
-          Every applicant is evaluated through adaptive interviews and structured assessment. Get
-          ranked candidates, evidence-backed reports, and clear hiring recommendations before the
-          first human interview.
-        </p>
+    <section className={cn("border-t border-border", SECTION_TINT)}>
+      <div className={cn(CONTAINER, SECTION_PAD)}>
+        <SectionHeading
+          eyebrow="The problem"
+          title={
+            <>
+              First-round hiring wasn't built to <Highlight>evaluate</Highlight>
+            </>
+          }
+          lead="ATS tools store applications. Your team still screens every résumé by hand, and keyword filters let the wrong people through while strong candidates get dropped."
+        />
+        <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-3 sm:gap-0">
+          {problemPoints.map((point, i) => (
+            <article
+              key={point.title}
+              className={cn(
+                "sm:px-7",
+                i !== 0 ? "border-t border-border pt-8 sm:border-t-0 sm:pt-0" : "",
+                i !== 0 ? "sm:border-l" : "",
+                i === 0 ? "sm:pl-0" : "",
+              )}
+            >
+              <h3 className="text-lg font-semibold tracking-[-0.01em]">{point.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{point.body}</p>
+            </article>
+          ))}
+        </div>
       </div>
     </section>
   );
 }
 
-// ───────────────────────────────────────────────────────────────────────────
-// Value strip
-// ───────────────────────────────────────────────────────────────────────────
-const valueProps = [
-  { label: "Skip", value: "Résumé screening", note: "No keyword filters, no ATS noise." },
-  { label: "Evaluate", value: "How people think", note: "Adaptive interviews, not trivia." },
-  { label: "Receive", value: "Ranked reports", note: "Scored, not just collected." },
-  { label: "Trust", value: "Linked evidence", note: "Every score ties to real answers." },
+const solutionOutcomes = [
+  {
+    title: "Adaptive interviews",
+    body: "Zero evaluates how candidates think and communicate, not just what is on their résumé.",
+  },
+  {
+    title: "Ranked reports",
+    body: "Every applicant arrives scored with strengths, concerns, and evidence from the conversation.",
+  },
+  {
+    title: "Hire with confidence",
+    body: "Clear recommendations before your team schedules a single human interview.",
+  },
 ];
 
-function ValueStrip() {
+function ProductIntro() {
   return (
     <section className="border-t border-border">
-      <div className={CONTAINER}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-          {valueProps.map((v, i) => (
-            <div
-              key={v.label}
+      <div className={cn(CONTAINER, SECTION_PAD)}>
+        <SectionHeading
+          eyebrow="The fix"
+          title={
+            <>
+              RoundZero replaces your <Highlight>first round</Highlight>
+            </>
+          }
+          lead="Every applicant is evaluated through adaptive interviews and structured assessment, not keyword filters or manual triage."
+        />
+        <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-3 sm:gap-0">
+          {solutionOutcomes.map((outcome, i) => (
+            <article
+              key={outcome.title}
               className={cn(
-                "py-10 sm:px-6 lg:py-12",
-                i !== 0 ? "border-t border-border sm:border-t-0 sm:border-l" : "",
-                i === 2 ? "sm:border-t lg:border-t-0 lg:border-l" : "",
-                i === 0 ? "lg:pl-0" : "",
+                "sm:px-7",
+                i !== 0 ? "border-t border-border pt-8 sm:border-t-0 sm:pt-0" : "",
+                i !== 0 ? "sm:border-l" : "",
+                i === 0 ? "sm:pl-0" : "",
               )}
             >
-              <span className="eyebrow">{v.label}</span>
-              <p className="mt-2 text-xl font-semibold tracking-[-0.015em]">{v.value}</p>
-              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{v.note}</p>
-            </div>
+              <h3 className="text-lg font-semibold tracking-[-0.01em]">{outcome.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{outcome.body}</p>
+            </article>
           ))}
         </div>
       </div>
@@ -347,62 +395,7 @@ const pipelineLogs: PipelineLogLine[] = [
     workflow: "pre-eval",
     runId: "d2e765a6",
     level: "INFO",
-    message: "load_application: Loading application from DB",
-  },
-  {
-    workflow: "pre-eval",
-    runId: "d2e765a6",
-    level: "INFO",
     message: "load_application completed → jobTitle=Senior Backend Engineer",
-  },
-  {
-    workflow: "pre-eval",
-    runId: "d2e765a6",
-    level: "INFO",
-    message: "extract_resume: Fetching from R2 and extracting text",
-  },
-  {
-    workflow: "pre-eval",
-    runId: "d2e765a6",
-    level: "INFO",
-    message: "Resume format: application/pdf, size: 77 KB",
-  },
-  {
-    workflow: "pre-eval",
-    runId: "d2e765a6",
-    level: "INFO",
-    message: "extract_resume completed → chars=4283 words=600",
-  },
-  {
-    workflow: "pre-eval",
-    runId: "d2e765a6",
-    level: "INFO",
-    message: "classify_job: Classifying job type for role-specific evaluation",
-  },
-  {
-    workflow: "pre-eval",
-    runId: "d2e765a6",
-    level: "INFO",
-    message: "ai-call → prompt=396 tokens=34 latencyMs=3948 promptVersion=1.0.0",
-  },
-  {
-    workflow: "pre-eval",
-    runId: "d2e765a6",
-    level: "INFO",
-    message:
-      "classify_job completed → roleType=technical reasoning=Backend APIs, scalable services, infrastructure",
-  },
-  {
-    workflow: "pre-eval",
-    runId: "d2e765a6",
-    level: "INFO",
-    message: "check_authenticity: Running resume authenticity check",
-  },
-  {
-    workflow: "pre-eval",
-    runId: "d2e765a6",
-    level: "INFO",
-    message: "ai-call → prompt=4638 tokens=3009 latencyMs=35015 promptVersion=1.0.0",
   },
   {
     workflow: "pre-eval",
@@ -415,18 +408,6 @@ const pipelineLogs: PipelineLogLine[] = [
     workflow: "pre-eval",
     runId: "d2e765a6",
     level: "INFO",
-    message: "evaluate: Calling OpenRouter for pre-evaluation",
-  },
-  {
-    workflow: "pre-eval",
-    runId: "d2e765a6",
-    level: "INFO",
-    message: "ai-call → prompt=5579 tokens=1698 latencyMs=18521 promptVersion=1.0.0",
-  },
-  {
-    workflow: "pre-eval",
-    runId: "d2e765a6",
-    level: "INFO",
     message:
       "evaluate completed → score=5.2 confidence=medium modelNextStep=interview_invited missingCount=4",
   },
@@ -434,31 +415,7 @@ const pipelineLogs: PipelineLogLine[] = [
     workflow: "pre-eval",
     runId: "d2e765a6",
     level: "INFO",
-    message: "save_pre_eval: Saving pre-evaluation to DB",
-  },
-  {
-    workflow: "pre-eval",
-    runId: "d2e765a6",
-    level: "INFO",
-    message: "save_pre_eval completed → status=pre_screening consistencyScore=9.4",
-  },
-  {
-    workflow: "pre-eval",
-    runId: "d2e765a6",
-    level: "INFO",
-    message: "decide: Checking quota and making decision",
-  },
-  {
-    workflow: "pre-eval",
-    runId: "d2e765a6",
-    level: "INFO",
     message: "decide completed → action=pooled newStatus=queued_for_batch availableSlots=5",
-  },
-  {
-    workflow: "pre-eval",
-    runId: "d2e765a6",
-    level: "INFO",
-    message: "Workflow complete: score=5.2, modelNextStep=interview_invited, decision=pooled",
   },
   {
     workflow: "batch",
@@ -470,19 +427,7 @@ const pipelineLogs: PipelineLogLine[] = [
     workflow: "batch",
     runId: "e104ba4b",
     level: "INFO",
-    message: "Matching 12 pooled candidates to 5 interview slots",
-  },
-  {
-    workflow: "batch",
-    runId: "e104ba4b",
-    level: "INFO",
     message: "Interview invitations queued → batch=e104ba4b slots=5",
-  },
-  {
-    workflow: "post-eval",
-    runId: "88683432",
-    level: "INFO",
-    message: "Loading existing report state",
   },
   {
     workflow: "post-eval",
@@ -494,38 +439,13 @@ const pipelineLogs: PipelineLogLine[] = [
     workflow: "post-eval",
     runId: "88683432",
     level: "INFO",
-    message: "Waiting for voice assessment to complete (max 12h)",
-  },
-  {
-    workflow: "post-eval",
-    runId: "88683432",
-    level: "INFO",
     message: "Voice assessment event received",
-  },
-  {
-    workflow: "post-eval",
-    runId: "88683432",
-    level: "INFO",
-    message: "Assessing answer authenticity",
-  },
-  {
-    workflow: "post-eval",
-    runId: "88683432",
-    level: "INFO",
-    message:
-      "ai-call → prompt=11715 tokens=1105 latencyMs=8420 promptVersion=answer-authenticity-1.0",
   },
   {
     workflow: "post-eval",
     runId: "88683432",
     level: "WARN",
     message: "Answer authenticity: medium risk, 2 signal(s) detected",
-  },
-  {
-    workflow: "post-eval",
-    runId: "88683432",
-    level: "INFO",
-    message: "Generating structured interview report with OpenRouter",
   },
   {
     workflow: "post-eval",
@@ -568,7 +488,7 @@ function PipelineSection() {
             </div>
           </div>
 
-          <div className="panel">
+          <div className="panel min-w-0">
             <div className="panel-header">
               <div className="flex items-center gap-2">
                 <span className="size-2 rounded-full bg-border" />
@@ -583,20 +503,22 @@ function PipelineSection() {
                 live
               </span>
             </div>
-            <ScrollArea className="h-128">
-              <div className="space-y-0 p-4 font-mono text-[11px] leading-[1.65] sm:p-5">
+            <div className="pipeline-log-scroll overflow-x-auto overscroll-x-contain">
+              <div className="w-max min-w-full space-y-0 p-4 font-mono text-[11px] leading-[1.65] sm:p-5">
                 {pipelineLogs.map((line) => (
                   <div
                     key={`${line.runId}-${line.message}`}
-                    className="grid grid-cols-[19ch_6ch_minmax(0,1fr)] gap-x-2 py-0.5"
+                    className="flex gap-x-2 whitespace-nowrap py-0.5"
                   >
-                    <span className="truncate text-muted-foreground/70">
+                    <span className="shrink-0 text-muted-foreground/70">
                       [{line.workflow}:{line.runId}]
                     </span>
-                    <span className={pipelineLogLevelClass(line.level)}>[{line.level}]</span>
+                    <span className={cn("shrink-0", pipelineLogLevelClass(line.level))}>
+                      [{line.level}]
+                    </span>
                     <span
                       className={cn(
-                        "min-w-0",
+                        "shrink-0",
                         line.level === "WARN" ? "text-warning" : "text-foreground/85",
                       )}
                     >
@@ -605,7 +527,7 @@ function PipelineSection() {
                   </div>
                 ))}
               </div>
-            </ScrollArea>
+            </div>
           </div>
         </div>
       </div>
