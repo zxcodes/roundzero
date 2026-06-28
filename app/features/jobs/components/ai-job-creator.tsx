@@ -14,6 +14,7 @@ import { useEntitlements } from "@/features/entitlements/hooks/use-entitlements"
 import type { JobFormData } from "@/features/jobs/components/job-form";
 import type { AiJobGenerationOutput } from "@/features/jobs/schemas";
 import { generateJobWithAI } from "@/features/jobs/server/functions";
+import { cn } from "@/lib/utils";
 import {
   employmentTypeLabels,
   experienceLevelLabels,
@@ -85,11 +86,29 @@ export function AiJobCreator({ isPaid, onApply, onDiscard }: AiJobCreatorProps) 
   const isGenerating = generateMutation.isPending;
 
   return (
-    <section className="space-y-4 rounded-3xl border border-border/60 bg-muted/20 px-5 py-4 md:px-6">
+    <section
+      className={cn(
+        "relative space-y-4 overflow-hidden rounded-3xl border px-5 py-4 md:px-6",
+        "border-primary/15 bg-muted-foreground/[0.045] shadow-sm shadow-primary/[0.04] dark:bg-muted/10",
+      )}
+    >
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-primary/25 to-transparent"
+      />
       <div className="space-y-1">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <HugeiconsIcon icon={AiMagicIcon} strokeWidth={2} className="size-5 text-primary" />
           <h2 className="text-base font-semibold tracking-tight">Create with AI</h2>
+          {isPaid ? (
+            <Badge variant="outline" className="font-mono text-[10px] uppercase tracking-wider">
+              Included
+            </Badge>
+          ) : (
+            <Badge variant="secondary" className="font-mono text-[10px] uppercase tracking-wider">
+              Paid plans
+            </Badge>
+          )}
         </div>
         <p className="text-sm text-muted-foreground">
           Describe the role in a few sentences and we will build the posting for you.
@@ -105,7 +124,6 @@ export function AiJobCreator({ isPaid, onApply, onDiscard }: AiJobCreatorProps) 
             rows={3}
             maxLength={500}
             disabled={!isPaid || isGenerating}
-            className="bg-background"
           />
           {isPaid ? (
             <Button
@@ -138,7 +156,7 @@ export function AiJobCreator({ isPaid, onApply, onDiscard }: AiJobCreatorProps) 
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>AI job creation is available on Pro. Upgrade to unlock.</p>
+                <p>AI job creation is available on paid plans. Upgrade to unlock.</p>
               </TooltipContent>
             </Tooltip>
           )}

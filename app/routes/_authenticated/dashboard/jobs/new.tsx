@@ -48,12 +48,12 @@ function NewJobPage() {
     mutationFn: createJobFn,
     onSuccess: async ({ job }) => {
       toast.success("Job created successfully");
-      await router.invalidate();
       await router.navigate({
         to: "/dashboard/job-applicants/$jobId",
         params: { jobId: job.id },
         search: { tab: "posting" },
       });
+      await router.invalidate();
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : "Failed to create job.");

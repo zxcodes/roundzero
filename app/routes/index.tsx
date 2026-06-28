@@ -704,6 +704,9 @@ function CandidateExperience() {
                     </li>
                   ))}
                 </ul>
+                <TextLink to="/candidate/login" className="mt-4 text-sm">
+                  For candidates
+                </TextLink>
               </div>
             </div>
           </div>
