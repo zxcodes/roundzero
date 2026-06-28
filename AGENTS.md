@@ -14,6 +14,7 @@ Every client-side server-function call is a real worker round trip (+ an `authMi
 - **One server fn per loader phase.** Consolidate related reads into a single server function (one auth-middleware run, parallel queries inside) instead of calling 2–3 separate fns from the same route.
 - **If you truly need expensive data in `beforeLoad`** (app-wide auth/entitlement context), cache it via `context.queryClient.fetchQuery({ queryKey, queryFn, staleTime })` — as `__root` does for the user and `_authenticated` does for the company bootstrap.
 - Router caching is global in `app/router.tsx` (`defaultStaleTime`, `defaultPreloadStaleTime`). Mutations must call `router.invalidate()` (overrides `staleTime`) to refresh after writes.
+- **Never pair `router.invalidate()` with `router.navigate()` in the wrong order.** `invalidate()` re-runs loaders on the *current* route; if a loader `throw redirect(...)` (e.g. onboarding complete, signed out on `_authenticated`), a second `navigate()` races it and can blank the app (`Uncaught undefined` in `MatchInnerImpl`, especially on slow networks). Rules: (1) leaving a route whose loader redirects → `invalidate()` *or* `navigate()`, not both; (2) navigating after a mutation → `navigate()` then `invalidate()`; (3) staying on the same page → `invalidate()` only.
 
 ## Billing & Entitlements
 

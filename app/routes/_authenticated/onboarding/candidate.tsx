@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { currentUserQueryKey, updateUserName } from "@/features/auth/server/functions";
-import { redirectAfterSignup, signupSearchSchema } from "@/features/auth/signup-search";
+import { signupSearchSchema } from "@/features/auth/signup-search";
 import { ResumeUploadField } from "@/features/candidates/components/resume-upload-field";
 import { createCandidateProfile } from "@/features/candidates/server/functions";
 
@@ -21,7 +21,6 @@ export const Route = createFileRoute("/_authenticated/onboarding/candidate")({
 
 function CandidateOnboardingPage() {
   const { user } = Route.useRouteContext();
-  const signupSearch = Route.useSearch();
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -35,7 +34,6 @@ function CandidateOnboardingPage() {
     mutationFn: createProfileFn,
     onSuccess: async () => {
       await router.invalidate();
-      await router.navigate(redirectAfterSignup(signupSearch));
     },
     onError: () => {
       toast.error("Failed to create profile. Please try again.");

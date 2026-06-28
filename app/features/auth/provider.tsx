@@ -103,8 +103,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Seed the cache with null so `__root.beforeLoad` hits warm cache
       // instead of round-tripping to confirm the session is gone.
       queryClient.setQueryData(currentUserQueryKey, null);
-      await router.invalidate();
       await router.navigate({ to: "/" });
+      await router.invalidate();
     } catch (error) {
       console.error("Logout failed:", error);
       toast.error("Failed to sign out");
