@@ -279,6 +279,15 @@
   padding: 0.7rem 1.25rem;
 }
 
+.calm .pipeline-log-scroll {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.calm .pipeline-log-scroll::-webkit-scrollbar {
+  display: none;
+}
+
 .calm .spec-sheet {
   border: 1px solid oklch(from var(--border) l c h / 0.6);
   border-radius: var(--radius-3xl);

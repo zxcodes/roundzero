@@ -22,6 +22,7 @@
 - add batch actions for companies (shortlist multiple candidates, and quick actions "shortlist top 3" reject "bottom ones")
 
 
+<!--- add landing page messaging what problem is roundzero solving. (save countless hours of human effort, ats is regex based and broken, etc etc.)-->
 <!--- see if we need candidate summary in interview table's metadata. audit other tables that are storing huge data like this and if we can derive on demand instead of storing in db.-->
 <!--- add onCopy, onPaste detectors and evaluate final score based on that.-->
 <!--- voice interview experience degraded since auto submit introduced. the agent speaks the last message twice but I don't at all see the message on screen.-->
