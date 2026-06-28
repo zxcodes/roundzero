@@ -42,6 +42,14 @@ export function PublicHeader() {
               >
                 <Link to="/company/login">Log in</Link>
               </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="hidden rounded-full text-muted-foreground lg:inline-flex"
+                asChild
+              >
+                <Link to="/candidate/login">For candidates</Link>
+              </Button>
               <Button size="sm" className="hidden rounded-full sm:inline-flex" asChild>
                 <Link to="/company/login">Post a job</Link>
               </Button>
