@@ -88,12 +88,7 @@ function Highlight({ children }: { children: React.ReactNode }) {
 }
 
 function Eyebrow({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="eyebrow inline-flex items-center gap-2">
-      <span className="size-1.5 rounded-xs bg-foreground" />
-      {children}
-    </span>
-  );
+  return <span className="eyebrow">{children}</span>;
 }
 
 function SectionHeading({
