@@ -71,7 +71,7 @@ const recordScreeningCoverageDef = toolDefinition({
 const endInterviewDef = toolDefinition({
   name: "end_interview",
   description:
-    "Mark the interview complete and trigger post-evaluation. Call this after you have already written a warm closing message to the candidate.",
+    "Submit the text interview and move the candidate to the required voice step. Call this after you have already written a warm closing message to the candidate.",
   inputSchema: z.object({
     reason: z.string().min(1),
   }),

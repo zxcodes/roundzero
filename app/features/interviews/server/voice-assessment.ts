@@ -175,7 +175,7 @@ export async function finalizeVoiceAssessmentFromTranscript(input: {
 
   if (existingAssessment?.status === "completed") {
     if (interview) {
-      await triggerPostEvaluationAfterVoice(input.db, {
+      await startPostEvaluation(input.db, {
         interviewId: input.interviewId,
         applicationId: interview.applicationId,
       });
@@ -227,7 +227,7 @@ export async function finalizeVoiceAssessmentFromTranscript(input: {
     return false;
   }
 
-  await triggerPostEvaluationAfterVoice(input.db, {
+  await startPostEvaluation(input.db, {
     interviewId: input.interviewId,
     applicationId: completedInterview.applicationId,
   });
@@ -336,56 +336,15 @@ async function runVoiceAnalysis(
 }
 
 /**
- * Wake a retained post-evaluation workflow (pre-deploy instances waiting on
- * voice) or start a new one once chat and voice are both finished.
- */
-export async function triggerPostEvaluationAfterVoice(
-  db: Parameters<typeof getCommunicationAssessmentByInterviewId>[0],
-  input: { interviewId: string; applicationId: string },
-): Promise<void> {
-  try {
-    const instance = await env.POST_EVALUATION.get(input.interviewId);
-    try {
-      const statusPayload = await instance.status();
-      try {
-        const { status } = statusPayload;
-        if (
-          status === "waiting" ||
-          status === "running" ||
-          status === "queued" ||
-          status === "paused" ||
-          status === "waitingForPause"
-        ) {
-          await instance.sendEvent({
-            type: "voice_assessment_complete",
-            payload: { interviewId: input.interviewId },
-          });
-          return;
-        }
-      } finally {
-        disposeRpcResource(statusPayload);
-      }
-    } finally {
-      disposeRpcResource(instance);
-    }
-  } catch {
-    // No retained instance — fall through to create.
-  }
-
-  await startPostEvaluation(db, input);
-}
-
-/**
- * Start post-evaluation after both chat and voice are finished.
+ * Start post-evaluation once chat and voice are both finished.
  *
- * Idempotent and safe to call repeatedly:
- *  - no-op once a report exists;
- *  - no-op unless the interview is `completed` with a completed voice assessment;
- *  - the workflow uses the interview id as a stable instance id, so a duplicate
- *    `create` (workflow already running) throws and is logged.
+ * Gate (all must pass):
+ *  - no report yet for this application;
+ *  - `interviews.status === 'completed'`;
+ *  - `communication_assessments.status === 'completed'`.
  *
- * Prefer `triggerPostEvaluationAfterVoice` at voice-completion boundaries so
- * in-flight pre-deploy workflows still receive the voice event.
+ * Idempotent: safe to call from voice finalization retries; duplicate workflow
+ * `create` (already running) throws and is logged.
  */
 export async function startPostEvaluation(
   db: Parameters<typeof getCommunicationAssessmentByInterviewId>[0],
