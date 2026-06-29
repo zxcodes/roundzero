@@ -24,16 +24,11 @@ import {
   sendReportReadyEmail,
 } from "./steps";
 
-// Wait at most 12 hours for the candidate to complete the required voice
-// communication assessment. Report generation is withheld until voice is done.
-// Aligned with the platform's 12-hour interview-window expectation.
-const VOICE_ASSESSMENT_WAIT_MS = 12 * 60 * 60 * 1000;
-
 export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluationPayload> {
   async run(event: WorkflowEvent<PostEvaluationPayload>, step: WorkflowStep) {
     const { interviewId } = event.payload;
     const log = createWorkflowLogger("post-evaluation", interviewId);
-    let db = getDb();
+    const db = getDb();
     let applicationId: string | null = null;
 
     try {
@@ -76,53 +71,14 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
       }
       applicationId = interviewData.interview.applicationId;
 
-      // Required voice communication assessment. The voice agent signals back
-      // via `instance.sendEvent({ type: "voice_assessment_complete" })` once
-      // it persists results to the DB. Report generation is withheld until then.
+      // Post-evaluation only starts after voice is finished. Reject immediately
+      // if the required communication assessment is missing or incomplete.
       const voiceAssessmentStatus = await step.do("check_voice_assessment_status", async () => {
         const row = await getCommunicationAssessmentByInterviewId(db, { interviewId });
         return row?.status ?? null;
       });
 
-      const voiceNeedsWait =
-        voiceAssessmentStatus === null ||
-        voiceAssessmentStatus === "pending" ||
-        voiceAssessmentStatus === "in_progress";
-
-      if (voiceNeedsWait) {
-        log.info("Waiting for voice assessment to complete (required, max 12h)");
-        try {
-          await step.waitForEvent("await_voice_assessment", {
-            type: "voice_assessment_complete",
-            timeout: VOICE_ASSESSMENT_WAIT_MS,
-          });
-          log.info("Voice assessment event received");
-        } catch (error) {
-          log.warn(
-            `Voice assessment not completed within window: ${
-              error instanceof Error ? error.message : String(error)
-            }`,
-          );
-          await step.do(
-            "mark_application_evaluation_failed_voice_timeout",
-            { retries: { limit: 3, delay: "5 seconds", backoff: "exponential" } },
-            async () => {
-              if (!applicationId) return;
-              await updateApplicationStatus(db, {
-                id: applicationId,
-                status: "evaluation_failed",
-              });
-            },
-          );
-          return { interviewId, status: "voice_assessment_incomplete" as const };
-        }
-        db = getDb();
-      }
-
-      const voiceCompleted = await step.do("verify_voice_assessment_completed", async () => {
-        const row = await getCommunicationAssessmentByInterviewId(db, { interviewId });
-        return row?.status === "completed";
-      });
+      const voiceCompleted = voiceAssessmentStatus === "completed";
 
       if (!voiceCompleted) {
         log.warn(

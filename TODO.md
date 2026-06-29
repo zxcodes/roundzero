@@ -3,7 +3,6 @@
 
 - see if 12 hr window for interview is still too much?
 - right now there's no feedback if there's something wrong with candidate's pdf. they can upload any pdf and the workflow will try to parse it. we need to detect if it's not a resume, and tell the user to add or something? think.
-- check why this happens with some reports: "Evaluation in progress Zero is generating the post-interview report. Check back in a few minutes."
 - check deleted account behaviour for companies, applications, etc. how the entire flow handles it. (add a workflow that cleans up deleted accounts)
 - pretty sure openrouter model fallbacks still don't work. verify in local dev.
 - add a really good resume and candidate test suite to pass thru the ai. (WIP in other branch)
