@@ -4,6 +4,7 @@ import {
   CheckmarkCircle02Icon,
   Clock01Icon,
   Message01Icon,
+  Mic01Icon,
   Rocket01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -31,7 +32,8 @@ export function InterviewInvitationCard({
   const timeLeft = formatTimeLeft(expiresAt ?? null);
   const deadline = formatDateTime(expiresAt ?? null);
 
-  const isActionable = status === "pending" || status === "in_progress";
+  const isChatActionable = status === "pending" || status === "in_progress";
+  const isAwaitingVoice = status === "awaiting_voice";
 
   const statusConfig: Record<
     string,
@@ -39,6 +41,7 @@ export function InterviewInvitationCard({
   > = {
     pending: { label: "Ready", icon: Rocket01Icon, tone: "text-primary" },
     in_progress: { label: "In progress", icon: Clock01Icon, tone: "text-primary" },
+    awaiting_voice: { label: "Voice pending", icon: Mic01Icon, tone: "text-warning" },
     completed: { label: "Completed", icon: CheckmarkCircle02Icon, tone: "text-success" },
     expired: { label: "Expired", icon: Clock01Icon, tone: "text-warning" },
     cancelled: { label: "Cancelled", icon: Cancel01Icon, tone: "text-muted-foreground" },
@@ -76,11 +79,13 @@ export function InterviewInvitationCard({
       <p className="text-sm text-muted-foreground">
         {status === "completed"
           ? "Your interview is complete. The company will review your evaluation."
-          : status === "expired"
-            ? "This interview window has expired."
-            : status === "cancelled"
-              ? "This interview has been cancelled."
-              : "Complete your RoundZero interview to advance your application."}
+          : status === "awaiting_voice"
+            ? "Your chat interview is done. Finish the required voice assessment to complete your evaluation."
+            : status === "expired"
+              ? "This interview window has expired."
+              : status === "cancelled"
+                ? "This interview has been cancelled."
+                : "Complete your RoundZero interview to advance your application."}
       </p>
 
       {status === "pending" && timeLeft && deadline ? (
@@ -90,10 +95,16 @@ export function InterviewInvitationCard({
         </div>
       ) : null}
 
-      {isActionable ? (
+      {isChatActionable ? (
         <Button size="sm" asChild>
           <Link to="/interview/$interviewId" params={{ interviewId }}>
             {status === "in_progress" ? "Continue interview" : "Start interview"}
+          </Link>
+        </Button>
+      ) : isAwaitingVoice ? (
+        <Button size="sm" asChild>
+          <Link to="/interview/$interviewId" params={{ interviewId }}>
+            Start voice assessment
           </Link>
         </Button>
       ) : status === "completed" ? (

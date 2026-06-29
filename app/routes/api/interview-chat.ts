@@ -145,6 +145,13 @@ export const Route = createFileRoute("/api/interview-chat")({
           return new Response("Interview is no longer available", { status: 400 });
         }
 
+        if (interview.status === "awaiting_voice") {
+          return new Response(
+            "Chat interview already submitted. Complete the voice assessment to finish.",
+            { status: 400 },
+          );
+        }
+
         if (interview.status === "completed") {
           return new Response("Interview already completed", { status: 400 });
         }
