@@ -54,7 +54,7 @@ export const expireInterviewIfDue = async <T extends ExpirableInterview>(input: 
   let postEvalTriggered = false;
   if (wasInProgress && input.postEvaluation) {
     try {
-      // Stable id matches what `completeInterview` uses so the post-eval
+      // Stable id matches what `submitInterviewForVoice` uses so the post-eval
       // workflow is single-sourced per interview. If an instance is already
       // retained (unlikely on first expiry), the create throws — log and
       // move on so the calling request still resolves cleanly.

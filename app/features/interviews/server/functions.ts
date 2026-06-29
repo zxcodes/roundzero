@@ -8,7 +8,6 @@ import { z } from "zod";
 import { updateApplicationStatus } from "@/features/applications/queries/queries_sql";
 import {
   cancelInterview,
-  completeInterview,
   createCommunicationAssessment,
   createInterviewMessage,
   getCommunicationAssessmentByInterviewId,
@@ -19,6 +18,7 @@ import {
   getInterviewsByCandidate,
   registerCommunicationAssessmentConversation,
   registerCommunicationAssessmentSession,
+  submitInterviewForVoice,
   updateInterviewStatus,
 } from "@/features/interviews/queries/queries_sql";
 import { type ExpirableInterview, expireInterviewIfDue } from "@/features/interviews/server/expire";
@@ -164,7 +164,10 @@ export const startMyInterview = createServerFn({ method: "POST" })
       throw new Error("Interview has expired");
     }
 
-    if (effectiveInterview.status === "completed") {
+    if (
+      effectiveInterview.status === "completed" ||
+      effectiveInterview.status === "awaiting_voice"
+    ) {
       return effectiveInterview;
     }
 
@@ -331,10 +334,14 @@ export const completeMyInterview = createServerFn({ method: "POST" })
       throw new Error("Interview has expired");
     }
 
-    if (effectiveInterview.status === "completed") {
-      // Recover from a prior partial completion (e.g. the interview was marked
-      // completed but the post-eval workflow create failed). Idempotent: a
-      // no-op once a report exists or the workflow is already running.
+    if (
+      effectiveInterview.status === "completed" ||
+      effectiveInterview.status === "awaiting_voice"
+    ) {
+      // Recover from a prior partial completion (e.g. the text was submitted but
+      // the post-eval workflow create failed). Idempotent: a no-op once a report
+      // exists or the workflow is already running. The interview only reaches
+      // `completed` once the mandatory voice assessment is also done.
       await startPostEvaluation(db, {
         interviewId: data.interviewId,
         applicationId: effectiveInterview.applicationId,
@@ -346,7 +353,7 @@ export const completeMyInterview = createServerFn({ method: "POST" })
       throw new Error("Interview is no longer available");
     }
 
-    const updated = await completeInterview(db, { id: data.interviewId });
+    const updated = await submitInterviewForVoice(db, { id: data.interviewId });
     if (!updated) {
       return null;
     }
@@ -470,7 +477,7 @@ export const getMyVoiceToken = createServerFn({ method: "POST" })
     if (!interview) {
       throw new Error("Interview not found");
     }
-    if (interview.status !== "completed") {
+    if (interview.status !== "awaiting_voice") {
       throw new Error("Voice assessment is not available yet");
     }
 

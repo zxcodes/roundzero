@@ -7,6 +7,7 @@ import {
 } from "@/features/applications/queries/queries_sql";
 import {
   completeCommunicationAssessment,
+  completeInterviewAfterVoice,
   createCommunicationAssessment,
   getCommunicationAssessmentByInterviewId,
   getInterviewContextById,
@@ -200,6 +201,11 @@ export async function finalizeVoiceAssessmentFromTranscript(input: {
   if (!completed) {
     return false;
   }
+
+  // Voice is mandatory: the interview is only fully `completed` now that both
+  // text and voice are done. Conditional (awaiting_voice → completed), so a
+  // late webhook can't resurrect an expired/cancelled interview.
+  await completeInterviewAfterVoice(input.db, { id: input.interviewId });
 
   await signalVoiceAssessmentComplete(input.interviewId);
   return true;
