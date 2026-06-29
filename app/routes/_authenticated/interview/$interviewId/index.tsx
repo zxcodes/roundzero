@@ -31,6 +31,7 @@ type InterviewDetail = NonNullable<
 const statusConfig: Record<string, { label: string; tone: string }> = {
   pending: { label: "Ready", tone: "border-warning/20 bg-warning/10 text-warning" },
   in_progress: { label: "In progress", tone: "bg-primary/10 text-primary" },
+  awaiting_voice: { label: "Voice pending", tone: "border-warning/20 bg-warning/10 text-warning" },
   completed: { label: "Completed", tone: "border-success/20 bg-success/10 text-success" },
   cancelled: { label: "Cancelled", tone: "bg-muted text-muted-foreground" },
   expired: { label: "Expired", tone: "border-danger/20 bg-danger/10 text-danger" },
@@ -125,8 +126,10 @@ function InterviewWorkspaceContent({
   };
 
   const canSend = interview.status === "in_progress";
+  const isAwaitingVoice = interview.status === "awaiting_voice";
   const isEnded =
     interview.status === "completed" ||
+    interview.status === "awaiting_voice" ||
     interview.status === "cancelled" ||
     interview.status === "expired";
   const isCompleted = interview.status === "completed";
@@ -170,11 +173,11 @@ function InterviewWorkspaceContent({
       const result = await getMyVoiceAssessment({ data: { interviewId: interview.id } });
       return result?.assessment ?? null;
     },
-    enabled: isCompleted,
+    enabled: isAwaitingVoice || isCompleted,
   });
 
   const voiceStatus = voiceAssessmentQuery.data?.status ?? null;
-  const voiceTabAvailable = isCompleted;
+  const voiceTabAvailable = isAwaitingVoice || isCompleted;
 
   // Auto-switch to the voice tab once when the chat is completed and the
   // voice assessment is still pending/in-progress. This covers both the
@@ -182,13 +185,13 @@ function InterviewWorkspaceContent({
   // fire this once per mount so a manual switch back to chat is respected.
   useEffect(() => {
     if (hasAutoSwitchedRef.current) return;
-    if (!isCompleted) return;
+    if (!isAwaitingVoice) return;
     if (!voiceAssessmentQuery.isFetched) return;
     if (voiceStatus === null || voiceStatus === "pending" || voiceStatus === "in_progress") {
       hasAutoSwitchedRef.current = true;
       setActiveTab("voice");
     }
-  }, [isCompleted, voiceStatus, voiceAssessmentQuery.isFetched]);
+  }, [isAwaitingVoice, voiceStatus, voiceAssessmentQuery.isFetched]);
 
   const onContinueToVoice =
     voiceTabAvailable &&

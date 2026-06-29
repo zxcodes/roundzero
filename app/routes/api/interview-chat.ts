@@ -13,11 +13,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useSession } from "@tanstack/react-start/server";
 import { z } from "zod";
 import {
-  completeInterview,
   createInterviewMessage,
   getInterviewContextById,
   getInterviewForCandidateById,
   getInterviewMessagesByInterviewId,
+  submitInterviewForVoice,
   updateInterviewMetadata,
 } from "@/features/interviews/queries/queries_sql";
 import { expireInterviewIfDue } from "@/features/interviews/server/expire";
@@ -272,7 +272,7 @@ export const Route = createFileRoute("/api/interview-chat")({
               return { ok: true };
             }),
             endInterviewDef.server(async ({ reason }) => {
-              await completeInterview(db, { id: interviewId });
+              await submitInterviewForVoice(db, { id: interviewId });
 
               await startPostEvaluation(db, {
                 interviewId,
