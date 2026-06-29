@@ -21,7 +21,6 @@ import {
   updateInterviewMetadata,
 } from "@/features/interviews/queries/queries_sql";
 import { expireInterviewIfDue } from "@/features/interviews/server/expire";
-import { startPostEvaluation } from "@/features/interviews/server/voice-assessment";
 import {
   clampMessageIntegritySnapshot,
   mergeInterviewIntegrity,
@@ -131,7 +130,6 @@ export const Route = createFileRoute("/api/interview-chat")({
         const expired = await expireInterviewIfDue({
           db,
           interview,
-          postEvaluation: env.POST_EVALUATION,
         });
         if (expired.expiredNow) {
           return new Response("Interview has expired", { status: 400 });
@@ -280,11 +278,6 @@ export const Route = createFileRoute("/api/interview-chat")({
             }),
             endInterviewDef.server(async ({ reason }) => {
               await submitInterviewForVoice(db, { id: interviewId });
-
-              await startPostEvaluation(db, {
-                interviewId,
-                applicationId: interview.applicationId,
-              });
 
               return { completed: true, reason };
             }),

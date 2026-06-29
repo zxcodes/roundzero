@@ -24,7 +24,7 @@ import {
 import { type ExpirableInterview, expireInterviewIfDue } from "@/features/interviews/server/expire";
 import {
   finalizeVoiceAssessmentFromTranscript,
-  startPostEvaluation,
+  triggerPostEvaluationAfterVoice,
 } from "@/features/interviews/server/voice-assessment";
 import {
   buildInterviewSystemPrompt,
@@ -47,7 +47,6 @@ const expireInterviewIfNeeded = <T extends ExpirableInterview>(input: {
   expireInterviewIfDue({
     db: input.db,
     interview: input.interview,
-    postEvaluation: env.POST_EVALUATION,
   });
 
 export const getMyInterview = createServerFn({ method: "GET" })
@@ -334,15 +333,13 @@ export const completeMyInterview = createServerFn({ method: "POST" })
       throw new Error("Interview has expired");
     }
 
-    if (
-      effectiveInterview.status === "completed" ||
-      effectiveInterview.status === "awaiting_voice"
-    ) {
-      // Recover from a prior partial completion (e.g. the text was submitted but
-      // the post-eval workflow create failed). Idempotent: a no-op once a report
-      // exists or the workflow is already running. The interview only reaches
-      // `completed` once the mandatory voice assessment is also done.
-      await startPostEvaluation(db, {
+    if (effectiveInterview.status === "awaiting_voice") {
+      return effectiveInterview;
+    }
+
+    if (effectiveInterview.status === "completed") {
+      // Recover when voice finished but post-eval workflow create failed.
+      await triggerPostEvaluationAfterVoice(db, {
         interviewId: data.interviewId,
         applicationId: effectiveInterview.applicationId,
       });
@@ -357,11 +354,6 @@ export const completeMyInterview = createServerFn({ method: "POST" })
     if (!updated) {
       return null;
     }
-
-    await startPostEvaluation(db, {
-      interviewId: data.interviewId,
-      applicationId: effectiveInterview.applicationId,
-    });
 
     return await getInterviewForCandidateById(db, {
       id: data.interviewId,
@@ -631,7 +623,14 @@ export const completeMyVoiceAssessment = createServerFn({ method: "POST" })
     const existing = await getCommunicationAssessmentByInterviewId(db, {
       interviewId: data.interviewId,
     });
-    if (existing?.status === "completed" || existing?.status === "skipped") {
+    if (existing?.status === "completed") {
+      await triggerPostEvaluationAfterVoice(db, {
+        interviewId: data.interviewId,
+        applicationId: interview.applicationId,
+      });
+      return { ok: true };
+    }
+    if (existing?.status === "skipped") {
       return { ok: true };
     }
     if (!existing) {

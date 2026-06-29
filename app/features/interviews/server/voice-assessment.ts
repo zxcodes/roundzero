@@ -1,14 +1,10 @@
 import { env } from "cloudflare:workers";
 import { generateText, Output } from "ai";
 import { z } from "zod";
-import {
-  getApplicationById,
-  updateApplicationStatus,
-} from "@/features/applications/queries/queries_sql";
+import { updateApplicationStatus } from "@/features/applications/queries/queries_sql";
 import {
   completeCommunicationAssessment,
   completeInterviewAfterVoice,
-  createCommunicationAssessment,
   getCommunicationAssessmentByInterviewId,
   getInterviewContextById,
 } from "@/features/interviews/queries/queries_sql";
@@ -20,7 +16,6 @@ import {
   communicationAssessmentSchema,
   parseCommunicationAssessment,
 } from "@/prompts/communication-assessment";
-import { getDb } from "@/shared/db";
 import { createChatModel } from "@/shared/openrouter";
 import { disposeRpcResource } from "@/shared/workflow-rpc";
 import { refineCommunicationAnalysis } from "@/workflows/post-evaluation/refine";
@@ -173,10 +168,26 @@ export async function finalizeVoiceAssessmentFromTranscript(input: {
   messages: Array<VoiceTranscriptMessage>;
   audioKey?: string | null;
 }) {
-  const existing = await getCommunicationAssessmentByInterviewId(input.db, {
+  const existingAssessment = await getCommunicationAssessmentByInterviewId(input.db, {
     interviewId: input.interviewId,
   });
-  if (!existing || existing.status === "completed" || existing.status === "skipped") {
+  const interview = await getInterviewContextById(input.db, { id: input.interviewId });
+
+  if (existingAssessment?.status === "completed") {
+    if (interview) {
+      await triggerPostEvaluationAfterVoice(input.db, {
+        interviewId: input.interviewId,
+        applicationId: interview.applicationId,
+      });
+    }
+    return true;
+  }
+
+  if (!existingAssessment || existingAssessment.status === "skipped") {
+    return false;
+  }
+
+  if (interview?.status !== "awaiting_voice") {
     return false;
   }
 
@@ -192,22 +203,35 @@ export async function finalizeVoiceAssessmentFromTranscript(input: {
     return false;
   }
 
-  const completed = await completeCommunicationAssessment(input.db, {
+  const completedAssessment = await completeCommunicationAssessment(input.db, {
     interviewId: input.interviewId,
     transcript: transcriptForDb,
     analysis: null,
     audioKey: input.audioKey ?? null,
   });
-  if (!completed) {
+  if (!completedAssessment) {
     return false;
   }
 
   // Voice is mandatory: the interview is only fully `completed` now that both
   // text and voice are done. Conditional (awaiting_voice → completed), so a
   // late webhook can't resurrect an expired/cancelled interview.
-  await completeInterviewAfterVoice(input.db, { id: input.interviewId });
+  const completedInterview = await completeInterviewAfterVoice(input.db, {
+    id: input.interviewId,
+  });
+  if (!completedInterview) {
+    await updateApplicationStatus(input.db, {
+      id: interview.applicationId,
+      status: "evaluation_failed",
+    });
+    return false;
+  }
 
-  await signalVoiceAssessmentComplete(input.interviewId);
+  await triggerPostEvaluationAfterVoice(input.db, {
+    interviewId: input.interviewId,
+    applicationId: completedInterview.applicationId,
+  });
+
   return true;
 }
 
@@ -311,29 +335,16 @@ async function runVoiceAnalysis(
   return null;
 }
 
-async function prepareApplicationForPostEvalResume(
+/**
+ * Wake a retained post-evaluation workflow (pre-deploy instances waiting on
+ * voice) or start a new one once chat and voice are both finished.
+ */
+export async function triggerPostEvaluationAfterVoice(
   db: Parameters<typeof getCommunicationAssessmentByInterviewId>[0],
-  applicationId: string,
-): Promise<boolean> {
-  const existingReport = await getReportByApplicationId(db, { applicationId });
-  if (existingReport) {
-    return false;
-  }
-
-  const application = await getApplicationById(db, { id: applicationId });
-  if (application?.status === "evaluation_failed") {
-    await updateApplicationStatus(db, {
-      id: applicationId,
-      status: "interview_in_progress",
-    });
-  }
-
-  return true;
-}
-
-export async function signalVoiceAssessmentComplete(interviewId: string): Promise<void> {
+  input: { interviewId: string; applicationId: string },
+): Promise<void> {
   try {
-    const instance = await env.POST_EVALUATION.get(interviewId);
+    const instance = await env.POST_EVALUATION.get(input.interviewId);
     try {
       const statusPayload = await instance.status();
       try {
@@ -347,26 +358,8 @@ export async function signalVoiceAssessmentComplete(interviewId: string): Promis
         ) {
           await instance.sendEvent({
             type: "voice_assessment_complete",
-            payload: { interviewId },
+            payload: { interviewId: input.interviewId },
           });
-          return;
-        }
-
-        // Workflow exited before voice finished (e.g. wait timeout). Restart if no report yet.
-        if (status === "complete" || status === "errored" || status === "terminated") {
-          const db = getDb();
-          const interview = await getInterviewContextById(db, { id: interviewId });
-          if (!interview) {
-            return;
-          }
-          const shouldResume = await prepareApplicationForPostEvalResume(
-            db,
-            interview.applicationId,
-          );
-          if (!shouldResume) {
-            return;
-          }
-          await instance.restart();
           return;
         }
       } finally {
@@ -375,52 +368,24 @@ export async function signalVoiceAssessmentComplete(interviewId: string): Promis
     } finally {
       disposeRpcResource(instance);
     }
-  } catch (error) {
-    console.error("[voice-assessment] failed to signal post-evaluation workflow", error);
+  } catch {
+    // No retained instance — fall through to create.
   }
 
-  // No retained workflow (or unknown state) — start or recover post-evaluation.
-  try {
-    const db = getDb();
-    const interview = await getInterviewContextById(db, { id: interviewId });
-    if (!interview) {
-      return;
-    }
-    const shouldResume = await prepareApplicationForPostEvalResume(db, interview.applicationId);
-    if (!shouldResume) {
-      return;
-    }
-    await startPostEvaluation(db, {
-      interviewId,
-      applicationId: interview.applicationId,
-    });
-  } catch (error) {
-    console.error(
-      "[voice-assessment] failed to resume post-evaluation after voice completion",
-      error,
-    );
-  }
+  await startPostEvaluation(db, input);
 }
 
 /**
- * Seed the required voice communication-assessment row and start the
- * post-evaluation workflow for a completed interview.
- *
- * Ordering matters: the assessment row is created BEFORE the workflow so the
- * workflow's `check_voice_assessment_pending` step reliably sees it and waits
- * for the candidate's voice call. If the row seed throws, we never create a
- * workflow that would skip the voice wait.
+ * Start post-evaluation after both chat and voice are finished.
  *
  * Idempotent and safe to call repeatedly:
- *  - no-op once a report exists (re-completion / retries);
- *  - reuses an existing assessment row;
+ *  - no-op once a report exists;
+ *  - no-op unless the interview is `completed` with a completed voice assessment;
  *  - the workflow uses the interview id as a stable instance id, so a duplicate
- *    `create` (workflow already running) throws and is logged, which also makes
- *    this a recovery path when a prior completion created the row but failed to
- *    start the workflow.
+ *    `create` (workflow already running) throws and is logged.
  *
- * Shared by both completion entry points: `completeMyInterview` and the
- * interview-chat `endInterview` tool.
+ * Prefer `triggerPostEvaluationAfterVoice` at voice-completion boundaries so
+ * in-flight pre-deploy workflows still receive the voice event.
  */
 export async function startPostEvaluation(
   db: Parameters<typeof getCommunicationAssessmentByInterviewId>[0],
@@ -433,21 +398,20 @@ export async function startPostEvaluation(
     return;
   }
 
+  const interview = await getInterviewContextById(db, { id: input.interviewId });
+  if (interview?.status !== "completed") {
+    return;
+  }
+
   const existingAssessment = await getCommunicationAssessmentByInterviewId(db, {
     interviewId: input.interviewId,
   });
-  if (!existingAssessment) {
-    await createCommunicationAssessment(db, {
-      interviewId: input.interviewId,
-      applicationId: input.applicationId,
-      status: "pending",
-    });
+  if (existingAssessment?.status !== "completed") {
+    return;
   }
 
   try {
     const instance = await env.POST_EVALUATION.create({
-      // Stable id so completeMyVoiceAssessment / the webhook can signal this
-      // workflow, and so a duplicate create is a no-op rather than a fork.
       id: input.interviewId,
       params: { interviewId: input.interviewId },
     });
