@@ -24,7 +24,7 @@ import {
 import { type ExpirableInterview, expireInterviewIfDue } from "@/features/interviews/server/expire";
 import {
   finalizeVoiceAssessmentFromTranscript,
-  triggerPostEvaluationAfterVoice,
+  startPostEvaluation,
 } from "@/features/interviews/server/voice-assessment";
 import {
   buildInterviewSystemPrompt,
@@ -333,16 +333,10 @@ export const completeMyInterview = createServerFn({ method: "POST" })
       throw new Error("Interview has expired");
     }
 
-    if (effectiveInterview.status === "awaiting_voice") {
-      return effectiveInterview;
-    }
-
-    if (effectiveInterview.status === "completed") {
-      // Recover when voice finished but post-eval workflow create failed.
-      await triggerPostEvaluationAfterVoice(db, {
-        interviewId: data.interviewId,
-        applicationId: effectiveInterview.applicationId,
-      });
+    if (
+      effectiveInterview.status === "awaiting_voice" ||
+      effectiveInterview.status === "completed"
+    ) {
       return effectiveInterview;
     }
 
@@ -624,7 +618,7 @@ export const completeMyVoiceAssessment = createServerFn({ method: "POST" })
       interviewId: data.interviewId,
     });
     if (existing?.status === "completed") {
-      await triggerPostEvaluationAfterVoice(db, {
+      await startPostEvaluation(db, {
         interviewId: data.interviewId,
         applicationId: interview.applicationId,
       });

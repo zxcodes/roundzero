@@ -319,7 +319,7 @@ Architecturally:
 - links applications to interview sessions
 - stores:
   - `type` (currently `full` in active flows)
-  - `status` (`pending`, `in_progress`, `completed`, `expired`, `cancelled`)
+  - `status` (`pending`, `in_progress`, `awaiting_voice`, `completed`, `expired`, `cancelled`)
   - `batch_id`
   - `metadata`
   - `invited_at`, `started_at`, `completed_at`, `expired_at`, `cancelled_at`
@@ -634,7 +634,7 @@ The interview uses TanStack server functions with `@tanstack/ai` + `@tanstack/ai
 - The system prompt (`buildInterviewSystemPrompt`) includes the job description, candidate summary, pre-evaluation context, and screening coverage state
 - Model selection uses the `"interview"` chain from `app/shared/openrouter.ts` with fallbacks for reliability
 - Message history is persisted in the `interview_messages` table
-- Post-evaluation workflow is triggered server-side when the interview is marked complete
+- Text submit (`completeMyInterview` or chat `end_interview` tool) moves the interview to `awaiting_voice`; post-evaluation is not started yet
 
 The chat uses request-response server function calls with OpenRouter's non-streaming `chat()` API.
 
@@ -643,25 +643,28 @@ The chat uses request-response server function calls with OpenRouter's non-strea
 The voice assessment uses ElevenLabs' Conversational AI:
 
 - ElevenLabs handles all voice processing (STT, LLM, TTS) as a managed service
+- `getMyVoiceToken` is available only while `interviews.status === 'awaiting_voice'`
 - `getMyVoiceToken` generates a signed URL via the ElevenLabs REST API (`@elevenlabs/elevenlabs-js`) for client-side session initiation
 - Candidate/job context is injected via ElevenLabs `dynamicVariables` (`candidate_name`, `job_title`, `company_name`, `candidate_summary`)
 - The client connects via `@elevenlabs/client` `Conversation.startSession()` using the signed URL
-- `completeMyVoiceAssessment` fetches the ElevenLabs transcript, runs structured analysis via OpenRouter, and persists to `communication_assessments`
-- Post-evaluation workflow is signalled when the voice assessment completes
+- `finalizeVoiceAssessmentFromTranscript` (webhook or `completeMyVoiceAssessment`) persists the transcript, moves the interview to `completed`, and calls `startPostEvaluation`
+- Voice dimension analysis runs inside the post-evaluation workflow, not on the hot request path
 
 The agent's system prompt and voice personality are configured in the ElevenLabs dashboard.
 
 ### Post-Evaluation Workflow
 
-Triggered after interview completion. Steps:
+Started by `startPostEvaluation` only when **both** `interviews.status === 'completed'` and `communication_assessments.status === 'completed'`. Steps:
 
-1. idempotency check
-2. read interview context and transcript
-3. generate structured report with LLM
-4. fall back deterministically if report generation fails
-5. persist report
+1. idempotency check (existing report short-circuit)
+2. read interview context and transcript; fail if voice assessment is missing or incomplete
+3. load voice analysis (LLM over stored transcript)
+4. generate structured report with LLM
+5. refine and persist report
 6. move application to `evaluated_held`
 7. notify company and/or batch orchestration flow
+
+Interview expiry does not start post-evaluation (partial text-only sessions have no report).
 
 ### Batch Orchestration Workflow
 

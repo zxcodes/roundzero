@@ -214,7 +214,7 @@ RoundZero now includes the AI hiring layer on top of the solid platform.
 ### 6.1 AI Interview Mode
 
 - in-app async chat (text-based, no video)
-- optional ~5 minute voice assessment after the text interview
+- required ~5 minute voice assessment after the text interview
 - preserves context and supports adaptive follow-ups
 - works across time zones without scheduling friction
 
@@ -236,7 +236,7 @@ After the text interview, candidates complete a short voice conversation to eval
 - evaluated across 5 dimensions: clarity, articulation, conciseness, listening, confidence
 - blended into the final communication score (60% voice, 40% text)
 - full transcript and dimension scores visible in the company report
-- candidates can skip — the report notes it was excluded
+- required to complete — post-interview report generation waits for voice
 
 ### 6.3 Evaluation Goals
 

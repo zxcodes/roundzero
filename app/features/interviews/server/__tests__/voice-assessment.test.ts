@@ -10,7 +10,6 @@ import {
 import {
   finalizeVoiceAssessmentFromTranscript,
   startPostEvaluation,
-  triggerPostEvaluationAfterVoice,
 } from "@/features/interviews/server/voice-assessment";
 import {
   getTestDb,
@@ -21,14 +20,11 @@ import {
 } from "@/shared/__tests__/test-utils";
 
 const postEvalCreate = vi.hoisted(() => vi.fn(async () => ({ id: "post-eval-instance" })));
-const postEvalGet = vi.hoisted(() => vi.fn());
-const postEvalSendEvent = vi.hoisted(() => vi.fn(async () => undefined));
 
 vi.mock("cloudflare:workers", () => ({
   env: {
     POST_EVALUATION: {
       create: postEvalCreate,
-      get: postEvalGet,
     },
   },
 }));
@@ -85,9 +81,6 @@ const seedAwaitingVoiceInterview = async () => {
 describe("voice assessment post-eval triggers", () => {
   beforeEach(() => {
     postEvalCreate.mockClear();
-    postEvalGet.mockReset();
-    postEvalSendEvent.mockClear();
-    postEvalGet.mockRejectedValue(new Error("no instance"));
   });
 
   it("finalizes voice, completes the interview, and starts post-evaluation", async () => {
@@ -186,36 +179,6 @@ describe("voice assessment post-eval triggers", () => {
     const { interviewId, applicationId } = await seedAwaitingVoiceInterview();
 
     await startPostEvaluation(sql, { interviewId, applicationId });
-    expect(postEvalCreate).not.toHaveBeenCalled();
-  });
-
-  it("signals in-flight workflows instead of creating a duplicate instance", async () => {
-    const { interviewId, applicationId } = await seedAwaitingVoiceInterview();
-
-    await finalizeVoiceAssessmentFromTranscript({
-      db: sql,
-      interviewId,
-      messages: [{ role: "candidate", content: "Done." }],
-    });
-    postEvalCreate.mockClear();
-
-    const statusPayload = {
-      status: "waiting",
-      [Symbol.dispose]: () => undefined,
-    };
-    const instance = {
-      status: vi.fn(async () => statusPayload),
-      sendEvent: postEvalSendEvent,
-      [Symbol.dispose]: () => undefined,
-    };
-    postEvalGet.mockResolvedValueOnce(instance);
-
-    await triggerPostEvaluationAfterVoice(sql, { interviewId, applicationId });
-
-    expect(postEvalSendEvent).toHaveBeenCalledWith({
-      type: "voice_assessment_complete",
-      payload: { interviewId },
-    });
     expect(postEvalCreate).not.toHaveBeenCalled();
   });
 });

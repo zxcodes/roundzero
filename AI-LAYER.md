@@ -127,7 +127,7 @@ The text interview uses **TanStack AI** (`@tanstack/ai`) with **OpenRouter** (`@
 2. Candidate types a message → client calls a server function that appends the message to `interview_messages`
 3. Server calls OpenRouter via `chat()` with full message history + system prompt → appends response to `interview_messages`
 4. The LLM drives the conversation — it decides when the interview is complete and responds accordingly
-5. Candidate or system marks interview complete → `completeMyInterview` triggers the post-evaluation workflow
+5. Candidate or system submits the text interview → `submitInterviewForVoice` moves status to `awaiting_voice` (voice still required)
 
 ## System Prompt
 
@@ -151,7 +151,7 @@ No agent-side tool calls. The LLM receives all context in the system prompt and 
 ## Interview State
 
 State is stored in the database:
-- `interviews` table — status lifecycle (`pending`, `in_progress`, `completed`, `expired`, `cancelled`)
+- `interviews` table — status lifecycle (`pending`, `in_progress`, `awaiting_voice`, `completed`, `expired`, `cancelled`)
 - `interview_messages` table — full transcript per interview
 - `interviews.metadata` — JSONB with expiry timestamp, pre-evaluation score, context state, screening coverage
 
@@ -284,11 +284,11 @@ A voice communication assessment runs after the text interview using **ElevenLab
 2. Client calls `getMyVoiceToken` to get a signed ElevenLabs session URL
 3. `@elevenlabs/client` connects via WebSocket — voice conversation begins immediately
 4. Candidate speaks, agent responds — all audio/LLM handled by ElevenLabs
-5. On end (candidate clicks End Call or agent calls `end_call` tool):
-   - Transcript is fetched from ElevenLabs API
-   - `generateObject` runs structured analysis against `communicationAssessmentSchema`
-   - Results saved to `communication_assessments`
-   - Post-evaluation workflow receives `voice_assessment_complete` event
+5. On end (candidate clicks End Call, browser fallback, or ElevenLabs webhook):
+   - Transcript is persisted to `communication_assessments`
+   - Interview moves `awaiting_voice` → `completed`
+   - `startPostEvaluation` runs only when both interview and voice assessment are `completed`
+   - Voice dimension analysis runs inside the post-evaluation workflow (`load_voice_assessment`)
 
 ### Report Integration
 
