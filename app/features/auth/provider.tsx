@@ -71,7 +71,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error("Authentication error:", error);
         pendingRoleRef.current = undefined;
         pendingSignupSearchRef.current = {};
-        toast.error("Failed to sign in with Google");
+        const message =
+          error instanceof Error && error.message ? error.message : "Failed to sign in with Google";
+        toast.error(message);
       } finally {
         setIsSigningIn(false);
       }

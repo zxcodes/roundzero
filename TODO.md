@@ -3,14 +3,14 @@
 
 - see if 12 hr window for interview is still too much?
 - right now there's no feedback if there's something wrong with candidate's pdf. they can upload any pdf and the workflow will try to parse it. we need to detect if it's not a resume, and tell the user to add or something? think.
-- check deleted account behaviour for companies, applications, etc. how the entire flow handles it. (add a workflow that cleans up deleted accounts)
+<!--- check deleted account behaviour for companies, applications, etc. how the entire flow handles it. (DONE — AccountCleanupWorkflow sweeps soft- deleted users past 30-day grace via daily cron; eraseDeletedAccount anonymizes identity, scrubs PII, deletes R2/notifications/feedback, archives orphaned company jobs.)-->
 - pretty sure openrouter model fallbacks still don't work. verify in local dev.
 - add a really good resume and candidate test suite to pass thru the ai. (WIP in other branch)
 
 
 ## PROD THINGS
 - add good seo stuff (check skills), basic done. use tanstack dev tools for og stuff it's good. enable them first.
-- check about data retention & allowing people to delete accounts.
+<!--- check about data retention & allowing people to delete accounts. (DONE — soft-delete + 30-day restore exists; day-30 erasure workflow fulfils UI promise.)-->
 - planetscale for db?
 - analytics? stretch? or just have a basic admin dashboard with stats (should be good enough for the start).
 - validate open router models using their api key in prod ci so we detect non existent models beforehand.
