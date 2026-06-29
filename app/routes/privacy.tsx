@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { LegalLink, LegalPage, LegalSection, LegalStrong } from "@/components/legal-document";
 
 export const Route = createFileRoute("/privacy")({
@@ -58,9 +58,10 @@ function PrivacyPage() {
           application, along with the application status and timeline.
         </p>
         <p>
-          <LegalStrong>Interview Data:</LegalStrong> During AI interviews, we collect the text of
-          your conversation with our AI interviewer. This transcript is used to generate evaluation
-          reports and is stored for quality and auditing purposes.
+          <LegalStrong>Interview Data:</LegalStrong> During AI text interviews, we collect your
+          conversation transcript with our AI interviewer. If you complete the voice assessment, we
+          also store the voice conversation transcript and may store an audio recording. This data
+          is used to generate evaluation reports and for quality and auditing purposes.
         </p>
         <p>
           <LegalStrong>Usage Data:</LegalStrong> We automatically collect information about how you
@@ -128,6 +129,10 @@ function PrivacyPage() {
             </LegalLink>
             .
           </li>
+          <li>
+            <strong>ElevenLabs</strong> for voice interview sessions (speech processing). See{" "}
+            <LegalLink href="https://elevenlabs.io/privacy">ElevenLabs' Privacy Policy</LegalLink>.
+          </li>
         </ul>
         <p>
           <LegalStrong>For Legal Reasons:</LegalStrong> We may disclose your information if required
@@ -148,9 +153,10 @@ function PrivacyPage() {
           controls, and regular security audits.
         </p>
         <p>
-          Resumes and company logos are stored in Cloudflare R2 with signed URL access for privacy.
-          Interview transcripts and evaluation data are stored securely and access is restricted to
-          authorized personnel and the company you applied to.
+          Resumes, voice audio, and company logos are stored in Cloudflare R2. File access is
+          mediated through our servers — we do not expose direct public download links for private
+          uploads. Interview transcripts and evaluation data are stored securely and access is
+          restricted to authorized personnel and the company you applied to.
         </p>
         <p>
           While we take reasonable precautions, no system is completely secure. We cannot guarantee
@@ -158,16 +164,13 @@ function PrivacyPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="6. Data Retention">
+      <LegalSection title="6. Data Retention and Account Deletion">
         <p>
           We retain your personal information for as long as necessary to provide the Service and
           fulfill the purposes outlined in this Privacy Policy. Specifically:
         </p>
         <ul className="list-disc space-y-2 pl-5">
-          <li>
-            Account and profile data are retained while your account is active. You may request
-            deletion at any time.
-          </li>
+          <li>Account and profile data are retained while your account is active.</li>
           <li>
             Application data and interview transcripts are retained for the duration of the hiring
             process and a reasonable period afterward to support disputes or audits.
@@ -177,6 +180,43 @@ function PrivacyPage() {
             longer retention is required for security or legal purposes.
           </li>
         </ul>
+        <p>
+          <LegalStrong>Deleting your account:</LegalStrong> You can delete your account at any time
+          from{" "}
+          <Link
+            to="/dashboard/settings"
+            className="text-foreground underline underline-offset-2 hover:text-foreground/80"
+          >
+            Settings
+          </Link>{" "}
+          (candidates and companies). When you confirm deletion:
+        </p>
+        <ul className="list-disc space-y-2 pl-5">
+          <li>
+            Your account is deactivated immediately and you are signed out. You will no longer
+            appear in public listings or be able to use the Service until restored.
+          </li>
+          <li>
+            You have <LegalStrong>30 days</LegalStrong> to change your mind. If you sign back in
+            with the same Google account during this grace period, your account is restored
+            automatically.
+          </li>
+          <li>
+            After 30 days, we permanently erase your personal data. This includes your profile,
+            resumes, voice audio, interview message content, voice transcripts, application
+            snapshots, notifications, and feedback. Evaluation report text fields are redacted;
+            numeric scores and recommendation labels already shared with a company may be retained
+            in anonymized form so hiring teams keep a consistent record.
+          </li>
+          <li>
+            If you are the sole active member of a company workspace, open jobs for that company may
+            be closed when your account is erased.
+          </li>
+        </ul>
+        <p>
+          Erasure runs automatically on a daily schedule. Once the grace period ends, deletion
+          cannot be undone.
+        </p>
       </LegalSection>
 
       <LegalSection title="7. Your Rights">
@@ -186,16 +226,19 @@ function PrivacyPage() {
         </p>
         <ul className="list-disc space-y-2 pl-5">
           <li>The right to access the personal information we hold about you</li>
-          <li>The right to correct inaccurate or incomplete information</li>
-          <li>The right to delete your personal information</li>
+          <li>
+            The right to correct inaccurate or incomplete information (via your profile settings)
+          </li>
+          <li>The right to delete your personal information (via Settings → Delete account)</li>
           <li>The right to restrict or object to certain processing activities</li>
           <li>The right to data portability</li>
           <li>The right to withdraw consent where processing is based on consent</li>
         </ul>
         <p>
-          To exercise these rights, please contact us at{" "}
+          For account deletion, use the self-service control in Settings. For other privacy
+          requests, contact us at{" "}
           <LegalLink href="mailto:support@roundzero.dev">support@roundzero.dev</LegalLink>. We will
-          respond to your request within a reasonable timeframe.
+          respond within a reasonable timeframe.
         </p>
       </LegalSection>
 
