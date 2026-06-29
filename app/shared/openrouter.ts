@@ -2,28 +2,11 @@ import { env } from "cloudflare:workers";
 import { createOpenRouter, type OpenRouterProvider } from "@openrouter/ai-sdk-provider";
 import { isProd, isStaging } from "./env.app";
 
-// Single cached provider instance per Worker isolate.
-let cachedProvider: OpenRouterProvider | null = null;
+let provider: OpenRouterProvider | null = null;
 
-/**
- * Returns an OpenRouter provider configured to route through Cloudflare AI Gateway
- * when both `CLOUDFLARE_ACCOUNT_ID` and `AI_GATEWAY_ID` are set. Otherwise it falls
- * back to OpenRouter's default endpoint.
- *
- * Auth model (per Cloudflare + OpenRouter docs):
- *   - `Authorization: Bearer ${OPENROUTER_API_KEY}` is sent upstream to OpenRouter
- *     (handled by the SDK).
- *   - When the gateway has "Authenticated Gateway" enabled, requests must also
- *     include `cf-aig-authorization: Bearer ${AI_GATEWAY_TOKEN}`. We attach it
- *     here when the env var is set so callers don't have to think about it.
- *
- * Reference:
- *   https://developers.cloudflare.com/ai-gateway/usage/providers/openrouter/
- *   https://developers.cloudflare.com/ai-gateway/configuration/authentication/
- */
-export function getOpenRouter(): OpenRouterProvider {
-  if (cachedProvider) {
-    return cachedProvider;
+function getProvider(): OpenRouterProvider {
+  if (provider) {
+    return provider;
   }
 
   const apiKey = env.OPENROUTER_API_KEY;
@@ -31,50 +14,22 @@ export function getOpenRouter(): OpenRouterProvider {
     throw new Error("OPENROUTER_API_KEY is required to call OpenRouter models");
   }
 
-  const accountId = env.CLOUDFLARE_ACCOUNT_ID;
-  const gatewayId = env.AI_GATEWAY_ID;
-  // AI_GATEWAY_TOKEN is optional — only required when the gateway has
-  // "Authenticated Gateway" enabled. Not declared in the worker types so
-  // it doesn't have to be set in every environment.
-  const gatewayToken = env.AI_GATEWAY_TOKEN;
-
   const baseURL =
-    accountId && gatewayId
-      ? `https://gateway.ai.cloudflare.com/v1/${accountId}/${gatewayId}/openrouter`
+    env.CLOUDFLARE_ACCOUNT_ID && env.AI_GATEWAY_ID
+      ? `https://gateway.ai.cloudflare.com/v1/${env.CLOUDFLARE_ACCOUNT_ID}/${env.AI_GATEWAY_ID}/openrouter`
       : undefined;
 
   const headers: Record<string, string> = {
-    // OpenRouter ranking headers — surface the app in OpenRouter analytics.
     "HTTP-Referer": env.APP_URL,
     "X-Title": "RoundZero",
   };
-
-  if (gatewayToken) {
-    headers["cf-aig-authorization"] = `Bearer ${gatewayToken}`;
+  if (env.AI_GATEWAY_TOKEN) {
+    headers["cf-aig-authorization"] = `Bearer ${env.AI_GATEWAY_TOKEN}`;
   }
 
-  cachedProvider = createOpenRouter({
-    apiKey,
-    baseURL,
-    headers,
-  });
-
-  return cachedProvider;
+  provider = createOpenRouter({ apiKey, baseURL, headers });
+  return provider;
 }
-
-// ─── Model Chains ───────────────────────────────────────────────────────────
-//
-// Model selection is code-level, not infra-level. Change these arrays in code
-// when you want to switch models. LOCAL_DEV_PAID_MODEL overrides the dev
-// default (openrouter/free) for local debugging with a paid model.
-//
-// Each chain is ordered: [primary, fallback1, ...]. The primary is passed to
-// `openrouter.chat(model)`. The rest are passed as `models` in the chat settings
-// so OpenRouter auto-failovers on errors (429, downtime, moderation refusal).
-//
-// The `models` array must NOT include the primary (per OpenRouter docs).
-//
-// https://openrouter.ai/docs/guides/routing/model-fallbacks
 
 type Task =
   | "pre_eval"
@@ -84,36 +39,34 @@ type Task =
   | "job_creation"
   | "answer_authenticity";
 
+type EnvKey = "dev" | "staging" | "prod";
+type ModelId<T extends Task> =
+  | (typeof MODEL_CHAINS)[T]["dev"][number]
+  | (typeof MODEL_CHAINS)[T]["staging"][number]
+  | (typeof MODEL_CHAINS)[T]["prod"][number];
+
+const currentEnv = (): EnvKey => (isProd ? "prod" : isStaging ? "staging" : "dev");
+
+const DEFAULT_CHAIN = {
+  dev: ["openrouter/free"],
+  staging: ["deepseek/deepseek-v4-flash"],
+  prod: ["anthropic/claude-sonnet-4.5", "anthropic/claude-haiku-4.5"],
+} as const;
+
+// [primary, ...fallbacks] — fallbacks are passed as OpenRouter `models`, not the primary.
 const MODEL_CHAINS = {
-  pre_eval: {
-    dev: ["openrouter/free"],
-    staging: ["deepseek/deepseek-v4-flash"],
-    prod: ["anthropic/claude-sonnet-4.5", "anthropic/claude-haiku-4.5"],
-  },
-  post_eval: {
-    dev: ["openrouter/free"],
-    staging: ["deepseek/deepseek-v4-flash"],
-    prod: ["anthropic/claude-sonnet-4.5", "anthropic/claude-haiku-4.5"],
-  },
-  // Audit uses a different model family than post_eval to catch biases.
-  post_eval_audit: {
-    dev: ["openrouter/free"],
-    staging: ["deepseek/deepseek-v4-flash"],
-    prod: ["anthropic/claude-sonnet-4.5", "anthropic/claude-haiku-4.5"],
-  },
+  pre_eval: DEFAULT_CHAIN,
+  post_eval: DEFAULT_CHAIN,
+  post_eval_audit: DEFAULT_CHAIN,
+  job_creation: DEFAULT_CHAIN,
   interview: {
-    dev: ["meta-llama/llama-3.3-70b-instruct:free", "google/gemini-2.5-flash"],
-    staging: ["deepseek/deepseek-v4-flash"],
-    prod: ["anthropic/claude-sonnet-4.5", "anthropic/claude-haiku-4.5"],
-  },
-  job_creation: {
-    dev: ["openrouter/free"],
+    dev: ["meta-llama/llama-3.3-70b-instruct:free"],
     staging: ["deepseek/deepseek-v4-flash"],
     prod: ["anthropic/claude-sonnet-4.5", "anthropic/claude-haiku-4.5"],
   },
   answer_authenticity: {
-    dev: ["openrouter/free"],
-    staging: ["deepseek/deepseek-v4-flash"],
+    dev: DEFAULT_CHAIN.dev,
+    staging: DEFAULT_CHAIN.staging,
     prod: ["anthropic/claude-haiku-4.5"],
   },
 } as const satisfies Record<
@@ -121,47 +74,19 @@ const MODEL_CHAINS = {
   { dev: readonly string[]; staging: readonly string[]; prod: readonly string[] }
 >;
 
-/**
- * Returns the primary model id and fallback list for a given AI task.
- *
- * `model`      — primary model id.
- * `fallbacks`  — ordered list of fallback models tried by OpenRouter when the
- *                primary errors. Must NOT include the primary model.
- */
-export function getModelChain<TTask extends Task>(
-  task: TTask,
-): {
-  model:
-    | (typeof MODEL_CHAINS)[TTask]["dev"][number]
-    | (typeof MODEL_CHAINS)[TTask]["staging"][number]
-    | (typeof MODEL_CHAINS)[TTask]["prod"][number];
-  fallbacks: Array<
-    | (typeof MODEL_CHAINS)[TTask]["dev"][number]
-    | (typeof MODEL_CHAINS)[TTask]["staging"][number]
-    | (typeof MODEL_CHAINS)[TTask]["prod"][number]
-  >;
-} {
-  const env = isProd ? "prod" : isStaging ? "staging" : "dev";
-  const chain = MODEL_CHAINS[task][env];
+export function getModelChain<T extends Task>(
+  task: T,
+): { model: ModelId<T>; fallbacks: ModelId<T>[] } {
+  const chain = MODEL_CHAINS[task][currentEnv()];
   return { model: chain[0], fallbacks: [...chain.slice(1)] };
 }
 
-/**
- * Returns a pre-configured Vercel AI SDK language model for the given task,
- * with the OpenRouter fallback chain baked into the model settings.
- *
- * Use this instead of calling `openrouter.chat()` directly — it wires up the
- * `models` fallback array correctly (as a chat setting, not providerOptions).
- *
- * `plugins` — optional Response Healing or other OpenRouter plugins.
- */
 export function createChatModel(
   task: Task,
   options?: { plugins?: Array<{ id: "response-healing" }> },
-): ReturnType<ReturnType<typeof getOpenRouter>["chat"]> {
-  const openrouter = getOpenRouter();
+) {
   const { model, fallbacks } = getModelChain(task);
-  return openrouter.chat(model, {
+  return getProvider().chat(model, {
     ...(fallbacks.length > 0 ? { models: fallbacks } : {}),
     ...options,
   });
