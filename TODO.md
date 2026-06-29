@@ -1,9 +1,7 @@
 ## TODO
 
 
-- see if 12 hr window for interview is still too much?
 - right now there's no feedback if there's something wrong with candidate's pdf. they can upload any pdf and the workflow will try to parse it. we need to detect if it's not a resume, and tell the user to add or something? think.
-- pretty sure openrouter model fallbacks still don't work. verify in local dev.
 - add a really good resume and candidate test suite to pass thru the ai. (WIP in other branch)
 
 
@@ -19,6 +17,8 @@
 - add batch actions for companies (shortlist multiple candidates, and quick actions "shortlist top 3" reject "bottom ones")
 
 
+<!--- pretty sure openrouter model fallbacks still don't work. verify in local dev.-->
+<!--- see if 12 hr window for interview is still too much?-->
 <!--- check about data retention & allowing people to delete accounts. (DONE — soft-delete + 30-day restore exists; day-30 erasure workflow fulfils UI promise.)-->
 <!--- check deleted account behaviour for companies, applications, etc. how the entire flow handles it. (DONE — AccountCleanupWorkflow sweeps soft- deleted users past 30-day grace via daily cron; eraseDeletedAccount anonymizes identity, scrubs PII, deletes R2/notifications/feedback, archives orphaned company jobs.)-->
 <!--- harden pre-eval prompts. easily invites the user to an interview even the role is irrelevant.-->
