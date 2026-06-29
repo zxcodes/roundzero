@@ -8,7 +8,8 @@ ON CONFLICT (google_id) DO UPDATE
       name = EXCLUDED.name,
       picture = EXCLUDED.picture,
       updated_at = now()
-RETURNING id, email, name, picture, role, google_id, deleted_at, created_at, updated_at`;
+WHERE users.anonymized_at IS NULL
+RETURNING id, email, name, picture, role, google_id, deleted_at, anonymized_at, created_at, updated_at`;
 
 export interface upsertUserByGoogleIdArgs {
     email: string;
@@ -25,6 +26,7 @@ export interface upsertUserByGoogleIdRow {
     role: string | null;
     googleId: string | null;
     deletedAt: Date | null;
+    anonymizedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -43,8 +45,51 @@ export async function upsertUserByGoogleId(sql: Sql, args: upsertUserByGoogleIdA
         role: row[4],
         googleId: row[5],
         deletedAt: row[6],
-        createdAt: row[7],
-        updatedAt: row[8]
+        anonymizedAt: row[7],
+        createdAt: row[8],
+        updatedAt: row[9]
+    };
+}
+
+export const getUserByGoogleIdQuery = `-- name: getUserByGoogleId :one
+SELECT id, email, name, picture, role, google_id, deleted_at, anonymized_at, created_at, updated_at
+FROM users
+WHERE google_id = $1`;
+
+export interface getUserByGoogleIdArgs {
+    googleId: string | null;
+}
+
+export interface getUserByGoogleIdRow {
+    id: string;
+    email: string;
+    name: string;
+    picture: string | null;
+    role: string | null;
+    googleId: string | null;
+    deletedAt: Date | null;
+    anonymizedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export async function getUserByGoogleId(sql: Sql, args: getUserByGoogleIdArgs): Promise<getUserByGoogleIdRow | null> {
+    const rows = await sql.unsafe(getUserByGoogleIdQuery, [args.googleId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        email: row[1],
+        name: row[2],
+        picture: row[3],
+        role: row[4],
+        googleId: row[5],
+        deletedAt: row[6],
+        anonymizedAt: row[7],
+        createdAt: row[8],
+        updatedAt: row[9]
     };
 }
 
@@ -276,7 +321,10 @@ export const restoreUserQuery = `-- name: restoreUser :exec
 UPDATE users
 SET deleted_at = NULL,
     updated_at = now()
-WHERE id = $1 AND deleted_at IS NOT NULL`;
+WHERE id = $1
+  AND deleted_at IS NOT NULL
+  AND deleted_at >= now() - interval '30 days'
+  AND anonymized_at IS NULL`;
 
 export interface restoreUserArgs {
     id: string;

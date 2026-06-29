@@ -6,6 +6,7 @@ import { getDb } from "./shared/db";
 import { isDev } from "./shared/env.app";
 import { disposeRpcResource } from "./shared/workflow-rpc";
 
+export { AccountCleanupWorkflow } from "./workflows/account-cleanup/workflow";
 export { BatchOrchestrationWorkflow } from "./workflows/batch-orchestration/workflow";
 export { EvalRetryWorkflow } from "./workflows/eval-retry/workflow";
 export { PoolCheckWorkflow } from "./workflows/pool-check/workflow";
@@ -90,6 +91,16 @@ ${companies.map((c) => `  <url><loc>${siteUrl}/companies/${c.slug}</loc><lastmod
           env.EVAL_RETRY.create({ id: `eval-retry-${event.scheduledTime}` }).then((instance) => {
             disposeRpcResource(instance);
           }),
+        );
+        break;
+      }
+      case "0 4 * * *": {
+        ctx.waitUntil(
+          env.ACCOUNT_CLEANUP.create({ id: `account-cleanup-${event.scheduledTime}` }).then(
+            (instance) => {
+              disposeRpcResource(instance);
+            },
+          ),
         );
         break;
       }
