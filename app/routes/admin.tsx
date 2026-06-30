@@ -1,7 +1,7 @@
 import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link, notFound, redirect } from "@tanstack/react-router";
-import { Logo, PublicHeader } from "@/components/public-layout";
+import { Logo } from "@/components/public-layout";
 import { AdminDashboardSkeleton } from "@/components/route-skeletons";
 import { Button } from "@/components/ui/button";
 import { PlatformAdminDashboard } from "@/features/admin/components/platform-admin-dashboard";
@@ -28,10 +28,8 @@ export const Route = createFileRoute("/admin")({
 function AdminShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="bg-background text-foreground min-h-svh">
-      <PublicHeader />
-
-      <main className="mx-auto w-full min-w-0 max-w-[1600px] px-4 py-6 md:px-8 md:py-10">
-        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+      <div className="mx-auto w-full min-w-0 max-w-[1600px] px-4 md:px-8">
+        <header className="flex flex-wrap items-center justify-between gap-4 border-b py-4 md:py-6">
           <div className="flex items-center gap-3">
             <Link to="/" className="flex items-center gap-1">
               <Logo />
@@ -47,10 +45,10 @@ function AdminShell({ children }: { children: React.ReactNode }) {
               Back to dashboard
             </Link>
           </Button>
-        </div>
+        </header>
 
-        {children}
-      </main>
+        <main className="py-6 md:py-10">{children}</main>
+      </div>
     </div>
   );
 }
