@@ -172,6 +172,7 @@ function ApplicantAiReportPage() {
 
   if (!report) {
     const isInterviewCompleted = interview?.status === "completed";
+    const isAwaitingVoice = interview?.status === "awaiting_voice";
     const isEvalFailed = application.status === "evaluation_failed";
 
     const emptyState = isEvalFailed ? (
@@ -185,6 +186,20 @@ function ApplicantAiReportPage() {
           <EmptyDescription>
             The AI evaluation could not be completed for this applicant. You can reject the
             application or wait for a manual review.
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    ) : isAwaitingVoice ? (
+      <Empty
+        className={
+          batchNavigation ? "border-0 p-0 shadow-none" : "rounded-2xl border-0 bg-muted/30"
+        }
+      >
+        <EmptyHeader>
+          <EmptyTitle>Waiting for voice assessment</EmptyTitle>
+          <EmptyDescription>
+            The candidate finished the chat interview and still needs to complete the required voice
+            assessment before Zero generates the report.
           </EmptyDescription>
         </EmptyHeader>
       </Empty>

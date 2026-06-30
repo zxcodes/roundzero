@@ -47,7 +47,7 @@
 
 | # | Decision | Answer |
 |---|---|---|----------|
-| 1 | Quota exhausted behavior | Stop creating new interviews when `completedReports >= final_report_target`. Send `position_filled` to remaining pending candidates. They stay in pipeline (`pre_screening`), not auto-rejected. |
+| 1 | Quota exhausted behavior | Stop creating new interviews when released reports (`reports.released_at IS NOT NULL`) reach `final_report_target`. Send `position_filled` to remaining pending candidates. They stay in pipeline (`pre_screening`), not auto-rejected. |
 | 2 | Default `final_report_target` | Defaults to plan's `reports/job` limit (Free: 1, Starter: 3, Growth: 5, Scale: 10). Clamped to `1..perJobLimit` at create/edit. DB column default `5` is legacy — app overrides on create. |
 | 3 | Low-match outcome | Hold in `pre_screening`. Company can manually reject. No system auto-reject. |
 | 4 | Unevaluated visibility | Yes — separate "Pending" tab, read-only. Companies see all applicants; only evaluated ones get AI reports. |

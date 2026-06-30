@@ -510,19 +510,19 @@ export async function updateInterviewStatus(sql: Sql, args: updateInterviewStatu
     };
 }
 
-export const completeInterviewQuery = `-- name: completeInterview :one
+export const submitInterviewForVoiceQuery = `-- name: submitInterviewForVoice :one
 UPDATE interviews
-SET status = 'completed',
-    completed_at = now(),
+SET status = 'awaiting_voice',
     updated_at = now()
 WHERE id = $1
+  AND status = 'in_progress'
 RETURNING id, application_id, batch_id, agent_id, type, metadata, status, invited_at, started_at, completed_at, expired_at, cancelled_at, cancellation_reason, created_at, updated_at`;
 
-export interface completeInterviewArgs {
+export interface submitInterviewForVoiceArgs {
     id: string;
 }
 
-export interface completeInterviewRow {
+export interface submitInterviewForVoiceRow {
     id: string;
     applicationId: string;
     batchId: string | null;
@@ -540,8 +540,64 @@ export interface completeInterviewRow {
     updatedAt: Date;
 }
 
-export async function completeInterview(sql: Sql, args: completeInterviewArgs): Promise<completeInterviewRow | null> {
-    const rows = await sql.unsafe(completeInterviewQuery, [args.id]).values();
+export async function submitInterviewForVoice(sql: Sql, args: submitInterviewForVoiceArgs): Promise<submitInterviewForVoiceRow | null> {
+    const rows = await sql.unsafe(submitInterviewForVoiceQuery, [args.id]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        applicationId: row[1],
+        batchId: row[2],
+        agentId: row[3],
+        type: row[4],
+        metadata: row[5],
+        status: row[6],
+        invitedAt: row[7],
+        startedAt: row[8],
+        completedAt: row[9],
+        expiredAt: row[10],
+        cancelledAt: row[11],
+        cancellationReason: row[12],
+        createdAt: row[13],
+        updatedAt: row[14]
+    };
+}
+
+export const completeInterviewAfterVoiceQuery = `-- name: completeInterviewAfterVoice :one
+UPDATE interviews
+SET status = 'completed',
+    completed_at = now(),
+    updated_at = now()
+WHERE id = $1
+  AND status = 'awaiting_voice'
+RETURNING id, application_id, batch_id, agent_id, type, metadata, status, invited_at, started_at, completed_at, expired_at, cancelled_at, cancellation_reason, created_at, updated_at`;
+
+export interface completeInterviewAfterVoiceArgs {
+    id: string;
+}
+
+export interface completeInterviewAfterVoiceRow {
+    id: string;
+    applicationId: string;
+    batchId: string | null;
+    agentId: string | null;
+    type: string;
+    metadata: any;
+    status: string;
+    invitedAt: Date | null;
+    startedAt: Date | null;
+    completedAt: Date | null;
+    expiredAt: Date | null;
+    cancelledAt: Date | null;
+    cancellationReason: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export async function completeInterviewAfterVoice(sql: Sql, args: completeInterviewAfterVoiceArgs): Promise<completeInterviewAfterVoiceRow | null> {
+    const rows = await sql.unsafe(completeInterviewAfterVoiceQuery, [args.id]).values();
     if (rows.length !== 1) {
         return null;
     }

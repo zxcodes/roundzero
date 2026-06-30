@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { assertAccountCanAuthenticate } from "@/features/accounts/grace";
 import { getTestDb } from "@/shared/__tests__/test-utils";
 import {
   clearUserRole,
+  getUserByGoogleId,
   getUserById,
+  restoreUser,
   setUserRole,
   softDeleteUser,
   upsertUserByGoogleId,
@@ -133,6 +136,98 @@ describe("setUserRole", () => {
     // Confirm role didn't change
     const check = await getUserById(sql, { id: user!.id });
     expect(check!.role).toBe("company");
+  });
+});
+
+const daysAgo = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+describe("restoreUser", () => {
+  it("does not restore users past the grace period", async () => {
+    const created = await upsertUserByGoogleId(sql, {
+      email: "past-grace@example.com",
+      name: "Past Grace",
+      picture: null,
+      googleId: "google-past-grace",
+    });
+    expect(created).not.toBeNull();
+
+    await sql`
+      UPDATE users
+      SET deleted_at = ${daysAgo(31)}
+      WHERE id = ${created!.id}
+    `;
+
+    await restoreUser(sql, { id: created!.id });
+
+    const [row] = await sql`
+      SELECT deleted_at
+      FROM users
+      WHERE id = ${created!.id}
+    `;
+    expect(row?.deleted_at).not.toBeNull();
+  });
+
+  it("does not restore anonymized users", async () => {
+    const created = await upsertUserByGoogleId(sql, {
+      email: "erased@example.com",
+      name: "Erased User",
+      picture: null,
+      googleId: "google-erased",
+    });
+    expect(created).not.toBeNull();
+
+    await sql`
+      UPDATE users
+      SET deleted_at = now(), anonymized_at = now()
+      WHERE id = ${created!.id}
+    `;
+
+    await restoreUser(sql, { id: created!.id });
+
+    const [row] = await sql`
+      SELECT deleted_at, anonymized_at
+      FROM users
+      WHERE id = ${created!.id}
+    `;
+    expect(row?.deleted_at).not.toBeNull();
+    expect(row?.anonymized_at).not.toBeNull();
+  });
+});
+
+describe("getUserByGoogleId anonymized tombstone", () => {
+  it("finds the tombstone row and blocks authentication after anonymization", async () => {
+    const created = await upsertUserByGoogleId(sql, {
+      email: "tombstone@example.com",
+      name: "Tombstone User",
+      picture: null,
+      googleId: "google-tombstone",
+    });
+    expect(created).not.toBeNull();
+
+    await sql`
+      UPDATE users
+      SET deleted_at = now(),
+          anonymized_at = now(),
+          name = 'Deleted user',
+          email = ${`deleted+${created!.id}@deleted.invalid`}
+      WHERE id = ${created!.id}
+    `;
+
+    const tombstone = await getUserByGoogleId(sql, { googleId: "google-tombstone" });
+    expect(tombstone).not.toBeNull();
+    expect(tombstone!.id).toBe(created!.id);
+    expect(tombstone!.anonymizedAt).not.toBeNull();
+    expect(() => assertAccountCanAuthenticate(tombstone!)).toThrow(
+      "This account has been permanently deleted",
+    );
+
+    const again = await upsertUserByGoogleId(sql, {
+      email: "tombstone@example.com",
+      name: "Tombstone User",
+      picture: null,
+      googleId: "google-tombstone",
+    });
+    expect(again).toBeNull();
   });
 });
 

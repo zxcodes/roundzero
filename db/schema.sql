@@ -335,7 +335,8 @@ CREATE TABLE public.users (
     google_id text,
     deleted_at timestamp with time zone,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    anonymized_at timestamp with time zone
 );
 
 
@@ -755,6 +756,13 @@ CREATE UNIQUE INDEX idx_users_email ON public.users USING btree (lower(email));
 
 
 --
+-- Name: idx_users_pending_erasure; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_users_pending_erasure ON public.users USING btree (deleted_at) WHERE ((deleted_at IS NOT NULL) AND (anonymized_at IS NULL));
+
+
+--
 -- Name: applications applications_candidate_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -941,4 +949,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260614000000'),
     ('20260614010000'),
     ('20260615042817'),
-    ('20260622161816');
+    ('20260622161816'),
+    ('20260629021838');

@@ -57,10 +57,15 @@
       "name": "eval-retry",
       "binding": "EVAL_RETRY",
       "class_name": "EvalRetryWorkflow"
+    },
+    {
+      "name": "account-cleanup",
+      "binding": "ACCOUNT_CLEANUP",
+      "class_name": "AccountCleanupWorkflow"
     }
   ],
   "triggers": {
-    "crons": ["0 */6 * * *", "0 */3 * * *"]
+    "crons": ["0 */6 * * *", "0 */3 * * *", "0 4 * * *"]
   },
   "env": {
     "staging": {
@@ -105,6 +110,11 @@
           "name": "eval-retry",
           "binding": "EVAL_RETRY",
           "class_name": "EvalRetryWorkflow"
+        },
+        {
+          "name": "account-cleanup",
+          "binding": "ACCOUNT_CLEANUP",
+          "class_name": "AccountCleanupWorkflow"
         }
       ],
       "routes": [
@@ -156,6 +166,11 @@
           "name": "eval-retry",
           "binding": "EVAL_RETRY",
           "class_name": "EvalRetryWorkflow"
+        },
+        {
+          "name": "account-cleanup",
+          "binding": "ACCOUNT_CLEANUP",
+          "class_name": "AccountCleanupWorkflow"
         }
       ]
     }

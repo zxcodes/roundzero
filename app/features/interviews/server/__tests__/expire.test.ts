@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createApplication, getApplicationById } from "@/features/applications/queries/queries_sql";
 import {
   createInterview,
@@ -45,19 +45,12 @@ const seedInterview = async (opts: {
   return { interview, applicationId: application.id };
 };
 
-const makePostEvalBinding = () => {
-  const create = vi.fn(async () => ({ id: "post-eval-instance" }));
-  const binding = { create } as unknown as Workflow<{ interviewId: string }>;
-  return { binding, create };
-};
-
 describe("expireInterviewIfDue", () => {
   it("does nothing when the interview has no expiry", async () => {
     const { interview, applicationId } = await seedInterview({
       status: "in_progress",
       expiresAt: null,
     });
-    const { binding, create } = makePostEvalBinding();
 
     const result = await expireInterviewIfDue({
       db: sql,
@@ -67,12 +60,9 @@ describe("expireInterviewIfDue", () => {
         status: interview.status,
         expiresAt: interview.metadata?.expiresAt ?? null,
       },
-      postEvaluation: binding,
     });
 
     expect(result.expiredNow).toBe(false);
-    expect(result.postEvalTriggered).toBe(false);
-    expect(create).not.toHaveBeenCalled();
 
     const reloaded = await getInterviewContextById(sql, { id: interview.id });
     expect(reloaded?.status).toBe("in_progress");
@@ -83,7 +73,6 @@ describe("expireInterviewIfDue", () => {
       status: "in_progress",
       expiresAt: new Date(Date.now() + 60 * 60 * 1000),
     });
-    const { binding, create } = makePostEvalBinding();
 
     const result = await expireInterviewIfDue({
       db: sql,
@@ -93,19 +82,16 @@ describe("expireInterviewIfDue", () => {
         status: interview.status,
         expiresAt: interview.metadata?.expiresAt ?? null,
       },
-      postEvaluation: binding,
     });
 
     expect(result.expiredNow).toBe(false);
-    expect(create).not.toHaveBeenCalled();
   });
 
-  it("expires a pending interview without triggering post-eval (no transcript to evaluate)", async () => {
+  it("expires a pending interview without starting post-evaluation", async () => {
     const { interview, applicationId } = await seedInterview({
       status: "pending",
       expiresAt: new Date(Date.now() - 60 * 1000),
     });
-    const { binding, create } = makePostEvalBinding();
 
     const result = await expireInterviewIfDue({
       db: sql,
@@ -115,12 +101,9 @@ describe("expireInterviewIfDue", () => {
         status: interview.status,
         expiresAt: interview.metadata?.expiresAt ?? null,
       },
-      postEvaluation: binding,
     });
 
     expect(result.expiredNow).toBe(true);
-    expect(result.postEvalTriggered).toBe(false);
-    expect(create).not.toHaveBeenCalled();
 
     const reloaded = await getInterviewContextById(sql, { id: interview.id });
     expect(reloaded?.status).toBe("expired");
@@ -128,68 +111,7 @@ describe("expireInterviewIfDue", () => {
     expect(application?.status).toBe("pre_screening");
   });
 
-  it("expires an in_progress interview AND triggers post-eval so partial transcript becomes a report", async () => {
-    const { interview, applicationId } = await seedInterview({
-      status: "in_progress",
-      expiresAt: new Date(Date.now() - 60 * 1000),
-    });
-    const { binding, create } = makePostEvalBinding();
-
-    const result = await expireInterviewIfDue({
-      db: sql,
-      interview: {
-        id: interview.id,
-        applicationId,
-        status: interview.status,
-        expiresAt: interview.metadata?.expiresAt ?? null,
-      },
-      postEvaluation: binding,
-    });
-
-    expect(result.expiredNow).toBe(true);
-    expect(result.postEvalTriggered).toBe(true);
-    expect(create).toHaveBeenCalledWith({
-      id: interview.id,
-      params: { interviewId: interview.id },
-    });
-
-    const reloaded = await getInterviewContextById(sql, { id: interview.id });
-    expect(reloaded?.status).toBe("expired");
-    const application = await getApplicationById(sql, { id: applicationId });
-    expect(application?.status).toBe("pre_screening");
-  });
-
-  it("still marks expired even if post-eval trigger throws (best-effort side effect)", async () => {
-    const { interview, applicationId } = await seedInterview({
-      status: "in_progress",
-      expiresAt: new Date(Date.now() - 60 * 1000),
-    });
-    const create = vi.fn(async () => {
-      throw new Error("workflow runtime down");
-    });
-    const binding = { create } as unknown as Workflow<{ interviewId: string }>;
-
-    const result = await expireInterviewIfDue({
-      db: sql,
-      interview: {
-        id: interview.id,
-        applicationId,
-        status: interview.status,
-        expiresAt: interview.metadata?.expiresAt ?? null,
-      },
-      postEvaluation: binding,
-    });
-
-    expect(result.expiredNow).toBe(true);
-    expect(result.postEvalTriggered).toBe(false);
-
-    const reloaded = await getInterviewContextById(sql, { id: interview.id });
-    expect(reloaded?.status).toBe("expired");
-    const application = await getApplicationById(sql, { id: applicationId });
-    expect(application?.status).toBe("pre_screening");
-  });
-
-  it("skips the post-eval side effect entirely when the binding is null", async () => {
+  it("expires an in_progress interview without starting post-evaluation", async () => {
     const { interview, applicationId } = await seedInterview({
       status: "in_progress",
       expiresAt: new Date(Date.now() - 60 * 1000),
@@ -203,11 +125,9 @@ describe("expireInterviewIfDue", () => {
         status: interview.status,
         expiresAt: interview.metadata?.expiresAt ?? null,
       },
-      postEvaluation: null,
     });
 
     expect(result.expiredNow).toBe(true);
-    expect(result.postEvalTriggered).toBe(false);
 
     const reloaded = await getInterviewContextById(sql, { id: interview.id });
     expect(reloaded?.status).toBe("expired");

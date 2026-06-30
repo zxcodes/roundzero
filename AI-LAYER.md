@@ -4,32 +4,29 @@
 
 Do **not** run a full AI interview for every application.
 
-That wastes:
-- compute
-- money
-- candidate time
+That wastes compute, money, and candidate time.
 
 Use a funnel:
 
-Application → Pre-Evaluation → Selective Deep Evaluation → Report → Company Review
+```
+Apply → Pre-Evaluation → Batch Pool → Interview (text + voice) → Post-Evaluation → Report → Batch Release → Company Review
+```
 
 ---
 
 # Overall Flow
 
 1. Candidate applies to a job
-2. System runs lightweight pre-evaluation **asynchronously**
-3. If candidate looks promising **and job report quota is available**:
-   - invite to RoundZero interview
-4. If medium fit **and job report quota is available**:
-   - ask 2–3 clarifying questions first
-5. If low fit:
-   - keep under review (no interview)
-6. If job report quota is exhausted:
-   - remaining pending candidates stay in pipeline
-   - candidates receive "position filled" notification
-   - no new interviews are created
-7. Company receives evaluated candidates with reports
+2. System runs lightweight pre-evaluation **asynchronously** (`PreEvaluationWorkflow`)
+3. If the candidate passes deterministic invite rules **and** report quota has slots:
+   - application moves to `queued_for_batch` (pool — not an immediate invite)
+4. When batch launch criteria are met, candidates receive interview invites (`interview_invited`)
+5. If low fit or quota exhausted:
+   - stay in `pre_screening` or receive `position_filled` notification
+6. After text + voice complete, post-evaluation generates a report held at `evaluated_held`
+7. When the batch releases, reports become visible and companies receive a `batch_ready` digest
+
+**Not implemented:** a separate “medium fit → 2–3 clarifying questions” path. Pre-eval output is binary: pool for full interview or hold.
 
 ---
 
@@ -41,66 +38,76 @@ Decide whether a candidate deserves deeper evaluation.
 
 ## Inputs
 
-- Resume
-- Candidate profile
-- Job description
-- Required skills
-- Company custom questions
+- Resume text (extracted from PDF/DOCX in R2)
+- Job title, description, requirements
+- Job type classification (technical, customer_facing, creative, operations, leadership, general)
+
+Screening questions are **not** inputs to pre-eval — they are used in the text interview system prompt.
+
+## Pipeline (`PreEvaluationWorkflow`)
+
+1. Fetch resume from R2, extract text
+2. Classify job type → pick role-specific eval prompt
+3. Resume authenticity / slop check
+4. Role-specific structured pre-eval (`generateText` + `Output.object`)
+5. Deterministic refine (`refinePreEvaluationResult`)
+6. Persist `pre_evaluations`, decide hold vs `queued_for_batch`
 
 ## Output
 
-- Fit score
+- Fit score (0–10)
 - Missing requirements
-- Confidence
-- Next step
+- Confidence (high / medium / low)
+- Model next step (`interview_invited` | `hold`) — refined by deterministic policy
 
-## Example Output
+## Invite policy (`shouldInviteFromDeterministicRules`)
 
-- Score: 7.8
-- Missing: AWS experience
-- Confidence: High
-- Next Step: Invite to RoundZero
+- Reject invite if `consistencyScore < 2` or `score < 5`
+- Invite if model says `interview_invited`
+- Or if `score >= 7.5` and consistency is null or `>= 7`
 
-## What It Should Check
-
-- Relevant skills match
-- Relevant experience
-- Seniority fit
-- Basic job alignment
+On workflow failure → application status `evaluation_failed` (recoverable via company re-invite).
 
 ---
 
-# Stage 2: Decision Layer
+# Stage 2: Batch Pool + Quota
 
-## Quota Check First
+## Quota math
 
-Each job has a `final_report_target` set at create/edit time. The default equals the company's plan `reports/job` limit and is clamped to `1..perJobLimit` (Free: 1, Starter: 3, Growth: 5, Scale: 10). The system delivers that many final reports when enough eligible candidates exist.
+Each job has `final_report_target` (plan-clamped: Free 1, Starter 3, Growth 5, Scale 10).
 
-Capacity is computed from completed reports and active interviews:
-- `remainingReports = final_report_target - completedReports`
-- `availableInviteSlots = remainingReports - activeInterviews(status IN pending|in_progress)`
+```
+remainingReports = final_report_target - releasedReports  (reports.released_at IS NOT NULL)
+availableInviteSlots = remainingReports - activeInterviews(pending | in_progress)
+```
 
-## High Match
+## Batch pooling (`queued_for_batch`)
 
-→ Invite to full AI interview (if quota available)
+Strong-fit candidates wait in a per-job pool. `checkAndLaunchBatch()` launches when:
 
-## Medium Match
+- pool ≥ target size (min of `final_report_target` and `DEFAULT_TARGET_SIZE`), **or**
+- pool ≥ `MIN_BATCH_SIZE` (3 prod / 1 dev-staging) after **12h** (`POOL_FORMATION_TIMEOUT_MS`), **or**
+- pool ≥ 1 after **24h** (2× pool timeout)
 
-→ Ask 2–3 clarifying questions first (if quota available)
+Config: `app/features/batches/config.ts`. Pool also checked every **6h** via `PoolCheckWorkflow` cron.
 
-## Low Match
+## On batch launch
 
-→ Hold in `pre_screening` (no interview)
+- Creates `job_batches` row, assigns interviews
+- Sets `expiresAt` = now + **12 hours** (`INTERVIEW_EXPIRY_MS`)
+- Sends `interview_invited` notification
+- Starts `BatchOrchestrationWorkflow` (12h wait → release)
 
-## Target Reached
+## Target reached
 
-→ Stop creating interviews. Remaining pending candidates stay in pipeline and receive a "position filled" notification. They are NOT auto-rejected.
+Stop creating new interviews. Remaining candidates stay in pipeline; `position_filled` notification sent. Not auto-rejected.
 
-## Interview Expiry + Cancel
+## Interview expiry + cancel
 
-- Interview invites expire after 48 hours
-- Candidates can cancel interviews if they no longer want to participate
-- Expired or cancelled interview slots are recycled to the next best eligible candidate
+- Expiry applies only while `pending` or `in_progress` — **not** `awaiting_voice`
+- Cancel → interview `cancelled`, application `withdrawn`
+- Expire → interview `expired`, application returns to `pre_screening`
+- Freed quota slots can backfill from the pool on the next `checkAndLaunchBatch` / `maybeLaunchNextBatch` — not instant per-slot replacement
 
 ---
 
@@ -108,247 +115,145 @@ Capacity is computed from completed reports and active interviews:
 
 The AI interviewer is named **Zero**.
 
-Candidate-facing copy references Zero by name:
-- "Zero invited you to complete an interview for this role."
-- "Your interview with Zero is in progress."
-- "Zero has completed the evaluation."
-
-This is a product branding decision, not a model name. The underlying agent class can change; Zero is the user-facing identity.
+Candidate-facing copy references Zero by name. This is product branding, not a model name.
 
 ---
 
 # Text Interview Implementation
 
-The text interview uses **TanStack AI** (`@tanstack/ai`) with **OpenRouter** (`@tanstack/ai-openrouter`) via server functions — no WebSockets, no streaming, no persistent agent runtime.
+Hybrid architecture — **not** WebSockets for chat; **SSE** for turn streaming.
 
 ## Flow
 
-1. Candidate clicks "Start" → `startMyInterview` server function prepares context and generates the first greeting via `chat()` from `@tanstack/ai`
-2. Candidate types a message → client calls a server function that appends the message to `interview_messages`
-3. Server calls OpenRouter via `chat()` with full message history + system prompt → appends response to `interview_messages`
-4. The LLM drives the conversation — it decides when the interview is complete and responds accordingly
-5. Candidate or system marks interview complete → `completeMyInterview` triggers the post-evaluation workflow
+1. **Start** — `startMyInterview` server function generates the first greeting (`chat()`, `stream: false`)
+2. **Chat turns** — client posts to `POST /api/interview-chat` (SSE stream via TanStack AI `chat()`)
+3. **Tools** — server-side tool loop (`maxIterations(5)`):
+   - `check_resume_gap` — verify claims against resume/profile
+   - `record_screening_coverage` — track requirement coverage
+   - `end_interview` — submit for voice when coverage rules met
+4. **Manual submit** — `completeMyInterview` also moves to `awaiting_voice`
+5. **Post-eval blocked** until voice assessment completes
 
-## System Prompt
+## System prompt
 
-Built by `buildInterviewSystemPrompt()` in `app/features/interviews/shared/runtime.ts`. Injected with:
+`buildInterviewSystemPrompt()` in `app/features/interviews/shared/runtime.ts` — job, candidate summary, pre-eval context, screening questions, coverage state, turn limits.
 
-- Job description, requirements, custom questions
-- Candidate summary (resume text, profile)
-- Pre-evaluation results (score, missing requirements, authenticity flags)
-- Screening coverage state (which requirements have been addressed)
-- Turn count and max questions
+## Model selection
 
-## Model Selection
+Source of truth: `app/shared/openrouter.ts` (`MODEL_CHAINS.interview`):
 
-Uses the `"interview"` chain from `app/shared/openrouter.ts`. Currently:
-- Dev: `meta-llama/llama-3.3-70b-instruct:free` / fallback `google/gemini-2.5-flash`
-- Staging: `google/gemini-2.5-flash` / fallback `anthropic/claude-haiku-4.5`
-- Prod: `anthropic/claude-haiku-4.5` / fallback `anthropic/claude-sonnet-4.5`
+| Env | Primary | Fallback |
+| --- | --- | --- |
+| dev | `meta-llama/llama-3.3-70b-instruct:free` | — |
+| staging | `deepseek/deepseek-v4-flash` | — |
+| prod | `anthropic/claude-sonnet-4.5` | `anthropic/claude-haiku-4.5` |
 
-No agent-side tool calls. The LLM receives all context in the system prompt and generates plain-text responses. Evaluation is performed post-hoc by the post-evaluation workflow.
+Fallbacks are OpenRouter `models` on the request (see `createChatModel` / `modelOptions.models`).
 
-## Interview State
+## Interview state
 
-State is stored in the database:
-- `interviews` table — status lifecycle (`pending`, `in_progress`, `completed`, `expired`, `cancelled`)
-- `interview_messages` table — full transcript per interview
-- `interviews.metadata` — JSONB with expiry timestamp, pre-evaluation score, context state, screening coverage
+- `interviews` — status lifecycle (`pending`, `in_progress`, `awaiting_voice`, `completed`, `expired`, `cancelled`)
+- `interview_messages` — full transcript
+- `interviews.metadata` — `expiresAt`, `jobSnapshot`, `screeningCoverage`, `integrity` (pre-eval scores come from `pre_evaluations` at runtime)
 
 ---
 
-# Stage 3: Deep Evaluation
+# Stage 3: Deep Evaluation (Post-Eval)
 
-Only for selected candidates.
+Only for selected candidates who completed text + voice.
 
-## Goal
+## `PostEvaluationWorkflow` (summary)
 
-Measure actual hiring signal beyond resume.
+1. Idempotency check
+2. Load interview context + transcript
+3. `assess_answer_authenticity` (Haiku in prod)
+4. `load_voice_assessment` — LLM analysis over stored ElevenLabs transcript (`generateText` + `Output.object`)
+5. Generate structured report (`post_eval` chain)
+6. Deterministic refine + `post_eval_audit` LLM pass
+7. Blend voice into communication score
+8. Persist report, move application to `evaluated_held`
+9. Batch orchestration holds until release
 
-## What Happens
+## Voice assessment (ElevenLabs)
 
-- Resume clarification
-- Role-specific questions
-- Problem solving
-- Tradeoff / judgment questions
-- Dynamic follow-ups
+- ElevenLabs handles STT/LLM/TTS
+- `getMyVoiceToken` fetches signed URL via ElevenLabs REST API (`fetch` to `api.elevenlabs.io`)
+- Client: `@elevenlabs/client` + TanStack `useRealtimeChat` adapter
+- On end: transcript persisted (`analysis: null` initially); interview → `completed`; `startPostEvaluation` triggered
+- Voice dimension scoring runs in post-eval, not on the hot path
 
-## Output
+## Communication score blend
 
-Structured candidate report
+Dynamic weight in `applyVoiceAssessmentToReport()`:
+
+```
+voiceWeight = min(0.7, 0.15 + totalEvidence × 0.055)
+communication = textScore × (1 - voiceWeight) + voiceOverall × voiceWeight
+```
+
+Not a fixed 60/40 split.
 
 ---
 
 # Report Limits
 
-Companies set `final_report_target` during job creation. The default and maximum come from the subscription plan (`PLAN_CONFIGS.includedReportsPerJob`). Server enforcement via `enforceReportTarget()` ensures the value stays within `1..perJobLimit`.
-
-Why a limit:
-- Prevents noise for companies with only 1 opening
-- Keeps evaluation costs predictable
-- Forces selectivity in the funnel
-
-When the target is reached, the pipeline closes for new evaluations but the job may remain open. Companies still see unevaluated applicants in a pending list and can manually review or reject them.
+`final_report_target` per job, enforced by `enforceReportTarget()`. Reports count toward quota only after **release** (`released_at` set at batch release or immediate release for non-batched paths).
 
 ---
 
-# Candidate Experience
+# Application Status Lifecycle
 
-## After Apply
+**11 statuses** in `applicationStatusSchema` (`app/shared/enums.ts`):
 
-### Strong Fit
-"Zero invited you to complete an interview for this role."
+`applied` → `pre_screening` → `queued_for_batch` → `interview_invited` → `interview_in_progress` → `evaluated_held` → `evaluated` → (`shortlisted` | `rejected`)
 
-### Medium Fit
-"Zero has a few additional questions to help evaluate your fit."
+Also: `withdrawn`, `evaluation_failed`
 
-### Low Fit
-"Application received and under review."
+**Rules:**
 
-### Position Filled (Quota Reached)
-"This position has received enough evaluations. Your application is still on file and the company may review it directly."
+- System auto-advances through the funnel above
+- Companies can **reject** at any pre-terminal stage (not read-only pre-eval)
+- Only companies move `evaluated` → `shortlisted` | `rejected`
+- Candidates can **withdraw** from most non-terminal states
+
+---
+
+# Candidate-Facing Messaging (implemented)
+
+Copy lives in route components (e.g. `application/$applicationId.tsx` `stageCopy`), not a central label map.
+
+Examples:
+
+- `queued_for_batch` — “Under review” / invite typically within 12 hours
+- `interview_invited` — Zero invited you to interview
+- `position_filled` — quota reached, application still on file
 
 ---
 
 # Company Experience
 
-Instead of raw applicants, companies see evaluated candidates.
+Evaluated candidates arrive with structured reports (summary, scores, strengths, weaknesses, insights, evidence, screening answers, answer authenticity risk, voice assessment, transcript).
 
-## Candidate Card
-
-- Name
-- Score
-- Strengths
-- Concerns
-- Status
-
-## Full Report
-
-- Overall score
-- Summary
-- Technical reasoning
-- Communication
-- Experience relevance
-- Strengths
-- Risks
-- Resume
-- Transcript (optional)
+Primary batched delivery: `batch_ready` digest email. Per-candidate `report_ready` for non-batched releases.
 
 ---
 
-# Application Status Lifecycle (Decided)
+# Model Chains (all tasks)
 
-> See **PLATFORM.md § 16.1** for the full decision.
+Source: `app/shared/openrouter.ts`. Pre/post-eval, job creation, audit use `DEFAULT_CHAIN`:
 
-**Decided:** Extend `applications.status` to include all 8 statuses in a single enum.
+| Env | Chain |
+| --- | --- |
+| dev | `openrouter/free` |
+| staging | `deepseek/deepseek-v4-flash` |
+| prod | `anthropic/claude-sonnet-4.5` → `anthropic/claude-haiku-4.5` |
 
-**Status Funnel:**
-- `applied` → `pre_screening` → (`interview_invited` | other outcome) → `interview_in_progress` → `evaluated` → (`shortlisted` | `rejected`)
+`answer_authenticity` prod: `anthropic/claude-haiku-4.5` only.
 
-**Transition Rules:**
-- Only companies can move `evaluated` → `shortlisted` or `rejected`
-- System auto-advances through `pre_screening` → `interview_invited` → `interview_in_progress` → `evaluated`
-- Companies can manually reject at any pre-evaluation stage
-- When `final_report_target` is reached, system stops advancing new candidates out of `pre_screening`
-
----
-
-# Important Notes
-
-## Pre-Evaluation should NOT decide final hiring
-
-It only decides:
-
-"Who deserves deeper evaluation?"
-
-## Avoid keyword-only matching
-
-Use semantic/contextual matching.
-
-## Voice Assessment
-
-A voice communication assessment runs after the text interview using **ElevenLabs Conversational AI**.
-
-### Architecture
-
-- ElevenLabs handles all voice processing (STT, LLM, TTS) as a managed service
-- `getMyVoiceToken` server function generates a signed URL via `@elevenlabs/elevenlabs-js`
-- Client connects via `@elevenlabs/client` `Conversation.startSession({ signedUrl, dynamicVariables })`
-- Agent system prompt and voice personality are configured in the ElevenLabs dashboard
-- Candidate/job context injected via `dynamicVariables` (`candidate_name`, `job_title`, `company_name`, `candidate_summary`)
-- Transcript analysis runs server-side via OpenRouter `generateObject` when the call ends
-
-### Flow
-
-1. After text interview completes, candidate enters the voice tab in the interview UI
-2. Client calls `getMyVoiceToken` to get a signed ElevenLabs session URL
-3. `@elevenlabs/client` connects via WebSocket — voice conversation begins immediately
-4. Candidate speaks, agent responds — all audio/LLM handled by ElevenLabs
-5. On end (candidate clicks End Call or agent calls `end_call` tool):
-   - Transcript is fetched from ElevenLabs API
-   - `generateObject` runs structured analysis against `communicationAssessmentSchema`
-   - Results saved to `communication_assessments`
-   - Post-evaluation workflow receives `voice_assessment_complete` event
-
-### Report Integration
-
-- Voice analysis rendered in the company report as a timeline node under "Voice Communication Assessment"
-- 5 dimension scores: clarity, articulation, conciseness, listening, confidence
-- Score blended into `communication` dimension (60% voice, 40% text)
-- Evidence quotes deduplicated into a "Key moments" section
-
-### DB Table
-
-- `communication_assessments` — one row per interview
-- Stores `status`, `transcript` (JSONB), `analysis` (JSONB — per-dimension scores + evidence), `audio_key`
-
----
-
-## Keep Simple
-
-Build:
-- pre-screening
-- selective AI interviews
-- candidate reports
-- **voice communication assessment**
-
-Skip for now:
-- video interviews
-- multiple visible agents (the ElevenLabs voice agent IS the agent — no custom agent code)
-- advanced analytics
-- over-engineered systems
-
----
-
-# Long-Term Opportunity
-
-Reusable candidate profile:
-
-If a candidate completed RoundZero recently:
-- reuse previous evaluation
-- ask only role-specific delta questions
-
-This reduces cost and improves UX.
-
----
-
-# Product Decisions (Phase 3.5 Exit Criteria)
-
-> All product decisions are documented in **PLATFORM.md § 16**. Refer there for full context.
-
-## Decided Decisions
-
-| # | Decision | Status |
-|---|----------|--------|
-| 1 | Application Status Lifecycle | ✅ Extend single `applications.status` enum to all 8 statuses |
-| 2 | Candidate-Facing Messaging | ✅ Hide pre-evaluation stages; show only 6 candidate-visible statuses |
-| 3 | Medium-Fit Follow-Up | ✅ Use synchronous chat UI (same as full interview) with 2–3 questions |
-| 4 | Company View Pre/Post AI | ✅ Show full pipeline; pre-eval candidates are read-only, post-eval show real scores |
-| 5 | Pre-Evaluation Output Format | ✅ Pipeline live; real-world validation with hiring managers deferred to post-MVP |
-| 6 | Final Report Target | ✅ `final_report_target` per job (plan-based default/max). Target reached → stop new evaluations, notify candidates, no auto-reject. |
+Pre/post-eval use Vercel AI SDK `generateText` + Response Healing plugin.
 
 ---
 
 # One-Line Summary
 
-RoundZero deeply evaluates the right candidates, not every candidate.
+RoundZero deeply evaluates the right candidates, not every candidate — through selective pre-screening, batch-orchestrated interviews, and explainable multi-pass reports.

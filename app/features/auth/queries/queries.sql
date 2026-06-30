@@ -6,7 +6,13 @@ ON CONFLICT (google_id) DO UPDATE
       name = EXCLUDED.name,
       picture = EXCLUDED.picture,
       updated_at = now()
-RETURNING id, email, name, picture, role, google_id, deleted_at, created_at, updated_at;
+WHERE users.anonymized_at IS NULL
+RETURNING id, email, name, picture, role, google_id, deleted_at, anonymized_at, created_at, updated_at;
+
+-- name: getUserByGoogleId :one
+SELECT id, email, name, picture, role, google_id, deleted_at, anonymized_at, created_at, updated_at
+FROM users
+WHERE google_id = $1;
 
 -- name: getUserById :one
 SELECT id, email, name, picture, role, google_id, deleted_at, created_at, updated_at
@@ -48,7 +54,11 @@ SET deleted_at = now(),
 WHERE id = $1 AND deleted_at IS NULL;
 
 -- name: restoreUser :exec
+-- Grace interval must match ACCOUNT_ERASURE_GRACE_DAYS in app/features/accounts/config.ts
 UPDATE users
 SET deleted_at = NULL,
     updated_at = now()
-WHERE id = $1 AND deleted_at IS NOT NULL;
+WHERE id = $1
+  AND deleted_at IS NOT NULL
+  AND deleted_at >= now() - interval '30 days'
+  AND anonymized_at IS NULL;

@@ -48,7 +48,7 @@ import {
   workplaceTypeSchema,
 } from "@/shared/enums";
 import { formatSalary, SALARY_BRACKETS } from "@/shared/format";
-import { PAGE_SEO } from "@/shared/seo";
+import { buildPageHead, PAGE_SEO } from "@/shared/seo";
 
 const searchDefaults = {
   search: "",
@@ -82,25 +82,12 @@ export const Route = createFileRoute("/jobs/")({
   validateSearch: jobsSearchSchema,
   search: { middlewares: [stripSearchParams(searchDefaults)] },
   loaderDeps: ({ search }) => search,
-  head: () => ({
-    meta: [
-      { title: PAGE_SEO.jobs.title },
-      {
-        name: "description",
-        content: PAGE_SEO.jobs.description,
-      },
-      {
-        property: "og:url",
-        content: `${import.meta.env.VITE_APP_URL}/jobs`,
-      },
-    ],
-    links: [
-      {
-        rel: "canonical",
-        href: `${import.meta.env.VITE_APP_URL}/jobs`,
-      },
-    ],
-  }),
+  head: () =>
+    buildPageHead({
+      title: PAGE_SEO.jobs.title,
+      description: PAGE_SEO.jobs.description,
+      path: "/jobs",
+    }),
   loader: async ({ deps }) => {
     const result = await getOpenJobsPaginated({
       data: {
