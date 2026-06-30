@@ -45,7 +45,14 @@ export function pickPreferredInterviewId(
     return null;
   }
 
-  const priority = ["in_progress", "pending", "completed", "expired", "cancelled"] as const;
+  const priority = [
+    "in_progress",
+    "awaiting_voice",
+    "pending",
+    "completed",
+    "expired",
+    "cancelled",
+  ] as const;
   for (const status of priority) {
     const match = interviews.find((interview) => interview.status === status);
     if (match) {

@@ -1,14 +1,19 @@
-# RoundZero 
+# RoundZero
 
-AI-powered hiring platform that replaces the first round of hiring with structured, adaptive interviews and explainable candidate evaluations.
+AI-powered hiring platform that replaces first-round screening with structured async interviews, voice assessment, and explainable candidate reports.
 
 ## Stack
 
 - **Framework:** TanStack Start (React 19 with React Compiler, Vite 8)
-- **Runtime:** Cloudflare Worker (Workflows, scheduled handlers)
-- **AI:** OpenRouter via AI SDK v6 + Cloudflare Workflows (in `app/workflows/`)
+- **Runtime:** Cloudflare Worker (Workflows + scheduled handlers)
+- **Database:** Postgres via Hyperdrive (local Docker for dev/test)
+- **AI:** OpenRouter via Vercel AI SDK v7 + TanStack AI (`@tanstack/ai-openrouter` for text interviews)
+- **Workflows:** Cloudflare Workflows — pre-eval, post-eval, batch orchestration, pool-check, eval-retry, account-cleanup
+- **Voice:** ElevenLabs Conversational AI (signed URL + `@elevenlabs/client`)
 - **Billing:** Polar subscriptions with plan-gated entitlements
-- **Models:** OpenRouter (Claude Haiku/Sonnet in prod; free Llama/Qwen/GPT-OSS in dev)
+- **Models:** Code-level chains in `app/shared/openrouter.ts` — Sonnet/Haiku in prod; free/OpenRouter models in dev
+- **Storage:** Cloudflare R2 (resumes, voice audio)
+- **Email:** Resend (secondary to in-app notifications)
 - **UI:** shadcn/ui, Tailwind CSS v4, Huge Icons
 - **Linting & Formatting:** Biome
 - **Finding Unused Code & Dependencies:** Knip
@@ -24,7 +29,7 @@ bash setup-db.sh setup_pg
 
 # Copy env template
 cp .env.example .env
-# Fill in DATABASE_URL, and other values
+# Fill in DATABASE_URL, OPENROUTER_API_KEY, and other values
 
 # Start dev server
 bun run dev
@@ -40,21 +45,23 @@ bun run dev
 | `bun run typecheck`  | TypeScript check only                  |
 | `bun run sqlgen`     | Generate typed queries from SQL (SQLC) |
 | `bun run db:migrate` | Run database migrations                |
+| `bun run test`       | Run Vitest suite                       |
 
 ## Project Structure
 
 ```
 app/
 ├── routes/          # TanStack file-based routes
-├── features/        # Feature modules (auth, jobs, applications, etc.)
+├── features/        # Feature modules (auth, jobs, applications, accounts, etc.)
 ├── workflows/       # Cloudflare Workflow classes
-├── shared/          # Cross-cutting utilities (db, auth, middleware)
+├── shared/          # Cross-cutting utilities (db, auth, openrouter, middleware)
 ├── components/      # Global UI components + shadcn/ui
-└── lib/             # Helpers (utils, theme)
+└── server.ts        # Worker entrypoint (fetch + scheduled crons)
 ```
 
 ## Documentation
 
 - **[PLATFORM.md](PLATFORM.md)** — Product specification
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** — Technical architecture
+- **[AI-LAYER.md](AI-LAYER.md)** — AI funnel, interviews, evaluation, batching
 - **[AGENTS.md](AGENTS.md)** — Agent/AI coding conventions

@@ -18,7 +18,7 @@ RoundZero is a hiring platform that is being built in two layers:
    - explainable reports
    - ranked candidate recommendations
 
-The product is not meant to be “just another jobs board.” The end state is a system where companies do less manual screening because candidates arrive already evaluated. But the current build priority is to make the non-AI platform solid first, so the AI layer lands on top of a complete hiring workflow instead of compensating for product gaps.
+The product is not meant to be “just another jobs board.” Companies do less manual screening because candidates arrive with explainable AI evaluation reports. Both the core hiring platform and the AI interview/evaluation layer are **live**.
 
 ### Core Value Proposition
 
@@ -32,7 +32,7 @@ The product is not meant to be “just another jobs board.” The end state is a
 
 - A role-specific hiring platform for companies and candidates
 - A structured application funnel
-- A future AI-driven first-round interview layer
+- An AI-driven first-round interview and evaluation layer (live)
 - A candidate evaluation and decision-support system
 
 ### 1.2 What RoundZero Is Not
@@ -44,21 +44,21 @@ The product is not meant to be “just another jobs board.” The end state is a
 
 ### 1.3 Current Product State
 
-Today, the app is primarily the **core platform layer**:
+Live today:
 
-- public marketing landing page
-- public company directory
-- public jobs board
-- role-specific login and onboarding
-- company job management
-- candidate profile/settings
-- one-click apply
-- applicant review pages and status tracking
-- in-app workflow notifications
+- public marketing landing page, company directory, jobs board
+- role-specific Google OAuth login and onboarding
+- company job management (draft/open/closed, screening questions, job expiry)
+- candidate profile/settings, resume upload, one-click apply
+- applicant review, AI reports, batch release (`/dashboard/job-batches`)
+- async AI pre-evaluation on all applicants (every plan)
+- batch-orchestrated text interviews + required voice assessment
+- explainable evaluation reports with ranking on job applicants page
+- in-app notifications + Resend email for key workflow events
 - company billing (Polar) and plan-gated entitlements
 - multi-tenant company teams (email invitations, `/dashboard/team`)
-
-The AI interview, evaluation, report, and ranking systems are now live.
+- account soft-delete with 30-day restore window and scheduled erasure
+- candidate withdraw and `evaluation_failed` recovery (company re-invite)
 
 ---
 
@@ -78,7 +78,7 @@ The platform should gather cleaner, more useful candidate and job data than a ty
 
 ### 2.4 Async by Default
 
-The product should minimize scheduling friction. Applications, profile setup, future interviews, and notifications should all fit asynchronous workflows.
+The product should minimize scheduling friction. Applications, profile setup, interviews, and notifications all fit asynchronous workflows.
 
 ### 2.5 Opinionated, Not Over-Abstracted
 
@@ -97,7 +97,7 @@ Candidates use RoundZero to:
 - browse public jobs
 - apply with one click
 - track application status
-- later complete AI interviews
+- complete async AI interviews (text + voice)
 
 ### 3.2 Companies
 
@@ -155,7 +155,7 @@ Current company flow:
 4. Invite teammates from `/dashboard/team` (owner/admin; plan-gated seat count)
 5. Manage subscription on `/dashboard/billing` (owner only)
 6. Create jobs (drafts always allowed; opening/publishing gated by active-job limit)
-7. Manage open/draft/archived jobs
+7. Manage jobs (`draft` / `open` / `closed`; archived jobs are `closed` with `archived_at` set)
 8. Set per-job evaluation report target (clamped to plan limit)
 9. View applicants per job
 10. Review applicants on dedicated applicant detail pages
@@ -197,7 +197,7 @@ The platform-hardening priorities listed below were completed before the AI laye
 ### 5.3 Notifications Delivery Layer
 
 - [x] In-app notifications as canonical record
-- [x] Resend email delivery for `report_ready` and `interview_expired`
+- [x] Resend email delivery for `interview_invited`, `report_ready`, `batch_ready`, `application_status_changed`, `position_filled`, and related types (see `notificationTypeSchema`)
 - [x] Delivery tracking on notification rows
 
 ### 5.4 Public Route Cleanup
@@ -214,7 +214,7 @@ RoundZero now includes the AI hiring layer on top of the solid platform.
 ### 6.1 AI Interview Mode
 
 - in-app async chat (text-based, no video)
-- optional ~5 minute voice assessment after the text interview
+- required ~5 minute voice assessment after the text interview
 - preserves context and supports adaptive follow-ups
 - works across time zones without scheduling friction
 
@@ -234,9 +234,9 @@ After the text interview, candidates complete a short voice conversation to eval
 
 - ~5 minute voice call, browser-based, no setup required
 - evaluated across 5 dimensions: clarity, articulation, conciseness, listening, confidence
-- blended into the final communication score (60% voice, 40% text)
+- blended into the final communication score with evidence-based weighting (≈15–70% voice, not a fixed split — see `applyVoiceAssessmentToReport()`)
 - full transcript and dimension scores visible in the company report
-- candidates can skip — the report notes it was excluded
+- required to complete — post-interview report generation waits for voice
 
 ### 6.3 Evaluation Goals
 
@@ -352,6 +352,7 @@ RoundZero uses subscription plans with hard caps (no overage billing). Plan conf
 - **Evaluation reports** — `final_report_target` per job defaults to the plan's reports/job limit and cannot exceed it
 - **Team seats** — plan limits count invited teammates beyond the owner; pending invites consume invite slots; accept is gated on member count
 - **AI job creation** — paid plans with active/trialing subscription only
+- **AI pre-evaluation** — runs on all applicants on every plan (not gated)
 
 ### Checkout
 
@@ -369,13 +370,15 @@ Live sections:
 
 - candidate header (name, job, apply date)
 - summary
-- recommendation badge (strong yes / yes / lean no / no)
+- recommendation badge (UI labels: Strong shortlist / Shortlist / Borderline / Reject; schema: `strong_yes` / `yes` / `lean_no` / `no`)
 - overall score (0–10)
 - dimension scores (communication, problem solving, ownership, role fit)
 - strengths
 - weaknesses
 - insights
 - evidence
+- screening answers (per company screening question)
+- answer authenticity risk block (signals + risk level)
 - pre-screening to interview to post-evaluation timeline
 - interview transcript (all standardised messages)
 - voice communication assessment (if completed):
@@ -424,24 +427,19 @@ After AI:
 
 ## 14. Notifications and Communication
 
-RoundZero will need transactional communication for key workflow events.
+Notifications are **in-app first**; email is a secondary channel via Resend.
 
-Current and planned uses:
+Live notification types (`notificationTypeSchema`):
 
-- application submitted confirmations
-- application status updates
-- company-facing applicant activity notifications
-- interview-ready notifications later
+- `application_status_changed`
+- `application_withdrawn`
+- `interview_invited`
+- `report_ready` (non-batched per-candidate release)
+- `batch_ready` (primary digest when a batch releases)
+- `position_filled` (quota exhausted)
+- `job_published`, `job_archived`, `job_closed`
 
-Recommended provider for email delivery:
-
-- **Resend** for transactional email
-
-Why:
-
-- simple developer experience
-- good fit for app-triggered transactional messages
-- enough for MVP without building a complex email system
+Each row tracks email delivery status. There is no `interview_expired` notification type — expiry is surfaced in the interview UI and DB status.
 
 ---
 
@@ -467,190 +465,78 @@ or
 
 ---
 
-## 16. AI Layer Product Decisions
+## 16. AI Layer — Implemented Decisions
 
-The following decisions are required **before Phase 4 (AI Interview)** begins. These define how the AI layer integrates with the existing platform.
+These decisions are **shipped**. See **AI-LAYER.md** for implementation detail.
 
-### 16.1 Decision 1: Application Status Lifecycle
+### 16.1 Application status lifecycle
 
-**Question:** How do we model application statuses when the AI layer introduces new evaluation stages?
+**11 statuses** in `applicationStatusSchema`:
 
-**Current State:**
-- `applications.status` uses: `applied`, `interviewing`, `evaluated`, `rejected`
-- AI-LAYER.md suggests: `applied`, `pre_screening`, `interview_invited`, `interview_in_progress`, `evaluated`, `shortlisted`, `rejected`
+`applied`, `pre_screening`, `queued_for_batch`, `interview_invited`, `interview_in_progress`, `evaluated_held`, `evaluated`, `shortlisted`, `rejected`, `withdrawn`, `evaluation_failed`
 
-**Decision:** **Extend the existing `applications.status` enum to include all 8 statuses**
+**Funnel:** `applied` → `pre_screening` → `queued_for_batch` → `interview_invited` → `interview_in_progress` → `evaluated_held` → `evaluated` → (`shortlisted` | `rejected`)
 
-**Rationale:**
-- Simpler query patterns (single status column)
-- Clear audit trail of all state transitions
-- No schema duplication or hidden parallel state machines
-- Status transitions follow the funnel: `applied` → `pre_screening` → (`interview_invited` | other outcome) → `interview_in_progress` → `evaluated` → (`shortlisted` | `rejected`)
+**Rules:**
+- System auto-advances through the funnel
+- Companies can **reject** at any pre-terminal stage; **shortlist** only from `evaluated`
+- Candidates can **withdraw** from most non-terminal states
+- `evaluation_failed` is recoverable — companies can re-invite to interview
 
-**Transition Rules:**
-- Only companies can move `evaluated` → `shortlisted` or `rejected`
-- The system auto-advances through `pre_screening` → `interview_invited` → `interview_in_progress` → `evaluated`
-- A company can manually reject at any pre-evaluation stage
-- When a job's `final_report_target` is reached, the system stops advancing new candidates out of `pre_screening`
+### 16.2 Candidate-facing messaging
 
-**Implementation:**
-- Update `enums.ts`: extend `applicationStatusSchema` to include all 8 statuses
-- Update `APPLICATION_STATUS_TRANSITIONS` to enforce the funnel order
-- Update all client-facing status labels to distinguish internal (pre-evaluation) vs. external (candidate-visible) states
+Pre-eval stages are collapsed in candidate UI. Copy is defined per-route (e.g. `stageCopy` in `application/$applicationId.tsx`), not a shared `getVisibleApplicationStatus()` helper.
 
----
+Notable states:
+- `queued_for_batch` — “Under review”; invite typically within 12 hours
+- `interview_invited` / `interview_in_progress` — Zero interview CTAs with expiry countdown
 
-### 16.2 Decision 2: Candidate-Facing Messaging After Apply
+**Not implemented:** separate “medium fit → 2–3 clarifying questions” messaging or interview mode.
 
-**Question:** What messaging do candidates see at each evaluation stage?
+### 16.3 Company view
 
-**Decision: Hide pre-evaluation stages from candidates**
+Companies see the full pipeline at all stages. Pre-eval applicants show profile/resume without a report. **Reject** is available before evaluation completes; **shortlist** requires `evaluated` status.
 
-**Candidate-Visible Status Mapping:**
-- `applied` / `pre_screening` → "Application Received"
-- `interview_invited` → "Interview Ready"
-- `interview_in_progress` → "Interview in Progress"
-- `evaluated` → "Under Review"
-- `shortlisted` → "Shortlisted"
-- `rejected` → "Not Moving Forward"
+### 16.4 Pre-evaluation output
 
-**Candidate Messages:**
-- Strong fit: "Zero invited you to complete an interview for this role."
-- Medium fit: "Zero has a few additional questions to help evaluate your fit."
-- Low fit: "Application received and under review."
+Live output: score (0–10), missing requirements, confidence, model next step (`interview_invited` | `hold`). Deterministic policy (`shouldInviteFromDeterministicRules`) gates pooling. Pre-eval does not make final hire decisions.
 
-**Implementation:**
-- Add `getVisibleApplicationStatus()` helper for status mapping
-- Add `applicationStatusCandidateLabelMap` in `config.ts` for exact copy
-- Update candidate dashboard to use visible status only
+### 16.5 Final report target + batching
+
+- `final_report_target` per job (plan-clamped)
+- Quota counts **released** reports (`reports.released_at IS NOT NULL`), not merely generated
+- Strong fits enter `queued_for_batch`; invites sent on batch launch
+- Reports held at `evaluated_held` until batch release (`batch_ready` digest)
+- **12-hour** interview window from batch launch; `awaiting_voice` not auto-expired
+- Scheduled crons: pool-check every 6h, eval-retry every 3h (`wrangler.jsonc`)
 
 ---
 
-### 16.3 Decision 3: Medium-Fit Follow-Up Medium
+## 17. Account Deletion
 
-**Question:** Where and how do medium-fit candidates answer clarifying questions?
+Self-service account deletion is available in candidate and company settings (`DeleteAccountSection`).
 
-**Decision: Use synchronous chat UI (same as full interview)**
+### Soft delete + grace period
 
-**Rationale:**
-- Preserves interview context and adaptability
-- Candidates get dynamic follow-ups based on answers
-- Lower barrier to answer 2–3 questions than to do a full interview
-- Reuses the same agent and transcript infrastructure
+1. User confirms deletion → `deleteAccount` sets `users.deleted_at`
+2. **30-day grace** (`ACCOUNT_ERASURE_GRACE_DAYS`) — user can restore by signing in with Google (`restoreUser` on login)
+3. During grace: session ends; deleted users are filtered from public queries (`deleted_at IS NULL`)
 
-**Implementation:**
-- Medium-fit candidates are invited to a "quick evaluation" via the interview chat UI
-- Agent system prompt is modified to ask 2–3 clarifying questions instead of full interview script
-- Questions adapt based on resume gaps identified in pre-evaluation
-- Output is still a structured report, same as full interview
-- Same `interviews` table is used; a `metadata` field can flag it as "quick_eval"
+### Hard erasure (after grace)
 
----
+Daily cron (`0 4 * * *`) runs `AccountCleanupWorkflow`, which calls `eraseDeletedAccount` for up to 50 users per sweep:
 
-### 16.4 Decision 4: Company View With and Without AI Reports
+- Deletes R2 objects (resumes, voice audio)
+- Scrubs candidate profile, applications, interview messages, voice transcripts, pre-eval raw responses
+- Redacts report text fields; preserves aggregate scores/recommendations for company analytics
+- Deletes notifications and feedback
+- Sole-owner companies with no other active members: archives open jobs
+- Sets `users.anonymized_at` and placeholder email (`deleted+<id>@deleted.invalid`)
 
-**Question:** Can companies see (and act on) applications before AI evaluation completes?
-
-**Decision: Companies see full pipeline, but pre-evaluation candidates are read-only**
-
-**Before AI Evaluation Completes:**
-- Raw applicant list with resume, profile snapshot
-- Status badge: "Application Received" or "Under Review"
-- No scoring or evaluation report yet
-- Cannot change status (read-only until evaluation completes)
-
-**After AI Evaluation Completes:**
-- Same applicant list, now includes:
-  - AI evaluation report (summary, scores, strengths, concerns)
-  - Can change status or shortlist/reject
-
-**Quota-Exhausted State:**
-- Once `final_report_target` reports are generated, new applicants remain in pre-evaluation
-- Companies still see them in the pending list with full profile data
-- No new AI reports are generated until the company edits the job target (within plan limit) or upgrades their plan
-
-**Minimum Viable Company View:**
-| State | Shows | Actions |
-|---|---|---|
-| Pre-evaluation | Name, resume, date, status | None |
-| Post-evaluation | Above + AI score, summary, recommendations | Shortlist / Reject |
-| Quota exhausted | Same as pre-evaluation | Manual review / reject only |
-
-**Implementation:**
-- `getApplicationReviewById` returns profile + evaluation report (if it exists)
-- UI conditionally renders "evaluation in progress" vs. full report view
-- Action buttons only appear post-evaluation
+Idempotent — safe to re-run.
 
 ---
 
-### 16.5 Decision 5: Pre-Evaluation Output Format Validation
+## 18. One-Line Definition
 
-**Question:** Is the pre-evaluation output (score + missing requirements + confidence + next step) sufficient?
-
-**Current Spec:**
-- **Score:** 0–10 (overall fit)
-- **Missing Requirements:** List of role requirements not met
-- **Confidence:** High/Medium/Low
-- **Next Step:** "Invite to RoundZero" | "Ask follow-ups" | "Hold / Reject"
-
-**Validation Plan:**
-
-1. Run 5–10 real applications through manual evaluation using this format
-2. Get hiring manager feedback:
-   - Would you trust this to decide "invite" vs. "ask follow-ups"?
-   - Are missing requirements useful, or want different dimensions?
-   - Should confidence be visible to company or internal only?
-   - Is 0–10 score clear, or prefer tier (Strong/Medium/Low)?
-3. Adjust output based on feedback
-4. Document final schema in `AI-LAYER.md`
-
-**Validation Status:**
-- Pre-evaluation pipeline is live and producing scores
-- Pre-evaluation only decides "invite to full interview" vs. "not yet"
-- It does NOT rank candidates or make final hiring decisions
-- If confidence is low, default to "ask follow-ups" rather than reject
-- Real-world validation with hiring managers remains pending (deferred to post-MVP)
-
----
-
-### 16.6 Decision 6: Final Report Target
-
-**Question:** How many final reports should RoundZero deliver per job, and what happens when that target is reached?
-
-**Decision:** Each job has a `final_report_target` set at create/edit time. The default equals the company's plan `reports/job` limit; the value is clamped to `1..perJobLimit` (Free: 1, Starter: 3, Growth: 5, Scale: 10). The system delivers that many final reports whenever enough eligible candidates exist.
-
-This target is based on completed reports, not interview invites.
-
-**Rationale:**
-- Prevents evaluation noise for roles with only 1–2 openings
-- Keeps costs predictable for companies (tied to subscription tier)
-- Forces selectivity in the funnel
-- Per-plan defaults match what each tier is priced for
-
-**When Target Is Reached:**
-- The system stops creating new interviews for that job
-- Remaining pending candidates stay in `pre_screening` (NOT auto-rejected)
-- Candidates receive a `position_filled` notification: "This position has received enough evaluations. Your application is still on file and the company may review it directly."
-- Companies still see unevaluated applicants in a read-only pending list and can manually reject them
-
-**Interview Slot Policy:**
-- Every invite has a 48-hour expiry window
-- If a candidate does not complete in time, interview status becomes `expired`
-- Candidates can cancel interviews voluntarily; status becomes `cancelled`
-- Expired/cancelled slots are recycled to the next best eligible candidate
-- Capacity is computed as:
-  - `remainingReports = final_report_target - completedReports`
-  - `availableInviteSlots = remainingReports - activeInterviews(status IN pending|in_progress)`
-
-**Implementation:**
-- `final_report_target INTEGER NOT NULL DEFAULT 5` on `jobs` (DB default is legacy; app sets plan-based default on create)
-- Job creation/edit form shows plan-valid range via `reportTargetRangeLabel(entitlements)`
-- `enforceReportTarget()` enforces plan limits server-side (strict on user input, clamp on publish/downgrade)
-- Pre-evaluation + lifecycle manager computes invite capacity from report completion and active interviews
-- Background workflow and cron lifecycle manager send `position_filled` when target is reached
-
----
-
-## 17. One-Line Definition
-
-> “A hiring platform that starts with a solid async application workflow and evolves into an explainable AI-driven first-round interview and candidate evaluation system.”
+> “A hiring platform with a solid async application workflow and a live explainable AI first-round interview and candidate evaluation system.”

@@ -100,12 +100,27 @@ SET status = $1,
 WHERE id = $2
 RETURNING *;
 
--- name: completeInterview :one
+-- name: submitInterviewForVoice :one
+-- Text interview submitted; voice assessment still required before completion.
+-- Conditional on `in_progress` so a re-submit/race can't overwrite a terminal
+-- state (cancelled/expired) or an already-advanced interview.
+UPDATE interviews
+SET status = 'awaiting_voice',
+    updated_at = now()
+WHERE id = $1
+  AND status = 'in_progress'
+RETURNING *;
+
+-- name: completeInterviewAfterVoice :one
+-- Voice assessment finished — the interview is now fully completed (text+voice).
+-- Conditional on `awaiting_voice` so a late webhook can't resurrect an
+-- expired/cancelled interview.
 UPDATE interviews
 SET status = 'completed',
     completed_at = now(),
     updated_at = now()
 WHERE id = $1
+  AND status = 'awaiting_voice'
 RETURNING *;
 
 -- name: expireInterview :one

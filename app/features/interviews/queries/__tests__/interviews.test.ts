@@ -6,10 +6,11 @@ import {
 } from "@/features/notifications/queries/queries_sql";
 import { getTestDb, makeTestResumeKey, seedCompany, seedUser } from "@/shared/__tests__/test-utils";
 import {
-  completeInterview,
+  completeInterviewAfterVoice,
   createInterview,
   getInterviewContextById,
   getInterviewForCandidateById,
+  submitInterviewForVoice,
   updateInterviewStatus,
 } from "../queries_sql";
 
@@ -99,7 +100,15 @@ describe("interview queries", () => {
     expect(inProgress).not.toBeNull();
     expect(inProgress!.status).toBe("in_progress");
 
-    const completed = await completeInterview(sql, { id: interview!.id });
+    // Text interview submitted → voice still required, so the interview is
+    // `awaiting_voice`, NOT yet `completed`.
+    const awaitingVoice = await submitInterviewForVoice(sql, { id: interview!.id });
+    expect(awaitingVoice).not.toBeNull();
+    expect(awaitingVoice!.status).toBe("awaiting_voice");
+    expect(awaitingVoice!.completedAt).toBeNull();
+
+    // Voice finished → interview is fully completed.
+    const completed = await completeInterviewAfterVoice(sql, { id: interview!.id });
     expect(completed).not.toBeNull();
     expect(completed!.status).toBe("completed");
     expect(completed!.completedAt).toBeInstanceOf(Date);

@@ -1,4 +1,3 @@
-import { env } from "cloudflare:workers";
 import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
@@ -68,7 +67,6 @@ export const getCompanyApplicantReportTimeline = createServerFn({ method: "GET" 
           status: interview.status,
           expiresAt: interview.expiresAt ?? null,
         },
-        postEvaluation: env.POST_EVALUATION,
       });
       if (result.expiredNow) {
         interview = await getInterviewForCompanyByApplicationId(db, {
