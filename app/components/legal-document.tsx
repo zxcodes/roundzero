@@ -52,7 +52,7 @@ export function LegalPage({
               {title}
             </h1>
             <p className="mt-4 font-mono text-xs text-muted-foreground">
-              Last updated: May 8, 2026
+              Last updated: June 29, 2026
             </p>
           </div>
 

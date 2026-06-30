@@ -40,8 +40,12 @@ export const cleanTestData = async () => {
   await sql`
     TRUNCATE
       reports,
+      interview_messages,
+      communication_assessments,
+      pre_evaluations,
       interviews,
       job_batches,
+      feedback,
       notifications,
       company_invitations,
       company_members,

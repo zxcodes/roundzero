@@ -9,23 +9,15 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { contactSchema, submitContactForm } from "@/features/contact/server/functions";
+import { buildPageHead } from "@/shared/seo";
 
 export const Route = createFileRoute("/contact")({
-  head: () => ({
-    meta: [
-      { title: "Contact | RoundZero" },
-      {
-        name: "description",
-        content: "Get in touch with the RoundZero team.",
-      },
-    ],
-    links: [
-      {
-        rel: "canonical",
-        href: `${import.meta.env.VITE_APP_URL}/contact`,
-      },
-    ],
-  }),
+  head: () =>
+    buildPageHead({
+      title: "Contact | RoundZero",
+      description: "Get in touch with the RoundZero team.",
+      path: "/contact",
+    }),
   component: ContactPage,
 });
 

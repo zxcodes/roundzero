@@ -122,3 +122,12 @@ sql:
         options:
           runtime: node
           driver: postgres
+  - schema: "db/migrations"
+    queries: "app/features/accounts/queries/queries.sql"
+    engine: postgresql
+    codegen:
+      - out: app/features/accounts/queries
+        plugin: ts
+        options:
+          runtime: node
+          driver: postgres

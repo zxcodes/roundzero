@@ -11,7 +11,7 @@ import { Logo } from "@/components/public-layout";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/features/auth/provider";
 import { redirectAfterSignup, signupSearchSchema } from "@/features/auth/signup-search";
-import { PAGE_SEO } from "@/shared/seo";
+import { buildPageHead, PAGE_SEO } from "@/shared/seo";
 
 export const Route = createFileRoute("/company/login")({
   validateSearch: signupSearchSchema,
@@ -20,16 +20,12 @@ export const Route = createFileRoute("/company/login")({
       throw redirect(redirectAfterSignup(search));
     }
   },
-  head: () => ({
-    meta: [
-      { title: PAGE_SEO.signUp.title },
-      {
-        name: "description",
-        content: PAGE_SEO.signUp.description,
-      },
-    ],
-    links: [{ rel: "canonical", href: `${import.meta.env.VITE_APP_URL}/company/login` }],
-  }),
+  head: () =>
+    buildPageHead({
+      title: PAGE_SEO.signUp.title,
+      description: PAGE_SEO.signUp.description,
+      path: "/company/login",
+    }),
   component: CompanyLoginPage,
 });
 

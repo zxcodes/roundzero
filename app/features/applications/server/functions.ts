@@ -143,7 +143,6 @@ export const getJobApplicants = createServerFn({ method: "GET" })
             status: interview.status,
             expiresAt: interview.expiresAt,
           },
-          postEvaluation: env.POST_EVALUATION,
         }),
       ),
     );
@@ -183,7 +182,6 @@ export const getJobApplicantsView = createServerFn({ method: "GET" })
             status: interview.status,
             expiresAt: interview.expiresAt,
           },
-          postEvaluation: env.POST_EVALUATION,
         }),
       ),
     );

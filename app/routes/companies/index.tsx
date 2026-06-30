@@ -38,6 +38,7 @@ import {
   industrySchema,
 } from "@/shared/enums";
 import { getPublicAssetUrl } from "@/shared/r2";
+import { buildPageHead, PAGE_SEO } from "@/shared/seo";
 
 const searchDefaults = { search: "", industry: "all", size: "all", page: 1 } as const;
 
@@ -52,26 +53,12 @@ export const Route = createFileRoute("/companies/")({
   validateSearch: companiesSearchSchema,
   search: { middlewares: [stripSearchParams(searchDefaults)] },
   loaderDeps: ({ search }) => search,
-  head: () => ({
-    meta: [
-      { title: "Browse Companies | RoundZero" },
-      {
-        name: "description",
-        content:
-          "Explore companies hiring on RoundZero. Find the right culture, stack, and role for you. Browse team profiles, open positions, and more.",
-      },
-      {
-        property: "og:url",
-        content: `${import.meta.env.VITE_APP_URL}/companies`,
-      },
-    ],
-    links: [
-      {
-        rel: "canonical",
-        href: `${import.meta.env.VITE_APP_URL}/companies`,
-      },
-    ],
-  }),
+  head: () =>
+    buildPageHead({
+      title: PAGE_SEO.companies.title,
+      description: PAGE_SEO.companies.description,
+      path: "/companies",
+    }),
   loader: async ({ deps }) => {
     const result = await getAllCompaniesPaginated({
       data: {

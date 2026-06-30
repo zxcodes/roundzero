@@ -13,15 +13,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useSession } from "@tanstack/react-start/server";
 import { z } from "zod";
 import {
-  completeInterview,
   createInterviewMessage,
   getInterviewContextById,
   getInterviewForCandidateById,
   getInterviewMessagesByInterviewId,
+  submitInterviewForVoice,
   updateInterviewMetadata,
 } from "@/features/interviews/queries/queries_sql";
 import { expireInterviewIfDue } from "@/features/interviews/server/expire";
-import { startPostEvaluation } from "@/features/interviews/server/voice-assessment";
 import {
   clampMessageIntegritySnapshot,
   mergeInterviewIntegrity,
@@ -72,7 +71,7 @@ const recordScreeningCoverageDef = toolDefinition({
 const endInterviewDef = toolDefinition({
   name: "end_interview",
   description:
-    "Mark the interview complete and trigger post-evaluation. Call this after you have already written a warm closing message to the candidate.",
+    "Submit the text interview and move the candidate to the required voice step. Call this after you have already written a warm closing message to the candidate.",
   inputSchema: z.object({
     reason: z.string().min(1),
   }),
@@ -131,7 +130,6 @@ export const Route = createFileRoute("/api/interview-chat")({
         const expired = await expireInterviewIfDue({
           db,
           interview,
-          postEvaluation: env.POST_EVALUATION,
         });
         if (expired.expiredNow) {
           return new Response("Interview has expired", { status: 400 });
@@ -143,6 +141,13 @@ export const Route = createFileRoute("/api/interview-chat")({
 
         if (interview.status === "cancelled" || interview.status === "expired") {
           return new Response("Interview is no longer available", { status: 400 });
+        }
+
+        if (interview.status === "awaiting_voice") {
+          return new Response(
+            "Chat interview already submitted. Complete the voice assessment to finish.",
+            { status: 400 },
+          );
         }
 
         if (interview.status === "completed") {
@@ -272,12 +277,7 @@ export const Route = createFileRoute("/api/interview-chat")({
               return { ok: true };
             }),
             endInterviewDef.server(async ({ reason }) => {
-              await completeInterview(db, { id: interviewId });
-
-              await startPostEvaluation(db, {
-                interviewId,
-                applicationId: interview.applicationId,
-              });
+              await submitInterviewForVoice(db, { id: interviewId });
 
               return { completed: true, reason };
             }),

@@ -13,8 +13,10 @@ import {
 } from "@/features/companies/server/functions";
 import { deriveEntitlements } from "@/features/entitlements/entitlements";
 import { parseCompanyMemberRole } from "@/shared/membership-auth";
+import { noindexHead } from "@/shared/seo";
 
 export const Route = createFileRoute("/_authenticated")({
+  head: () => noindexHead(),
   beforeLoad: async ({ context, location }) => {
     // A session with no role (e.g. a brand-new identity) is not a usable app
     // session — treat it as logged out. Public routes guard on `user?.role`,
