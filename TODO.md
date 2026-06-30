@@ -1,14 +1,14 @@
 ## TODO
 
 
+- add good seo stuff (check skills), basic done. use tanstack dev tools for og stuff it's good. enable them first.
+- add basic admin dashboard with stats (should be good enough for the start).
 - right now there's no feedback if there's something wrong with candidate's pdf. they can upload any pdf and the workflow will try to parse it. we need to detect if it's not a resume, and tell the user to add or something? think.
 - add a really good resume and candidate test suite to pass thru the ai. (WIP in other branch)
 
 
 ## PROD THINGS
-- add good seo stuff (check skills), basic done. use tanstack dev tools for og stuff it's good. enable them first.
 - planetscale for db?
-- analytics? stretch? or just have a basic admin dashboard with stats (should be good enough for the start).
 - validate open router models using their api key in prod ci so we detect non existent models beforehand.
 - update brand identity, desc etc in google console. infact just create a new project.
 
