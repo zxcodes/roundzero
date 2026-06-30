@@ -4,6 +4,7 @@ import { getUserById } from "@/features/auth/queries/queries_sql";
 import { getActiveMembershipByUserId } from "@/features/companies/queries/membership-queries_sql";
 import { getCompanyById } from "@/features/companies/queries/queries_sql";
 import { getDb } from "@/shared/db";
+import { assertPlatformAdmin } from "@/shared/platform-admin";
 import { type SessionData, sessionConfig } from "@/shared/session";
 
 /**
@@ -50,4 +51,15 @@ export const companyMiddleware = createMiddleware()
     }
 
     return next({ context: { company, membership } });
+  });
+
+/**
+ * Requires an authenticated platform admin (see PLATFORM_ADMIN_EMAILS).
+ */
+export const platformAdminMiddleware = createMiddleware()
+  .middleware([authMiddleware])
+  .server(async ({ next, context }) => {
+    assertPlatformAdmin(context.user.email);
+
+    return next();
   });
