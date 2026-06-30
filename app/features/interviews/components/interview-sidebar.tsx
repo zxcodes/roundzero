@@ -67,7 +67,7 @@ export function InterviewSidebar({
       <SidebarContent>
         {interviews.length === 0 ? (
           <div className="flex h-full items-center justify-center px-3 py-4">
-            <Empty className="rounded-2xl border-0 bg-muted/30">
+            <Empty>
               <EmptyHeader>
                 <EmptyMedia variant="icon">
                   <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={2} className="size-5" />
