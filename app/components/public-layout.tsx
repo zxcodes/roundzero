@@ -63,7 +63,10 @@ export function PublicHeader() {
                   <Link to="/candidate/login">For candidates</Link>
                 </Button>
               </div>
-              <Separator orientation="vertical" className="mx-2 hidden h-5 md:block data-vertical:self-center" />
+              <Separator
+                orientation="vertical"
+                className="mx-2 hidden h-5 md:block data-vertical:self-center"
+              />
               <div className="hidden items-center sm:flex">
                 <Button
                   variant="ghost"

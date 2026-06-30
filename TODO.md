@@ -1,7 +1,6 @@
 ## TODO
 
 
-- add good seo stuff (check skills), basic done. use tanstack dev tools for og stuff it's good. enable them first.
 - add basic admin dashboard with stats (should be good enough for the start).
 - right now there's no feedback if there's something wrong with candidate's pdf. they can upload any pdf and the workflow will try to parse it. we need to detect if it's not a resume, and tell the user to add or something? think.
 - add a really good resume and candidate test suite to pass thru the ai. (WIP in other branch)
@@ -17,6 +16,7 @@
 - add batch actions for companies (shortlist multiple candidates, and quick actions "shortlist top 3" reject "bottom ones")
 
 
+<!--- add good seo stuff (check skills), basic done. use tanstack dev tools for og stuff it's good. enable them first.-->
 <!--- pretty sure openrouter model fallbacks still don't work. verify in local dev.-->
 <!--- see if 12 hr window for interview is still too much?-->
 <!--- check about data retention & allowing people to delete accounts. (DONE — soft-delete + 30-day restore exists; day-30 erasure workflow fulfils UI promise.)-->
