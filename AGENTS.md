@@ -55,6 +55,7 @@ Every client-side server-function call is a real worker round trip (+ an `authMi
 
 ## UI
 
+- **Never extract Tailwind classes into named string constants** (`export const fooClass = "..."`, `const barClass = "..."`). Put `className` strings inline on the element; use `cn()` only when merging dynamic/conditional classes.
 - Always use shadcn components over hand-rolled divs/buttons (`Card`, `Button`, `Empty`, etc.). Empty states via `@app/components/ui/empty.tsx`.
 - Icons: `@hugeicons/react` + `@hugeicons/core-free-icons` only (no Lucide/Phosphor).
 - React Compiler is on — never `useCallback`/`useMemo`/`React.memo`. One `useId()` per component, derive IDs.

@@ -27,8 +27,6 @@ import { CANDIDATE_SCORE_MAX, formatCandidateScore } from "@/shared/score";
 type CompanyMetrics = Extract<Awaited<ReturnType<typeof getDashboardMetrics>>, { type: "company" }>;
 type CompanyHero = Awaited<CompanyMetrics["hero"]>;
 
-const dashboardCardGridClass = "grid gap-4 sm:grid-cols-2 lg:grid-cols-3";
-
 function RecommendationBadge({
   recommendation,
   size = "default",
@@ -202,7 +200,7 @@ function AwaitingReviewSection({
         <span className="text-sm text-muted-foreground">{awaitingReviewCount} total</span>
       </div>
 
-      <div className={dashboardCardGridClass}>
+      <div className={"grid gap-4 sm:grid-cols-2 lg:grid-cols-3"}>
         {candidates.map((candidate) => (
           <AwaitingReviewCard key={candidate.applicationId} candidate={candidate} />
         ))}
@@ -302,7 +300,7 @@ function RolesAttentionSection({ roles }: { roles: RoleAttention[] }) {
         </p>
       </div>
 
-      <div className={dashboardCardGridClass}>
+      <div className={"grid gap-4 sm:grid-cols-2 lg:grid-cols-3"}>
         {roles.map((role) => (
           <RoleAttentionCard key={role.jobId} role={role} />
         ))}
@@ -360,7 +358,7 @@ function RecentActivitySection({
       ) : null}
 
       {reports.length > 0 ? (
-        <div className={dashboardCardGridClass}>
+        <div className={"grid gap-4 sm:grid-cols-2 lg:grid-cols-3"}>
           {reports.map((report) => (
             <RecentReportCard key={report.applicationId} report={report} />
           ))}

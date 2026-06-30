@@ -55,8 +55,6 @@ import { formatSalaryFull } from "@/shared/format";
 
 type JobDetail = NonNullable<Awaited<ReturnType<typeof getJob>>>;
 
-const jobToolbarChipClass = "h-8 gap-1.5 px-3 text-xs [&>svg]:size-3.5";
-
 export function JobMetaChip({
   icon,
   children,
@@ -67,7 +65,7 @@ export function JobMetaChip({
   variant?: "secondary" | "outline";
 }) {
   return (
-    <Badge variant={variant} className={jobToolbarChipClass}>
+    <Badge variant={variant} className="h-8 gap-1.5 px-3 text-xs [&>svg]:size-3.5">
       {icon}
       {children}
     </Badge>
