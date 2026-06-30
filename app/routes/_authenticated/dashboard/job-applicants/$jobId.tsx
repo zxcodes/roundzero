@@ -25,6 +25,7 @@ import {
   JobMetaChip,
 } from "@/features/jobs/components/company-job-posting-panel";
 import type { JobStatus } from "@/shared/enums";
+import { buildJobPageSeo } from "@/shared/seo";
 import { validateUuidParams } from "@/shared/validation";
 
 type JobApplicantsView = NonNullable<Awaited<ReturnType<typeof getJobApplicantsView>>>;
@@ -71,6 +72,14 @@ export const Route = createFileRoute("/_authenticated/dashboard/job-applicants/$
       throw notFound();
     }
     return view;
+  },
+  head: ({ loaderData }) => {
+    const job = loaderData?.job ?? null;
+    if (!job) {
+      return { meta: [{ title: "Job | RoundZero" }] };
+    }
+
+    return { meta: [{ title: buildJobPageSeo(job).title }] };
   },
   pendingComponent: DashboardJobApplicantsSkeleton,
   component: JobApplicantsPage,

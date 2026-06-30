@@ -1,18 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { LegalLink, LegalPage, LegalSection, LegalStrong } from "@/components/legal-document";
+import { buildPageHead } from "@/shared/seo";
 
 export const Route = createFileRoute("/privacy")({
-  head: () => ({
-    meta: [
-      { title: "Privacy Policy | RoundZero" },
-      {
-        name: "description",
-        content:
-          "RoundZero Privacy Policy. How we collect, use, store, and share your personal information when you use our hiring platform and AI interview services.",
-      },
-    ],
-    links: [{ rel: "canonical", href: `${import.meta.env.VITE_APP_URL}/privacy` }],
-  }),
+  head: () =>
+    buildPageHead({
+      title: "Privacy Policy | RoundZero",
+      description:
+        "RoundZero Privacy Policy. How we collect, use, store, and share your personal information when you use our hiring platform and AI interview services.",
+      path: "/privacy",
+    }),
   component: PrivacyPage,
 });
 

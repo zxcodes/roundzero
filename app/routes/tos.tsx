@@ -1,18 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { LegalLink, LegalPage, LegalSection, LegalStrong } from "@/components/legal-document";
+import { buildPageHead } from "@/shared/seo";
 
 export const Route = createFileRoute("/tos")({
-  head: () => ({
-    meta: [
-      { title: "Terms of Service | RoundZero" },
-      {
-        name: "description",
-        content:
-          "RoundZero Terms of Service. The terms governing your use of our AI-driven hiring platform and interview services.",
-      },
-    ],
-    links: [{ rel: "canonical", href: `${import.meta.env.VITE_APP_URL}/tos` }],
-  }),
+  head: () =>
+    buildPageHead({
+      title: "Terms of Service | RoundZero",
+      description:
+        "RoundZero Terms of Service. The terms governing your use of our AI-driven hiring platform and interview services.",
+      path: "/tos",
+    }),
   component: TermsPage,
 });
 
