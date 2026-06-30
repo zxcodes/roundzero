@@ -28,6 +28,7 @@ interface __BaseEnv_Env {
 	ELEVENLABS_AGENT_ID: string;
 	ELEVENLABS_WEBHOOK_SECRET: string;
 	SENTRY_AUTH_TOKEN: string;
+	PLATFORM_ADMIN_EMAILS: string;
 	PRE_EVALUATION: Workflow<Parameters<import("./app/server").PreEvaluationWorkflow['run']>[0]['payload']>;
 	POST_EVALUATION: Workflow<Parameters<import("./app/server").PostEvaluationWorkflow['run']>[0]['payload']>;
 	BATCH_ORCHESTRATION: Workflow<Parameters<import("./app/server").BatchOrchestrationWorkflow['run']>[0]['payload']>;
@@ -66,6 +67,7 @@ declare namespace Cloudflare {
 		ELEVENLABS_AGENT_ID: string;
 		ELEVENLABS_WEBHOOK_SECRET: string;
 		SENTRY_AUTH_TOKEN: string;
+		PLATFORM_ADMIN_EMAILS: string;
 		PRE_EVALUATION: Workflow<Parameters<import("./app/server").PreEvaluationWorkflow['run']>[0]['payload']>;
 		POST_EVALUATION: Workflow<Parameters<import("./app/server").PostEvaluationWorkflow['run']>[0]['payload']>;
 		BATCH_ORCHESTRATION: Workflow<Parameters<import("./app/server").BatchOrchestrationWorkflow['run']>[0]['payload']>;
@@ -100,6 +102,7 @@ declare namespace Cloudflare {
 		ELEVENLABS_AGENT_ID: string;
 		ELEVENLABS_WEBHOOK_SECRET: string;
 		SENTRY_AUTH_TOKEN: string;
+		PLATFORM_ADMIN_EMAILS: string;
 		PRE_EVALUATION: Workflow<Parameters<import("./app/server").PreEvaluationWorkflow['run']>[0]['payload']>;
 		POST_EVALUATION: Workflow<Parameters<import("./app/server").PostEvaluationWorkflow['run']>[0]['payload']>;
 		BATCH_ORCHESTRATION: Workflow<Parameters<import("./app/server").BatchOrchestrationWorkflow['run']>[0]['payload']>;
@@ -114,7 +117,7 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "NODE_ENV" | "DATABASE_URL" | "TEST_DATABASE_URL" | "SESSION_SECRET" | "VITE_GOOGLE_CLIENT_ID" | "VITE_APP_URL" | "APP_URL" | "VITE_PUBLIC_ASSET_BASE_URL" | "RESEND_API_KEY" | "RESEND_FROM_EMAIL" | "CLOUDFLARE_ACCOUNT_ID" | "AI_GATEWAY_ID" | "OPENROUTER_API_KEY" | "AI_GATEWAY_TOKEN" | "POLAR_ACCESS_TOKEN" | "POLAR_WEBHOOK_SECRET" | "POLAR_MODE" | "POLAR_PRODUCT_ID_STARTER" | "POLAR_PRODUCT_ID_GROWTH" | "POLAR_PRODUCT_ID_SCALE" | "ELEVENLABS_API_KEY" | "ELEVENLABS_AGENT_ID" | "ELEVENLABS_WEBHOOK_SECRET" | "SENTRY_AUTH_TOKEN">> {}
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "NODE_ENV" | "DATABASE_URL" | "TEST_DATABASE_URL" | "SESSION_SECRET" | "VITE_GOOGLE_CLIENT_ID" | "VITE_APP_URL" | "APP_URL" | "VITE_PUBLIC_ASSET_BASE_URL" | "RESEND_API_KEY" | "RESEND_FROM_EMAIL" | "CLOUDFLARE_ACCOUNT_ID" | "AI_GATEWAY_ID" | "OPENROUTER_API_KEY" | "AI_GATEWAY_TOKEN" | "POLAR_ACCESS_TOKEN" | "POLAR_WEBHOOK_SECRET" | "POLAR_MODE" | "POLAR_PRODUCT_ID_STARTER" | "POLAR_PRODUCT_ID_GROWTH" | "POLAR_PRODUCT_ID_SCALE" | "ELEVENLABS_API_KEY" | "ELEVENLABS_AGENT_ID" | "ELEVENLABS_WEBHOOK_SECRET" | "SENTRY_AUTH_TOKEN" | "PLATFORM_ADMIN_EMAILS">> {}
 }
 
 // Begin runtime types

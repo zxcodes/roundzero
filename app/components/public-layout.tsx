@@ -158,7 +158,7 @@ export function PublicHeader() {
 export function PublicFooter() {
   return (
     <footer className="border-t border-border/40">
-      <div className="mx-auto flex w-full max-w-[90rem] flex-col items-start gap-3 px-6 py-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between lg:px-12 xl:px-16">
+      <div className="mx-auto flex w-full max-w-360 flex-col items-start gap-3 px-6 py-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between lg:px-12 xl:px-16">
         <span>&copy; {new Date().getFullYear()} RoundZero</span>
         <div className="flex gap-6">
           <Link to="/contact" className="hover:text-foreground transition-colors">
