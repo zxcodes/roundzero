@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockAppEnv = vi.hoisted(() => ({
   PLATFORM_ADMIN_EMAILS: "admin@example.com",
@@ -8,9 +8,18 @@ vi.mock("@/shared/env.app", () => ({
   appEnv: mockAppEnv,
 }));
 
-import { assertPlatformAdmin, isPlatformAdmin } from "@/shared/platform-admin";
-
 describe("platform admin authorization", () => {
+  let isPlatformAdmin: (email: string | null | undefined) => boolean;
+  let assertPlatformAdmin: (email: string | null | undefined) => void;
+
+  beforeEach(async () => {
+    vi.resetModules();
+    mockAppEnv.PLATFORM_ADMIN_EMAILS = "admin@example.com";
+    const mod = await import("@/shared/platform-admin");
+    isPlatformAdmin = mod.isPlatformAdmin;
+    assertPlatformAdmin = mod.assertPlatformAdmin;
+  });
+
   afterEach(() => {
     mockAppEnv.PLATFORM_ADMIN_EMAILS = "admin@example.com";
   });
