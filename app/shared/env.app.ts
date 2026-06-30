@@ -21,6 +21,9 @@ const envSchema = z.object({
   POLAR_PRODUCT_ID_STARTER: z.string(),
   POLAR_PRODUCT_ID_GROWTH: z.string(),
   POLAR_PRODUCT_ID_SCALE: z.string(),
+
+  // Comma-separated platform admin emails; empty disables /admin access.
+  PLATFORM_ADMIN_EMAILS: z.string().default(""),
 });
 
 export const appEnv = envSchema.parse(process.env);
