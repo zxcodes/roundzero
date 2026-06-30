@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table";
 import type { getPlatformAdminStats } from "@/features/admin/server/functions";
 import { formatDateTime } from "@/shared/date";
+import { type ApplicationStatus, applicationStatusLabels } from "@/shared/enums";
 
 type PlatformAdminStats = NonNullable<Awaited<ReturnType<typeof getPlatformAdminStats>>>;
 
@@ -40,13 +41,15 @@ function MetricsPanel({
   description,
   rows,
   totalLabel,
+  totalValue,
 }: {
   title: string;
   description?: string;
   rows: MetricRow[];
   totalLabel?: string;
+  totalValue?: number;
 }) {
-  const total = rows.reduce((sum, row) => sum + row.value, 0);
+  const total = totalValue ?? rows.reduce((sum, row) => sum + row.value, 0);
 
   return (
     <Card variant="bordered-inset" className="overflow-hidden">
@@ -84,33 +87,24 @@ function MetricsPanel({
   );
 }
 
-const applicationStatusOrder = [
-  "applied",
-  "preScreening",
-  "queuedForBatch",
-  "interviewInvited",
-  "interviewInProgress",
-  "evaluatedHeld",
-  "evaluated",
-  "shortlisted",
-  "rejected",
-  "withdrawn",
-  "evaluationFailed",
-] as const;
-
-const applicationStatusLabels: Record<(typeof applicationStatusOrder)[number], string> = {
-  applied: "Applied",
-  preScreening: "Pre-screening",
-  queuedForBatch: "Queued for batch",
-  interviewInvited: "Interview invited",
-  interviewInProgress: "Interview in progress",
-  evaluatedHeld: "Evaluated (held)",
-  evaluated: "Evaluated",
-  shortlisted: "Shortlisted",
-  rejected: "Rejected",
-  withdrawn: "Withdrawn",
-  evaluationFailed: "Evaluation failed",
+const pipelineApplicationFields: Record<
+  ApplicationStatus,
+  keyof PlatformAdminStats["pipeline"]["applications"]
+> = {
+  applied: "applied",
+  pre_screening: "preScreening",
+  queued_for_batch: "queuedForBatch",
+  interview_invited: "interviewInvited",
+  interview_in_progress: "interviewInProgress",
+  evaluated_held: "evaluatedHeld",
+  evaluated: "evaluated",
+  shortlisted: "shortlisted",
+  rejected: "rejected",
+  withdrawn: "withdrawn",
+  evaluation_failed: "evaluationFailed",
 };
+
+const pipelineStatusOrder = Object.keys(pipelineApplicationFields) as ApplicationStatus[];
 
 function PipelineTable({
   applications,
@@ -119,9 +113,9 @@ function PipelineTable({
   applications: PlatformAdminStats["pipeline"]["applications"];
   total: number;
 }) {
-  const rows = applicationStatusOrder.map((key) => ({
-    label: applicationStatusLabels[key],
-    value: applications[key],
+  const rows = pipelineStatusOrder.map((status) => ({
+    label: applicationStatusLabels[status],
+    value: applications[pipelineApplicationFields[status]],
   }));
 
   if (total === 0) {
@@ -249,6 +243,7 @@ export function PlatformAdminDashboard({ stats }: { stats: PlatformAdminStats })
               { label: "Scale", value: stats.companies.plans.scale },
             ]}
             totalLabel="All companies"
+            totalValue={stats.companies.total}
           />
         </div>
       </section>

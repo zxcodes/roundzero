@@ -6,7 +6,6 @@ import { AdminDashboardSkeleton } from "@/components/route-skeletons";
 import { Button } from "@/components/ui/button";
 import { PlatformAdminDashboard } from "@/features/admin/components/platform-admin-dashboard";
 import { getPlatformAdminStats } from "@/features/admin/server/functions";
-import { isPlatformAdmin } from "@/shared/platform-admin";
 import { noindexHead } from "@/shared/seo";
 
 export const Route = createFileRoute("/admin")({
@@ -15,12 +14,14 @@ export const Route = createFileRoute("/admin")({
     if (!context.user) {
       throw redirect({ to: "/" });
     }
-
-    if (!isPlatformAdmin(context.user.email)) {
+  },
+  loader: async () => {
+    try {
+      return await getPlatformAdminStats();
+    } catch {
       throw notFound();
     }
   },
-  loader: () => getPlatformAdminStats(),
   pendingComponent: AdminPendingPage,
   component: AdminPage,
 });

@@ -1,32 +1,59 @@
--- name: getPlatformAdminMetrics :one
+-- name: getPlatformAdminUserMetrics :one
 SELECT
-  (SELECT count(*)::int FROM users WHERE deleted_at IS NULL) AS active_users,
-  (SELECT count(*)::int FROM users WHERE deleted_at IS NULL AND role = 'company') AS company_users,
-  (SELECT count(*)::int FROM users WHERE deleted_at IS NULL AND role = 'candidate') AS candidate_users,
-  (SELECT count(*)::int FROM users WHERE deleted_at IS NULL AND role IS NULL) AS unassigned_users,
-  (SELECT count(*)::int FROM users WHERE deleted_at IS NOT NULL) AS deleted_users,
-  (SELECT count(*)::int FROM companies) AS companies,
-  (SELECT count(*)::int FROM companies WHERE onboarding_completed_at IS NOT NULL) AS onboarded_companies,
-  (SELECT count(*)::int FROM jobs WHERE archived_at IS NULL) AS active_jobs,
-  (SELECT count(*)::int FROM jobs WHERE archived_at IS NULL AND status = 'open') AS open_jobs,
-  (SELECT count(*)::int FROM jobs WHERE archived_at IS NULL AND status = 'draft') AS draft_jobs,
-  (SELECT count(*)::int FROM jobs WHERE archived_at IS NULL AND status = 'closed') AS closed_jobs,
-  (SELECT count(*)::int FROM jobs WHERE archived_at IS NOT NULL) AS archived_jobs,
-  (SELECT count(*)::int FROM applications) AS applications,
-  (SELECT count(*)::int FROM interviews) AS interviews,
-  (SELECT count(*)::int FROM interviews WHERE status = 'completed') AS interviews_completed,
-  (SELECT count(*)::int FROM interviews WHERE status IN ('pending', 'in_progress', 'awaiting_voice')) AS interviews_active,
-  (SELECT count(*)::int FROM interviews WHERE status = 'cancelled') AS interviews_cancelled,
-  (SELECT count(*)::int FROM interviews WHERE status = 'expired') AS interviews_expired,
-  (SELECT count(*)::int FROM reports) AS reports,
-  (SELECT count(*)::int FROM reports WHERE released_at IS NOT NULL) AS reports_released,
-  (SELECT count(*)::int FROM job_batches) AS batches,
-  (SELECT count(*)::int FROM pre_evaluations) AS pre_evaluations,
-  (SELECT count(*)::int FROM users WHERE deleted_at IS NULL AND created_at >= now() - interval '7 days') AS new_users_7d,
-  (SELECT count(*)::int FROM companies WHERE created_at >= now() - interval '7 days') AS new_companies_7d,
-  (SELECT count(*)::int FROM applications WHERE created_at >= now() - interval '7 days') AS new_applications_7d,
-  (SELECT count(*)::int FROM interviews WHERE created_at >= now() - interval '7 days') AS new_interviews_7d,
-  (SELECT count(*)::int FROM reports WHERE created_at >= now() - interval '7 days') AS new_reports_7d;
+  count(*) FILTER (WHERE deleted_at IS NULL)::int AS active_users,
+  count(*) FILTER (WHERE deleted_at IS NULL AND role = 'company')::int AS company_users,
+  count(*) FILTER (WHERE deleted_at IS NULL AND role = 'candidate')::int AS candidate_users,
+  count(*) FILTER (WHERE deleted_at IS NULL AND role IS NULL)::int AS unassigned_users,
+  count(*) FILTER (WHERE deleted_at IS NOT NULL)::int AS deleted_users,
+  count(*) FILTER (WHERE deleted_at IS NULL AND created_at >= now() - interval '7 days')::int AS new_users_7d
+FROM users;
+
+-- name: getPlatformAdminCompanyMetrics :one
+SELECT
+  count(*)::int AS companies,
+  count(*) FILTER (WHERE onboarding_completed_at IS NOT NULL)::int AS onboarded_companies,
+  count(*) FILTER (WHERE created_at >= now() - interval '7 days')::int AS new_companies_7d
+FROM companies;
+
+-- name: getPlatformAdminJobMetrics :one
+SELECT
+  count(*) FILTER (WHERE archived_at IS NULL)::int AS active_jobs,
+  count(*) FILTER (WHERE archived_at IS NULL AND status = 'open')::int AS open_jobs,
+  count(*) FILTER (WHERE archived_at IS NULL AND status = 'draft')::int AS draft_jobs,
+  count(*) FILTER (WHERE archived_at IS NULL AND status = 'closed')::int AS closed_jobs,
+  count(*) FILTER (WHERE archived_at IS NOT NULL)::int AS archived_jobs
+FROM jobs;
+
+-- name: getPlatformAdminApplicationMetrics :one
+SELECT
+  count(*)::int AS applications,
+  count(*) FILTER (WHERE created_at >= now() - interval '7 days')::int AS new_applications_7d
+FROM applications;
+
+-- name: getPlatformAdminInterviewMetrics :one
+SELECT
+  count(*)::int AS interviews,
+  count(*) FILTER (WHERE status = 'completed')::int AS interviews_completed,
+  count(*) FILTER (WHERE status IN ('pending', 'in_progress', 'awaiting_voice'))::int AS interviews_active,
+  count(*) FILTER (WHERE status = 'cancelled')::int AS interviews_cancelled,
+  count(*) FILTER (WHERE status = 'expired')::int AS interviews_expired,
+  count(*) FILTER (WHERE created_at >= now() - interval '7 days')::int AS new_interviews_7d
+FROM interviews;
+
+-- name: getPlatformAdminReportMetrics :one
+SELECT
+  count(*)::int AS reports,
+  count(*) FILTER (WHERE released_at IS NOT NULL)::int AS reports_released,
+  count(*) FILTER (WHERE created_at >= now() - interval '7 days')::int AS new_reports_7d
+FROM reports;
+
+-- name: getPlatformAdminBatchCount :one
+SELECT count(*)::int AS batches
+FROM job_batches;
+
+-- name: getPlatformAdminPreEvaluationCount :one
+SELECT count(*)::int AS pre_evaluations
+FROM pre_evaluations;
 
 -- name: getPlatformAdminCompanyPlans :one
 SELECT

@@ -4,7 +4,7 @@ import { getUserById } from "@/features/auth/queries/queries_sql";
 import { getActiveMembershipByUserId } from "@/features/companies/queries/membership-queries_sql";
 import { getCompanyById } from "@/features/companies/queries/queries_sql";
 import { getDb } from "@/shared/db";
-import { isPlatformAdmin } from "@/shared/platform-admin";
+import { assertPlatformAdmin } from "@/shared/platform-admin";
 import { type SessionData, sessionConfig } from "@/shared/session";
 
 /**
@@ -59,9 +59,7 @@ export const companyMiddleware = createMiddleware()
 export const platformAdminMiddleware = createMiddleware()
   .middleware([authMiddleware])
   .server(async ({ next, context }) => {
-    if (!isPlatformAdmin(context.user.email)) {
-      throw new Error("Not authorized");
-    }
+    assertPlatformAdmin(context.user.email);
 
     return next();
   });

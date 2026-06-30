@@ -1,8 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
+  getPlatformAdminApplicationMetrics,
   getPlatformAdminApplicationStatuses,
+  getPlatformAdminBatchCount,
+  getPlatformAdminCompanyMetrics,
   getPlatformAdminCompanyPlans,
-  getPlatformAdminMetrics,
+  getPlatformAdminInterviewMetrics,
+  getPlatformAdminJobMetrics,
+  getPlatformAdminPreEvaluationCount,
+  getPlatformAdminReportMetrics,
+  getPlatformAdminUserMetrics,
 } from "@/features/admin/queries/queries_sql";
 import { createApplication } from "@/features/applications/queries/queries_sql";
 import { createInterview } from "@/features/interviews/queries/queries_sql";
@@ -55,16 +62,30 @@ describe("platform admin metrics queries", () => {
       completedAt: null,
     });
 
-    const metrics = await getPlatformAdminMetrics(sql);
+    const userMetrics = await getPlatformAdminUserMetrics(sql);
+    const companyMetrics = await getPlatformAdminCompanyMetrics(sql);
+    const jobMetrics = await getPlatformAdminJobMetrics(sql);
+    const applicationMetrics = await getPlatformAdminApplicationMetrics(sql);
+    const interviewMetrics = await getPlatformAdminInterviewMetrics(sql);
+    const reportMetrics = await getPlatformAdminReportMetrics(sql);
+    const batchCount = await getPlatformAdminBatchCount(sql);
+    const preEvaluationCount = await getPlatformAdminPreEvaluationCount(sql);
     const plans = await getPlatformAdminCompanyPlans(sql);
     const statuses = await getPlatformAdminApplicationStatuses(sql);
 
-    expect(metrics).not.toBeNull();
-    expect(metrics!.activeUsers).toBeGreaterThanOrEqual(2);
-    expect(metrics!.companies).toBeGreaterThanOrEqual(1);
-    expect(metrics!.openJobs).toBeGreaterThanOrEqual(1);
-    expect(metrics!.applications).toBeGreaterThanOrEqual(1);
-    expect(metrics!.interviewsCompleted).toBeGreaterThanOrEqual(1);
+    expect(userMetrics).not.toBeNull();
+    expect(userMetrics!.activeUsers).toBeGreaterThanOrEqual(2);
+    expect(companyMetrics).not.toBeNull();
+    expect(companyMetrics!.companies).toBeGreaterThanOrEqual(1);
+    expect(jobMetrics).not.toBeNull();
+    expect(jobMetrics!.openJobs).toBeGreaterThanOrEqual(1);
+    expect(applicationMetrics).not.toBeNull();
+    expect(applicationMetrics!.applications).toBeGreaterThanOrEqual(1);
+    expect(interviewMetrics).not.toBeNull();
+    expect(interviewMetrics!.interviewsCompleted).toBeGreaterThanOrEqual(1);
+    expect(reportMetrics).not.toBeNull();
+    expect(batchCount).not.toBeNull();
+    expect(preEvaluationCount).not.toBeNull();
 
     expect(plans).not.toBeNull();
     expect(plans!.total).toBeGreaterThanOrEqual(1);
