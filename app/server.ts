@@ -46,6 +46,19 @@ const appHandler = {
     const assetResponse = await serveAsset(request, env);
     if (assetResponse) return assetResponse;
 
+    if (url.pathname === "/robots.txt") {
+      const siteUrl = env.APP_URL;
+      const body = `User-agent: *
+Disallow:
+
+Sitemap: ${siteUrl}/sitemap.xml
+`;
+
+      return new Response(body, {
+        headers: { "Content-Type": "text/plain; charset=utf-8" },
+      });
+    }
+
     if (url.pathname === "/sitemap.xml") {
       const sql = getDb();
       const [jobs, companies] = await Promise.all([
@@ -54,13 +67,20 @@ const appHandler = {
       ]);
 
       const siteUrl = env.APP_URL;
+      const indexableCompanies = companies.filter(
+        (company) =>
+          company.openJobCount > 0 ||
+          (typeof company.description === "string" && company.description.trim().length > 0),
+      );
       const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>${siteUrl}/</loc><priority>1.0</priority></url>
   <url><loc>${siteUrl}/jobs</loc><priority>0.9</priority></url>
   <url><loc>${siteUrl}/companies</loc><priority>0.9</priority></url>
+
 ${jobs.map((j) => `  <url><loc>${siteUrl}/jobs/${j.id}</loc><lastmod>${new Date(j.updatedAt).toISOString()}</lastmod><priority>0.8</priority></url>`).join("\n")}
-${companies.map((c) => `  <url><loc>${siteUrl}/companies/${c.slug}</loc><lastmod>${new Date(c.updatedAt).toISOString()}</lastmod><priority>0.7</priority></url>`).join("\n")}
+${indexableCompanies.map((c) => `  <url><loc>${siteUrl}/companies/${c.slug}</loc><lastmod>${new Date(c.updatedAt).toISOString()}</lastmod><priority>0.7</priority></url>`).join("\n")}
+  <url><loc>${siteUrl}/contact</loc><priority>0.4</priority></url>
   <url><loc>${siteUrl}/privacy</loc><priority>0.3</priority></url>
   <url><loc>${siteUrl}/tos</loc><priority>0.3</priority></url>
 </urlset>`;

@@ -31,59 +31,22 @@ import type { CompanySize, Industry, WorkplaceType } from "@/shared/enums";
 import { companySizeLabels, industryLabels, workplaceTypeLabels } from "@/shared/enums";
 import { formatSalary } from "@/shared/format";
 import { getPublicAssetUrl } from "@/shared/r2";
+import { buildPageHead, organizationJsonLd } from "@/shared/seo";
 
 type CompanyDetail = NonNullable<Awaited<ReturnType<typeof getCompanyBySlug>>>;
 type LoaderData = { company: CompanyDetail; jobs: Array<unknown> };
 
-function companyMeta(data: LoaderData | null) {
-  if (!data) return [];
-
+function companySeo(data: LoaderData) {
   const industry = data.company.industry ? ` — ${data.company.industry}` : "";
   const location = data.company.location ? `, ${data.company.location}` : "";
   const jobCount = data.jobs.length;
   const plural = jobCount === 1 ? "position" : "positions";
 
-  return [
-    {
-      name: "description",
-      content: `${data.company.name}${industry}${location}. ${jobCount} open ${plural} hiring on RoundZero.`,
-    },
-    {
-      property: "og:description",
-      content: `${data.company.name} is hiring on RoundZero. ${jobCount} open ${plural} available.`,
-    },
-    {
-      property: "og:url",
-      content: `${import.meta.env.VITE_APP_URL}/companies/${data.company.slug}`,
-    },
-  ];
-}
-
-function companyLinks(data: LoaderData | null) {
-  if (!data) return [];
-  return [
-    {
-      rel: "canonical" as const,
-      href: `${import.meta.env.VITE_APP_URL}/companies/${data.company.slug}`,
-    },
-  ];
-}
-
-function companyScripts(data: LoaderData | null) {
-  if (!data) return [];
-
-  const schema: Record<string, unknown> = {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    name: data.company.name,
+  return {
+    title: `${data.company.name} | RoundZero`,
+    description: `${data.company.name}${industry}${location}. ${jobCount} open ${plural} hiring on RoundZero.`,
+    ogDescription: `${data.company.name} is hiring on RoundZero. ${jobCount} open ${plural} available.`,
   };
-
-  if (data.company.description) schema.description = data.company.description;
-  if (data.company.website) schema.url = data.company.website;
-  if (data.company.industry) schema.industry = data.company.industry;
-  if (data.company.foundedYear) schema.foundingDate = String(data.company.foundedYear);
-
-  return [{ type: "application/ld+json" as const, children: JSON.stringify(schema) }];
 }
 
 export const Route = createFileRoute("/companies/$slug")({
@@ -97,14 +60,34 @@ export const Route = createFileRoute("/companies/$slug")({
   },
   head: ({ loaderData }) => {
     const data = loaderData ?? null;
-    return {
-      meta: [
-        { title: data ? `${data.company.name} | RoundZero` : "Company Not Found | RoundZero" },
-        ...companyMeta(data),
+    if (!data) {
+      return buildPageHead({
+        title: "Company Not Found | RoundZero",
+        description: "This company profile could not be found on RoundZero.",
+        path: "/companies",
+      });
+    }
+
+    const seo = companySeo(data);
+    const logoUrl = data.company.logoKey ? getPublicAssetUrl(data.company.logoKey) : null;
+
+    return buildPageHead({
+      title: seo.title,
+      description: seo.description,
+      path: `/companies/${data.company.slug}`,
+      ogDescription: seo.ogDescription,
+      scripts: [
+        organizationJsonLd({
+          name: data.company.name,
+          slug: data.company.slug,
+          description: data.company.description,
+          website: data.company.website,
+          industry: data.company.industry,
+          foundedYear: data.company.foundedYear,
+          logoUrl,
+        }),
       ],
-      links: companyLinks(data),
-      scripts: companyScripts(data),
-    };
+    });
   },
   pendingComponent: CompanyDetailSkeleton,
   component: CompanyProfilePage,

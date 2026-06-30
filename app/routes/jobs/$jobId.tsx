@@ -27,20 +27,8 @@ import { formatDate, formatDaysLeft } from "@/shared/date";
 import type { EmploymentType, ExperienceLevel, WorkplaceType } from "@/shared/enums";
 import { employmentTypeLabels, experienceLevelLabels, workplaceTypeLabels } from "@/shared/enums";
 import { formatSalaryFull } from "@/shared/format";
-import { PAGE_SEO } from "@/shared/seo";
+import { buildJobPageSeo, buildPageHead, jobPostingJsonLd, NOINDEX_ROBOTS } from "@/shared/seo";
 import { validateUuidParams } from "@/shared/validation";
-
-type JobDetail = NonNullable<Awaited<ReturnType<typeof getPublicJobById>>>;
-
-const employmentTypeToSchema = (type: string): string => {
-  const map: Record<string, string> = {
-    full_time: "FULL_TIME",
-    part_time: "PART_TIME",
-    contract: "CONTRACTOR",
-    internship: "INTERN",
-  };
-  return map[type] ?? "OTHER";
-};
 
 function companyInitials(name: string) {
   return name
@@ -49,69 +37,6 @@ function companyInitials(name: string) {
     .join("")
     .toUpperCase()
     .slice(0, 2);
-}
-
-function jobMeta(job: JobDetail | null) {
-  if (!job) return [];
-
-  return [
-    {
-      name: "description",
-      content: PAGE_SEO.apply.description,
-    },
-    { property: "og:description", content: PAGE_SEO.apply.description },
-    { property: "og:url", content: `${import.meta.env.VITE_APP_URL}/jobs/${job.id}` },
-    { name: "twitter:description", content: PAGE_SEO.apply.description },
-  ];
-}
-
-function jobLinks(job: JobDetail | null) {
-  if (!job) return [];
-  return [{ rel: "canonical" as const, href: `${import.meta.env.VITE_APP_URL}/jobs/${job.id}` }];
-}
-
-function jobScripts(job: JobDetail | null) {
-  if (!job) return [];
-
-  const schema: Record<string, unknown> = {
-    "@context": "https://schema.org",
-    "@type": "JobPosting",
-    title: job.title,
-    description: job.description,
-    hiringOrganization: { "@type": "Organization", name: job.companyName },
-    datePosted: job.createdAt,
-  };
-
-  if (job.employmentType) {
-    schema.employmentType = employmentTypeToSchema(job.employmentType);
-  }
-  if (job.location) {
-    schema.jobLocation = {
-      "@type": "Place",
-      address: { "@type": "PostalAddress", addressLocality: job.location },
-    };
-  }
-  if (job.salaryMin || job.salaryMax) {
-    schema.baseSalary = {
-      "@type": "MonetaryAmount",
-      currency: job.salaryCurrency,
-      value:
-        job.salaryMin && job.salaryMax
-          ? { "@type": "QuantitativeValue", minValue: job.salaryMin, maxValue: job.salaryMax }
-          : { "@type": "QuantitativeValue", value: job.salaryMin ?? job.salaryMax },
-    };
-  }
-  if (job.expiresAt) {
-    schema.validThrough = job.expiresAt;
-  }
-  if (Array.isArray(job.requirements) && job.requirements.length > 0) {
-    schema.skills = job.requirements;
-  }
-  if (job.workplaceType === "remote") {
-    schema.applicantLocationRequirements = "Any";
-  }
-
-  return [{ type: "application/ld+json" as const, children: JSON.stringify(schema) }];
 }
 
 export const Route = createFileRoute("/jobs/$jobId")({
@@ -136,16 +61,25 @@ export const Route = createFileRoute("/jobs/$jobId")({
   },
   head: ({ loaderData }) => {
     const job = loaderData?.job ?? null;
-    return {
-      meta: [
-        {
-          title: job ? PAGE_SEO.apply.title : "Job Not Found | RoundZero",
-        },
-        ...jobMeta(job),
-      ],
-      links: jobLinks(job),
-      scripts: jobScripts(job),
-    };
+    if (!job) {
+      return buildPageHead({
+        title: "Job Not Found | RoundZero",
+        description: "This job posting could not be found on RoundZero.",
+        path: "/jobs",
+        robots: NOINDEX_ROBOTS,
+      });
+    }
+
+    const { title, description } = buildJobPageSeo(job);
+    const isClosed = job.status !== "open";
+
+    return buildPageHead({
+      title,
+      description,
+      path: `/jobs/${job.id}`,
+      robots: isClosed ? NOINDEX_ROBOTS : undefined,
+      scripts: isClosed ? undefined : [jobPostingJsonLd(job)],
+    });
   },
   pendingComponent: JobDetailSkeleton,
   component: JobDetailPage,

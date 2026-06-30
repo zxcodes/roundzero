@@ -18,6 +18,7 @@ import {
   DEFAULT_META_DESCRIPTION,
   DEFAULT_META_TITLE,
   OG_DESCRIPTION,
+  SITE_ICON_LINKS,
   TWITTER_DESCRIPTION,
 } from "@/shared/seo";
 import appCss from "../styles.css?url";
@@ -97,6 +98,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         rel: "stylesheet",
         href: appCss,
       },
+      ...SITE_ICON_LINKS,
     ],
   }),
   beforeLoad: async ({ context }) => {
