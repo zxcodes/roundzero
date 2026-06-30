@@ -1085,6 +1085,63 @@ export function DashboardTeamSkeleton() {
 }
 
 /**
+ * Skeleton for /admin — platform admin metrics dashboard.
+ */
+export function AdminDashboardSkeleton() {
+  return (
+    <div className="space-y-10">
+      <section className="space-y-2">
+        <Skeleton className="h-6 w-36" />
+        <Skeleton className="h-4 w-[24rem] max-w-full" />
+      </section>
+
+      <section className="space-y-4">
+        <Skeleton className="h-5 w-28" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i} variant="dashboard-tile" className="p-5">
+              <Skeleton className="h-9 w-16" />
+              <Skeleton className="mt-3 h-4 w-28" />
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <Skeleton className="h-5 w-28" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Card key={i} variant="dashboard-tile" className="p-5">
+              <Skeleton className="h-9 w-12" />
+              <Skeleton className="mt-3 h-4 w-20" />
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <Skeleton className="h-5 w-20" />
+        <div className="grid gap-4 lg:grid-cols-2">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <Card key={i} variant="bordered-inset">
+              <CardContent className="space-y-3 p-5">
+                <Skeleton className="h-5 w-24" />
+                {Array.from({ length: 5 }).map((__, j) => (
+                  <div key={j} className="flex justify-between gap-3">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-4 w-10" />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+/**
  * Skeleton for /dashboard/applications — candidate applications list.
  */
 export function DashboardApplicationsSkeleton() {

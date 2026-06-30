@@ -1,0 +1,74 @@
+import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { createFileRoute, Link, notFound, redirect } from "@tanstack/react-router";
+import { Logo, PublicHeader } from "@/components/public-layout";
+import { AdminDashboardSkeleton } from "@/components/route-skeletons";
+import { Button } from "@/components/ui/button";
+import { PlatformAdminDashboard } from "@/features/admin/components/platform-admin-dashboard";
+import { getPlatformAdminStats } from "@/features/admin/server/functions";
+import { isPlatformAdmin } from "@/shared/platform-admin";
+import { noindexHead } from "@/shared/seo";
+
+export const Route = createFileRoute("/admin")({
+  head: () => noindexHead(),
+  beforeLoad: ({ context }) => {
+    if (!context.user) {
+      throw redirect({ to: "/" });
+    }
+
+    if (!isPlatformAdmin(context.user.email)) {
+      throw notFound();
+    }
+  },
+  loader: () => getPlatformAdminStats(),
+  pendingComponent: AdminPendingPage,
+  component: AdminPage,
+});
+
+function AdminShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="bg-background text-foreground min-h-svh">
+      <PublicHeader />
+
+      <main className="mx-auto w-full min-w-0 max-w-[1600px] px-4 py-6 md:px-8 md:py-10">
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <Link to="/" className="flex items-center gap-1">
+              <Logo />
+              <span className="font-heading text-[19px] leading-none font-medium tracking-[-0.01em]">
+                RoundZero
+              </span>
+            </Link>
+            <span className="text-sm text-muted-foreground">Internal</span>
+          </div>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/dashboard" className="no-underline hover:no-underline">
+              <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-3.5" />
+              Back to dashboard
+            </Link>
+          </Button>
+        </div>
+
+        {children}
+      </main>
+    </div>
+  );
+}
+
+function AdminPendingPage() {
+  return (
+    <AdminShell>
+      <AdminDashboardSkeleton />
+    </AdminShell>
+  );
+}
+
+function AdminPage() {
+  const stats = Route.useLoaderData();
+
+  return (
+    <AdminShell>
+      <PlatformAdminDashboard stats={stats} />
+    </AdminShell>
+  );
+}
