@@ -13,7 +13,6 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   InterviewThinkingBubble,
   InterviewTranscript,
-  interviewEmptyIconClass,
 } from "@/features/interviews/components/interview-transcript";
 import {
   CompletedInterviewBar,
@@ -320,7 +319,12 @@ export function EmptyInterviewComponent({
   return (
     <div className="flex h-full items-center justify-center">
       <div className="mx-auto flex max-w-md flex-col items-center gap-3 text-center text-muted-foreground">
-        <div className={cn(interviewEmptyIconClass, visual.bg)}>
+        <div
+          className={cn(
+            "flex size-12 items-center justify-center rounded-full border border-border/60 bg-muted/30",
+            visual.bg,
+          )}
+        >
           <HugeiconsIcon icon={visual.icon} strokeWidth={2} className={cn("size-5", visual.tone)} />
         </div>
         <p className="text-sm leading-relaxed">{title}.</p>

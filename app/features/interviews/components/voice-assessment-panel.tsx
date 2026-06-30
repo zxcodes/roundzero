@@ -19,7 +19,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   InterviewInterimBubble,
   InterviewThinkingBubble,
-  interviewEmptyIconClass,
   TranscriptBubble,
 } from "@/features/interviews/components/interview-transcript";
 import {
@@ -370,7 +369,7 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
         ) : (
           <div className="flex flex-1 items-center justify-center px-6 py-10">
             <div className="flex flex-col items-center gap-3 text-center text-muted-foreground">
-              <div className={interviewEmptyIconClass}>
+              <div className="flex size-12 items-center justify-center rounded-full border border-border/60 bg-muted/30">
                 <HugeiconsIcon icon={Mic01Icon} strokeWidth={2} className="size-5 text-primary" />
               </div>
               <p className="text-sm text-foreground">Transcript unavailable</p>
@@ -471,7 +470,7 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
                       ? chat.mode === "listening"
                         ? "Listening…"
                         : chat.mode === "thinking"
-                          ? "Thinking…"
+                          ? "Connected"
                           : chat.mode === "speaking"
                             ? "Zero is speaking…"
                             : "Connected"
@@ -671,7 +670,7 @@ function VoiceEmptyState({ finalising, error }: { finalising: boolean; error: st
   return (
     <div className="flex h-full items-center justify-center px-6 py-10">
       <div className="mx-auto flex max-w-md flex-col items-center gap-3 text-center text-muted-foreground">
-        <div className={interviewEmptyIconClass}>
+        <div className="flex size-12 items-center justify-center rounded-full border border-border/60 bg-muted/30">
           <HugeiconsIcon icon={Mic01Icon} strokeWidth={2} className="size-5 text-primary" />
         </div>
         <p className="text-sm leading-relaxed text-foreground">
