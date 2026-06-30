@@ -2,6 +2,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { clearSession, updateSession, useSession } from "@tanstack/react-start/server";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
+import {
+  assertAccountCanAuthenticate,
+  canRestoreSoftDeletedAccount,
+} from "@/features/accounts/grace";
 import { getCandidateProfileByUserId } from "@/features/candidates/queries/queries_sql";
 import {
   createCompanyMember,
@@ -26,6 +30,7 @@ import { isUniqueViolation } from "@/shared/postgres-errors";
 import { type SessionData, sessionConfig } from "@/shared/session";
 import { requiredTrimmedString } from "@/shared/validation";
 import {
+  getUserByGoogleId,
   getUserById,
   restoreUser,
   setUserRole as setUserRoleQuery,
@@ -53,6 +58,11 @@ export const loginWithGoogle = createServerFn({ method: "POST" })
     }
 
     const db = getDb();
+    const existing = await getUserByGoogleId(db, { googleId: googleUser.id });
+    if (existing) {
+      assertAccountCanAuthenticate(existing);
+    }
+
     const user = await upsertUserByGoogleId(db, {
       email: googleUser.email,
       name: googleUser.name,
@@ -61,12 +71,18 @@ export const loginWithGoogle = createServerFn({ method: "POST" })
     });
 
     if (!user) {
+      const tombstone = await getUserByGoogleId(db, { googleId: googleUser.id });
+      if (tombstone) {
+        assertAccountCanAuthenticate(tombstone);
+      }
       throw new Error("Failed to create or update user");
     }
 
-    // Restore soft-deleted user signing back in
+    assertAccountCanAuthenticate(user);
+
+    // Restore soft-deleted user signing back in within the grace window
     let restored = false;
-    if (user.deletedAt) {
+    if (canRestoreSoftDeletedAccount(user)) {
       await restoreUser(db, { id: user.id });
       restored = true;
     }
@@ -80,7 +96,7 @@ export const loginWithGoogle = createServerFn({ method: "POST" })
       });
 
       if (updated) {
-        activeUser = updated;
+        activeUser = { ...user, ...updated };
       }
     }
 
@@ -124,6 +140,11 @@ export const acceptInvite = createServerFn({ method: "POST" })
         throw new Error(`Sign in with the Google account for ${invitation.email}`);
       }
 
+      const existing = await getUserByGoogleId(db, { googleId: googleUser.id });
+      if (existing) {
+        assertAccountCanAuthenticate(existing);
+      }
+
       const user = await upsertUserByGoogleId(db, {
         email: googleUser.email,
         name: googleUser.name,
@@ -132,10 +153,16 @@ export const acceptInvite = createServerFn({ method: "POST" })
       });
 
       if (!user) {
+        const tombstone = await getUserByGoogleId(db, { googleId: googleUser.id });
+        if (tombstone) {
+          assertAccountCanAuthenticate(tombstone);
+        }
         throw new Error("Failed to create or update user");
       }
 
-      if (user.deletedAt) {
+      assertAccountCanAuthenticate(user);
+
+      if (canRestoreSoftDeletedAccount(user)) {
         await restoreUser(db, { id: user.id });
       }
 

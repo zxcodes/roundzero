@@ -3,6 +3,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { Link, useRouteContext } from "@tanstack/react-router";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
@@ -17,7 +18,7 @@ export function PublicHeader() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-md">
-      <div className="mx-auto flex h-14 w-full max-w-[90rem] items-center justify-between px-6 lg:px-12 xl:px-16">
+      <div className="mx-auto flex h-14 w-full max-w-360 items-center justify-between px-6 lg:px-12 xl:px-16">
         <div className="flex items-center">
           <Link to="/" className="flex items-center gap-1">
             <Logo />
@@ -27,32 +28,58 @@ export function PublicHeader() {
             </span>
           </Link>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center">
           {user?.role ? (
             <Button size="sm" asChild>
               <Link to="/dashboard">Dashboard</Link>
             </Button>
           ) : (
             <>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="hidden rounded-full text-muted-foreground sm:inline-flex"
-                asChild
-              >
-                <Link to="/company/login">Log in</Link>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="hidden rounded-full text-muted-foreground lg:inline-flex"
-                asChild
-              >
-                <Link to="/candidate/login">For candidates</Link>
-              </Button>
-              <Button size="sm" className="hidden rounded-full sm:inline-flex" asChild>
-                <Link to="/company/login">Post a job</Link>
-              </Button>
+              <div className="hidden items-center md:flex">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-full text-muted-foreground font-normal"
+                  asChild
+                >
+                  <Link to="/jobs">Jobs</Link>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-full text-muted-foreground font-normal"
+                  asChild
+                >
+                  <Link to="/" hash="pricing">
+                    Pricing
+                  </Link>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-full text-muted-foreground font-normal max-lg:hidden"
+                  asChild
+                >
+                  <Link to="/candidate/login">For candidates</Link>
+                </Button>
+              </div>
+              <Separator
+                orientation="vertical"
+                className="mx-2 hidden h-5 md:block data-vertical:self-center"
+              />
+              <div className="hidden items-center sm:flex">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-full text-muted-foreground font-normal"
+                  asChild
+                >
+                  <Link to="/company/login">Log in</Link>
+                </Button>
+                <Button size="sm" className="rounded-full font-normal" asChild>
+                  <Link to="/company/login">Post a job</Link>
+                </Button>
+              </div>
             </>
           )}
 
@@ -103,6 +130,20 @@ export function PublicHeader() {
                 >
                   <Link to="/jobs" activeProps={{ className: "text-foreground bg-accent" }}>
                     Jobs
+                  </Link>
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="justify-start text-muted-foreground"
+                  asChild
+                  onClick={onCloseMobileMenu}
+                >
+                  <Link
+                    to="/"
+                    hash="pricing"
+                    activeProps={{ className: "text-foreground bg-accent" }}
+                  >
+                    Pricing
                   </Link>
                 </Button>
               </div>

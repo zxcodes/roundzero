@@ -17,6 +17,7 @@ import {
 } from "@/features/auth/server/functions";
 import { getInvitationPreview } from "@/features/companies/server/team-functions";
 import { emailsMatch } from "@/shared/google-userinfo";
+import { noindexHead } from "@/shared/seo";
 
 export const Route = createFileRoute("/invite/$token")({
   loader: async ({ params }) => {
@@ -38,6 +39,7 @@ export const Route = createFileRoute("/invite/$token")({
           ? `Join ${loaderData.preview.companyName} | RoundZero`
           : "Invitation | RoundZero",
       },
+      ...noindexHead().meta,
     ],
   }),
   component: InviteAcceptPage,

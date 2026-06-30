@@ -31,6 +31,7 @@ type InterviewSidebarProps = {
 const getSessionLabel = (value: string) => {
   if (value === "in_progress") return "In progress";
   if (value === "pending") return "Ready";
+  if (value === "awaiting_voice") return "Voice pending";
   if (value === "completed") return "Completed";
   if (value === "cancelled") return "Cancelled";
   if (value === "expired") return "Expired";
@@ -40,6 +41,7 @@ const getSessionLabel = (value: string) => {
 const getSessionTone = (value: string) => {
   if (value === "in_progress") return "bg-primary/10 text-primary";
   if (value === "pending") return "border-warning/20 bg-warning/10 text-warning";
+  if (value === "awaiting_voice") return "border-warning/20 bg-warning/10 text-warning";
   if (value === "completed") return "border-success/20 bg-success/10 text-success";
   if (value === "cancelled") return "bg-muted text-muted-foreground";
   if (value === "expired") return "border-danger/20 bg-danger/10 text-danger";
@@ -65,7 +67,7 @@ export function InterviewSidebar({
       <SidebarContent>
         {interviews.length === 0 ? (
           <div className="flex h-full items-center justify-center px-3 py-4">
-            <Empty className="rounded-2xl border-0 bg-muted/30">
+            <Empty>
               <EmptyHeader>
                 <EmptyMedia variant="icon">
                   <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={2} className="size-5" />

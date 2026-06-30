@@ -1,18 +1,15 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { LegalLink, LegalPage, LegalSection, LegalStrong } from "@/components/legal-document";
+import { buildPageHead } from "@/shared/seo";
 
 export const Route = createFileRoute("/tos")({
-  head: () => ({
-    meta: [
-      { title: "Terms of Service | RoundZero" },
-      {
-        name: "description",
-        content:
-          "RoundZero Terms of Service. The terms governing your use of our AI-driven hiring platform and interview services.",
-      },
-    ],
-    links: [{ rel: "canonical", href: `${import.meta.env.VITE_APP_URL}/tos` }],
-  }),
+  head: () =>
+    buildPageHead({
+      title: "Terms of Service | RoundZero",
+      description:
+        "RoundZero Terms of Service. The terms governing your use of our AI-driven hiring platform and interview services.",
+      path: "/tos",
+    }),
   component: TermsPage,
 });
 
@@ -115,16 +112,46 @@ function TermsPage() {
         </ul>
       </LegalSection>
 
-      <LegalSection title="8. Termination">
+      <LegalSection title="8. Termination and Account Deletion">
         <p>
           We may terminate or suspend your account immediately, without prior notice or liability,
           for any reason, including if you breach these Terms. Upon termination, your right to use
           the Service will cease immediately.
         </p>
         <p>
-          You may terminate your account at any time by discontinuing use of the Service. If you
-          wish to delete your account and associated data, please contact us at{" "}
-          <LegalLink href="mailto:support@roundzero.dev">support@roundzero.dev</LegalLink>.
+          You may delete your account at any time from{" "}
+          <Link
+            to="/dashboard/settings"
+            className="text-foreground underline underline-offset-2 hover:text-foreground/80"
+          >
+            Settings
+          </Link>
+          . Deletion is a two-step process:
+        </p>
+        <ul className="list-disc space-y-2 pl-5">
+          <li>
+            <LegalStrong>Immediate deactivation:</LegalStrong> Your account is soft-deleted, you are
+            signed out, and you lose access to the Service.
+          </li>
+          <li>
+            <LegalStrong>30-day grace period:</LegalStrong> Sign back in with the same Google
+            account to restore your account and data automatically.
+          </li>
+          <li>
+            <LegalStrong>Permanent erasure:</LegalStrong> After 30 days, we irreversibly delete or
+            anonymize your personal data as described in our{" "}
+            <Link
+              to="/privacy"
+              className="text-foreground underline underline-offset-2 hover:text-foreground/80"
+            >
+              Privacy Policy
+            </Link>
+            .
+          </li>
+        </ul>
+        <p>
+          If you need help with account deletion or have questions about what data is removed,
+          contact <LegalLink href="mailto:support@roundzero.dev">support@roundzero.dev</LegalLink>.
         </p>
       </LegalSection>
 

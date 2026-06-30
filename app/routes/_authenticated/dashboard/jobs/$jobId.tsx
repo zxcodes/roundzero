@@ -3,6 +3,7 @@ import { DashboardJobOutletSkeleton } from "@/components/route-skeletons";
 import { getJobApplicants, hasApplied } from "@/features/applications/server/functions";
 import { getMyCandidateProfile } from "@/features/candidates/server/functions";
 import { getJob } from "@/features/jobs/server/functions";
+import { buildJobPageSeo } from "@/shared/seo";
 import { validateUuidParams } from "@/shared/validation";
 
 export const Route = createFileRoute("/_authenticated/dashboard/jobs/$jobId")({
@@ -29,6 +30,14 @@ export const Route = createFileRoute("/_authenticated/dashboard/jobs/$jobId")({
       getMyCandidateProfile(),
     ]);
     return { type: "candidate" as const, job: jobResult, alreadyApplied, candidateProfile };
+  },
+  head: ({ loaderData }) => {
+    const job = loaderData?.job ?? null;
+    if (!job) {
+      return { meta: [{ title: "Job | RoundZero" }] };
+    }
+
+    return { meta: [{ title: buildJobPageSeo(job).title }] };
   },
   pendingComponent: DashboardJobOutletSkeleton,
   component: JobLayout,

@@ -1,19 +1,13 @@
 ## TODO
 
 
+- add basic admin dashboard with stats (should be good enough for the start).
 - right now there's no feedback if there's something wrong with candidate's pdf. they can upload any pdf and the workflow will try to parse it. we need to detect if it's not a resume, and tell the user to add or something? think.
-- check why this happens with some reports: "Evaluation in progress Zero is generating the post-interview report. Check back in a few minutes."
-- harden pre-eval prompts. easily invites the user to an interview even the role is irrelevant.
-- check deleted account behaviour for companies, applications, etc. how the entire flow handles it. (add a workflow that cleans up deleted accounts)
-- pretty sure openrouter model fallbacks still don't work. verify in local dev.
 - add a really good resume and candidate test suite to pass thru the ai. (WIP in other branch)
 
 
 ## PROD THINGS
-- add good seo stuff (check skills), basic done. use tanstack dev tools for og stuff it's good. enable them first.
-- check about data retention & allowing people to delete accounts.
 - planetscale for db?
-- analytics? stretch? or just have a basic admin dashboard with stats (should be good enough for the start).
 - validate open router models using their api key in prod ci so we detect non existent models beforehand.
 - update brand identity, desc etc in google console. infact just create a new project.
 
@@ -22,6 +16,13 @@
 - add batch actions for companies (shortlist multiple candidates, and quick actions "shortlist top 3" reject "bottom ones")
 
 
+<!--- add good seo stuff (check skills), basic done. use tanstack dev tools for og stuff it's good. enable them first.-->
+<!--- pretty sure openrouter model fallbacks still don't work. verify in local dev.-->
+<!--- see if 12 hr window for interview is still too much?-->
+<!--- check about data retention & allowing people to delete accounts. (DONE — soft-delete + 30-day restore exists; day-30 erasure workflow fulfils UI promise.)-->
+<!--- check deleted account behaviour for companies, applications, etc. how the entire flow handles it. (DONE — AccountCleanupWorkflow sweeps soft- deleted users past 30-day grace via daily cron; eraseDeletedAccount anonymizes identity, scrubs PII, deletes R2/notifications/feedback, archives orphaned company jobs.)-->
+<!--- harden pre-eval prompts. easily invites the user to an interview even the role is irrelevant.-->
+<!--- see if interviews are still marked as completed even if only text interview has been given. (bc that's what the sidebar shows even before completing voice assessment.) unify those both. if voice isn't completed, it should still be pending.-->
 <!--- add landing page messaging what problem is roundzero solving. (save countless hours of human effort, ats is regex based and broken, etc etc.)-->
 <!--- see if we need candidate summary in interview table's metadata. audit other tables that are storing huge data like this and if we can derive on demand instead of storing in db.-->
 <!--- add onCopy, onPaste detectors and evaluate final score based on that.-->
@@ -76,7 +77,7 @@
 <!--- think more about the duration from first report to last report generation bc it will depend on the candidate. think if we need to add an expiry or something and pass it to the next candidate? (BATCH WORKFLOW TEST)-->
 <!--- check for leaking info in api calls (emails, ids etc) (DONE — audit. Real leak fixed: candidate-facing interview server fns (getMyInterview/getMyInterviews/startMyInterview/cancelMyInterview/completeMyInterview/getInterviewForApplication) were returning the raw interviews.metadata JSONB, which holds the AI runtime contextState — system-prompt inputs, the company's screening questions, the candidate's pre-eval authenticity flags + internal slop/consistency scores. A candidate could read these from the network response and iterate to defeat pre-eval guards. Now sanitized via toCandidateInterview() which strips metadata + agentId and surfaces only expiresAt. Route loaders updated to read interview.expiresAt instead of parsing metadata. Candidate-contactable email + candidate_id to the owning company are by design (mailto on applicant detail). Lower-sev note: getApplicationsByJob still selects a.metadata (eval retry counters + headline/skills/links) returned to the owning company, but it's never rendered and only reaches the job owner — left as-is.)-->
 <!--- check all resend templates for all notifications exist, if they link to proper paths etc. (I see no_lean in report, also rn individual reports are being sent? see if batch report template exists and also need to test it manually.) (DONE — audit: report-ready email was rendering raw enum key (e.g. "lean_no") because it accepted recommendation: string and printed it directly; now typed as Recommendation and mapped through recommendationLabels so it reads "Lean no"/"Strong yes". Individual report_ready emails only fire for non-batched legacy/manual flows (batchId === null) — batched runs go through BatchDigestEmailTemplate. All other notification types route through deliverNotificationEmail → NotificationEmailTemplate via getNotificationPresentation in notifications/config.ts, every enum-typed notification has a presentation entry with a valid in-app path + CTA.)-->
-<!--- check what should happen if an interview is expired while being in progress. (DONE — client now arms a setTimeout against expiresAt and invalidates the route at the deadline so the UI flips to expired without a refresh; server-side expireInterviewIfDue helper also fires post-evaluation for in_progress interviews so the partial transcript becomes a report (or insufficient_signal) instead of being dropped. Helper reused by the chat API + getMyInterview/Messages.)-->
+<!--- check what should happen if an interview is expired while being in progress. (DONE — client arms a setTimeout against expiresAt and invalidates at the deadline; server-side expireInterviewIfDue marks expired without starting post-evaluation — reports require completed voice.)-->
 <!--- detect failures in the whole pipeline and give candidates or companies an option to retry. make as failure proof as possible. specifically in model responses. (DONE — "Retry evaluation" button on the applicant detail page for evaluation_failed apps (manual = uncapped). Backed by retryApplicationEvaluation server fn + shared retryEvaluation service. Same path the cron uses.)-->
 <!--- add a cron to detect failed workflows (evaluation_failed) in the entire ai layer? and then it should update their statuses accordingly. (DONE — new EvalRetryWorkflow runs every 30 min, sweeps applications stranded in evaluation_failed past the 15 min cool-down, capped at 3 auto-retries via metadata.evalRetryCount. Re-triggers PRE_EVALUATION or restarts POST_EVALUATION via get/status/restart.)-->
 <!--- if pre-eval fails for some reason, the manual review doesn't let me move the application to interview invited or other states. it only allows me to reject/withdraw. (DONE — added interview_invited to evaluation_failed transitions in enums.ts; existing workflow already handles the side-effects.)-->

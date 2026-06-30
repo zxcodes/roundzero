@@ -13,9 +13,9 @@ Implemented in the repo today:
 - candidate profiles with resume upload
 - one-click applications with profile snapshots
 - in-app notifications with Resend-backed email delivery
-- Cloudflare Workflows for pre-evaluation, post-evaluation, and batch orchestration
-- Cloudflare Agents SDK interview runtime
-- Voice assessment agent for real-time communication evaluation
+- Cloudflare Workflows for pre-evaluation, post-evaluation, batch orchestration, pool-check, eval-retry, and account-cleanup
+- TanStack AI + OpenRouter text interviews (SSE via `/api/interview-chat`)
+- ElevenLabs Conversational AI for voice assessment
 - AI pre-evaluation, interviews, reports, and ranked batch release flow
 - billing plan config, Polar checkout/webhooks, and plan-gated entitlements
 - multi-tenant company auth (membership, email invitations, team management)
@@ -45,7 +45,7 @@ Important current constraints:
 | Validation | Zod |
 | Storage | Cloudflare R2 |
 | Email | Resend |
-| LLM Provider | OpenRouter via AI SDK v6 |
+| LLM Provider | OpenRouter via Vercel AI SDK v7 + TanStack AI |
 | Tooling | Biome, Vitest, Knip |
 
 ---
@@ -59,7 +59,7 @@ The app and AI layer run together inside one Cloudflare Worker:
 - `app/server.ts` is the Worker entrypoint
 - TanStack Start handles the main app request flow
 - Workflow bindings run pre-evaluation, post-evaluation, and batch-orchestration jobs
-- the Worker scheduled handler periodically checks queued applicant pools and launches batches
+- the Worker scheduled handler runs pool-check (6h), eval-retry (3h), and account-cleanup (daily 04:00 UTC)
 - R2 stores resumes and other assets
 
 Why this shape:
@@ -73,7 +73,7 @@ Why this shape:
 - serve the main TanStack Start app
 - handle the Polar billing webhook
 - serve local/public asset reads under `/api/assets/:key`
-- run scheduled batch pool checks
+- run scheduled workflows: `PoolCheckWorkflow` (6h), `EvalRetryWorkflow` (3h), `AccountCleanupWorkflow` (daily)
 
 ---
 
@@ -138,6 +138,7 @@ Current top-level feature modules:
 
 ```text
 app/features/
+├── accounts/       # deletion grace, erasure helpers
 ├── applications/
 ├── auth/
 ├── batches/
@@ -155,8 +156,9 @@ app/features/
 
 High-level responsibilities:
 
+- `accounts`: erasure grace config, `eraseDeletedAccount`, cleanup queries
 - `applications`: apply flow, applicant lists, status transitions, workflow triggers
-- `auth`: Google login, session bootstrap, user data
+- `auth`: Google login, session bootstrap, soft-delete/restore, `deleteAccount`
 - `batches`: pooling, launch orchestration, release, batch digest email
 - `billing`: subscription plan config (`PLAN_CONFIGS`), billing page, Polar checkout + webhook integration
 - `candidates`: profile CRUD, work history, resume upload contract
@@ -177,6 +179,9 @@ High-level responsibilities:
 - `app/workflows/post-evaluation/steps.ts`
 - `app/workflows/post-evaluation/workflow.ts`
 - `app/workflows/batch-orchestration/workflow.ts`
+- `app/workflows/pool-check/workflow.ts`
+- `app/workflows/eval-retry/workflow.ts`
+- `app/workflows/account-cleanup/workflow.ts`
 
 ---
 
@@ -218,7 +223,7 @@ Source of truth:
 
 - Google-authenticated user identity
 - role: `company` or `candidate`
-- soft delete support via `deleted_at`
+- soft delete via `deleted_at`; hard erasure via `anonymized_at` after 30-day grace
 
 #### `companies`
 
@@ -319,7 +324,7 @@ Architecturally:
 - links applications to interview sessions
 - stores:
   - `type` (currently `full` in active flows)
-  - `status` (`pending`, `in_progress`, `completed`, `expired`, `cancelled`)
+  - `status` (`pending`, `in_progress`, `awaiting_voice`, `completed`, `expired`, `cancelled`)
   - `batch_id`
   - `metadata`
   - `invited_at`, `started_at`, `completed_at`, `expired_at`, `cancelled_at`
@@ -625,43 +630,44 @@ Triggered from the application flow. Steps:
 
 ### Text Interview
 
-The interview uses TanStack server functions with `@tanstack/ai` + `@tanstack/ai-openrouter`:
+Hybrid TanStack AI + OpenRouter:
 
-- `startMyInterview` prepares the interview context (job, candidate, pre-eval data) and generates the first greeting via OpenRouter
-- `getMyInterview` returns interview status + metadata
-- `getMyInterviewMessages` returns the message transcript
-- The client sends messages via server functions, and the server calls OpenRouter with the full message history to generate the next assistant response
-- The system prompt (`buildInterviewSystemPrompt`) includes the job description, candidate summary, pre-evaluation context, and screening coverage state
-- Model selection uses the `"interview"` chain from `app/shared/openrouter.ts` with fallbacks for reliability
-- Message history is persisted in the `interview_messages` table
-- Post-evaluation workflow is triggered server-side when the interview is marked complete
-
-The chat uses request-response server function calls with OpenRouter's non-streaming `chat()` API.
+- `startMyInterview` — server function; generates first greeting (`chat()`, non-streaming)
+- `POST /api/interview-chat` — SSE streaming route for subsequent turns (`toServerSentEventsResponse`)
+- Server-side tool loop: `check_resume_gap`, `record_screening_coverage`, `end_interview` (`maxIterations(5)`)
+- `getMyInterview` / `getMyInterviewMessages` — status + transcript reads
+- System prompt via `buildInterviewSystemPrompt()` (job, candidate, pre-eval, screening coverage)
+- Models from `getModelChain("interview")` with OpenRouter `models` fallbacks in `modelOptions`
+- Text submit (`completeMyInterview` or `end_interview` tool) → `awaiting_voice`; post-eval waits for voice
 
 ### Voice Assessment
 
 The voice assessment uses ElevenLabs' Conversational AI:
 
 - ElevenLabs handles all voice processing (STT, LLM, TTS) as a managed service
-- `getMyVoiceToken` generates a signed URL via the ElevenLabs REST API (`@elevenlabs/elevenlabs-js`) for client-side session initiation
+- `getMyVoiceToken` is available only while `interviews.status === 'awaiting_voice'`
+- `getMyVoiceToken` generates a signed URL via `fetch` to the ElevenLabs REST API for client-side session initiation
 - Candidate/job context is injected via ElevenLabs `dynamicVariables` (`candidate_name`, `job_title`, `company_name`, `candidate_summary`)
 - The client connects via `@elevenlabs/client` `Conversation.startSession()` using the signed URL
-- `completeMyVoiceAssessment` fetches the ElevenLabs transcript, runs structured analysis via OpenRouter, and persists to `communication_assessments`
-- Post-evaluation workflow is signalled when the voice assessment completes
+- `finalizeVoiceAssessmentFromTranscript` (ElevenLabs webhook or browser fallback) persists transcript with `analysis: null`, moves interview to `completed`, calls `startPostEvaluation`
+- Voice dimension analysis (`analyzeVoiceTranscript`) runs inside post-evaluation `load_voice_assessment`, not on the hot path
+- Communication score blend is evidence-weighted in `applyVoiceAssessmentToReport()` (not fixed 60/40)
 
 The agent's system prompt and voice personality are configured in the ElevenLabs dashboard.
 
 ### Post-Evaluation Workflow
 
-Triggered after interview completion. Steps:
+Started by `startPostEvaluation` only when **both** `interviews.status === 'completed'` and `communication_assessments.status === 'completed'`. Steps:
 
-1. idempotency check
-2. read interview context and transcript
-3. generate structured report with LLM
-4. fall back deterministically if report generation fails
-5. persist report
+1. idempotency check (existing report short-circuit)
+2. read interview context and transcript; fail if voice assessment is missing or incomplete
+3. load voice analysis (LLM over stored transcript)
+4. generate structured report with LLM
+5. refine and persist report
 6. move application to `evaluated_held`
 7. notify company and/or batch orchestration flow
+
+Interview expiry does not start post-evaluation (partial text-only sessions have no report).
 
 ### Batch Orchestration Workflow
 
@@ -669,9 +675,26 @@ Batch release is a first-class workflow:
 
 1. candidates accumulate in a per-job pool (`queued_for_batch`)
 2. pool checks run on pre-eval completion and on the Worker scheduled handler
-3. when launch criteria are met, the app creates a batch and invites candidates
-4. completed reports are held until the batch releases
-5. release notifies the company and can trigger backfill logic for the next batch
+3. when launch criteria are met, the app creates a batch and invites candidates (each invite gets a 12-hour completion window from `BATCH_CONFIG.INTERVIEW_EXPIRY_MS`; partial batch after 12h with `MIN_BATCH_SIZE`, or single candidate after 24h)
+4. completed reports are held at `evaluated_held` until batch release (`released_at` set on release)
+5. release sends `batch_ready` digest and can trigger backfill via `maybeLaunchNextBatch`
+
+### Scheduled handlers (`app/server.ts`)
+
+| Cron | Workflow | Purpose |
+| --- | --- | --- |
+| `0 */6 * * *` | `PoolCheckWorkflow` | Re-check batch pools for all open jobs |
+| `0 */3 * * *` | `EvalRetryWorkflow` | Retry stuck/failed evaluations |
+| `0 4 * * *` | `AccountCleanupWorkflow` | Erase soft-deleted users past 30-day grace |
+
+### Account deletion architecture
+
+1. `deleteAccount` → `softDeleteUser` (`users.deleted_at`)
+2. Login during grace → `restoreUser` (Google OAuth flow in `auth/server/functions.ts`)
+3. Daily `AccountCleanupWorkflow` → `listAccountsPendingErasure` → `eraseDeletedAccount` per user
+4. Erasure: R2 delete, PII scrub, report text redaction (scores preserved), `anonymizeUser`, sole-owner job archive
+
+Config: `app/features/accounts/config.ts` (`ACCOUNT_ERASURE_GRACE_DAYS = 30`, `ACCOUNT_CLEANUP_SWEEP_LIMIT = 50`).
 
 ### Current AI-layer outputs
 
