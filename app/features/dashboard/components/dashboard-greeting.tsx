@@ -1,5 +1,4 @@
 import { useHydrated } from "@tanstack/react-router";
-import { Skeleton } from "@/components/ui/skeleton";
 
 export function getTimeGreeting(): string {
   const hour = new Date().getHours();
@@ -15,13 +14,14 @@ export function getTimeGreeting(): string {
 export function DashboardGreeting({ firstName }: { firstName: string }) {
   const hydrated = useHydrated();
 
-  if (!hydrated) {
-    return <Skeleton className="h-7 w-56" />;
-  }
-
+  // The time-of-day prefix depends on the viewer's local clock, so it can't be
+  // rendered on the server without risking a hydration mismatch. Render the name
+  // immediately (stable across server/client) and prepend the greeting once
+  // hydrated — no skeleton, no flash.
   return (
     <h1 className="text-xl font-semibold tracking-tight">
-      {getTimeGreeting()} {firstName},
+      {hydrated ? `${getTimeGreeting()} ` : ""}
+      {firstName},
     </h1>
   );
 }

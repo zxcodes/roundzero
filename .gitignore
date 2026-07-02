@@ -18,3 +18,4 @@ todos.json
 user.*.json
 docs/superpowers
 tmp/
+app/routeTree.gen.ts
