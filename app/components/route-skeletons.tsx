@@ -751,23 +751,9 @@ function JobPostingTabSkeleton() {
 }
 
 /**
- * Skeleton for /dashboard — dashboard index page.
- * Matches company and candidate views.
+ * Per-section skeletons for /dashboard — the dashboard index page streams each
+ * section independently via DeferredSection, so each has its own skeleton.
  */
-export function DashboardIndexContentSkeleton({
-  firstName,
-  isCompany,
-}: {
-  firstName: string;
-  isCompany: boolean;
-}) {
-  return isCompany ? (
-    <DashboardCompanyIndexSkeleton firstName={firstName} />
-  ) : (
-    <DashboardCandidateIndexSkeleton firstName={firstName} />
-  );
-}
-
 export function DashboardCompanyHeroSkeleton({ firstName }: { firstName: string }) {
   return (
     <section className="space-y-6">
@@ -942,27 +928,6 @@ export function DashboardCandidateRecentSkeleton() {
         <Skeleton className="h-8 w-36" />
       </div>
     </section>
-  );
-}
-
-function DashboardCompanyIndexSkeleton({ firstName }: { firstName: string }) {
-  return (
-    <div className="space-y-8">
-      <DashboardCompanyHeroSkeleton firstName={firstName} />
-      <DashboardCompanyAwaitingReviewSkeleton />
-      <DashboardCompanyRolesSkeleton />
-      <DashboardCompanyRecentSkeleton />
-    </div>
-  );
-}
-
-function DashboardCandidateIndexSkeleton({ firstName }: { firstName: string }) {
-  return (
-    <div className="space-y-8">
-      <DashboardCandidateHeroSkeleton firstName={firstName} />
-      <DashboardCandidateActionQueueSkeleton />
-      <DashboardCandidateRecentSkeleton />
-    </div>
   );
 }
 
