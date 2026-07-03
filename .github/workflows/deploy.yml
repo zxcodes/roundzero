@@ -81,6 +81,7 @@ jobs:
       - name: Create secrets file
         run: |
           cat > .env.ci <<EOF
+          NODE_ENV=${{ secrets.NODE_ENV }}
           DATABASE_URL=${{ secrets.DATABASE_URL }}
           SESSION_SECRET=${{ secrets.SESSION_SECRET }}
           APP_URL=${{ secrets.APP_URL }}
@@ -89,6 +90,7 @@ jobs:
           OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }}
           AI_GATEWAY_TOKEN=${{ secrets.AI_GATEWAY_TOKEN }}
           POLAR_ACCESS_TOKEN=${{ secrets.POLAR_ACCESS_TOKEN }}
+          POLAR_MODE=${{ secrets.POLAR_MODE }}
           POLAR_WEBHOOK_SECRET=${{ secrets.POLAR_WEBHOOK_SECRET }}
           POLAR_PRODUCT_ID_STARTER=${{ secrets.POLAR_PRODUCT_ID_STARTER }}
           POLAR_PRODUCT_ID_GROWTH=${{ secrets.POLAR_PRODUCT_ID_GROWTH }}
