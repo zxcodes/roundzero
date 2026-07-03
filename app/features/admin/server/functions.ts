@@ -1,4 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
+import { zodValidator } from "@tanstack/zod-adapter";
+import { z } from "zod";
 import {
   getPlatformAdminApplicationMetrics,
   getPlatformAdminApplicationStatuses,
@@ -11,8 +13,18 @@ import {
   getPlatformAdminReportMetrics,
   getPlatformAdminUserMetrics,
 } from "@/features/admin/queries/queries_sql";
+import {
+  countFeedbackForPlatformAdmin,
+  listFeedbackForPlatformAdmin,
+} from "@/features/feedback/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { platformAdminMiddleware } from "@/shared/middleware";
+
+export const ADMIN_FEEDBACK_PAGE_SIZE = 25;
+
+const adminFeedbackPageSchema = z.object({
+  page: z.number().int().min(1).default(1),
+});
 
 export const getPlatformAdminStats = createServerFn({ method: "GET" })
   .middleware([platformAdminMiddleware])
@@ -57,62 +69,128 @@ export const getPlatformAdminStats = createServerFn({ method: "GET" })
       throw new Error("Failed to load platform admin metrics");
     }
 
+    return buildPlatformAdminStatsPayload({
+      userMetrics,
+      companyMetrics,
+      jobMetrics,
+      applicationMetrics,
+      interviewMetrics,
+      reportMetrics,
+      batchCount,
+      preEvaluationCount,
+      companyPlans,
+      applicationStatuses,
+    });
+  });
+
+export const getPlatformAdminFeedback = createServerFn({ method: "GET" })
+  .middleware([platformAdminMiddleware])
+  .validator(zodValidator(adminFeedbackPageSchema))
+  .handler(async ({ data }) => {
+    const db = getDb();
+    const offset = (data.page - 1) * ADMIN_FEEDBACK_PAGE_SIZE;
+    const [totalRow, items] = await Promise.all([
+      countFeedbackForPlatformAdmin(db),
+      listFeedbackForPlatformAdmin(db, {
+        offset,
+        limit: ADMIN_FEEDBACK_PAGE_SIZE,
+      }),
+    ]);
+
+    if (!totalRow) {
+      throw new Error("Failed to load feedback count");
+    }
+
+    const totalPages = Math.max(1, Math.ceil(totalRow.total / ADMIN_FEEDBACK_PAGE_SIZE));
+
     return {
-      overview: {
-        activeUsers: userMetrics.activeUsers,
-        companies: companyMetrics.companies,
-        openJobs: jobMetrics.openJobs,
-        applications: applicationMetrics.applications,
-        interviewsCompleted: interviewMetrics.interviewsCompleted,
-        reportsReleased: reportMetrics.reportsReleased,
-      },
-      recent: {
-        newUsers: userMetrics.newUsers_7d,
-        newCompanies: companyMetrics.newCompanies_7d,
-        newApplications: applicationMetrics.newApplications_7d,
-        newInterviews: interviewMetrics.newInterviews_7d,
-        newReports: reportMetrics.newReports_7d,
-      },
-      users: {
-        active: userMetrics.activeUsers,
-        company: userMetrics.companyUsers,
-        candidate: userMetrics.candidateUsers,
-        unassigned: userMetrics.unassignedUsers,
-        deleted: userMetrics.deletedUsers,
-      },
-      companies: {
-        total: companyMetrics.companies,
-        onboarded: companyMetrics.onboardedCompanies,
-        plans: {
-          free: companyPlans.planFree,
-          starter: companyPlans.planStarter,
-          growth: companyPlans.planGrowth,
-          scale: companyPlans.planScale,
-        },
-      },
-      jobs: {
-        active: jobMetrics.activeJobs,
-        open: jobMetrics.openJobs,
-        draft: jobMetrics.draftJobs,
-        closed: jobMetrics.closedJobs,
-        archived: jobMetrics.archivedJobs,
-      },
-      interviews: {
-        total: interviewMetrics.interviews,
-        completed: interviewMetrics.interviewsCompleted,
-        active: interviewMetrics.interviewsActive,
-        cancelled: interviewMetrics.interviewsCancelled,
-        expired: interviewMetrics.interviewsExpired,
-      },
-      reports: {
-        total: reportMetrics.reports,
-        released: reportMetrics.reportsReleased,
-      },
-      pipeline: {
-        batches: batchCount.batches,
-        preEvaluations: preEvaluationCount.preEvaluations,
-        applications: applicationStatuses,
-      },
-      generatedAt: new Date().toISOString(),
+      total: totalRow.total,
+      items,
+      page: data.page,
+      pageSize: ADMIN_FEEDBACK_PAGE_SIZE,
+      totalPages,
     };
   });
+
+function buildPlatformAdminStatsPayload({
+  userMetrics,
+  companyMetrics,
+  jobMetrics,
+  applicationMetrics,
+  interviewMetrics,
+  reportMetrics,
+  batchCount,
+  preEvaluationCount,
+  companyPlans,
+  applicationStatuses,
+}: {
+  userMetrics: NonNullable<Awaited<ReturnType<typeof getPlatformAdminUserMetrics>>>;
+  companyMetrics: NonNullable<Awaited<ReturnType<typeof getPlatformAdminCompanyMetrics>>>;
+  jobMetrics: NonNullable<Awaited<ReturnType<typeof getPlatformAdminJobMetrics>>>;
+  applicationMetrics: NonNullable<Awaited<ReturnType<typeof getPlatformAdminApplicationMetrics>>>;
+  interviewMetrics: NonNullable<Awaited<ReturnType<typeof getPlatformAdminInterviewMetrics>>>;
+  reportMetrics: NonNullable<Awaited<ReturnType<typeof getPlatformAdminReportMetrics>>>;
+  batchCount: NonNullable<Awaited<ReturnType<typeof getPlatformAdminBatchCount>>>;
+  preEvaluationCount: NonNullable<Awaited<ReturnType<typeof getPlatformAdminPreEvaluationCount>>>;
+  companyPlans: NonNullable<Awaited<ReturnType<typeof getPlatformAdminCompanyPlans>>>;
+  applicationStatuses: NonNullable<Awaited<ReturnType<typeof getPlatformAdminApplicationStatuses>>>;
+}) {
+  return {
+    overview: {
+      activeUsers: userMetrics.activeUsers,
+      companies: companyMetrics.companies,
+      openJobs: jobMetrics.openJobs,
+      applications: applicationMetrics.applications,
+      interviewsCompleted: interviewMetrics.interviewsCompleted,
+      reportsReleased: reportMetrics.reportsReleased,
+    },
+    recent: {
+      newUsers: userMetrics.newUsers_7d,
+      newCompanies: companyMetrics.newCompanies_7d,
+      newApplications: applicationMetrics.newApplications_7d,
+      newInterviews: interviewMetrics.newInterviews_7d,
+      newReports: reportMetrics.newReports_7d,
+    },
+    users: {
+      active: userMetrics.activeUsers,
+      company: userMetrics.companyUsers,
+      candidate: userMetrics.candidateUsers,
+      unassigned: userMetrics.unassignedUsers,
+      deleted: userMetrics.deletedUsers,
+    },
+    companies: {
+      total: companyMetrics.companies,
+      onboarded: companyMetrics.onboardedCompanies,
+      plans: {
+        free: companyPlans.planFree,
+        starter: companyPlans.planStarter,
+        growth: companyPlans.planGrowth,
+        scale: companyPlans.planScale,
+      },
+    },
+    jobs: {
+      active: jobMetrics.activeJobs,
+      open: jobMetrics.openJobs,
+      draft: jobMetrics.draftJobs,
+      closed: jobMetrics.closedJobs,
+      archived: jobMetrics.archivedJobs,
+    },
+    interviews: {
+      total: interviewMetrics.interviews,
+      completed: interviewMetrics.interviewsCompleted,
+      active: interviewMetrics.interviewsActive,
+      cancelled: interviewMetrics.interviewsCancelled,
+      expired: interviewMetrics.interviewsExpired,
+    },
+    reports: {
+      total: reportMetrics.reports,
+      released: reportMetrics.reportsReleased,
+    },
+    pipeline: {
+      batches: batchCount.batches,
+      preEvaluations: preEvaluationCount.preEvaluations,
+      applications: applicationStatuses,
+    },
+    generatedAt: new Date().toISOString(),
+  };
+}

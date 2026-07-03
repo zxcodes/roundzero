@@ -943,6 +943,50 @@ export function DashboardTeamSkeleton() {
 }
 
 /**
+ * Skeleton for /admin/feedback — platform admin feedback inbox.
+ */
+export function AdminFeedbackSkeleton() {
+  return (
+    <div className="space-y-6">
+      <section className="space-y-2">
+        <Skeleton className="h-6 w-28" />
+        <Skeleton className="h-4 w-[28rem] max-w-full" />
+      </section>
+      <Skeleton className="h-3.5 w-32" />
+      <div className="space-y-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i} variant="bordered-inset" className="overflow-hidden">
+            <div className="border-b border-border/60 px-5 py-4">
+              <div className="flex gap-2">
+                <Skeleton className="h-5 w-24 rounded-full" />
+                <Skeleton className="h-5 w-20 rounded-full" />
+              </div>
+            </div>
+            <CardContent className="space-y-4 p-5">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Skeleton className="h-3 w-12" />
+                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-4 w-52" />
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-3 w-16" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className="h-16 w-full" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
  * Skeleton for /admin — platform admin metrics dashboard.
  */
 export function AdminDashboardSkeleton() {

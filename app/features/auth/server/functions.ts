@@ -26,6 +26,7 @@ import { asSqlTransaction } from "@/shared/db-transaction";
 import { userRoleSchema } from "@/shared/enums";
 import { emailsMatch, fetchGoogleUserInfo } from "@/shared/google-userinfo";
 import { authMiddleware } from "@/shared/middleware";
+import { isPlatformAdmin } from "@/shared/platform-admin";
 import { isUniqueViolation } from "@/shared/postgres-errors";
 import { type SessionData, sessionConfig } from "@/shared/session";
 import { requiredTrimmedString } from "@/shared/validation";
@@ -288,7 +289,14 @@ export const getCurrentUser = createServerFn({ method: "GET" }).handler(async ()
 
   const db = getDb();
   const user = await getUserById(db, { id: session.data.userId });
-  return user;
+  if (!user) {
+    return null;
+  }
+
+  return {
+    ...user,
+    isPlatformAdmin: isPlatformAdmin(user.email),
+  };
 });
 
 export const deleteAccount = createServerFn({ method: "POST" })

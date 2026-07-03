@@ -169,7 +169,7 @@ export function PlatformAdminDashboard({ stats }: { stats: PlatformAdminStats })
       <section className="space-y-2">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="space-y-1">
-            <h1 className="text-xl font-semibold tracking-tight">Platform admin</h1>
+            <h1 className="text-xl font-semibold tracking-tight">Metrics</h1>
             <p className="max-w-2xl text-sm text-muted-foreground">
               Internal snapshot of users, companies, jobs, and hiring activity.
             </p>

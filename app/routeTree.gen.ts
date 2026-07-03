@@ -17,6 +17,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as JobsIndexRouteImport } from './routes/jobs/index'
 import { Route as CompaniesIndexRouteImport } from './routes/companies/index'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as JobsJobIdRouteImport } from './routes/jobs/$jobId'
 import { Route as InviteTokenRouteImport } from './routes/invite/$token'
 import { Route as CompanyLoginRouteImport } from './routes/company/login'
@@ -24,6 +25,7 @@ import { Route as CompaniesSlugRouteImport } from './routes/companies/$slug'
 import { Route as CandidateLoginRouteImport } from './routes/candidate/login'
 import { Route as ApiVoiceWebhookRouteImport } from './routes/api/voice-webhook'
 import { Route as ApiInterviewChatRouteImport } from './routes/api/interview-chat'
+import { Route as AdminFeedbackRouteImport } from './routes/admin/feedback'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedInterviewRouteImport } from './routes/_authenticated/interview'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -92,6 +94,11 @@ const CompaniesIndexRoute = CompaniesIndexRouteImport.update({
   path: '/companies/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
 const JobsJobIdRoute = JobsJobIdRouteImport.update({
   id: '/jobs/$jobId',
   path: '/jobs/$jobId',
@@ -126,6 +133,11 @@ const ApiInterviewChatRoute = ApiInterviewChatRouteImport.update({
   id: '/api/interview-chat',
   path: '/api/interview-chat',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminFeedbackRoute = AdminFeedbackRouteImport.update({
+  id: '/feedback',
+  path: '/feedback',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
   id: '/onboarding',
@@ -295,13 +307,14 @@ const AuthenticatedDashboardApplicantReportsApplicationIdFullRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/contact': typeof ContactRoute
   '/privacy': typeof PrivacyRoute
   '/tos': typeof TosRoute
   '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/interview': typeof AuthenticatedInterviewRouteWithChildren
   '/onboarding': typeof AuthenticatedOnboardingRouteWithChildren
+  '/admin/feedback': typeof AdminFeedbackRoute
   '/api/interview-chat': typeof ApiInterviewChatRoute
   '/api/voice-webhook': typeof ApiVoiceWebhookRoute
   '/candidate/login': typeof CandidateLoginRoute
@@ -309,6 +322,7 @@ export interface FileRoutesByFullPath {
   '/company/login': typeof CompanyLoginRoute
   '/invite/$token': typeof InviteTokenRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
+  '/admin/': typeof AdminIndexRoute
   '/companies/': typeof CompaniesIndexRoute
   '/jobs/': typeof JobsIndexRoute
   '/dashboard/applications': typeof AuthenticatedDashboardApplicationsRoute
@@ -339,11 +353,11 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
   '/contact': typeof ContactRoute
   '/privacy': typeof PrivacyRoute
   '/tos': typeof TosRoute
   '/onboarding': typeof AuthenticatedOnboardingRouteWithChildren
+  '/admin/feedback': typeof AdminFeedbackRoute
   '/api/interview-chat': typeof ApiInterviewChatRoute
   '/api/voice-webhook': typeof ApiVoiceWebhookRoute
   '/candidate/login': typeof CandidateLoginRoute
@@ -351,6 +365,7 @@ export interface FileRoutesByTo {
   '/company/login': typeof CompanyLoginRoute
   '/invite/$token': typeof InviteTokenRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
+  '/admin': typeof AdminIndexRoute
   '/companies': typeof CompaniesIndexRoute
   '/jobs': typeof JobsIndexRoute
   '/dashboard/applications': typeof AuthenticatedDashboardApplicationsRoute
@@ -381,13 +396,14 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/contact': typeof ContactRoute
   '/privacy': typeof PrivacyRoute
   '/tos': typeof TosRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/_authenticated/interview': typeof AuthenticatedInterviewRouteWithChildren
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRouteWithChildren
+  '/admin/feedback': typeof AdminFeedbackRoute
   '/api/interview-chat': typeof ApiInterviewChatRoute
   '/api/voice-webhook': typeof ApiVoiceWebhookRoute
   '/candidate/login': typeof CandidateLoginRoute
@@ -395,6 +411,7 @@ export interface FileRoutesById {
   '/company/login': typeof CompanyLoginRoute
   '/invite/$token': typeof InviteTokenRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
+  '/admin/': typeof AdminIndexRoute
   '/companies/': typeof CompaniesIndexRoute
   '/jobs/': typeof JobsIndexRoute
   '/_authenticated/dashboard/applications': typeof AuthenticatedDashboardApplicationsRoute
@@ -434,6 +451,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/interview'
     | '/onboarding'
+    | '/admin/feedback'
     | '/api/interview-chat'
     | '/api/voice-webhook'
     | '/candidate/login'
@@ -441,6 +459,7 @@ export interface FileRouteTypes {
     | '/company/login'
     | '/invite/$token'
     | '/jobs/$jobId'
+    | '/admin/'
     | '/companies/'
     | '/jobs/'
     | '/dashboard/applications'
@@ -471,11 +490,11 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/admin'
     | '/contact'
     | '/privacy'
     | '/tos'
     | '/onboarding'
+    | '/admin/feedback'
     | '/api/interview-chat'
     | '/api/voice-webhook'
     | '/candidate/login'
@@ -483,6 +502,7 @@ export interface FileRouteTypes {
     | '/company/login'
     | '/invite/$token'
     | '/jobs/$jobId'
+    | '/admin'
     | '/companies'
     | '/jobs'
     | '/dashboard/applications'
@@ -519,6 +539,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/interview'
     | '/_authenticated/onboarding'
+    | '/admin/feedback'
     | '/api/interview-chat'
     | '/api/voice-webhook'
     | '/candidate/login'
@@ -526,6 +547,7 @@ export interface FileRouteTypes {
     | '/company/login'
     | '/invite/$token'
     | '/jobs/$jobId'
+    | '/admin/'
     | '/companies/'
     | '/jobs/'
     | '/_authenticated/dashboard/applications'
@@ -558,7 +580,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
-  AdminRoute: typeof AdminRoute
+  AdminRoute: typeof AdminRouteWithChildren
   ContactRoute: typeof ContactRoute
   PrivacyRoute: typeof PrivacyRoute
   TosRoute: typeof TosRoute
@@ -631,6 +653,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CompaniesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/jobs/$jobId': {
       id: '/jobs/$jobId'
       path: '/jobs/$jobId'
@@ -679,6 +708,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/interview-chat'
       preLoaderRoute: typeof ApiInterviewChatRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/feedback': {
+      id: '/admin/feedback'
+      path: '/feedback'
+      fullPath: '/admin/feedback'
+      preLoaderRoute: typeof AdminFeedbackRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/_authenticated/onboarding': {
       id: '/_authenticated/onboarding'
@@ -1021,10 +1057,22 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
+interface AdminRouteChildren {
+  AdminFeedbackRoute: typeof AdminFeedbackRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminFeedbackRoute: AdminFeedbackRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
-  AdminRoute: AdminRoute,
+  AdminRoute: AdminRouteWithChildren,
   ContactRoute: ContactRoute,
   PrivacyRoute: PrivacyRoute,
   TosRoute: TosRoute,
