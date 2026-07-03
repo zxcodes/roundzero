@@ -19,6 +19,7 @@ on:
       - "LICENSE"
       - "AGENTS.md"
       - "TODO.md"
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -65,7 +66,7 @@ jobs:
 
   deploy:
     needs: test
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     environment: staging
     steps:
