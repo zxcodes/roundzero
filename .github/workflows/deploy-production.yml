@@ -1,31 +1,23 @@
-name: Test and Deploy Staging
+name: Deploy Production
 
 on:
-  push:
-    branches: [staging]
-    paths-ignore:
-      - "**.md"
-      - ".gitignore"
-      - ".env.example"
-      - "LICENSE"
-      - "AGENTS.md"
-      - "TODO.md"
   pull_request:
-    branches: [staging]
-    paths-ignore:
-      - "**.md"
-      - ".gitignore"
-      - ".env.example"
-      - "LICENSE"
-      - "AGENTS.md"
-      - "TODO.md"
+    types: [opened, synchronize, reopened, closed]
+    branches: [main]
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: deploy-production-${{ github.event.pull_request.head.ref }}
   cancel-in-progress: true
 
 jobs:
   test:
+    if: |
+      (
+        startsWith(github.event.pull_request.head.ref, 'hotfix/') ||
+        startsWith(github.event.pull_request.head.ref, 'release/')
+      ) && (
+        github.event.action != 'closed' || github.event.pull_request.merged == true
+      )
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -43,6 +35,8 @@ jobs:
           --health-retries 5
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -65,11 +59,17 @@ jobs:
 
   deploy:
     needs: test
-    if: github.event_name == 'push'
+    if: |
+      github.event.pull_request.merged == true && (
+        startsWith(github.event.pull_request.head.ref, 'hotfix/') ||
+        startsWith(github.event.pull_request.head.ref, 'release/')
+      )
     runs-on: ubuntu-latest
-    environment: staging
+    environment: production
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: main
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -104,7 +104,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Build and deploy
-        run: bun run build && bunx wrangler deploy --env staging --secrets-file .env.ci
+        run: bun run build && bunx wrangler deploy --env production --secrets-file .env.ci
         env:
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
           VITE_APP_URL: ${{ secrets.VITE_APP_URL }}
