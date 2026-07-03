@@ -23,8 +23,12 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { z } from "zod";
 import { CompanyInboxPageShell } from "@/components/company-inbox-page-shell";
+import { DeferredSection } from "@/components/deferred-section";
 import { PaginationNav } from "@/components/pagination-nav";
-import { DashboardJobsListSkeleton } from "@/components/route-skeletons";
+import {
+  CandidateJobsResultsSkeleton,
+  CompanyJobsTableSkeleton,
+} from "@/components/route-skeletons";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -116,27 +120,27 @@ export const Route = createFileRoute("/_authenticated/dashboard/jobs/")({
   validateSearch: dashboardJobsSearchSchema,
   search: { middlewares: [stripSearchParams(searchDefaults)] },
   loaderDeps: ({ search }) => search,
-  loader: async ({ context, deps }) => {
+  loader: ({ context, deps }) => {
     if (context.isCompany) {
-      const jobs =
-        deps.tab === "archived" ? await getMyArchivedJobs() : await getMyJobsWithPipeline();
+      const jobs = deps.tab === "archived" ? getMyArchivedJobs() : getMyJobsWithPipeline();
       const counts = context.jobCounts ?? { openCount: 0, draftCount: 0, totalCount: 0 };
       return { type: "company" as const, jobs, counts };
     }
-    const paginatedJobs = await getOpenJobsPaginated({
-      data: {
-        search: deps.search,
-        type: deps.type,
-        level: deps.level,
-        workplace: deps.workplace,
-        salaryMin: deps.salaryMin,
-        salaryCurrency: deps.salaryCurrency,
-        page: deps.page,
-      },
-    });
-    return { type: "candidate" as const, paginatedJobs };
+    return {
+      type: "candidate" as const,
+      paginatedJobs: getOpenJobsPaginated({
+        data: {
+          search: deps.search,
+          type: deps.type,
+          level: deps.level,
+          workplace: deps.workplace,
+          salaryMin: deps.salaryMin,
+          salaryCurrency: deps.salaryCurrency,
+          page: deps.page,
+        },
+      }),
+    };
   },
-  pendingComponent: DashboardJobsListSkeleton,
   component: JobsListPage,
 });
 
@@ -160,22 +164,18 @@ function JobsListPage() {
     return <CompanyJobsList jobs={data.jobs} counts={data.counts} />;
   }
 
-  return <CandidateJobsList data={data.paginatedJobs} />;
+  return <CandidateJobsList paginatedJobs={data.paginatedJobs} />;
 }
 
 type PipelineJob = Awaited<ReturnType<typeof getMyJobsWithPipeline>>[number];
 
 type JobCounts = Awaited<ReturnType<typeof getMyJobCounts>>;
 
-function CompanyJobsList({
-  jobs,
-  counts,
-}: {
-  jobs:
-    | Awaited<ReturnType<typeof getMyJobsWithPipeline>>
-    | Awaited<ReturnType<typeof getMyArchivedJobs>>;
-  counts: JobCounts;
-}) {
+type CompanyJobs =
+  | Awaited<ReturnType<typeof getMyJobsWithPipeline>>
+  | Awaited<ReturnType<typeof getMyArchivedJobs>>;
+
+function CompanyJobsList({ jobs, counts }: { jobs: Promise<CompanyJobs>; counts: JobCounts }) {
   const router = useRouter();
   const { tab } = Route.useSearch();
   const navigate = useNavigate({ from: "/dashboard/jobs/" });
@@ -247,19 +247,33 @@ function CompanyJobsList({
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="active">
-          <ActiveJobsTable
-            jobs={tab === "active" ? (jobs as PipelineJob[]) : []}
-            onPublish={onPublish}
-            isPending={publishJobMutation.isPending}
-            atLimit={atLimit}
-            jobLimit={jobLimit}
-          />
-        </TabsContent>
+        <DeferredSection
+          promise={jobs}
+          resetKey={tab}
+          fallback={<CompanyJobsTableSkeleton />}
+          sectionLabel="jobs"
+        >
+          {(resolvedJobs) => (
+            <>
+              <TabsContent value="active">
+                <ActiveJobsTable
+                  jobs={tab === "active" ? (resolvedJobs as PipelineJob[]) : []}
+                  onPublish={onPublish}
+                  isPending={publishJobMutation.isPending}
+                  atLimit={atLimit}
+                  jobLimit={jobLimit}
+                />
+              </TabsContent>
 
-        <TabsContent value="archived">
-          <ArchivedJobsTable jobs={tab === "archived" ? jobs : []} isLoading={false} />
-        </TabsContent>
+              <TabsContent value="archived">
+                <ArchivedJobsTable
+                  jobs={tab === "archived" ? resolvedJobs : []}
+                  isLoading={false}
+                />
+              </TabsContent>
+            </>
+          )}
+        </DeferredSection>
       </Tabs>
     </CompanyInboxPageShell>
   );
@@ -541,7 +555,9 @@ function ArchivedJobsTable({
   );
 }
 
-function CandidateJobsList({ data }: { data: Awaited<ReturnType<typeof getOpenJobsPaginated>> }) {
+type PaginatedJobs = Awaited<ReturnType<typeof getOpenJobsPaginated>>;
+
+function CandidateJobsList({ paginatedJobs }: { paginatedJobs: Promise<PaginatedJobs> }) {
   const {
     search,
     type: typeFilter,
@@ -553,13 +569,14 @@ function CandidateJobsList({ data }: { data: Awaited<ReturnType<typeof getOpenJo
   } = Route.useSearch();
   const navigate = useNavigate({ from: "/dashboard/jobs/" });
 
-  const hasFilters =
+  const hasFilters = Boolean(
     search ||
-    typeFilter !== "all" ||
-    levelFilter !== "all" ||
-    workplaceFilter !== "all" ||
-    salaryCurrency !== "all" ||
-    salaryMin > 0;
+      typeFilter !== "all" ||
+      levelFilter !== "all" ||
+      workplaceFilter !== "all" ||
+      salaryCurrency !== "all" ||
+      salaryMin > 0,
+  );
   const brackets =
     SALARY_BRACKETS[(salaryCurrency === "all" ? "USD" : salaryCurrency) as SalaryCurrency] ??
     SALARY_BRACKETS.USD;
@@ -589,6 +606,8 @@ function CandidateJobsList({ data }: { data: Awaited<ReturnType<typeof getOpenJo
   const onSalaryChange = (value: string) => {
     void navigate({ search: (prev) => ({ ...prev, salaryMin: Number(value), page: 1 }) });
   };
+
+  const resultsResetKey = `${typeFilter}-${levelFilter}-${workplaceFilter}-${salaryMin}-${salaryCurrency}-${page}`;
 
   return (
     <div className="space-y-6">
@@ -683,45 +702,63 @@ function CandidateJobsList({ data }: { data: Awaited<ReturnType<typeof getOpenJo
           </ScrollArea>
         </div>
 
-        {/* Results count */}
-        <p className="text-xs font-medium text-muted-foreground">
-          {data.total} {data.total === 1 ? "position" : "positions"}
-          {hasFilters ? " matching your filters" : ""}
-        </p>
-
-        {data.items.length === 0 ? (
-          <Empty className="rounded-2xl border-0 bg-muted/30">
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} />
-              </EmptyMedia>
-              <EmptyTitle>{hasFilters ? "No jobs found" : "No open jobs"}</EmptyTitle>
-              <EmptyDescription>
-                {hasFilters
-                  ? "Try adjusting your search or filters."
-                  : "There are no open positions right now. Check back later."}
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
-        ) : (
-          <div className="divide-y divide-border/50 overflow-hidden rounded-3xl border border-border/60">
-            {data.items.map((job) => (
-              <CandidateJobRow key={job.id} job={job} />
-            ))}
-          </div>
-        )}
-
-        <PaginationNav currentPage={page} totalPages={data.totalPages} />
+        <DeferredSection
+          promise={paginatedJobs}
+          resetKey={resultsResetKey}
+          fallback={<CandidateJobsResultsSkeleton />}
+          sectionLabel="job listings"
+        >
+          {(data) => <CandidateJobsResults data={data} page={page} hasFilters={hasFilters} />}
+        </DeferredSection>
       </section>
     </div>
   );
 }
 
-function CandidateJobRow({
-  job,
+function CandidateJobsResults({
+  data,
+  page,
+  hasFilters,
 }: {
-  job: Awaited<ReturnType<typeof getOpenJobsPaginated>>["items"][number];
+  data: PaginatedJobs;
+  page: number;
+  hasFilters: boolean;
 }) {
+  return (
+    <>
+      <p className="text-xs font-medium text-muted-foreground">
+        {data.total} {data.total === 1 ? "position" : "positions"}
+        {hasFilters ? " matching your filters" : ""}
+      </p>
+
+      {data.items.length === 0 ? (
+        <Empty className="rounded-2xl border-0 bg-muted/30">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} />
+            </EmptyMedia>
+            <EmptyTitle>{hasFilters ? "No jobs found" : "No open jobs"}</EmptyTitle>
+            <EmptyDescription>
+              {hasFilters
+                ? "Try adjusting your search or filters."
+                : "There are no open positions right now. Check back later."}
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      ) : (
+        <div className="divide-y divide-border/50 overflow-hidden rounded-3xl border border-border/60">
+          {data.items.map((job) => (
+            <CandidateJobRow key={job.id} job={job} />
+          ))}
+        </div>
+      )}
+
+      <PaginationNav currentPage={page} totalPages={data.totalPages} />
+    </>
+  );
+}
+
+function CandidateJobRow({ job }: { job: PaginatedJobs["items"][number] }) {
   const salary = formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency);
 
   return (
