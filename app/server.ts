@@ -4,6 +4,7 @@ import handler from "@tanstack/react-start/server-entry";
 import { handlePolarWebhook } from "./features/billing/webhook";
 import { getDb } from "./shared/db";
 import { isDev } from "./shared/env.app";
+import { sentryOptions } from "./shared/sentry";
 import { disposeRpcResource } from "./shared/workflow-rpc";
 
 export { AccountCleanupWorkflow } from "./workflows/account-cleanup/workflow";
@@ -132,11 +133,7 @@ ${indexableCompanies.map((c) => `  <url><loc>${siteUrl}/companies/${c.slug}</loc
 export default isDev
   ? appHandler
   : Sentry.withSentry(
-      () => ({
-        dsn: "https://93220926b2dbb8136dfb5e8d25f7a3fd@o4511527312687104.ingest.us.sentry.io/4511527318388736",
-        sendDefaultPii: true,
-        tracesSampleRate: 1.0,
-      }),
+      () => sentryOptions,
       // @ts-expect-error - handler is not typed as a Cloudflare handler
       wrapFetchWithSentry(appHandler),
     );
