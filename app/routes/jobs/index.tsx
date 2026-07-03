@@ -32,6 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getOpenJobsPaginated } from "@/features/jobs/server/functions";
+import { useDebouncedSearchInput } from "@/hooks/use-debounced-search-input";
 import type {
   EmploymentType,
   ExperienceLevel,
@@ -140,9 +141,9 @@ function JobsPage() {
     SALARY_BRACKETS[(salaryCurrency === "all" ? "USD" : salaryCurrency) as SalaryCurrency] ??
     SALARY_BRACKETS.USD;
 
-  const onSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    void navigate({ search: (prev) => ({ ...prev, search: e.target.value, page: 1 }) });
-  };
+  const [searchInput, onSearchInputChange] = useDebouncedSearchInput(search, (next) => {
+    void navigate({ search: (prev) => ({ ...prev, search: next, page: 1 }) });
+  });
 
   const onTypeChange = (value: string) => {
     void navigate({ search: (prev) => ({ ...prev, type: value, page: 1 }) });
@@ -199,7 +200,7 @@ function JobsPage() {
               />
               <Input
                 placeholder="Search by title, company, or location..."
-                value={search}
+                value={searchInput}
                 onChange={onSearchInputChange}
                 className="pl-10"
               />
