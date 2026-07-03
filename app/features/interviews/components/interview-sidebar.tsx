@@ -9,6 +9,7 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -48,12 +49,108 @@ const getSessionTone = (value: string) => {
   return "bg-muted text-muted-foreground";
 };
 
+type InterviewSidebarItem = InterviewSidebarProps["interviews"][number];
+
+function InterviewSidebarItemContent({
+  item,
+  isActive,
+}: {
+  item: InterviewSidebarItem;
+  isActive: boolean;
+}) {
+  const deadline = formatDateTime(item.expiresAt);
+  const timeLeft = formatTimeLeft(item.expiresAt);
+
+  return (
+    <>
+      <p className="w-full truncate text-sm font-medium">{item.jobTitle}</p>
+      <p
+        className={cn(
+          "w-full truncate text-xs",
+          isActive ? "text-sidebar-accent-foreground/80" : "text-muted-foreground",
+        )}
+      >
+        {item.companyName}
+      </p>
+      <Badge
+        className={cn(
+          "mt-1 text-[11px]",
+          getSessionTone(item.status),
+          isActive ? "ring-1 ring-sidebar-accent-foreground/25" : "",
+        )}
+      >
+        {getSessionLabel(item.status)}
+      </Badge>
+      {(item.status === "pending" || item.status === "in_progress") && deadline && timeLeft ? (
+        <p
+          className={cn(
+            "mt-1 text-[11px]",
+            isActive ? "text-sidebar-accent-foreground/80" : "text-muted-foreground",
+          )}
+        >
+          {timeLeft} · {deadline}
+        </p>
+      ) : null}
+    </>
+  );
+}
+
+function InterviewSidebarMenu({
+  items,
+  activeInterviewId,
+  disabled = false,
+}: {
+  items: InterviewSidebarItem[];
+  activeInterviewId?: string;
+  disabled?: boolean;
+}) {
+  return (
+    <SidebarMenu className="gap-2">
+      {items.map((item) => {
+        const isActive = item.id === activeInterviewId;
+
+        return (
+          <SidebarMenuItem key={item.id}>
+            {disabled ? (
+              <SidebarMenuButton
+                disabled
+                isActive={isActive}
+                className={cn("h-auto flex-col items-start gap-1.5 rounded-xl px-3 py-3.5")}
+              >
+                <InterviewSidebarItemContent item={item} isActive={isActive} />
+              </SidebarMenuButton>
+            ) : (
+              <SidebarMenuButton
+                asChild
+                isActive={isActive}
+                className={cn("h-auto flex-col items-start gap-1.5 rounded-xl px-3 py-3.5")}
+              >
+                <Link
+                  to="/interview/$interviewId"
+                  params={{ interviewId: item.id }}
+                  className="flex w-full flex-col items-start"
+                >
+                  <InterviewSidebarItemContent item={item} isActive={isActive} />
+                </Link>
+              </SidebarMenuButton>
+            )}
+          </SidebarMenuItem>
+        );
+      })}
+    </SidebarMenu>
+  );
+}
+
 export function InterviewSidebar({
   activeInterviewId,
   interviews,
   className,
   ...props
 }: InterviewSidebarProps) {
+  const activeInterviews = interviews.filter((item) => item.status !== "expired");
+  const expiredInterviews = interviews.filter((item) => item.status === "expired");
+  const showActiveLabel = activeInterviews.length > 0 && expiredInterviews.length > 0;
+
   return (
     <Sidebar className={className} variant="floating" {...props}>
       <SidebarHeader>
@@ -61,7 +158,6 @@ export function InterviewSidebar({
           <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={2} className="size-4 text-primary" />
           <p className="text-sm font-semibold tracking-wide">Interviews</p>
         </div>
-        <p className="px-1 text-xs text-muted-foreground">All sessions</p>
       </SidebarHeader>
 
       <SidebarContent>
@@ -77,68 +173,32 @@ export function InterviewSidebar({
             </Empty>
           </div>
         ) : (
-          <SidebarGroup>
-            <SidebarGroupContent>
-              <SidebarMenu className="gap-2">
-                {interviews.map((item) => {
-                  const isActive = item.id === activeInterviewId;
-                  const deadline = formatDateTime(item.expiresAt);
-                  const timeLeft = formatTimeLeft(item.expiresAt);
+          <>
+            {activeInterviews.length > 0 ? (
+              <SidebarGroup>
+                {showActiveLabel ? <SidebarGroupLabel>Active</SidebarGroupLabel> : null}
+                <SidebarGroupContent>
+                  <InterviewSidebarMenu
+                    items={activeInterviews}
+                    activeInterviewId={activeInterviewId}
+                  />
+                </SidebarGroupContent>
+              </SidebarGroup>
+            ) : null}
 
-                  return (
-                    <SidebarMenuItem key={item.id}>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={isActive}
-                        className={cn("h-auto flex-col items-start gap-1.5 rounded-xl px-3 py-3.5")}
-                      >
-                        <Link
-                          to="/interview/$interviewId"
-                          params={{ interviewId: item.id }}
-                          className="flex w-full flex-col items-start"
-                        >
-                          <p className="w-full truncate text-sm font-medium">{item.jobTitle}</p>
-                          <p
-                            className={cn(
-                              "w-full truncate text-xs",
-                              isActive
-                                ? "text-sidebar-accent-foreground/80"
-                                : "text-muted-foreground",
-                            )}
-                          >
-                            {item.companyName}
-                          </p>
-                          <Badge
-                            className={cn(
-                              "mt-1 text-[11px]",
-                              getSessionTone(item.status),
-                              isActive ? "ring-1 ring-sidebar-accent-foreground/25" : "",
-                            )}
-                          >
-                            {getSessionLabel(item.status)}
-                          </Badge>
-                          {(item.status === "pending" || item.status === "in_progress") &&
-                          deadline &&
-                          timeLeft ? (
-                            <p
-                              className={cn(
-                                "mt-1 text-[11px]",
-                                isActive
-                                  ? "text-sidebar-accent-foreground/80"
-                                  : "text-muted-foreground",
-                              )}
-                            >
-                              {timeLeft} · {deadline}
-                            </p>
-                          ) : null}
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+            {expiredInterviews.length > 0 ? (
+              <SidebarGroup>
+                <SidebarGroupLabel>Expired</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <InterviewSidebarMenu
+                    items={expiredInterviews}
+                    activeInterviewId={activeInterviewId}
+                    disabled
+                  />
+                </SidebarGroupContent>
+              </SidebarGroup>
+            ) : null}
+          </>
         )}
       </SidebarContent>
 

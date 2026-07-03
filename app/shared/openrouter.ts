@@ -50,20 +50,29 @@ const currentEnv = (): EnvKey => (isProd ? "prod" : isStaging ? "staging" : "dev
 const DEFAULT_CHAIN = {
   dev: ["openrouter/free"],
   staging: ["deepseek/deepseek-v4-flash"],
-  prod: ["anthropic/claude-sonnet-4.5", "anthropic/claude-haiku-4.5"],
+  // Cross-provider final fallback (Gemini) so an Anthropic-family outage or
+  // moderation refusal doesn't stall the pipeline.
+  prod: ["anthropic/claude-sonnet-4.5", "anthropic/claude-haiku-4.5", "google/gemini-2.5-pro"],
 } as const;
 
 // [primary, ...fallbacks] — fallbacks are passed as OpenRouter `models`, not the primary.
 const MODEL_CHAINS = {
   pre_eval: DEFAULT_CHAIN,
   post_eval: DEFAULT_CHAIN,
-  post_eval_audit: DEFAULT_CHAIN,
+  // Audit uses a different model family than post_eval so it can catch
+  // model-specific biases, with an Anthropic fallback for resilience.
+  post_eval_audit: {
+    dev: ["openrouter/free"],
+    staging: ["deepseek/deepseek-v4-flash"],
+    prod: ["google/gemini-2.5-pro", "anthropic/claude-sonnet-4.5"],
+  },
   job_creation: DEFAULT_CHAIN,
   interview: {
     dev: ["meta-llama/llama-3.3-70b-instruct:free"],
     staging: ["deepseek/deepseek-v4-flash"],
-    prod: ["anthropic/claude-sonnet-4.5", "anthropic/claude-haiku-4.5"],
+    prod: ["anthropic/claude-sonnet-4.5", "anthropic/claude-haiku-4.5", "google/gemini-2.5-pro"],
   },
+  // Cheap, high-frequency slop / AI-detection check — Haiku only in prod.
   answer_authenticity: {
     dev: DEFAULT_CHAIN.dev,
     staging: DEFAULT_CHAIN.staging,
