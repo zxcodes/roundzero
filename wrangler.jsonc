@@ -116,12 +116,6 @@
           "binding": "ACCOUNT_CLEANUP",
           "class_name": "AccountCleanupWorkflow"
         }
-      ],
-      "routes": [
-        {
-          "pattern": "staging.roundzero.dev",
-          "custom_domain": true
-        }
       ]
     },
     "production": {
