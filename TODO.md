@@ -1,6 +1,7 @@
 ## TODO
 
 
+- review openrouter models prod chain.
 <!--- job search doesn't work. each keystroke triggers a page refresh (regression)-->
 - improve landing page messaging. also see if we need to move sections around or make the value prop more clear, or use report image as hero?
 - see if we can add a cold reach out feature for companies (paid) so find any candidate on the platform in natural lang. should give their profile with a nice summary irrespective of job postings or anything. useful if companies are looking for someone direct instead of posting a job. an alternate way of hiring basically.
