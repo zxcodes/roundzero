@@ -9,6 +9,8 @@ type DeferredSectionProps<T> = {
   fallback: ReactNode;
   children: (data: T) => ReactNode;
   sectionLabel?: string;
+  /** When this changes, drop the cached value and show fallback until the new promise resolves. */
+  resetKey?: string | number;
 };
 
 /**
@@ -25,16 +27,31 @@ function DeferredSectionContent<T>({
   promise,
   fallback,
   children,
+  resetKey,
 }: {
   promise: Promise<T>;
   fallback: ReactNode;
   children: (data: T) => ReactNode;
+  resetKey?: string | number;
 }) {
   const cacheRef = useRef<{ hasValue: boolean; data: T }>({
     hasValue: false,
     data: undefined as T,
   });
   const [, setVersion] = useState(0);
+  const prevResetKey = useRef(resetKey);
+
+  useEffect(() => {
+    if (resetKey === undefined) {
+      return;
+    }
+
+    if (prevResetKey.current !== resetKey) {
+      prevResetKey.current = resetKey;
+      cacheRef.current = { hasValue: false, data: undefined as T };
+      setVersion((current) => current + 1);
+    }
+  }, [resetKey]);
 
   useEffect(() => {
     if (!cacheRef.current.hasValue) {
@@ -140,6 +157,7 @@ export function DeferredSection<T>({
   fallback,
   children,
   sectionLabel,
+  resetKey,
 }: DeferredSectionProps<T>) {
   const router = useRouter();
   const [retryKey, setRetryKey] = useState(0);
@@ -170,7 +188,7 @@ export function DeferredSection<T>({
         />
       }
     >
-      <DeferredSectionContent promise={promise} fallback={fallback}>
+      <DeferredSectionContent promise={promise} fallback={fallback} resetKey={resetKey}>
         {children}
       </DeferredSectionContent>
     </SectionErrorBoundary>
