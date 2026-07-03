@@ -2,89 +2,51 @@ import { getRouteApi, useRouteContext } from "@tanstack/react-router";
 import { BreadcrumbSkeleton } from "@/components/app-breadcrumbs";
 import { PublicFooter, PublicHeader } from "@/components/public-layout";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DashboardGreeting } from "@/features/dashboard/components/dashboard-greeting";
 import { cn } from "@/lib/utils";
 
-/**
- * Skeleton for /jobs — public jobs listing page.
- * Matches: hero header + sticky filter bar + 2-column card grid + pagination.
- */
-export function JobsListSkeleton() {
+/** Results count + grid + pagination for /jobs (used inside DeferredSection). */
+export function JobsResultsSkeleton() {
   return (
-    <div className="bg-background text-foreground min-h-svh">
-      <PublicHeader />
+    <>
+      <Skeleton className="h-4 w-36" />
 
-      <main>
-        {/* Hero header */}
-        <section className="relative overflow-hidden border-b border-border/40">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--color-primary)/6%,transparent_70%)]" />
-          <div className="relative mx-auto max-w-7xl px-6 py-14 lg:px-10 lg:py-16">
-            <div className="max-w-2xl space-y-4">
-              <Skeleton className="h-3 w-20" />
-              <Skeleton className="h-9 w-64" />
-              <Skeleton className="h-5 w-96 max-w-full" />
-              <Skeleton className="h-4 w-36" />
-            </div>
-          </div>
-        </section>
-
-        <section className="sticky top-0 z-10 border-b border-border/40 bg-background/95 backdrop-blur">
-          <div className="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-3.5 sm:flex-row sm:items-center lg:px-10">
-            <Skeleton className="h-9 flex-1 shrink-0 sm:shrink" />
-            <ScrollArea orientation="horizontal" className="-mx-6 h-9 px-6 sm:mx-0 sm:px-0">
-              <div className="flex gap-3">
-                <Skeleton className="h-9 w-36 shrink-0" />
-                <Skeleton className="h-9 w-36 shrink-0" />
-                <Skeleton className="h-9 w-36 shrink-0" />
-                <Skeleton className="h-9 w-36 shrink-0" />
-                <Skeleton className="h-9 w-36 shrink-0" />
+      <div className="grid gap-5 sm:grid-cols-2">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Card key={i} variant="bordered-inset" className="min-h-52">
+            <CardContent className="flex flex-col gap-4 p-5">
+              <div className="flex items-start gap-3">
+                <Skeleton className="size-11 shrink-0 rounded-2xl" />
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  <Skeleton className="h-5 w-4/5" />
+                  <Skeleton className="h-4 w-1/3" />
+                </div>
+                <Skeleton className="size-4 shrink-0" />
               </div>
-            </ScrollArea>
-          </div>
-        </section>
+              <div className="flex gap-3">
+                <Skeleton className="h-3.5 w-24" />
+                <Skeleton className="h-5 w-16 rounded-full" />
+              </div>
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-14 w-full" />
+              <div className="flex gap-1.5 border-t border-border/40 pt-3">
+                <Skeleton className="h-5 w-16 rounded-full" />
+                <Skeleton className="h-5 w-14 rounded-full" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
-        <section className="mx-auto max-w-7xl px-6 py-8 pb-14 lg:px-10 lg:pb-20">
-          <div className="grid gap-5 sm:grid-cols-2">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Card key={i} variant="bordered-inset" className="min-h-52">
-                <CardContent className="flex flex-col gap-4 p-5">
-                  <div className="flex items-start gap-3">
-                    <Skeleton className="size-11 shrink-0 rounded-2xl" />
-                    <div className="min-w-0 flex-1 space-y-1.5">
-                      <Skeleton className="h-5 w-4/5" />
-                      <Skeleton className="h-4 w-1/3" />
-                    </div>
-                    <Skeleton className="size-4 shrink-0" />
-                  </div>
-                  <div className="flex gap-3">
-                    <Skeleton className="h-3.5 w-24" />
-                    <Skeleton className="h-5 w-16 rounded-full" />
-                  </div>
-                  <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-14 w-full" />
-                  <div className="flex gap-1.5 border-t border-border/40 pt-3">
-                    <Skeleton className="h-5 w-16 rounded-full" />
-                    <Skeleton className="h-5 w-14 rounded-full" />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          <div className="mt-10 flex items-center justify-center gap-1">
-            <Skeleton className="h-9 w-9 rounded-md" />
-            <Skeleton className="h-9 w-9 rounded-md" />
-            <Skeleton className="h-9 w-9 rounded-md" />
-            <Skeleton className="h-9 w-9 rounded-md" />
-            <Skeleton className="h-9 w-9 rounded-md" />
-          </div>
-        </section>
-      </main>
-
-      <PublicFooter />
-    </div>
+      <div className="mt-10 flex items-center justify-center gap-1">
+        <Skeleton className="h-9 w-9 rounded-md" />
+        <Skeleton className="h-9 w-9 rounded-md" />
+        <Skeleton className="h-9 w-9 rounded-md" />
+        <Skeleton className="h-9 w-9 rounded-md" />
+        <Skeleton className="h-9 w-9 rounded-md" />
+      </div>
+    </>
   );
 }
 
@@ -386,88 +348,43 @@ export function CompanyDetailSkeleton() {
   );
 }
 
-export function DashboardJobsListSkeleton() {
-  const { isCompany } = useRouteContext({ from: "/_authenticated/dashboard/jobs/" });
-  return isCompany ? <CompanyJobsListSkeleton /> : <CandidateJobsListSkeleton />;
-}
-
-function CompanyJobsListSkeleton() {
+/** Company jobs table for /dashboard/jobs (used inside DeferredSection). */
+export function CompanyJobsTableSkeleton() {
   return (
-    <div className="space-y-10">
-      <div className="flex items-start justify-between gap-3">
-        <div className="space-y-2">
-          <Skeleton className="h-6 w-16" />
-          <Skeleton className="h-4 w-64" />
-          <div className="flex gap-4 pt-1">
-            <Skeleton className="h-4 w-20" />
-            <Skeleton className="h-4 w-16" />
-            <Skeleton className="h-4 w-12" />
-          </div>
-        </div>
-        <Skeleton className="h-8 w-28 rounded-md" />
-      </div>
-
-      <div className="space-y-4">
-        <div className="flex gap-1">
-          <Skeleton className="h-8 w-20 rounded-md" />
-          <Skeleton className="h-8 w-24 rounded-md" />
-        </div>
-
-        <div className="min-w-0 overflow-hidden rounded-3xl border border-border/60">
-          <div className="border-b bg-muted/30 px-4 py-3">
-            <div className="flex gap-8">
-              <Skeleton className="h-3.5 w-12" />
-              <Skeleton className="h-3.5 w-16" />
-              <Skeleton className="h-3.5 w-16" />
-              <Skeleton className="h-3.5 w-14" />
-              <Skeleton className="h-3.5 w-12" />
-              <Skeleton className="h-3.5 w-16" />
-              <Skeleton className="ml-auto h-3.5 w-14" />
-            </div>
-          </div>
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-8 border-b px-4 py-3.5 last:border-0">
-              <Skeleton className="h-4 w-40" />
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-4 w-8" />
-              <Skeleton className="h-4 w-8" />
-              <Skeleton className="h-4 w-20" />
-              <Skeleton className="h-4 w-20" />
-              <div className="ml-auto flex gap-1">
-                <Skeleton className="h-7 w-20 rounded-md" />
-                <Skeleton className="h-7 w-14 rounded-md" />
-              </div>
-            </div>
-          ))}
+    <div className="min-w-0 overflow-hidden rounded-3xl border border-border/60">
+      <div className="border-b bg-muted/30 px-4 py-3">
+        <div className="flex gap-8">
+          <Skeleton className="h-3.5 w-12" />
+          <Skeleton className="h-3.5 w-16" />
+          <Skeleton className="h-3.5 w-16" />
+          <Skeleton className="h-3.5 w-14" />
+          <Skeleton className="h-3.5 w-12" />
+          <Skeleton className="h-3.5 w-16" />
+          <Skeleton className="ml-auto h-3.5 w-14" />
         </div>
       </div>
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div key={i} className="flex items-center gap-8 border-b px-4 py-3.5 last:border-0">
+          <Skeleton className="h-4 w-40" />
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-8" />
+          <Skeleton className="h-4 w-8" />
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-4 w-20" />
+          <div className="ml-auto flex gap-1">
+            <Skeleton className="h-7 w-20 rounded-md" />
+            <Skeleton className="h-7 w-14 rounded-md" />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
 
-function CandidateJobsListSkeleton() {
+/** Results count + list + pagination for candidate /dashboard/jobs (DeferredSection). */
+export function CandidateJobsResultsSkeleton() {
   return (
-    <div className="space-y-6">
-      <div>
-        <Skeleton className="h-8 w-36" />
-        <Skeleton className="mt-1 h-4 w-56" />
-      </div>
-
-      {/* Filter bar */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <Skeleton className="h-9 flex-1 shrink-0 sm:shrink rounded-md" />
-        <ScrollArea orientation="horizontal" className="h-9">
-          <div className="flex gap-3">
-            <Skeleton className="h-9 w-36 shrink-0 rounded-md" />
-            <Skeleton className="h-9 w-36 shrink-0 rounded-md" />
-            <Skeleton className="h-9 w-36 shrink-0 rounded-md" />
-            <Skeleton className="h-9 w-36 shrink-0 rounded-md" />
-            <Skeleton className="h-9 w-36 shrink-0 rounded-md" />
-          </div>
-        </ScrollArea>
-      </div>
-
-      {/* Results count */}
+    <>
       <Skeleton className="h-3.5 w-28" />
 
       <div className="divide-y divide-border/50 overflow-hidden rounded-3xl border border-border/60">
@@ -487,7 +404,6 @@ function CandidateJobsListSkeleton() {
         ))}
       </div>
 
-      {/* Pagination */}
       <div className="flex items-center justify-center gap-1">
         <Skeleton className="h-9 w-9 rounded-md" />
         <Skeleton className="h-9 w-9 rounded-md" />
@@ -495,7 +411,7 @@ function CandidateJobsListSkeleton() {
         <Skeleton className="h-9 w-9 rounded-md" />
         <Skeleton className="h-9 w-9 rounded-md" />
       </div>
-    </div>
+    </>
   );
 }
 
