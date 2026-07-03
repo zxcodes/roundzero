@@ -70,6 +70,23 @@ Every client-side server-function call is a real worker round trip (+ an `authMi
 - Biome lint (`biome.json`); SQLC outputs excluded. **Run `bun run check` (lint + types) after every change.**
 - `bun run dev` | `bun run sqlgen` | `bun run test` | `bun run setup.ts`. DB: `bash setup-db.sh setup_pg|reset_pg|rm_pg`.
 
+## Deployment (staging / production)
+
+Secrets live in **GitHub environment secrets** (`gh secret list --env staging|production`), not Wrangler directly. CI writes `.env.ci` and deploys via `wrangler deploy --secrets-file .env.ci` (see `.github/workflows/deploy.yml` and `deploy-production.yml`).
+
+**When adding or changing a Worker runtime secret**, update all of:
+1. GitHub environment secret (staging + production as needed)
+2. **Both** workflow `.env.ci` heredocs — GitHub cannot auto-enumerate secrets; each must be `${{ secrets.NAME }}` explicitly
+3. `app/shared/env.app.ts` if the app reads it at runtime
+
+**Where env vars go (don't mix these up):**
+- **Worker runtime** (`process.env` / `appEnv`) → `.env.ci` in both deploy workflows
+- **Client build** (`import.meta.env.VITE_*`) → build step `env:` block in those workflows (not `.env.ci`)
+- **Non-secret config** (`CLOUDFLARE_ACCOUNT_ID`, `AI_GATEWAY_ID`) → `wrangler.jsonc` `vars` per env
+- **Deploy auth / build-only** (`CLOUDFLARE_API_TOKEN`, `SENTRY_AUTH_TOKEN`) → build step `env:` only
+
+Missing from `.env.ci` silently breaks prod: unset secrets fall back to Zod defaults (e.g. `POLAR_MODE` → `sandbox`, `NODE_ENV` → `development`). Staging can look fine while production fails.
+
 ## Cloudflare + AI
 
 - Use the Cloudflare docs MCP for Workers/Workflows/DO/R2/AI/bindings questions — don't rely on memory.
