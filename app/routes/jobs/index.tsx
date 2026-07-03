@@ -8,9 +8,10 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link, stripSearchParams, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
+import { DeferredSection } from "@/components/deferred-section";
 import { PaginationNav } from "@/components/pagination-nav";
 import { PublicFooter, PublicHeader } from "@/components/public-layout";
-import { JobsListSkeleton } from "@/components/route-skeletons";
+import { JobsResultsSkeleton } from "@/components/route-skeletons";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -88,8 +89,8 @@ export const Route = createFileRoute("/jobs/")({
       description: PAGE_SEO.jobs.description,
       path: "/jobs",
     }),
-  loader: async ({ deps }) => {
-    const result = await getOpenJobsPaginated({
+  loader: ({ deps }) => ({
+    results: getOpenJobsPaginated({
       data: {
         search: deps.search,
         type: deps.type,
@@ -99,10 +100,8 @@ export const Route = createFileRoute("/jobs/")({
         salaryCurrency: deps.salaryCurrency,
         page: deps.page,
       },
-    });
-    return result;
-  },
-  pendingComponent: JobsListSkeleton,
+    }),
+  }),
   component: JobsPage,
 });
 
@@ -115,8 +114,10 @@ function companyInitials(name: string) {
     .slice(0, 2);
 }
 
+type JobsResults = Awaited<ReturnType<typeof getOpenJobsPaginated>>;
+
 function JobsPage() {
-  const { items, total, totalPages } = Route.useLoaderData();
+  const { results } = Route.useLoaderData();
   const {
     search,
     type: typeFilter,
@@ -165,6 +166,8 @@ function JobsPage() {
     void navigate({ search: (prev) => ({ ...prev, salaryMin: Number(value), page: 1 }) });
   };
 
+  const resultsResetKey = `${typeFilter}-${levelFilter}-${workplaceFilter}-${salaryMin}-${salaryCurrency}-${page}`;
+
   return (
     <div className="min-h-svh bg-background text-foreground">
       <PublicHeader />
@@ -181,11 +184,6 @@ function JobsPage() {
               <p className="text-base leading-relaxed text-muted-foreground">
                 Browse roles from companies hiring on RoundZero. Apply with one click and interview
                 on your schedule.
-              </p>
-              <p className="text-sm text-muted-foreground">
-                <span className="font-medium tabular-nums text-foreground">{total}</span> open{" "}
-                {total === 1 ? "position" : "positions"}
-                {hasFilters ? " matching your filters" : ""}
               </p>
             </div>
           </div>
@@ -278,25 +276,14 @@ function JobsPage() {
         </section>
 
         <section className="mx-auto max-w-7xl px-6 py-8 pb-14 lg:px-10 lg:pb-20">
-          {items.length === 0 ? (
-            <Empty className="rounded-2xl border-0 bg-muted/30">
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} />
-                </EmptyMedia>
-                <EmptyTitle>No jobs found</EmptyTitle>
-                <EmptyDescription>Try adjusting your search or filters.</EmptyDescription>
-              </EmptyHeader>
-            </Empty>
-          ) : (
-            <div className="grid gap-5 sm:grid-cols-2">
-              {items.map((job, i) => (
-                <JobCard key={job.id} job={job} className={i < 4 ? `stagger-${i + 1}` : ""} />
-              ))}
-            </div>
-          )}
-
-          <PaginationNav currentPage={page} totalPages={totalPages} className="mt-10" />
+          <DeferredSection
+            promise={results}
+            resetKey={resultsResetKey}
+            fallback={<JobsResultsSkeleton />}
+            sectionLabel="job listings"
+          >
+            {(data) => <JobsResults data={data} page={page} hasFilters={Boolean(hasFilters)} />}
+          </DeferredSection>
         </section>
       </main>
 
@@ -305,7 +292,57 @@ function JobsPage() {
   );
 }
 
-type JobFromLoader = Awaited<ReturnType<typeof getOpenJobsPaginated>>["items"][number];
+function JobsResults({
+  data,
+  page,
+  hasFilters,
+}: {
+  data: JobsResults;
+  page: number;
+  hasFilters: boolean;
+}) {
+  return (
+    <div className="space-y-8">
+      <p className="text-sm text-muted-foreground">
+        <span className="font-medium tabular-nums text-foreground">{data.total}</span> open{" "}
+        {data.total === 1 ? "position" : "positions"}
+        {hasFilters ? " matching your filters" : ""}
+      </p>
+
+      <JobsResultsContent data={data} page={page} />
+    </div>
+  );
+}
+
+function JobsResultsContent({ data, page }: { data: JobsResults; page: number }) {
+  if (data.items.length === 0) {
+    return (
+      <Empty className="rounded-2xl border-0 bg-muted/30">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} />
+          </EmptyMedia>
+          <EmptyTitle>No jobs found</EmptyTitle>
+          <EmptyDescription>Try adjusting your search or filters.</EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    );
+  }
+
+  return (
+    <>
+      <div className="grid gap-5 sm:grid-cols-2">
+        {data.items.map((job, i) => (
+          <JobCard key={job.id} job={job} className={i < 4 ? `stagger-${i + 1}` : ""} />
+        ))}
+      </div>
+
+      <PaginationNav currentPage={page} totalPages={data.totalPages} className="mt-10" />
+    </>
+  );
+}
+
+type JobFromLoader = JobsResults["items"][number];
 
 function JobCard({ job, className }: { job: JobFromLoader; className?: string }) {
   const salary = formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency);
