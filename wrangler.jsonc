@@ -116,19 +116,13 @@
           "binding": "ACCOUNT_CLEANUP",
           "class_name": "AccountCleanupWorkflow"
         }
-      ],
-      "routes": [
-        {
-          "pattern": "staging.roundzero.dev",
-          "custom_domain": true
-        }
       ]
     },
     "production": {
       "hyperdrive": [
         {
           "binding": "HYPERDRIVE",
-          "id": "<PRODUCTION_HYPERDRIVE_CONFIG_ID>"
+          "id": "9905b692491f4f929b911d40f8245d1d"
         }
       ],
       "vars": {
