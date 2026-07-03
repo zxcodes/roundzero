@@ -17,6 +17,7 @@ export function NavMain({
       title: string;
       url: string;
       icon?: React.ReactNode;
+      matchPrefix?: boolean;
     }[];
   }[];
 }) {
@@ -32,9 +33,11 @@ export function NavMain({
           <SidebarGroupContent>
             <SidebarMenu>
               {section.items.map((item) => {
+                const matchPrefix = item.matchPrefix !== false;
                 const isActive =
                   pathname === item.url ||
-                  (item.url !== "/dashboard" && pathname.startsWith(`${item.url}/`));
+                  pathname === `${item.url}/` ||
+                  (matchPrefix && pathname.startsWith(`${item.url}/`));
 
                 return (
                   <SidebarMenuItem key={item.title}>
