@@ -104,8 +104,12 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Build and deploy
-        run: bun run build && bunx wrangler deploy --env production --secrets-file .env.ci
+        # @cloudflare/vite-plugin resolves the environment at BUILD time via
+        # CLOUDFLARE_ENV and writes a flattened dist config. `wrangler deploy`
+        # must NOT pass --env (it would double-suffix / fail to match).
+        run: bun run build && bunx wrangler deploy --secrets-file .env.ci
         env:
+          CLOUDFLARE_ENV: production
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
           VITE_APP_URL: ${{ secrets.VITE_APP_URL }}
           VITE_PUBLIC_ASSET_BASE_URL: ${{ secrets.VITE_PUBLIC_ASSET_BASE_URL }}
