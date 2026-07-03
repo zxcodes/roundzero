@@ -1,11 +1,19 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
+import { zodValidator } from "@tanstack/zod-adapter";
+import { z } from "zod";
 import { DashboardSettingsSkeleton } from "@/components/route-skeletons";
+import { sanitizeRedirect } from "@/features/auth/signup-search";
 import { CandidateSettings } from "@/features/candidates/components/candidate-settings";
 import { getMyCandidateProfile } from "@/features/candidates/server/functions";
 import { CompanyLeaveSection } from "@/features/companies/components/company-leave-section";
 import { CompanySettings } from "@/features/companies/components/company-settings";
 
+const settingsSearchSchema = z.object({
+  redirect: z.string().optional().transform(sanitizeRedirect),
+});
+
 export const Route = createFileRoute("/_authenticated/dashboard/settings")({
+  validateSearch: zodValidator(settingsSearchSchema),
   loader: async ({ context }) => {
     if (context.isCompany) {
       if (!context.company) {
@@ -35,6 +43,7 @@ export const Route = createFileRoute("/_authenticated/dashboard/settings")({
 function SettingsPage() {
   const data = Route.useLoaderData();
   const { user } = Route.useRouteContext();
+  const { redirect: redirectTo } = Route.useSearch();
 
   if (data.type === "company") {
     return (
@@ -53,5 +62,5 @@ function SettingsPage() {
     return null;
   }
 
-  return <CandidateSettings profile={data.profile} user={user} />;
+  return <CandidateSettings profile={data.profile} user={user} redirectTo={redirectTo} />;
 }

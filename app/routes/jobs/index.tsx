@@ -1,20 +1,11 @@
-import {
-  ArrowRight01Icon,
-  Briefcase01Icon,
-  Location01Icon,
-  MoneyBag02Icon,
-  Search01Icon,
-} from "@hugeicons/core-free-icons";
+import { Briefcase01Icon, Search01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { createFileRoute, Link, stripSearchParams, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, stripSearchParams, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { DeferredSection } from "@/components/deferred-section";
 import { PaginationNav } from "@/components/pagination-nav";
 import { PublicFooter, PublicHeader } from "@/components/public-layout";
 import { JobsResultsSkeleton } from "@/components/route-skeletons";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Empty,
   EmptyDescription,
@@ -31,14 +22,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { JobListRow } from "@/features/jobs/components/job-list-row";
 import { getOpenJobsPaginated } from "@/features/jobs/server/functions";
 import { useDebouncedSearchInput } from "@/hooks/use-debounced-search-input";
-import type {
-  EmploymentType,
-  ExperienceLevel,
-  SalaryCurrency,
-  WorkplaceType,
-} from "@/shared/enums";
+import type { SalaryCurrency } from "@/shared/enums";
 import {
   employmentTypeLabels,
   employmentTypeSchema,
@@ -49,7 +36,7 @@ import {
   workplaceTypeLabels,
   workplaceTypeSchema,
 } from "@/shared/enums";
-import { formatSalary, SALARY_BRACKETS } from "@/shared/format";
+import { SALARY_BRACKETS } from "@/shared/format";
 import { buildPageHead, PAGE_SEO } from "@/shared/seo";
 
 const searchDefaults = {
@@ -105,15 +92,6 @@ export const Route = createFileRoute("/jobs/")({
   }),
   component: JobsPage,
 });
-
-function companyInitials(name: string) {
-  return name
-    .split(" ")
-    .map((part) => part[0] ?? "")
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-}
 
 type JobsResults = Awaited<ReturnType<typeof getOpenJobsPaginated>>;
 
@@ -303,19 +281,26 @@ function JobsResults({
   hasFilters: boolean;
 }) {
   return (
-    <div className="space-y-8">
-      <p className="text-sm text-muted-foreground">
-        <span className="font-medium tabular-nums text-foreground">{data.total}</span> open{" "}
-        {data.total === 1 ? "position" : "positions"}
+    <div className="space-y-5">
+      <p className="text-xs font-medium text-muted-foreground">
+        {data.total} {data.total === 1 ? "position" : "positions"}
         {hasFilters ? " matching your filters" : ""}
       </p>
 
-      <JobsResultsContent data={data} page={page} />
+      <JobsResultsContent data={data} page={page} hasFilters={hasFilters} />
     </div>
   );
 }
 
-function JobsResultsContent({ data, page }: { data: JobsResults; page: number }) {
+function JobsResultsContent({
+  data,
+  page,
+  hasFilters,
+}: {
+  data: JobsResults;
+  page: number;
+  hasFilters: boolean;
+}) {
   if (data.items.length === 0) {
     return (
       <Empty className="rounded-2xl border-0 bg-muted/30">
@@ -323,8 +308,12 @@ function JobsResultsContent({ data, page }: { data: JobsResults; page: number })
           <EmptyMedia variant="icon">
             <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} />
           </EmptyMedia>
-          <EmptyTitle>No jobs found</EmptyTitle>
-          <EmptyDescription>Try adjusting your search or filters.</EmptyDescription>
+          <EmptyTitle>{hasFilters ? "No jobs found" : "No open jobs"}</EmptyTitle>
+          <EmptyDescription>
+            {hasFilters
+              ? "Try adjusting your search or filters."
+              : "There are no open positions right now. Check back later."}
+          </EmptyDescription>
         </EmptyHeader>
       </Empty>
     );
@@ -332,119 +321,19 @@ function JobsResultsContent({ data, page }: { data: JobsResults; page: number })
 
   return (
     <>
-      <div className="grid gap-5 sm:grid-cols-2">
-        {data.items.map((job, i) => (
-          <JobCard key={job.id} job={job} className={i < 4 ? `stagger-${i + 1}` : ""} />
+      <div className="divide-y divide-border/50 overflow-hidden rounded-3xl border border-border/60">
+        {data.items.map((job) => (
+          <JobListRow
+            key={job.id}
+            job={job}
+            jobTo="/jobs/$jobId"
+            showCompanyName
+            linkCompanyToProfile
+          />
         ))}
       </div>
 
-      <PaginationNav currentPage={page} totalPages={data.totalPages} className="mt-10" />
+      <PaginationNav currentPage={page} totalPages={data.totalPages} />
     </>
-  );
-}
-
-type JobFromLoader = JobsResults["items"][number];
-
-function JobCard({ job, className }: { job: JobFromLoader; className?: string }) {
-  const salary = formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency);
-  const navigate = useNavigate();
-
-  const onCompanyClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    void navigate({ to: "/companies/$slug", params: { slug: job.companySlug } });
-  };
-  const onCompanyKeyDown = (e: React.KeyboardEvent<HTMLSpanElement>) => {
-    if (e.key === "Enter" || e.key === " ") {
-      onCompanyClick(e as unknown as React.MouseEvent);
-    }
-  };
-
-  return (
-    <Link to="/jobs/$jobId" params={{ jobId: job.id }} className={className}>
-      <Card
-        variant="bordered-inset"
-        className="group h-full transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-lg hover:shadow-primary/5"
-      >
-        <CardContent className="flex h-full min-h-52 flex-col gap-4 p-5">
-          <div className="flex items-start gap-3">
-            <Avatar className="size-11 shrink-0 rounded-2xl">
-              <AvatarFallback className="rounded-2xl bg-muted text-[11px] font-semibold">
-                {companyInitials(job.companyName)}
-              </AvatarFallback>
-            </Avatar>
-
-            <div className="min-w-0 flex-1 space-y-1">
-              <p className="line-clamp-2 text-base font-semibold leading-snug tracking-tight transition-colors group-hover:text-primary">
-                {job.title}
-              </p>
-              {/* biome-ignore lint/a11y/useSemanticElements: can't nest <a> inside parent <Link> */}
-              <span
-                role="link"
-                tabIndex={0}
-                onClick={onCompanyClick}
-                onKeyDown={onCompanyKeyDown}
-                className="cursor-pointer text-sm text-muted-foreground transition-colors hover:text-primary"
-              >
-                {job.companyName}
-              </span>
-            </div>
-
-            <HugeiconsIcon
-              icon={ArrowRight01Icon}
-              strokeWidth={2}
-              className="size-4 shrink-0 text-muted-foreground/50 transition-all group-hover:translate-x-0.5 group-hover:text-primary"
-            />
-          </div>
-
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
-            {job.location ? (
-              <span className="inline-flex items-center gap-1">
-                <HugeiconsIcon icon={Location01Icon} strokeWidth={2} className="size-3.5" />
-                {job.location}
-              </span>
-            ) : null}
-            {job.workplaceType ? (
-              <Badge variant="outline" className="text-[11px]">
-                {workplaceTypeLabels[job.workplaceType as WorkplaceType] ?? job.workplaceType}
-              </Badge>
-            ) : null}
-          </div>
-
-          {salary ? (
-            <p className="inline-flex items-center gap-1.5 text-sm font-medium tabular-nums text-foreground">
-              <HugeiconsIcon
-                icon={MoneyBag02Icon}
-                strokeWidth={2}
-                className="size-3.5 text-muted-foreground"
-              />
-              {salary}
-            </p>
-          ) : null}
-
-          {job.description ? (
-            <p className="line-clamp-3 flex-1 text-sm leading-relaxed text-muted-foreground">
-              {job.description}
-            </p>
-          ) : (
-            <div className="flex-1" />
-          )}
-
-          <div className="flex flex-wrap gap-1.5 border-t border-border/40 pt-3">
-            {job.employmentType ? (
-              <Badge variant="secondary" className="text-[11px]">
-                {employmentTypeLabels[job.employmentType as EmploymentType] ?? job.employmentType}
-              </Badge>
-            ) : null}
-            {job.experienceLevel ? (
-              <Badge variant="secondary" className="text-[11px]">
-                {experienceLevelLabels[job.experienceLevel as ExperienceLevel] ??
-                  job.experienceLevel}
-              </Badge>
-            ) : null}
-          </div>
-        </CardContent>
-      </Card>
-    </Link>
   );
 }

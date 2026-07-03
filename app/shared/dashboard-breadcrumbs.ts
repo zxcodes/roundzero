@@ -216,6 +216,8 @@ export function resolveDashboardBreadcrumbs(
       return flatCrumb("Billing");
     case "/_authenticated/dashboard/team":
       return flatCrumb("Team");
+    case "/_authenticated/dashboard/support":
+      return flatCrumb("Support");
     case "/_authenticated/dashboard/settings":
       return flatCrumb("Settings");
     case "/_authenticated/dashboard/jobs/new":

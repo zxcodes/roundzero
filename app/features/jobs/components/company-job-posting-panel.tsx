@@ -2,8 +2,10 @@ import {
   Archive01Icon,
   Briefcase01Icon,
   Clock01Icon,
+  Copy01Icon,
   Edit02Icon,
   EyeIcon,
+  Link04Icon,
   Loading03Icon,
   Location01Icon,
   MoneyBag02Icon,
@@ -41,6 +43,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { JobPreviewDialog } from "@/features/jobs/components/job-preview-dialog";
 import { JobStatusBadge } from "@/features/jobs/components/job-status-badge";
+import { canCopyPublicJobLink, copyPublicJobLink } from "@/features/jobs/copy-job-link";
 import { archiveJob, type getJob, publishJob } from "@/features/jobs/server/functions";
 import { formatDate, formatDaysLeft } from "@/shared/date";
 import {
@@ -52,6 +55,7 @@ import {
   workplaceTypeLabels,
 } from "@/shared/enums";
 import { formatSalaryFull } from "@/shared/format";
+import { publicJobUrl } from "@/shared/seo";
 
 type JobDetail = NonNullable<Awaited<ReturnType<typeof getJob>>>;
 
@@ -118,6 +122,12 @@ export function CompanyJobActions({
 
   const onOpenPreview = () => setPreviewOpen(true);
   const onOpenArchive = () => setArchiveOpen(true);
+
+  const showCopyLink = canCopyPublicJobLink(job);
+
+  const onCopyLink = () => {
+    void copyPublicJobLink(job.id);
+  };
 
   const previewData = {
     title: job.title,
@@ -190,6 +200,20 @@ export function CompanyJobActions({
               Edit
             </Link>
           </DropdownMenuItem>
+          {showCopyLink ? (
+            <>
+              <DropdownMenuItem onSelect={onCopyLink}>
+                <HugeiconsIcon icon={Copy01Icon} strokeWidth={2} className="size-3.5" />
+                Copy job link
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <a href={publicJobUrl(job.id)} target="_blank" rel="noopener noreferrer">
+                  <HugeiconsIcon icon={Link04Icon} strokeWidth={2} className="size-3.5" />
+                  Open job page
+                </a>
+              </DropdownMenuItem>
+            </>
+          ) : null}
           <DropdownMenuSeparator />
           <DropdownMenuItem
             variant="destructive"

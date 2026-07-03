@@ -349,7 +349,7 @@ function PublicJobCTA({
           </>
         ) : null}
         <Button size={variant === "header" ? "lg" : "default"} asChild>
-          <Link to="/dashboard/settings">
+          <Link to="/dashboard/settings" search={{ redirect: `/dashboard/jobs/${job.id}` }}>
             {variant === "header" ? "Add resume" : "Add resume to apply"}
             <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="ml-1.5 size-4" />
           </Link>

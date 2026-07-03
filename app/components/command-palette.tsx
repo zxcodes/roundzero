@@ -4,6 +4,7 @@ import {
   BubbleChatIcon,
   CheckmarkCircle02Icon,
   CreditCardIcon,
+  CustomerService01Icon,
   House01Icon,
   Loading03Icon,
   Logout03Icon,
@@ -73,6 +74,7 @@ const buildCompanyNavSections = (showBilling: boolean, showTeam: boolean): Comma
         ...(showBilling
           ? [{ title: "Billing", url: "/dashboard/billing", icon: CreditCardIcon }]
           : []),
+        { title: "Support", url: "/dashboard/support", icon: CustomerService01Icon },
         { title: "Settings", url: "/dashboard/settings", icon: Setting06Icon },
       ],
     },
@@ -83,12 +85,21 @@ const buildCompanyNavSections = (showBilling: boolean, showTeam: boolean): Comma
 
 const candidateNavSections: CommandNavSection[] = [
   {
-    label: "Candidate",
+    label: "Overview",
+    items: [{ title: "Overview", url: "/dashboard", icon: House01Icon }],
+  },
+  {
+    label: "Applications",
     items: [
-      { title: "Overview", url: "/dashboard", icon: House01Icon },
       { title: "Browse jobs", url: "/dashboard/jobs", icon: Search01Icon },
       { title: "My applications", url: "/dashboard/applications", icon: Briefcase01Icon },
       { title: "Interviews", url: "/interview", icon: BubbleChatIcon },
+    ],
+  },
+  {
+    label: "Account",
+    items: [
+      { title: "Support", url: "/dashboard/support", icon: CustomerService01Icon },
       { title: "Settings", url: "/dashboard/settings", icon: Setting06Icon },
     ],
   },
