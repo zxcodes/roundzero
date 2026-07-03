@@ -27,7 +27,15 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export function CandidateSettings({ profile, user }: { profile: CandidateProfile; user: User }) {
+export function CandidateSettings({
+  profile,
+  user,
+  redirectTo,
+}: {
+  profile: CandidateProfile;
+  user: User;
+  redirectTo?: string;
+}) {
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -35,8 +43,14 @@ export function CandidateSettings({ profile, user }: { profile: CandidateProfile
   const updateProfileMutation = useMutation({
     mutationFn: updateProfileFn,
     onSuccess: async () => {
-      await router.invalidate();
       form.reset(form.state.values);
+      toast.success("Profile saved");
+      if (redirectTo) {
+        await router.navigate({ to: redirectTo });
+        await router.invalidate();
+        return;
+      }
+      await router.invalidate();
     },
     onError: () => {
       toast.error("Failed to save changes.");

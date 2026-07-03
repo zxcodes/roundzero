@@ -1,14 +1,12 @@
 import {
-  ArrowRight01Icon,
   Briefcase01Icon,
   Building01Icon,
   Link04Icon,
   Location01Icon,
-  MoneyBag02Icon,
   UserGroupIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, notFound } from "@tanstack/react-router";
 import { AppBreadcrumbs } from "@/components/app-breadcrumbs";
 import { PublicFooter, PublicHeader } from "@/components/public-layout";
 import { CompanyDetailSkeleton } from "@/components/route-skeletons";
@@ -25,11 +23,11 @@ import {
 } from "@/components/ui/empty";
 
 import { getCompanyBySlug } from "@/features/companies/server/functions";
+import { JobListRow } from "@/features/jobs/components/job-list-row";
 import { getOpenJobsByCompanyId } from "@/features/jobs/server/functions";
 import { publicCompanyDetailTrail } from "@/shared/breadcrumb-trails";
-import type { CompanySize, Industry, WorkplaceType } from "@/shared/enums";
-import { companySizeLabels, industryLabels, workplaceTypeLabels } from "@/shared/enums";
-import { formatSalary } from "@/shared/format";
+import type { CompanySize, Industry } from "@/shared/enums";
+import { companySizeLabels, industryLabels } from "@/shared/enums";
 import { getPublicAssetUrl } from "@/shared/r2";
 import { buildPageHead, organizationJsonLd } from "@/shared/seo";
 
@@ -230,9 +228,9 @@ function CompanyProfilePage() {
                   </EmptyHeader>
                 </Empty>
               ) : (
-                <div className="space-y-3">
+                <div className="divide-y divide-border/50 overflow-hidden rounded-3xl border border-border/60">
                   {jobs.map((job) => (
-                    <CompanyJobCard key={job.id} job={job} />
+                    <JobListRow key={job.id} job={job} jobTo="/jobs/$jobId" />
                   ))}
                 </div>
               )}
@@ -305,49 +303,5 @@ function StatRow({ label, value }: { label: string; value: string }) {
       <span className="text-muted-foreground">{label}</span>
       <span className="font-medium">{value}</span>
     </div>
-  );
-}
-
-type JobFromLoader = Awaited<ReturnType<typeof getOpenJobsByCompanyId>>[number];
-
-function CompanyJobCard({ job }: { job: JobFromLoader }) {
-  const salary = formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency);
-
-  return (
-    <Link
-      to="/jobs/$jobId"
-      params={{ jobId: job.id }}
-      className="group flex items-center gap-3 rounded-3xl border border-border/60 bg-muted-foreground/4.5 px-4 py-3.5 transition-colors hover:border-primary/25 hover:bg-muted/30 dark:bg-muted/10 md:px-5"
-    >
-      <div className="min-w-0 flex-1 space-y-1">
-        <p className="truncate text-sm font-semibold group-hover:text-primary">{job.title}</p>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-          {job.location ? (
-            <span className="inline-flex items-center gap-1">
-              <HugeiconsIcon icon={Location01Icon} strokeWidth={2} className="size-3" />
-              {job.location}
-            </span>
-          ) : null}
-          {salary ? (
-            <span className="inline-flex items-center gap-1 font-medium tabular-nums text-foreground">
-              <HugeiconsIcon icon={MoneyBag02Icon} strokeWidth={2} className="size-3" />
-              {salary}
-            </span>
-          ) : null}
-        </div>
-      </div>
-      <div className="flex shrink-0 items-center gap-2">
-        {job.workplaceType ? (
-          <Badge variant="outline" className="text-[11px]">
-            {workplaceTypeLabels[job.workplaceType as WorkplaceType] ?? job.workplaceType}
-          </Badge>
-        ) : null}
-        <HugeiconsIcon
-          icon={ArrowRight01Icon}
-          strokeWidth={2}
-          className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary"
-        />
-      </div>
-    </Link>
   );
 }

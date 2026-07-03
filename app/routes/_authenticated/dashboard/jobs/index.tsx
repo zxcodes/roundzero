@@ -2,11 +2,9 @@ import {
   Add01Icon,
   Alert01Icon,
   Archive01Icon,
-  ArrowRight01Icon,
   Briefcase01Icon,
+  Copy01Icon,
   Loading03Icon,
-  Location01Icon,
-  MoneyBag02Icon,
   Rocket01Icon,
   Search01Icon,
 } from "@hugeicons/core-free-icons";
@@ -61,7 +59,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useEntitlements } from "@/features/entitlements/hooks/use-entitlements";
+import { JobListRow } from "@/features/jobs/components/job-list-row";
 import { isJobClosingSoon } from "@/features/jobs/components/job-status-badge";
+import { canCopyPublicJobLink, copyPublicJobLink } from "@/features/jobs/copy-job-link";
 import {
   getMyArchivedJobs,
   type getMyJobCounts,
@@ -73,7 +73,6 @@ import { useDebouncedSearchInput } from "@/hooks/use-debounced-search-input";
 import { formatDate, formatDaysLeft } from "@/shared/date";
 import {
   type EmploymentType,
-  type ExperienceLevel,
   employmentTypeLabels,
   employmentTypeSchema,
   experienceLevelLabels,
@@ -81,11 +80,11 @@ import {
   type SalaryCurrency,
   salaryCurrencyLabels,
   salaryCurrencySchema,
-  type WorkplaceType,
   workplaceTypeLabels,
   workplaceTypeSchema,
 } from "@/shared/enums";
-import { formatSalary, SALARY_BRACKETS } from "@/shared/format";
+import { SALARY_BRACKETS } from "@/shared/format";
+import { publicJobUrl } from "@/shared/seo";
 
 const searchDefaults = {
   tab: "active",
@@ -351,6 +350,12 @@ function ActiveJobsTable({
               void onPublish(job.id);
             };
 
+            const showCopyLink = canCopyPublicJobLink(job);
+
+            const onCopyLinkClick = () => {
+              void copyPublicJobLink(job.id);
+            };
+
             return (
               <TableRow key={job.id}>
                 <TableCell className="whitespace-normal">
@@ -443,6 +448,30 @@ function ActiveJobsTable({
                           {isPending ? "Publishing..." : "Publish"}
                         </Button>
                       )
+                    ) : null}
+                    {showCopyLink ? (
+                      <>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="outline" size="sm" onClick={onCopyLinkClick}>
+                              <HugeiconsIcon
+                                icon={Copy01Icon}
+                                strokeWidth={2}
+                                className="size-3.5"
+                              />
+                              Copy link
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Copy public job link</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={publicJobUrl(job.id)} target="_blank" rel="noopener noreferrer">
+                            Open
+                          </a>
+                        </Button>
+                      </>
                     ) : null}
                     <Button variant="outline" size="sm" asChild>
                       <Link
@@ -749,69 +778,12 @@ function CandidateJobsResults({
       ) : (
         <div className="divide-y divide-border/50 overflow-hidden rounded-3xl border border-border/60">
           {data.items.map((job) => (
-            <CandidateJobRow key={job.id} job={job} />
+            <JobListRow key={job.id} job={job} jobTo="/dashboard/jobs/$jobId" showCompanyName />
           ))}
         </div>
       )}
 
       <PaginationNav currentPage={page} totalPages={data.totalPages} />
     </>
-  );
-}
-
-function CandidateJobRow({ job }: { job: PaginatedJobs["items"][number] }) {
-  const salary = formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency);
-
-  return (
-    <Link
-      to="/dashboard/jobs/$jobId"
-      params={{ jobId: job.id }}
-      className="group flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted/40 md:gap-4 md:px-5"
-    >
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold group-hover:text-primary">{job.title}</p>
-        <p className="mt-0.5 truncate text-xs text-muted-foreground">{job.companyName}</p>
-        <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-          {job.location ? (
-            <span className="inline-flex items-center gap-1">
-              <HugeiconsIcon icon={Location01Icon} strokeWidth={2} className="size-3.5" />
-              {job.location}
-            </span>
-          ) : null}
-          {salary ? (
-            <span className="inline-flex items-center gap-1">
-              <HugeiconsIcon icon={MoneyBag02Icon} strokeWidth={2} className="size-3.5" />
-              {salary}
-            </span>
-          ) : null}
-        </div>
-        {job.description ? (
-          <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">{job.description}</p>
-        ) : null}
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {job.employmentType ? (
-            <Badge variant="secondary" className="text-[11px]">
-              {employmentTypeLabels[job.employmentType as EmploymentType] ?? job.employmentType}
-            </Badge>
-          ) : null}
-          {job.experienceLevel ? (
-            <Badge variant="secondary" className="text-[11px]">
-              {experienceLevelLabels[job.experienceLevel as ExperienceLevel] ?? job.experienceLevel}
-            </Badge>
-          ) : null}
-          {job.workplaceType ? (
-            <Badge variant="outline" className="text-[11px]">
-              {workplaceTypeLabels[job.workplaceType as WorkplaceType] ?? job.workplaceType}
-            </Badge>
-          ) : null}
-        </div>
-      </div>
-
-      <HugeiconsIcon
-        icon={ArrowRight01Icon}
-        strokeWidth={2}
-        className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary"
-      />
-    </Link>
   );
 }

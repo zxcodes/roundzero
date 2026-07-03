@@ -102,7 +102,9 @@ export function CandidateApplySection({
         description="Add a resume to your profile before applying to jobs."
         action={
           <Button className="w-full" asChild>
-            <Link to="/dashboard/settings">Add resume in settings</Link>
+            <Link to="/dashboard/settings" search={{ redirect: `/dashboard/jobs/${jobId}` }}>
+              Add resume in settings
+            </Link>
           </Button>
         }
       />

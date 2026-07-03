@@ -82,6 +82,10 @@ export function appUrl(): string {
   return import.meta.env.VITE_APP_URL;
 }
 
+export function publicJobUrl(jobId: string): string {
+  return `${appUrl()}/jobs/${jobId}`;
+}
+
 export function truncateDescription(text: string, maxLength = 160): string {
   const normalized = text.replace(/\s+/g, " ").trim();
   if (normalized.length <= maxLength) {
@@ -161,7 +165,7 @@ export function buildJobPageSeo(job: JobPostingSchemaInput) {
 }
 
 export function buildJobPostingSchema(job: JobPostingSchemaInput): Record<string, unknown> {
-  const jobUrl = `${appUrl()}/jobs/${job.id}`;
+  const jobUrl = publicJobUrl(job.id);
   const schema: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "JobPosting",

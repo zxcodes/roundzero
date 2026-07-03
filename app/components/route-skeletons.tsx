@@ -6,40 +6,41 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { DashboardGreeting } from "@/features/dashboard/components/dashboard-greeting";
 import { cn } from "@/lib/utils";
 
-/** Results count + grid + pagination for /jobs (used inside DeferredSection). */
+/** Results count + list + pagination for /jobs (used inside DeferredSection). */
 export function JobsResultsSkeleton() {
   return (
     <>
-      <Skeleton className="h-4 w-36" />
+      <Skeleton className="h-3.5 w-28" />
 
-      <div className="grid gap-5 sm:grid-cols-2">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <Card key={i} variant="bordered-inset" className="min-h-52">
-            <CardContent className="flex flex-col gap-4 p-5">
-              <div className="flex items-start gap-3">
-                <Skeleton className="size-11 shrink-0 rounded-2xl" />
-                <div className="min-w-0 flex-1 space-y-1.5">
-                  <Skeleton className="h-5 w-4/5" />
-                  <Skeleton className="h-4 w-1/3" />
-                </div>
-                <Skeleton className="size-4 shrink-0" />
+      <JobListResultsSkeleton />
+    </>
+  );
+}
+
+function JobListResultsSkeleton() {
+  return (
+    <>
+      <div className="divide-y divide-border/50 overflow-hidden rounded-3xl border border-border/60">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="flex items-start gap-4 px-5 py-4 md:px-6 md:py-5">
+            <div className="min-w-0 flex-1 space-y-3">
+              <div className="space-y-1.5">
+                <Skeleton className="h-5 w-56" />
+                <Skeleton className="h-4 w-32" />
               </div>
-              <div className="flex gap-3">
-                <Skeleton className="h-3.5 w-24" />
-                <Skeleton className="h-5 w-16 rounded-full" />
-              </div>
-              <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-14 w-full" />
-              <div className="flex gap-1.5 border-t border-border/40 pt-3">
+              <Skeleton className="h-4 w-48" />
+              <Skeleton className="h-10 w-full" />
+              <div className="flex gap-2">
                 <Skeleton className="h-5 w-16 rounded-full" />
                 <Skeleton className="h-5 w-14 rounded-full" />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+            <Skeleton className="mt-1 size-4 shrink-0" />
+          </div>
         ))}
       </div>
 
-      <div className="mt-10 flex items-center justify-center gap-1">
+      <div className="flex items-center justify-center gap-1">
         <Skeleton className="h-9 w-9 rounded-md" />
         <Skeleton className="h-9 w-9 rounded-md" />
         <Skeleton className="h-9 w-9 rounded-md" />
@@ -386,31 +387,7 @@ export function CandidateJobsResultsSkeleton() {
   return (
     <>
       <Skeleton className="h-3.5 w-28" />
-
-      <div className="divide-y divide-border/50 overflow-hidden rounded-3xl border border-border/60">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-3 px-5 py-3.5">
-            <div className="min-w-0 flex-1 space-y-1.5">
-              <Skeleton className="h-4 w-56" />
-              <Skeleton className="h-3 w-32" />
-              <Skeleton className="h-3 w-48" />
-              <div className="flex gap-1.5 pt-1">
-                <Skeleton className="h-5 w-16 rounded-full" />
-                <Skeleton className="h-5 w-14 rounded-full" />
-              </div>
-            </div>
-            <Skeleton className="size-4" />
-          </div>
-        ))}
-      </div>
-
-      <div className="flex items-center justify-center gap-1">
-        <Skeleton className="h-9 w-9 rounded-md" />
-        <Skeleton className="h-9 w-9 rounded-md" />
-        <Skeleton className="h-9 w-9 rounded-md" />
-        <Skeleton className="h-9 w-9 rounded-md" />
-        <Skeleton className="h-9 w-9 rounded-md" />
-      </div>
+      <JobListResultsSkeleton />
     </>
   );
 }

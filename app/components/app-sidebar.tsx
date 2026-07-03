@@ -4,6 +4,7 @@ import {
   BubbleChatIcon,
   CheckmarkCircle02Icon,
   CreditCardIcon,
+  CustomerService01Icon,
   House01Icon,
   RankingIcon,
   Search01Icon,
@@ -26,7 +27,6 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/features/auth/provider";
-import { FeedbackDialog } from "@/features/feedback/components/feedback-dialog";
 import type { User } from "@/router";
 import type { CompanyMemberRole } from "@/shared/enums";
 import { Logo } from "./public-layout";
@@ -96,6 +96,11 @@ const buildCompanyNavSections = (showBilling: boolean, showTeam: boolean): Sideb
             ]
           : []),
         {
+          title: "Support",
+          url: "/dashboard/support",
+          icon: <HugeiconsIcon icon={CustomerService01Icon} strokeWidth={2} className="size-4" />,
+        },
+        {
           title: "Settings",
           url: "/dashboard/settings",
           icon: <HugeiconsIcon icon={Setting06Icon} strokeWidth={2} className="size-4" />,
@@ -107,31 +112,51 @@ const buildCompanyNavSections = (showBilling: boolean, showTeam: boolean): Sideb
   return sections.filter((section) => section.items.length > 0);
 };
 
-const candidateMain = [
+const buildCandidateNavSections = (): SidebarNavSection[] => [
   {
-    title: "Overview",
-    url: "/dashboard",
-    icon: <HugeiconsIcon icon={House01Icon} strokeWidth={2} className="size-4" />,
+    label: "Overview",
+    items: [
+      {
+        title: "Overview",
+        url: "/dashboard",
+        icon: <HugeiconsIcon icon={House01Icon} strokeWidth={2} className="size-4" />,
+      },
+    ],
   },
   {
-    title: "Browse Jobs",
-    url: "/dashboard/jobs",
-    icon: <HugeiconsIcon icon={Search01Icon} strokeWidth={2} className="size-4" />,
+    label: "Applications",
+    items: [
+      {
+        title: "Browse Jobs",
+        url: "/dashboard/jobs",
+        icon: <HugeiconsIcon icon={Search01Icon} strokeWidth={2} className="size-4" />,
+      },
+      {
+        title: "My Applications",
+        url: "/dashboard/applications",
+        icon: <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} className="size-4" />,
+      },
+      {
+        title: "Interviews",
+        url: "/interview",
+        icon: <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={2} className="size-4" />,
+      },
+    ],
   },
   {
-    title: "My Applications",
-    url: "/dashboard/applications",
-    icon: <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} className="size-4" />,
-  },
-  {
-    title: "Interviews",
-    url: "/interview",
-    icon: <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={2} className="size-4" />,
-  },
-  {
-    title: "Settings",
-    url: "/dashboard/settings",
-    icon: <HugeiconsIcon icon={Setting06Icon} strokeWidth={2} className="size-4" />,
+    label: "Account",
+    items: [
+      {
+        title: "Support",
+        url: "/dashboard/support",
+        icon: <HugeiconsIcon icon={CustomerService01Icon} strokeWidth={2} className="size-4" />,
+      },
+      {
+        title: "Settings",
+        url: "/dashboard/settings",
+        icon: <HugeiconsIcon icon={Setting06Icon} strokeWidth={2} className="size-4" />,
+      },
+    ],
   },
 ];
 
@@ -149,7 +174,7 @@ export function AppSidebar({
   const canManageTeam = membershipRole === "owner" || membershipRole === "admin";
   const navSections = isCompany
     ? buildCompanyNavSections(membershipRole === "owner", canManageTeam)
-    : [{ label: "Candidate", items: candidateMain }];
+    : buildCandidateNavSections();
 
   return (
     <Sidebar collapsible="offcanvas" {...props} variant="floating">
@@ -186,8 +211,7 @@ export function AppSidebar({
         <NavMain sections={navSections} />
       </SidebarContent>
 
-      <SidebarFooter className="flex flex-col gap-2">
-        <FeedbackDialog />
+      <SidebarFooter>
         <NavUser user={user} onSignOut={signOut} isSigningOut={isSigningOut} />
       </SidebarFooter>
     </Sidebar>
