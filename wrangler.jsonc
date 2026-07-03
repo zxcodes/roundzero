@@ -82,7 +82,7 @@
       "r2_buckets": [
         {
           "binding": "RESUMES",
-          "bucket_name": "roundzero-assets"
+          "bucket_name": "roundzero-assets-staging"
         }
       ],
       "workflows": [
