@@ -33,7 +33,9 @@ export default defineConfig(({ mode }) => {
         org: "roundzero-a4",
         project: "roundzero",
         authToken: process.env.SENTRY_AUTH_TOKEN ?? env.SENTRY_AUTH_TOKEN,
-        sourcemaps: { disable: mode !== "production" },
+        // `mode` is Vite's build mode (always "production" for `vite build`),
+        // so gate on the Cloudflare env instead — upload maps for prod only.
+        sourcemaps: { disable: process.env.CLOUDFLARE_ENV !== "production" },
         telemetry: false,
       }),
     ],
