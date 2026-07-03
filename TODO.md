@@ -17,7 +17,6 @@
 ## Future
 - add batch actions for companies (shortlist multiple candidates, and quick actions "shortlist top 3" reject "bottom ones")
 
-
 <!--- job search doesn't work. each keystroke triggers a page refresh (regression)-->
 <!--- add basic admin dashboard with stats (should be good enough for the start).-->
 <!--- add good seo stuff (check skills), basic done. use tanstack dev tools for og stuff it's good. enable them first.-->
