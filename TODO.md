@@ -2,7 +2,6 @@
 
 
 - review openrouter models prod chain.
-<!--- job search doesn't work. each keystroke triggers a page refresh (regression)-->
 - improve landing page messaging. also see if we need to move sections around or make the value prop more clear, or use report image as hero?
 - see if we can add a cold reach out feature for companies (paid) so find any candidate on the platform in natural lang. should give their profile with a nice summary irrespective of job postings or anything. useful if companies are looking for someone direct instead of posting a job. an alternate way of hiring basically.
 - right now there's no feedback if there's something wrong with candidate's pdf. they can upload any pdf and the workflow will try to parse it. we need to detect if it's not a resume, and tell the user to add or something? think.
@@ -19,6 +18,7 @@
 - add batch actions for companies (shortlist multiple candidates, and quick actions "shortlist top 3" reject "bottom ones")
 
 
+<!--- job search doesn't work. each keystroke triggers a page refresh (regression)-->
 <!--- add basic admin dashboard with stats (should be good enough for the start).-->
 <!--- add good seo stuff (check skills), basic done. use tanstack dev tools for og stuff it's good. enable them first.-->
 <!--- pretty sure openrouter model fallbacks still don't work. verify in local dev.-->
