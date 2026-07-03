@@ -67,7 +67,7 @@ const MODEL_CHAINS = {
   answer_authenticity: {
     dev: DEFAULT_CHAIN.dev,
     staging: DEFAULT_CHAIN.staging,
-    prod: ["anthropic/claude-haiku-4.5"],
+    prod: ["anthropic/claude-sonnet-4.5", "anthropic/claude-haiku-4.5"],
   },
 } as const satisfies Record<
   Task,
