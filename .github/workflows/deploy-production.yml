@@ -4,19 +4,22 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches: [main]
+  workflow_dispatch:
 
 concurrency:
-  group: deploy-production-${{ github.event.pull_request.head.ref }}
+  group: deploy-production-${{ github.event_name == 'workflow_dispatch' && github.ref || github.event.pull_request.head.ref }}
   cancel-in-progress: false
 
 jobs:
   test:
     if: |
-      (
-        startsWith(github.event.pull_request.head.ref, 'hotfix/') ||
-        startsWith(github.event.pull_request.head.ref, 'release/')
-      ) && (
-        github.event.action != 'closed' || github.event.pull_request.merged == true
+      github.event_name == 'workflow_dispatch' || (
+        (
+          startsWith(github.event.pull_request.head.ref, 'hotfix/') ||
+          startsWith(github.event.pull_request.head.ref, 'release/')
+        ) && (
+          github.event.action != 'closed' || github.event.pull_request.merged == true
+        )
       )
     runs-on: ubuntu-latest
     services:
@@ -36,7 +39,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.sha || github.event.pull_request.head.sha }}
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -60,16 +63,18 @@ jobs:
   deploy:
     needs: test
     if: |
-      github.event.pull_request.merged == true && (
-        startsWith(github.event.pull_request.head.ref, 'hotfix/') ||
-        startsWith(github.event.pull_request.head.ref, 'release/')
+      github.event_name == 'workflow_dispatch' || (
+        github.event.pull_request.merged == true && (
+          startsWith(github.event.pull_request.head.ref, 'hotfix/') ||
+          startsWith(github.event.pull_request.head.ref, 'release/')
+        )
       )
     runs-on: ubuntu-latest
     environment: production
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.sha || github.event.pull_request.merge_commit_sha }}
 
       - uses: oven-sh/setup-bun@v2
         with:
