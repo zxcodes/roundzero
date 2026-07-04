@@ -1020,25 +1020,6 @@ export function AdminDashboardSkeleton() {
           ))}
         </div>
       </section>
-
-      <section className="space-y-4">
-        <Skeleton className="h-5 w-20" />
-        <div className="grid gap-4 lg:grid-cols-2">
-          {Array.from({ length: 2 }).map((_, i) => (
-            <Card key={i} variant="bordered-inset">
-              <CardContent className="space-y-3 p-5">
-                <Skeleton className="h-5 w-24" />
-                {Array.from({ length: 5 }).map((__, j) => (
-                  <div key={j} className="flex justify-between gap-3">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-4 w-10" />
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
     </div>
   );
 }
