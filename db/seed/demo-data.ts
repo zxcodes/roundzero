@@ -82,15 +82,39 @@ export function makeScoresFromOverall(overall: number, seed: string) {
 
 export function buildReportSummary(candidateName: string, jobTitle: string, overall: number) {
   if (overall >= 8.5) {
-    return `${candidateName} is a standout candidate for ${jobTitle} — strong signal across technical depth, communication, and ownership.`;
+    return [
+      `${candidateName} is a standout candidate for ${jobTitle} — strong signal across technical depth, communication, and ownership.`,
+      `They grounded answers in shipped work with measurable outcomes instead of abstract claims, and walked through tradeoffs between speed, reliability, and maintainability with unusual clarity.`,
+      `System design responses showed mature judgment: they scoped problems before proposing architecture, called out failure modes, and described how they would validate assumptions in production.`,
+      `Communication stayed structured under follow-up pressure — they asked clarifying questions, revised plans when new constraints appeared, and explained decisions in language a cross-functional partner could act on.`,
+      `Recommendation: advance to a human interview with high confidence. Likely to ramp quickly, raise the quality bar on the team, and contribute meaningfully within the first sprint cycle.`,
+    ].join(" ");
   }
   if (overall >= 7) {
-    return `${candidateName} shows solid readiness for ${jobTitle} with credible production examples and structured reasoning.`;
+    return [
+      `${candidateName} shows solid readiness for ${jobTitle} with credible production examples and structured reasoning throughout the interview.`,
+      `They demonstrated competent execution on familiar problem shapes and explained how their work connected to user or business outcomes, not just implementation detail.`,
+      `Depth was strongest on topics they have lived in recently; a few answers stayed high-level when pushed on edge cases, scaling limits, or operational follow-through.`,
+      `Communication was clear and collaborative — they listened to constraints, incorporated feedback mid-answer, and stayed composed when scenarios became ambiguous.`,
+      `Recommendation: worth advancing, with targeted follow-up on the thinner areas during the next round before making a final hire decision.`,
+    ].join(" ");
   }
   if (overall >= 5.5) {
-    return `${candidateName} demonstrates baseline competence for ${jobTitle}, but gaps remain before a confident hire recommendation.`;
+    return [
+      `${candidateName} demonstrates baseline competence for ${jobTitle}, but the interview did not produce enough depth for a confident hire recommendation yet.`,
+      `They could describe recent responsibilities and tools used, yet struggled to connect those experiences to difficult tradeoffs, incident response, or measurable impact.`,
+      `Problem-solving answers often stopped at the happy path — follow-up questions about failure modes, monitoring, or rollback plans revealed gaps in production judgment.`,
+      `Communication was polite and earnest, though answers sometimes wandered before reaching a concrete recommendation the hiring team could evaluate.`,
+      `Recommendation: hold for now. A structured follow-up interview focused on live problem-solving would be needed before reconsidering.`,
+    ].join(" ");
   }
-  return `${candidateName} does not currently meet the bar for ${jobTitle} based on interview depth and role-specific examples.`;
+  return [
+    `${candidateName} does not currently meet the bar for ${jobTitle} based on interview depth, role-specific examples, and decision-making under ambiguity.`,
+    `Responses frequently lacked concrete artifacts from shipped work — timelines, metrics, constraints, and personal ownership were hard to pin down.`,
+    `When pressed on technical or product scenarios relevant to the role, answers stayed generic and did not show a repeatable approach to diagnosing or de-risking problems.`,
+    `Communication was uneven: several answers were difficult to follow, and clarifying questions did not consistently lead to sharper thinking.`,
+    `Recommendation: do not advance at this stage. A future application could be reconsidered if their profile shows substantially stronger relevant experience.`,
+  ].join(" ");
 }
 
 export function buildReportContent(input: {
@@ -103,10 +127,22 @@ export function buildReportContent(input: {
 
   return {
     summary: buildReportSummary(input.candidateName, input.jobTitle, input.overall),
-    strengths: [pick(strengthPool, input.index), pick(strengthPool, input.index + 3)],
-    weaknesses: [pick(weaknessPool, input.index)],
-    insights: [pick(insightPool, input.index), pick(insightPool, input.index + 2)],
-    evidence: [pick(evidencePool, input.index), pick(evidencePool, input.index + 1)],
+    strengths: [
+      pick(strengthPool, input.index),
+      pick(strengthPool, input.index + 3),
+      pick(strengthPool, input.index + 5),
+    ],
+    weaknesses: [pick(weaknessPool, input.index), pick(weaknessPool, input.index + 2)],
+    insights: [
+      pick(insightPool, input.index),
+      pick(insightPool, input.index + 2),
+      pick(insightPool, input.index + 4),
+    ],
+    evidence: [
+      pick(evidencePool, input.index),
+      pick(evidencePool, input.index + 1),
+      pick(evidencePool, input.index + 3),
+    ],
     screeningAnswers: [
       {
         question: screeningQuestionPool[0],

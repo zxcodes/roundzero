@@ -153,10 +153,9 @@ function ApplicantReportSummaryPage() {
   const canReject = allowedTransitions.includes("rejected") && currentStatus !== "rejected";
   const isShortlisted = currentStatus === "shortlisted";
   const shortlistDetails = parseShortlistDetails(application.metadata);
-  const allowedStatusOptions: ApplicationStatus[] = [
-    currentStatus,
-    ...allowedTransitions.filter((status) => status !== currentStatus && status !== "shortlisted"),
-  ];
+  const statusMoveOptions = allowedTransitions.filter(
+    (status) => status !== "shortlisted" && status !== "rejected",
+  );
 
   const onStatusValueChange = async (value: string) => {
     const nextStatus = applicationStatusSchema.parse(value);
@@ -388,17 +387,13 @@ function ApplicantReportSummaryPage() {
                   : "Reject"}
               </Button>
             ) : null}
-            {allowedStatusOptions.length > 1 ? (
-              <Select
-                value={currentStatus}
-                onValueChange={onStatusValueChange}
-                disabled={updateStatusMutation.isPending}
-              >
+            {statusMoveOptions.length > 0 ? (
+              <Select onValueChange={onStatusValueChange} disabled={updateStatusMutation.isPending}>
                 <SelectTrigger className="w-50">
                   <SelectValue placeholder="Move to status" />
                 </SelectTrigger>
                 <SelectContent>
-                  {allowedStatusOptions.map((status) => (
+                  {statusMoveOptions.map((status) => (
                     <SelectItem key={status} value={status}>
                       Move to: {applicationStatusLabels[status]}
                     </SelectItem>
@@ -432,7 +427,7 @@ function ApplicantReportSummaryPage() {
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Verdict
           </p>
-          <p className="mt-2 max-w-3xl text-sm leading-7 text-foreground">{report.summary}</p>
+          <p className="mt-2 text-sm leading-7 text-foreground">{report.summary}</p>
           <div className="mt-4 flex flex-wrap gap-2">
             {(Object.keys(reportDimensionLabels) as Array<keyof typeof reportDimensionLabels>).map(
               (key) => {

@@ -137,10 +137,9 @@ function ApplicantAiReportPage() {
   const canReject = allowedTransitions.includes("rejected") && currentStatus !== "rejected";
   const isShortlisted = currentStatus === "shortlisted";
   const shortlistDetails = parseShortlistDetails(application.metadata);
-  const allowedStatusOptions: ApplicationStatus[] = [
-    currentStatus,
-    ...allowedTransitions.filter((status) => status !== currentStatus && status !== "shortlisted"),
-  ];
+  const statusMoveOptions = allowedTransitions.filter(
+    (status) => status !== "shortlisted" && status !== "rejected",
+  );
 
   const onStatusValueChange = async (value: string) => {
     const nextStatus = applicationStatusSchema.parse(value);
@@ -367,17 +366,13 @@ function ApplicantAiReportPage() {
                   : "Reject"}
               </Button>
             ) : null}
-            {allowedStatusOptions.length > 1 ? (
-              <Select
-                value={currentStatus}
-                onValueChange={onStatusValueChange}
-                disabled={updateStatusMutation.isPending}
-              >
+            {statusMoveOptions.length > 0 ? (
+              <Select onValueChange={onStatusValueChange} disabled={updateStatusMutation.isPending}>
                 <SelectTrigger className="w-50">
                   <SelectValue placeholder="Move to status" />
                 </SelectTrigger>
                 <SelectContent>
-                  {allowedStatusOptions.map((status) => (
+                  {statusMoveOptions.map((status) => (
                     <SelectItem key={status} value={status}>
                       Move to: {applicationStatusLabels[status]}
                     </SelectItem>
