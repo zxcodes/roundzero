@@ -1,11 +1,15 @@
-import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { createFileRoute, Link, notFound, redirect } from "@tanstack/react-router";
-import { Logo } from "@/components/public-layout";
-import { AdminDashboardSkeleton } from "@/components/route-skeletons";
-import { Button } from "@/components/ui/button";
-import { PlatformAdminDashboard } from "@/features/admin/components/platform-admin-dashboard";
-import { getPlatformAdminStats } from "@/features/admin/server/functions";
+import {
+  createFileRoute,
+  notFound,
+  Outlet,
+  redirect,
+  useMatches,
+  useRouteContext,
+} from "@tanstack/react-router";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { AdminHeader } from "@/features/admin/components/admin-header";
+import { AdminSidebar } from "@/features/admin/components/admin-sidebar";
 import { noindexHead } from "@/shared/seo";
 
 export const Route = createFileRoute("/admin")({
@@ -14,60 +18,43 @@ export const Route = createFileRoute("/admin")({
     if (!context.user) {
       throw redirect({ to: "/" });
     }
-  },
-  loader: async () => {
-    try {
-      return await getPlatformAdminStats();
-    } catch {
+
+    if (!context.user.isPlatformAdmin) {
       throw notFound();
     }
   },
-  pendingComponent: AdminPendingPage,
-  component: AdminPage,
+  component: AdminLayout,
 });
 
-function AdminShell({ children }: { children: React.ReactNode }) {
+function AdminLayout() {
+  const { user } = useRouteContext({ from: "__root__" });
+  const matches = useMatches();
+  const lastMatch = matches[matches.length - 1];
+  const routeId = lastMatch?.routeId ?? "";
+
+  if (!user) {
+    return null;
+  }
+
   return (
-    <div className="bg-background text-foreground min-h-svh">
-      <div className="mx-auto w-full min-w-0 max-w-[1600px] px-4 md:px-8">
-        <header className="flex flex-wrap items-center justify-between gap-4 border-b py-4 md:py-6">
-          <div className="flex items-center gap-3">
-            <Link to="/" className="flex items-center gap-1">
-              <Logo />
-              <span className="font-heading text-[19px] leading-none font-medium tracking-[-0.01em]">
-                RoundZero
-              </span>
-            </Link>
-            <span className="text-sm text-muted-foreground">Internal</span>
+    <TooltipProvider>
+      <SidebarProvider
+        style={
+          {
+            "--sidebar-width": "calc(var(--spacing) * 72)",
+          } as { [key: string]: string }
+        }
+      >
+        <AdminSidebar user={user} variant="inset" />
+        <SidebarInset>
+          <AdminHeader routeId={routeId} />
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden">
+            <div className="mx-auto flex w-full min-w-0 max-w-[1600px] flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+              <Outlet />
+            </div>
           </div>
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/dashboard" className="no-underline hover:no-underline">
-              <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-3.5" />
-              Back to dashboard
-            </Link>
-          </Button>
-        </header>
-
-        <main className="py-6 md:py-10">{children}</main>
-      </div>
-    </div>
-  );
-}
-
-function AdminPendingPage() {
-  return (
-    <AdminShell>
-      <AdminDashboardSkeleton />
-    </AdminShell>
-  );
-}
-
-function AdminPage() {
-  const stats = Route.useLoaderData();
-
-  return (
-    <AdminShell>
-      <PlatformAdminDashboard stats={stats} />
-    </AdminShell>
+        </SidebarInset>
+      </SidebarProvider>
+    </TooltipProvider>
   );
 }

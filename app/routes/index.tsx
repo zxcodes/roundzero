@@ -43,7 +43,6 @@ function HomePage() {
         <HowItWorks />
         <PipelineSection />
         <CandidateExperience />
-        <ReportScreenshotSection />
         <MarketingPricingSection />
         <FaqSection />
         <Closing />
@@ -149,7 +148,8 @@ function Hero() {
           </h1>
           <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
             <p className="min-w-0 max-w-xl text-[clamp(0.95rem,1.2vw,1.05rem)] leading-relaxed text-muted-foreground">
-              Purpose-built for hiring teams. Evaluation before the first interview.
+              Evidence-backed reports on every applicant, before your team schedules a real
+              interview.
             </p>
             <TextLink to="/company/login" className="shrink-0 text-sm">
               Post a job
@@ -159,8 +159,8 @@ function Hero() {
 
         <div className="rise calm-hero-shot mt-10 lg:mt-14">
           <img
-            src="/marketing/dashboard.jpeg"
-            alt="RoundZero dashboard showing candidates awaiting review with scores and recommendations"
+            src="/marketing/report.png"
+            alt="RoundZero post-interview report with scores, verdict, strengths, gaps, and interview evidence"
             className="calm-hero-shot__img"
             width={2400}
             height={1500}
@@ -666,39 +666,6 @@ function CandidateExperience() {
               </div>
             </div>
           </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ───────────────────────────────────────────────────────────────────────────
-// Report
-// ───────────────────────────────────────────────────────────────────────────
-function ReportScreenshotSection() {
-  return (
-    <section
-      className={cn("overflow-hidden border-t border-border", SECTION_TINT, "pb-20 lg:pb-28")}
-    >
-      <div className={cn(CONTAINER, "pb-0 pt-20 lg:pt-28")}>
-        <div className="w-full text-left">
-          <SectionHeading
-            eyebrow="The report"
-            title="See how candidates actually perform"
-            lead="Every candidate arrives with a structured report covering reasoning, communication, and relevant experience, plus strengths, concerns, and a clear recommendation."
-          />
-        </div>
-
-        <div className="calm-hero-shot mt-10 lg:mt-14">
-          <img
-            src="/marketing/report.jpeg"
-            alt="RoundZero post-interview report with scores, strengths, gaps, and interview evidence"
-            className="calm-hero-shot__img"
-            width={2400}
-            height={1500}
-            loading="lazy"
-            decoding="async"
-          />
         </div>
       </div>
     </section>

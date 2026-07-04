@@ -221,7 +221,9 @@ function buildApplicantPlans(reportCount: number, heldCount = 0): ApplicantPlan[
 
   const reportPlans: ApplicantPlan[] = releasedScores.map((overallScore, index) => {
     let status: ApplicantStatus = "evaluated";
-    if (index < 2) status = "shortlisted";
+    // Keep the top-ranked report in "evaluated" so the report page shows the
+    // primary Shortlist action; shortlist the runner-up for the Shortlisted inbox.
+    if (index === 1) status = "shortlisted";
     if (index >= releasedScores.length - 2) status = "rejected";
 
     return {
@@ -263,6 +265,29 @@ function parseEmailArgs() {
 
 // ─── Phase 1: synthetic candidate pool ─────────────────────────────
 
+const syntheticCandidateProfiles = [
+  { name: "Sarah Chen", picture: "https://i.pravatar.cc/300?img=47" },
+  { name: "Marcus Johnson", picture: "https://i.pravatar.cc/300?img=33" },
+  { name: "Priya Patel", picture: "https://i.pravatar.cc/300?img=45" },
+  { name: "James Okonkwo", picture: "https://i.pravatar.cc/300?img=12" },
+  { name: "Emily Rodriguez", picture: "https://i.pravatar.cc/300?img=9" },
+  { name: "David Kim", picture: "https://i.pravatar.cc/300?img=15" },
+  { name: "Aisha Rahman", picture: "https://i.pravatar.cc/300?img=48" },
+  { name: "Michael Torres", picture: "https://i.pravatar.cc/300?img=13" },
+  { name: "Hannah Nguyen", picture: "https://i.pravatar.cc/300?img=44" },
+  { name: "Chris Anderson", picture: "https://i.pravatar.cc/300?img=7" },
+  { name: "Olivia Bennett", picture: "https://i.pravatar.cc/300?img=31" },
+  { name: "Raj Mehta", picture: "https://i.pravatar.cc/300?img=14" },
+  { name: "Sophie Laurent", picture: "https://i.pravatar.cc/300?img=38" },
+  { name: "Daniel Brooks", picture: "https://i.pravatar.cc/300?img=11" },
+  { name: "Maya Williams", picture: "https://i.pravatar.cc/300?img=49" },
+  { name: "Kevin Okafor", picture: "https://i.pravatar.cc/300?img=52" },
+  { name: "Jessica Park", picture: "https://i.pravatar.cc/300?img=32" },
+  { name: "Alex Morgan", picture: "https://i.pravatar.cc/300?img=60" },
+  { name: "Nina Kowalski", picture: "https://i.pravatar.cc/300?img=36" },
+  { name: "Ryan Sullivan", picture: "https://i.pravatar.cc/300?img=8" },
+] as const;
+
 async function seedSyntheticCandidates() {
   const candidates: Array<{
     id: string;
@@ -273,20 +298,19 @@ async function seedSyntheticCandidates() {
     googleId: string;
   }> = [];
 
-  for (let i = 1; i <= 20; i++) {
-    const seed = `rz-seed-candidate-user-${i}`;
-    const firstName = copycat.firstName(seed);
-    const lastName = copycat.lastName(`${seed}-last`);
-    const id = makeUuid("rz-seed-candidate-user", i);
-    const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}${i}@gmail.com`;
+  for (let i = 0; i < syntheticCandidateProfiles.length; i++) {
+    const profile = syntheticCandidateProfiles[i]!;
+    const index = i + 1;
+    const id = makeUuid("rz-seed-candidate-user", index);
+    const slug = profile.name.toLowerCase().replace(/[^a-z0-9]+/g, ".");
 
     candidates.push({
       id,
-      email,
-      name: `${firstName} ${lastName}`,
-      picture: `https://i.pravatar.cc/300?img=${((i + 20) % 70) + 1}`,
+      email: `${slug}${index}@gmail.com`,
+      name: profile.name,
+      picture: profile.picture,
       role: "candidate",
-      googleId: `rz-seed-candidate-google-${i}`,
+      googleId: `rz-seed-candidate-google-${index}`,
     });
   }
 

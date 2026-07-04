@@ -66,7 +66,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       },
       {
         property: "og:image",
-        content: `${import.meta.env.VITE_APP_URL}/og-default.jpeg`,
+        content: `${import.meta.env.VITE_APP_URL}/og-default.png`,
       },
       {
         property: "og:image:width",
@@ -82,7 +82,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       },
       {
         name: "twitter:image",
-        content: `${import.meta.env.VITE_APP_URL}/og-default.jpeg`,
+        content: `${import.meta.env.VITE_APP_URL}/og-default.png`,
       },
       {
         name: "twitter:title",
@@ -103,10 +103,6 @@ export const Route = createRootRouteWithContext<RouterContext>()({
   }),
   beforeLoad: async ({ context }) => {
     try {
-      // Cache the user in React Query so repeated navigations don't re-round-trip
-      // to the worker. Auth mutations invalidate `currentUserQueryKey` to refresh.
-      // `fetchQuery` (not `ensureQueryData`) is required so that after invalidation
-      // the router waits for fresh data rather than receiving stale cached data.
       const user = await context.queryClient.fetchQuery({
         queryKey: currentUserQueryKey,
         queryFn: () => getCurrentUser(),

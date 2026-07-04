@@ -231,8 +231,6 @@ export const createCompany = createServerFn({ method: "POST" })
     return { company };
   });
 
-// Cache key for the _authenticated beforeLoad bootstrap; invalidated centrally
-// in getRouter() on router.invalidate(). See app/router.tsx.
 export const companyBootstrapQueryKey = ["company-bootstrap"] as const;
 
 /**
