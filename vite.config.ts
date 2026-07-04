@@ -4,12 +4,10 @@ import { sentryTanstackStart } from "@sentry/tanstackstart-react/vite";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact, { reactCompilerPreset } from "@vitejs/plugin-react";
-import { defineConfig, loadEnv } from "vite";
+import { defineConfig } from "vite";
 
 // biome-ignore lint/style/noDefaultExport: <uh>
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), "");
-
+export default defineConfig(() => {
   return {
     server: { port: 3000 },
     resolve: { tsconfigPaths: true },
@@ -32,9 +30,7 @@ export default defineConfig(({ mode }) => {
       sentryTanstackStart({
         org: "roundzero-a4",
         project: "roundzero",
-        authToken: process.env.SENTRY_AUTH_TOKEN ?? env.SENTRY_AUTH_TOKEN,
-        // `mode` is Vite's build mode (always "production" for `vite build`),
-        // so gate on the Cloudflare env instead — upload maps for prod only.
+        authToken: process.env.SENTRY_AUTH_TOKEN,
         sourcemaps: { disable: process.env.CLOUDFLARE_ENV !== "production" },
         telemetry: false,
       }),
