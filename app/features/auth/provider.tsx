@@ -42,8 +42,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         pendingRoleRef.current = undefined;
         pendingSignupSearchRef.current = {};
 
-        // Seed the cache with the freshly-authenticated user so
-        // `__root.beforeLoad` hits warm cache instead of round-tripping.
         queryClient.setQueryData(currentUserQueryKey, result.user);
 
         if (result.restored) {
@@ -102,8 +100,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsSigningOut(true);
     try {
       await logout();
-      // Seed the cache with null so `__root.beforeLoad` hits warm cache
-      // instead of round-tripping to confirm the session is gone.
       queryClient.setQueryData(currentUserQueryKey, null);
       await router.navigate({ to: "/" });
       await router.invalidate();
