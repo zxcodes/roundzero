@@ -445,7 +445,7 @@ function ActiveJobsTable({
                               className="size-3.5"
                             />
                           )}
-                          {isPending ? "Publishing..." : "Publish"}
+                          {isPending ? "Publishing" : "Publish"}
                         </Button>
                       )
                     ) : null}

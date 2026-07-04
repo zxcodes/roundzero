@@ -141,7 +141,7 @@ function ContactPage() {
                     className="size-4 animate-spin"
                   />
                 ) : null}
-                {isSubmitting ? "Sending..." : "Send message"}
+                {isSubmitting ? "Sending" : "Send message"}
               </Button>
             )}
           </form.Subscribe>

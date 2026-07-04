@@ -361,9 +361,7 @@ function ApplicantAiReportPage() {
                 ) : (
                   <HugeiconsIcon icon={Alert02Icon} strokeWidth={2} className="size-4" />
                 )}
-                {updateStatusMutation.isPending && pendingStatus !== null
-                  ? "Rejecting..."
-                  : "Reject"}
+                {updateStatusMutation.isPending && pendingStatus !== null ? "Rejecting" : "Reject"}
               </Button>
             ) : null}
             {statusMoveOptions.length > 0 ? (
@@ -396,7 +394,7 @@ function ApplicantAiReportPage() {
                 ) : (
                   <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-4" />
                 )}
-                {resumeDownloadMutation.isPending ? "Opening..." : "View resume"}
+                {resumeDownloadMutation.isPending ? "Opening" : "View resume"}
               </Button>
             ) : null}
           </div>

@@ -146,8 +146,8 @@ export function ResumeUploadField({
       {isUploading ? (
         <div className="space-y-2 rounded-lg border px-3 py-2">
           <div className="flex items-center justify-between text-sm">
-            <span>{uploadedResume?.name ?? "Uploading resume..."}</span>
-            <span className="text-muted-foreground">Uploading...</span>
+            <span>{uploadedResume?.name ?? "Uploading resume"}</span>
+            <span className="text-muted-foreground">Uploading</span>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-muted">
             <div className="h-full w-full animate-pulse bg-primary" />

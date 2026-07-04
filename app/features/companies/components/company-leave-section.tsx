@@ -59,7 +59,7 @@ export function CompanyLeaveSection() {
               ) : (
                 <HugeiconsIcon icon={Logout01Icon} strokeWidth={2} className="size-4" />
               )}
-              {leaveMutation.isPending ? "Leaving..." : "Leave team"}
+              {leaveMutation.isPending ? "Leaving" : "Leave team"}
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
@@ -79,7 +79,7 @@ export function CompanyLeaveSection() {
                     className="size-4 animate-spin"
                   />
                 ) : null}
-                {leaveMutation.isPending ? "Leaving..." : "Leave team"}
+                {leaveMutation.isPending ? "Leaving" : "Leave team"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

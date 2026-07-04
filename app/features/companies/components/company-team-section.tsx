@@ -292,7 +292,7 @@ export function CompanyTeamSection({
                     ) : (
                       <HugeiconsIcon icon={Mail01Icon} strokeWidth={2} className="size-4" />
                     )}
-                    {isSubmitting || inviteMutation.isPending ? "Sending..." : "Send invite"}
+                    {isSubmitting || inviteMutation.isPending ? "Sending" : "Send invite"}
                   </Button>
                 )}
               </form.Subscribe>
@@ -362,7 +362,7 @@ export function CompanyTeamSection({
                             className="size-4 animate-spin"
                           />
                         ) : null}
-                        {isResending ? "Resending..." : "Resend"}
+                        {isResending ? "Resending" : "Resend"}
                       </Button>
                       <Button
                         type="button"
@@ -378,7 +378,7 @@ export function CompanyTeamSection({
                             className="size-4 animate-spin"
                           />
                         ) : null}
-                        {isRevoking ? "Revoking..." : "Revoke"}
+                        {isRevoking ? "Revoking" : "Revoke"}
                       </Button>
                     </div>
                   </div>
@@ -451,7 +451,7 @@ export function CompanyTeamSection({
                                     className="size-4 animate-spin"
                                   />
                                 ) : null}
-                                {isTransferring ? "Transferring..." : "Make owner"}
+                                {isTransferring ? "Transferring" : "Make owner"}
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
@@ -475,7 +475,7 @@ export function CompanyTeamSection({
                                       className="size-4 animate-spin"
                                     />
                                   ) : null}
-                                  {isTransferring ? "Transferring..." : "Transfer ownership"}
+                                  {isTransferring ? "Transferring" : "Transfer ownership"}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
@@ -497,7 +497,7 @@ export function CompanyTeamSection({
                                     className="size-4 animate-spin"
                                   />
                                 ) : null}
-                                {isRemoving ? "Removing..." : "Remove"}
+                                {isRemoving ? "Removing" : "Remove"}
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
@@ -520,7 +520,7 @@ export function CompanyTeamSection({
                                       className="size-4 animate-spin"
                                     />
                                   ) : null}
-                                  {isRemoving ? "Removing..." : "Remove member"}
+                                  {isRemoving ? "Removing" : "Remove member"}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>

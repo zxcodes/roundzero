@@ -371,7 +371,7 @@ function CandidateApplicationDetailPage() {
             ) : (
               <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-4" />
             )}
-            {resumeDownloadMutation.isPending ? "Opening..." : "View submitted resume"}
+            {resumeDownloadMutation.isPending ? "Opening" : "View submitted resume"}
           </Button>
         ) : null}
         {application.companyOwnerDeleted ? null : (

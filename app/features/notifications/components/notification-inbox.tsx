@@ -151,7 +151,7 @@ export function NotificationInbox({
           {markAllMutation.isPending ? (
             <HugeiconsIcon icon={Loading03Icon} strokeWidth={2} className="size-4 animate-spin" />
           ) : null}
-          {markAllMutation.isPending ? "Marking..." : "Mark all read"}
+          {markAllMutation.isPending ? "Marking" : "Mark all read"}
         </Button>
       </div>
 

@@ -166,7 +166,7 @@ export function CommandPalette({
           <CommandGroup heading="Account">
             <CommandItem onSelect={onSignOut} disabled={isSigningOut}>
               <HugeiconsIcon icon={isSigningOut ? Loading03Icon : Logout03Icon} strokeWidth={2} />
-              <span>{isSigningOut ? "Signing out..." : "Sign out"}</span>
+              <span>{isSigningOut ? "Signing out" : "Sign out"}</span>
               <CommandShortcut>⇧⌘Q</CommandShortcut>
             </CommandItem>
           </CommandGroup>

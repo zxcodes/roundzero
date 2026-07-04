@@ -47,7 +47,7 @@ function NoWorkspacePage() {
         <EmptyContent>
           <Button disabled={isSigningOut} onClick={onSignOut} variant="outline">
             <HugeiconsIcon icon={Logout01Icon} strokeWidth={2} className="size-4" />
-            {isSigningOut ? "Signing out..." : "Sign out"}
+            {isSigningOut ? "Signing out" : "Sign out"}
           </Button>
         </EmptyContent>
       </Empty>

@@ -174,7 +174,7 @@ export function CompanyJobActions({
           ) : (
             <HugeiconsIcon icon={Rocket01Icon} strokeWidth={2} className="size-3.5" />
           )}
-          {publishJobMutation.isPending ? "Publishing..." : "Publish"}
+          {publishJobMutation.isPending ? "Publishing" : "Publish"}
         </Button>
       ) : null}
 
@@ -229,7 +229,7 @@ export function CompanyJobActions({
             ) : (
               <HugeiconsIcon icon={Archive01Icon} strokeWidth={2} className="size-3.5" />
             )}
-            {archiveJobMutation.isPending ? "Archiving..." : "Archive"}
+            {archiveJobMutation.isPending ? "Archiving" : "Archive"}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

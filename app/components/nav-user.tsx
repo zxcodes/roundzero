@@ -85,7 +85,7 @@ export function NavUser({
                 strokeWidth={2}
                 className="size-4"
               />
-              {isSigningOut ? "Logging out..." : "Log out"}
+              {isSigningOut ? "Logging out" : "Log out"}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
