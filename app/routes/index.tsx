@@ -148,7 +148,7 @@ function Hero() {
           </h1>
           <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
             <p className="min-w-0 max-w-xl text-[clamp(0.95rem,1.2vw,1.05rem)] leading-relaxed text-muted-foreground">
-              Evidence-backed reports on every applicant — before your team schedules a single
+              Evidence-backed reports on every applicant, before your team schedules a real
               interview.
             </p>
             <TextLink to="/company/login" className="shrink-0 text-sm">
