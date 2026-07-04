@@ -3,13 +3,9 @@ import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import {
   getPlatformAdminApplicationMetrics,
-  getPlatformAdminApplicationStatuses,
-  getPlatformAdminBatchCount,
   getPlatformAdminCompanyMetrics,
-  getPlatformAdminCompanyPlans,
   getPlatformAdminInterviewMetrics,
   getPlatformAdminJobMetrics,
-  getPlatformAdminPreEvaluationCount,
   getPlatformAdminReportMetrics,
   getPlatformAdminUserMetrics,
 } from "@/features/admin/queries/queries_sql";
@@ -37,10 +33,6 @@ export const getPlatformAdminStats = createServerFn({ method: "GET" })
       applicationMetrics,
       interviewMetrics,
       reportMetrics,
-      batchCount,
-      preEvaluationCount,
-      companyPlans,
-      applicationStatuses,
     ] = await Promise.all([
       getPlatformAdminUserMetrics(db),
       getPlatformAdminCompanyMetrics(db),
@@ -48,10 +40,6 @@ export const getPlatformAdminStats = createServerFn({ method: "GET" })
       getPlatformAdminApplicationMetrics(db),
       getPlatformAdminInterviewMetrics(db),
       getPlatformAdminReportMetrics(db),
-      getPlatformAdminBatchCount(db),
-      getPlatformAdminPreEvaluationCount(db),
-      getPlatformAdminCompanyPlans(db),
-      getPlatformAdminApplicationStatuses(db),
     ]);
 
     if (
@@ -60,11 +48,7 @@ export const getPlatformAdminStats = createServerFn({ method: "GET" })
       !jobMetrics ||
       !applicationMetrics ||
       !interviewMetrics ||
-      !reportMetrics ||
-      !batchCount ||
-      !preEvaluationCount ||
-      !companyPlans ||
-      !applicationStatuses
+      !reportMetrics
     ) {
       throw new Error("Failed to load platform admin metrics");
     }
@@ -76,10 +60,6 @@ export const getPlatformAdminStats = createServerFn({ method: "GET" })
       applicationMetrics,
       interviewMetrics,
       reportMetrics,
-      batchCount,
-      preEvaluationCount,
-      companyPlans,
-      applicationStatuses,
     });
   });
 
@@ -119,10 +99,6 @@ function buildPlatformAdminStatsPayload({
   applicationMetrics,
   interviewMetrics,
   reportMetrics,
-  batchCount,
-  preEvaluationCount,
-  companyPlans,
-  applicationStatuses,
 }: {
   userMetrics: NonNullable<Awaited<ReturnType<typeof getPlatformAdminUserMetrics>>>;
   companyMetrics: NonNullable<Awaited<ReturnType<typeof getPlatformAdminCompanyMetrics>>>;
@@ -130,10 +106,6 @@ function buildPlatformAdminStatsPayload({
   applicationMetrics: NonNullable<Awaited<ReturnType<typeof getPlatformAdminApplicationMetrics>>>;
   interviewMetrics: NonNullable<Awaited<ReturnType<typeof getPlatformAdminInterviewMetrics>>>;
   reportMetrics: NonNullable<Awaited<ReturnType<typeof getPlatformAdminReportMetrics>>>;
-  batchCount: NonNullable<Awaited<ReturnType<typeof getPlatformAdminBatchCount>>>;
-  preEvaluationCount: NonNullable<Awaited<ReturnType<typeof getPlatformAdminPreEvaluationCount>>>;
-  companyPlans: NonNullable<Awaited<ReturnType<typeof getPlatformAdminCompanyPlans>>>;
-  applicationStatuses: NonNullable<Awaited<ReturnType<typeof getPlatformAdminApplicationStatuses>>>;
 }) {
   return {
     overview: {
@@ -151,45 +123,12 @@ function buildPlatformAdminStatsPayload({
       newInterviews: interviewMetrics.newInterviews_7d,
       newReports: reportMetrics.newReports_7d,
     },
-    users: {
-      active: userMetrics.activeUsers,
-      company: userMetrics.companyUsers,
-      candidate: userMetrics.candidateUsers,
-      unassigned: userMetrics.unassignedUsers,
-      deleted: userMetrics.deletedUsers,
-    },
-    companies: {
-      total: companyMetrics.companies,
-      onboarded: companyMetrics.onboardedCompanies,
-      plans: {
-        free: companyPlans.planFree,
-        starter: companyPlans.planStarter,
-        growth: companyPlans.planGrowth,
-        scale: companyPlans.planScale,
-      },
-    },
-    jobs: {
-      active: jobMetrics.activeJobs,
-      open: jobMetrics.openJobs,
-      draft: jobMetrics.draftJobs,
-      closed: jobMetrics.closedJobs,
-      archived: jobMetrics.archivedJobs,
-    },
     interviews: {
-      total: interviewMetrics.interviews,
-      completed: interviewMetrics.interviewsCompleted,
       active: interviewMetrics.interviewsActive,
-      cancelled: interviewMetrics.interviewsCancelled,
-      expired: interviewMetrics.interviewsExpired,
     },
     reports: {
       total: reportMetrics.reports,
       released: reportMetrics.reportsReleased,
-    },
-    pipeline: {
-      batches: batchCount.batches,
-      preEvaluations: preEvaluationCount.preEvaluations,
-      applications: applicationStatuses,
     },
     generatedAt: new Date().toISOString(),
   };
