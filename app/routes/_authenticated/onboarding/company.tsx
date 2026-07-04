@@ -1,7 +1,7 @@
 import { Loading03Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useForm } from "@tanstack/react-form";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -17,8 +17,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { signupSearchSchema } from "@/features/auth/signup-search";
-import { createCompany } from "@/features/companies/server/functions";
+import { redirectAfterSignup, signupSearchSchema } from "@/features/auth/signup-search";
+import { companyBootstrapQueryKey, createCompany } from "@/features/companies/server/functions";
 import {
   type CompanySize,
   companySizeLabels,
@@ -37,6 +37,8 @@ const sizeOptions = Object.entries(companySizeLabels).map(([value, label]) => ({
 
 function CompanyOnboardingPage() {
   const router = useRouter();
+  const signupSearch = Route.useSearch();
+  const queryClient = useQueryClient();
 
   const onboardingSchema = z.object({
     name: z.string().trim().min(1, "Company name is required"),
@@ -49,7 +51,11 @@ function CompanyOnboardingPage() {
   const createCompanyMutation = useMutation({
     mutationFn: createCompanyFn,
     onSuccess: async () => {
-      await router.invalidate();
+      await queryClient.invalidateQueries({ queryKey: companyBootstrapQueryKey });
+      await router.navigate({
+        ...redirectAfterSignup(signupSearch),
+        replace: true,
+      });
     },
     onError: () => {
       toast.error("Failed to create company. Please try again.");

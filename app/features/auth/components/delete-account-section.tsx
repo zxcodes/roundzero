@@ -16,7 +16,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-
 import { currentUserQueryKey, deleteAccount } from "@/features/auth/server/functions";
 
 export function DeleteAccountSection() {
