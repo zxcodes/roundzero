@@ -116,7 +116,7 @@ function SectionErrorFallback({
     <Card variant="dashboard-panel" className="px-6 py-6">
       <p className="text-sm text-muted-foreground">{label}</p>
       <Button variant="outline" size="sm" className="mt-3" onClick={onRetry} disabled={isRetrying}>
-        {isRetrying ? "Retrying..." : "Try again"}
+        {isRetrying ? "Retrying" : "Try again"}
       </Button>
     </Card>
   );

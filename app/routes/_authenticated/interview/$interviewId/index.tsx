@@ -263,7 +263,7 @@ function InterviewWorkspaceContent({
               ) : (
                 <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-4" />
               )}
-              {cancelMutation.isPending ? "Cancelling..." : "Cancel"}
+              {cancelMutation.isPending ? "Cancelling" : "Cancel"}
             </Button>
           ) : null}
 
@@ -283,9 +283,9 @@ function InterviewWorkspaceContent({
                 <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-4" />
               )}
               {isStarting
-                ? "Starting..."
+                ? "Starting"
                 : isSubmitting
-                  ? "Submitting..."
+                  ? "Submitting"
                   : isPending
                     ? "Start"
                     : "Submit"}

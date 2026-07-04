@@ -475,7 +475,7 @@ function ApplicationStatusSection({
               ) : (
                 <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-4" />
               )}
-              {resumeLoading ? "Opening..." : "View resume"}
+              {resumeLoading ? "Opening" : "View resume"}
             </Button>
           ) : null}
 
@@ -488,7 +488,7 @@ function ApplicationStatusSection({
                   className="size-4 animate-spin"
                 />
               ) : null}
-              {retryEvaluationPending ? "Retrying..." : "Retry evaluation"}
+              {retryEvaluationPending ? "Retrying" : "Retry evaluation"}
             </Button>
           ) : null}
 
@@ -504,7 +504,7 @@ function ApplicationStatusSection({
                   className="size-4 animate-spin"
                 />
               ) : null}
-              {isPending ? "Inviting..." : "Re-invite to interview"}
+              {isPending ? "Inviting" : "Re-invite to interview"}
             </Button>
           ) : null}
 
@@ -517,7 +517,7 @@ function ApplicationStatusSection({
                   className="size-4 animate-spin"
                 />
               ) : null}
-              {isPending && isRejectPending ? "Rejecting..." : "Reject"}
+              {isPending && isRejectPending ? "Rejecting" : "Reject"}
             </Button>
           ) : null}
 

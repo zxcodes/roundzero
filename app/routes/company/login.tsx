@@ -149,7 +149,7 @@ function CompanyLoginPage() {
               ) : (
                 <GoogleIcon />
               )}
-              {isSigningIn ? "Signing in..." : "Continue with Google"}
+              {isSigningIn ? "Signing in" : "Continue with Google"}
             </Button>
           </div>
 

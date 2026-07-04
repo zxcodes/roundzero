@@ -177,7 +177,7 @@ function InviteAcceptPage() {
                 ) : (
                   <GoogleIcon />
                 )}
-                {isAccepting ? "Accepting..." : "Continue with Google"}
+                {isAccepting ? "Accepting" : "Continue with Google"}
               </Button>
             )}
 
