@@ -8,6 +8,7 @@ import {
   House01Icon,
   RankingIcon,
   Search01Icon,
+  SecurityValidationIcon,
   Setting06Icon,
   UserGroupIcon,
 } from "@hugeicons/core-free-icons";
@@ -36,6 +37,7 @@ type SidebarNavItem = {
   title: string;
   url: string;
   icon: React.ReactNode;
+  matchPrefix?: boolean;
 };
 
 type SidebarNavSection = {
@@ -51,6 +53,7 @@ const buildCompanyNavSections = (showBilling: boolean, showTeam: boolean): Sideb
         {
           title: "Overview",
           url: "/dashboard",
+          matchPrefix: false,
           icon: <HugeiconsIcon icon={House01Icon} strokeWidth={2} className="size-4" />,
         },
         {
@@ -120,6 +123,7 @@ const buildCandidateNavSections = (): SidebarNavSection[] => [
       {
         title: "Overview",
         url: "/dashboard",
+        matchPrefix: false,
         icon: <HugeiconsIcon icon={House01Icon} strokeWidth={2} className="size-4" />,
       },
     ],
@@ -176,6 +180,20 @@ export function AppSidebar({
   const navSections = isCompany
     ? buildCompanyNavSections(membershipRole === "owner", canManageTeam)
     : buildCandidateNavSections();
+
+  if (user.isPlatformAdmin) {
+    navSections.push({
+      label: "Internal",
+      items: [
+        {
+          title: "Admin",
+          url: "/admin",
+          matchPrefix: false,
+          icon: <HugeiconsIcon icon={SecurityValidationIcon} strokeWidth={2} className="size-4" />,
+        },
+      ],
+    });
+  }
 
   return (
     <Sidebar collapsible="offcanvas" {...props} variant="floating">

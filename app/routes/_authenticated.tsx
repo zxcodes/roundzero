@@ -35,9 +35,6 @@ export const Route = createFileRoute("/_authenticated")({
       };
     }
 
-    // Cache the bootstrap in React Query so the repeated beforeLoad executions
-    // triggered by `defaultPreload: "intent"` (every nav link hover) and client
-    // navigations reuse warm data instead of round-tripping to the worker.
     const companyContext = await context.queryClient.fetchQuery({
       queryKey: companyBootstrapQueryKey,
       queryFn: () => getMyCompanyBootstrap(),

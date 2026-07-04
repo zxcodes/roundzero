@@ -149,7 +149,8 @@ CREATE TABLE public.feedback (
     role text NOT NULL,
     type text NOT NULL,
     message text NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    company_id uuid
 );
 
 
@@ -644,6 +645,13 @@ CREATE INDEX idx_company_members_user ON public.company_members USING btree (use
 
 
 --
+-- Name: idx_feedback_company; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_feedback_company ON public.feedback USING btree (company_id);
+
+
+--
 -- Name: idx_feedback_created_at; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -851,6 +859,14 @@ ALTER TABLE ONLY public.company_members
 
 
 --
+-- Name: feedback feedback_company_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.feedback
+    ADD CONSTRAINT feedback_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id) ON DELETE SET NULL;
+
+
+--
 -- Name: feedback feedback_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -950,4 +966,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260614010000'),
     ('20260615042817'),
     ('20260622161816'),
-    ('20260629021838');
+    ('20260629021838'),
+    ('20260703114221');
