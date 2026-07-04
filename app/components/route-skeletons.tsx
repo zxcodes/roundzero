@@ -950,7 +950,7 @@ export function AdminFeedbackSkeleton() {
     <div className="space-y-6">
       <section className="space-y-2">
         <Skeleton className="h-6 w-28" />
-        <Skeleton className="h-4 w-[28rem] max-w-full" />
+        <Skeleton className="h-4 w-md max-w-full" />
       </section>
       <Skeleton className="h-3.5 w-32" />
       <div className="space-y-4">
