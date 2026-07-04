@@ -5,7 +5,6 @@ import { handlePolarWebhook } from "./features/billing/webhook";
 import { getDb } from "./shared/db";
 import { isDev } from "./shared/env.app";
 import { sentryOptions } from "./shared/sentry";
-import { disposeRpcResource } from "./shared/workflow-rpc";
 
 export { AccountCleanupWorkflow } from "./workflows/account-cleanup/workflow";
 export { BatchOrchestrationWorkflow } from "./workflows/batch-orchestration/workflow";
@@ -96,36 +95,6 @@ ${indexableCompanies.map((c) => `  <url><loc>${siteUrl}/companies/${c.slug}</loc
       env,
       ctx,
     );
-  },
-  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
-    switch (event.cron) {
-      case "0 */6 * * *": {
-        ctx.waitUntil(
-          env.POOL_CHECK.create({ id: `pool-check-${event.scheduledTime}` }).then((instance) => {
-            disposeRpcResource(instance);
-          }),
-        );
-        break;
-      }
-      case "0 */3 * * *": {
-        ctx.waitUntil(
-          env.EVAL_RETRY.create({ id: `eval-retry-${event.scheduledTime}` }).then((instance) => {
-            disposeRpcResource(instance);
-          }),
-        );
-        break;
-      }
-      case "0 4 * * *": {
-        ctx.waitUntil(
-          env.ACCOUNT_CLEANUP.create({ id: `account-cleanup-${event.scheduledTime}` }).then(
-            (instance) => {
-              disposeRpcResource(instance);
-            },
-          ),
-        );
-        break;
-      }
-    }
   },
 };
 
