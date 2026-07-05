@@ -12,7 +12,7 @@ Implemented in the repo today:
 - public companies and jobs browsing
 - candidate profiles with resume upload
 - one-click applications with profile snapshots
-- in-app notifications with Resend-backed email delivery
+- in-app notifications with Cloudflare Email Service delivery
 - Cloudflare Workflows for pre-evaluation, post-evaluation, batch orchestration, pool-check, eval-retry, and account-cleanup
 - TanStack AI + OpenRouter text interviews (SSE via `/api/interview-chat`)
 - ElevenLabs Conversational AI for voice assessment
@@ -44,7 +44,7 @@ Important current constraints:
 | UI | shadcn/ui, Tailwind CSS v4, Hugeicons |
 | Validation | Zod |
 | Storage | Cloudflare R2 |
-| Email | Resend |
+| Email | Cloudflare Email Service (`send_email` binding) |
 | LLM Provider | OpenRouter via Vercel AI SDK v7 + TanStack AI |
 | Tooling | Biome, Vitest, Knip |
 
@@ -473,7 +473,7 @@ Why `resume_key` instead of `resume_url`:
 
 ## 11. Notifications Architecture
 
-Notifications are durable in-app records first, with Resend-backed email as a secondary delivery channel.
+Notifications are durable in-app records first, with Cloudflare Email Service as a secondary delivery channel.
 
 ### Notifications table
 
@@ -785,8 +785,7 @@ wrangler hyperdrive create roundzero-db-staging \
 | `DATABASE_URL` | Postgres connection string for dbmate migrations |
 | `SESSION_SECRET` | Cookie signing key |
 | `APP_URL` | Canonical app URL (`https://staging.roundzero.dev`) |
-| `RESEND_API_KEY` | Email delivery |
-| `RESEND_FROM_EMAIL` | Sender address |
+| `EMAIL_FROM` | Transactional email from address (Cloudflare Email Service; domain must be onboarded) |
 | `OPENROUTER_API_KEY` | LLM inference |
 | `AI_GATEWAY_TOKEN` | Cloudflare AI Gateway |
 | `POLAR_ACCESS_TOKEN` | Billing API |
@@ -819,7 +818,7 @@ wrangler hyperdrive create roundzero-db-staging \
 | Resume persistence | `resume_key` | stable storage reference |
 | Resume upload | server-mediated R2 writes | simplest current contract |
 | Resume delivery | server-mediated reads + asset endpoint/public base URL | flexible delivery without DB URL coupling |
-| Notifications | DB-first in-app records + Resend | durable record first, email second |
+| Notifications | DB-first in-app records + Cloudflare Email | durable record first, email second |
 | Auth | Google OAuth + cookie session | sufficient for current scope |
 | AI orchestration | Cloudflare Workflows | durable multi-step execution |
 | Interview runtime | TanStack server functions + OpenRouter | request-response chat via server functions |

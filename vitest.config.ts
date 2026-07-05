@@ -7,6 +7,10 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         "@": new URL("./app", import.meta.url).pathname,
+        "cloudflare:workers": new URL(
+          "./app/shared/__tests__/cloudflare-workers-mock.ts",
+          import.meta.url,
+        ).pathname,
       },
     },
     test: {

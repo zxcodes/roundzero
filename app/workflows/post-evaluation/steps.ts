@@ -3,7 +3,6 @@ import { NonRetryableError } from "cloudflare:workflows";
 import { generateText, Output } from "ai";
 import type { Sql } from "postgres";
 import { jsx } from "react/jsx-runtime";
-import { Resend } from "resend";
 import { z } from "zod";
 import { updateApplicationStatus } from "@/features/applications/queries/queries_sql";
 import { notifyCompanyTeam } from "@/features/companies/services/company-team-notifications";
@@ -53,6 +52,7 @@ import {
   type TranscriptMessage,
   transcriptHasEnoughSignal,
 } from "@/shared/ai-refine";
+import { isEmailDeliveryConfigured, sendReactTransactionalEmail } from "@/shared/email";
 import type { Recommendation } from "@/shared/enums";
 import type { createWorkflowLogger } from "@/shared/logger";
 import { notificationPayloadSchemas } from "@/shared/notifications-config";
@@ -600,11 +600,8 @@ export function sendReportReadyEmail(
       return;
     }
 
-    const resendApiKey = env.RESEND_API_KEY;
-    const resendFromEmail = env.RESEND_FROM_EMAIL;
-
-    if (!resendApiKey || !resendFromEmail) {
-      log.info("Resend not configured, skipping email delivery");
+    if (!isEmailDeliveryConfigured()) {
+      log.info("Email delivery not configured, skipping email delivery");
       for (const delivery of deliveries) {
         await markNotificationEmailSkipped(db, {
           id: delivery.notification.id,
@@ -614,7 +611,6 @@ export function sendReportReadyEmail(
       return;
     }
 
-    const resend = new Resend(resendApiKey);
     const appUrl = env.APP_URL ?? "";
     const reportUrl = appUrl
       ? new URL(
@@ -634,9 +630,9 @@ export function sendReportReadyEmail(
       }
 
       try {
-        const response = await resend.emails.send({
-          from: `RoundZero <${resendFromEmail}>`,
+        const emailDelivery = await sendReactTransactionalEmail({
           to: delivery.email,
+          fromName: "RoundZero",
           subject: `Evaluation ready for ${interviewData.interview.candidateName}`,
           react: jsx(ReportReadyEmailTemplate, {
             candidateName: interviewData.interview.candidateName,
@@ -647,13 +643,9 @@ export function sendReportReadyEmail(
           }),
         });
 
-        if (response.error) {
-          throw new Error(response.error.message);
-        }
-
         await markNotificationEmailDelivered(db, {
           id: delivery.notification.id,
-          providerMessageId: response.data?.id ?? null,
+          providerMessageId: emailDelivery.providerMessageId,
         });
         log.info(`Report ready email sent to ${delivery.email}`);
       } catch (error) {
