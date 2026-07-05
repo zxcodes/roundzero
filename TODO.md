@@ -1,5 +1,6 @@
 ## TODO
 
+- text interview experience regressed. last message disappears from agent when it says an ending message and ends the interview. also we should disable auto switching to voice. its bad dx. just show a nice action to complete it.
 - revert batch config for prod.
 - see if we can add a cold reach out feature for companies (paid) so find any candidate on the platform in natural lang. should give their profile with a nice summary irrespective of job postings or anything. useful if companies are looking for someone direct instead of posting a job. an alternate way of hiring basically.
 - right now there's no feedback if there's something wrong with candidate's pdf. they can upload any pdf and the workflow will try to parse it. we need to detect if it's not a resume, and tell the user to add or something? think.
