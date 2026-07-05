@@ -16,7 +16,7 @@ import {
   type SubscriptionPlan,
   subscriptionPlanSchema,
 } from "../config";
-import { sendSubscriptionWelcomeEmail } from "../services/email";
+import { trySendSubscriptionWelcomeEmail } from "../services/email";
 import { getPolar } from "../services/polar";
 
 const checkoutSchema = z.object({
@@ -160,11 +160,9 @@ export const syncCheckoutSubscription = createServerFn({ method: "POST" })
     });
 
     if (subscription.status === "active" || subscription.status === "trialing") {
-      await sendSubscriptionWelcomeEmail({
-        to: context.user.email,
-        companyName: context.company.name,
-        plan,
+      await trySendSubscriptionWelcomeEmail(getDb(), {
         polarSubscriptionId: subscription.id,
+        plan,
       }).catch((error) => {
         console.error("[billing.syncCheckoutSubscription] failed to send welcome email", error);
       });

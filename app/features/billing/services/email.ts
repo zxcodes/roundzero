@@ -1,5 +1,11 @@
+import type { Sql } from "postgres";
 import { jsx } from "react/jsx-runtime";
-import { Resend } from "resend";
+import { getUserById } from "@/features/auth/queries/queries_sql";
+import {
+  claimSubscriptionWelcomeSend,
+  clearSubscriptionWelcomeSendClaim,
+} from "@/features/companies/queries/queries_sql";
+import { isEmailDeliveryConfigured, sendReactTransactionalEmail } from "@/shared/email";
 import { appEnv } from "@/shared/env.app";
 import { SubscriptionWelcomeEmail } from "../components/subscription-welcome-email";
 import { PLAN_CONFIGS, type SubscriptionPlan } from "../config";
@@ -8,38 +14,65 @@ export async function sendSubscriptionWelcomeEmail(input: {
   to: string;
   companyName: string;
   plan: SubscriptionPlan;
-  polarSubscriptionId: string;
 }): Promise<void> {
-  if (!appEnv.RESEND_API_KEY || !appEnv.RESEND_FROM_EMAIL) {
-    console.warn("[billing.email] Resend is not configured; skipping welcome email");
+  if (!isEmailDeliveryConfigured()) {
+    console.warn("[billing.email] Email delivery is not configured; skipping welcome email");
     return;
   }
 
-  const resend = new Resend(appEnv.RESEND_API_KEY);
   const dashboardUrl = appEnv.APP_URL
     ? `${appEnv.APP_URL}/dashboard`
     : "https://roundzero.dev/dashboard";
 
-  const response = await resend.emails.send(
-    {
-      from: `RoundZero <${appEnv.RESEND_FROM_EMAIL}>`,
-      to: input.to,
-      subject:
-        input.plan === "free"
-          ? "Welcome to RoundZero"
-          : `Welcome to RoundZero ${PLAN_CONFIGS[input.plan].name}`,
-      react: jsx(SubscriptionWelcomeEmail, {
-        plan: input.plan,
-        companyName: input.companyName,
-        dashboardUrl,
-      }),
-    },
-    {
-      idempotencyKey: `subscription-welcome-${input.polarSubscriptionId}`,
-    },
-  );
+  await sendReactTransactionalEmail({
+    to: input.to,
+    fromName: "RoundZero",
+    subject:
+      input.plan === "free"
+        ? "Welcome to RoundZero"
+        : `Welcome to RoundZero ${PLAN_CONFIGS[input.plan].name}`,
+    react: jsx(SubscriptionWelcomeEmail, {
+      plan: input.plan,
+      companyName: input.companyName,
+      dashboardUrl,
+    }),
+  });
+}
 
-  if (response.error) {
-    throw new Error(response.error.message);
+/** Sends at most one welcome email per Polar subscription id (checkout + webhook safe). */
+export async function trySendSubscriptionWelcomeEmail(
+  db: Sql,
+  input: {
+    polarSubscriptionId: string;
+    plan: SubscriptionPlan;
+  },
+): Promise<void> {
+  if (input.plan === "free") {
+    return;
+  }
+
+  const claimed = await claimSubscriptionWelcomeSend(db, {
+    subscriptionWelcomePolarSubscriptionId: input.polarSubscriptionId,
+  });
+  if (!claimed) {
+    return;
+  }
+
+  const owner = await getUserById(db, { id: claimed.ownerId });
+  if (!owner?.email) {
+    return;
+  }
+
+  try {
+    await sendSubscriptionWelcomeEmail({
+      to: owner.email,
+      companyName: claimed.name,
+      plan: input.plan,
+    });
+  } catch (error) {
+    await clearSubscriptionWelcomeSendClaim(db, {
+      polarSubscriptionId: input.polarSubscriptionId,
+    });
+    throw error;
   }
 }

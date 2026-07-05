@@ -1,6 +1,4 @@
-import { env } from "cloudflare:workers";
 import { jsx } from "react/jsx-runtime";
-import { Resend } from "resend";
 import { BatchDigestEmailTemplate } from "@/features/notifications/components/batch-digest-email-template";
 import {
   markNotificationEmailDelivered,
@@ -8,6 +6,8 @@ import {
   markNotificationEmailSkipped,
 } from "@/features/notifications/queries/queries_sql";
 import { getDb } from "@/shared/db";
+import { isEmailDeliveryConfigured, sendReactTransactionalEmail } from "@/shared/email";
+import { appEnv } from "@/shared/env.app";
 
 type BatchDigestEmailInput = {
   notificationId: string;
@@ -22,10 +22,7 @@ type BatchDigestEmailInput = {
 export async function sendBatchDigestEmail(input: BatchDigestEmailInput): Promise<void> {
   const db = getDb();
   try {
-    const resendApiKey = env.RESEND_API_KEY;
-    const resendFromEmail = env.RESEND_FROM_EMAIL;
-
-    if (!resendApiKey || !resendFromEmail) {
+    if (!isEmailDeliveryConfigured()) {
       await markNotificationEmailSkipped(db, {
         id: input.notificationId,
         reason: "Email delivery is not configured",
@@ -33,16 +30,15 @@ export async function sendBatchDigestEmail(input: BatchDigestEmailInput): Promis
       return;
     }
 
-    const appUrl = env.APP_URL ?? "";
+    const appUrl = appEnv.APP_URL;
     const batchUrl = appUrl
       ? new URL(`/dashboard/job-batches/${input.batchId}`, appUrl).toString()
       : `/dashboard/job-batches/${input.batchId}`;
 
     try {
-      const resend = new Resend(resendApiKey);
-      const response = await resend.emails.send({
-        from: `RoundZero <${resendFromEmail}>`,
+      const delivery = await sendReactTransactionalEmail({
         to: input.to,
+        fromName: "RoundZero",
         subject: `${input.reportCount} new ${input.reportCount === 1 ? "evaluation" : "evaluations"} ready — ${input.jobTitle}`,
         react: jsx(BatchDigestEmailTemplate, {
           jobTitle: input.jobTitle,
@@ -53,13 +49,9 @@ export async function sendBatchDigestEmail(input: BatchDigestEmailInput): Promis
         }),
       });
 
-      if (response.error) {
-        throw new Error(response.error.message);
-      }
-
       await markNotificationEmailDelivered(db, {
         id: input.notificationId,
-        providerMessageId: response.data?.id ?? null,
+        providerMessageId: delivery.providerMessageId,
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown email delivery failure";

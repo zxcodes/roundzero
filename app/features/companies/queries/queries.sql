@@ -111,3 +111,18 @@ SET polar_subscription_id = NULL,
     updated_at = now()
 WHERE polar_customer_id = $1
 RETURNING *;
+
+-- name: claimSubscriptionWelcomeSend :one
+UPDATE companies
+SET subscription_welcome_polar_subscription_id = $1,
+    updated_at = now()
+WHERE polar_subscription_id = $1
+  AND subscription_welcome_polar_subscription_id IS DISTINCT FROM $1
+RETURNING id, name, owner_id;
+
+-- name: clearSubscriptionWelcomeSendClaim :exec
+UPDATE companies
+SET subscription_welcome_polar_subscription_id = NULL,
+    updated_at = now()
+WHERE polar_subscription_id = $1
+  AND subscription_welcome_polar_subscription_id = $1;

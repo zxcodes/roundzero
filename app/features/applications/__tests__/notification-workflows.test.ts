@@ -83,7 +83,7 @@ describe("application notification workflows", () => {
       },
       {
         sendNotificationEmail: async () => {
-          throw new Error("Resend rejected request");
+          throw new Error("Email delivery failed");
         },
       },
     );
@@ -104,7 +104,7 @@ describe("application notification workflows", () => {
       },
       {
         sendNotificationEmail: async () => {
-          throw new Error("Resend rejected request");
+          throw new Error("Email delivery failed");
         },
       },
     );
@@ -118,7 +118,7 @@ describe("application notification workflows", () => {
       },
       {
         sendNotificationEmail: async () => {
-          throw new Error("Resend rejected request");
+          throw new Error("Email delivery failed");
         },
       },
     );
@@ -140,7 +140,7 @@ describe("application notification workflows", () => {
       },
       {
         sendNotificationEmail: async () => {
-          throw new Error("Resend rejected request");
+          throw new Error("Email delivery failed");
         },
       },
     );
@@ -154,7 +154,7 @@ describe("application notification workflows", () => {
       },
       {
         sendNotificationEmail: async () => {
-          throw new Error("Resend rejected request");
+          throw new Error("Email delivery failed");
         },
       },
     );
@@ -168,7 +168,7 @@ describe("application notification workflows", () => {
       },
       {
         sendNotificationEmail: async () => {
-          throw new Error("Resend rejected request");
+          throw new Error("Email delivery failed");
         },
       },
     );
@@ -182,7 +182,7 @@ describe("application notification workflows", () => {
       },
       {
         sendNotificationEmail: async () => {
-          throw new Error("Resend rejected request");
+          throw new Error("Email delivery failed");
         },
       },
     );
@@ -205,7 +205,7 @@ describe("application notification workflows", () => {
     expect(notifications[0].emailDeliveryStatus).toBe("failed");
     expect(notifications[0].emailDeliveryAttemptedAt).toBeInstanceOf(Date);
     expect(notifications[0].emailDeliverySentAt).toBeNull();
-    expect(notifications[0].emailDeliveryError).toContain("Resend rejected request");
+    expect(notifications[0].emailDeliveryError).toContain("Email delivery failed");
 
     expect(notifications[1].type).toBe("interview_invited");
 
@@ -234,7 +234,7 @@ describe("application notification workflows", () => {
       },
       {
         sendNotificationEmail: async () => {
-          throw new Error("Resend rejected request");
+          throw new Error("Email delivery failed");
         },
       },
     );
@@ -281,7 +281,7 @@ describe("application notification workflows", () => {
       },
       {
         sendNotificationEmail: async () => {
-          throw new Error("Resend rejected request");
+          throw new Error("Email delivery failed");
         },
       },
     );
@@ -338,7 +338,7 @@ describe("application notification workflows", () => {
       },
       {
         sendNotificationEmail: async () => {
-          throw new Error("Resend rejected request");
+          throw new Error("Email delivery failed");
         },
       },
     );

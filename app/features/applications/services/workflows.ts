@@ -18,7 +18,7 @@ import { createNotification } from "@/features/notifications/queries/queries_sql
 import {
   deliverNotificationEmail,
   type NotificationEmailSender,
-  sendNotificationEmailViaResend,
+  sendNotificationEmail,
 } from "@/features/notifications/services/email";
 import { type ApplicationStatus, applicationStatusSchema, isValidTransition } from "@/shared/enums";
 import {
@@ -221,7 +221,7 @@ export const updateApplicationStatusWorkflow = async (
       await deliverNotificationEmail(db, {
         notification,
         recipient: candidate ? { email: candidate.email } : null,
-        sendEmail: options?.sendNotificationEmail ?? sendNotificationEmailViaResend,
+        sendEmail: options?.sendNotificationEmail ?? sendNotificationEmail,
       });
     }
 
@@ -251,7 +251,7 @@ export const updateApplicationStatusWorkflow = async (
       await deliverNotificationEmail(db, {
         notification,
         recipient: candidate ? { email: candidate.email } : null,
-        sendEmail: options?.sendNotificationEmail ?? sendNotificationEmailViaResend,
+        sendEmail: options?.sendNotificationEmail ?? sendNotificationEmail,
       });
     }
   }
@@ -332,7 +332,7 @@ export const shortlistApplicantWorkflow = async (
       await deliverNotificationEmail(db, {
         notification,
         recipient: candidate ? { email: candidate.email } : null,
-        sendEmail: options?.sendNotificationEmail ?? sendNotificationEmailViaResend,
+        sendEmail: options?.sendNotificationEmail ?? sendNotificationEmail,
       });
     }
   }
@@ -399,7 +399,7 @@ export const withdrawApplicationWorkflow = async (
         await deliverNotificationEmail(db, {
           notification: delivery.notification,
           recipient: { email: delivery.email },
-          sendEmail: options?.sendNotificationEmail ?? sendNotificationEmailViaResend,
+          sendEmail: options?.sendNotificationEmail ?? sendNotificationEmail,
         });
       }
     }
