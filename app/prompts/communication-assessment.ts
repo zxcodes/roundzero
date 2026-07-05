@@ -1,14 +1,17 @@
 import { z } from "zod";
 import { LIMITS } from "@/shared/ai-refine";
-import { clampCandidateScore } from "@/shared/score";
+import { CANDIDATE_SCORE_MAX, clampCandidateScore } from "@/shared/score";
 
 const DIMENSIONS = ["clarity", "articulation", "conciseness", "listening", "confidence"] as const;
 
 type DimensionName = (typeof DIMENSIONS)[number];
 
+// No `.min()` / `.max()` on numbers — Anthropic structured output rejects JSON
+// Schema `minimum`/`maximum` on number types, and post_eval tries Anthropic first.
+// Clamp to 0–10 in `normalizeCommunicationAssessmentInput` instead.
 const dimension = z
   .object({
-    score: z.number().min(0).max(10),
+    score: z.number(),
     evidence: z.array(z.string()),
   })
   .strict();
@@ -20,7 +23,7 @@ const communicationAssessmentObjectSchema = z
     conciseness: dimension,
     listening: dimension,
     confidence: dimension,
-    overallScore: z.number().min(0).max(10),
+    overallScore: z.number(),
     summary: z.string(),
   })
   .strict();
@@ -39,6 +42,32 @@ function isNestedDimension(value: unknown): value is { score: number; evidence: 
   );
 }
 
+function normalizeCommunicationScore(value: unknown, fallback = 5): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return fallback;
+  }
+  // Models often emit 0–100; treat values above 10 as percentage-style scores.
+  const scaled = value > CANDIDATE_SCORE_MAX ? value / 10 : value;
+  return clampCandidateScore(scaled);
+}
+
+function normalizeEvidence(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.filter((item): item is string => typeof item === "string");
+}
+
+function normalizeNestedDimension(value: unknown): { score: number; evidence: string[] } {
+  if (!isNestedDimension(value)) {
+    return { score: 5, evidence: [] };
+  }
+  return {
+    score: normalizeCommunicationScore(value.score),
+    evidence: normalizeEvidence(value.evidence),
+  };
+}
+
 /**
  * Coerce common flat model outputs (e.g. `clarity: 40`, `evidenceClarity: [...]`)
  * into the nested `{ score, evidence }` shape the rest of the pipeline expects.
@@ -49,20 +78,27 @@ export function normalizeCommunicationAssessmentInput(raw: unknown): unknown {
   }
 
   const obj = raw as Record<string, unknown>;
-
-  if (isNestedDimension(obj.clarity)) {
-    return raw;
-  }
-
-  const overallScore =
-    typeof obj.overallScore === "number" ? clampCandidateScore(obj.overallScore) : 5;
   const summary = typeof obj.summary === "string" ? obj.summary : "";
 
-  const normalized: Record<string, unknown> = { overallScore, summary };
+  if (isNestedDimension(obj.clarity)) {
+    const normalized: Record<string, unknown> = {
+      overallScore: normalizeCommunicationScore(obj.overallScore),
+      summary,
+    };
+    for (const dim of DIMENSIONS) {
+      normalized[dim] = normalizeNestedDimension(obj[dim]);
+    }
+    return normalized;
+  }
+
+  const normalized: Record<string, unknown> = {
+    overallScore: normalizeCommunicationScore(obj.overallScore),
+    summary,
+  };
 
   for (const dim of DIMENSIONS) {
     const scoreRaw = obj[dim];
-    const score = typeof scoreRaw === "number" ? clampCandidateScore(scoreRaw) : 5;
+    const score = normalizeCommunicationScore(scoreRaw);
 
     const evidenceCandidates = [
       obj[evidenceKeyFor(dim)],
@@ -72,10 +108,7 @@ export function normalizeCommunicationAssessmentInput(raw: unknown): unknown {
 
     let evidence: string[] = [];
     for (const candidate of evidenceCandidates) {
-      if (!Array.isArray(candidate)) {
-        continue;
-      }
-      evidence = candidate.filter((item): item is string => typeof item === "string");
+      evidence = normalizeEvidence(candidate);
       if (evidence.length > 0) {
         break;
       }
