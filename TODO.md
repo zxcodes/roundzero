@@ -8,7 +8,6 @@
 ## PROD THINGS
 - planetscale for db?
 - validate open router models using their api key in prod ci so we detect non existent models beforehand.
-- update brand identity, desc etc in google console. infact just create a new project.
 
 
 ## Future
@@ -17,6 +16,7 @@
 - right now there's no feedback if there's something wrong with candidate's pdf. they can upload any pdf and the workflow will try to parse it. we need to detect if it's not a resume, and tell the user to add or something? think.
 - add a really good resume and candidate test suite to pass thru the ai. (WIP in other branch)
 
+<!--- update brand identity, desc etc in google console. infact just create a new project.-->
 <!--- review ux is broken. review role -> lands on all applications -> nothing's there (url: tab=applicants&view=all&filter=awaiting_decision) switch tab to released reports, applicant shows up -> all application works again (url now:tab=applicants&view=all)-->
 <!--- fix landing page initial animation. use the animation skill. 
 - update seed with better data.
