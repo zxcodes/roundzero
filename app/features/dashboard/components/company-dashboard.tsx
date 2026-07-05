@@ -261,7 +261,7 @@ function RoleAttentionCard({ role }: { role: RoleAttention }) {
           <Link
             to="/dashboard/job-applicants/$jobId"
             params={{ jobId: role.jobId }}
-            search={{ tab: "applicants", view: "all", filter: "awaiting_decision" }}
+            search={{ tab: "applicants" }}
             className="no-underline hover:no-underline"
           >
             Review role

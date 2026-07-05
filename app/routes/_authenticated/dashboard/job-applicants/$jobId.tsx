@@ -17,6 +17,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  type JobApplicantsFilter,
+  matchesJobApplicantsFilter,
+} from "@/features/applications/applicant-filters";
 import { CompanyJobApplicantsList } from "@/features/applications/components/company-job-applicants-list";
 import { getJobApplicantsView } from "@/features/applications/server/functions";
 import {
@@ -86,16 +90,7 @@ export const Route = createFileRoute("/_authenticated/dashboard/job-applicants/$
 });
 
 type ApplicantsView = "ready" | "all";
-type ApplicantsFilter =
-  | "all"
-  | "screening"
-  | "queued"
-  | "active_interview"
-  | "awaiting_decision"
-  | "shortlisted"
-  | "rejected"
-  | "withdrawn"
-  | "evaluation_failed";
+type ApplicantsFilter = JobApplicantsFilter;
 
 function JobApplicantsPage() {
   const { job, applicants, activeBatch } = Route.useLoaderData();
@@ -153,23 +148,9 @@ function JobApplicantsPage() {
     return a.status === "pre_screening";
   });
 
-  const filteredApplicants = applicants.filter((a: (typeof applicants)[number]) => {
-    if (filter === "all") return true;
-    if (filter === "screening") return a.status === "pre_screening";
-    if (filter === "queued") return a.status === "queued_for_batch";
-    if (filter === "active_interview") {
-      return (
-        a.status === "interview_invited" ||
-        a.status === "interview_in_progress" ||
-        a.status === "evaluated_held"
-      );
-    }
-    if (filter === "awaiting_decision") return a.status === "evaluated";
-    if (filter === "shortlisted") return a.status === "shortlisted";
-    if (filter === "rejected") return a.status === "rejected";
-    if (filter === "withdrawn") return a.status === "withdrawn";
-    return a.status === "evaluation_failed";
-  });
+  const filteredApplicants = applicants.filter((applicant) =>
+    matchesJobApplicantsFilter(applicant, filter),
+  );
 
   const applicantStatItems =
     tab === "applicants" && applicants.length > 0
@@ -329,7 +310,17 @@ function ApplicantsTabContent({
           }
         />
       ) : (
-        <CompanyJobApplicantsList applicants={filteredApplicants} />
+        <CompanyJobApplicantsList
+          applicants={filteredApplicants}
+          emptyTitle={
+            filter === "awaiting_decision" ? "No candidates awaiting decision" : undefined
+          }
+          emptyDescription={
+            filter === "awaiting_decision"
+              ? "Released reports waiting for a shortlist or reject decision will show up here."
+              : undefined
+          }
+        />
       )}
 
       {view === "all" && activeInterviewApplicants.length > 0 ? (
