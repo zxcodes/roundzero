@@ -1,13 +1,10 @@
 ## TODO
 
-
 - revert batch config for prod & remove early access badge on landing.
-
 
 ## PROD THINGS
 - planetscale for db?
 - validate open router models using their api key in prod ci so we detect non existent models beforehand.
-
 
 ## Future
 - add batch actions for companies (shortlist multiple candidates, and quick actions "shortlist top 3" reject "bottom ones")
