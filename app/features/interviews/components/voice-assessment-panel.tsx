@@ -42,9 +42,13 @@ const normMessage = (m: ChatMessage): string =>
 // transcript. ElevenLabs' `post_call_transcription` webhook delivers the
 // authoritative, complete transcript (including the agent's closing line);
 // the in-browser transcript can be clipped because the final message event
-// races the disconnect. We let the webhook win, and only submit the browser
-// transcript if it never lands (e.g. local dev or a webhook outage).
-const WEBHOOK_GRACE_MS = 8_000;
+// races the disconnect. We let a fast webhook win (the 2s DB poll picks it up
+// as soon as it lands), but keep this window short: the only thing the browser
+// transcript typically loses is the agent's closing pleasantry, which doesn't
+// affect scoring of the candidate — so a long wait is pure DX cost. If the
+// webhook hasn't landed by now (slow webhook, local dev, or an outage) we
+// submit the browser transcript we already hold.
+const WEBHOOK_GRACE_MS = 3_000;
 
 export type InterviewEndVariant = "completed" | "cancelled" | "expired";
 
