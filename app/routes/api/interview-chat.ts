@@ -232,6 +232,15 @@ export const Route = createFileRoute("/api/interview-chat")({
 
         const { model, fallbacks } = getModelChain("interview");
         const abortController = new AbortController();
+        // The closing turn writes its farewell text *and* calls end_interview in
+        // the same agent-loop iteration. The follow-up iteration that consumes the
+        // tool result emits no text, so by `onFinish` the run's accumulated
+        // `info.content` is empty and the farewell would be dropped — which made
+        // the last assistant message vanish once the route reloaded from the DB.
+        // Capture the last non-empty iteration text at each tool-phase boundary
+        // (fires before the next iteration resets the accumulator) and fall back
+        // to it when the terminal content is empty.
+        let lastAssistantContent = "";
         const stream = chat({
           adapter: createOpenRouterText(model, env.OPENROUTER_API_KEY, {
             httpReferer: env.APP_URL,
@@ -305,8 +314,14 @@ export const Route = createFileRoute("/api/interview-chat")({
             },
             {
               name: "persist-assistant-message",
+              onToolPhaseComplete: (context) => {
+                const text = context.accumulatedContent.trim();
+                if (text.length > 0) {
+                  lastAssistantContent = text;
+                }
+              },
               onFinish: async (_context, info) => {
-                const content = info.content.trim();
+                const content = info.content.trim() || lastAssistantContent;
                 if (content.length === 0) {
                   return;
                 }
