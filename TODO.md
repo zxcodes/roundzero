@@ -1,5 +1,7 @@
 ## TODO
 
+
+- review ux is broken. review role -> lands on all applications -> nothing's there (url: tab=applicants&view=all&filter=awaiting_decision) switch tab to released reports, applicant shows up -> all application works again (url now:tab=applicants&view=all)
 - text interview experience regressed. last message disappears from agent when it says an ending message and ends the interview. also we should disable auto switching to voice. its bad dx. just show a nice action to complete it.
 - revert batch config for prod.
 - see if we can add a cold reach out feature for companies (paid) so find any candidate on the platform in natural lang. should give their profile with a nice summary irrespective of job postings or anything. useful if companies are looking for someone direct instead of posting a job. an alternate way of hiring basically.
