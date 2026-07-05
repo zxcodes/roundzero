@@ -1,7 +1,6 @@
 ## TODO
 
 
-- text interview experience regressed. last message disappears from agent when it says an ending message and ends the interview. also we should disable auto switching to voice. its bad dx. just show a nice action to complete it.
 - revert batch config for prod & remove early access badge on landing.
 
 
@@ -16,6 +15,7 @@
 - right now there's no feedback if there's something wrong with candidate's pdf. they can upload any pdf and the workflow will try to parse it. we need to detect if it's not a resume, and tell the user to add or something? think.
 - add a really good resume and candidate test suite to pass thru the ai. (WIP in other branch)
 
+<!--- text interview experience regressed. last message disappears from agent when it says an ending message and ends the interview. also we should disable auto switching to voice. its bad dx. just show a nice action to complete it.-->
 <!--- update brand identity, desc etc in google console. infact just create a new project.-->
 <!--- review ux is broken. review role -> lands on all applications -> nothing's there (url: tab=applicants&view=all&filter=awaiting_decision) switch tab to released reports, applicant shows up -> all application works again (url now:tab=applicants&view=all)-->
 <!--- fix landing page initial animation. use the animation skill. 
