@@ -20,7 +20,6 @@
  */
 
 import { generateText, Output } from "ai";
-import { z } from "zod";
 import {
   applyIntegrityScoreAdjustment,
   getIntegrityInsight,
@@ -35,6 +34,11 @@ import {
   communicationAssessmentSchema,
 } from "@/prompts/communication-assessment";
 import {
+  REPORT_AUDIT_LIMITS,
+  type ReportAuditGenerationOutput,
+  reportAuditGenerationSchema,
+} from "@/prompts/report-audit-output";
+import {
   auditScreeningCoverage,
   cleanBullets,
   filterAnchored,
@@ -42,9 +46,12 @@ import {
   recomputeOverall,
   type TranscriptMessage,
 } from "@/shared/ai-refine";
+import { normalizeCandidateScoreValue } from "@/shared/llm-schema";
 import type { createWorkflowLogger } from "@/shared/logger";
 import { createChatModel } from "@/shared/openrouter";
 import { clampCandidateScore } from "@/shared/score";
+
+const { MAX_STRENGTHS, MAX_WEAKNESSES, MAX_INSIGHTS, MAX_EVIDENCE } = REPORT_AUDIT_LIMITS;
 
 type ScreeningConcern = "none" | "minor" | "dealbreaker";
 
@@ -72,34 +79,6 @@ export type ReportDraft = {
   recommendation: "strong_yes" | "yes" | "lean_no" | "no";
   answerAuthenticity: AnswerAuthenticity | null;
 };
-
-const MAX_STRENGTHS = 5;
-const MAX_WEAKNESSES = 5;
-const MAX_INSIGHTS = 4;
-const MAX_EVIDENCE = 8;
-
-// LLM audit schema — same shape as `reportSchema` minus `scores`/
-// `recommendation`. The deterministic pass owns those; the LLM only audits
-// prose content.
-const auditSchema = z
-  .object({
-    summary: z.string(),
-    strengths: z.array(z.string()).max(MAX_STRENGTHS),
-    weaknesses: z.array(z.string()).max(MAX_WEAKNESSES),
-    insights: z.array(z.string()).max(MAX_INSIGHTS),
-    evidence: z.array(z.string()).max(MAX_EVIDENCE),
-    screeningAnswers: z.array(
-      z.object({
-        question: z.string(),
-        answer: z.string().nullable(),
-        concern: z.enum(["none", "minor", "dealbreaker"]),
-        notes: z.string(),
-      }),
-    ),
-  })
-  .strict();
-
-type AuditOutput = z.infer<typeof auditSchema>;
 
 function appendIntegrityReportProse(
   report: ReportDraft,
@@ -193,15 +172,15 @@ function deterministicReportPass(
   // Score sanity. Clamp everything, recompute overall as a bounded function
   // of dimensions, then apply hard rules: zero evidence caps communication;
   // any dealbreaker forces the recommendation down.
-  const communication = clampCandidateScore(draft.scores?.communication);
-  const problemSolving = clampCandidateScore(draft.scores?.problemSolving);
-  let ownership = clampCandidateScore(draft.scores?.ownership);
-  const roleFit = clampCandidateScore(draft.scores?.roleFit);
+  const communication = normalizeCandidateScoreValue(draft.scores?.communication);
+  const problemSolving = normalizeCandidateScoreValue(draft.scores?.problemSolving);
+  let ownership = normalizeCandidateScoreValue(draft.scores?.ownership);
+  const roleFit = normalizeCandidateScoreValue(draft.scores?.roleFit);
   let cappedCommunication = evidence.length === 0 ? Math.min(communication, 5) : communication;
 
   let overall = recomputeOverall(
     [cappedCommunication, problemSolving, ownership, roleFit],
-    clampCandidateScore(draft.scores?.overall),
+    normalizeCandidateScoreValue(draft.scores?.overall),
   );
 
   const dealbreakers = screeningAnswers.filter((s) => s.concern === "dealbreaker").length;
@@ -296,7 +275,7 @@ async function runLlmAudit(args: {
   customQuestions: string[];
   log: ReturnType<typeof createWorkflowLogger>;
   messages?: ReadonlyArray<TranscriptMessage>;
-}): Promise<AuditOutput | null> {
+}): Promise<ReportAuditGenerationOutput | null> {
   const answerAuthenticitySignal = args.draft.answerAuthenticity;
   const userPrompt = JSON.stringify({
     instructions:
@@ -321,7 +300,7 @@ async function runLlmAudit(args: {
   try {
     const result = await generateText({
       model: createChatModel("post_eval_audit", { plugins: [{ id: "response-healing" }] }),
-      output: Output.object({ schema: auditSchema }),
+      output: Output.object({ schema: reportAuditGenerationSchema }),
       system: AUDIT_SYSTEM_PROMPT,
       prompt: userPrompt,
     });

@@ -394,6 +394,21 @@ function cleanGeneratedString(value: string | null | undefined): string | null |
   return value.replace(/^[:\-\s]+/, "").trim() || null;
 }
 
+function nullInvalidOptionalInt(value: unknown): number | null | undefined {
+  if (value === null || value === undefined) {
+    return value as null | undefined;
+  }
+  if (
+    typeof value !== "number" ||
+    !Number.isFinite(value) ||
+    !Number.isInteger(value) ||
+    value <= 0
+  ) {
+    return null;
+  }
+  return value;
+}
+
 function cleanAiJobOutput(output: Record<string, unknown>): Record<string, unknown> {
   const cleaned: Record<string, unknown> = { ...output };
 
@@ -425,6 +440,13 @@ function cleanAiJobOutput(output: Record<string, unknown>): Record<string, unkno
     cleaned.screeningQuestions.length > MAX_SCREENING_QUESTIONS
   ) {
     cleaned.screeningQuestions = cleaned.screeningQuestions.slice(0, MAX_SCREENING_QUESTIONS);
+  }
+
+  const optionalIntFields = ["salaryMin", "salaryMax", "teamSize", "headcount"] as const;
+  for (const key of optionalIntFields) {
+    if (key in cleaned) {
+      cleaned[key] = nullInvalidOptionalInt(cleaned[key]);
+    }
   }
 
   // Sanity check: cap salary fields to prevent unrealistic values

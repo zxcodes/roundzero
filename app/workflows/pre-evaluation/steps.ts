@@ -4,7 +4,7 @@ import { generateText, Output } from "ai";
 import { DocuText } from "docutext";
 import mammoth from "mammoth";
 import type { Sql } from "postgres";
-import { z } from "zod";
+import type { z } from "zod";
 import {
   getApplicationById,
   updateApplicationStatus,
@@ -28,13 +28,17 @@ import { GENERAL_EVAL_SYSTEM_PROMPT } from "@/prompts/evaluate/general";
 import { LEADERSHIP_EVAL_SYSTEM_PROMPT } from "@/prompts/evaluate/leadership";
 import { OPERATIONS_EVAL_SYSTEM_PROMPT } from "@/prompts/evaluate/operations";
 import { TECHNICAL_EVAL_SYSTEM_PROMPT } from "@/prompts/evaluate/technical";
+import {
+  preEvaluationGenerationSchema,
+  slopDetectionGenerationSchema,
+} from "@/prompts/pre-evaluation-output";
 import { SLOP_DETECTION_SYSTEM_PROMPT } from "@/prompts/slop-detection";
 import { getModelDateContext, LIMITS, sanitizeUntrustedText } from "@/shared/ai-refine";
 import { getDb } from "@/shared/db";
+import { normalizeCandidateScoreValue } from "@/shared/llm-schema";
 import type { createWorkflowLogger } from "@/shared/logger";
 import { notificationPayloadSchemas } from "@/shared/notifications-config";
 import { createChatModel, getModelChain } from "@/shared/openrouter";
-import { clampCandidateScore } from "@/shared/score";
 import { buildResumeAuthenticityPrompt, shouldInviteFromDeterministicRules } from "./policy";
 import { refinePreEvaluationResult, refineSlopCheck } from "./refine";
 
@@ -61,26 +65,6 @@ type SlopCheckResult = {
   redFlags: string[];
   explanation: string;
 };
-
-// Zod schemas for structured output. `.strict()` enforces `additionalProperties: false`
-// so the model cannot hallucinate extra fields — equivalent to OpenRouter's `strict: true`.
-// https://openrouter.ai/docs/guides/features/structured-outputs
-const preEvaluationSchema = z
-  .object({
-    score: z.number().min(0).max(10),
-    missingRequirements: z.array(z.string()),
-    confidence: z.enum(["low", "medium", "high"]),
-    nextStep: z.enum(["interview_invited", "hold"]),
-  })
-  .strict();
-
-const slopDetectionSchema = z
-  .object({
-    consistencyScore: z.number().min(0).max(10),
-    redFlags: z.array(z.string()),
-    explanation: z.string(),
-  })
-  .strict();
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
@@ -281,13 +265,13 @@ export function detectSlop(resumeText: string, log: ReturnType<typeof createWork
       const { object: raw, usage } = await runPreEvalObject({
         systemPrompt: SLOP_DETECTION_SYSTEM_PROMPT.prompt,
         userPrompt: prompt,
-        schema: slopDetectionSchema,
+        schema: slopDetectionGenerationSchema,
       });
       const latency = Date.now() - startTime;
 
       const result = refineSlopCheck(
         {
-          consistencyScore: clampCandidateScore(raw.consistencyScore),
+          consistencyScore: normalizeCandidateScoreValue(raw.consistencyScore),
           redFlags: raw.redFlags.filter((r: string) => typeof r === "string"),
           explanation: raw.explanation,
         },
@@ -343,13 +327,13 @@ export function runAiPreEvaluation(
       } = await runPreEvalObject({
         systemPrompt,
         userPrompt,
-        schema: preEvaluationSchema,
+        schema: preEvaluationGenerationSchema,
       });
       const latency = Date.now() - startTime;
 
       const result: PreEvaluationResult = refinePreEvaluationResult(
         {
-          score: clampCandidateScore(raw.score),
+          score: normalizeCandidateScoreValue(raw.score),
           missingRequirements: raw.missingRequirements.filter((r: string) => typeof r === "string"),
           confidence: raw.confidence,
           modelNextStep: raw.nextStep,

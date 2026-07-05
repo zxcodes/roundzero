@@ -5,6 +5,7 @@ import {
   jobStatusSchema,
   workplaceTypeSchema,
 } from "@/shared/enums";
+import { llmOptionalIntSchema } from "@/shared/llm-schema";
 import { nullableTrimmedString, requiredTrimmedString } from "@/shared/validation";
 
 const jobFieldsBaseSchema = z.object({
@@ -87,14 +88,24 @@ export const jobIdSchema = z.object({
 
 /**
  * Schema used for AI job generation via structured outputs.
- * Derived from the base schema so field definitions stay in one place.
- * Omits system fields the AI should not generate.
+ * Numeric fields use LLM-safe shapes (no `.positive()` / `.min()` on numbers).
+ * `cleanAiJobOutput()` + `jobFieldsSchema.safeParse()` enforce ranges after generation.
  */
 export const aiJobGenerationSchema = jobFieldsBaseSchema
   .omit({
     status: true,
     expiresAt: true,
     finalReportTarget: true,
+    salaryMin: true,
+    salaryMax: true,
+    teamSize: true,
+    headcount: true,
+  })
+  .extend({
+    salaryMin: llmOptionalIntSchema,
+    salaryMax: llmOptionalIntSchema,
+    teamSize: llmOptionalIntSchema,
+    headcount: llmOptionalIntSchema,
   })
   .strict();
 

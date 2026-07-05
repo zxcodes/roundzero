@@ -2,6 +2,9 @@ import { env } from "cloudflare:workers";
 import { createOpenRouter, type OpenRouterProvider } from "@openrouter/ai-sdk-provider";
 import { isProd, isStaging } from "./env.app";
 
+// Prod chains often hit Anthropic/Bedrock first. Schemas passed to Output.object()
+// must follow app/shared/llm-schema.ts (no z.number().min/.max/.positive in generation schemas).
+
 let provider: OpenRouterProvider | null = null;
 
 function getProvider(): OpenRouterProvider {

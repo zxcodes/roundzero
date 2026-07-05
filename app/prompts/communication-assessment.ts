@@ -1,14 +1,12 @@
 import { z } from "zod";
 import { LIMITS } from "@/shared/ai-refine";
-import { CANDIDATE_SCORE_MAX, clampCandidateScore } from "@/shared/score";
+import { normalizeCandidateScoreValue } from "@/shared/llm-schema";
 
 const DIMENSIONS = ["clarity", "articulation", "conciseness", "listening", "confidence"] as const;
 
 type DimensionName = (typeof DIMENSIONS)[number];
 
-// No `.min()` / `.max()` on numbers — Anthropic structured output rejects JSON
-// Schema `minimum`/`maximum` on number types, and post_eval tries Anthropic first.
-// Clamp to 0–10 in `normalizeCommunicationAssessmentInput` instead.
+// LLM-safe numbers — see `app/shared/llm-schema.ts`. Clamp in preprocess below.
 const dimension = z
   .object({
     score: z.number(),
@@ -42,15 +40,6 @@ function isNestedDimension(value: unknown): value is { score: number; evidence: 
   );
 }
 
-function normalizeCommunicationScore(value: unknown, fallback = 5): number {
-  if (typeof value !== "number" || !Number.isFinite(value)) {
-    return fallback;
-  }
-  // Models often emit 0–100; treat values above 10 as percentage-style scores.
-  const scaled = value > CANDIDATE_SCORE_MAX ? value / 10 : value;
-  return clampCandidateScore(scaled);
-}
-
 function normalizeEvidence(value: unknown): string[] {
   if (!Array.isArray(value)) {
     return [];
@@ -63,7 +52,7 @@ function normalizeNestedDimension(value: unknown): { score: number; evidence: st
     return { score: 5, evidence: [] };
   }
   return {
-    score: normalizeCommunicationScore(value.score),
+    score: normalizeCandidateScoreValue(value.score),
     evidence: normalizeEvidence(value.evidence),
   };
 }
@@ -82,7 +71,7 @@ export function normalizeCommunicationAssessmentInput(raw: unknown): unknown {
 
   if (isNestedDimension(obj.clarity)) {
     const normalized: Record<string, unknown> = {
-      overallScore: normalizeCommunicationScore(obj.overallScore),
+      overallScore: normalizeCandidateScoreValue(obj.overallScore),
       summary,
     };
     for (const dim of DIMENSIONS) {
@@ -92,13 +81,13 @@ export function normalizeCommunicationAssessmentInput(raw: unknown): unknown {
   }
 
   const normalized: Record<string, unknown> = {
-    overallScore: normalizeCommunicationScore(obj.overallScore),
+    overallScore: normalizeCandidateScoreValue(obj.overallScore),
     summary,
   };
 
   for (const dim of DIMENSIONS) {
     const scoreRaw = obj[dim];
-    const score = normalizeCommunicationScore(scoreRaw);
+    const score = normalizeCandidateScoreValue(scoreRaw);
 
     const evidenceCandidates = [
       obj[evidenceKeyFor(dim)],
