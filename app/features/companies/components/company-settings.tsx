@@ -257,7 +257,10 @@ export function CompanySettings({
                   return (
                     <Field>
                       <FieldLabel htmlFor={field.name}>Industry</FieldLabel>
-                      <Select value={field.state.value} onValueChange={field.handleChange}>
+                      <Select
+                        value={field.state.value ? field.state.value : undefined}
+                        onValueChange={field.handleChange}
+                      >
                         <SelectTrigger id={field.name}>
                           <SelectValue placeholder="Select industry" />
                         </SelectTrigger>
@@ -279,7 +282,10 @@ export function CompanySettings({
                   return (
                     <Field>
                       <FieldLabel htmlFor={field.name}>Company size</FieldLabel>
-                      <Select value={field.state.value} onValueChange={field.handleChange}>
+                      <Select
+                        value={field.state.value ? field.state.value : undefined}
+                        onValueChange={field.handleChange}
+                      >
                         <SelectTrigger id={field.name}>
                           <SelectValue placeholder="Select size" />
                         </SelectTrigger>

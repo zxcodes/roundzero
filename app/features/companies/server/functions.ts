@@ -79,7 +79,14 @@ const updateCompanyProfileSchema = z.object({
   website: nullableTrimmedUrl(),
   industry: industrySchema.nullable(),
   companySize: companySizeSchema.nullable(),
-  foundedYear: z.number().int().min(1800).max(new Date().getFullYear()).nullable(),
+  foundedYear: z
+    .number()
+    .int()
+    .min(1800)
+    .refine((year) => year <= new Date().getFullYear(), {
+      message: "Founded year cannot be in the future",
+    })
+    .nullable(),
   location: nullableTrimmedString(200),
   techStack: z.array(z.string()).nullable(),
   culture: nullableTrimmedString(5000),
