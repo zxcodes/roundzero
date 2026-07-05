@@ -133,7 +133,7 @@
       ],
       "vars": {
         "CLOUDFLARE_ACCOUNT_ID": "5634bacd1c09247fdaa26ef02fbcf6ef",
-        "AI_GATEWAY_ID": "roundzero"
+        "AI_GATEWAY_ID": "roundzero-production"
       },
       "r2_buckets": [
         {
