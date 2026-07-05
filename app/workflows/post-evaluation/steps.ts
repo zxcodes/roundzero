@@ -686,22 +686,24 @@ export function loadVoiceAssessment(
   db: Sql,
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
-  return async (): Promise<CommunicationAssessmentAnalysis | null> => {
+  return async (): Promise<CommunicationAssessmentAnalysis> => {
     const row = await getCommunicationAssessmentByInterviewId(db, { interviewId });
     if (row?.status !== "completed") {
-      log.info(`No completed voice assessment for interview ${interviewId}`);
-      return null;
+      throw new NonRetryableError(
+        `Voice assessment not completed (status=${row?.status ?? "missing"})`,
+      );
     }
 
     // Already scored (e.g. a legacy row or a previous workflow run): reuse it.
     if (row.analysis) {
       const parsed = communicationAssessmentSchema.safeParse(row.analysis);
-      if (!parsed.success) {
-        log.warn(`Voice assessment analysis for ${interviewId} failed schema validation`);
-        return null;
+      if (parsed.success) {
+        log.info(`Loaded voice assessment for interview ${interviewId}`);
+        return parsed.data;
       }
-      log.info(`Loaded voice assessment for interview ${interviewId}`);
-      return parsed.data;
+      log.warn(
+        `Stored voice analysis for ${interviewId} failed schema validation; re-scoring from transcript`,
+      );
     }
 
     // Completed but unscored: the candidate finished the call, the transcript
@@ -709,43 +711,33 @@ export function loadVoiceAssessment(
     // here (durably, off the candidate's request path) and backfill the row.
     const transcript = voiceTranscriptDbSchema.safeParse(row.transcript ?? []);
     if (!transcript.success || transcript.data.length === 0) {
-      log.info(`Completed voice assessment for ${interviewId} has no transcript to score`);
-      return null;
+      throw new NonRetryableError(
+        `Completed voice assessment for ${interviewId} has no transcript to score`,
+      );
+    }
+
+    const interview = await getInterviewContextById(db, { id: interviewId });
+    if (!interview) {
+      throw new NonRetryableError(`Interview not found: ${interviewId}`);
+    }
+
+    const ctx = await loadVoiceAssessmentContext(db, interview);
+    const analysis = await analyzeVoiceTranscript(transcript.data, ctx);
+    if (!analysis) {
+      throw new Error(
+        `Voice assessment scoring produced no result for ${interviewId} (LLM failure or refinement rejected output)`,
+      );
     }
 
     try {
-      const interview = await getInterviewContextById(db, { id: interviewId });
-      if (!interview) {
-        return null;
-      }
-
-      const ctx = await loadVoiceAssessmentContext(db, interview);
-      const analysis = await analyzeVoiceTranscript(transcript.data, ctx);
-      if (!analysis) {
-        log.warn(`Voice assessment scoring produced no result for ${interviewId}`);
-        return null;
-      }
-
-      try {
-        await updateCommunicationAssessmentAnalysis(db, { interviewId, analysis });
-      } catch (error) {
-        log.warn(
-          `Could not persist voice analysis for ${interviewId}: ${
-            error instanceof Error ? error.message : String(error)
-          }`,
-        );
-      }
-
-      log.info(`Scored voice assessment for interview ${interviewId}`);
-      return analysis;
+      await updateCommunicationAssessmentAnalysis(db, { interviewId, analysis });
     } catch (error) {
-      log.warn(
-        `Voice analysis failed for ${interviewId}: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      );
-      return null;
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Could not persist voice analysis for ${interviewId}: ${message}`);
     }
+
+    log.info(`Scored voice assessment for interview ${interviewId}`);
+    return analysis;
   };
 }
 

@@ -260,13 +260,20 @@ export async function analyzeVoiceTranscript(
     return null;
   }
 
-  try {
-    const raw = await runVoiceAnalysis(transcriptForPrompt, ctx);
-    return raw ? refineCommunicationAnalysis(raw, transcriptForPrompt) : null;
-  } catch (error) {
-    console.error("[voice-assessment] analysis/refine failed:", error);
+  const raw = await runVoiceAnalysis(transcriptForPrompt, ctx);
+  if (!raw) {
     return null;
   }
+
+  const refined = refineCommunicationAnalysis(raw, transcriptForPrompt);
+  if (!refined) {
+    console.error(
+      "[voice-assessment] refine rejected analysis (no grounded evidence or schema failure)",
+    );
+    return null;
+  }
+
+  return refined;
 }
 
 function recoverCommunicationAssessmentFromError(

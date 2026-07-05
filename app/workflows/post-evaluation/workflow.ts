@@ -103,25 +103,12 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
       // the analysis's internal retry budget (~3 × 45s + backoff ≈ 138s).
       const voiceAssessment = await step.do(
         "load_voice_assessment",
-        { timeout: "5 minutes" },
+        {
+          timeout: "5 minutes",
+          retries: { limit: 3, delay: "10 seconds", backoff: "exponential" },
+        },
         loadVoiceAssessment(interviewId, db, log),
       );
-
-      if (!voiceAssessment) {
-        log.warn("Voice assessment completed but analysis unavailable — report withheld");
-        await step.do(
-          "mark_application_evaluation_failed_voice_analysis_unavailable",
-          { retries: { limit: 3, delay: "5 seconds", backoff: "exponential" } },
-          async () => {
-            if (!applicationId) return;
-            await updateApplicationStatus(db, {
-              id: applicationId,
-              status: "evaluation_failed",
-            });
-          },
-        );
-        return { interviewId, status: "voice_assessment_incomplete" as const };
-      }
 
       const answerAuthenticity = await step.do(
         "assess_answer_authenticity",

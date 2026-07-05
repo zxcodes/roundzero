@@ -23,16 +23,16 @@ const sql = getTestDb();
 
 type StubInstance = {
   id: string;
-  status: () => Promise<{ status: string }>;
-  restart: () => Promise<void>;
+  status: () => Promise<{ status: string; output?: unknown }>;
+  restart: (options?: { from?: { name: string } }) => Promise<void>;
   disposed?: boolean;
   [Symbol.dispose]?: () => void;
 };
 
 const makeStubInstance = (input: {
   id: string;
-  status: () => Promise<{ status: string }>;
-  restart?: () => Promise<void>;
+  status: () => Promise<{ status: string; output?: unknown }>;
+  restart?: (options?: { from?: { name: string } }) => Promise<void>;
 }): StubInstance => {
   const instance: StubInstance = {
     id: input.id,
@@ -274,13 +274,16 @@ describe("retryEvaluation post-eval probing", () => {
     expect(reloaded?.status).toBe("evaluation_failed");
   });
 
-  it("skips when post-eval is complete (e.g., insufficient_signal)", async () => {
+  it("skips when post-eval is complete with insufficient_signal", async () => {
     const { application } = await seedFailedApplication();
     const interview = await attachInterview(application.id, "completed");
 
     const completeInstance = makeStubInstance({
       id: interview.id,
-      status: async () => ({ status: "complete" }),
+      status: async () => ({
+        status: "complete",
+        output: { status: "insufficient_signal" },
+      }),
     });
     const bindings = makeBindings({
       postEvalGet: async () => completeInstance,
@@ -293,6 +296,50 @@ describe("retryEvaluation post-eval probing", () => {
 
     expect(result).toEqual({ kind: "skipped", reason: "post_eval_already_complete" });
     expect(completeInstance.disposed).toBe(true);
+  });
+
+  it("restarts from load_voice_assessment when post-eval completed without voice analysis", async () => {
+    const { application } = await seedFailedApplication();
+    const interview = await attachInterview(application.id, "completed");
+
+    await sql`
+      INSERT INTO communication_assessments (interview_id, application_id, status, transcript, analysis)
+      VALUES (
+        ${interview.id},
+        ${application.id},
+        'completed',
+        ${JSON.stringify([{ role: "candidate", content: "I led the migration project end to end." }])}::jsonb,
+        NULL
+      )
+    `;
+
+    const restartedInstance = makeStubInstance({
+      id: interview.id,
+      status: async () => ({
+        status: "complete",
+        output: { status: "voice_assessment_incomplete" },
+      }),
+      restart: vi.fn(async () => undefined),
+    });
+    const bindings = makeBindings({
+      postEvalGet: async () => restartedInstance,
+    });
+
+    const result = await retryEvaluation(sql, application.id, bindings, {
+      cap: 3,
+      source: "manual",
+    });
+
+    expect(result).toEqual({
+      kind: "post_eval",
+      action: "restarted",
+      workflowInstanceId: interview.id,
+    });
+    expect(restartedInstance.restart).toHaveBeenCalledWith({
+      from: { name: "load_voice_assessment" },
+    });
+    expect(restartedInstance.disposed).toBe(true);
+    expect(bindings.postCreate).not.toHaveBeenCalled();
   });
 
   it("disposes the instance when status() throws", async () => {
@@ -390,13 +437,16 @@ describe("previewEvaluationRetry", () => {
     expect(preview).toEqual({ actionable: true, kind: "pre_eval" });
   });
 
-  it("suggests re-invite when post-eval already completed without a report", async () => {
+  it("suggests re-invite when post-eval completed with insufficient_signal", async () => {
     const { application } = await seedFailedApplication();
     const interview = await attachInterview(application.id, "completed");
 
     const completeInstance = makeStubInstance({
       id: interview.id,
-      status: async () => ({ status: "complete" }),
+      status: async () => ({
+        status: "complete",
+        output: { status: "insufficient_signal" },
+      }),
     });
     const bindings = makeBindings({
       postEvalGet: async () => completeInstance,
@@ -408,6 +458,37 @@ describe("previewEvaluationRetry", () => {
       reason: "post_eval_already_complete",
       suggestedAction: "reinvite",
     });
+    expect(completeInstance.disposed).toBe(true);
+  });
+
+  it("marks voice-scoring retries as actionable when post-eval completed without analysis", async () => {
+    const { application } = await seedFailedApplication();
+    const interview = await attachInterview(application.id, "completed");
+
+    await sql`
+      INSERT INTO communication_assessments (interview_id, application_id, status, transcript, analysis)
+      VALUES (
+        ${interview.id},
+        ${application.id},
+        'completed',
+        ${JSON.stringify([{ role: "candidate", content: "We shipped the feature on schedule." }])}::jsonb,
+        NULL
+      )
+    `;
+
+    const completeInstance = makeStubInstance({
+      id: interview.id,
+      status: async () => ({
+        status: "complete",
+        output: { status: "voice_assessment_incomplete" },
+      }),
+    });
+    const bindings = makeBindings({
+      postEvalGet: async () => completeInstance,
+    });
+
+    const preview = await previewEvaluationRetry(sql, application.id, bindings);
+    expect(preview).toEqual({ actionable: true, kind: "post_eval" });
     expect(completeInstance.disposed).toBe(true);
   });
 
