@@ -1,5 +1,7 @@
 import { z } from "zod";
+import { llmReportScoresSchema } from "@/shared/llm-schema";
 
+/** Strict 0–10 scores for persisted reports and post-refine validation. */
 export const reportScoresSchema = z.object({
   communication: z.number().min(0).max(10),
   problemSolving: z.number().min(0).max(10),
@@ -7,6 +9,9 @@ export const reportScoresSchema = z.object({
   roleFit: z.number().min(0).max(10),
   overall: z.number().min(0).max(10),
 });
+
+/** LLM-safe scores for `generate_report` structured output (Anthropic-compatible). */
+export const reportScoresGenerationSchema = llmReportScoresSchema;
 
 export const answerAuthenticitySignalSchema = z.object({
   signal: z.string(),
@@ -49,7 +54,9 @@ export type ReportData = z.infer<typeof reportSchema>;
 
 // Schema for the report generation model call — the model does NOT produce
 // answerAuthenticity. That field is populated from a separate detection step.
-export const reportGenerationSchema = reportSchema.omit({ answerAuthenticity: true });
+export const reportGenerationSchema = reportSchema
+  .omit({ answerAuthenticity: true })
+  .extend({ scores: reportScoresGenerationSchema });
 
 export function getOverallScore(scores: unknown): number | null {
   const parsed = reportScoresSchema.safeParse(scores);
