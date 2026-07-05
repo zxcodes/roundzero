@@ -18,7 +18,7 @@ import { getJobById } from "@/features/jobs/queries/queries_sql";
 import { createNotification } from "@/features/notifications/queries/queries_sql";
 import {
   deliverNotificationEmail,
-  sendNotificationEmailViaResend,
+  sendNotificationEmail,
 } from "@/features/notifications/services/email";
 import { getDb } from "@/shared/db";
 import { notificationPayloadSchemas } from "@/shared/notifications-config";
@@ -203,7 +203,7 @@ export async function checkAndLaunchBatch(jobId: string): Promise<PoolCheckResul
       await deliverNotificationEmail(db, {
         notification: pending.notification,
         recipient: pending.recipient,
-        sendEmail: sendNotificationEmailViaResend,
+        sendEmail: sendNotificationEmail,
       });
     }
   }

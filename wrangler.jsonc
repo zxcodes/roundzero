@@ -32,6 +32,12 @@
       "bucket_name": "roundzero-assets"
     }
   ],
+  "send_email": [
+    {
+      "name": "EMAIL",
+      "remote": true
+    }
+  ],
   "workflows": [
     {
       "name": "pre-evaluation",
@@ -88,6 +94,12 @@
           "bucket_name": "roundzero-assets-staging"
         }
       ],
+      "send_email": [
+        {
+          "name": "EMAIL",
+          "remote": true
+        }
+      ],
       "workflows": [
         {
           "name": "pre-evaluation-staging",
@@ -139,6 +151,12 @@
         {
           "binding": "RESUMES",
           "bucket_name": "roundzero-assets"
+        }
+      ],
+      "send_email": [
+        {
+          "name": "EMAIL",
+          "remote": true
         }
       ],
       "workflows": [

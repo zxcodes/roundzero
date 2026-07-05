@@ -67,7 +67,7 @@ export async function getAnyMembershipByUserId(sql: Sql, args: getAnyMembershipB
 }
 
 export const getCompanyByMemberUserIdQuery = `-- name: getCompanyByMemberUserId :one
-SELECT c.id, c.owner_id, c.name, c.slug, c.onboarding_completed_at, c.description, c.logo_key, c.website, c.industry, c.company_size, c.founded_year, c.location, c.tech_stack, c.culture, c.social_links, c.polar_customer_id, c.polar_subscription_id, c.polar_product_id, c.subscription_plan, c.subscription_status, c.subscription_current_period_end, c.subscription_cancel_at_period_end, c.created_at, c.updated_at
+SELECT c.id, c.owner_id, c.name, c.slug, c.onboarding_completed_at, c.description, c.logo_key, c.website, c.industry, c.company_size, c.founded_year, c.location, c.tech_stack, c.culture, c.social_links, c.polar_customer_id, c.polar_subscription_id, c.polar_product_id, c.subscription_plan, c.subscription_status, c.subscription_current_period_end, c.subscription_cancel_at_period_end, c.created_at, c.updated_at, c.subscription_welcome_polar_subscription_id
 FROM company_members cm
 JOIN companies c ON c.id = cm.company_id
 WHERE cm.user_id = $1
@@ -102,6 +102,7 @@ export interface getCompanyByMemberUserIdRow {
     subscriptionCancelAtPeriodEnd: boolean;
     createdAt: Date;
     updatedAt: Date;
+    subscriptionWelcomePolarSubscriptionId: string | null;
 }
 
 export async function getCompanyByMemberUserId(sql: Sql, args: getCompanyByMemberUserIdArgs): Promise<getCompanyByMemberUserIdRow | null> {
@@ -134,7 +135,8 @@ export async function getCompanyByMemberUserId(sql: Sql, args: getCompanyByMembe
         subscriptionCurrentPeriodEnd: row[20],
         subscriptionCancelAtPeriodEnd: row[21],
         createdAt: row[22],
-        updatedAt: row[23]
+        updatedAt: row[23],
+        subscriptionWelcomePolarSubscriptionId: row[24]
     };
 }
 

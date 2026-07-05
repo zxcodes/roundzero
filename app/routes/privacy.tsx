@@ -105,16 +105,10 @@ function PrivacyPage() {
             .
           </li>
           <li>
-            <strong>Cloudflare</strong> for hosting, storage (R2), and AI infrastructure. See{" "}
+            <strong>Cloudflare</strong> for hosting, storage (R2), AI infrastructure, and
+            transactional email delivery. See{" "}
             <LegalLink href="https://www.cloudflare.com/privacypolicy/">
               Cloudflare's Privacy Policy
-            </LegalLink>
-            .
-          </li>
-          <li>
-            <strong>Resend</strong> for transactional email delivery. See{" "}
-            <LegalLink href="https://resend.com/legal/privacy-policy">
-              Resend's Privacy Policy
             </LegalLink>
             .
           </li>

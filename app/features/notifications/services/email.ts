@@ -1,6 +1,6 @@
 import type { Sql } from "postgres";
+import type { ReactElement } from "react";
 import { jsx } from "react/jsx-runtime";
-import { Resend } from "resend";
 import { NotificationEmailTemplate } from "@/features/notifications/components/notification-email-template";
 import { getNotificationPresentation } from "@/features/notifications/config";
 import {
@@ -9,6 +9,7 @@ import {
   markNotificationEmailSkipped,
 } from "@/features/notifications/queries/queries_sql";
 import { formatDateTime } from "@/shared/date";
+import { isEmailDeliveryConfigured, sendReactTransactionalEmail } from "@/shared/email";
 import { appEnv } from "@/shared/env.app";
 
 type NotificationRecord = {
@@ -25,7 +26,7 @@ type NotificationEmailMessage = {
   to: string;
   fromName: string;
   subject: string;
-  react: ReturnType<typeof jsx>;
+  react: ReactElement;
 };
 
 type NotificationEmailSendResult = {
@@ -88,21 +89,16 @@ const getEmailPresentationMeta = (presentation: ReturnType<typeof getNotificatio
   return { ctaLabel, ctaHref, deadlineText };
 };
 
-export const sendNotificationEmailViaResend: NotificationEmailSender = async (message) => {
-  const resend = new Resend(appEnv.RESEND_API_KEY);
-  const response = await resend.emails.send({
-    from: `${message.fromName} <${appEnv.RESEND_FROM_EMAIL}>`,
+export const sendNotificationEmail: NotificationEmailSender = async (message) => {
+  const delivery = await sendReactTransactionalEmail({
     to: message.to,
+    fromName: message.fromName,
     subject: message.subject,
     react: message.react,
   });
 
-  if (response.error) {
-    throw new Error(response.error.message);
-  }
-
   return {
-    providerMessageId: response.data?.id ?? null,
+    providerMessageId: delivery.providerMessageId,
   };
 };
 
@@ -140,11 +136,7 @@ export async function deliverNotificationEmail(
   const link = appUrl ? new URL(pathname, appUrl).toString() : null;
 
   const sendEmail = input.sendEmail;
-  if (
-    !sendEmail ||
-    (sendEmail === sendNotificationEmailViaResend &&
-      (!appEnv.RESEND_API_KEY || !appEnv.RESEND_FROM_EMAIL))
-  ) {
+  if (!sendEmail || (sendEmail === sendNotificationEmail && !isEmailDeliveryConfigured())) {
     await markNotificationEmailSkipped(db, {
       id: input.notification.id,
       reason: "Email delivery is not configured",

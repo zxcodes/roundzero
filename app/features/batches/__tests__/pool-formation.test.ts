@@ -9,17 +9,6 @@ import {
   seedUser,
 } from "@/shared/__tests__/test-utils";
 
-vi.mock("cloudflare:workers", () => ({
-  env: {
-    HYPERDRIVE: {
-      connectionString:
-        process.env.TEST_DATABASE_URL ??
-        "postgres://postgres:password@localhost:6312/postgres?sslmode=disable",
-    },
-    BATCH_ORCHESTRATION: { create: vi.fn().mockResolvedValue(undefined) },
-  },
-}));
-
 vi.mock("agents", () => ({
   getAgentByName: vi.fn().mockReturnValue({
     initializeContext: vi.fn().mockResolvedValue(undefined),
@@ -30,7 +19,7 @@ vi.mock("@/features/notifications/services/email", async (importOriginal) => {
   const mod = await importOriginal<typeof import("@/features/notifications/services/email")>();
   return {
     ...mod,
-    sendNotificationEmailViaResend: vi.fn().mockResolvedValue({
+    sendNotificationEmail: vi.fn().mockResolvedValue({
       providerMessageId: "mock-id",
     }),
   };

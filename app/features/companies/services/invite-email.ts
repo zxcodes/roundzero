@@ -1,8 +1,8 @@
-import { env } from "cloudflare:workers";
 import { jsx } from "react/jsx-runtime";
-import { Resend } from "resend";
 import { CompanyInviteEmailTemplate } from "@/features/companies/components/company-invite-email-template";
+import { isEmailDeliveryConfigured, sendReactTransactionalEmail } from "@/shared/email";
 import type { CompanyInvitationRole } from "@/shared/enums";
+import { appEnv } from "@/shared/env.app";
 
 const roleLabels: Record<CompanyInvitationRole, string> = {
   admin: "Admin",
@@ -18,22 +18,18 @@ type SendCompanyInviteEmailInput = {
 };
 
 export async function sendCompanyInviteEmail(input: SendCompanyInviteEmailInput): Promise<void> {
-  const resendApiKey = env.RESEND_API_KEY;
-  const resendFromEmail = env.RESEND_FROM_EMAIL;
-
-  if (!resendApiKey || !resendFromEmail) {
+  if (!isEmailDeliveryConfigured()) {
     throw new Error("Email delivery is not configured");
   }
 
-  const appUrl = env.APP_URL ?? "";
+  const appUrl = appEnv.APP_URL;
   const inviteUrl = appUrl
     ? new URL(`/invite/${input.token}`, appUrl).toString()
     : `/invite/${input.token}`;
 
-  const resend = new Resend(resendApiKey);
-  const response = await resend.emails.send({
-    from: `RoundZero <${resendFromEmail}>`,
+  await sendReactTransactionalEmail({
     to: input.to,
+    fromName: "RoundZero",
     subject: `You're invited to join ${input.companyName} on RoundZero`,
     react: jsx(CompanyInviteEmailTemplate, {
       companyName: input.companyName,
@@ -42,8 +38,4 @@ export async function sendCompanyInviteEmail(input: SendCompanyInviteEmailInput)
       inviteUrl,
     }),
   });
-
-  if (response.error) {
-    throw new Error(response.error.message);
-  }
 }

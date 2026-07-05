@@ -12,7 +12,7 @@ INSERT INTO companies (
   onboarding_completed_at
 )
 VALUES ($1, $2, $3, $4, $5, $6, $7, now())
-RETURNING id, owner_id, name, slug, onboarding_completed_at, description, logo_key, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, polar_customer_id, polar_subscription_id, polar_product_id, subscription_plan, subscription_status, subscription_current_period_end, subscription_cancel_at_period_end, created_at, updated_at`;
+RETURNING id, owner_id, name, slug, onboarding_completed_at, description, logo_key, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, polar_customer_id, polar_subscription_id, polar_product_id, subscription_plan, subscription_status, subscription_current_period_end, subscription_cancel_at_period_end, created_at, updated_at, subscription_welcome_polar_subscription_id`;
 
 export interface createCompanyArgs {
     ownerId: string;
@@ -49,6 +49,7 @@ export interface createCompanyRow {
     subscriptionCancelAtPeriodEnd: boolean;
     createdAt: Date;
     updatedAt: Date;
+    subscriptionWelcomePolarSubscriptionId: string | null;
 }
 
 export async function createCompany(sql: Sql, args: createCompanyArgs): Promise<createCompanyRow | null> {
@@ -81,12 +82,13 @@ export async function createCompany(sql: Sql, args: createCompanyArgs): Promise<
         subscriptionCurrentPeriodEnd: row[20],
         subscriptionCancelAtPeriodEnd: row[21],
         createdAt: row[22],
-        updatedAt: row[23]
+        updatedAt: row[23],
+        subscriptionWelcomePolarSubscriptionId: row[24]
     };
 }
 
 export const getCompanyByOwnerIdQuery = `-- name: getCompanyByOwnerId :one
-SELECT id, owner_id, name, slug, onboarding_completed_at, description, logo_key, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, polar_customer_id, polar_subscription_id, polar_product_id, subscription_plan, subscription_status, subscription_current_period_end, subscription_cancel_at_period_end, created_at, updated_at
+SELECT id, owner_id, name, slug, onboarding_completed_at, description, logo_key, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, polar_customer_id, polar_subscription_id, polar_product_id, subscription_plan, subscription_status, subscription_current_period_end, subscription_cancel_at_period_end, created_at, updated_at, subscription_welcome_polar_subscription_id
 FROM companies
 WHERE owner_id = $1`;
 
@@ -119,6 +121,7 @@ export interface getCompanyByOwnerIdRow {
     subscriptionCancelAtPeriodEnd: boolean;
     createdAt: Date;
     updatedAt: Date;
+    subscriptionWelcomePolarSubscriptionId: string | null;
 }
 
 export async function getCompanyByOwnerId(sql: Sql, args: getCompanyByOwnerIdArgs): Promise<getCompanyByOwnerIdRow | null> {
@@ -151,12 +154,13 @@ export async function getCompanyByOwnerId(sql: Sql, args: getCompanyByOwnerIdArg
         subscriptionCurrentPeriodEnd: row[20],
         subscriptionCancelAtPeriodEnd: row[21],
         createdAt: row[22],
-        updatedAt: row[23]
+        updatedAt: row[23],
+        subscriptionWelcomePolarSubscriptionId: row[24]
     };
 }
 
 export const getCompanyByIdQuery = `-- name: getCompanyById :one
-SELECT id, owner_id, name, slug, onboarding_completed_at, description, logo_key, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, polar_customer_id, polar_subscription_id, polar_product_id, subscription_plan, subscription_status, subscription_current_period_end, subscription_cancel_at_period_end, created_at, updated_at
+SELECT id, owner_id, name, slug, onboarding_completed_at, description, logo_key, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, polar_customer_id, polar_subscription_id, polar_product_id, subscription_plan, subscription_status, subscription_current_period_end, subscription_cancel_at_period_end, created_at, updated_at, subscription_welcome_polar_subscription_id
 FROM companies
 WHERE id = $1`;
 
@@ -189,6 +193,7 @@ export interface getCompanyByIdRow {
     subscriptionCancelAtPeriodEnd: boolean;
     createdAt: Date;
     updatedAt: Date;
+    subscriptionWelcomePolarSubscriptionId: string | null;
 }
 
 export async function getCompanyById(sql: Sql, args: getCompanyByIdArgs): Promise<getCompanyByIdRow | null> {
@@ -221,12 +226,13 @@ export async function getCompanyById(sql: Sql, args: getCompanyByIdArgs): Promis
         subscriptionCurrentPeriodEnd: row[20],
         subscriptionCancelAtPeriodEnd: row[21],
         createdAt: row[22],
-        updatedAt: row[23]
+        updatedAt: row[23],
+        subscriptionWelcomePolarSubscriptionId: row[24]
     };
 }
 
 export const getCompanyBySlugQuery = `-- name: getCompanyBySlug :one
-SELECT c.id, c.owner_id, c.name, c.slug, c.onboarding_completed_at, c.description, c.logo_key, c.website, c.industry, c.company_size, c.founded_year, c.location, c.tech_stack, c.culture, c.social_links, c.polar_customer_id, c.polar_subscription_id, c.polar_product_id, c.subscription_plan, c.subscription_status, c.subscription_current_period_end, c.subscription_cancel_at_period_end, c.created_at, c.updated_at,
+SELECT c.id, c.owner_id, c.name, c.slug, c.onboarding_completed_at, c.description, c.logo_key, c.website, c.industry, c.company_size, c.founded_year, c.location, c.tech_stack, c.culture, c.social_links, c.polar_customer_id, c.polar_subscription_id, c.polar_product_id, c.subscription_plan, c.subscription_status, c.subscription_current_period_end, c.subscription_cancel_at_period_end, c.created_at, c.updated_at, c.subscription_welcome_polar_subscription_id,
        u.name AS owner_name,
        u.picture AS owner_picture
 FROM companies c
@@ -262,6 +268,7 @@ export interface getCompanyBySlugRow {
     subscriptionCancelAtPeriodEnd: boolean;
     createdAt: Date;
     updatedAt: Date;
+    subscriptionWelcomePolarSubscriptionId: string | null;
     ownerName: string;
     ownerPicture: string | null;
 }
@@ -297,8 +304,9 @@ export async function getCompanyBySlug(sql: Sql, args: getCompanyBySlugArgs): Pr
         subscriptionCancelAtPeriodEnd: row[21],
         createdAt: row[22],
         updatedAt: row[23],
-        ownerName: row[24],
-        ownerPicture: row[25]
+        subscriptionWelcomePolarSubscriptionId: row[24],
+        ownerName: row[25],
+        ownerPicture: row[26]
     };
 }
 
@@ -317,7 +325,7 @@ SET name = $1,
     social_links = $11,
     updated_at = now()
 WHERE id = $12
-RETURNING id, owner_id, name, slug, onboarding_completed_at, description, logo_key, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, polar_customer_id, polar_subscription_id, polar_product_id, subscription_plan, subscription_status, subscription_current_period_end, subscription_cancel_at_period_end, created_at, updated_at`;
+RETURNING id, owner_id, name, slug, onboarding_completed_at, description, logo_key, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, polar_customer_id, polar_subscription_id, polar_product_id, subscription_plan, subscription_status, subscription_current_period_end, subscription_cancel_at_period_end, created_at, updated_at, subscription_welcome_polar_subscription_id`;
 
 export interface updateCompanyProfileArgs {
     name: string;
@@ -359,6 +367,7 @@ export interface updateCompanyProfileRow {
     subscriptionCancelAtPeriodEnd: boolean;
     createdAt: Date;
     updatedAt: Date;
+    subscriptionWelcomePolarSubscriptionId: string | null;
 }
 
 export async function updateCompanyProfile(sql: Sql, args: updateCompanyProfileArgs): Promise<updateCompanyProfileRow | null> {
@@ -391,12 +400,13 @@ export async function updateCompanyProfile(sql: Sql, args: updateCompanyProfileA
         subscriptionCurrentPeriodEnd: row[20],
         subscriptionCancelAtPeriodEnd: row[21],
         createdAt: row[22],
-        updatedAt: row[23]
+        updatedAt: row[23],
+        subscriptionWelcomePolarSubscriptionId: row[24]
     };
 }
 
 export const getAllCompaniesQuery = `-- name: getAllCompanies :many
-SELECT c.id, c.owner_id, c.name, c.slug, c.onboarding_completed_at, c.description, c.logo_key, c.website, c.industry, c.company_size, c.founded_year, c.location, c.tech_stack, c.culture, c.social_links, c.polar_customer_id, c.polar_subscription_id, c.polar_product_id, c.subscription_plan, c.subscription_status, c.subscription_current_period_end, c.subscription_cancel_at_period_end, c.created_at, c.updated_at,
+SELECT c.id, c.owner_id, c.name, c.slug, c.onboarding_completed_at, c.description, c.logo_key, c.website, c.industry, c.company_size, c.founded_year, c.location, c.tech_stack, c.culture, c.social_links, c.polar_customer_id, c.polar_subscription_id, c.polar_product_id, c.subscription_plan, c.subscription_status, c.subscription_current_period_end, c.subscription_cancel_at_period_end, c.created_at, c.updated_at, c.subscription_welcome_polar_subscription_id,
        (SELECT count(*)::int FROM jobs j WHERE j.company_id = c.id AND j.status = 'open' AND j.archived_at IS NULL) AS open_job_count
 FROM companies c
 JOIN users u ON u.id = c.owner_id AND u.deleted_at IS NULL
@@ -427,6 +437,7 @@ export interface getAllCompaniesRow {
     subscriptionCancelAtPeriodEnd: boolean;
     createdAt: Date;
     updatedAt: Date;
+    subscriptionWelcomePolarSubscriptionId: string | null;
     openJobCount: number;
 }
 
@@ -456,12 +467,13 @@ export async function getAllCompanies(sql: Sql): Promise<getAllCompaniesRow[]> {
         subscriptionCancelAtPeriodEnd: row[21],
         createdAt: row[22],
         updatedAt: row[23],
-        openJobCount: row[24]
+        subscriptionWelcomePolarSubscriptionId: row[24],
+        openJobCount: row[25]
     }));
 }
 
 export const getAllCompaniesPaginatedQuery = `-- name: getAllCompaniesPaginated :many
-SELECT c.id, c.owner_id, c.name, c.slug, c.onboarding_completed_at, c.description, c.logo_key, c.website, c.industry, c.company_size, c.founded_year, c.location, c.tech_stack, c.culture, c.social_links, c.polar_customer_id, c.polar_subscription_id, c.polar_product_id, c.subscription_plan, c.subscription_status, c.subscription_current_period_end, c.subscription_cancel_at_period_end, c.created_at, c.updated_at,
+SELECT c.id, c.owner_id, c.name, c.slug, c.onboarding_completed_at, c.description, c.logo_key, c.website, c.industry, c.company_size, c.founded_year, c.location, c.tech_stack, c.culture, c.social_links, c.polar_customer_id, c.polar_subscription_id, c.polar_product_id, c.subscription_plan, c.subscription_status, c.subscription_current_period_end, c.subscription_cancel_at_period_end, c.created_at, c.updated_at, c.subscription_welcome_polar_subscription_id,
        (SELECT count(*)::int FROM jobs j WHERE j.company_id = c.id AND j.status = 'open' AND j.archived_at IS NULL) AS open_job_count
 FROM companies c
 JOIN users u ON u.id = c.owner_id AND u.deleted_at IS NULL
@@ -504,6 +516,7 @@ export interface getAllCompaniesPaginatedRow {
     subscriptionCancelAtPeriodEnd: boolean;
     createdAt: Date;
     updatedAt: Date;
+    subscriptionWelcomePolarSubscriptionId: string | null;
     openJobCount: number;
 }
 
@@ -533,7 +546,8 @@ export async function getAllCompaniesPaginated(sql: Sql, args: getAllCompaniesPa
         subscriptionCancelAtPeriodEnd: row[21],
         createdAt: row[22],
         updatedAt: row[23],
-        openJobCount: row[24]
+        subscriptionWelcomePolarSubscriptionId: row[24],
+        openJobCount: row[25]
     }));
 }
 
@@ -589,7 +603,7 @@ export async function slugExists(sql: Sql, args: slugExistsArgs): Promise<slugEx
 }
 
 export const getCompanyByPolarCustomerIdQuery = `-- name: getCompanyByPolarCustomerId :one
-SELECT id, owner_id, name, slug, onboarding_completed_at, description, logo_key, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, polar_customer_id, polar_subscription_id, polar_product_id, subscription_plan, subscription_status, subscription_current_period_end, subscription_cancel_at_period_end, created_at, updated_at
+SELECT id, owner_id, name, slug, onboarding_completed_at, description, logo_key, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, polar_customer_id, polar_subscription_id, polar_product_id, subscription_plan, subscription_status, subscription_current_period_end, subscription_cancel_at_period_end, created_at, updated_at, subscription_welcome_polar_subscription_id
 FROM companies
 WHERE polar_customer_id = $1`;
 
@@ -622,6 +636,7 @@ export interface getCompanyByPolarCustomerIdRow {
     subscriptionCancelAtPeriodEnd: boolean;
     createdAt: Date;
     updatedAt: Date;
+    subscriptionWelcomePolarSubscriptionId: string | null;
 }
 
 export async function getCompanyByPolarCustomerId(sql: Sql, args: getCompanyByPolarCustomerIdArgs): Promise<getCompanyByPolarCustomerIdRow | null> {
@@ -654,7 +669,8 @@ export async function getCompanyByPolarCustomerId(sql: Sql, args: getCompanyByPo
         subscriptionCurrentPeriodEnd: row[20],
         subscriptionCancelAtPeriodEnd: row[21],
         createdAt: row[22],
-        updatedAt: row[23]
+        updatedAt: row[23],
+        subscriptionWelcomePolarSubscriptionId: row[24]
     };
 }
 
@@ -663,7 +679,7 @@ UPDATE companies
 SET polar_customer_id = $1,
     updated_at = now()
 WHERE id = $2
-RETURNING id, owner_id, name, slug, onboarding_completed_at, description, logo_key, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, polar_customer_id, polar_subscription_id, polar_product_id, subscription_plan, subscription_status, subscription_current_period_end, subscription_cancel_at_period_end, created_at, updated_at`;
+RETURNING id, owner_id, name, slug, onboarding_completed_at, description, logo_key, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, polar_customer_id, polar_subscription_id, polar_product_id, subscription_plan, subscription_status, subscription_current_period_end, subscription_cancel_at_period_end, created_at, updated_at, subscription_welcome_polar_subscription_id`;
 
 export interface setCompanyPolarCustomerArgs {
     polarCustomerId: string | null;
@@ -695,6 +711,7 @@ export interface setCompanyPolarCustomerRow {
     subscriptionCancelAtPeriodEnd: boolean;
     createdAt: Date;
     updatedAt: Date;
+    subscriptionWelcomePolarSubscriptionId: string | null;
 }
 
 export async function setCompanyPolarCustomer(sql: Sql, args: setCompanyPolarCustomerArgs): Promise<setCompanyPolarCustomerRow | null> {
@@ -727,7 +744,8 @@ export async function setCompanyPolarCustomer(sql: Sql, args: setCompanyPolarCus
         subscriptionCurrentPeriodEnd: row[20],
         subscriptionCancelAtPeriodEnd: row[21],
         createdAt: row[22],
-        updatedAt: row[23]
+        updatedAt: row[23],
+        subscriptionWelcomePolarSubscriptionId: row[24]
     };
 }
 
@@ -741,7 +759,7 @@ SET polar_subscription_id = $1,
     subscription_cancel_at_period_end = $6,
     updated_at = now()
 WHERE polar_customer_id = $7
-RETURNING id, owner_id, name, slug, onboarding_completed_at, description, logo_key, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, polar_customer_id, polar_subscription_id, polar_product_id, subscription_plan, subscription_status, subscription_current_period_end, subscription_cancel_at_period_end, created_at, updated_at`;
+RETURNING id, owner_id, name, slug, onboarding_completed_at, description, logo_key, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, polar_customer_id, polar_subscription_id, polar_product_id, subscription_plan, subscription_status, subscription_current_period_end, subscription_cancel_at_period_end, created_at, updated_at, subscription_welcome_polar_subscription_id`;
 
 export interface updateCompanySubscriptionArgs {
     polarSubscriptionId: string | null;
@@ -778,6 +796,7 @@ export interface updateCompanySubscriptionRow {
     subscriptionCancelAtPeriodEnd: boolean;
     createdAt: Date;
     updatedAt: Date;
+    subscriptionWelcomePolarSubscriptionId: string | null;
 }
 
 export async function updateCompanySubscription(sql: Sql, args: updateCompanySubscriptionArgs): Promise<updateCompanySubscriptionRow | null> {
@@ -810,7 +829,8 @@ export async function updateCompanySubscription(sql: Sql, args: updateCompanySub
         subscriptionCurrentPeriodEnd: row[20],
         subscriptionCancelAtPeriodEnd: row[21],
         createdAt: row[22],
-        updatedAt: row[23]
+        updatedAt: row[23],
+        subscriptionWelcomePolarSubscriptionId: row[24]
     };
 }
 
@@ -824,7 +844,7 @@ SET polar_subscription_id = NULL,
     subscription_cancel_at_period_end = false,
     updated_at = now()
 WHERE polar_customer_id = $1
-RETURNING id, owner_id, name, slug, onboarding_completed_at, description, logo_key, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, polar_customer_id, polar_subscription_id, polar_product_id, subscription_plan, subscription_status, subscription_current_period_end, subscription_cancel_at_period_end, created_at, updated_at`;
+RETURNING id, owner_id, name, slug, onboarding_completed_at, description, logo_key, website, industry, company_size, founded_year, location, tech_stack, culture, social_links, polar_customer_id, polar_subscription_id, polar_product_id, subscription_plan, subscription_status, subscription_current_period_end, subscription_cancel_at_period_end, created_at, updated_at, subscription_welcome_polar_subscription_id`;
 
 export interface clearCompanySubscriptionArgs {
     polarCustomerId: string | null;
@@ -855,6 +875,7 @@ export interface clearCompanySubscriptionRow {
     subscriptionCancelAtPeriodEnd: boolean;
     createdAt: Date;
     updatedAt: Date;
+    subscriptionWelcomePolarSubscriptionId: string | null;
 }
 
 export async function clearCompanySubscription(sql: Sql, args: clearCompanySubscriptionArgs): Promise<clearCompanySubscriptionRow | null> {
@@ -887,7 +908,54 @@ export async function clearCompanySubscription(sql: Sql, args: clearCompanySubsc
         subscriptionCurrentPeriodEnd: row[20],
         subscriptionCancelAtPeriodEnd: row[21],
         createdAt: row[22],
-        updatedAt: row[23]
+        updatedAt: row[23],
+        subscriptionWelcomePolarSubscriptionId: row[24]
     };
+}
+
+export const claimSubscriptionWelcomeSendQuery = `-- name: claimSubscriptionWelcomeSend :one
+UPDATE companies
+SET subscription_welcome_polar_subscription_id = $1,
+    updated_at = now()
+WHERE polar_subscription_id = $1
+  AND subscription_welcome_polar_subscription_id IS DISTINCT FROM $1
+RETURNING id, name, owner_id`;
+
+export interface claimSubscriptionWelcomeSendArgs {
+    subscriptionWelcomePolarSubscriptionId: string | null;
+}
+
+export interface claimSubscriptionWelcomeSendRow {
+    id: string;
+    name: string;
+    ownerId: string;
+}
+
+export async function claimSubscriptionWelcomeSend(sql: Sql, args: claimSubscriptionWelcomeSendArgs): Promise<claimSubscriptionWelcomeSendRow | null> {
+    const rows = await sql.unsafe(claimSubscriptionWelcomeSendQuery, [args.subscriptionWelcomePolarSubscriptionId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        name: row[1],
+        ownerId: row[2]
+    };
+}
+
+export const clearSubscriptionWelcomeSendClaimQuery = `-- name: clearSubscriptionWelcomeSendClaim :exec
+UPDATE companies
+SET subscription_welcome_polar_subscription_id = NULL,
+    updated_at = now()
+WHERE polar_subscription_id = $1
+  AND subscription_welcome_polar_subscription_id = $1`;
+
+export interface clearSubscriptionWelcomeSendClaimArgs {
+    polarSubscriptionId: string | null;
+}
+
+export async function clearSubscriptionWelcomeSendClaim(sql: Sql, args: clearSubscriptionWelcomeSendClaimArgs): Promise<void> {
+    await sql.unsafe(clearSubscriptionWelcomeSendClaimQuery, [args.polarSubscriptionId]);
 }
 

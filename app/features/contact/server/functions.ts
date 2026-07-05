@@ -1,8 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
-import { Resend } from "resend";
 import { z } from "zod";
-import { appEnv } from "@/shared/env.app";
+import { isEmailDeliveryConfigured, sendTransactionalEmail } from "@/shared/email";
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
 
 export const contactSchema = z.object({
   email: z.email("Please enter a valid email"),
@@ -12,18 +19,18 @@ export const contactSchema = z.object({
 export const submitContactForm = createServerFn({ method: "POST" })
   .validator(zodValidator(contactSchema))
   .handler(async ({ data }) => {
-    const resend = new Resend(appEnv.RESEND_API_KEY);
-
-    const response = await resend.emails.send({
-      from: `RoundZero Contact <${appEnv.RESEND_FROM_EMAIL}>`,
-      to: "contact@roundzero.dev",
-      subject: `Contact form submission from ${data.email}`,
-      text: `From: ${data.email}\n\nMessage:\n${data.query}`,
-    });
-
-    if (response.error) {
-      throw new Error(response.error.message);
+    if (!isEmailDeliveryConfigured()) {
+      throw new Error("Email delivery is not configured");
     }
+
+    await sendTransactionalEmail({
+      to: "contact@roundzero.dev",
+      fromName: "RoundZero Contact",
+      subject: `Contact form submission from ${data.email}`,
+      html: `<p><strong>From:</strong> ${escapeHtml(data.email)}</p><p>${escapeHtml(data.query).replace(/\n/g, "<br />")}</p>`,
+      text: `From: ${data.email}\n\nMessage:\n${data.query}`,
+      replyTo: data.email,
+    });
 
     return { success: true };
   });
