@@ -1,5 +1,8 @@
 import type { Sql } from "postgres";
-import { getInterviewByApplicationId } from "@/features/interviews/queries/queries_sql";
+import {
+  getCommunicationAssessmentByInterviewId,
+  getInterviewByApplicationId,
+} from "@/features/interviews/queries/queries_sql";
 import { getReportByInterviewId } from "@/features/reports/queries/queries_sql";
 import { disposeRpcResource } from "@/shared/workflow-rpc";
 import {
@@ -78,7 +81,7 @@ export async function previewEvaluationRetry(
       return { actionable: false, reason: "report_already_exists" };
     }
 
-    const probe = await probePostEvaluationInstance(bindings.postEvaluation, interview.id);
+    const probe = await probePostEvaluationInstance(db, bindings.postEvaluation, interview.id);
     try {
       if (probe.action === "create" || probe.action === "restart") {
         return { actionable: true, kind: "post_eval" };
@@ -173,7 +176,7 @@ async function claimAndTriggerPostEval(
 ): Promise<RetryEvaluationResult> {
   // Probe the existing instance BEFORE claiming so we can skip without
   // incrementing the counter if the workflow is healthily mid-flight.
-  const probe = await probePostEvaluationInstance(bindings.postEvaluation, interviewId);
+  const probe = await probePostEvaluationInstance(db, bindings.postEvaluation, interviewId);
   if (probe.action === "skip") {
     return { kind: "skipped", reason: probe.reason };
   }
@@ -202,7 +205,7 @@ async function claimAndTriggerPostEval(
       }
     }
 
-    await probe.instance.restart();
+    await probe.instance.restart(probe.restartFrom ? { from: probe.restartFrom } : undefined);
     return { kind: "post_eval", action: "restarted", workflowInstanceId: probe.instance.id };
   } catch (error) {
     await updateApplicationStatus(db, { id: applicationId, status: "evaluation_failed" });
@@ -214,12 +217,37 @@ async function claimAndTriggerPostEval(
   }
 }
 
+type PostEvalRestartFrom = WorkflowInstanceRestartOptions["from"];
+
 type PostEvalProbe =
   | { action: "create" }
-  | { action: "restart"; instance: WorkflowInstance }
+  | { action: "restart"; instance: WorkflowInstance; restartFrom?: PostEvalRestartFrom }
   | { action: "skip"; reason: string };
 
+async function isPostEvalVoiceScoringRecoverable(
+  db: Sql,
+  interviewId: string,
+  output: unknown,
+): Promise<boolean> {
+  const existingReport = await getReportByInterviewId(db, { interviewId });
+  if (existingReport) {
+    return false;
+  }
+
+  const result = output as { status?: string } | null | undefined;
+  if (result?.status === "voice_assessment_incomplete") {
+    return true;
+  }
+  if (result?.status === "insufficient_signal" || result?.status === "already_exists") {
+    return false;
+  }
+
+  const assessment = await getCommunicationAssessmentByInterviewId(db, { interviewId });
+  return assessment?.status === "completed" && assessment.analysis == null;
+}
+
 async function probePostEvaluationInstance(
+  db: Sql,
   binding: Workflow<{ interviewId: string }>,
   interviewId: string,
 ): Promise<PostEvalProbe> {
@@ -242,11 +270,19 @@ async function probePostEvaluationInstance(
         case "terminated":
           retainInstance = true;
           return { action: "restart", instance };
-        case "complete":
-          // Workflow ran to completion (often the `insufficient_signal` branch).
-          // Restarting against the same data will produce the same outcome, so
-          // skip — operators can intervene differently (e.g. re-invite).
+        case "complete": {
+          if (await isPostEvalVoiceScoringRecoverable(db, interviewId, statusPayload.output)) {
+            retainInstance = true;
+            return {
+              action: "restart",
+              instance,
+              restartFrom: { name: "load_voice_assessment" },
+            };
+          }
+          // Workflow ran to completion (e.g. `insufficient_signal`). Restarting
+          // against the same data will produce the same outcome — re-invite.
           return { action: "skip", reason: "post_eval_already_complete" };
+        }
         case "queued":
         case "running":
         case "paused":
