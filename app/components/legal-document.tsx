@@ -40,15 +40,13 @@ export function LegalPage({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-svh bg-background text-foreground">
+    <div className="calm min-h-svh bg-background text-foreground">
       <PublicHeader />
       <main id="main-content" className="pb-20 pt-10">
         <div className={CONTAINER}>
           <div className="mb-12">
-            <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-              Legal
-            </span>
-            <h1 className="mt-3 text-[clamp(2rem,5vw,3.5rem)] font-semibold leading-[1.05] tracking-[-0.03em]">
+            <span className="eyebrow">Legal</span>
+            <h1 className="mt-4 text-[clamp(2rem,3.2vw,3rem)] font-semibold leading-[1.06] tracking-[-0.035em]">
               {title}
             </h1>
             <p className="mt-4 font-mono text-xs text-muted-foreground">

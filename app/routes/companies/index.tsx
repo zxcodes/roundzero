@@ -10,6 +10,7 @@ import { createFileRoute, Link, stripSearchParams, useNavigate } from "@tanstack
 import { z } from "zod";
 import { PaginationNav } from "@/components/pagination-nav";
 import { PublicFooter, PublicHeader } from "@/components/public-layout";
+import { PUBLIC_CONTAINER, PublicPageHero } from "@/components/public-page";
 import { CompaniesListSkeleton } from "@/components/route-skeletons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getAllCompaniesPaginated } from "@/features/companies/server/functions";
+import { cn } from "@/lib/utils";
 import type { Industry } from "@/shared/enums";
 import {
   companySizeLabels,
@@ -97,37 +99,30 @@ function CompaniesPage() {
   };
 
   return (
-    <div className="bg-background text-foreground min-h-svh">
+    <div className="calm min-h-svh bg-background text-foreground">
       <PublicHeader />
 
       <main>
-        {/* Header */}
-        <section className="relative overflow-hidden border-b border-border/40">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--color-primary)/6%,transparent_70%)]" />
-          <div className="relative mx-auto max-w-7xl px-6 py-16 lg:px-10 lg:py-20">
-            <div className="max-w-2xl space-y-4">
-              <p className="text-xs font-medium uppercase tracking-widest text-primary">
-                Company directory
-              </p>
-              <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-                Companies hiring on RoundZero
-              </h1>
-              <p className="text-base leading-relaxed text-muted-foreground">
-                Explore teams building great products. Find the right culture, stack, and role for
-                you.
-              </p>
-              <p className="text-sm text-muted-foreground">
-                <span className="font-medium tabular-nums text-foreground">{total}</span>{" "}
-                {total === 1 ? "company" : "companies"}
-                {hasFilters ? " matching your filters" : ""}
-              </p>
-            </div>
-          </div>
-        </section>
+        <PublicPageHero
+          eyebrow="Company directory"
+          title="Companies hiring on RoundZero"
+          lead="Explore teams building great products. Find the right culture, stack, and role for you."
+          meta={
+            <>
+              <span className="font-medium tabular-nums text-foreground">{total}</span>{" "}
+              {total === 1 ? "company" : "companies"}
+              {hasFilters ? " matching your filters" : ""}
+            </>
+          }
+        />
 
-        {/* Filters */}
         <section className="sticky top-0 z-10 border-b border-border/40 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80">
-          <div className="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-3.5 sm:flex-row sm:items-center lg:px-10">
+          <div
+            className={cn(
+              "flex flex-col gap-3 py-3.5 sm:flex-row sm:items-center",
+              PUBLIC_CONTAINER,
+            )}
+          >
             <div className="relative flex-1">
               <HugeiconsIcon
                 icon={Search01Icon}
@@ -170,7 +165,7 @@ function CompaniesPage() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-7xl px-6 py-8 pb-14 lg:px-10 lg:pb-20">
+        <section className={cn(PUBLIC_CONTAINER, "py-8 pb-14 lg:pb-20")}>
           {items.length === 0 ? (
             <Empty className="rounded-2xl border-0 bg-muted/30">
               <EmptyHeader>
@@ -208,11 +203,10 @@ type CompanyFromLoader = Awaited<ReturnType<typeof getAllCompaniesPaginated>>["i
 function CompanyCard({ company, className }: { company: CompanyFromLoader; className?: string }) {
   const initials = company.name
     .split(" ")
-    .map((w) => w[0])
+    .map((word) => word[0])
     .join("")
     .slice(0, 2)
     .toUpperCase();
-
   const techStack: string[] = Array.isArray(company.techStack) ? company.techStack : [];
   const logoUrl = company.logoKey ? getPublicAssetUrl(company.logoKey) : null;
 
@@ -224,14 +218,16 @@ function CompanyCard({ company, className }: { company: CompanyFromLoader; class
       >
         <CardContent className="flex h-full min-h-48 flex-col gap-4 p-5">
           <div className="flex items-start gap-3">
-            <Avatar className="size-11 shrink-0 rounded-2xl">
-              {logoUrl ? <AvatarImage src={logoUrl} alt={company.name} /> : null}
+            <Avatar className="size-11 shrink-0 rounded-2xl after:rounded-2xl">
+              {logoUrl ? (
+                <AvatarImage src={logoUrl} alt={company.name} className="rounded-2xl" />
+              ) : null}
               <AvatarFallback className="rounded-2xl bg-muted text-[11px] font-semibold">
                 {initials}
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1 space-y-1">
-              <p className="line-clamp-2 text-base font-semibold leading-snug tracking-tight transition-colors group-hover:text-primary">
+              <p className="line-clamp-2 text-base font-semibold leading-snug tracking-tight transition-colors group-hover:text-foreground/80">
                 {company.name}
               </p>
               {company.industry ? (
@@ -243,7 +239,7 @@ function CompanyCard({ company, className }: { company: CompanyFromLoader; class
             <HugeiconsIcon
               icon={ArrowRight01Icon}
               strokeWidth={2}
-              className="size-4 shrink-0 text-muted-foreground/50 transition-all group-hover:translate-x-0.5 group-hover:text-primary"
+              className="size-4 shrink-0 text-muted-foreground/50 transition-all group-hover:translate-x-0.5 group-hover:text-foreground"
             />
           </div>
 

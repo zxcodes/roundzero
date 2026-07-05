@@ -40,10 +40,9 @@ function ContactPage() {
       <div className="calm flex min-h-svh flex-col bg-background text-foreground">
         <PublicHeader />
         <main className="mx-auto flex w-full max-w-lg flex-1 flex-col items-center px-6 py-24 text-center lg:px-10">
-          <h1 className="text-[clamp(1.75rem,3.2vw,2.6rem)] font-semibold leading-[1.05] tracking-tight">
-            Message sent
-          </h1>
-          <p className="mt-4 text-[clamp(0.98rem,1.3vw,1.1rem)] leading-relaxed text-muted-foreground">
+          <span className="eyebrow">Contact</span>
+          <h1 className="mt-4 text-2xl font-semibold tracking-tight">Message sent</h1>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             Thanks for reaching out. We'll get back to you at{" "}
             <span className="text-foreground">{form.getFieldValue("email")}</span> as soon as
             possible.
@@ -59,10 +58,9 @@ function ContactPage() {
       <PublicHeader />
       <main className="mx-auto flex-1 w-full max-w-lg px-6 py-20 lg:px-10">
         <div className="text-center">
-          <h1 className="text-[clamp(1.75rem,3.2vw,2.6rem)] font-semibold leading-[1.05] tracking-tight">
-            Contact us
-          </h1>
-          <p className="mt-4 text-[clamp(0.98rem,1.3vw,1.1rem)] leading-relaxed text-muted-foreground">
+          <span className="eyebrow">Contact</span>
+          <h1 className="mt-4 text-2xl font-semibold tracking-tight">Contact us</h1>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             Have a question or want to learn more? Send us a message and we'll get back to you.
           </p>
         </div>
