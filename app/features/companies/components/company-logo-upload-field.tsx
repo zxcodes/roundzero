@@ -109,7 +109,7 @@ export function CompanyLogoUploadField({
           ) : null}
           {isUploading ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-background/70">
-              <span className="text-xs font-medium tabular-nums text-foreground">Uploading...</span>
+              <span className="text-xs font-medium tabular-nums text-foreground">Uploading</span>
               <div className="w-3/4 overflow-hidden rounded-full bg-muted">
                 <div className="h-1.5 w-full animate-pulse bg-primary" />
               </div>
@@ -135,7 +135,7 @@ export function CompanyLogoUploadField({
           </div>
 
           {isUploading ? (
-            <p className="text-xs text-muted-foreground">Uploading company logo...</p>
+            <p className="text-xs text-muted-foreground">Uploading company logo</p>
           ) : value ? (
             <p className="text-xs text-muted-foreground">
               Visible across your public company profile and job surfaces

@@ -42,7 +42,7 @@ export function UnsavedChangesBar({
                       strokeWidth={2}
                       className="size-4 animate-spin"
                     />
-                    Saving...
+                    Saving
                   </>
                 ) : (
                   "Save changes"

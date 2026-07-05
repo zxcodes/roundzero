@@ -213,7 +213,7 @@ function CurrentPlanCard({
                   strokeWidth={2}
                   className="size-4 animate-spin"
                 />
-                Opening...
+                Opening
               </>
             ) : (
               "Manage billing"
@@ -342,7 +342,7 @@ function PlanCard({
                   strokeWidth={2}
                   className="size-4 animate-spin"
                 />
-                Redirecting...
+                Redirecting
               </>
             ) : (
               `Upgrade to ${config.name}`

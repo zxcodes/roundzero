@@ -141,7 +141,7 @@ export function ShortlistDialog({
                     strokeWidth={2}
                     className="size-4 animate-spin"
                   />
-                  Saving...
+                  Saving
                 </>
               ) : mode === "create" ? (
                 "Shortlist candidate"

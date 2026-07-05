@@ -880,19 +880,15 @@ export function JobForm({
           <form.Subscribe selector={(state) => ({ values: state.values })}>
             {({ values }) => (
               <div className="flex items-center gap-2">
-                <Button type="submit" disabled={isSubmittingProp}>
+                <Button type="submit" disabled={isSubmittingProp} className="gap-2">
                   {isSubmittingProp ? (
-                    <>
-                      <HugeiconsIcon
-                        icon={Loading03Icon}
-                        strokeWidth={2}
-                        className="size-4 animate-spin"
-                      />
-                      Creating...
-                    </>
-                  ) : (
-                    submitLabel
-                  )}
+                    <HugeiconsIcon
+                      icon={Loading03Icon}
+                      strokeWidth={2}
+                      className="size-4 animate-spin"
+                    />
+                  ) : null}
+                  {isSubmittingProp ? "Creating job" : submitLabel}
                 </Button>
                 {companyName ? (
                   <JobPreviewDialog

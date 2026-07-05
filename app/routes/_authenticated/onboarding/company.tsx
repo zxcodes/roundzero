@@ -207,7 +207,7 @@ function CompanyOnboardingPage() {
                       strokeWidth={2}
                       className="size-4 animate-spin"
                     />
-                    Creating...
+                    Creating
                   </>
                 ) : (
                   "Create company"
