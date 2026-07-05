@@ -1,14 +1,5 @@
-import {
-  BubbleChatIcon,
-  CheckmarkCircle02Icon,
-  File02Icon,
-  Loading03Icon,
-  RankingIcon,
-} from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { Logo } from "@/components/public-layout";
-import { Button } from "@/components/ui/button";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { LoginPageShell } from "@/features/auth/components/login-page-shell";
 import { useAuth } from "@/features/auth/provider";
 import { redirectAfterSignup, signupSearchSchema } from "@/features/auth/signup-search";
 import { buildPageHead, PAGE_SEO } from "@/shared/seo";
@@ -29,6 +20,21 @@ export const Route = createFileRoute("/company/login")({
   component: CompanyLoginPage,
 });
 
+const valueProps = [
+  {
+    title: "Adaptive interviews",
+    body: "Zero evaluates how candidates think and communicate, not just what is on their résumé.",
+  },
+  {
+    title: "Ranked reports",
+    body: "Every applicant arrives scored with strengths, concerns, and evidence from the conversation.",
+  },
+  {
+    title: "Hire with confidence",
+    body: "Clear recommendations before your team schedules a single human interview.",
+  },
+];
+
 function CompanyLoginPage() {
   const { signIn, isSigningIn } = useAuth();
   const signupSearch = Route.useSearch();
@@ -38,246 +44,25 @@ function CompanyLoginPage() {
   };
 
   return (
-    <div className="min-h-svh lg:grid lg:grid-cols-2">
-      {/* Left — value proposition */}
-      <div className="relative hidden overflow-hidden bg-muted lg:block">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,var(--color-primary)/8%,transparent_60%)]" />
-        <div className="relative flex h-full flex-col justify-between p-10 xl:p-14">
-          <Link to="/" className="flex items-center gap-1">
-            <Logo />
-            <span className="font-heading text-[19px] leading-none tracking-[-0.01em] font-medium">
-              RoundZero
-            </span>
-          </Link>
-
-          {/* Hero copy */}
-          <div className="space-y-8">
-            <div className="space-y-4">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
-                For companies
-              </p>
-              <h1 className="text-3xl font-extrabold leading-tight tracking-tight xl:text-4xl">
-                Replace your first
-                <br />
-                interview round.
-              </h1>
-              <p className="max-w-md text-base leading-relaxed text-muted-foreground">
-                Post a job and RoundZero handles the initial screen. Every candidate gets a
-                structured, adaptive AI interview, and you get a scored report with evidence.
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <ValueProp
-                icon={BubbleChatIcon}
-                title="AI-powered interviews"
-                text="Adaptive questions that probe deeper based on real answers"
-              />
-              <ValueProp
-                icon={File02Icon}
-                title="Evidence-backed reports"
-                text="Scored evaluations with transcript excerpts and reasoning"
-              />
-              <ValueProp
-                icon={RankingIcon}
-                title="Ranked shortlists"
-                text="Candidates sorted by fit with clear shortlist and reject recommendations"
-              />
-            </div>
-          </div>
-
-          {/* Social proof placeholder */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <HugeiconsIcon
-                  icon={CheckmarkCircle02Icon}
-                  strokeWidth={2}
-                  className="size-3.5 text-success"
-                />
-                No credit card required
-              </span>
-              <span className="flex items-center gap-1">
-                <HugeiconsIcon
-                  icon={CheckmarkCircle02Icon}
-                  strokeWidth={2}
-                  className="size-3.5 text-success"
-                />
-                Free to post jobs
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Right — login form */}
-      <div className="relative flex min-h-svh items-start justify-center p-6 pt-16 lg:min-h-0 lg:items-center lg:p-10 lg:pt-10">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--color-primary)/4%,transparent_70%)]" />
-
-        <div className="relative w-full max-w-sm space-y-8">
-          {/* Mobile logo */}
-          <div className="flex justify-center lg:hidden">
-            <Link to="/" className="flex items-center gap-2">
-              <Logo classname="size-7" />
-            </Link>
-          </div>
-
-          <div className="space-y-2 text-center">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-primary lg:hidden">
-              For companies
-            </p>
-            <h2 className="text-2xl font-bold tracking-tight">Start hiring smarter</h2>
-            <p className="text-sm text-muted-foreground">
-              Sign in to post jobs, run AI interviews, and review scored candidate reports.
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            <Button
-              variant="outline"
-              size="lg"
-              className="w-full gap-3"
-              onClick={onSignIn}
-              disabled={isSigningIn}
-            >
-              {isSigningIn ? (
-                <HugeiconsIcon
-                  icon={Loading03Icon}
-                  strokeWidth={2}
-                  className="size-4 animate-spin"
-                />
-              ) : (
-                <GoogleIcon />
-              )}
-              {isSigningIn ? "Signing in" : "Continue with Google"}
-            </Button>
-          </div>
-
-          {/* Mobile value props — condensed */}
-          <div className="space-y-3 lg:hidden">
-            <div className="flex items-start gap-3 rounded-lg border border-border/60 bg-card/50 p-3">
-              <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10">
-                <HugeiconsIcon
-                  icon={BubbleChatIcon}
-                  strokeWidth={2}
-                  className="size-4 text-primary"
-                />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium">AI-powered interviews</p>
-                <p className="text-xs text-muted-foreground">
-                  Adaptive questions that probe deeper based on real answers
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 rounded-lg border border-border/60 bg-card/50 p-3">
-              <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10">
-                <HugeiconsIcon icon={File02Icon} strokeWidth={2} className="size-4 text-primary" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium">Evidence-backed reports</p>
-                <p className="text-xs text-muted-foreground">
-                  Scored evaluations with transcript excerpts and reasoning
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 rounded-lg border border-border/60 bg-card/50 p-3">
-              <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10">
-                <HugeiconsIcon icon={RankingIcon} strokeWidth={2} className="size-4 text-primary" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium">Ranked shortlists</p>
-                <p className="text-xs text-muted-foreground">
-                  Candidates sorted by fit with clear shortlist and reject recommendations
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center justify-center gap-4 pt-1 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <HugeiconsIcon
-                  icon={CheckmarkCircle02Icon}
-                  strokeWidth={2}
-                  className="size-3.5 text-success"
-                />
-                No credit card required
-              </span>
-              <span className="flex items-center gap-1">
-                <HugeiconsIcon
-                  icon={CheckmarkCircle02Icon}
-                  strokeWidth={2}
-                  className="size-3.5 text-success"
-                />
-                Free to post jobs
-              </span>
-            </div>
-          </div>
-
-          <div className="space-y-3 text-center text-xs text-muted-foreground">
-            <p>
-              Looking to apply for jobs?{" "}
-              <Link to="/candidate/login" className="font-medium text-primary hover:underline">
-                Sign in as a candidate
-              </Link>
-            </p>
-            <p>
-              By continuing, you agree to our{" "}
-              <Link to="/tos" className="underline underline-offset-2">
-                Terms
-              </Link>{" "}
-              and{" "}
-              <Link to="/privacy" className="underline underline-offset-2">
-                Privacy Policy
-              </Link>
-              .
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ValueProp({
-  icon,
-  title,
-  text,
-}: {
-  icon: typeof BubbleChatIcon;
-  title: string;
-  text: string;
-}) {
-  return (
-    <div className="flex items-start gap-3.5">
-      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-        <HugeiconsIcon icon={icon} strokeWidth={2} className="size-4 text-primary" />
-      </div>
-      <div>
-        <p className="text-sm font-semibold">{title}</p>
-        <p className="mt-0.5 text-sm text-muted-foreground">{text}</p>
-      </div>
-    </div>
-  );
-}
-
-function GoogleIcon() {
-  return (
-    <svg className="size-4" viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
-        fill="#4285F4"
-      />
-      <path
-        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-        fill="#34A853"
-      />
-      <path
-        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-        fill="#FBBC05"
-      />
-      <path
-        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-        fill="#EA4335"
-      />
-    </svg>
+    <LoginPageShell
+      roleEyebrow="For companies"
+      headline={
+        <>
+          Review candidates, not <span className="highlight">resumes</span>.
+        </>
+      }
+      lead="Post a job and RoundZero handles the initial screen. Every candidate gets a structured, adaptive AI interview, and you get a scored report with evidence."
+      valueProps={valueProps}
+      trustPoints={["No credit card required", "Free to post jobs"]}
+      formTitle="Get started"
+      formLead="Sign in to post jobs, run AI interviews, and review scored candidate reports."
+      crossLink={{
+        prompt: "Looking to apply for jobs?",
+        to: "/candidate/login",
+        linkText: "Sign in as a candidate",
+      }}
+      onSignIn={onSignIn}
+      isSigningIn={isSigningIn}
+    />
   );
 }

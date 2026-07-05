@@ -183,6 +183,7 @@ export function CompanySettings({
             <form.Field name="logoKey">
               {(field) => (
                 <CompanyLogoUploadField
+                  companyName={company.name}
                   value={field.state.value}
                   description="Upload a square or transparent company logo. This appears on your public company page."
                   onUploaded={async ({ logoKey }) => {

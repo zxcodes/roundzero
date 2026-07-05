@@ -11,6 +11,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link, notFound, useRouteContext } from "@tanstack/react-router";
 import { AppBreadcrumbs } from "@/components/app-breadcrumbs";
 import { PublicFooter, PublicHeader } from "@/components/public-layout";
+import { PUBLIC_CONTAINER } from "@/components/public-page";
 import { JobDetailSkeleton } from "@/components/route-skeletons";
 import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -22,6 +23,7 @@ import { candidateLoginLink } from "@/features/auth/signup-search";
 import { getMyCandidateProfile } from "@/features/candidates/server/functions";
 import { JobStatusBadge } from "@/features/jobs/components/job-status-badge";
 import { getPublicJobById } from "@/features/jobs/server/functions";
+import { cn } from "@/lib/utils";
 import { publicJobDetailTrail } from "@/shared/breadcrumb-trails";
 import { formatDate, formatDaysLeft } from "@/shared/date";
 import type { EmploymentType, ExperienceLevel, WorkplaceType } from "@/shared/enums";
@@ -33,7 +35,7 @@ import { validateUuidParams } from "@/shared/validation";
 function companyInitials(name: string) {
   return name
     .split(" ")
-    .map((part) => part[0] ?? "")
+    .map((word) => word[0] ?? "")
     .join("")
     .toUpperCase()
     .slice(0, 2);
@@ -104,12 +106,12 @@ function JobDetailPage() {
   const hasResume = Boolean(candidateProfile?.resumeKey);
 
   return (
-    <div className="min-h-svh bg-background text-foreground">
+    <div className="calm min-h-svh bg-background text-foreground">
       <PublicHeader />
 
       <main>
         {isClosed ? (
-          <div className="mx-auto max-w-7xl px-6 pt-4 lg:px-10">
+          <div className={cn(PUBLIC_CONTAINER, "pt-4")}>
             <Alert>
               <HugeiconsIcon icon={Alert02Icon} strokeWidth={2} className="size-4" />
               <AlertDescription>
@@ -129,17 +131,16 @@ function JobDetailPage() {
           </div>
         ) : null}
 
-        <section className="relative overflow-hidden border-b border-border/40">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--color-primary)/5%,transparent_60%)]" />
-          <div className="relative mx-auto max-w-7xl px-6 pb-10 pt-6 lg:px-10 lg:pb-12">
+        <section className="border-b border-border/40 bg-background">
+          <div className={cn(PUBLIC_CONTAINER, "pb-10 pt-6 lg:pb-12")}>
             <AppBreadcrumbs items={publicJobDetailTrail(job.title)} />
 
             <div className="mt-8 space-y-6">
               <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
                 <div className="flex min-w-0 items-start gap-4">
-                  <Avatar className="size-14 shrink-0 rounded-2xl">
+                  <Avatar className="size-14 shrink-0 rounded-2xl after:rounded-2xl">
                     <AvatarFallback className="rounded-2xl bg-muted text-sm font-semibold">
-                      {companyInitials(job.companyName)}
+                      {companyInitials(job.companyName ?? "Company")}
                     </AvatarFallback>
                   </Avatar>
 
@@ -150,7 +151,7 @@ function JobDetailPage() {
                     <Link
                       to="/companies/$slug"
                       params={{ slug: job.companySlug }}
-                      className="block text-sm text-muted-foreground transition-colors hover:text-primary"
+                      className="block text-sm text-muted-foreground transition-colors hover:text-foreground"
                     >
                       {job.companyName}
                     </Link>
@@ -201,7 +202,9 @@ function JobDetailPage() {
           </div>
         </section>
 
-        <section className="mx-auto grid max-w-7xl gap-8 px-6 py-8 lg:grid-cols-3 lg:gap-10 lg:px-10 lg:py-12">
+        <section
+          className={cn(PUBLIC_CONTAINER, "grid gap-8 py-8 lg:grid-cols-3 lg:gap-10 lg:py-12")}
+        >
           <div className="space-y-8 lg:col-span-2">
             {job.description ? (
               <section className="space-y-3 rounded-2xl bg-muted/30 px-6 py-5">
@@ -277,9 +280,9 @@ function JobDetailPage() {
               params={{ slug: job.companySlug }}
               className="group flex items-center gap-3 rounded-3xl border border-border/60 bg-muted-foreground/4.5 px-5 py-4 transition-all hover:border-primary/25 hover:shadow-md hover:shadow-primary/5 dark:bg-muted/10"
             >
-              <Avatar className="size-11 shrink-0 rounded-2xl">
+              <Avatar className="size-11 shrink-0 rounded-2xl after:rounded-2xl">
                 <AvatarFallback className="rounded-2xl bg-muted text-[11px] font-semibold">
-                  {companyInitials(job.companyName)}
+                  {companyInitials(job.companyName ?? "Company")}
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">

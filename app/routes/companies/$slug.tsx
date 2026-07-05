@@ -9,11 +9,11 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { AppBreadcrumbs } from "@/components/app-breadcrumbs";
 import { PublicFooter, PublicHeader } from "@/components/public-layout";
+import { PUBLIC_CONTAINER } from "@/components/public-page";
 import { CompanyDetailSkeleton } from "@/components/route-skeletons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-
 import {
   Empty,
   EmptyDescription,
@@ -25,6 +25,7 @@ import {
 import { getCompanyBySlug } from "@/features/companies/server/functions";
 import { JobListRow } from "@/features/jobs/components/job-list-row";
 import { getOpenJobsByCompanyId } from "@/features/jobs/server/functions";
+import { cn } from "@/lib/utils";
 import { publicCompanyDetailTrail } from "@/shared/breadcrumb-trails";
 import type { CompanySize, Industry } from "@/shared/enums";
 import { companySizeLabels, industryLabels } from "@/shared/enums";
@@ -96,11 +97,10 @@ function CompanyProfilePage() {
 
   const initials = company.name
     .split(" ")
-    .map((w) => w[0])
+    .map((word) => word[0])
     .join("")
     .slice(0, 2)
     .toUpperCase();
-
   const techStack: string[] = Array.isArray(company.techStack) ? company.techStack : [];
   const logoUrl = company.logoKey ? getPublicAssetUrl(company.logoKey) : null;
   const socialLinks: Record<string, string> =
@@ -111,20 +111,23 @@ function CompanyProfilePage() {
       : {};
 
   return (
-    <div className="bg-background text-foreground min-h-svh">
+    <div className="calm min-h-svh bg-background text-foreground">
       <PublicHeader />
 
       <main>
         {/* Back link + hero */}
-        <section className="relative overflow-hidden border-b border-border/40">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--color-primary)/5%,transparent_60%)]" />
-          <div className="relative mx-auto max-w-7xl px-6 pb-10 pt-6 lg:px-10 lg:pb-12">
+        <section className="border-b border-border/40 bg-background">
+          <div className={cn(PUBLIC_CONTAINER, "pb-10 pt-6 lg:pb-12")}>
             <AppBreadcrumbs items={publicCompanyDetailTrail(company.name)} />
 
             <div className="mt-8 flex flex-col gap-6 sm:flex-row sm:items-start">
-              <Avatar className="size-16 rounded-xl">
-                {logoUrl ? <AvatarImage src={logoUrl} alt={company.name} /> : null}
-                <AvatarFallback className="rounded-xl text-lg font-bold">{initials}</AvatarFallback>
+              <Avatar className="size-16 shrink-0 rounded-2xl after:rounded-2xl">
+                {logoUrl ? (
+                  <AvatarImage src={logoUrl} alt={company.name} className="rounded-2xl" />
+                ) : null}
+                <AvatarFallback className="rounded-2xl bg-muted text-lg font-semibold">
+                  {initials}
+                </AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1 space-y-3">
                 <div>
@@ -187,7 +190,7 @@ function CompanyProfilePage() {
         </section>
 
         {/* Body */}
-        <section className="mx-auto grid max-w-7xl gap-10 px-6 py-8 lg:grid-cols-3 lg:px-10 lg:py-12">
+        <section className={cn(PUBLIC_CONTAINER, "grid gap-10 py-8 lg:grid-cols-3 lg:py-12")}>
           {/* Left column — about + jobs */}
           <div className="space-y-6 lg:col-span-2">
             {company.description ? (

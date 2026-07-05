@@ -5,6 +5,7 @@ import { z } from "zod";
 import { DeferredSection } from "@/components/deferred-section";
 import { PaginationNav } from "@/components/pagination-nav";
 import { PublicFooter, PublicHeader } from "@/components/public-layout";
+import { PUBLIC_CONTAINER, PublicPageHero } from "@/components/public-page";
 import { JobsResultsSkeleton } from "@/components/route-skeletons";
 import {
   Empty,
@@ -25,6 +26,7 @@ import {
 import { JobListRow } from "@/features/jobs/components/job-list-row";
 import { getOpenJobsPaginated } from "@/features/jobs/server/functions";
 import { useDebouncedSearchInput } from "@/hooks/use-debounced-search-input";
+import { cn } from "@/lib/utils";
 import type { SalaryCurrency } from "@/shared/enums";
 import {
   employmentTypeLabels,
@@ -148,28 +150,23 @@ function JobsPage() {
   const resultsResetKey = `${typeFilter}-${levelFilter}-${workplaceFilter}-${salaryMin}-${salaryCurrency}-${page}`;
 
   return (
-    <div className="min-h-svh bg-background text-foreground">
+    <div className="calm min-h-svh bg-background text-foreground">
       <PublicHeader />
 
       <main>
-        <section className="relative overflow-hidden border-b border-border/40">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--color-primary)/6%,transparent_70%)]" />
-          <div className="relative mx-auto max-w-7xl px-6 py-14 lg:px-10 lg:py-16">
-            <div className="max-w-2xl space-y-4">
-              <p className="text-xs font-medium uppercase tracking-widest text-primary">
-                Job board
-              </p>
-              <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Open positions</h1>
-              <p className="text-base leading-relaxed text-muted-foreground">
-                Browse roles from companies hiring on RoundZero. Apply with one click and interview
-                on your schedule.
-              </p>
-            </div>
-          </div>
-        </section>
+        <PublicPageHero
+          eyebrow="Job board"
+          title="Open positions"
+          lead="Browse roles from companies hiring on RoundZero. Apply with one click and interview on your schedule."
+        />
 
         <section className="sticky top-0 z-10 border-b border-border/40 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80">
-          <div className="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-3.5 sm:flex-row sm:items-center lg:px-10">
+          <div
+            className={cn(
+              "flex flex-col gap-3 py-3.5 sm:flex-row sm:items-center",
+              PUBLIC_CONTAINER,
+            )}
+          >
             <div className="relative flex-1 shrink-0 sm:shrink">
               <HugeiconsIcon
                 icon={Search01Icon}
@@ -254,7 +251,7 @@ function JobsPage() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-7xl px-6 py-8 pb-14 lg:px-10 lg:pb-20">
+        <section className={cn(PUBLIC_CONTAINER, "py-8 pb-14 lg:pb-20")}>
           <DeferredSection
             promise={results}
             resetKey={resultsResetKey}
