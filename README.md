@@ -13,7 +13,7 @@ AI-powered hiring platform that replaces first-round screening with structured a
 - **Billing:** Polar subscriptions with plan-gated entitlements
 - **Models:** Code-level chains in `app/shared/openrouter.ts` — Sonnet/Haiku in prod; free/OpenRouter models in dev
 - **Storage:** Cloudflare R2 (resumes, voice audio)
-- **Email:** Resend (secondary to in-app notifications)
+- **Email:** Cloudflare Email Service (secondary to in-app notifications)
 - **UI:** shadcn/ui, Tailwind CSS v4, Huge Icons
 - **Linting & Formatting:** Biome
 - **Finding Unused Code & Dependencies:** Knip
