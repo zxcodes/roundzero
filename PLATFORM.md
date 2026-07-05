@@ -54,7 +54,7 @@ Live today:
 - async AI pre-evaluation on all applicants (every plan)
 - batch-orchestrated text interviews + required voice assessment
 - explainable evaluation reports with ranking on job applicants page
-- in-app notifications + Resend email for key workflow events
+- in-app notifications + Cloudflare Email Service for key workflow events
 - company billing (Polar) and plan-gated entitlements
 - multi-tenant company teams (email invitations, `/dashboard/team`)
 - account soft-delete with 30-day restore window and scheduled erasure
@@ -197,7 +197,7 @@ The platform-hardening priorities listed below were completed before the AI laye
 ### 5.3 Notifications Delivery Layer
 
 - [x] In-app notifications as canonical record
-- [x] Resend email delivery for `interview_invited`, `report_ready`, `batch_ready`, `application_status_changed`, `position_filled`, and related types (see `notificationTypeSchema`)
+- [x] Cloudflare Email Service delivery for `interview_invited`, `report_ready`, `batch_ready`, `application_status_changed`, `position_filled`, and related types (see `notificationTypeSchema`)
 - [x] Delivery tracking on notification rows
 
 ### 5.4 Public Route Cleanup
@@ -427,7 +427,7 @@ After AI:
 
 ## 14. Notifications and Communication
 
-Notifications are **in-app first**; email is a secondary channel via Resend.
+Notifications are **in-app first**; email is a secondary channel via Cloudflare Email Service.
 
 Live notification types (`notificationTypeSchema`):
 
