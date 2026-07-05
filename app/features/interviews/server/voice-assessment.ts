@@ -243,6 +243,13 @@ export async function finalizeVoiceAssessmentFromTranscript(input: {
  * Invoked from the post-evaluation workflow's `load_voice_assessment` step,
  * where it runs in the background without blocking the candidate.
  */
+function formatVoiceAnalysisError(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
+}
+
 export async function analyzeVoiceTranscript(
   messages: Array<VoiceTranscriptMessage>,
   ctx: Awaited<ReturnType<typeof loadVoiceAssessmentContext>>,
@@ -260,16 +267,18 @@ export async function analyzeVoiceTranscript(
     return null;
   }
 
-  const raw = await runVoiceAnalysis(transcriptForPrompt, ctx);
-  if (!raw) {
+  const rawResult = await runVoiceAnalysis(transcriptForPrompt, ctx);
+  if (!rawResult.analysis) {
+    console.error(
+      `[voice-assessment] LLM analysis failed: ${rawResult.failure ?? "unknown error"}`,
+    );
     return null;
   }
 
-  const refined = refineCommunicationAnalysis(raw, transcriptForPrompt);
+  const refined = refineCommunicationAnalysis(rawResult.analysis, transcriptForPrompt);
   if (!refined) {
-    console.error(
-      "[voice-assessment] refine rejected analysis (no grounded evidence or schema failure)",
-    );
+    const wordCount = transcriptForPrompt.trim().split(/\s+/).length;
+    console.error(`[voice-assessment] refine rejected analysis (transcriptWords=${wordCount})`);
     return null;
   }
 
@@ -298,7 +307,7 @@ function recoverCommunicationAssessmentFromError(
 async function runVoiceAnalysis(
   transcript: string,
   ctx: Awaited<ReturnType<typeof loadVoiceAssessmentContext>>,
-): Promise<CommunicationAssessmentAnalysis | null> {
+): Promise<{ analysis: CommunicationAssessmentAnalysis | null; failure: string | null }> {
   const { systemPrompt, userPrompt } = COMMUNICATION_ASSESSMENT_PROMPT.build({
     jobTitle: ctx.jobTitle,
     companyName: ctx.companyName,
@@ -308,6 +317,7 @@ async function runVoiceAnalysis(
 
   const maxAttempts = 3;
   const perAttemptTimeoutMs = 45_000;
+  let lastFailure: string | null = null;
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const controller = new AbortController();
@@ -319,16 +329,21 @@ async function runVoiceAnalysis(
         output: Output.object({ schema: communicationAssessmentSchema }),
         system: systemPrompt,
         prompt: userPrompt,
-        maxOutputTokens: 1200,
+        maxOutputTokens: 2000,
         abortSignal: controller.signal,
       });
-      return result.output;
+      if (!result.output) {
+        lastFailure = "Structured output was empty";
+        continue;
+      }
+      return { analysis: result.output, failure: null };
     } catch (error) {
       const recovered = recoverCommunicationAssessmentFromError(error);
       if (recovered) {
-        return recovered;
+        return { analysis: recovered, failure: null };
       }
 
+      lastFailure = formatVoiceAnalysisError(error);
       console.error(`[voice-assessment] analysis attempt ${attempt + 1} failed:`, error);
       if (attempt < maxAttempts - 1) {
         const delay = 1_000 * 2 ** attempt;
@@ -339,7 +354,7 @@ async function runVoiceAnalysis(
     }
   }
 
-  return null;
+  return { analysis: null, failure: lastFailure };
 }
 
 /**

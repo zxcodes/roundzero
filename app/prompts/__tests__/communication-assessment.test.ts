@@ -33,7 +33,7 @@ describe("normalizeCommunicationAssessmentInput", () => {
     expect(parsed?.summary).toBe("The candidate struggles to deliver clear responses.");
   });
 
-  it("rejects voice scores outside the 0–10 scale", () => {
+  it("clamps nested 0–100 voice scores onto the 0–10 scale", () => {
     const raw = {
       clarity: { score: 72, evidence: ["clear answer"] },
       articulation: { score: 68, evidence: ["precise wording"] },
@@ -44,7 +44,10 @@ describe("normalizeCommunicationAssessmentInput", () => {
       summary: "Out-of-range voice assessment.",
     };
 
-    expect(parseCommunicationAssessment(raw)).toBeNull();
+    const parsed = parseCommunicationAssessment(raw);
+    expect(parsed).not.toBeNull();
+    expect(parsed?.clarity.score).toBe(7.2);
+    expect(parsed?.overallScore).toBe(7.2);
   });
 
   it("passes through already-nested output unchanged", () => {

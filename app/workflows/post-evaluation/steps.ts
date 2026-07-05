@@ -725,7 +725,7 @@ export function loadVoiceAssessment(
     const analysis = await analyzeVoiceTranscript(transcript.data, ctx);
     if (!analysis) {
       throw new Error(
-        `Voice assessment scoring produced no result for ${interviewId} (LLM failure or refinement rejected output)`,
+        `Voice assessment scoring produced no result for ${interviewId}. Check workflow logs for [voice-assessment] LLM or refine details.`,
       );
     }
 
