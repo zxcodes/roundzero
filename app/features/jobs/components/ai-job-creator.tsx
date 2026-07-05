@@ -141,7 +141,7 @@ export function AiJobCreator({ isPaid, onApply, onDiscard }: AiJobCreatorProps) 
                     strokeWidth={2}
                     className="size-4 animate-spin"
                   />
-                  Generating...
+                  Generating
                 </>
               ) : (
                 <>

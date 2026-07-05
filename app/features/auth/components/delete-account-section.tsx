@@ -60,7 +60,7 @@ export function DeleteAccountSection() {
                   strokeWidth={2}
                   className="size-4 animate-spin"
                 />
-                Deleting...
+                Deleting
               </>
             ) : (
               "Delete account"

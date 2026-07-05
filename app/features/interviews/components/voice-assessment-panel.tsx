@@ -426,7 +426,7 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
               strokeWidth={2}
               className="size-6 animate-spin text-muted-foreground"
             />
-            <p className="text-sm text-muted-foreground">Preparing voice assessment…</p>
+            <p className="text-sm text-muted-foreground">Preparing voice assessment</p>
           </div>
         </div>
       </div>
@@ -538,7 +538,7 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
         ) : showFinalisingSpinner ? (
           <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
             <HugeiconsIcon icon={Loading03Icon} strokeWidth={2} className="size-4 animate-spin" />
-            Finalising results…
+            Finalising results
           </div>
         ) : finalising && submitFailed && liveTranscript.length > 0 ? (
           <div className="flex flex-wrap items-center justify-between gap-3">

@@ -131,7 +131,7 @@ export function CandidateApplySection({
       {applyMutation.isPending ? (
         <>
           <HugeiconsIcon icon={Loading03Icon} strokeWidth={2} className="size-4 animate-spin" />
-          Applying...
+          Applying
         </>
       ) : (
         "Apply for this position"

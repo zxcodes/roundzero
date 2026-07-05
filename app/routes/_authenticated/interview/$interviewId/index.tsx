@@ -299,8 +299,8 @@ function InterviewWorkspaceContent({
           <HugeiconsIcon icon={Loading03Icon} strokeWidth={2} className="size-4 animate-spin" />
           <span>
             {isStarting
-              ? "Starting interview and preparing your first question..."
-              : "Submitting your chat interview..."}
+              ? "Starting interview and preparing your first question"
+              : "Submitting your chat interview"}
           </span>
         </div>
       ) : null}

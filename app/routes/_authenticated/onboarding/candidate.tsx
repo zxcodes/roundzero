@@ -140,7 +140,7 @@ function CandidateOnboardingPage() {
                       strokeWidth={2}
                       className="size-4 animate-spin"
                     />
-                    Creating...
+                    Creating
                   </>
                 ) : (
                   "Create profile"

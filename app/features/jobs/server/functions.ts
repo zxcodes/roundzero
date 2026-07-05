@@ -11,6 +11,10 @@ import {
   lockCompanyEntitlementScope,
   readCompanyEntitlements,
 } from "@/features/entitlements/server/enforcement";
+import {
+  isJobPublishTransition,
+  notifyJobPublished,
+} from "@/features/jobs/services/job-lifecycle-notifications";
 import { getDb } from "@/shared/db";
 import { asSqlTransaction } from "@/shared/db-transaction";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
@@ -82,6 +86,10 @@ export const createJob = createServerFn({ method: "POST" })
       throw new Error("Failed to create job");
     }
 
+    if (isJobPublishTransition(null, job.status)) {
+      await notifyJobPublished(db, context.company.id, job);
+    }
+
     return { job };
   });
 
@@ -136,6 +144,7 @@ export const updateJob = createServerFn({ method: "POST" })
   .validator(zodValidator(updateJobSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
+    const existing = data.status === "open" ? await getJobById(db, { id: data.id }) : null;
     const updateArgs = {
       id: data.id,
       companyId: context.company.id,
@@ -183,6 +192,10 @@ export const updateJob = createServerFn({ method: "POST" })
 
     if (!job) {
       throw new Error("Failed to update job: not found or not authorized");
+    }
+
+    if (isJobPublishTransition(existing?.status, job.status)) {
+      await notifyJobPublished(db, context.company.id, job);
     }
 
     return { job };
@@ -266,15 +279,7 @@ export const publishJob = createServerFn({ method: "POST" })
       throw new Error("Failed to publish job");
     }
 
-    await notifyCompanyTeam(db, {
-      companyId: context.company.id,
-      type: "job_published",
-      payload: {
-        jobId: updated.id,
-        jobTitle: updated.title,
-        status: "open",
-      },
-    });
+    await notifyJobPublished(db, context.company.id, updated);
 
     return { job: updated };
   });
