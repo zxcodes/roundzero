@@ -1,14 +1,12 @@
 import type { Subscription } from "@polar-sh/sdk/models/components/subscription";
 import { validateEvent, WebhookVerificationError } from "@polar-sh/sdk/webhooks";
-import { getUserById } from "@/features/auth/queries/queries_sql";
 import {
   clearCompanySubscription,
-  getCompanyByPolarCustomerId,
   updateCompanySubscription,
 } from "@/features/companies/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { appEnv } from "@/shared/env.app";
-import { sendSubscriptionWelcomeEmail } from "./services/email";
+import { trySendSubscriptionWelcomeEmail } from "./services/email";
 import { getPolar } from "./services/polar";
 
 function planFromProductId(
@@ -72,7 +70,12 @@ export async function handlePolarWebhook(request: Request): Promise<Response> {
         }
         break;
       }
-      case "subscription.active":
+      case "subscription.active": {
+        const subscription = event.data;
+        await syncSubscription(subscription);
+        await trySendSubscriptionWelcomeForActiveSubscription(subscription);
+        break;
+      }
       case "subscription.updated":
       case "subscription.canceled":
       case "subscription.uncanceled": {
@@ -114,23 +117,20 @@ async function syncSubscription(subscription: Subscription): Promise<void> {
     subscriptionCurrentPeriodEnd: subscription.currentPeriodEnd,
     subscriptionCancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
   });
+}
 
-  if (subscription.status === "active" || subscription.status === "trialing") {
-    const company = await getCompanyByPolarCustomerId(getDb(), {
-      polarCustomerId: subscription.customerId,
-    });
-    if (company?.ownerId) {
-      const owner = await getUserById(getDb(), { id: company.ownerId });
-      if (owner?.email) {
-        await sendSubscriptionWelcomeEmail({
-          to: owner.email,
-          companyName: company.name,
-          plan,
-          polarSubscriptionId: subscription.id,
-        }).catch((error) => {
-          console.error("[polar.webhook] failed to send welcome email", error);
-        });
-      }
-    }
+async function trySendSubscriptionWelcomeForActiveSubscription(
+  subscription: Subscription,
+): Promise<void> {
+  if (subscription.status !== "active" && subscription.status !== "trialing") {
+    return;
   }
+
+  const plan = planFromProductId(subscription.productId);
+  await trySendSubscriptionWelcomeEmail(getDb(), {
+    polarSubscriptionId: subscription.id,
+    plan,
+  }).catch((error) => {
+    console.error("[polar.webhook] failed to send welcome email", error);
+  });
 }

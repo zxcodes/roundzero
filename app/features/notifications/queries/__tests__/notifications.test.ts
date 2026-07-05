@@ -209,7 +209,7 @@ describe("notification email delivery state", () => {
 
     const failedUpdated = await markNotificationEmailFailed(sql, {
       id: failed!.id,
-      errorMessage: "Resend rejected request",
+      errorMessage: "Email delivery failed",
     });
     const skippedUpdated = await markNotificationEmailSkipped(sql, {
       id: skipped!.id,
@@ -220,7 +220,7 @@ describe("notification email delivery state", () => {
     expect(failedUpdated!.emailDeliveryStatus).toBe("failed");
     expect(failedUpdated!.emailDeliveryAttemptedAt).toBeInstanceOf(Date);
     expect(failedUpdated!.emailDeliverySentAt).toBeNull();
-    expect(failedUpdated!.emailDeliveryError).toBe("Resend rejected request");
+    expect(failedUpdated!.emailDeliveryError).toBe("Email delivery failed");
     expect(failedUpdated!.emailProviderMessageId).toBeNull();
 
     expect(skippedUpdated).not.toBeNull();

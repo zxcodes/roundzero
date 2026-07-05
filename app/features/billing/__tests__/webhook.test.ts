@@ -1,3 +1,4 @@
+import { env } from "cloudflare:workers";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getCompanyByPolarCustomerId } from "@/features/companies/queries/queries_sql";
 import { getTestDb, seedUser } from "@/shared/__tests__/test-utils";
@@ -32,6 +33,8 @@ vi.mock("@/shared/env.app", () => ({
     POLAR_PRODUCT_ID_STARTER: "starter-product-id",
     POLAR_PRODUCT_ID_GROWTH: "growth-product-id",
     POLAR_PRODUCT_ID_SCALE: "scale-product-id",
+    EMAIL_FROM: "test@roundzero.dev",
+    APP_URL: "http://localhost:3000",
   },
 }));
 
@@ -134,6 +137,30 @@ describe("subscription.active webhook", () => {
 
     const updated = await getCompanyByPolarCustomerId(sql, { polarCustomerId: "cust_starter" });
     expect(updated!.subscriptionPlan).toBe("starter");
+  });
+
+  it("sends welcome email at most once per subscription id", async () => {
+    const owner = await seedUser({ role: "company", email: "owner-welcome@acme.com" });
+    await sql`
+      INSERT INTO companies (owner_id, name, slug, polar_customer_id)
+      VALUES (${owner.id}, ${"Welcome Co"}, ${`welcome-co-${crypto.randomUUID().slice(0, 6)}`}, ${"cust_welcome"})
+    `;
+
+    vi.mocked(env.EMAIL.send).mockClear();
+
+    mockValidateEvent.mockReturnValue({
+      type: "subscription.active",
+      data: makeSubscription({ customerId: "cust_welcome", id: "sub_welcome_once" }),
+    });
+
+    const request = makeWebhookRequest({ type: "subscription.active" });
+    const first = await handlePolarWebhook(request);
+    expect(first.status).toBe(200);
+    expect(env.EMAIL.send).toHaveBeenCalledTimes(1);
+
+    const second = await handlePolarWebhook(makeWebhookRequest({ type: "subscription.active" }));
+    expect(second.status).toBe(200);
+    expect(env.EMAIL.send).toHaveBeenCalledTimes(1);
   });
 
   it("maps scale product id to scale plan", async () => {

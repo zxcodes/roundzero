@@ -10,9 +10,8 @@ const envSchema = z.object({
 
   SESSION_SECRET: z.string(),
 
-  // Resend Keys
-  RESEND_API_KEY: z.string(),
-  RESEND_FROM_EMAIL: z.email(),
+  // Cloudflare Email Service — from address must use an onboarded sending domain.
+  EMAIL_FROM: z.email(),
 
   // Polar
   POLAR_ACCESS_TOKEN: z.string(),

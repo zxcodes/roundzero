@@ -99,7 +99,8 @@ CREATE TABLE public.companies (
     subscription_current_period_end timestamp with time zone,
     subscription_cancel_at_period_end boolean DEFAULT false NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    subscription_welcome_polar_subscription_id text
 );
 
 
@@ -967,4 +968,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260615042817'),
     ('20260622161816'),
     ('20260629021838'),
-    ('20260703114221');
+    ('20260703114221'),
+    ('20260705072949');
