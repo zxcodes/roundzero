@@ -90,34 +90,34 @@
       ],
       "workflows": [
         {
-          "name": "pre-evaluation",
+          "name": "pre-evaluation-staging",
           "binding": "PRE_EVALUATION",
           "class_name": "PreEvaluationWorkflow"
         },
         {
-          "name": "post-evaluation",
+          "name": "post-evaluation-staging",
           "binding": "POST_EVALUATION",
           "class_name": "PostEvaluationWorkflow"
         },
         {
-          "name": "batch-orchestration",
+          "name": "batch-orchestration-staging",
           "binding": "BATCH_ORCHESTRATION",
           "class_name": "BatchOrchestrationWorkflow"
         },
         {
-          "name": "pool-check",
+          "name": "pool-check-staging",
           "binding": "POOL_CHECK",
           "class_name": "PoolCheckWorkflow",
           "schedules": ["0 */6 * * *"]
         },
         {
-          "name": "eval-retry",
+          "name": "eval-retry-staging",
           "binding": "EVAL_RETRY",
           "class_name": "EvalRetryWorkflow",
           "schedules": ["0 */3 * * *"]
         },
         {
-          "name": "account-cleanup",
+          "name": "account-cleanup-staging",
           "binding": "ACCOUNT_CLEANUP",
           "class_name": "AccountCleanupWorkflow",
           "schedules": ["0 4 * * *"]
@@ -143,34 +143,34 @@
       ],
       "workflows": [
         {
-          "name": "pre-evaluation",
+          "name": "pre-evaluation-production",
           "binding": "PRE_EVALUATION",
           "class_name": "PreEvaluationWorkflow"
         },
         {
-          "name": "post-evaluation",
+          "name": "post-evaluation-production",
           "binding": "POST_EVALUATION",
           "class_name": "PostEvaluationWorkflow"
         },
         {
-          "name": "batch-orchestration",
+          "name": "batch-orchestration-production",
           "binding": "BATCH_ORCHESTRATION",
           "class_name": "BatchOrchestrationWorkflow"
         },
         {
-          "name": "pool-check",
+          "name": "pool-check-production",
           "binding": "POOL_CHECK",
           "class_name": "PoolCheckWorkflow",
           "schedules": ["0 */6 * * *"]
         },
         {
-          "name": "eval-retry",
+          "name": "eval-retry-production",
           "binding": "EVAL_RETRY",
           "class_name": "EvalRetryWorkflow",
           "schedules": ["0 */3 * * *"]
         },
         {
-          "name": "account-cleanup",
+          "name": "account-cleanup-production",
           "binding": "ACCOUNT_CLEANUP",
           "class_name": "AccountCleanupWorkflow",
           "schedules": ["0 4 * * *"]
