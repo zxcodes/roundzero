@@ -1,7 +1,6 @@
 ## TODO
 
 
-- review ux is broken. review role -> lands on all applications -> nothing's there (url: tab=applicants&view=all&filter=awaiting_decision) switch tab to released reports, applicant shows up -> all application works again (url now:tab=applicants&view=all)
 - text interview experience regressed. last message disappears from agent when it says an ending message and ends the interview. also we should disable auto switching to voice. its bad dx. just show a nice action to complete it.
 - revert batch config for prod.
 - see if we can add a cold reach out feature for companies (paid) so find any candidate on the platform in natural lang. should give their profile with a nice summary irrespective of job postings or anything. useful if companies are looking for someone direct instead of posting a job. an alternate way of hiring basically.
@@ -18,6 +17,7 @@
 ## Future
 - add batch actions for companies (shortlist multiple candidates, and quick actions "shortlist top 3" reject "bottom ones")
 
+<!--- review ux is broken. review role -> lands on all applications -> nothing's there (url: tab=applicants&view=all&filter=awaiting_decision) switch tab to released reports, applicant shows up -> all application works again (url now:tab=applicants&view=all)-->
 <!--- fix landing page initial animation. use the animation skill. 
 - update seed with better data.
 - improve landing page messaging. also see if we need to move sections around or make the value prop more clear, or use report image as hero?-->
