@@ -3,7 +3,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ClientOnly, createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { InterviewWorkspacePageSkeleton } from "@/components/route-skeletons";
 import { Badge } from "@/components/ui/badge";
@@ -161,9 +161,8 @@ function InterviewWorkspaceContent({
   }, [expiresAt, interview.status, router]);
 
   const [activeTab, setActiveTab] = useState<"chat" | "voice">("chat");
-  const hasAutoSwitchedRef = useRef(false);
 
-  // Voice assessment status drives the tab badge and auto-switch nudge.
+  // Voice assessment status drives the tab badge and the completion nudge.
   // We only fetch this once the chat is completed so we don't pay the
   // round-trip during the chat itself.
   const voiceAssessmentQuery = useQuery({
@@ -178,20 +177,11 @@ function InterviewWorkspaceContent({
   const voiceStatus = voiceAssessmentQuery.data?.status ?? null;
   const voiceTabAvailable = isAwaitingVoice || isCompleted;
 
-  // Auto-switch to the voice tab once when the chat is completed and the
-  // voice assessment is still pending/in-progress. This covers both the
-  // live "submit the chat" transition and the returning-user case. We only
-  // fire this once per mount so a manual switch back to chat is respected.
-  useEffect(() => {
-    if (hasAutoSwitchedRef.current) return;
-    if (!isAwaitingVoice) return;
-    if (!voiceAssessmentQuery.isFetched) return;
-    if (voiceStatus === null || voiceStatus === "pending" || voiceStatus === "in_progress") {
-      hasAutoSwitchedRef.current = true;
-      setActiveTab("voice");
-    }
-  }, [isAwaitingVoice, voiceStatus, voiceAssessmentQuery.isFetched]);
-
+  // We deliberately do NOT auto-switch to the voice tab when the chat ends.
+  // Yanking the candidate off the transcript the moment the agent signs off is
+  // jarring and hides the closing message. Instead the chat's ended-state footer
+  // surfaces an explicit "Start voice assessment" action (via onContinueToVoice)
+  // and the candidate switches when they're ready.
   const onContinueToVoice =
     voiceTabAvailable &&
     (voiceStatus === null || voiceStatus === "pending" || voiceStatus === "in_progress")
