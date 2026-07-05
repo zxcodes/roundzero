@@ -1,9 +1,5 @@
 function getPublicAssetBaseUrl() {
-  const value =
-    typeof window === "undefined"
-      ? process.env.VITE_PUBLIC_ASSET_BASE_URL
-      : import.meta.env.VITE_PUBLIC_ASSET_BASE_URL;
-
+  const value = import.meta.env.VITE_PUBLIC_ASSET_BASE_URL;
   return value?.replace(/\/+$/, "") ?? null;
 }
 
