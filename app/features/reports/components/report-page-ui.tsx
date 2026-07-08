@@ -165,6 +165,28 @@ export function ReportActionsRow({
   );
 }
 
+export function ReportKeyboardLegend({ items }: { items: { key: string; label: string }[] }) {
+  if (items.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+      {items.map((item) => (
+        <span
+          key={item.label}
+          className="inline-flex items-center gap-2 text-xs text-muted-foreground"
+        >
+          <kbd className="inline-flex h-6 min-w-6 items-center justify-center rounded-md border bg-muted px-1.5 font-sans text-xs font-semibold text-foreground">
+            {item.key}
+          </kbd>
+          {item.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export function DimensionStatChip({
   label,
   score,
