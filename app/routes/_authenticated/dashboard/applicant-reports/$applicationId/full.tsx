@@ -178,10 +178,10 @@ function ApplicantAiReportPage() {
   });
 
   const shortcutItems = [
-    ...(canShortlist ? [{ key: "S", label: "Shortlist" }] : []),
-    ...(canReject ? [{ key: "R", label: "Reject" }] : []),
-    ...(batchNavigation?.previousApplicationId ? [{ key: "←", label: "Previous" }] : []),
-    ...(batchNavigation?.nextApplicationId ? [{ key: "→", label: "Next" }] : []),
+    { key: "S", label: "Shortlist", disabled: !canShortlist },
+    { key: "R", label: "Reject", disabled: !canReject },
+    { key: "←", label: "Previous", disabled: !batchNavigation?.previousApplicationId },
+    { key: "→", label: "Next", disabled: !batchNavigation?.nextApplicationId },
   ];
 
   const onRejectConfirm = async () => {
