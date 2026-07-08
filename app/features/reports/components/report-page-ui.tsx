@@ -165,7 +165,11 @@ export function ReportActionsRow({
   );
 }
 
-export function ReportKeyboardLegend({ items }: { items: { key: string; label: string }[] }) {
+export function ReportKeyboardLegend({
+  items,
+}: {
+  items: { key: string; label: string; disabled?: boolean }[];
+}) {
   if (items.length === 0) {
     return null;
   }
@@ -175,9 +179,20 @@ export function ReportKeyboardLegend({ items }: { items: { key: string; label: s
       {items.map((item) => (
         <span
           key={item.label}
-          className="inline-flex items-center gap-2 text-xs text-muted-foreground"
+          aria-disabled={item.disabled}
+          className={cn(
+            "inline-flex items-center gap-2 text-xs",
+            item.disabled ? "text-muted-foreground/40" : "text-muted-foreground",
+          )}
         >
-          <kbd className="inline-flex h-6 min-w-6 items-center justify-center rounded-md border bg-muted px-1.5 font-sans text-xs font-semibold text-foreground">
+          <kbd
+            className={cn(
+              "inline-flex h-6 min-w-6 items-center justify-center rounded-md border px-1.5 font-sans text-xs font-semibold",
+              item.disabled
+                ? "border-border/50 bg-muted/40 text-muted-foreground/50"
+                : "bg-muted text-foreground",
+            )}
+          >
             {item.key}
           </kbd>
           {item.label}
