@@ -31,15 +31,26 @@ export function ShortlistDialog({
   mode,
   defaultNote,
   trigger,
+  open: openProp,
+  onOpenChange,
 }: {
   applicationId: string;
   candidateName: string;
   mode: "create" | "edit";
   defaultNote?: string | null;
   trigger: ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
   const id = useId();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = openProp ?? internalOpen;
+  const setOpen = (next: boolean) => {
+    onOpenChange?.(next);
+    if (openProp === undefined) {
+      setInternalOpen(next);
+    }
+  };
   const router = useRouter();
   const shortlistFn = useServerFn(shortlistApplicant);
 

@@ -51,12 +51,14 @@ import {
   DimensionStatChip,
   getReportInitials,
   ReportActionsRow,
+  ReportKeyboardLegend,
   reportDimensionLabels,
   reportScreeningConcernMeta,
   SignalColumn,
   verdictBandTone,
 } from "@/features/reports/components/report-page-ui";
 import { ScorePill } from "@/features/reports/components/score-pill";
+import { useReportKeyboardShortcuts } from "@/features/reports/hooks/use-report-keyboard-shortcuts";
 import { getCompanyApplicantReportTimeline } from "@/features/reports/server/functions";
 import { cn } from "@/lib/utils";
 import { parseCommunicationAssessment } from "@/prompts/communication-assessment";
@@ -118,6 +120,16 @@ function ApplicantReportSummaryPage() {
 
   const router = useRouter();
   const [pendingStatus, setPendingStatus] = useState<ApplicationStatus | null>(null);
+  const [shortlistOpen, setShortlistOpen] = useState(false);
+
+  // This route reuses the component instance across applicationId changes, so any
+  // open dialog would otherwise act on the newly loaded profile. Close them on nav.
+  const [renderedApplicationId, setRenderedApplicationId] = useState(application.id);
+  if (renderedApplicationId !== application.id) {
+    setRenderedApplicationId(application.id);
+    setPendingStatus(null);
+    setShortlistOpen(false);
+  }
 
   const getResumeFn = useServerFn(getApplicationResume);
   const updateStatusFn = useServerFn(updateApplicationStatus);
@@ -170,6 +182,21 @@ function ApplicantReportSummaryPage() {
   };
 
   const onRejectClick = () => setPendingStatus("rejected");
+  const onShortlistShortcut = () => setShortlistOpen(true);
+
+  useReportKeyboardShortcuts({
+    batchNavigation,
+    linkTarget: "summary",
+    onShortlist: canShortlist ? onShortlistShortcut : undefined,
+    onReject: canReject ? onRejectClick : undefined,
+  });
+
+  const shortcutItems = [
+    ...(canShortlist ? [{ key: "S", label: "Shortlist" }] : []),
+    ...(canReject ? [{ key: "R", label: "Reject" }] : []),
+    ...(batchNavigation?.previousApplicationId ? [{ key: "←", label: "Previous" }] : []),
+    ...(batchNavigation?.nextApplicationId ? [{ key: "→", label: "Next" }] : []),
+  ];
 
   const onResumeView = async () => {
     await resumeDownloadMutation.mutateAsync({
@@ -346,6 +373,8 @@ function ApplicantReportSummaryPage() {
                 applicationId={application.id}
                 candidateName={application.candidateName}
                 mode="create"
+                open={shortlistOpen}
+                onOpenChange={setShortlistOpen}
                 trigger={
                   <Button>
                     <HugeiconsIcon
@@ -419,6 +448,12 @@ function ApplicantReportSummaryPage() {
               </Button>
             ) : null}
           </div>
+
+          {shortcutItems.length > 0 ? (
+            <div className="mt-4 border-t border-border/30 pt-4">
+              <ReportKeyboardLegend items={shortcutItems} />
+            </div>
+          ) : null}
         </div>
 
         <div className="border-t border-border/30 px-5 py-5 md:px-6">

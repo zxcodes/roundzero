@@ -44,9 +44,11 @@ import { ReportTimeline } from "@/features/reports/components/report-cards";
 import {
   getReportInitials,
   ReportActionsRow,
+  ReportKeyboardLegend,
   verdictBandTone,
 } from "@/features/reports/components/report-page-ui";
 import { ScorePill } from "@/features/reports/components/score-pill";
+import { useReportKeyboardShortcuts } from "@/features/reports/hooks/use-report-keyboard-shortcuts";
 import { getCompanyApplicantReportTimeline } from "@/features/reports/server/functions";
 import { cn } from "@/lib/utils";
 import { formatDateTime } from "@/shared/date";
@@ -96,6 +98,16 @@ function ApplicantAiReportPage() {
   } = Route.useLoaderData();
   const router = useRouter();
   const [pendingStatus, setPendingStatus] = useState<ApplicationStatus | null>(null);
+  const [shortlistOpen, setShortlistOpen] = useState(false);
+
+  // This route reuses the component instance across applicationId changes, so any
+  // open dialog would otherwise act on the newly loaded profile. Close them on nav.
+  const [renderedApplicationId, setRenderedApplicationId] = useState(application.id);
+  if (renderedApplicationId !== application.id) {
+    setRenderedApplicationId(application.id);
+    setPendingStatus(null);
+    setShortlistOpen(false);
+  }
 
   const getResumeFn = useServerFn(getApplicationResume);
   const updateStatusFn = useServerFn(updateApplicationStatus);
@@ -156,6 +168,21 @@ function ApplicantAiReportPage() {
   const onRejectClick = () => {
     setPendingStatus("rejected");
   };
+  const onShortlistShortcut = () => setShortlistOpen(true);
+
+  useReportKeyboardShortcuts({
+    batchNavigation,
+    linkTarget: "full",
+    onShortlist: canShortlist ? onShortlistShortcut : undefined,
+    onReject: canReject ? onRejectClick : undefined,
+  });
+
+  const shortcutItems = [
+    ...(canShortlist ? [{ key: "S", label: "Shortlist" }] : []),
+    ...(canReject ? [{ key: "R", label: "Reject" }] : []),
+    ...(batchNavigation?.previousApplicationId ? [{ key: "←", label: "Previous" }] : []),
+    ...(batchNavigation?.nextApplicationId ? [{ key: "→", label: "Next" }] : []),
+  ];
 
   const onRejectConfirm = async () => {
     if (!pendingStatus) return;
@@ -325,6 +352,8 @@ function ApplicantAiReportPage() {
                 applicationId={application.id}
                 candidateName={application.candidateName}
                 mode="create"
+                open={shortlistOpen}
+                onOpenChange={setShortlistOpen}
                 trigger={
                   <Button>
                     <HugeiconsIcon
@@ -398,6 +427,12 @@ function ApplicantAiReportPage() {
               </Button>
             ) : null}
           </div>
+
+          {shortcutItems.length > 0 ? (
+            <div className="mt-4 border-t border-border/30 pt-4">
+              <ReportKeyboardLegend items={shortcutItems} />
+            </div>
+          ) : null}
         </div>
       </section>
 
