@@ -14,7 +14,7 @@ Every client-side server-function call is a real worker round trip (+ an `authMi
 - **One server fn per loader phase.** Consolidate related reads into a single server function (one auth-middleware run, parallel queries inside) instead of calling 2–3 separate fns from the same route.
 - **If you truly need expensive data in `beforeLoad`** (app-wide auth/entitlement context), cache it via `context.queryClient.fetchQuery({ queryKey, queryFn, staleTime })` — as `__root` does for the user and `_authenticated` does for the company bootstrap.
 - Router caching is global in `app/router.tsx` (`defaultStaleTime`, `defaultPreloadStaleTime`). Mutations must call `router.invalidate()` (overrides `staleTime`) to refresh after writes.
-- **Never pair `router.invalidate()` with `router.navigate()` in the wrong order.** `invalidate()` re-runs loaders on the *current* route; if a loader `throw redirect(...)` (e.g. onboarding complete, signed out on `_authenticated`), a second `navigate()` races it and can blank the app (`Uncaught undefined` in `MatchInnerImpl`, especially on slow networks). Rules: (1) leaving a route whose loader redirects → `invalidate()` *or* `navigate()`, not both; (2) navigating after a mutation → `navigate()` then `invalidate()`; (3) staying on the same page → `invalidate()` only.
+- **Never pair `router.invalidate()` with `router.navigate()` in the wrong order.** `invalidate()` re-runs loaders on the _current_ route; if a loader `throw redirect(...)` (e.g. onboarding complete, signed out on `_authenticated`), a second `navigate()` races it and can blank the app (`Uncaught undefined` in `MatchInnerImpl`, especially on slow networks). Rules: (1) leaving a route whose loader redirects → `invalidate()` _or_ `navigate()`, not both; (2) navigating after a mutation → `navigate()` then `invalidate()`; (3) staying on the same page → `invalidate()` only.
 
 ## Billing & Entitlements
 
@@ -67,7 +67,7 @@ Every client-side server-function call is a real worker round trip (+ an `authMi
 
 ## Tooling
 
-- Biome lint (`biome.json`); SQLC outputs excluded. **Run `bun run check` (lint + types) after every change.**
+- Oxlint + Oxfmt (`.oxlintrc.json`, `.oxfmtrc.json`); SQLC outputs excluded. **Run `bun run check` (format + lint + types) after every change.**
 - `bun run dev` | `bun run sqlgen` | `bun run test` | `bun run setup.ts`. DB: `bash setup-db.sh setup_pg|reset_pg|rm_pg`.
 
 ## Deployment (staging / production)
@@ -75,11 +75,13 @@ Every client-side server-function call is a real worker round trip (+ an `authMi
 Secrets live in **GitHub environment secrets** (`gh secret list --env staging|production`), not Wrangler directly. CI writes `.env.ci` and deploys via `wrangler deploy --secrets-file .env.ci` (see `.github/workflows/deploy.yml` and `deploy-production.yml`).
 
 **When adding or changing a Worker runtime secret**, update all of:
+
 1. GitHub environment secret (staging + production as needed)
 2. **Both** workflow `.env.ci` heredocs — GitHub cannot auto-enumerate secrets; each must be `${{ secrets.NAME }}` explicitly
 3. `app/shared/env.app.ts` if the app reads it at runtime
 
 **Where env vars go (don't mix these up):**
+
 - **Worker runtime** (`process.env` / `appEnv`) → `.env.ci` in both deploy workflows
 - **Client build** (`import.meta.env.VITE_*`) → build step `env:` block in those workflows (not `.env.ci`)
 - **Non-secret config** (`CLOUDFLARE_ACCOUNT_ID`, `AI_GATEWAY_ID`) → `wrangler.jsonc` `vars` per env

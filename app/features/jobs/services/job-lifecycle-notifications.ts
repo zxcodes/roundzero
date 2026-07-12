@@ -1,4 +1,5 @@
 import type { Sql } from "postgres";
+
 import { notifyCompanyTeam } from "@/features/companies/services/company-team-notifications";
 
 export function isJobPublishTransition(

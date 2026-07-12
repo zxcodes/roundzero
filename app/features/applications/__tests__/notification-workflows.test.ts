@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import {
   createInterview,
   getInterviewByApplicationId,
@@ -12,6 +13,7 @@ import {
   seedJob,
   seedUser,
 } from "@/shared/__tests__/test-utils";
+
 import { createApplication } from "../queries/queries_sql";
 import { applyToJobWorkflow, updateApplicationStatusWorkflow } from "../services/workflows";
 

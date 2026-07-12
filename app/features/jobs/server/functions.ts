@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { generateText, NoObjectGeneratedError, NoOutputGeneratedError, Output } from "ai";
 import { z } from "zod";
+
 import { getCompanyByMemberUserId } from "@/features/companies/queries/membership-queries_sql";
 import { notifyCompanyTeam } from "@/features/companies/services/company-team-notifications";
 import type { Entitlements } from "@/features/entitlements/entitlements";
@@ -19,6 +20,7 @@ import { getDb } from "@/shared/db";
 import { asSqlTransaction } from "@/shared/db-transaction";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
 import { createChatModel } from "@/shared/openrouter";
+
 import {
   archiveJob as archiveJobQuery,
   closeExpiredJobsQuery,

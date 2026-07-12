@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+
 import { SLOP_DETECTION_SYSTEM_PROMPT } from "@/prompts/slop-detection";
+
 import { buildResumeAuthenticityPrompt, shouldInviteFromDeterministicRules } from "../policy";
 
 describe("pre-evaluation routing rules", () => {

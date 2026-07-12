@@ -7,6 +7,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link, notFound, redirect } from "@tanstack/react-router";
+
 import { PageInlineStats } from "@/components/page-inline-stats";
 import { BatchDetailSkeleton } from "@/components/route-skeletons";
 import { Badge } from "@/components/ui/badge";

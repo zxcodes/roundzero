@@ -1,4 +1,5 @@
 import { Polar } from "@polar-sh/sdk";
+
 import { appEnv } from "@/shared/env.app";
 
 let cachedClient: Polar | null = null;

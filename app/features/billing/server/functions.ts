@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
+
 import {
   getCompanyById,
   setCompanyPolarCustomer,
@@ -10,6 +11,7 @@ import { getDb } from "@/shared/db";
 import { appEnv } from "@/shared/env.app";
 import { assertCompanyOwner } from "@/shared/membership-auth";
 import { companyMiddleware } from "@/shared/middleware";
+
 import {
   hasActiveSubscription,
   SUBSCRIPTION_PLANS,

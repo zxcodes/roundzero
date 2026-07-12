@@ -1,9 +1,10 @@
+import { generateText, Output } from "ai";
 import { env } from "cloudflare:workers";
 import { NonRetryableError } from "cloudflare:workflows";
-import { generateText, Output } from "ai";
 import type { Sql } from "postgres";
 import { jsx } from "react/jsx-runtime";
 import { z } from "zod";
+
 import { updateApplicationStatus } from "@/features/applications/queries/queries_sql";
 import { notifyCompanyTeam } from "@/features/companies/services/company-team-notifications";
 import {

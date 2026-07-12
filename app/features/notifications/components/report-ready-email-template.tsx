@@ -9,9 +9,11 @@ import {
   Section,
   Text,
 } from "@react-email/components";
+
 import { type Recommendation, recommendationLabels } from "@/shared/enums";
 import { formatCandidateScoreWithScale } from "@/shared/score";
 import { EMAIL_PREVIEW } from "@/shared/seo";
+
 import { emailTheme } from "./email-theme";
 
 type ReportReadyEmailTemplateProps = {

@@ -1,6 +1,7 @@
 import { ChatFeedback01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
+
 import { PaginationNav } from "@/components/pagination-nav";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";

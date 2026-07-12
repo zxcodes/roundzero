@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+
 import { refineReport } from "../refine";
 
 vi.mock("ai", () => ({

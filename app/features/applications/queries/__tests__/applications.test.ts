@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
+
 import { softDeleteUser } from "@/features/auth/queries/queries_sql";
 import { createInterview } from "@/features/interviews/queries/queries_sql";
 import { archiveJob, createJob } from "@/features/jobs/queries/queries_sql";
 import { getTestDb, makeTestResumeKey, seedCompany, seedUser } from "@/shared/__tests__/test-utils";
+
 import {
   countApplicationsByCandidate,
   countApplicationsByCompany,

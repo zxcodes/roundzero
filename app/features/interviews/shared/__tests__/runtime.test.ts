@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { createApplication } from "@/features/applications/queries/queries_sql";
 import {
   createInterview,

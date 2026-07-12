@@ -1,6 +1,7 @@
 import { ArrowLeft01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
+
 import { Button } from "@/components/ui/button";
 import {
   Pagination,

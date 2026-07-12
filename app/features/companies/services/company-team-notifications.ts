@@ -1,5 +1,6 @@
 import type { Sql } from "postgres";
 import type { z } from "zod";
+
 import { listCompanyNotificationRecipients } from "@/features/companies/queries/membership-queries_sql";
 import {
   createNotification,

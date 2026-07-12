@@ -1,4 +1,5 @@
 import { z } from "zod";
+
 import { subscriptionPlanSchema } from "./config";
 
 export const billingPageSearchSchema = z.object({

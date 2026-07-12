@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { createCompanyMember } from "@/features/companies/queries/membership-queries_sql";
 import { notifyCompanyTeam } from "@/features/companies/services/company-team-notifications";
 import { getNotificationsByUser } from "@/features/notifications/queries/queries_sql";

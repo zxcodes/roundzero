@@ -3,6 +3,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { useForm } from "@tanstack/react-form";
 import { useState } from "react";
 import { z } from "zod";
+
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -211,7 +212,7 @@ export function JobForm({
 
   const onFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    form.handleSubmit();
+    void form.handleSubmit();
   };
   const onRequirementInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setRequirementInput(e.target.value);
@@ -231,7 +232,7 @@ export function JobForm({
               isDirty={isDirty}
               isSubmitting={isSubmitting}
               onDiscard={onCancel}
-              onSave={() => form.handleSubmit()}
+              onSave={() => void form.handleSubmit()}
             />
           )}
         </form.Subscribe>

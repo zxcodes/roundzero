@@ -2,8 +2,8 @@ import { Briefcase01Icon, RankingIcon, UserGroupIcon } from "@hugeicons/core-fre
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link, notFound, redirect, useNavigate } from "@tanstack/react-router";
 import { zodValidator } from "@tanstack/zod-adapter";
-
 import { z } from "zod";
+
 import { PageInlineStats } from "@/components/page-inline-stats";
 import { DashboardJobApplicantsSkeleton } from "@/components/route-skeletons";
 import { Badge } from "@/components/ui/badge";

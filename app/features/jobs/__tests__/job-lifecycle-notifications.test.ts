@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
+
 import { getNotificationsByUser } from "@/features/notifications/queries/queries_sql";
 import { getTestDb, seedCompany, seedJob } from "@/shared/__tests__/test-utils";
+
 import {
   isJobPublishTransition,
   notifyJobPublished,

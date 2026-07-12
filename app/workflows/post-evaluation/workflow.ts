@@ -1,4 +1,5 @@
 import { env, WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers";
+
 import { updateApplicationStatus } from "@/features/applications/queries/queries_sql";
 import { isBatchFullyResolved } from "@/features/batches/server/release";
 import {
@@ -8,6 +9,7 @@ import {
 import { getDb } from "@/shared/db";
 import { createWorkflowLogger } from "@/shared/logger";
 import { disposeRpcResource } from "@/shared/workflow-rpc";
+
 import { refineReport } from "./refine";
 import {
   applyVoiceAssessmentToReport,

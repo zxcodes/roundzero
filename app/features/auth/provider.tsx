@@ -3,7 +3,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { createContext, use, useRef, useState } from "react";
 import { toast } from "sonner";
+
 import type { UserRole } from "@/shared/enums";
+
 import { currentUserQueryKey, loginWithGoogle, logout } from "./server/functions";
 import {
   parseSignupSearch,

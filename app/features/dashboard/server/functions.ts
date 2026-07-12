@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import type { Sql } from "postgres";
+
 import {
   countApplicationsByCandidate,
   getApplicationsByCandidate,

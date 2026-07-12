@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { hasActiveSubscription, PLAN_CONFIGS, SUBSCRIPTION_PLANS } from "../config";
 
 describe("hasActiveSubscription", () => {

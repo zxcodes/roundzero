@@ -2,6 +2,7 @@ import { Briefcase01Icon, Search01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Await, createFileRoute, stripSearchParams, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
+
 import { DeferredSection } from "@/components/deferred-section";
 import { PaginationNav } from "@/components/pagination-nav";
 import { PublicFooter, PublicHeader } from "@/components/public-layout";

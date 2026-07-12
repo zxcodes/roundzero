@@ -7,6 +7,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, notFound } from "@tanstack/react-router";
+
 import { AppBreadcrumbs } from "@/components/app-breadcrumbs";
 import { PublicFooter, PublicHeader } from "@/components/public-layout";
 import { PUBLIC_CONTAINER } from "@/components/public-page";
@@ -21,7 +22,6 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-
 import { getCompanyBySlug } from "@/features/companies/server/functions";
 import { JobListRow } from "@/features/jobs/components/job-list-row";
 import { getOpenJobsByCompanyId } from "@/features/jobs/server/functions";

@@ -10,6 +10,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import type { IconSvgElement } from "@hugeicons/react";
 import { z } from "zod";
+
 import { type applicationStatusSchema, notificationTypeSchema } from "@/shared/enums";
 import { notificationPayloadSchemas } from "@/shared/notifications-config";
 import { EMAIL_PREVIEW } from "@/shared/seo";

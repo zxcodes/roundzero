@@ -339,12 +339,12 @@ Company membership:
 
 RoundZero uses subscription plans with hard caps (no overage billing). Plan config lives in `app/features/billing/config.ts`.
 
-| Plan | Price | Active jobs | Reports/job | Teammates (+ owner) |
-| --- | --- | --- | --- | --- |
-| Free | $0 | 1 | 1 | 1 |
-| Starter | $39/mo | 5 | 3 | 2 |
-| Growth | $99/mo | 15 | 5 | 4 |
-| Scale | $249/mo | 35 | 10 | 10 |
+| Plan    | Price   | Active jobs | Reports/job | Teammates (+ owner) |
+| ------- | ------- | ----------- | ----------- | ------------------- |
+| Free    | $0      | 1           | 1           | 1                   |
+| Starter | $39/mo  | 5           | 3           | 2                   |
+| Growth  | $99/mo  | 15          | 5           | 4                   |
+| Scale   | $249/mo | 35          | 10          | 10                  |
 
 ### Gated features
 
@@ -478,6 +478,7 @@ These decisions are **shipped**. See **AI-LAYER.md** for implementation detail.
 **Funnel:** `applied` → `pre_screening` → `queued_for_batch` → `interview_invited` → `interview_in_progress` → `evaluated_held` → `evaluated` → (`shortlisted` | `rejected`)
 
 **Rules:**
+
 - System auto-advances through the funnel
 - Companies can **reject** at any pre-terminal stage; **shortlist** only from `evaluated`
 - Candidates can **withdraw** from most non-terminal states
@@ -488,6 +489,7 @@ These decisions are **shipped**. See **AI-LAYER.md** for implementation detail.
 Pre-eval stages are collapsed in candidate UI. Copy is defined per-route (e.g. `stageCopy` in `application/$applicationId.tsx`), not a shared `getVisibleApplicationStatus()` helper.
 
 Notable states:
+
 - `queued_for_batch` — “Under review”; invite typically within 12 hours
 - `interview_invited` / `interview_in_progress` — Zero interview CTAs with expiry countdown
 

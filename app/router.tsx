@@ -2,7 +2,9 @@ import * as Sentry from "@sentry/tanstackstart-react";
 import { QueryClient } from "@tanstack/react-query";
 import { createRouter as createTanStackRouter } from "@tanstack/react-router";
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
+
 import { sentryOptions } from "@/shared/sentry";
+
 import { ErrorBoundary } from "./components/error-boundary";
 import { NotFound } from "./components/not-found";
 import type { getCurrentUser } from "./features/auth/server/functions";
@@ -56,7 +58,7 @@ export function getRouter() {
 
   const invalidate = router.invalidate.bind(router);
   router.invalidate = (opts) => {
-    queryClient.invalidateQueries({ queryKey: companyBootstrapQueryKey });
+    void queryClient.invalidateQueries({ queryKey: companyBootstrapQueryKey });
     return invalidate(opts);
   };
 

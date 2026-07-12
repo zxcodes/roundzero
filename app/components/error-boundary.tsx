@@ -3,6 +3,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import * as Sentry from "@sentry/tanstackstart-react";
 import { Link, useRouter } from "@tanstack/react-router";
 import { useEffect } from "react";
+
 import { Button } from "@/components/ui/button";
 
 export function ErrorBoundary({
@@ -21,7 +22,7 @@ export function ErrorBoundary({
   }, [error]);
 
   const onRetry = () => {
-    router.invalidate();
+    void router.invalidate();
   };
 
   return (

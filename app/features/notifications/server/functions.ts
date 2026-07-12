@@ -1,8 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
+
 import { getDb } from "@/shared/db";
 import { authMiddleware } from "@/shared/middleware";
+
 import {
   countUnreadNotificationsByUser,
   getNotificationsByUser,

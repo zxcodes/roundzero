@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { pickPreferredInterviewId } from "@/features/interviews/shared/candidate-display";
 
 describe("pickPreferredInterviewId", () => {

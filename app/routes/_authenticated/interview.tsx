@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet, redirect, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
+
 import { CommandPalette } from "@/components/command-palette";
 import { InterviewWorkspaceSkeleton } from "@/components/route-skeletons";
 import { SidebarInset, SidebarProvider, useSidebar } from "@/components/ui/sidebar";

@@ -1,6 +1,7 @@
 import { Logout01Icon, Mail01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute } from "@tanstack/react-router";
+
 import { Button } from "@/components/ui/button";
 import {
   Empty,

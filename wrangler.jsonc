@@ -9,191 +9,191 @@
   "observability": {
     "enabled": true,
     "logs": {
-      "enabled": true
+      "enabled": true,
     },
     "traces": {
-      "enabled": true
-    }
+      "enabled": true,
+    },
   },
   "vars": {
     "CLOUDFLARE_ACCOUNT_ID": "5634bacd1c09247fdaa26ef02fbcf6ef",
-    "AI_GATEWAY_ID": "roundzero"
+    "AI_GATEWAY_ID": "roundzero",
   },
   "hyperdrive": [
     {
       "binding": "HYPERDRIVE",
       "id": "bb78ad8ae6314ac597683d314c81f094",
-      "localConnectionString": "postgres://postgres:password@localhost:6311/postgres?sslmode=disable"
-    }
+      "localConnectionString": "postgres://postgres:password@localhost:6311/postgres?sslmode=disable",
+    },
   ],
   "r2_buckets": [
     {
       "binding": "RESUMES",
-      "bucket_name": "roundzero-assets"
-    }
+      "bucket_name": "roundzero-assets",
+    },
   ],
   "send_email": [
     {
       "name": "EMAIL",
-      "remote": false
-    }
+      "remote": false,
+    },
   ],
   "workflows": [
     {
       "name": "pre-evaluation",
       "binding": "PRE_EVALUATION",
-      "class_name": "PreEvaluationWorkflow"
+      "class_name": "PreEvaluationWorkflow",
     },
     {
       "name": "post-evaluation",
       "binding": "POST_EVALUATION",
-      "class_name": "PostEvaluationWorkflow"
+      "class_name": "PostEvaluationWorkflow",
     },
     {
       "name": "batch-orchestration",
       "binding": "BATCH_ORCHESTRATION",
-      "class_name": "BatchOrchestrationWorkflow"
+      "class_name": "BatchOrchestrationWorkflow",
     },
     {
       "name": "pool-check",
       "binding": "POOL_CHECK",
       "class_name": "PoolCheckWorkflow",
-      "schedules": ["0 */6 * * *"]
+      "schedules": ["0 */6 * * *"],
     },
     {
       "name": "eval-retry",
       "binding": "EVAL_RETRY",
       "class_name": "EvalRetryWorkflow",
-      "schedules": ["0 */3 * * *"]
+      "schedules": ["0 */3 * * *"],
     },
     {
       "name": "account-cleanup",
       "binding": "ACCOUNT_CLEANUP",
       "class_name": "AccountCleanupWorkflow",
-      "schedules": ["0 4 * * *"]
-    }
+      "schedules": ["0 4 * * *"],
+    },
   ],
   "triggers": {
-    "crons": []
+    "crons": [],
   },
   "env": {
     "staging": {
       "hyperdrive": [
         {
           "binding": "HYPERDRIVE",
-          "id": "bb78ad8ae6314ac597683d314c81f094"
-        }
+          "id": "bb78ad8ae6314ac597683d314c81f094",
+        },
       ],
       "vars": {
         "CLOUDFLARE_ACCOUNT_ID": "5634bacd1c09247fdaa26ef02fbcf6ef",
-        "AI_GATEWAY_ID": "roundzero"
+        "AI_GATEWAY_ID": "roundzero",
       },
       "r2_buckets": [
         {
           "binding": "RESUMES",
-          "bucket_name": "roundzero-assets-staging"
-        }
+          "bucket_name": "roundzero-assets-staging",
+        },
       ],
       "send_email": [
         {
           "name": "EMAIL",
-          "remote": true
-        }
+          "remote": true,
+        },
       ],
       "workflows": [
         {
           "name": "pre-evaluation-staging",
           "binding": "PRE_EVALUATION",
-          "class_name": "PreEvaluationWorkflow"
+          "class_name": "PreEvaluationWorkflow",
         },
         {
           "name": "post-evaluation-staging",
           "binding": "POST_EVALUATION",
-          "class_name": "PostEvaluationWorkflow"
+          "class_name": "PostEvaluationWorkflow",
         },
         {
           "name": "batch-orchestration-staging",
           "binding": "BATCH_ORCHESTRATION",
-          "class_name": "BatchOrchestrationWorkflow"
+          "class_name": "BatchOrchestrationWorkflow",
         },
         {
           "name": "pool-check-staging",
           "binding": "POOL_CHECK",
           "class_name": "PoolCheckWorkflow",
-          "schedules": ["0 */6 * * *"]
+          "schedules": ["0 */6 * * *"],
         },
         {
           "name": "eval-retry-staging",
           "binding": "EVAL_RETRY",
           "class_name": "EvalRetryWorkflow",
-          "schedules": ["0 */3 * * *"]
+          "schedules": ["0 */3 * * *"],
         },
         {
           "name": "account-cleanup-staging",
           "binding": "ACCOUNT_CLEANUP",
           "class_name": "AccountCleanupWorkflow",
-          "schedules": ["0 4 * * *"]
-        }
-      ]
+          "schedules": ["0 4 * * *"],
+        },
+      ],
     },
     "production": {
       "hyperdrive": [
         {
           "binding": "HYPERDRIVE",
-          "id": "9905b692491f4f929b911d40f8245d1d"
-        }
+          "id": "9905b692491f4f929b911d40f8245d1d",
+        },
       ],
       "vars": {
         "CLOUDFLARE_ACCOUNT_ID": "5634bacd1c09247fdaa26ef02fbcf6ef",
-        "AI_GATEWAY_ID": "roundzero-prod"
+        "AI_GATEWAY_ID": "roundzero-prod",
       },
       "r2_buckets": [
         {
           "binding": "RESUMES",
-          "bucket_name": "roundzero-assets"
-        }
+          "bucket_name": "roundzero-assets",
+        },
       ],
       "send_email": [
         {
           "name": "EMAIL",
-          "remote": true
-        }
+          "remote": true,
+        },
       ],
       "workflows": [
         {
           "name": "pre-evaluation-production",
           "binding": "PRE_EVALUATION",
-          "class_name": "PreEvaluationWorkflow"
+          "class_name": "PreEvaluationWorkflow",
         },
         {
           "name": "post-evaluation-production",
           "binding": "POST_EVALUATION",
-          "class_name": "PostEvaluationWorkflow"
+          "class_name": "PostEvaluationWorkflow",
         },
         {
           "name": "batch-orchestration-production",
           "binding": "BATCH_ORCHESTRATION",
-          "class_name": "BatchOrchestrationWorkflow"
+          "class_name": "BatchOrchestrationWorkflow",
         },
         {
           "name": "pool-check-production",
           "binding": "POOL_CHECK",
           "class_name": "PoolCheckWorkflow",
-          "schedules": ["0 */6 * * *"]
+          "schedules": ["0 */6 * * *"],
         },
         {
           "name": "eval-retry-production",
           "binding": "EVAL_RETRY",
           "class_name": "EvalRetryWorkflow",
-          "schedules": ["0 */3 * * *"]
+          "schedules": ["0 */3 * * *"],
         },
         {
           "name": "account-cleanup-production",
           "binding": "ACCOUNT_CLEANUP",
           "class_name": "AccountCleanupWorkflow",
-          "schedules": ["0 4 * * *"]
-        }
-      ]
-    }
-  }
+          "schedules": ["0 4 * * *"],
+        },
+      ],
+    },
+  },
 }

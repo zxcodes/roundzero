@@ -1,6 +1,7 @@
 import type { UIMessage } from "@tanstack/ai";
 import { fetchServerSentEvents, useChat } from "@tanstack/ai-react";
 import { useMemo, useRef } from "react";
+
 import type { getMyInterviewMessages } from "@/features/interviews/server/functions";
 import type { MessageIntegritySnapshot } from "@/features/interviews/shared/integrity";
 
@@ -40,7 +41,7 @@ export function useInterviewChat(interviewId: string, initialMessages: InitialIn
         runContext: Parameters<typeof base.connect>[3],
       ) {
         const messageIntegrity = pendingIntegrityRef.current;
-        const mergedData = messageIntegrity === null ? data : { ...(data ?? {}), messageIntegrity };
+        const mergedData = messageIntegrity === null ? data : { ...data, messageIntegrity };
         yield* base.connect(messages, mergedData, abortSignal, runContext);
       },
     };

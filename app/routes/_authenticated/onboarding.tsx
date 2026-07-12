@@ -1,4 +1,5 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
+
 import { Logo } from "@/components/public-layout";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
