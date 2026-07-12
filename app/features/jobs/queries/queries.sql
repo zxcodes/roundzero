@@ -132,7 +132,7 @@ WHERE j.company_id = $1
 ORDER BY j.created_at DESC;
 
 -- name: getOpenJobCompanies :many
-SELECT DISTINCT c.id, c.name
+SELECT DISTINCT c.id, c.name, c.slug
 FROM companies c
 JOIN users u ON u.id = c.owner_id AND u.deleted_at IS NULL
 JOIN jobs j ON j.company_id = c.id
@@ -157,7 +157,7 @@ WHERE j.status = 'open'
   AND (sqlc.arg('workplace_type')::text = 'all' OR j.workplace_type = sqlc.arg('workplace_type'))
   AND (sqlc.arg('salary_currency')::text = 'all' OR j.salary_currency = sqlc.arg('salary_currency'))
   AND (sqlc.arg('salary_min')::int = 0 OR j.salary_max IS NULL OR j.salary_max >= sqlc.arg('salary_min')::int)
-  AND (sqlc.arg('company_id')::text = 'all' OR j.company_id::text = sqlc.arg('company_id'))
+  AND (sqlc.arg('company_slug')::text = 'all' OR c.slug = sqlc.arg('company_slug'))
 ORDER BY j.created_at DESC
 LIMIT sqlc.arg('limit')::int OFFSET sqlc.arg('offset')::int;
 
@@ -175,7 +175,7 @@ WHERE j.status = 'open'
   AND (sqlc.arg('workplace_type')::text = 'all' OR j.workplace_type = sqlc.arg('workplace_type'))
   AND (sqlc.arg('salary_currency')::text = 'all' OR j.salary_currency = sqlc.arg('salary_currency'))
   AND (sqlc.arg('salary_min')::int = 0 OR j.salary_max IS NULL OR j.salary_max >= sqlc.arg('salary_min')::int)
-  AND (sqlc.arg('company_id')::text = 'all' OR j.company_id::text = sqlc.arg('company_id'));
+  AND (sqlc.arg('company_slug')::text = 'all' OR c.slug = sqlc.arg('company_slug'));
 
 -- name: getCandidateOpenJobsPaginated :many
 SELECT j.*,
@@ -199,7 +199,7 @@ WHERE j.status = 'open'
   AND (sqlc.arg('workplace_type')::text = 'all' OR j.workplace_type = sqlc.arg('workplace_type'))
   AND (sqlc.arg('salary_currency')::text = 'all' OR j.salary_currency = sqlc.arg('salary_currency'))
   AND (sqlc.arg('salary_min')::int = 0 OR j.salary_max IS NULL OR j.salary_max >= sqlc.arg('salary_min')::int)
-  AND (sqlc.arg('company_id')::text = 'all' OR j.company_id::text = sqlc.arg('company_id'))
+  AND (sqlc.arg('company_slug')::text = 'all' OR c.slug = sqlc.arg('company_slug'))
 ORDER BY j.created_at DESC
 LIMIT sqlc.arg('limit')::int OFFSET sqlc.arg('offset')::int;
 
@@ -223,4 +223,4 @@ WHERE j.status = 'open'
   AND (sqlc.arg('workplace_type')::text = 'all' OR j.workplace_type = sqlc.arg('workplace_type'))
   AND (sqlc.arg('salary_currency')::text = 'all' OR j.salary_currency = sqlc.arg('salary_currency'))
   AND (sqlc.arg('salary_min')::int = 0 OR j.salary_max IS NULL OR j.salary_max >= sqlc.arg('salary_min')::int)
-  AND (sqlc.arg('company_id')::text = 'all' OR j.company_id::text = sqlc.arg('company_id'));
+  AND (sqlc.arg('company_slug')::text = 'all' OR c.slug = sqlc.arg('company_slug'));
