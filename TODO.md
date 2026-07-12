@@ -1,13 +1,15 @@
 ## TODO
 
-- think about what happens when there are no top reports in a batch? Let's say all reports are maybe under 3-10. So do we re assign scores to them so the #3 can be #1 or something? Bc without it companies cannot take action. Or should they simply wait for the next batch? Also check if this system is ever going to rank candidates with a 9-10 score. 
+- think about what happens when there are no top reports in a batch? Let's say all reports are maybe under 3-10. So do we re assign scores to them so the #3 can be #1 or something? Bc without it companies cannot take action. Or should they simply wait for the next batch? Also check if this system is ever going to rank candidates with a 9-10 score.
 - revert batch config for prod & remove early access badge on landing.
 
 ## PROD THINGS
+
 - planetscale for db?
 - validate open router models using their api key in prod ci so we detect non existent models beforehand.
 
 ## Future
+
 - add batch actions for companies (shortlist multiple candidates, and quick actions "shortlist top 3" reject "bottom ones")
 - see if we can add a cold reach out feature for companies (paid) so find any candidate on the platform in natural lang. should give their profile with a nice summary irrespective of job postings or anything. useful if companies are looking for someone direct instead of posting a job. an alternate way of hiring basically.
 - right now there's no feedback if there's something wrong with candidate's pdf. they can upload any pdf and the workflow will try to parse it. we need to detect if it's not a resume, and tell the user to add or something? think.
@@ -16,7 +18,7 @@
 <!--- text interview experience regressed. last message disappears from agent when it says an ending message and ends the interview. also we should disable auto switching to voice. its bad dx. just show a nice action to complete it.-->
 <!--- update brand identity, desc etc in google console. infact just create a new project.-->
 <!--- review ux is broken. review role -> lands on all applications -> nothing's there (url: tab=applicants&view=all&filter=awaiting_decision) switch tab to released reports, applicant shows up -> all application works again (url now:tab=applicants&view=all)-->
-<!--- fix landing page initial animation. use the animation skill. 
+<!--- fix landing page initial animation. use the animation skill.
 - update seed with better data.
 - improve landing page messaging. also see if we need to move sections around or make the value prop more clear, or use report image as hero?-->
 <!--- review openrouter models prod chain.-->
@@ -72,14 +74,14 @@
 <!--- the mf skeleton is still there. add a new route that displays all of them and check.-->
 <!--- "Interview questions" when generating a job with ai are not good. these are not supposed to be technical questions. these are purely informatory such as (relocation, visa, salary exp etc). Maybe rename it to screening questions or something? also update the job templates & creation prompt.-->
 <!--- harden the final summary prompt to be extremely strict and judge every single response from the user. here's an example: (WIP)
- 
+
   Candidate consistently failed to implement the requested features across multiple tasks, submitting unrelated console output instead of functional solutions. Every submission violated problem constraints (no I/O) and received rubric scores of 0 for lacking required implementations.
 
   Impact: No working deliverables — LRUCache, promisePool, Router, debounce, deepClone, and paginate were not implemented; responses contain console.log snippets instead of solutions.
   Role fit: Insufficient evidence of core engineering skills (data structures, async/concurrency, API design, correctness); candidate did not follow explicit problem requirements across tasks.
   Risk/gap: High execution risk — repeated inability to produce test-ready code and respect constraints; would require close supervision and remediation before assignment to production work.-->
 <!--- the text interview or voice interview don't ask questions based on the actual resume at all. they just seem to add job desc specific questions. (WIP)-->
-<!--- check if everything a company sees (application statues) are accurate at each step. (applied, failed eval, interviewing, interviewed, etc, all lifecycle events.) (SUPPOSEDLY FIXED IN LAST COMMIT)--> 
+<!--- check if everything a company sees (application statues) are accurate at each step. (applied, failed eval, interviewing, interviewed, etc, all lifecycle events.) (SUPPOSEDLY FIXED IN LAST COMMIT)-->
 <!--- think more about the duration from first report to last report generation bc it will depend on the candidate. think if we need to add an expiry or something and pass it to the next candidate? (BATCH WORKFLOW TEST)-->
 <!--- check for leaking info in api calls (emails, ids etc) (DONE — audit. Real leak fixed: candidate-facing interview server fns (getMyInterview/getMyInterviews/startMyInterview/cancelMyInterview/completeMyInterview/getInterviewForApplication) were returning the raw interviews.metadata JSONB, which holds the AI runtime contextState — system-prompt inputs, the company's screening questions, the candidate's pre-eval authenticity flags + internal slop/consistency scores. A candidate could read these from the network response and iterate to defeat pre-eval guards. Now sanitized via toCandidateInterview() which strips metadata + agentId and surfaces only expiresAt. Route loaders updated to read interview.expiresAt instead of parsing metadata. Candidate-contactable email + candidate_id to the owning company are by design (mailto on applicant detail). Lower-sev note: getApplicationsByJob still selects a.metadata (eval retry counters + headline/skills/links) returned to the owning company, but it's never rendered and only reaches the job owner — left as-is.)-->
 <!--- check all resend templates for all notifications exist, if they link to proper paths etc. (I see no_lean in report, also rn individual reports are being sent? see if batch report template exists and also need to test it manually.) (DONE — audit: report-ready email was rendering raw enum key (e.g. "lean_no") because it accepted recommendation: string and printed it directly; now typed as Recommendation and mapped through recommendationLabels so it reads "Lean no"/"Strong yes". Individual report_ready emails only fire for non-batched legacy/manual flows (batchId === null) — batched runs go through BatchDigestEmailTemplate. All other notification types route through deliverNotificationEmail → NotificationEmailTemplate via getNotificationPresentation in notifications/config.ts, every enum-typed notification has a presentation entry with a valid in-app path + CTA.)-->
@@ -184,12 +186,10 @@
 <!--- add a real user seed that can create jobs, profile, candidate profile, company profile etc for the actual signed in user.-->
 <!--- auto save profile needs fixing (still needs work, reverted to manual saving).-->
 
-<!--- see how some jobs require mandatory relocation, so we might need to ask questions or prevent candidate from applying? same with some location only jobs. remote but diff timezones. think about it. should it not even be a qualified agent interview? (AGENT-OFFLOAD)--> 
-
-
+<!--- see how some jobs require mandatory relocation, so we might need to ask questions or prevent candidate from applying? same with some location only jobs. remote but diff timezones. think about it. should it not even be a qualified agent interview? (AGENT-OFFLOAD)-->
 
 <!--- Flip the model, show companies first, (detailed view, what they do, why should someone work there, their tech stack etc, no of people, location etc optional stuff).
-- Can always switch to jobs. (LATER)--> 
+- Can always switch to jobs. (LATER)-->
 
 <!--- soft deletes only.-->
 <!--- Add react compiler, and vite plus.-->
@@ -214,7 +214,6 @@
 <!--- we should not ask for resume url. it should be a file instead that gets written to R2 and we get that url.-->
 <!--- allow resume updation, similar to wellfound. just replace existing resume and show updated at.-->
 
-
 <!--- Think about job postings expiry (biggest problem with existing platforms where the inactive jobs still exist), give companies the option to set expiry.-->
 
 <!--- see max upload error toast being thrown in toasts. also check the same for resumes.-->
@@ -224,10 +223,10 @@
 <!--- improve landing page messaging with (cut thru noise, ats is old and out dated, let real agents do the work, beat AI with AI etc)-->
 <!--- make sure redirects work properly in the app.-->
 
-
-
 ## Agent & AI Stuff
+
 - send periodic job recommendations to candidates (matches) based on their profile and put it behind a paywall.
+
 <!--- add guard rails during agent conv, detect short and uninterested answers, detect screenshots, detect ai responses, detect if text was copied, and detect if answers don't align with normal conv tone and more. basically ai beating ai. - this will be another step in post-evaluation.-->
 <!--- show suggested skills based on job description.-->
 <!--- ~~gatekeep ai features using paywall~~ Done — AI job creation gated to paid plans via `aiJobCreation` entitlement.-->
@@ -237,8 +236,8 @@
 <!--- pre-eval: Delete parseJsonPayload entirely — OpenRouter + Claude actually respects response_format. You’ll get clean objects every time.-->
 <!--- enable min release age in prod.-->
 
-
 ## Future Stuff (Not included in initial release)
+
 <!--- cut bundle size (polar, elevenlabs sdk, etc)-->
 <!--- prevent people from using diff resumes/profiles for diff jobs. we can use snapshots to compare and decide if we wanna hold them in pre-eval itself. not exactly prevent, it should just act as a guardrail in the background.-->
 <!--- ~~think about pricing~~ Resolved — monthly subscription tiers (Free/Starter/Growth/Scale) with hard caps. See PLATFORM.md §10.-->
