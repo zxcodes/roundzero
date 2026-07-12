@@ -7,6 +7,7 @@ import {
   useLocation,
   useRouteContext,
 } from "@tanstack/react-router";
+
 import { NotFound } from "@/components/not-found";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -21,6 +22,7 @@ import {
   SITE_ICON_LINKS,
   TWITTER_DESCRIPTION,
 } from "@/shared/seo";
+
 import appCss from "../styles.css?url";
 
 export const Route = createRootRouteWithContext<RouterContext>()({

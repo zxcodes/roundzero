@@ -1,6 +1,7 @@
 import { ArrowRight01Icon, Briefcase01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+
 import { CompanyInboxPageShell } from "@/components/company-inbox-page-shell";
 import { DashboardApplicationsSkeleton } from "@/components/route-skeletons";
 import { Badge } from "@/components/ui/badge";

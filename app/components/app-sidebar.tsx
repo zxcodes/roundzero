@@ -14,6 +14,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
+
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
 import {
@@ -31,6 +32,7 @@ import { useAuth } from "@/features/auth/provider";
 import { FeedbackDialog } from "@/features/feedback/components/feedback-dialog";
 import type { User } from "@/router";
 import type { CompanyMemberRole } from "@/shared/enums";
+
 import { Logo } from "./public-layout";
 
 type SidebarNavItem = {

@@ -85,7 +85,7 @@ export function createWorkflowLogger(workflowName: string, applicationId: string
         level,
         message,
         ...base,
-        ...(extra ?? {}),
+        ...extra,
       };
 
       console[level](safeStringify(payload));

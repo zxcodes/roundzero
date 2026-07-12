@@ -1,4 +1,5 @@
 import type { Sql } from "postgres";
+
 import { getUserById } from "@/features/auth/queries/queries_sql";
 import { getCandidateProfileByUserId } from "@/features/candidates/queries/queries_sql";
 import { getCompanyByMemberUserId } from "@/features/companies/queries/membership-queries_sql";
@@ -21,6 +22,7 @@ import {
   sendNotificationEmail,
 } from "@/features/notifications/services/email";
 import { type ApplicationStatus, applicationStatusSchema, isValidTransition } from "@/shared/enums";
+
 import {
   createApplication as createApplicationQuery,
   getApplicationById,

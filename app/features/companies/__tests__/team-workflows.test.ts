@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { getUserByEmail, getUserById } from "@/features/auth/queries/queries_sql";
 import {
   createCompanyMember,

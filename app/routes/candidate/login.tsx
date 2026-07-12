@@ -1,4 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
+
 import { LoginPageShell } from "@/features/auth/components/login-page-shell";
 import { useAuth } from "@/features/auth/provider";
 import { redirectAfterSignup, signupSearchSchema } from "@/features/auth/signup-search";

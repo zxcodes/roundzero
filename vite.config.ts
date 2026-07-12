@@ -6,7 +6,6 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact, { reactCompilerPreset } from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
-// biome-ignore lint/style/noDefaultExport: <uh>
 export default defineConfig(() => {
   return {
     server: { port: 3000 },

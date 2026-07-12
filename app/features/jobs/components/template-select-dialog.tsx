@@ -1,6 +1,7 @@
 import { Search01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useId, useState } from "react";
+
 import {
   Dialog,
   DialogContent,
@@ -11,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { JOB_TEMPLATES, type JobTemplate } from "@/shared/job-templates";
+
 import { TemplateCard } from "./template-card";
 
 interface TemplateSelectDialogProps {

@@ -1,7 +1,6 @@
 import { loadEnv } from "vite";
 import { defineConfig } from "vitest/config";
 
-// biome-ignore lint/style/noDefaultExport: vitest config requires default export
 export default defineConfig(({ mode }) => {
   return {
     resolve: {

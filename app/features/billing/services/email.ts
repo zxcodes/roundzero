@@ -1,5 +1,6 @@
 import type { Sql } from "postgres";
 import { jsx } from "react/jsx-runtime";
+
 import { getUserById } from "@/features/auth/queries/queries_sql";
 import {
   claimSubscriptionWelcomeSend,
@@ -7,6 +8,7 @@ import {
 } from "@/features/companies/queries/queries_sql";
 import { isEmailDeliveryConfigured, sendReactTransactionalEmail } from "@/shared/email";
 import { appEnv } from "@/shared/env.app";
+
 import { SubscriptionWelcomeEmail } from "../components/subscription-welcome-email";
 import { PLAN_CONFIGS, type SubscriptionPlan } from "../config";
 

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+
 import { SupportPage } from "@/features/support/components/support-page";
 import { noindexHead } from "@/shared/seo";
 

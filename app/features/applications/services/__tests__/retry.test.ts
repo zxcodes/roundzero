@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+
 import {
   getTestDb,
   makeTestResumeKey,
@@ -6,6 +7,7 @@ import {
   seedJob,
   seedUser,
 } from "@/shared/__tests__/test-utils";
+
 import { createApplication, getApplicationById } from "../../queries/queries_sql";
 import {
   EVAL_RETRY_AUTO_CAP,

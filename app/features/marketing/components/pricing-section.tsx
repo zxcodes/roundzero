@@ -1,6 +1,7 @@
 import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
+
 import { Button } from "@/components/ui/button";
 import { companyLoginLinkForPlan } from "@/features/auth/signup-search";
 import {

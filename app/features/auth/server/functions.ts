@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { clearSession, updateSession, useSession } from "@tanstack/react-start/server";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
+
 import {
   assertAccountCanAuthenticate,
   canRestoreSoftDeletedAccount,
@@ -30,6 +31,7 @@ import { isPlatformAdmin } from "@/shared/platform-admin";
 import { isUniqueViolation } from "@/shared/postgres-errors";
 import { type SessionData, sessionConfig } from "@/shared/session";
 import { requiredTrimmedString } from "@/shared/validation";
+
 import {
   getUserByGoogleId,
   getUserById,

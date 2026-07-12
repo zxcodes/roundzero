@@ -9,6 +9,7 @@ import {
   Section,
   Text,
 } from "@react-email/components";
+
 import { emailTheme } from "./email-theme";
 
 type NotificationEmailTemplateProps = {

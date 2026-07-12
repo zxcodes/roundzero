@@ -2,11 +2,12 @@ import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { DashboardJobEditSkeleton } from "@/components/route-skeletons";
 
+import { DashboardJobEditSkeleton } from "@/components/route-skeletons";
 import { JobForm, type JobFormData } from "@/features/jobs/components/job-form";
 import { updateJob } from "@/features/jobs/server/functions";
 import type { EmploymentType, ExperienceLevel, JobStatus, WorkplaceType } from "@/shared/enums";
+
 import { Route as ParentRoute } from "../$jobId";
 
 export const Route = createFileRoute("/_authenticated/dashboard/jobs/$jobId/edit")({

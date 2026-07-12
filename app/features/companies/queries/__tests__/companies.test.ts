@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
+
 import { softDeleteUser } from "@/features/auth/queries/queries_sql";
 import { getTestDb, seedCompany, seedUser } from "@/shared/__tests__/test-utils";
+
 import {
   countTeamSlotsByCompany,
   createCompanyMember,

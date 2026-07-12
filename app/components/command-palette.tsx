@@ -17,6 +17,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useNavigate } from "@tanstack/react-router";
+
 import { useTheme } from "@/components/theme-provider";
 import {
   Command,
@@ -132,7 +133,7 @@ export function CommandPalette({
 
   const onSignOut = () => {
     onOpenChange(false);
-    signOut();
+    void signOut();
   };
 
   return (

@@ -1,6 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
+
 import { DashboardSettingsSkeleton } from "@/components/route-skeletons";
 import { sanitizeRedirect } from "@/features/auth/signup-search";
 import { CandidateSettings } from "@/features/candidates/components/candidate-settings";

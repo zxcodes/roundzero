@@ -9,8 +9,10 @@ import {
   Section,
   Text,
 } from "@react-email/components";
+
 import { emailTheme } from "@/features/notifications/components/email-theme";
 import { EMAIL_PREVIEW } from "@/shared/seo";
+
 import { PLAN_CONFIGS, type SubscriptionPlan } from "../config";
 
 type SubscriptionWelcomeEmailProps = {

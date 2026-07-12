@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { jobFieldsSchema, jobIdSchema, updateJobSchema } from "../schemas";
 
 describe("jobFieldsSchema", () => {

@@ -1,6 +1,7 @@
 import { zodSchema } from "@ai-sdk/provider-utils";
 import { describe, expect, it } from "vitest";
 import type { z } from "zod";
+
 import { aiJobGenerationSchema } from "@/features/jobs/schemas";
 import {
   answerAuthenticitySchema,

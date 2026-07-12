@@ -1,6 +1,7 @@
 import { ArrowRight01Icon, RankingIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
+
 import { RoleAccordionPanel } from "@/components/role-accordion-panel";
 import {
   Empty,

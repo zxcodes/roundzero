@@ -1,5 +1,6 @@
 import { existsSync, copyFileSync } from "node:fs";
 import { resolve } from "node:path";
+
 import { $ } from "bun";
 
 const root = import.meta.dirname;
@@ -12,8 +13,7 @@ const yellow = (s: string) => `\x1b[33m${s}\x1b[0m`;
 const cyan = (s: string) => `\x1b[36m${s}\x1b[0m`;
 const dim = (s: string) => `\x1b[2m${s}\x1b[0m`;
 
-const step = (n: number, label: string) =>
-	console.log(`\n${bold(`[${n}/4]`)} ${label}`);
+const step = (n: number, label: string) => console.log(`\n${bold(`[${n}/4]`)} ${label}`);
 
 // ── 1. Install dependencies ──────────────────────────────────────────
 step(1, "Installing dependencies...");
@@ -23,10 +23,10 @@ console.log(green("  Dependencies installed."));
 // ── 2. Copy .env.example → .env ─────────────────────────────────────
 step(2, "Setting up environment variables...");
 if (existsSync(envPath)) {
-	console.log(yellow("  .env already exists — skipping copy."));
+  console.log(yellow("  .env already exists — skipping copy."));
 } else {
-	copyFileSync(envExamplePath, envPath);
-	console.log(green("  Copied .env.example -> .env"));
+  copyFileSync(envExamplePath, envPath);
+  console.log(green("  Copied .env.example -> .env"));
 }
 
 // ── 3. Setup Postgres (dev + test) ──────────────────────────────────

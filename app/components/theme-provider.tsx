@@ -1,5 +1,6 @@
 import { ScriptOnce } from "@tanstack/react-router";
 import { createContext, type PropsWithChildren, use, useEffect, useState } from "react";
+
 import {
   applyThemeClass,
   getStoredTheme,

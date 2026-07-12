@@ -8,6 +8,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+
 import { DashboardJobDetailSkeleton } from "@/components/route-skeletons";
 import { Separator } from "@/components/ui/separator";
 import { CandidateApplySection } from "@/features/applications/components/candidate-apply-section";

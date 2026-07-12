@@ -1,4 +1,5 @@
 import { createFileRoute, notFound, Outlet } from "@tanstack/react-router";
+
 import { DashboardJobOutletSkeleton } from "@/components/route-skeletons";
 import { getJobApplicants, hasApplied } from "@/features/applications/server/functions";
 import { getMyCandidateProfile } from "@/features/candidates/server/functions";
