@@ -690,23 +690,33 @@ function CandidateJobsList({ paginatedJobs }: { paginatedJobs: Promise<Paginated
                   </Select>
                 }
               >
-                {(data) => (
-                  <Select value={companyFilter} onValueChange={onCompanyChange}>
-                    <SelectTrigger className="w-44 shrink-0">
-                      <SelectValue placeholder="Company" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        <SelectItem value="all">All companies</SelectItem>
-                        {data.companies.map((company) => (
-                          <SelectItem key={company.id} value={company.id}>
-                            {company.name}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                )}
+                {(data) => {
+                  const hasSelectedCompany = data.companies.some(
+                    (company) => company.id === companyFilter,
+                  );
+                  const showStaleCompany = companyFilter !== "all" && !hasSelectedCompany;
+
+                  return (
+                    <Select value={companyFilter} onValueChange={onCompanyChange}>
+                      <SelectTrigger className="w-44 shrink-0">
+                        <SelectValue placeholder="Company" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectItem value="all">All companies</SelectItem>
+                          {showStaleCompany ? (
+                            <SelectItem value={companyFilter}>Unknown company</SelectItem>
+                          ) : null}
+                          {data.companies.map((company) => (
+                            <SelectItem key={company.id} value={company.id}>
+                              {company.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  );
+                }}
               </Await>
               <Select value={typeFilter} onValueChange={onTypeChange}>
                 <SelectTrigger className="w-36 shrink-0">
