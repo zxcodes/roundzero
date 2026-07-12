@@ -729,7 +729,7 @@ export async function getOpenJobsByCompanyId(sql: Sql, args: getOpenJobsByCompan
 }
 
 export const getOpenJobCompaniesQuery = `-- name: getOpenJobCompanies :many
-SELECT DISTINCT c.id, c.name
+SELECT DISTINCT c.id, c.name, c.slug
 FROM companies c
 JOIN users u ON u.id = c.owner_id AND u.deleted_at IS NULL
 JOIN jobs j ON j.company_id = c.id
@@ -741,12 +741,14 @@ ORDER BY c.name`;
 export interface getOpenJobCompaniesRow {
     id: string;
     name: string;
+    slug: string;
 }
 
 export async function getOpenJobCompanies(sql: Sql): Promise<getOpenJobCompaniesRow[]> {
     return (await sql.unsafe(getOpenJobCompaniesQuery, []).values()).map(row => ({
         id: row[0],
-        name: row[1]
+        name: row[1],
+        slug: row[2]
     }));
 }
 
@@ -766,7 +768,7 @@ WHERE j.status = 'open'
   AND ($4::text = 'all' OR j.workplace_type = $4)
   AND ($5::text = 'all' OR j.salary_currency = $5)
   AND ($6::int = 0 OR j.salary_max IS NULL OR j.salary_max >= $6::int)
-  AND ($7::text = 'all' OR j.company_id::text = $7)
+  AND ($7::text = 'all' OR c.slug = $7)
 ORDER BY j.created_at DESC
 LIMIT $9::int OFFSET $8::int`;
 
@@ -777,7 +779,7 @@ export interface getOpenJobsPaginatedArgs {
     workplaceType: string;
     salaryCurrency: string;
     salaryMin: number;
-    companyId: string;
+    companySlug: string;
     offset: number;
     limit: number;
 }
@@ -809,7 +811,7 @@ export interface getOpenJobsPaginatedRow {
 }
 
 export async function getOpenJobsPaginated(sql: Sql, args: getOpenJobsPaginatedArgs): Promise<getOpenJobsPaginatedRow[]> {
-    return (await sql.unsafe(getOpenJobsPaginatedQuery, [args.search, args.employmentType, args.experienceLevel, args.workplaceType, args.salaryCurrency, args.salaryMin, args.companyId, args.offset, args.limit]).values()).map(row => ({
+    return (await sql.unsafe(getOpenJobsPaginatedQuery, [args.search, args.employmentType, args.experienceLevel, args.workplaceType, args.salaryCurrency, args.salaryMin, args.companySlug, args.offset, args.limit]).values()).map(row => ({
         id: row[0],
         companyId: row[1],
         title: row[2],
@@ -850,7 +852,7 @@ WHERE j.status = 'open'
   AND ($4::text = 'all' OR j.workplace_type = $4)
   AND ($5::text = 'all' OR j.salary_currency = $5)
   AND ($6::int = 0 OR j.salary_max IS NULL OR j.salary_max >= $6::int)
-  AND ($7::text = 'all' OR j.company_id::text = $7)`;
+  AND ($7::text = 'all' OR c.slug = $7)`;
 
 export interface countOpenJobsFilteredArgs {
     search: string;
@@ -859,7 +861,7 @@ export interface countOpenJobsFilteredArgs {
     workplaceType: string;
     salaryCurrency: string;
     salaryMin: number;
-    companyId: string;
+    companySlug: string;
 }
 
 export interface countOpenJobsFilteredRow {
@@ -867,7 +869,7 @@ export interface countOpenJobsFilteredRow {
 }
 
 export async function countOpenJobsFiltered(sql: Sql, args: countOpenJobsFilteredArgs): Promise<countOpenJobsFilteredRow | null> {
-    const rows = await sql.unsafe(countOpenJobsFilteredQuery, [args.search, args.employmentType, args.experienceLevel, args.workplaceType, args.salaryCurrency, args.salaryMin, args.companyId]).values();
+    const rows = await sql.unsafe(countOpenJobsFilteredQuery, [args.search, args.employmentType, args.experienceLevel, args.workplaceType, args.salaryCurrency, args.salaryMin, args.companySlug]).values();
     if (rows.length !== 1) {
         return null;
     }
@@ -899,7 +901,7 @@ WHERE j.status = 'open'
   AND ($5::text = 'all' OR j.workplace_type = $5)
   AND ($6::text = 'all' OR j.salary_currency = $6)
   AND ($7::int = 0 OR j.salary_max IS NULL OR j.salary_max >= $7::int)
-  AND ($8::text = 'all' OR j.company_id::text = $8)
+  AND ($8::text = 'all' OR c.slug = $8)
 ORDER BY j.created_at DESC
 LIMIT $10::int OFFSET $9::int`;
 
@@ -911,7 +913,7 @@ export interface getCandidateOpenJobsPaginatedArgs {
     workplaceType: string;
     salaryCurrency: string;
     salaryMin: number;
-    companyId: string;
+    companySlug: string;
     offset: number;
     limit: number;
 }
@@ -943,7 +945,7 @@ export interface getCandidateOpenJobsPaginatedRow {
 }
 
 export async function getCandidateOpenJobsPaginated(sql: Sql, args: getCandidateOpenJobsPaginatedArgs): Promise<getCandidateOpenJobsPaginatedRow[]> {
-    return (await sql.unsafe(getCandidateOpenJobsPaginatedQuery, [args.candidateId, args.search, args.employmentType, args.experienceLevel, args.workplaceType, args.salaryCurrency, args.salaryMin, args.companyId, args.offset, args.limit]).values()).map(row => ({
+    return (await sql.unsafe(getCandidateOpenJobsPaginatedQuery, [args.candidateId, args.search, args.employmentType, args.experienceLevel, args.workplaceType, args.salaryCurrency, args.salaryMin, args.companySlug, args.offset, args.limit]).values()).map(row => ({
         id: row[0],
         companyId: row[1],
         title: row[2],
@@ -990,7 +992,7 @@ WHERE j.status = 'open'
   AND ($5::text = 'all' OR j.workplace_type = $5)
   AND ($6::text = 'all' OR j.salary_currency = $6)
   AND ($7::int = 0 OR j.salary_max IS NULL OR j.salary_max >= $7::int)
-  AND ($8::text = 'all' OR j.company_id::text = $8)`;
+  AND ($8::text = 'all' OR c.slug = $8)`;
 
 export interface countCandidateOpenJobsFilteredArgs {
     candidateId: string;
@@ -1000,7 +1002,7 @@ export interface countCandidateOpenJobsFilteredArgs {
     workplaceType: string;
     salaryCurrency: string;
     salaryMin: number;
-    companyId: string;
+    companySlug: string;
 }
 
 export interface countCandidateOpenJobsFilteredRow {
@@ -1008,7 +1010,7 @@ export interface countCandidateOpenJobsFilteredRow {
 }
 
 export async function countCandidateOpenJobsFiltered(sql: Sql, args: countCandidateOpenJobsFilteredArgs): Promise<countCandidateOpenJobsFilteredRow | null> {
-    const rows = await sql.unsafe(countCandidateOpenJobsFilteredQuery, [args.candidateId, args.search, args.employmentType, args.experienceLevel, args.workplaceType, args.salaryCurrency, args.salaryMin, args.companyId]).values();
+    const rows = await sql.unsafe(countCandidateOpenJobsFilteredQuery, [args.candidateId, args.search, args.employmentType, args.experienceLevel, args.workplaceType, args.salaryCurrency, args.salaryMin, args.companySlug]).values();
     if (rows.length !== 1) {
         return null;
     }

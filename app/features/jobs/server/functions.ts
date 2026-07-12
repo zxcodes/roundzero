@@ -344,7 +344,7 @@ export const getOpenJobsPaginated = createServerFn({ method: "GET" })
       workplaceType: data.workplace,
       salaryMin: data.salaryMin,
       salaryCurrency: data.salaryCurrency,
-      companyId: data.company,
+      companySlug: data.company,
     };
 
     const [items, countRow, companies] = await Promise.all([
@@ -374,7 +374,7 @@ export const getCandidateOpenJobsPaginated = createServerFn({ method: "GET" })
       workplaceType: data.workplace,
       salaryMin: data.salaryMin,
       salaryCurrency: data.salaryCurrency,
-      companyId: data.company,
+      companySlug: data.company,
     };
 
     const [items, countRow, countIncludingAppliedRow, companies] = await Promise.all([

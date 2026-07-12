@@ -51,7 +51,7 @@ const openJobsFilterArgs = {
   workplaceType: "all",
   salaryCurrency: "all",
   salaryMin: 0,
-  companyId: "all",
+  companySlug: "all",
 };
 
 describe("createJob", () => {
@@ -330,7 +330,7 @@ describe("paginated open jobs", () => {
     await createJob(sql, makeJobArgs(firstCompany.id, { title: "First Role", status: "open" }));
     await createJob(sql, makeJobArgs(secondCompany.id, { title: "Second Role", status: "open" }));
 
-    const filterArgs = { ...openJobsFilterArgs, companyId: firstCompany.id };
+    const filterArgs = { ...openJobsFilterArgs, companySlug: firstCompany.slug };
     const [jobs, count] = await Promise.all([
       getOpenJobsPaginated(sql, { ...filterArgs, limit: 12, offset: 0 }),
       countOpenJobsFiltered(sql, filterArgs),
@@ -351,8 +351,8 @@ describe("paginated open jobs", () => {
     const companies = await getOpenJobCompanies(sql);
 
     expect(companies).toEqual([
-      { id: alphaCompany.id, name: "Alpha Company" },
-      { id: zuluCompany.id, name: "Zulu Company" },
+      { id: alphaCompany.id, name: "Alpha Company", slug: alphaCompany.slug },
+      { id: zuluCompany.id, name: "Zulu Company", slug: zuluCompany.slug },
     ]);
   });
 

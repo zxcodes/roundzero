@@ -205,7 +205,7 @@ function JobsPage() {
                 >
                   {(data) => {
                     const hasSelectedCompany = data.companies.some(
-                      (company) => company.id === companyFilter,
+                      (company) => company.slug === companyFilter,
                     );
                     const showStaleCompany = companyFilter !== "all" && !hasSelectedCompany;
 
@@ -221,7 +221,7 @@ function JobsPage() {
                               <SelectItem value={companyFilter}>Unknown company</SelectItem>
                             ) : null}
                             {data.companies.map((company) => (
-                              <SelectItem key={company.id} value={company.id}>
+                              <SelectItem key={company.slug} value={company.slug}>
                                 {company.name}
                               </SelectItem>
                             ))}
