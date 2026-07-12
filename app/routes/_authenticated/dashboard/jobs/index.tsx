@@ -4,6 +4,7 @@ import {
   Archive01Icon,
   Briefcase01Icon,
   Copy01Icon,
+  InformationCircleIcon,
   Loading03Icon,
   Rocket01Icon,
   Search01Icon,
@@ -11,6 +12,7 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
 import {
+  Await,
   createFileRoute,
   Link,
   stripSearchParams,
@@ -44,6 +46,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -63,10 +66,10 @@ import { JobListRow } from "@/features/jobs/components/job-list-row";
 import { isJobClosingSoon } from "@/features/jobs/components/job-status-badge";
 import { canCopyPublicJobLink, copyPublicJobLink } from "@/features/jobs/copy-job-link";
 import {
+  getCandidateOpenJobsPaginated,
   getMyArchivedJobs,
   type getMyJobCounts,
   getMyJobsWithPipeline,
-  getOpenJobsPaginated,
   publishJob,
 } from "@/features/jobs/server/functions";
 import { useDebouncedSearchInput } from "@/hooks/use-debounced-search-input";
@@ -94,6 +97,7 @@ const searchDefaults = {
   workplace: "all",
   salaryMin: 0,
   salaryCurrency: "all",
+  company: "all",
   page: 1,
 } as const;
 
@@ -113,6 +117,7 @@ const dashboardJobsSearchSchema = z.object({
     .string()
     .default(searchDefaults.salaryCurrency)
     .catch(searchDefaults.salaryCurrency),
+  company: z.string().default(searchDefaults.company).catch(searchDefaults.company),
   page: z.number().int().min(1).default(searchDefaults.page).catch(searchDefaults.page),
 });
 
@@ -128,7 +133,7 @@ export const Route = createFileRoute("/_authenticated/dashboard/jobs/")({
     }
     return {
       type: "candidate" as const,
-      paginatedJobs: getOpenJobsPaginated({
+      paginatedJobs: getCandidateOpenJobsPaginated({
         data: {
           search: deps.search,
           type: deps.type,
@@ -136,6 +141,7 @@ export const Route = createFileRoute("/_authenticated/dashboard/jobs/")({
           workplace: deps.workplace,
           salaryMin: deps.salaryMin,
           salaryCurrency: deps.salaryCurrency,
+          company: deps.company,
           page: deps.page,
         },
       }),
@@ -585,7 +591,7 @@ function ArchivedJobsTable({
   );
 }
 
-type PaginatedJobs = Awaited<ReturnType<typeof getOpenJobsPaginated>>;
+type PaginatedJobs = Awaited<ReturnType<typeof getCandidateOpenJobsPaginated>>;
 
 function CandidateJobsList({ paginatedJobs }: { paginatedJobs: Promise<PaginatedJobs> }) {
   const {
@@ -595,6 +601,7 @@ function CandidateJobsList({ paginatedJobs }: { paginatedJobs: Promise<Paginated
     workplace: workplaceFilter,
     salaryMin,
     salaryCurrency,
+    company: companyFilter,
     page,
   } = Route.useSearch();
   const navigate = useNavigate({ from: "/dashboard/jobs/" });
@@ -605,6 +612,7 @@ function CandidateJobsList({ paginatedJobs }: { paginatedJobs: Promise<Paginated
       levelFilter !== "all" ||
       workplaceFilter !== "all" ||
       salaryCurrency !== "all" ||
+      companyFilter !== "all" ||
       salaryMin > 0,
   );
   const brackets =
@@ -627,6 +635,10 @@ function CandidateJobsList({ paginatedJobs }: { paginatedJobs: Promise<Paginated
     void navigate({ search: (prev) => ({ ...prev, workplace: value, page: 1 }) });
   };
 
+  const onCompanyChange = (value: string) => {
+    void navigate({ search: (prev) => ({ ...prev, company: value, page: 1 }) });
+  };
+
   const onCurrencyChange = (value: string) => {
     void navigate({
       search: (prev) => ({ ...prev, salaryCurrency: value, salaryMin: 0, page: 1 }),
@@ -637,13 +649,17 @@ function CandidateJobsList({ paginatedJobs }: { paginatedJobs: Promise<Paginated
     void navigate({ search: (prev) => ({ ...prev, salaryMin: Number(value), page: 1 }) });
   };
 
-  const resultsResetKey = `${typeFilter}-${levelFilter}-${workplaceFilter}-${salaryMin}-${salaryCurrency}-${page}`;
+  const resultsResetKey = `${typeFilter}-${levelFilter}-${workplaceFilter}-${salaryMin}-${salaryCurrency}-${companyFilter}-${page}`;
 
   return (
     <div className="space-y-6">
       <section className="space-y-1">
         <h1 className="text-xl font-semibold tracking-tight">Browse roles</h1>
         <p className="text-sm text-muted-foreground">Find open positions and apply.</p>
+        <p className="flex items-center gap-1.5 pt-1 text-xs text-muted-foreground">
+          <HugeiconsIcon icon={InformationCircleIcon} strokeWidth={2} className="size-3.5" />
+          Jobs you’ve already applied to are hidden.
+        </p>
       </section>
 
       <section className="space-y-5">
@@ -664,6 +680,34 @@ function CandidateJobsList({ paginatedJobs }: { paginatedJobs: Promise<Paginated
           </div>
           <ScrollArea orientation="horizontal" className="h-9">
             <div className="flex gap-3">
+              <Await
+                promise={paginatedJobs}
+                fallback={
+                  <Select disabled>
+                    <SelectTrigger className="w-44 shrink-0">
+                      <SelectValue placeholder="Company" />
+                    </SelectTrigger>
+                  </Select>
+                }
+              >
+                {(data) => (
+                  <Select value={companyFilter} onValueChange={onCompanyChange}>
+                    <SelectTrigger className="w-44 shrink-0">
+                      <SelectValue placeholder="Company" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectItem value="all">All companies</SelectItem>
+                        {data.companies.map((company) => (
+                          <SelectItem key={company.id} value={company.id}>
+                            {company.name}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                )}
+              </Await>
               <Select value={typeFilter} onValueChange={onTypeChange}>
                 <SelectTrigger className="w-36 shrink-0">
                   <SelectValue placeholder="Job type" />
@@ -754,6 +798,8 @@ function CandidateJobsResults({
   page: number;
   hasFilters: boolean;
 }) {
+  const hasAppliedToAll = data.total === 0 && data.totalIncludingApplied > 0;
+
   return (
     <>
       <p className="text-xs font-medium text-muted-foreground">
@@ -767,11 +813,23 @@ function CandidateJobsResults({
             <EmptyMedia variant="icon">
               <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} />
             </EmptyMedia>
-            <EmptyTitle>{hasFilters ? "No jobs found" : "No open jobs"}</EmptyTitle>
+            <EmptyTitle>
+              {hasAppliedToAll
+                ? hasFilters
+                  ? "You’ve applied to all matching roles"
+                  : "You’ve applied to all available roles"
+                : hasFilters
+                  ? "No jobs found"
+                  : "No open jobs"}
+            </EmptyTitle>
             <EmptyDescription>
-              {hasFilters
-                ? "Try adjusting your search or filters."
-                : "There are no open positions right now. Check back later."}
+              {hasAppliedToAll
+                ? hasFilters
+                  ? "Try adjusting your search or filters to discover other opportunities."
+                  : "You’re all caught up. New openings will appear here when they’re posted."
+                : hasFilters
+                  ? "Try adjusting your search or filters."
+                  : "There are no open positions right now. Check back later."}
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
