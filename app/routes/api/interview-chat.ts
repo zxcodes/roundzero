@@ -1,4 +1,3 @@
-import { env } from "cloudflare:workers";
 import {
   chat,
   chatParamsFromRequest,
@@ -11,7 +10,9 @@ import {
 import { createOpenRouterText } from "@tanstack/ai-openrouter";
 import { createFileRoute } from "@tanstack/react-router";
 import { useSession } from "@tanstack/react-start/server";
+import { env } from "cloudflare:workers";
 import { z } from "zod";
+
 import {
   createInterviewMessage,
   getInterviewContextById,
@@ -272,7 +273,7 @@ export const Route = createFileRoute("/api/interview-chat")({
               runtimeMetadata = {
                 ...runtimeMetadata,
                 screeningCoverage: {
-                  ...(runtimeMetadata.screeningCoverage ?? {}),
+                  ...runtimeMetadata.screeningCoverage,
                   [String(questionIndex)]: status,
                 },
               };

@@ -1,6 +1,7 @@
 import type { Sql } from "postgres";
 import type { ReactElement } from "react";
 import { jsx } from "react/jsx-runtime";
+
 import { NotificationEmailTemplate } from "@/features/notifications/components/notification-email-template";
 import { getNotificationPresentation } from "@/features/notifications/config";
 import {

@@ -1,10 +1,12 @@
 import type { Sql } from "postgres";
+
 import {
   getCommunicationAssessmentByInterviewId,
   getInterviewByApplicationId,
 } from "@/features/interviews/queries/queries_sql";
 import { getReportByInterviewId } from "@/features/reports/queries/queries_sql";
 import { disposeRpcResource } from "@/shared/workflow-rpc";
+
 import {
   claimApplicationForRetry,
   getApplicationById,

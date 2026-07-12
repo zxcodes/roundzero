@@ -1,4 +1,5 @@
 import { jsx } from "react/jsx-runtime";
+
 import { CompanyInviteEmailTemplate } from "@/features/companies/components/company-invite-email-template";
 import { isEmailDeliveryConfigured, sendReactTransactionalEmail } from "@/shared/email";
 import type { CompanyInvitationRole } from "@/shared/enums";

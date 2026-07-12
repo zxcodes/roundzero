@@ -30,23 +30,23 @@ Important current constraints:
 
 ## 1. Stack
 
-| Layer | Technology |
-| --- | --- |
-| Framework | TanStack Start, React 19, Vite 8 |
-| Runtime | Cloudflare Worker |
-| AI Runtime | Cloudflare Workflows |
-| Database | Postgres |
-| Local DB | Docker Postgres containers (`rz_pg_dev`, `rz_pg_test`) |
-| Deployed DB Access | Hyperdrive binding in `wrangler.jsonc` |
-| Data Access | SQLC + handwritten SQL |
-| Migrations | dbmate |
-| Auth | Google OAuth + cookie session |
-| UI | shadcn/ui, Tailwind CSS v4, Hugeicons |
-| Validation | Zod |
-| Storage | Cloudflare R2 |
-| Email | Cloudflare Email Service (`send_email` binding) |
-| LLM Provider | OpenRouter via Vercel AI SDK v7 + TanStack AI |
-| Tooling | Biome, Vitest, Knip |
+| Layer              | Technology                                             |
+| ------------------ | ------------------------------------------------------ |
+| Framework          | TanStack Start, React 19, Vite 8                       |
+| Runtime            | Cloudflare Worker                                      |
+| AI Runtime         | Cloudflare Workflows                                   |
+| Database           | Postgres                                               |
+| Local DB           | Docker Postgres containers (`rz_pg_dev`, `rz_pg_test`) |
+| Deployed DB Access | Hyperdrive binding in `wrangler.jsonc`                 |
+| Data Access        | SQLC + handwritten SQL                                 |
+| Migrations         | dbmate                                                 |
+| Auth               | Google OAuth + cookie session                          |
+| UI                 | shadcn/ui, Tailwind CSS v4, Hugeicons                  |
+| Validation         | Zod                                                    |
+| Storage            | Cloudflare R2                                          |
+| Email              | Cloudflare Email Service (`send_email` binding)        |
+| LLM Provider       | OpenRouter via Vercel AI SDK v7 + TanStack AI          |
+| Tooling            | Oxlint, Oxfmt, Vitest, Knip                            |
 
 ---
 
@@ -548,12 +548,12 @@ Batch-oriented evaluation adds:
 
 Source of truth: `app/features/billing/config.ts` (`PLAN_CONFIGS`).
 
-| Plan | Price | Active jobs | Reports/job | Teammates (+ owner) |
-| --- | --- | --- | --- | --- |
-| Free | $0 | 1 | 1 | 1 |
-| Starter | $39/mo | 5 | 3 | 2 |
-| Growth | $99/mo | 15 | 5 | 4 |
-| Scale | $249/mo | 35 | 10 | 10 |
+| Plan    | Price   | Active jobs | Reports/job | Teammates (+ owner) |
+| ------- | ------- | ----------- | ----------- | ------------------- |
+| Free    | $0      | 1           | 1           | 1                   |
+| Starter | $39/mo  | 5           | 3           | 2                   |
+| Growth  | $99/mo  | 15          | 5           | 4                   |
+| Scale   | $249/mo | 35          | 10          | 10                  |
 
 Paid features require `hasActiveSubscription()` — plan is not `free` and status is `active` or `trialing`.
 
@@ -563,13 +563,13 @@ Paid features require `hasActiveSubscription()` — plan is not `free` and statu
 
 Gated capabilities:
 
-| Entitlement | Rule |
-| --- | --- |
-| `jobs.open` | `open` jobs count toward limit; drafts never consume a slot |
+| Entitlement       | Rule                                                                    |
+| ----------------- | ----------------------------------------------------------------------- |
+| `jobs.open`       | `open` jobs count toward limit; drafts never consume a slot             |
 | `reports` per job | `final_report_target` default = plan limit; clamped to `1..perJobLimit` |
-| `team.invite` | non-owner members + pending invites count toward limit |
-| `team.accept` | gated on non-owner member count (owner excluded) |
-| `aiJobCreation` | paid plans only |
+| `team.invite`     | non-owner members + pending invites count toward limit                  |
+| `team.accept`     | gated on non-owner member count (owner excluded)                        |
+| `aiJobCreation`   | paid plans only                                                         |
 
 ### Enforcement layers
 
@@ -589,10 +589,10 @@ Gated capabilities:
 
 Two local Postgres containers:
 
-| Container | Port | Purpose |
-| --- | --- | --- |
-| `rz_pg_dev` | 6311 | development |
-| `rz_pg_test` | 6312 | tests |
+| Container    | Port | Purpose     |
+| ------------ | ---- | ----------- |
+| `rz_pg_dev`  | 6311 | development |
+| `rz_pg_test` | 6312 | tests       |
 
 Testing approach:
 
@@ -681,11 +681,11 @@ Batch release is a first-class workflow:
 
 ### Scheduled handlers (`app/server.ts`)
 
-| Cron | Workflow | Purpose |
-| --- | --- | --- |
-| `0 */6 * * *` | `PoolCheckWorkflow` | Re-check batch pools for all open jobs |
-| `0 */3 * * *` | `EvalRetryWorkflow` | Retry stuck/failed evaluations |
-| `0 4 * * *` | `AccountCleanupWorkflow` | Erase soft-deleted users past 30-day grace |
+| Cron          | Workflow                 | Purpose                                    |
+| ------------- | ------------------------ | ------------------------------------------ |
+| `0 */6 * * *` | `PoolCheckWorkflow`      | Re-check batch pools for all open jobs     |
+| `0 */3 * * *` | `EvalRetryWorkflow`      | Retry stuck/failed evaluations             |
+| `0 4 * * *`   | `AccountCleanupWorkflow` | Erase soft-deleted users past 30-day grace |
 
 ### Account deletion architecture
 
@@ -721,12 +721,12 @@ See `PLAN.md` for the full build plan. Based on the current architecture, likely
 
 ## 17. Post-Release Hardening
 
-| Item | Why | Approach |
-| --- | --- | --- |
-| Recovery sweep for stuck applications | async workflow triggers can still fail around edges | scheduled recovery for stale `applied` / `pre_screening` rows |
-| Batch / quota race conditions | concurrency around invites and release can over-allocate | keep job-level locking and idempotent release checks |
-| AI quality drift | prompts and model mix can regress | periodic audit of score/report consistency and routing behavior |
-| Workflow failure orphans | partial workflow completion can strand rows | recovery sweeps plus idempotent re-entry |
+| Item                                  | Why                                                      | Approach                                                        |
+| ------------------------------------- | -------------------------------------------------------- | --------------------------------------------------------------- |
+| Recovery sweep for stuck applications | async workflow triggers can still fail around edges      | scheduled recovery for stale `applied` / `pre_screening` rows   |
+| Batch / quota race conditions         | concurrency around invites and release can over-allocate | keep job-level locking and idempotent release checks            |
+| AI quality drift                      | prompts and model mix can regress                        | periodic audit of score/report consistency and routing behavior |
+| Workflow failure orphans              | partial workflow completion can strand rows              | recovery sweeps plus idempotent re-entry                        |
 
 ---
 
@@ -734,22 +734,24 @@ See `PLAN.md` for the full build plan. Based on the current architecture, likely
 
 ### Environments
 
-| Env | Branch | URL | Workers Plan |
-| --- | --- | --- | --- |
-| staging | `staging` | `staging.roundzero.dev` | Paid (or Free if < 3 MiB gzip) |
-| production | `main` | `roundzero.dev` | Paid |
+| Env        | Branch    | URL                     | Workers Plan                   |
+| ---------- | --------- | ----------------------- | ------------------------------ |
+| staging    | `staging` | `staging.roundzero.dev` | Paid (or Free if < 3 MiB gzip) |
+| production | `main`    | `roundzero.dev`         | Paid                           |
 
 ### CI/CD
 
 GitHub Actions workflow at `.github/workflows/deploy.yml`.
 
 Triggers:
+
 - push to `staging` or `main`
 - `workflow_dispatch` (manual) from Actions tab
 
 Pipeline:
+
 1. `bun install --frozen-lockfile`
-2. `bun run check` — lint + typecheck
+2. `bun run check` — format (Oxfmt) + lint (Oxlint) + typecheck
 3. create `.env.ci` from GitHub environment secrets
 4. `bun run db:migrate` — run dbmate against Neon DB
 5. `vite build && wrangler deploy --env <env> --secrets-file .env.ci`
@@ -780,26 +782,26 @@ wrangler hyperdrive create roundzero-db-staging \
 
 ### Required GitHub secrets (per environment)
 
-| Secret | Purpose |
-|--------|---------|
-| `DATABASE_URL` | Postgres connection string for dbmate migrations |
-| `SESSION_SECRET` | Cookie signing key |
-| `APP_URL` | Canonical app URL (`https://staging.roundzero.dev`) |
-| `EMAIL_FROM` | Transactional email from address (Cloudflare Email Service; domain must be onboarded) |
-| `OPENROUTER_API_KEY` | LLM inference |
-| `AI_GATEWAY_TOKEN` | Cloudflare AI Gateway |
-| `POLAR_ACCESS_TOKEN` | Billing API |
-| `POLAR_WEBHOOK_SECRET` | Billing webhook verification |
-| `POLAR_PRODUCT_ID_STARTER` | Polar Starter plan product ID |
-| `POLAR_PRODUCT_ID_GROWTH` | Polar Growth plan product ID |
-| `POLAR_PRODUCT_ID_SCALE` | Polar Scale plan product ID |
-| `ELEVENLABS_API_KEY` | Voice assessment |
-| `ELEVENLABS_AGENT_ID` | Voice agent config |
-| `ELEVENLABS_WEBHOOK_SECRET` | Voice webhook verification |
-| `VITE_GOOGLE_CLIENT_ID` | Google OAuth client ID |
-| `VITE_APP_URL` | Client-side app URL |
-| `VITE_PUBLIC_ASSET_BASE_URL` | R2 asset CDN domain (optional) |
-| `CLOUDFLARE_API_TOKEN` | Wrangler deploy auth (Workers: Edit permission) |
+| Secret                       | Purpose                                                                               |
+| ---------------------------- | ------------------------------------------------------------------------------------- |
+| `DATABASE_URL`               | Postgres connection string for dbmate migrations                                      |
+| `SESSION_SECRET`             | Cookie signing key                                                                    |
+| `APP_URL`                    | Canonical app URL (`https://staging.roundzero.dev`)                                   |
+| `EMAIL_FROM`                 | Transactional email from address (Cloudflare Email Service; domain must be onboarded) |
+| `OPENROUTER_API_KEY`         | LLM inference                                                                         |
+| `AI_GATEWAY_TOKEN`           | Cloudflare AI Gateway                                                                 |
+| `POLAR_ACCESS_TOKEN`         | Billing API                                                                           |
+| `POLAR_WEBHOOK_SECRET`       | Billing webhook verification                                                          |
+| `POLAR_PRODUCT_ID_STARTER`   | Polar Starter plan product ID                                                         |
+| `POLAR_PRODUCT_ID_GROWTH`    | Polar Growth plan product ID                                                          |
+| `POLAR_PRODUCT_ID_SCALE`     | Polar Scale plan product ID                                                           |
+| `ELEVENLABS_API_KEY`         | Voice assessment                                                                      |
+| `ELEVENLABS_AGENT_ID`        | Voice agent config                                                                    |
+| `ELEVENLABS_WEBHOOK_SECRET`  | Voice webhook verification                                                            |
+| `VITE_GOOGLE_CLIENT_ID`      | Google OAuth client ID                                                                |
+| `VITE_APP_URL`               | Client-side app URL                                                                   |
+| `VITE_PUBLIC_ASSET_BASE_URL` | R2 asset CDN domain (optional)                                                        |
+| `CLOUDFLARE_API_TOKEN`       | Wrangler deploy auth (Workers: Edit permission)                                       |
 
 ### Local secrets
 
@@ -810,17 +812,17 @@ wrangler hyperdrive create roundzero-db-staging \
 
 ## 19. Key Decisions
 
-| Decision | Choice | Rationale |
-| --- | --- | --- |
-| Product layering | Platform first, AI second | AI should sit on top of a credible hiring workflow |
-| Runtime | Single Cloudflare Worker | shared bindings, simpler local/dev/prod flow |
-| DB typing | SQLC + inference | keeps SQL authoritative |
-| Resume persistence | `resume_key` | stable storage reference |
-| Resume upload | server-mediated R2 writes | simplest current contract |
-| Resume delivery | server-mediated reads + asset endpoint/public base URL | flexible delivery without DB URL coupling |
-| Notifications | DB-first in-app records + Cloudflare Email | durable record first, email second |
-| Auth | Google OAuth + cookie session | sufficient for current scope |
-| AI orchestration | Cloudflare Workflows | durable multi-step execution |
-| Interview runtime | TanStack server functions + OpenRouter | request-response chat via server functions |
-| Company access | `company_members` membership | supports multi-user teams; `owner_id` kept for billing |
-| Plan gating | `deriveEntitlements()` + server enforcement | single source of truth; fresh DB reads at mutation boundary |
+| Decision           | Choice                                                 | Rationale                                                   |
+| ------------------ | ------------------------------------------------------ | ----------------------------------------------------------- |
+| Product layering   | Platform first, AI second                              | AI should sit on top of a credible hiring workflow          |
+| Runtime            | Single Cloudflare Worker                               | shared bindings, simpler local/dev/prod flow                |
+| DB typing          | SQLC + inference                                       | keeps SQL authoritative                                     |
+| Resume persistence | `resume_key`                                           | stable storage reference                                    |
+| Resume upload      | server-mediated R2 writes                              | simplest current contract                                   |
+| Resume delivery    | server-mediated reads + asset endpoint/public base URL | flexible delivery without DB URL coupling                   |
+| Notifications      | DB-first in-app records + Cloudflare Email             | durable record first, email second                          |
+| Auth               | Google OAuth + cookie session                          | sufficient for current scope                                |
+| AI orchestration   | Cloudflare Workflows                                   | durable multi-step execution                                |
+| Interview runtime  | TanStack server functions + OpenRouter                 | request-response chat via server functions                  |
+| Company access     | `company_members` membership                           | supports multi-user teams; `owner_id` kept for billing      |
+| Plan gating        | `deriveEntitlements()` + server enforcement            | single source of truth; fresh DB reads at mutation boundary |

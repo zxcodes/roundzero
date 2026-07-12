@@ -1,6 +1,7 @@
-import { env } from "cloudflare:workers";
 import { generateText, Output } from "ai";
+import { env } from "cloudflare:workers";
 import { z } from "zod";
+
 import { updateApplicationStatus } from "@/features/applications/queries/queries_sql";
 import {
   completeCommunicationAssessment,

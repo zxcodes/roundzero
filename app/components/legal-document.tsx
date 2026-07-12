@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+
 import { PublicFooter, PublicHeader } from "@/components/public-layout";
 
 const CONTAINER = "mx-auto w-full max-w-3xl px-6 lg:px-10";

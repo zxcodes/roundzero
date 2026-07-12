@@ -9,7 +9,9 @@ import {
   Section,
   Text,
 } from "@react-email/components";
+
 import { formatCandidateScoreWithScale } from "@/shared/score";
+
 import { emailTheme } from "./email-theme";
 
 type BatchDigestEmailTemplateProps = {

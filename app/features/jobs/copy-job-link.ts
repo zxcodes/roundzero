@@ -1,4 +1,5 @@
 import { toast } from "sonner";
+
 import { publicJobUrl } from "@/shared/seo";
 
 type JobLinkSource = {

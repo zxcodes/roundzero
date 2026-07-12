@@ -95,7 +95,7 @@ export function CandidateSettings({
     : null;
 
   const onSave = () => {
-    form.handleSubmit();
+    void form.handleSubmit();
   };
   const onDiscard = () => {
     form.reset();

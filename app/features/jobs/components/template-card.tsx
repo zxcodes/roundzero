@@ -1,5 +1,6 @@
 import { Briefcase01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+
 import { Badge } from "@/components/ui/badge";
 import type { JobTemplate } from "@/shared/job-templates";
 

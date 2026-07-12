@@ -1,4 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
+
 import { CompanyInboxPageShell } from "@/components/company-inbox-page-shell";
 import { DashboardShortlistedSkeleton } from "@/components/route-skeletons";
 import { ShortlistedApplicantsList } from "@/features/applications/components/shortlisted-applicants-list";

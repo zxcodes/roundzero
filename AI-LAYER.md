@@ -142,11 +142,11 @@ Hybrid architecture — **not** WebSockets for chat; **SSE** for turn streaming.
 
 Source of truth: `app/shared/openrouter.ts` (`MODEL_CHAINS.interview`):
 
-| Env | Primary | Fallback |
-| --- | --- | --- |
-| dev | `meta-llama/llama-3.3-70b-instruct:free` | — |
-| staging | `deepseek/deepseek-v4-flash` | — |
-| prod | `anthropic/claude-sonnet-4.5` | `anthropic/claude-haiku-4.5` → `google/gemini-2.5-pro` |
+| Env     | Primary                                  | Fallback                                               |
+| ------- | ---------------------------------------- | ------------------------------------------------------ |
+| dev     | `meta-llama/llama-3.3-70b-instruct:free` | —                                                      |
+| staging | `deepseek/deepseek-v4-flash`             | —                                                      |
+| prod    | `anthropic/claude-sonnet-4.5`            | `anthropic/claude-haiku-4.5` → `google/gemini-2.5-pro` |
 
 Fallbacks are OpenRouter `models` on the request (see `createChatModel` / `modelOptions.models`).
 
@@ -242,11 +242,11 @@ Primary batched delivery: `batch_ready` digest email. Per-candidate `report_read
 
 Source: `app/shared/openrouter.ts`. Pre/post-eval and job creation use `DEFAULT_CHAIN`:
 
-| Env | Chain |
-| --- | --- |
-| dev | `openrouter/free` |
-| staging | `deepseek/deepseek-v4-flash` |
-| prod | `anthropic/claude-sonnet-4.5` → `anthropic/claude-haiku-4.5` → `google/gemini-2.5-pro` |
+| Env     | Chain                                                                                  |
+| ------- | -------------------------------------------------------------------------------------- |
+| dev     | `openrouter/free`                                                                      |
+| staging | `deepseek/deepseek-v4-flash`                                                           |
+| prod    | `anthropic/claude-sonnet-4.5` → `anthropic/claude-haiku-4.5` → `google/gemini-2.5-pro` |
 
 `post_eval_audit` prod: `google/gemini-2.5-pro` → `anthropic/claude-sonnet-4.5` — a
 different model family than `post_eval` so the audit pass can catch model-specific biases.

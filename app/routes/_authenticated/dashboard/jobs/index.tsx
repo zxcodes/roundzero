@@ -22,6 +22,7 @@ import {
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { z } from "zod";
+
 import { CompanyInboxPageShell } from "@/components/company-inbox-page-shell";
 import { DeferredSection } from "@/components/deferred-section";
 import { PaginationNav } from "@/components/pagination-nav";
@@ -32,7 +33,6 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-
 import {
   Empty,
   EmptyContent,
@@ -608,12 +608,12 @@ function CandidateJobsList({ paginatedJobs }: { paginatedJobs: Promise<Paginated
 
   const hasFilters = Boolean(
     search ||
-      typeFilter !== "all" ||
-      levelFilter !== "all" ||
-      workplaceFilter !== "all" ||
-      salaryCurrency !== "all" ||
-      companyFilter !== "all" ||
-      salaryMin > 0,
+    typeFilter !== "all" ||
+    levelFilter !== "all" ||
+    workplaceFilter !== "all" ||
+    salaryCurrency !== "all" ||
+    companyFilter !== "all" ||
+    salaryMin > 0,
   );
   const brackets =
     SALARY_BRACKETS[(salaryCurrency === "all" ? "USD" : salaryCurrency) as SalaryCurrency] ??

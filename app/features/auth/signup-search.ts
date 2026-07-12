@@ -1,5 +1,6 @@
 import { linkOptions } from "@tanstack/react-router";
 import { z } from "zod";
+
 import { type SubscriptionPlan, subscriptionPlanSchema } from "@/features/billing/config";
 
 export const billingSignupRedirect = "/dashboard/billing";

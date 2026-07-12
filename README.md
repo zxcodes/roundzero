@@ -15,7 +15,7 @@ AI-powered hiring platform that replaces first-round screening with structured a
 - **Storage:** Cloudflare R2 (resumes, voice audio)
 - **Email:** Cloudflare Email Service (secondary to in-app notifications)
 - **UI:** shadcn/ui, Tailwind CSS v4, Huge Icons
-- **Linting & Formatting:** Biome
+- **Linting & Formatting:** Oxlint + Oxfmt
 - **Finding Unused Code & Dependencies:** Knip
 
 ## Getting Started
@@ -41,7 +41,7 @@ bun run dev
 | -------------------- | -------------------------------------- |
 | `bun run dev`        | Start dev server (port 3000)           |
 | `bun run build`      | Production build                       |
-| `bun run check`      | Lint (Biome) + typecheck               |
+| `bun run check`      | Format + lint + typecheck              |
 | `bun run typecheck`  | TypeScript check only                  |
 | `bun run sqlgen`     | Generate typed queries from SQL (SQLC) |
 | `bun run db:migrate` | Run database migrations                |

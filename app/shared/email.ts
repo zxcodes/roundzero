@@ -1,6 +1,7 @@
-import { env } from "cloudflare:workers";
 import { render } from "@react-email/render";
+import { env } from "cloudflare:workers";
 import type { ReactElement } from "react";
+
 import { appEnv } from "@/shared/env.app";
 
 export type TransactionalEmailSendResult = {

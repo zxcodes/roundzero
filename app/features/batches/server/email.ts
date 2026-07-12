@@ -1,4 +1,5 @@
 import { jsx } from "react/jsx-runtime";
+
 import { BatchDigestEmailTemplate } from "@/features/notifications/components/batch-digest-email-template";
 import {
   markNotificationEmailDelivered,

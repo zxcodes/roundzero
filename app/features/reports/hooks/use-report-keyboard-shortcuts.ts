@@ -1,4 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
+
 import type { ReportBatchNavigation } from "@/features/reports/components/report-page-ui";
 import { useHotkey } from "@/shared/hotkeys";
 

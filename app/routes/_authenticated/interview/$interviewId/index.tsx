@@ -5,6 +5,7 @@ import { ClientOnly, createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+
 import { InterviewWorkspacePageSkeleton } from "@/components/route-skeletons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ import {
 } from "@/features/interviews/server/functions";
 import type { MessageIntegritySnapshot } from "@/features/interviews/shared/integrity";
 import { formatDeadlineLabel, formatTimeLeft } from "@/shared/date";
+
 import { Route as ParentRoute } from "../$interviewId";
 
 type InterviewDetail = NonNullable<
@@ -153,9 +155,12 @@ function InterviewWorkspaceContent({
     // 1s buffer so the server clock has rolled past `expiresAt` by the time
     // the loader re-runs; otherwise `shouldAutoExpireInterview` may still
     // return false and the route will look unchanged on invalidation.
-    const handle = setTimeout(() => {
-      void router.invalidate();
-    }, Math.max(0, msUntilExpiry) + 1000);
+    const handle = setTimeout(
+      () => {
+        void router.invalidate();
+      },
+      Math.max(0, msUntilExpiry) + 1000,
+    );
 
     return () => clearTimeout(handle);
   }, [expiresAt, interview.status, router]);

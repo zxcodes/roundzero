@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { createApplication, getApplicationById } from "@/features/applications/queries/queries_sql";
 import * as interviewQueries from "@/features/interviews/queries/queries_sql";
 import {

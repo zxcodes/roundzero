@@ -1,7 +1,9 @@
 import type { Sql } from "postgres";
+
 import { countTeamSlotsByCompany } from "@/features/companies/queries/membership-queries_sql";
 import { getCompanyById } from "@/features/companies/queries/queries_sql";
 import { countJobsByCompanyAndStatus } from "@/features/jobs/queries/queries_sql";
+
 import { deriveEntitlements, type Entitlements, resolveReportTarget } from "../entitlements";
 
 /** Entitlements that can be enforced at a server-function boundary. */

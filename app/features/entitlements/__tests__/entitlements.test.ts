@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { deriveEntitlements, resolveReportTarget } from "../entitlements";
 import { enforceReportTarget } from "../server/enforcement";
 

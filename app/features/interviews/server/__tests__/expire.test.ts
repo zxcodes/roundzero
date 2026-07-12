@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { createApplication, getApplicationById } from "@/features/applications/queries/queries_sql";
 import {
   createInterview,
@@ -11,6 +12,7 @@ import {
   seedJob,
   seedUser,
 } from "@/shared/__tests__/test-utils";
+
 import { expireInterviewIfDue } from "../expire";
 
 const sql = getTestDb();

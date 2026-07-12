@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+
 import { LegalLink, LegalPage, LegalSection, LegalStrong } from "@/components/legal-document";
 import { buildPageHead } from "@/shared/seo";
 

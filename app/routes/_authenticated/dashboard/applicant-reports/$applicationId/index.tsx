@@ -12,6 +12,7 @@ import { createFileRoute, Link, notFound, redirect, useRouter } from "@tanstack/
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
+
 import { DashboardApplicantReportSkeleton } from "@/components/route-skeletons";
 import {
   Accordion,

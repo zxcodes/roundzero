@@ -4,6 +4,7 @@
  * exercised directly from tests against the test Postgres instance.
  */
 import type { Sql } from "postgres";
+
 import {
   getBatchForUpdate,
   getCompanyOwnerForBatch,

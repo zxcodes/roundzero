@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+
 import { AdminDashboardSkeleton } from "@/components/route-skeletons";
 import { PlatformAdminDashboard } from "@/features/admin/components/platform-admin-dashboard";
 import { getPlatformAdminStats } from "@/features/admin/server/functions";

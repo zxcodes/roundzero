@@ -26,6 +26,7 @@
  */
 
 import { z } from "zod";
+
 import { CANDIDATE_SCORE_MAX, clampCandidateScore } from "@/shared/score";
 
 /** Normalize a model score onto 0–10. Values above 10 are treated as 0–100 scale. */

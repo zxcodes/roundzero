@@ -1,5 +1,6 @@
 import { createMiddleware } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
+
 import { getUserById } from "@/features/auth/queries/queries_sql";
 import { getActiveMembershipByUserId } from "@/features/companies/queries/membership-queries_sql";
 import { getCompanyById } from "@/features/companies/queries/queries_sql";

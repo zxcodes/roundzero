@@ -1,6 +1,7 @@
 import * as Sentry from "@sentry/tanstackstart-react";
 import { Await, useRouter } from "@tanstack/react-router";
 import { Component, type ErrorInfo, type ReactNode, useEffect, useRef, useState } from "react";
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
