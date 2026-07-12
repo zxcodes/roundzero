@@ -1,6 +1,6 @@
 import { Briefcase01Icon, Search01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { createFileRoute, stripSearchParams, useNavigate } from "@tanstack/react-router";
+import { Await, createFileRoute, stripSearchParams, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { DeferredSection } from "@/components/deferred-section";
 import { PaginationNav } from "@/components/pagination-nav";
@@ -19,6 +19,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -48,6 +49,7 @@ const searchDefaults = {
   workplace: "all",
   salaryMin: 0,
   salaryCurrency: "all",
+  company: "all",
   page: 1,
 } as const;
 
@@ -66,6 +68,7 @@ const jobsSearchSchema = z.object({
     .string()
     .default(searchDefaults.salaryCurrency)
     .catch(searchDefaults.salaryCurrency),
+  company: z.string().default(searchDefaults.company).catch(searchDefaults.company),
   page: z.number().int().min(1).default(searchDefaults.page).catch(searchDefaults.page),
 });
 
@@ -88,6 +91,7 @@ export const Route = createFileRoute("/jobs/")({
         workplace: deps.workplace,
         salaryMin: deps.salaryMin,
         salaryCurrency: deps.salaryCurrency,
+        company: deps.company,
         page: deps.page,
       },
     }),
@@ -106,6 +110,7 @@ function JobsPage() {
     workplace: workplaceFilter,
     salaryMin,
     salaryCurrency,
+    company: companyFilter,
     page,
   } = Route.useSearch();
   const navigate = useNavigate({ from: "/jobs/" });
@@ -116,6 +121,7 @@ function JobsPage() {
     levelFilter !== "all" ||
     workplaceFilter !== "all" ||
     salaryCurrency !== "all" ||
+    companyFilter !== "all" ||
     salaryMin > 0;
   const brackets =
     SALARY_BRACKETS[(salaryCurrency === "all" ? "USD" : salaryCurrency) as SalaryCurrency] ??
@@ -137,6 +143,10 @@ function JobsPage() {
     void navigate({ search: (prev) => ({ ...prev, workplace: value, page: 1 }) });
   };
 
+  const onCompanyChange = (value: string) => {
+    void navigate({ search: (prev) => ({ ...prev, company: value, page: 1 }) });
+  };
+
   const onCurrencyChange = (value: string) => {
     void navigate({
       search: (prev) => ({ ...prev, salaryCurrency: value, salaryMin: 0, page: 1 }),
@@ -147,7 +157,7 @@ function JobsPage() {
     void navigate({ search: (prev) => ({ ...prev, salaryMin: Number(value), page: 1 }) });
   };
 
-  const resultsResetKey = `${typeFilter}-${levelFilter}-${workplaceFilter}-${salaryMin}-${salaryCurrency}-${page}`;
+  const resultsResetKey = `${typeFilter}-${levelFilter}-${workplaceFilter}-${salaryMin}-${salaryCurrency}-${companyFilter}-${page}`;
 
   return (
     <div className="calm min-h-svh bg-background text-foreground">
@@ -182,6 +192,34 @@ function JobsPage() {
             </div>
             <ScrollArea orientation="horizontal" className="-mx-6 h-9 px-6 sm:mx-0 sm:px-0">
               <div className="flex gap-3">
+                <Await
+                  promise={results}
+                  fallback={
+                    <Select disabled>
+                      <SelectTrigger className="w-44 shrink-0">
+                        <SelectValue placeholder="Company" />
+                      </SelectTrigger>
+                    </Select>
+                  }
+                >
+                  {(data) => (
+                    <Select value={companyFilter} onValueChange={onCompanyChange}>
+                      <SelectTrigger className="w-44 shrink-0">
+                        <SelectValue placeholder="Company" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectItem value="all">All companies</SelectItem>
+                          {data.companies.map((company) => (
+                            <SelectItem key={company.id} value={company.id}>
+                              {company.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  )}
+                </Await>
                 <Select value={typeFilter} onValueChange={onTypeChange}>
                   <SelectTrigger className="w-36 shrink-0">
                     <SelectValue placeholder="Job type" />

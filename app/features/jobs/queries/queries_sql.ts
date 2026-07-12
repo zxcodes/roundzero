@@ -728,6 +728,28 @@ export async function getOpenJobsByCompanyId(sql: Sql, args: getOpenJobsByCompan
     }));
 }
 
+export const getOpenJobCompaniesQuery = `-- name: getOpenJobCompanies :many
+SELECT DISTINCT c.id, c.name
+FROM companies c
+JOIN users u ON u.id = c.owner_id AND u.deleted_at IS NULL
+JOIN jobs j ON j.company_id = c.id
+WHERE j.status = 'open'
+  AND j.archived_at IS NULL
+  AND (j.expires_at IS NULL OR j.expires_at > now())
+ORDER BY c.name`;
+
+export interface getOpenJobCompaniesRow {
+    id: string;
+    name: string;
+}
+
+export async function getOpenJobCompanies(sql: Sql): Promise<getOpenJobCompaniesRow[]> {
+    return (await sql.unsafe(getOpenJobCompaniesQuery, []).values()).map(row => ({
+        id: row[0],
+        name: row[1]
+    }));
+}
+
 export const getOpenJobsPaginatedQuery = `-- name: getOpenJobsPaginated :many
 SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.screening_questions, j.status, j.location, j.workplace_type, j.employment_type, j.experience_level, j.salary_min, j.salary_max, j.salary_currency, j.team_size, j.headcount, j.final_report_target, j.expires_at, j.archived_at, j.created_at, j.updated_at,
        c.name AS company_name,
@@ -744,8 +766,9 @@ WHERE j.status = 'open'
   AND ($4::text = 'all' OR j.workplace_type = $4)
   AND ($5::text = 'all' OR j.salary_currency = $5)
   AND ($6::int = 0 OR j.salary_max IS NULL OR j.salary_max >= $6::int)
+  AND ($7::text = 'all' OR j.company_id::text = $7)
 ORDER BY j.created_at DESC
-LIMIT $8::int OFFSET $7::int`;
+LIMIT $9::int OFFSET $8::int`;
 
 export interface getOpenJobsPaginatedArgs {
     search: string;
@@ -754,6 +777,7 @@ export interface getOpenJobsPaginatedArgs {
     workplaceType: string;
     salaryCurrency: string;
     salaryMin: number;
+    companyId: string;
     offset: number;
     limit: number;
 }
@@ -785,7 +809,7 @@ export interface getOpenJobsPaginatedRow {
 }
 
 export async function getOpenJobsPaginated(sql: Sql, args: getOpenJobsPaginatedArgs): Promise<getOpenJobsPaginatedRow[]> {
-    return (await sql.unsafe(getOpenJobsPaginatedQuery, [args.search, args.employmentType, args.experienceLevel, args.workplaceType, args.salaryCurrency, args.salaryMin, args.offset, args.limit]).values()).map(row => ({
+    return (await sql.unsafe(getOpenJobsPaginatedQuery, [args.search, args.employmentType, args.experienceLevel, args.workplaceType, args.salaryCurrency, args.salaryMin, args.companyId, args.offset, args.limit]).values()).map(row => ({
         id: row[0],
         companyId: row[1],
         title: row[2],
@@ -825,7 +849,8 @@ WHERE j.status = 'open'
   AND ($3::text = 'all' OR j.experience_level = $3)
   AND ($4::text = 'all' OR j.workplace_type = $4)
   AND ($5::text = 'all' OR j.salary_currency = $5)
-  AND ($6::int = 0 OR j.salary_max IS NULL OR j.salary_max >= $6::int)`;
+  AND ($6::int = 0 OR j.salary_max IS NULL OR j.salary_max >= $6::int)
+  AND ($7::text = 'all' OR j.company_id::text = $7)`;
 
 export interface countOpenJobsFilteredArgs {
     search: string;
@@ -834,6 +859,7 @@ export interface countOpenJobsFilteredArgs {
     workplaceType: string;
     salaryCurrency: string;
     salaryMin: number;
+    companyId: string;
 }
 
 export interface countOpenJobsFilteredRow {
@@ -841,7 +867,148 @@ export interface countOpenJobsFilteredRow {
 }
 
 export async function countOpenJobsFiltered(sql: Sql, args: countOpenJobsFilteredArgs): Promise<countOpenJobsFilteredRow | null> {
-    const rows = await sql.unsafe(countOpenJobsFilteredQuery, [args.search, args.employmentType, args.experienceLevel, args.workplaceType, args.salaryCurrency, args.salaryMin]).values();
+    const rows = await sql.unsafe(countOpenJobsFilteredQuery, [args.search, args.employmentType, args.experienceLevel, args.workplaceType, args.salaryCurrency, args.salaryMin, args.companyId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        total: row[0]
+    };
+}
+
+export const getCandidateOpenJobsPaginatedQuery = `-- name: getCandidateOpenJobsPaginated :many
+SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.screening_questions, j.status, j.location, j.workplace_type, j.employment_type, j.experience_level, j.salary_min, j.salary_max, j.salary_currency, j.team_size, j.headcount, j.final_report_target, j.expires_at, j.archived_at, j.created_at, j.updated_at,
+       c.name AS company_name,
+       c.slug AS company_slug
+FROM jobs j
+JOIN companies c ON c.id = j.company_id
+JOIN users u ON u.id = c.owner_id AND u.deleted_at IS NULL
+WHERE j.status = 'open'
+  AND j.archived_at IS NULL
+  AND (j.expires_at IS NULL OR j.expires_at > now())
+  AND NOT EXISTS (
+    SELECT 1
+    FROM applications a
+    WHERE a.job_id = j.id
+      AND a.candidate_id = $1::uuid
+  )
+  AND ($2::text = '' OR j.title ILIKE '%' || $2 || '%' OR c.name ILIKE '%' || $2 || '%' OR j.location ILIKE '%' || $2 || '%')
+  AND ($3::text = 'all' OR j.employment_type = $3)
+  AND ($4::text = 'all' OR j.experience_level = $4)
+  AND ($5::text = 'all' OR j.workplace_type = $5)
+  AND ($6::text = 'all' OR j.salary_currency = $6)
+  AND ($7::int = 0 OR j.salary_max IS NULL OR j.salary_max >= $7::int)
+  AND ($8::text = 'all' OR j.company_id::text = $8)
+ORDER BY j.created_at DESC
+LIMIT $10::int OFFSET $9::int`;
+
+export interface getCandidateOpenJobsPaginatedArgs {
+    candidateId: string;
+    search: string;
+    employmentType: string;
+    experienceLevel: string;
+    workplaceType: string;
+    salaryCurrency: string;
+    salaryMin: number;
+    companyId: string;
+    offset: number;
+    limit: number;
+}
+
+export interface getCandidateOpenJobsPaginatedRow {
+    id: string;
+    companyId: string;
+    title: string;
+    description: string;
+    requirements: any;
+    screeningQuestions: any;
+    status: string;
+    location: string | null;
+    workplaceType: string | null;
+    employmentType: string | null;
+    experienceLevel: string | null;
+    salaryMin: number | null;
+    salaryMax: number | null;
+    salaryCurrency: string;
+    teamSize: number | null;
+    headcount: number | null;
+    finalReportTarget: number;
+    expiresAt: Date | null;
+    archivedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+    companyName: string;
+    companySlug: string;
+}
+
+export async function getCandidateOpenJobsPaginated(sql: Sql, args: getCandidateOpenJobsPaginatedArgs): Promise<getCandidateOpenJobsPaginatedRow[]> {
+    return (await sql.unsafe(getCandidateOpenJobsPaginatedQuery, [args.candidateId, args.search, args.employmentType, args.experienceLevel, args.workplaceType, args.salaryCurrency, args.salaryMin, args.companyId, args.offset, args.limit]).values()).map(row => ({
+        id: row[0],
+        companyId: row[1],
+        title: row[2],
+        description: row[3],
+        requirements: row[4],
+        screeningQuestions: row[5],
+        status: row[6],
+        location: row[7],
+        workplaceType: row[8],
+        employmentType: row[9],
+        experienceLevel: row[10],
+        salaryMin: row[11],
+        salaryMax: row[12],
+        salaryCurrency: row[13],
+        teamSize: row[14],
+        headcount: row[15],
+        finalReportTarget: row[16],
+        expiresAt: row[17],
+        archivedAt: row[18],
+        createdAt: row[19],
+        updatedAt: row[20],
+        companyName: row[21],
+        companySlug: row[22]
+    }));
+}
+
+export const countCandidateOpenJobsFilteredQuery = `-- name: countCandidateOpenJobsFiltered :one
+SELECT count(*)::int AS total
+FROM jobs j
+JOIN companies c ON c.id = j.company_id
+JOIN users u ON u.id = c.owner_id AND u.deleted_at IS NULL
+WHERE j.status = 'open'
+  AND j.archived_at IS NULL
+  AND (j.expires_at IS NULL OR j.expires_at > now())
+  AND NOT EXISTS (
+    SELECT 1
+    FROM applications a
+    WHERE a.job_id = j.id
+      AND a.candidate_id = $1::uuid
+  )
+  AND ($2::text = '' OR j.title ILIKE '%' || $2 || '%' OR c.name ILIKE '%' || $2 || '%' OR j.location ILIKE '%' || $2 || '%')
+  AND ($3::text = 'all' OR j.employment_type = $3)
+  AND ($4::text = 'all' OR j.experience_level = $4)
+  AND ($5::text = 'all' OR j.workplace_type = $5)
+  AND ($6::text = 'all' OR j.salary_currency = $6)
+  AND ($7::int = 0 OR j.salary_max IS NULL OR j.salary_max >= $7::int)
+  AND ($8::text = 'all' OR j.company_id::text = $8)`;
+
+export interface countCandidateOpenJobsFilteredArgs {
+    candidateId: string;
+    search: string;
+    employmentType: string;
+    experienceLevel: string;
+    workplaceType: string;
+    salaryCurrency: string;
+    salaryMin: number;
+    companyId: string;
+}
+
+export interface countCandidateOpenJobsFilteredRow {
+    total: number;
+}
+
+export async function countCandidateOpenJobsFiltered(sql: Sql, args: countCandidateOpenJobsFilteredArgs): Promise<countCandidateOpenJobsFilteredRow | null> {
+    const rows = await sql.unsafe(countCandidateOpenJobsFilteredQuery, [args.candidateId, args.search, args.employmentType, args.experienceLevel, args.workplaceType, args.salaryCurrency, args.salaryMin, args.companyId]).values();
     if (rows.length !== 1) {
         return null;
     }

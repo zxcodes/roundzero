@@ -1,15 +1,21 @@
 import { describe, expect, it } from "vitest";
+import { createApplication } from "@/features/applications/queries/queries_sql";
 import { softDeleteUser } from "@/features/auth/queries/queries_sql";
-import { getTestDb, seedCompany } from "@/shared/__tests__/test-utils";
+import { getTestDb, makeTestResumeKey, seedCompany, seedUser } from "@/shared/__tests__/test-utils";
 import {
   archiveJob,
   closeExpiredJobsQuery,
+  countCandidateOpenJobsFiltered,
   countJobsByCompanyAndStatus,
+  countOpenJobsFiltered,
   createJob,
   getArchivedJobsByCompanyId,
+  getCandidateOpenJobsPaginated,
   getJobById,
   getJobsByCompanyId,
+  getOpenJobCompanies,
   getOpenJobs,
+  getOpenJobsPaginated,
   updateJob,
 } from "../queries_sql";
 
@@ -35,6 +41,16 @@ const makeJobArgs = (companyId: string, overrides?: Record<string, unknown>) => 
   finalReportTarget: 5,
   ...overrides,
 });
+
+const openJobsFilterArgs = {
+  search: "",
+  employmentType: "all",
+  experienceLevel: "all",
+  workplaceType: "all",
+  salaryCurrency: "all",
+  salaryMin: 0,
+  companyId: "all",
+};
 
 describe("createJob", () => {
   it("creates a job with all fields", async () => {
@@ -302,6 +318,77 @@ describe("getOpenJobs", () => {
 
     const open = await getOpenJobs(sql);
     expect(open.map((j) => j.title)).not.toContain("Ghost Job");
+  });
+});
+
+describe("paginated open jobs", () => {
+  it("filters jobs and counts by company", async () => {
+    const { company: firstCompany } = await seedCompany({ name: "First Company" });
+    const { company: secondCompany } = await seedCompany({ name: "Second Company" });
+    await createJob(sql, makeJobArgs(firstCompany.id, { title: "First Role", status: "open" }));
+    await createJob(sql, makeJobArgs(secondCompany.id, { title: "Second Role", status: "open" }));
+
+    const filterArgs = { ...openJobsFilterArgs, companyId: firstCompany.id };
+    const [jobs, count] = await Promise.all([
+      getOpenJobsPaginated(sql, { ...filterArgs, limit: 12, offset: 0 }),
+      countOpenJobsFiltered(sql, filterArgs),
+    ]);
+
+    expect(jobs.map((job) => job.title)).toEqual(["First Role"]);
+    expect(count?.total).toBe(1);
+  });
+
+  it("lists only companies with visible open jobs in name order", async () => {
+    const { company: zuluCompany } = await seedCompany({ name: "Zulu Company" });
+    const { company: alphaCompany } = await seedCompany({ name: "Alpha Company" });
+    const { company: draftCompany } = await seedCompany({ name: "Draft Company" });
+    await createJob(sql, makeJobArgs(zuluCompany.id, { status: "open" }));
+    await createJob(sql, makeJobArgs(alphaCompany.id, { status: "open" }));
+    await createJob(sql, makeJobArgs(draftCompany.id, { status: "draft" }));
+
+    const companies = await getOpenJobCompanies(sql);
+
+    expect(companies).toEqual([
+      { id: alphaCompany.id, name: "Alpha Company" },
+      { id: zuluCompany.id, name: "Zulu Company" },
+    ]);
+  });
+
+  it("hides only jobs the current candidate has applied to", async () => {
+    const { company } = await seedCompany();
+    const candidate = await seedUser({ role: "candidate" });
+    const otherCandidate = await seedUser({ role: "candidate" });
+    const appliedJob = await createJob(
+      sql,
+      makeJobArgs(company.id, { title: "Applied Role", status: "open" }),
+    );
+    const visibleJob = await createJob(
+      sql,
+      makeJobArgs(company.id, { title: "Visible Role", status: "open" }),
+    );
+    await createApplication(sql, {
+      jobId: appliedJob!.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: {},
+      status: "applied",
+    });
+    await createApplication(sql, {
+      jobId: visibleJob!.id,
+      candidateId: otherCandidate.id,
+      resumeKey: makeTestResumeKey(otherCandidate.id),
+      metadata: {},
+      status: "applied",
+    });
+
+    const filterArgs = { ...openJobsFilterArgs, candidateId: candidate.id };
+    const [jobs, count] = await Promise.all([
+      getCandidateOpenJobsPaginated(sql, { ...filterArgs, limit: 12, offset: 0 }),
+      countCandidateOpenJobsFiltered(sql, filterArgs),
+    ]);
+
+    expect(jobs.map((job) => job.title)).toEqual(["Visible Role"]);
+    expect(count?.total).toBe(1);
   });
 });
 

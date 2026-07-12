@@ -22,12 +22,15 @@ import { createChatModel } from "@/shared/openrouter";
 import {
   archiveJob as archiveJobQuery,
   closeExpiredJobsQuery,
+  countCandidateOpenJobsFiltered,
   countJobsByCompanyAndStatus,
   countOpenJobsFiltered,
   createJob as createJobQuery,
   getArchivedJobsByCompanyId,
+  getCandidateOpenJobsPaginated as getCandidateOpenJobsPaginatedQuery,
   getJobById,
   getJobsWithPipelineByCompanyId,
+  getOpenJobCompanies,
   getOpenJobsByCompanyId as getOpenJobsByCompanyIdQuery,
   getOpenJobsPaginated as getOpenJobsPaginatedQuery,
   updateJob as updateJobQuery,
@@ -321,6 +324,7 @@ const paginatedJobsSchema = z.object({
   workplace: z.string(),
   salaryMin: z.number().int().min(0),
   salaryCurrency: z.string(),
+  company: z.string(),
   page: z.number().int().min(1),
 });
 
@@ -338,16 +342,60 @@ export const getOpenJobsPaginated = createServerFn({ method: "GET" })
       workplaceType: data.workplace,
       salaryMin: data.salaryMin,
       salaryCurrency: data.salaryCurrency,
+      companyId: data.company,
     };
 
-    const [items, countRow] = await Promise.all([
+    const [items, countRow, companies] = await Promise.all([
       getOpenJobsPaginatedQuery(db, { ...filterArgs, limit: JOBS_PER_PAGE, offset }),
       countOpenJobsFiltered(db, filterArgs),
+      getOpenJobCompanies(db),
     ]);
 
     const total = countRow?.total ?? 0;
 
-    return { items, total, totalPages: Math.ceil(total / JOBS_PER_PAGE) };
+    return { items, total, totalPages: Math.ceil(total / JOBS_PER_PAGE), companies };
+  });
+
+export const getCandidateOpenJobsPaginated = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .validator(zodValidator(paginatedJobsSchema))
+  .handler(async ({ data, context }) => {
+    const db = getDb();
+    await db.unsafe(closeExpiredJobsQuery);
+    const offset = (data.page - 1) * JOBS_PER_PAGE;
+
+    const filterArgs = {
+      candidateId: context.userId,
+      search: data.search,
+      employmentType: data.type,
+      experienceLevel: data.level,
+      workplaceType: data.workplace,
+      salaryMin: data.salaryMin,
+      salaryCurrency: data.salaryCurrency,
+      companyId: data.company,
+    };
+
+    const [items, countRow, countIncludingAppliedRow, companies] = await Promise.all([
+      getCandidateOpenJobsPaginatedQuery(db, {
+        ...filterArgs,
+        limit: JOBS_PER_PAGE,
+        offset,
+      }),
+      countCandidateOpenJobsFiltered(db, filterArgs),
+      countOpenJobsFiltered(db, filterArgs),
+      getOpenJobCompanies(db),
+    ]);
+
+    const total = countRow?.total ?? 0;
+    const totalIncludingApplied = countIncludingAppliedRow?.total ?? 0;
+
+    return {
+      items,
+      total,
+      totalIncludingApplied,
+      totalPages: Math.ceil(total / JOBS_PER_PAGE),
+      companies,
+    };
   });
 
 export const getMyJobCounts = createServerFn({ method: "GET" })
