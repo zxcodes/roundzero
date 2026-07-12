@@ -1,6 +1,7 @@
 import * as Sentry from "@sentry/cloudflare";
 import { wrapFetchWithSentry } from "@sentry/tanstackstart-react";
 import handler from "@tanstack/react-start/server-entry";
+
 import { handlePolarWebhook } from "./features/billing/webhook";
 import { getDb } from "./shared/db";
 import { isDev } from "./shared/env.app";
@@ -98,7 +99,6 @@ ${indexableCompanies.map((c) => `  <url><loc>${siteUrl}/companies/${c.slug}</loc
   },
 };
 
-// biome-ignore lint/style/noDefaultExport: worker entrypoint
 export default isDev
   ? appHandler
   : Sentry.withSentry(

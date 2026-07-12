@@ -1,4 +1,5 @@
 import type { Sql } from "postgres";
+
 import { isEligibleForErasure } from "@/features/accounts/grace";
 import {
   anonymizeUser,

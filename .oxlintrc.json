@@ -1,0 +1,85 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "options": {
+    "typeAware": true
+  },
+  "plugins": ["typescript", "unicorn", "oxc", "react", "jsx-a11y", "import"],
+  "categories": {
+    "correctness": "error"
+  },
+  "ignorePatterns": [
+    "app/routeTree.gen.ts",
+    "app/**/*_sql.ts",
+    "app/components/ui/**",
+    "db/seed/**",
+    "app/vite-env.d.ts",
+    "worker-configuration.d.ts",
+    ".wrangler/**",
+    "dist/**"
+  ],
+  "rules": {
+    "typescript/no-floating-promises": "error",
+    "jsx-a11y/no-autofocus": "warn",
+    "jsx-a11y/tabindex-no-positive": "warn",
+    "typescript/no-non-null-assertion": "error",
+    "no-else-return": "warn",
+    "import/no-default-export": "warn",
+    "typescript/no-non-null-asserted-optional-chain": "error",
+    "typescript/no-explicit-any": "error",
+    "react/no-array-index-key": "off",
+    "no-console": ["warn", { "allow": ["error", "warn", "info"] }],
+    "react/jsx-key": "error",
+    "no-unused-vars": [
+      "error",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
+      }
+    ],
+    "no-unused-labels": "error",
+    "no-unreachable": "error",
+    "react/rules-of-hooks": "error",
+    "no-useless-concat": "warn",
+    "no-useless-catch": "warn",
+
+    "no-unsafe-optional-chaining": "off",
+    "jsx-a11y/control-has-associated-label": "off",
+    "jsx-a11y/prefer-tag-over-role": "off",
+    "typescript/unbound-method": "off",
+    "typescript/no-useless-default-assignment": "off"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.test.ts", "**/*.test.tsx"],
+      "rules": {
+        "typescript/no-non-null-assertion": "off"
+      }
+    },
+    {
+      "files": [
+        "setup.ts",
+        "seed.ts",
+        "app/workflows/**/*.ts",
+        "app/agents/**/*.ts",
+        "app/server.ts",
+        "app/shared/logger.ts"
+      ],
+      "rules": {
+        "no-console": "off"
+      }
+    },
+    {
+      "files": ["vite.config.ts", "vitest.config.ts", "app/server.ts"],
+      "rules": {
+        "import/no-default-export": "off"
+      }
+    },
+    {
+      "files": ["app/routes/api/**/*.ts"],
+      "rules": {
+        "react/rules-of-hooks": "off"
+      }
+    }
+  ]
+}

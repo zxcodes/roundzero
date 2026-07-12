@@ -1,11 +1,13 @@
 import type { Subscription } from "@polar-sh/sdk/models/components/subscription";
 import { validateEvent, WebhookVerificationError } from "@polar-sh/sdk/webhooks";
+
 import {
   clearCompanySubscription,
   updateCompanySubscription,
 } from "@/features/companies/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { appEnv } from "@/shared/env.app";
+
 import { trySendSubscriptionWelcomeEmail } from "./services/email";
 import { getPolar } from "./services/polar";
 

@@ -10,6 +10,7 @@ import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link, notFound, redirect, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+
 import { DashboardApplicationDetailSkeleton } from "@/components/route-skeletons";
 import {
   AlertDialog,
@@ -196,7 +197,7 @@ function CandidateApplicationDetailPage() {
     onSuccess: (data) => {
       if (!data?.application?.id) return;
       toast.success("Application withdrawn.");
-      router.invalidate();
+      void router.invalidate();
     },
     onError: () => {
       toast.error("Failed to withdraw application. Please try again.");

@@ -1,4 +1,5 @@
 import type { Sql } from "postgres";
+
 import {
   getApplicationById,
   updateApplicationStatus,

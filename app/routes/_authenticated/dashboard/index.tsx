@@ -1,6 +1,7 @@
 import { Alert02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link, useLoaderData } from "@tanstack/react-router";
+
 import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { CandidateDashboard } from "@/features/dashboard/components/candidate-dashboard";

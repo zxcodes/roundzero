@@ -1,6 +1,7 @@
 import { ArrowRight01Icon, Location01Icon, MoneyBag02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link, useNavigate } from "@tanstack/react-router";
+
 import { Badge } from "@/components/ui/badge";
 import type { EmploymentType, ExperienceLevel, WorkplaceType } from "@/shared/enums";
 import { employmentTypeLabels, experienceLevelLabels, workplaceTypeLabels } from "@/shared/enums";
@@ -72,7 +73,6 @@ export function JobListRow({
           </p>
           {showCompanyName && job.companyName ? (
             linkCompanyToProfile && job.companySlug ? (
-              // biome-ignore lint/a11y/useSemanticElements: can't nest <a> inside parent <Link>
               <span
                 role="link"
                 tabIndex={0}

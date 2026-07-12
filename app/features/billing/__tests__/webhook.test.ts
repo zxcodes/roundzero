@@ -1,7 +1,9 @@
 import { env } from "cloudflare:workers";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { getCompanyByPolarCustomerId } from "@/features/companies/queries/queries_sql";
 import { getTestDb, seedUser } from "@/shared/__tests__/test-utils";
+
 import { handlePolarWebhook } from "../webhook";
 
 const sql = getTestDb();

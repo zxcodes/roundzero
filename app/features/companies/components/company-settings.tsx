@@ -6,9 +6,9 @@ import { useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useId, useState } from "react";
 import { toast } from "sonner";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
@@ -116,7 +116,7 @@ export function CompanySettings({
     setTagInput(e.target.value);
   };
   const onSave = () => {
-    form.handleSubmit();
+    void form.handleSubmit();
   };
   const onDiscard = () => {
     form.reset();

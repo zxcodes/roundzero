@@ -1,6 +1,7 @@
 import { CheckmarkCircle02Icon, Clock01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { differenceInDays } from "date-fns";
+
 import { Badge } from "@/components/ui/badge";
 import { formatDaysLeft } from "@/shared/date";
 

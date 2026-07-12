@@ -1,5 +1,6 @@
-import { env } from "cloudflare:workers";
 import { createOpenRouter, type OpenRouterProvider } from "@openrouter/ai-sdk-provider";
+import { env } from "cloudflare:workers";
+
 import { isProd, isStaging } from "./env.app";
 
 // Prod chains often hit Anthropic/Bedrock first. Schemas passed to Output.object()
@@ -90,7 +91,7 @@ export function getModelChain<T extends Task>(
   task: T,
 ): { model: ModelId<T>; fallbacks: ModelId<T>[] } {
   const chain = MODEL_CHAINS[task][currentEnv()];
-  return { model: chain[0], fallbacks: [...chain.slice(1)] };
+  return { model: chain[0], fallbacks: chain.slice(1) };
 }
 
 export function createChatModel(

@@ -131,6 +131,16 @@ WHERE j.company_id = $1
   AND (j.expires_at IS NULL OR j.expires_at > now())
 ORDER BY j.created_at DESC;
 
+-- name: getOpenJobCompanies :many
+SELECT DISTINCT c.id, c.name
+FROM companies c
+JOIN users u ON u.id = c.owner_id AND u.deleted_at IS NULL
+JOIN jobs j ON j.company_id = c.id
+WHERE j.status = 'open'
+  AND j.archived_at IS NULL
+  AND (j.expires_at IS NULL OR j.expires_at > now())
+ORDER BY c.name;
+
 -- name: getOpenJobsPaginated :many
 SELECT j.*,
        c.name AS company_name,
@@ -147,6 +157,7 @@ WHERE j.status = 'open'
   AND (sqlc.arg('workplace_type')::text = 'all' OR j.workplace_type = sqlc.arg('workplace_type'))
   AND (sqlc.arg('salary_currency')::text = 'all' OR j.salary_currency = sqlc.arg('salary_currency'))
   AND (sqlc.arg('salary_min')::int = 0 OR j.salary_max IS NULL OR j.salary_max >= sqlc.arg('salary_min')::int)
+  AND (sqlc.arg('company_id')::text = 'all' OR j.company_id::text = sqlc.arg('company_id'))
 ORDER BY j.created_at DESC
 LIMIT sqlc.arg('limit')::int OFFSET sqlc.arg('offset')::int;
 
@@ -163,4 +174,53 @@ WHERE j.status = 'open'
   AND (sqlc.arg('experience_level')::text = 'all' OR j.experience_level = sqlc.arg('experience_level'))
   AND (sqlc.arg('workplace_type')::text = 'all' OR j.workplace_type = sqlc.arg('workplace_type'))
   AND (sqlc.arg('salary_currency')::text = 'all' OR j.salary_currency = sqlc.arg('salary_currency'))
-  AND (sqlc.arg('salary_min')::int = 0 OR j.salary_max IS NULL OR j.salary_max >= sqlc.arg('salary_min')::int);
+  AND (sqlc.arg('salary_min')::int = 0 OR j.salary_max IS NULL OR j.salary_max >= sqlc.arg('salary_min')::int)
+  AND (sqlc.arg('company_id')::text = 'all' OR j.company_id::text = sqlc.arg('company_id'));
+
+-- name: getCandidateOpenJobsPaginated :many
+SELECT j.*,
+       c.name AS company_name,
+       c.slug AS company_slug
+FROM jobs j
+JOIN companies c ON c.id = j.company_id
+JOIN users u ON u.id = c.owner_id AND u.deleted_at IS NULL
+WHERE j.status = 'open'
+  AND j.archived_at IS NULL
+  AND (j.expires_at IS NULL OR j.expires_at > now())
+  AND NOT EXISTS (
+    SELECT 1
+    FROM applications a
+    WHERE a.job_id = j.id
+      AND a.candidate_id = sqlc.arg('candidate_id')::uuid
+  )
+  AND (sqlc.arg('search')::text = '' OR j.title ILIKE '%' || sqlc.arg('search') || '%' OR c.name ILIKE '%' || sqlc.arg('search') || '%' OR j.location ILIKE '%' || sqlc.arg('search') || '%')
+  AND (sqlc.arg('employment_type')::text = 'all' OR j.employment_type = sqlc.arg('employment_type'))
+  AND (sqlc.arg('experience_level')::text = 'all' OR j.experience_level = sqlc.arg('experience_level'))
+  AND (sqlc.arg('workplace_type')::text = 'all' OR j.workplace_type = sqlc.arg('workplace_type'))
+  AND (sqlc.arg('salary_currency')::text = 'all' OR j.salary_currency = sqlc.arg('salary_currency'))
+  AND (sqlc.arg('salary_min')::int = 0 OR j.salary_max IS NULL OR j.salary_max >= sqlc.arg('salary_min')::int)
+  AND (sqlc.arg('company_id')::text = 'all' OR j.company_id::text = sqlc.arg('company_id'))
+ORDER BY j.created_at DESC
+LIMIT sqlc.arg('limit')::int OFFSET sqlc.arg('offset')::int;
+
+-- name: countCandidateOpenJobsFiltered :one
+SELECT count(*)::int AS total
+FROM jobs j
+JOIN companies c ON c.id = j.company_id
+JOIN users u ON u.id = c.owner_id AND u.deleted_at IS NULL
+WHERE j.status = 'open'
+  AND j.archived_at IS NULL
+  AND (j.expires_at IS NULL OR j.expires_at > now())
+  AND NOT EXISTS (
+    SELECT 1
+    FROM applications a
+    WHERE a.job_id = j.id
+      AND a.candidate_id = sqlc.arg('candidate_id')::uuid
+  )
+  AND (sqlc.arg('search')::text = '' OR j.title ILIKE '%' || sqlc.arg('search') || '%' OR c.name ILIKE '%' || sqlc.arg('search') || '%' OR j.location ILIKE '%' || sqlc.arg('search') || '%')
+  AND (sqlc.arg('employment_type')::text = 'all' OR j.employment_type = sqlc.arg('employment_type'))
+  AND (sqlc.arg('experience_level')::text = 'all' OR j.experience_level = sqlc.arg('experience_level'))
+  AND (sqlc.arg('workplace_type')::text = 'all' OR j.workplace_type = sqlc.arg('workplace_type'))
+  AND (sqlc.arg('salary_currency')::text = 'all' OR j.salary_currency = sqlc.arg('salary_currency'))
+  AND (sqlc.arg('salary_min')::int = 0 OR j.salary_max IS NULL OR j.salary_max >= sqlc.arg('salary_min')::int)
+  AND (sqlc.arg('company_id')::text = 'all' OR j.company_id::text = sqlc.arg('company_id'));

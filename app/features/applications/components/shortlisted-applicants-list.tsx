@@ -2,6 +2,7 @@ import { Copy01Icon, UserGroupIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
+
 import { RoleAccordionPanel } from "@/components/role-accordion-panel";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +20,7 @@ import { ScorePill } from "@/features/reports/components/score-pill";
 import { getOverallScore } from "@/features/reports/schemas";
 import { formatDateTime } from "@/shared/date";
 import { recommendationSchema } from "@/shared/enums";
+
 import { ShortlistDialog } from "./shortlist-dialog";
 
 type ShortlistedApplicant = Awaited<ReturnType<typeof getShortlistedApplicants>>[number];
@@ -90,7 +92,7 @@ function ShortlistedApplicantRow({ applicant }: { applicant: ShortlistedApplican
   };
 
   const onViewCandidate = () => {
-    router.navigate({
+    void router.navigate({
       to: "/dashboard/applicants/$applicationId",
       params: { applicationId: applicant.id },
     });

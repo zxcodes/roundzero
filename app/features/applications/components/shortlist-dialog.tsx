@@ -7,6 +7,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { type ReactNode, useId, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
+
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -84,7 +85,7 @@ export function ShortlistDialog({
 
   const onFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    form.handleSubmit();
+    void form.handleSubmit();
   };
 
   return (

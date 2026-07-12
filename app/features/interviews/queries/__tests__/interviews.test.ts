@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
+
 import { createApplication } from "@/features/applications/queries/queries_sql";
 import {
   createNotification,
   getNotificationsByUser,
 } from "@/features/notifications/queries/queries_sql";
 import { getTestDb, makeTestResumeKey, seedCompany, seedUser } from "@/shared/__tests__/test-utils";
+
 import {
   completeInterviewAfterVoice,
   createInterview,

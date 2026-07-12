@@ -1,6 +1,7 @@
 import { ArrowRight01Icon, ArrowRight02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+
 import { PublicFooter, PublicHeader } from "@/components/public-layout";
 import {
   Accordion,
@@ -9,7 +10,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-
 import { MarketingPricingSection } from "@/features/marketing/components/pricing-section";
 import { cn } from "@/lib/utils";
 import { buildPageHead, DEFAULT_META_TITLE, HOMEPAGE_META_DESCRIPTION } from "@/shared/seo";

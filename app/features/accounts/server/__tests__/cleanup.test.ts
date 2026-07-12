@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+
 import { listAccountsPendingErasure } from "@/features/accounts/queries/queries_sql";
 import { eraseDeletedAccount } from "@/features/accounts/server/cleanup";
 import { createApplication } from "@/features/applications/queries/queries_sql";

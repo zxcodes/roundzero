@@ -14,6 +14,7 @@ import { Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -242,8 +243,8 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
         return false;
       }
 
-      queryClient.invalidateQueries({ queryKey: ["voice-assessment", interviewId] });
-      queryClient.invalidateQueries({
+      await queryClient.invalidateQueries({ queryKey: ["voice-assessment", interviewId] });
+      await queryClient.invalidateQueries({
         queryKey: ["voice-assessment-transcript", interviewId],
       });
       await router.invalidate();
@@ -287,7 +288,7 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
     }
 
     setCallEnded(true);
-    queryClient.invalidateQueries({ queryKey: ["voice-assessment", interviewId] });
+    void queryClient.invalidateQueries({ queryKey: ["voice-assessment", interviewId] });
   }, [chat.status, clientError, queryClient, interviewId]);
 
   // Webhook-first finalisation: once the call has ended, give ElevenLabs'

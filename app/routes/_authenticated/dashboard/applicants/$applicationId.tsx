@@ -11,6 +11,7 @@ import { createFileRoute, Link, notFound, redirect, useRouter } from "@tanstack/
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
+
 import { DashboardApplicantReviewSkeleton } from "@/components/route-skeletons";
 import {
   AlertDialog,
@@ -25,7 +26,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-
 import {
   Select,
   SelectContent,

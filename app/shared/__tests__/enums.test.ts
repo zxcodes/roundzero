@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import {
   APPLICATION_STATUS_TRANSITIONS,
   type ApplicationStatus,

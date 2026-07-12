@@ -1,6 +1,7 @@
 import { ArrowRight01Icon, UserGroupIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
+
 import { Badge } from "@/components/ui/badge";
 import {
   Empty,

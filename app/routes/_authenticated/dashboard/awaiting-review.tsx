@@ -1,4 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
+
 import { CompanyInboxPageShell } from "@/components/company-inbox-page-shell";
 import { DashboardAwaitingReviewSkeleton } from "@/components/route-skeletons";
 import { AwaitingReviewApplicantsList } from "@/features/dashboard/components/awaiting-review-applicants-list";
