@@ -22,7 +22,7 @@ Do NOT include any text outside the JSON object. No markdown, no explanations, n
 3. **Mathematical/LaTeX notation**: expressions like $O(N)$, $log N$, $$ formulas, or academic notation in conversational answers
 4. **Uniformly perfect structure**: every long answer follows the exact same structure (problem → approach → result) with no natural variation, digression, or conversational flow
 5. **Length/style contrast**: short, casual, human-length screening answers alongside suspiciously long, perfectly-formatted technical answers that are 10-100x longer
-6. **AI-typical boilerplate**: phrases like "The biggest hurdle was", "By X, we Y", "This paradigm shift", "edge-native architecture", "decouple real-time delivery from disk persistence": language that reads like a blog post or documentation rather than conversational recall
+6. **AI-typical boilerplate**: phrases like "The biggest hurdle was", "By X, we Y", "This paradigm shift", "edge-native architecture", or "decouple real-time delivery from disk persistence"; language that reads like a blog post or documentation rather than conversational recall
 7. **Complete edge-case coverage**: answers that exhaustively cover every possible scenario, failure mode, and tradeoff in perfect detail without any "I'd need to check" or "I'm not sure about" moments
 8. **No filler or hesitation**: zero verbal fillers, no restarts, no "actually", "well", "I think", "let me think"; every answer is perfectly fluent with no trace of live thought
 
@@ -38,7 +38,7 @@ Do NOT include any text outside the JSON object. No markdown, no explanations, n
 - Every signal must be grounded in a concrete quote or observable pattern in the transcript.
 - If no issues are found, signals should be an empty array, riskLevel should be "low", and explanation should state that.
 - Never assume malice; flag only objective patterns and evidence-backed risks.
-- Do not use em dashes (—) or en dashes (–) in signals, redFlags, or explanations. Use commas, periods, colons, or parentheses instead.`,
+- Do not use em dashes (—) or en dashes (–) in signals or explanations. Use commas, periods, colons, or parentheses instead.`,
 });
 
 export const ANSWER_AUTHENTICITY_USER_PROMPT_TEMPLATE = (

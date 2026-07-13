@@ -50,9 +50,9 @@ function engineeringChatBilling(input: TranscriptInput): ChatMessage[] {
   return [
     {
       role: "assistant",
-      content: `Hi ${name}, I'm Zero, and I'll be conducting your interview for the ${input.jobTitle} role today. We'll walk through your recent work, a couple of scenarios, and a few logistics questions at the end. This usually takes about 35 minutes. Are you ready to get started?`,
+      content: `Hi ${name}. I'm Zero, and I'll be conducting your interview for the ${input.jobTitle} role today. We'll walk through your recent work, a couple of scenarios, and a few logistics questions at the end. This usually takes about 35 minutes. Are you ready to get started?`,
     },
-    { role: "candidate", content: `Yeah, works for me. I'm in a quiet spot, go ahead.` },
+    { role: "candidate", content: `Yeah, works for me. I'm in a quiet spot; go ahead.` },
     {
       role: "assistant",
       content: `Great. I'd like to start with something concrete from the last year, pick a project where you owned a meaningful chunk of work end-to-end. What was actually broken when you started, and what did you personally ship by the end?`,
@@ -67,11 +67,11 @@ function engineeringChatBilling(input: TranscriptInput): ChatMessage[] {
     },
     {
       role: "candidate",
-      content: `Scope control, honestly. First milestone was read-only shadowing, we wrote events alongside the old code for three weeks, compared totals nightly. Once variance dropped under half a percent, we flipped writes for new customers only. Legacy accounts stayed on the old path another month. I wrote the rollout doc and ran the war room channel during cutover.`,
+      content: `Scope control, honestly. First milestone was read-only shadowing: we wrote events alongside the old code for three weeks, compared totals nightly. Once variance dropped under half a percent, we flipped writes for new customers only. Legacy accounts stayed on the old path another month. I wrote the rollout doc and ran the war room channel during cutover.`,
     },
     {
       role: "assistant",
-      content: `Shadowing before flipping writes is a disciplined approach. Did anything go wrong in production during cutover, even briefly, and if so, how did you handle it in the moment?`,
+      content: `Shadowing before flipping writes is a disciplined approach. Did anything go wrong in production during cutover (even briefly), and if so, how did you handle it in the moment?`,
     },
     {
       role: "candidate",
@@ -79,7 +79,7 @@ function engineeringChatBilling(input: TranscriptInput): ChatMessage[] {
     },
     {
       role: "assistant",
-      content: `Helpful detail on the duplicate events. Stepping back from that incident, how big was the team on this work, and what was yours alone versus shared with others?`,
+      content: `Helpful detail on the duplicate events. Stepping back from that incident: how big was the team on this work, and what was yours alone versus shared with others?`,
     },
     {
       role: "candidate",
@@ -109,7 +109,7 @@ function engineeringChatBilling(input: TranscriptInput): ChatMessage[] {
       role: "candidate",
       content: pick(
         [
-          `Base around $158k, flexible on equity. Two weeks notice, could start mid-month.`,
+          `Base around $158k, flexible on equity. Two weeks notice; could start mid-month.`,
           `Looking $150-165k base. Need three weeks to hand off on-call cleanly.`,
           `Roughly $162k today; modest bump to move. Could start in two weeks.`,
         ],
@@ -123,9 +123,9 @@ function engineeringChatBilling(input: TranscriptInput): ChatMessage[] {
     { role: "candidate", content: `Yes, US citizen.` },
     {
       role: "assistant",
-      content: `That's everything I needed on my end, ${name}. I appreciated how specific you were about the messy parts of the rollout, that's useful signal for the hiring team. They'll follow up on next steps.`,
+      content: `That's everything I needed on my end, ${name}. I appreciated how specific you were about the messy parts of the rollout. That's useful signal for the hiring team. They'll follow up on next steps.`,
     },
-    { role: "candidate", content: `Thanks, happy to go deeper if the team wants a follow-up.` },
+    { role: "candidate", content: `Thanks. Happy to go deeper if the team wants a follow-up.` },
   ];
 }
 
@@ -136,12 +136,12 @@ function engineeringChatFrontendPerf(input: TranscriptInput): ChatMessage[] {
   return [
     {
       role: "assistant",
-      content: `Hi ${name}, I'm Zero, thanks for making time for the ${input.jobTitle} interview. I'll ask about work you've shipped, how you handle tradeoffs, and wrap with a few logistics. Ready when you are.`,
+      content: `Hi ${name}. I'm Zero. Thanks for making time for the ${input.jobTitle} interview. I'll ask about work you've shipped, how you handle tradeoffs, and wrap with a few logistics. Ready when you are.`,
     },
     { role: "candidate", content: `Yep, ready when you are.` },
     {
       role: "assistant",
-      content: `To start, I'd like to hear about a frontend performance problem you chased in production, not a theoretical optimization, but something users or the business actually felt. What was going wrong and how did you find the root cause?`,
+      content: `To start, I'd like to hear about a frontend performance problem you chased in production (not a theoretical optimization), but something users or the business actually felt. What was going wrong and how did you find the root cause?`,
     },
     {
       role: "candidate",
@@ -149,11 +149,11 @@ function engineeringChatFrontendPerf(input: TranscriptInput): ChatMessage[] {
     },
     {
       role: "assistant",
-      content: `A barrel re-export causing that kind of regression is frustratingly common. How did you fix it without pausing feature work for a full rewrite, what shipped first and what moved the number?`,
+      content: `A barrel re-export causing that kind of regression is frustratingly common. How did you fix it without pausing feature work for a full rewrite: what shipped first and what moved the number?`,
     },
     {
       role: "candidate",
-      content: `Lazy routes first, 3.1s. Deferred below-fold widgets with design. Real lift was dynamic chart import plus moving date formatting server-side. Five PRs over two weeks, measured each deploy in SpeedCurve.`,
+      content: `Lazy routes first: 3.1s. Deferred below-fold widgets with design. Real lift was dynamic chart import plus moving date formatting server-side. Five PRs over two weeks, measured each deploy in SpeedCurve.`,
     },
     {
       role: "assistant",
@@ -161,11 +161,11 @@ function engineeringChatFrontendPerf(input: TranscriptInput): ChatMessage[] {
     },
     {
       role: "candidate",
-      content: `Design worried skeleton states would feel janky. We prototyped two variants in Storybook, recorded side-by-side videos, product signed off progressive load. A junior was mid-feature on same layout, I paired so we didn't reintroduce the barrel import.`,
+      content: `Design worried skeleton states would feel janky. We prototyped two variants in Storybook, recorded side-by-side videos, product signed off progressive load. A junior was mid-feature on same layout; I paired so we didn't reintroduce the barrel import.`,
     },
     {
       role: "assistant",
-      content: `On accessibility, where does that show up in your day-to-day workflow, not just as a checklist at the end? Give me a recent example where you caught or fixed something meaningful.`,
+      content: `On accessibility: where does that show up in your day-to-day workflow, not just as a checklist at the end? Give me a recent example where you caught or fixed something meaningful.`,
     },
     {
       role: "candidate",
@@ -173,15 +173,15 @@ function engineeringChatFrontendPerf(input: TranscriptInput): ChatMessage[] {
     },
     {
       role: "assistant",
-      content: `Here's a scenario product teams often raise: they want infinite scroll on a table with 10k rows and the client is already struggling. How would you respond, what would you propose instead and why?`,
+      content: `Here's a scenario product teams often raise: they want infinite scroll on a table with 10k rows and the client is already struggling. How would you respond: what would you propose instead and why?`,
     },
     {
       role: "candidate",
-      content: `Ask what job scroll is doing, usually it's search. Pitch virtualized list with server cursor, cap 200 rendered rows. Full scan is async CSV, not DOM. Had that conversation twice; simpler pattern won both times.`,
+      content: `Ask what job scroll is doing (usually it's search). Pitch virtualized list with server cursor, cap 200 rendered rows. Full scan is async CSV, not DOM. Had that conversation twice; simpler pattern won both times.`,
     },
     {
       role: "assistant",
-      content: `Last couple of logistics, what salary range are you targeting for your next role, and how much notice would you need to give your current employer?`,
+      content: `Last couple of logistics: what salary range are you targeting for your next role, and how much notice would you need to give your current employer?`,
     },
     {
       role: "candidate",
@@ -204,12 +204,12 @@ function engineeringChatOnCall(input: TranscriptInput): ChatMessage[] {
   return [
     {
       role: "assistant",
-      content: `${name}, hi, I'm Zero. For this ${input.jobTitle} conversation I want to understand how you operate when production breaks, not just when features ship cleanly. We'll also touch on API design and a few logistics. Sound good?`,
+      content: `${name}, hi. I'm Zero. For this ${input.jobTitle} conversation I want to understand how you operate when production breaks, not just when features ship cleanly. We'll also touch on API design and a few logistics. Sound good?`,
     },
     { role: "candidate", content: `Yeah, that's most Tuesdays anyway.` },
     {
       role: "assistant",
-      content: `Fair enough. Walk me through an incident you led, meaning you were the one coordinating response, not just joining someone else's bridge. What broke, and what did you do in the first thirty minutes?`,
+      content: `Fair enough. Walk me through an incident you led (meaning you were the one coordinating response, not just joining someone else's bridge). What broke, and what did you do in the first thirty minutes?`,
     },
     {
       role: "candidate",
@@ -225,7 +225,7 @@ function engineeringChatOnCall(input: TranscriptInput): ChatMessage[] {
     },
     {
       role: "assistant",
-      content: `Solid comms discipline on the bridge. Looking back at that incident now, what would you do differently if you could run it again?`,
+      content: `Solid comms discipline on the bridge. Looking back at that incident now: what would you do differently if you could run it again?`,
     },
     {
       role: "candidate",
@@ -233,7 +233,7 @@ function engineeringChatOnCall(input: TranscriptInput): ChatMessage[] {
     },
     {
       role: "assistant",
-      content: `Different angle, when you're designing APIs that other internal teams depend on, what conventions or guardrails do you put in place so consumers aren't surprised by changes?`,
+      content: `Different angle: when you're designing APIs that other internal teams depend on, what conventions or guardrails do you put in place so consumers aren't surprised by changes?`,
     },
     {
       role: "candidate",
@@ -241,15 +241,15 @@ function engineeringChatOnCall(input: TranscriptInput): ChatMessage[] {
     },
     {
       role: "assistant",
-      content: `Wrapping up, what are your compensation expectations for this role, and what notice period would you need before you could start?`,
+      content: `Wrapping up: what are your compensation expectations for this role, and what notice period would you need before you could start?`,
     },
     {
       role: "candidate",
-      content: `$155k floor; ideal $165-170k. Four weeks notice, tech lead on migration, could negotiate if timing's urgent.`,
+      content: `$155k floor; ideal $165-170k. Four weeks notice (tech lead on migration); could negotiate if timing's urgent.`,
     },
     {
       role: "assistant",
-      content: `Appreciate the honesty on the replica flag, that kind of self-awareness is useful signal. We'll follow up soon, ${name}.`,
+      content: `Appreciate the honesty on the replica flag. That kind of self-awareness is useful signal. We'll follow up soon, ${name}.`,
     },
   ];
 }
@@ -261,12 +261,12 @@ function designChatResearch(input: TranscriptInput): ChatMessage[] {
   return [
     {
       role: "assistant",
-      content: `Hi ${name}, I'm Zero, I'll be interviewing you for the ${input.jobTitle} position today. I want to understand how you move from research through shipped UI, including how you handle disagreement and tradeoffs with PM and engineering. We can reference your portfolio if helpful.`,
+      content: `Hi ${name}. I'm Zero, and I'll be interviewing you for the ${input.jobTitle} position today. I want to understand how you move from research through shipped UI, including how you handle disagreement and tradeoffs with PM and engineering. We can reference your portfolio if helpful.`,
     },
-    { role: "candidate", content: `Ready, portfolio's open if you want a specific file.` },
+    { role: "candidate", content: `Ready; portfolio's open if you want a specific file.` },
     {
       role: "assistant",
-      content: `Perfect. To start, pick a project where user research actually changed the direction of the work, not just validated a decision you'd already made. What were stakeholders assuming, and what did you learn that shifted the design?`,
+      content: `Perfect. To start, pick a project where user research actually changed the direction of the work (not just validated a decision you'd already made). What were stakeholders assuming, and what did you learn that shifted the design?`,
     },
     {
       role: "candidate",
@@ -298,7 +298,7 @@ function designChatResearch(input: TranscriptInput): ChatMessage[] {
     },
     {
       role: "assistant",
-      content: `Makes sense to ship pragmatically and log the rest. When you're handing off to engineers, what does a good handoff look like for you, what do you include beyond the Figma file itself?`,
+      content: `Makes sense to ship pragmatically and log the rest. When you're handing off to engineers, what does a good handoff look like for you: what do you include beyond the Figma file itself?`,
     },
     {
       role: "candidate",
@@ -306,7 +306,7 @@ function designChatResearch(input: TranscriptInput): ChatMessage[] {
     },
     {
       role: "assistant",
-      content: `A couple of logistics to close, what salary range are you looking for in your next role, and how much notice would you need to give before starting?`,
+      content: `A couple of logistics to close: what salary range are you looking for in your next role, and how much notice would you need to give before starting?`,
     },
     { role: "candidate", content: `$125-140k depending on band. Two weeks notice.` },
     {
@@ -323,7 +323,7 @@ function dataChatPipeline(input: TranscriptInput): ChatMessage[] {
   return [
     {
       role: "assistant",
-      content: `Hey ${name}, I'm Zero, thanks for joining the ${input.jobTitle} interview. I'd like to hear how you build and operate data pipelines in production, especially when upstream data goes wrong. We'll also cover how you balance speed with correctness.`,
+      content: `Hey ${name}. I'm Zero. Thanks for joining the ${input.jobTitle} interview. I'd like to hear how you build and operate data pipelines in production, especially when upstream data goes wrong. We'll also cover how you balance speed with correctness.`,
     },
     { role: "candidate", content: `Good, the going wrong part is where you learn.` },
     {
@@ -360,7 +360,7 @@ function dataChatPipeline(input: TranscriptInput): ChatMessage[] {
     },
     {
       role: "assistant",
-      content: `Last few logistics, what base salary range are you targeting, and what notice period would you need before you could start a new role?`,
+      content: `Last few logistics: what base salary range are you targeting, and what notice period would you need before you could start a new role?`,
     },
     {
       role: "candidate",
@@ -368,7 +368,7 @@ function dataChatPipeline(input: TranscriptInput): ChatMessage[] {
     },
     {
       role: "assistant",
-      content: `Appreciate the detail on the null-rate incident, ${name}, that's the kind of operational maturity we look for. The team will follow up with next steps.`,
+      content: `Appreciate the detail on the null-rate incident, ${name}. That's the kind of operational maturity we look for. The team will follow up with next steps.`,
     },
   ];
 }
@@ -385,7 +385,7 @@ function productChatExperiment(input: TranscriptInput): ChatMessage[] {
     { role: "candidate", content: `I've got a failed one, probably more instructive.` },
     {
       role: "assistant",
-      content: `Let's start there then. Tell me about an experiment you ran that didn't pan out, what hypothesis were you testing, what did the data actually show, and what did you learn?`,
+      content: `Let's start there then. Tell me about an experiment you ran that didn't pan out: what hypothesis were you testing, what did the data actually show, and what did you learn?`,
     },
     {
       role: "candidate",
@@ -405,7 +405,7 @@ function productChatExperiment(input: TranscriptInput): ChatMessage[] {
     },
     {
       role: "candidate",
-      content: `Slice to learning milestone. For experiments I want power calc upfront, I'll cut scope before we fake significance. Had eng lead teach me SQL joins so I'm not filing blind tickets.`,
+      content: `Slice to learning milestone. For experiments I want power calc upfront. I'll cut scope before we fake significance. Had eng lead teach me SQL joins so I'm not filing blind tickets.`,
     },
     {
       role: "assistant",
@@ -417,7 +417,7 @@ function productChatExperiment(input: TranscriptInput): ChatMessage[] {
     },
     {
       role: "assistant",
-      content: `To close out, what compensation range are you looking for, and what's your earliest realistic start date?`,
+      content: `To close out: what compensation range are you looking for, and what's your earliest realistic start date?`,
     },
     {
       role: "candidate",
@@ -437,7 +437,7 @@ function defaultChatGeneral(input: TranscriptInput): ChatMessage[] {
   return [
     {
       role: "assistant",
-      content: `Hi ${name}, I'm Zero. Today we'll talk through your fit for the ${input.jobTitle} role, recent work, how you handle feedback and tradeoffs, and a few logistics questions toward the end.`,
+      content: `Hi ${name}. I'm Zero. Today we'll talk through your fit for the ${input.jobTitle} role, recent work, how you handle feedback and tradeoffs, and a few logistics questions toward the end.`,
     },
     { role: "candidate", content: `Sounds good.` },
     {
@@ -446,11 +446,11 @@ function defaultChatGeneral(input: TranscriptInput): ChatMessage[] {
     },
     {
       role: "candidate",
-      content: `Honestly the problem space, hiring workflows are messy for both sides. At ${co} I saw recruiters drowning in unstructured notes while candidates ghosted because feedback loops were slow. RoundZero's angle on structured eval before human rounds maps to what I think should exist.`,
+      content: `Honestly, the problem space: hiring workflows are messy for both sides. At ${co} I saw recruiters drowning in unstructured notes while candidates ghosted because feedback loops were slow. RoundZero's angle on structured eval before human rounds maps to what I think should exist.`,
     },
     {
       role: "assistant",
-      content: `That's helpful context on why the problem resonates. What's a piece of recent work you're proud of, something where you can point to a concrete outcome, not just activity?`,
+      content: `That's helpful context on why the problem resonates. What's a piece of recent work you're proud of (something where you can point to a concrete outcome, not just activity)?`,
     },
     {
       role: "candidate",
@@ -458,15 +458,15 @@ function defaultChatGeneral(input: TranscriptInput): ChatMessage[] {
     },
     {
       role: "assistant",
-      content: `Nine days to four is a meaningful shift for recruiters. Tell me about the hardest piece of feedback you've received from a manager or peer, what was it, and what did you change afterward?`,
+      content: `Nine days to four is a meaningful shift for recruiters. Tell me about the hardest piece of feedback you've received from a manager or peer: what was it, and what did you change afterward?`,
     },
     {
       role: "candidate",
-      content: `Manager said I over-document and slow decisions. Fair, I now timebox specs to two pages and explicit open questions. Still document, but decision log instead of novel.`,
+      content: `Manager said I over-document and slow decisions. Fair. I now timebox specs to two pages and explicit open questions. Still document, but decision log instead of novel.`,
     },
     {
       role: "assistant",
-      content: `Last couple of questions, what salary range are you targeting, and how much notice would you need before starting a new role?`,
+      content: `Last couple of questions: what salary range are you targeting, and how much notice would you need before starting a new role?`,
     },
     {
       role: "candidate",
@@ -505,27 +505,27 @@ function voiceEngineeringStakeholder(input: TranscriptInput): ChatMessage[] {
     },
     {
       role: "assistant",
-      content: `That's a reasonable framing. Now they push back and say something like "Can't we just patch it after launch?", how do you respond without sounding like you're blocking the business?`,
+      content: `That's a reasonable framing. Now they push back and say something like "Can't we just patch it after launch?" How do you respond without sounding like you're blocking the business?`,
     },
     {
       role: "candidate",
-      content: `Yeah, that's common. I'd acknowledge the business pressure, then separate patch-later for cosmetic stuff from money-moving paths. If they still want to ship, I'd ask for explicit sign-off on the risk and make sure support has a script, I'm not passive-aggressive about it, but I want the tradeoff on record.`,
+      content: `Yeah, that's common. I'd acknowledge the business pressure, then separate patch-later for cosmetic stuff from money-moving paths. If they still want to ship, I'd ask for explicit sign-off on the risk and make sure support has a script. I'm not passive-aggressive about it, but I want the tradeoff on record.`,
     },
     {
       role: "assistant",
-      content: `Good. One more thing, when they ask for more technical detail than the VP needs, how do you keep the conversation concise without being dismissive?`,
+      content: `Good. One more thing: when they ask for more technical detail than the VP needs, how do you keep the conversation concise without being dismissive?`,
     },
     {
       role: "candidate",
-      content: `One layer down, "we had two workers that could process the same event", then pause and ask if they want implementation or customer comms next. Usually they want customer comms.`,
+      content: `One layer down: "we had two workers that could process the same event", then pause and ask if they want implementation or customer comms next. Usually they want customer comms.`,
     },
     {
       role: "assistant",
-      content: `Last question on tone, if you're personally frustrated about the delay too, how do you make sure that doesn't leak into how you sound on the call?`,
+      content: `Last question on tone: if you're personally frustrated about the delay too, how do you make sure that doesn't leak into how you sound on the call?`,
     },
     {
       role: "candidate",
-      content: `I try not to vent upward. If I'm frustrated, it's usually with process gaps on our side, I'll say "we should've caught this in checklist X" instead of blaming individuals. VP doesn't need my standup drama.`,
+      content: `I try not to vent upward. If I'm frustrated, it's usually with process gaps on our side. I'll say "we should've caught this in checklist X" instead of blaming individuals. VP doesn't need my standup drama.`,
     },
     {
       role: "assistant",
@@ -560,7 +560,7 @@ function voiceDesignCritique(input: TranscriptInput): ChatMessage[] {
     },
     {
       role: "candidate",
-      content: `I anchor on user moment, "they just finished signup, they're tired", show before/after thumbnail. Avoid saying "visual hierarchy" to sales; say "they see the next step first."`,
+      content: `I anchor on user moment: "they just finished signup, they're tired", show before/after thumbnail. Avoid saying "visual hierarchy" to sales; say "they see the next step first."`,
     },
     {
       role: "assistant",
@@ -576,7 +576,7 @@ function voiceDataIncident(input: TranscriptInput): ChatMessage[] {
   return [
     {
       role: "assistant",
-      content: `This is the voice check for ${input.jobTitle}. Imagine finance Slacks you at 4pm on a Thursday saying the numbers in the executive dashboard look wrong. Walk me through your first five minutes, what do you do before you reply?`,
+      content: `This is the voice check for ${input.jobTitle}. Imagine finance Slacks you at 4pm on a Thursday saying the numbers in the executive dashboard look wrong. Walk me through your first five minutes: what do you do before you reply?`,
     },
     {
       role: "candidate",
@@ -584,11 +584,11 @@ function voiceDataIncident(input: TranscriptInput): ChatMessage[] {
     },
     {
       role: "assistant",
-      content: `Good instinct not to speculate publicly. Let's say freshness looks fine but the transformed numbers are genuinely wrong, what's your next move for communication and coordination?`,
+      content: `Good instinct not to speculate publicly. Let's say freshness looks fine but the transformed numbers are genuinely wrong: what's your next move for communication and coordination?`,
     },
     {
       role: "candidate",
-      content: `Post in channel: impacted dashboards, not impacted systems of record, ETA for fix or rollback. Page eng if pipeline's broken, own comms if it's transform logic. Finance gets a one-pager after, they hate threads.`,
+      content: `Post in channel: impacted dashboards, not impacted systems of record, ETA for fix or rollback. Page eng if pipeline's broken, own comms if it's transform logic. Finance gets a one-pager after; they hate threads.`,
     },
     {
       role: "assistant",
@@ -615,7 +615,7 @@ function voiceProductNo(input: TranscriptInput): ChatMessage[] {
     },
     {
       role: "candidate",
-      content: `I'd bring the retention cohort chart and the request side by side, not to win an argument, to align on goal. Say something like: "If the goal is Q3 retention, this feature touches users who already stay; the drop-off is week-one setup. I recommend we swap priority unless there's a deal blocker I'm missing."`,
+      content: `I'd bring the retention cohort chart and the request side by side (not to win an argument, to align on goal). Say something like: "If the goal is Q3 retention, this feature touches users who already stay; the drop-off is week-one setup. I recommend we swap priority unless there's a deal blocker I'm missing."`,
     },
     {
       role: "assistant",
@@ -631,7 +631,7 @@ function voiceProductNo(input: TranscriptInput): ChatMessage[] {
     },
     {
       role: "candidate",
-      content: `Offer two paths with dates. "Ship thin version Friday, retention project starts Monday", they pick, I don't just say no.`,
+      content: `Offer two paths with dates. "Ship thin version Friday, retention project starts Monday"; they pick. I don't just say no.`,
     },
     {
       role: "assistant",
