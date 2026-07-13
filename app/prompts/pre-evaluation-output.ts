@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-/** LLM-safe — see `app/shared/llm-schema.ts`. Scores normalized via `normalizeCandidateScoreValue()` after generation. */
+/** LLM-safe, see `app/shared/llm-schema.ts`. Scores normalized via `normalizeCandidateScoreValue()` after generation. */
 export const preEvaluationGenerationSchema = z
   .object({
     score: z.number(),
@@ -10,7 +10,7 @@ export const preEvaluationGenerationSchema = z
   })
   .strict();
 
-/** LLM-safe — see `app/shared/llm-schema.ts`. Scores normalized via `normalizeCandidateScoreValue()` after generation. */
+/** LLM-safe, see `app/shared/llm-schema.ts`. Scores normalized via `normalizeCandidateScoreValue()` after generation. */
 export const slopDetectionGenerationSchema = z
   .object({
     consistencyScore: z.number(),
