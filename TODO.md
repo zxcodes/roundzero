@@ -1,5 +1,6 @@
 ## TODO
 
+- check how batch config is working and if it's respecting the no of reports a company selects for a job application. also check if the batch stops after reaching the target size.
 - think about what happens when there are no top reports in a batch? Let's say all reports are maybe under 3-10. So do we re assign scores to them so the #3 can be #1 or something? Bc without it companies cannot take action. Or should they simply wait for the next batch? Also check if this system is ever going to rank candidates with a 9-10 score.
 - revert batch config for prod & remove early access badge on landing.
 
