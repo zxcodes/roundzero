@@ -9,7 +9,7 @@ export const REPORT_AUDIT_LIMITS = {
 
 const { MAX_STRENGTHS, MAX_WEAKNESSES, MAX_INSIGHTS, MAX_EVIDENCE } = REPORT_AUDIT_LIMITS;
 
-/** LLM audit schema — prose only; scores/recommendation owned by deterministic refine. */
+/** LLM audit schema, prose only; scores/recommendation owned by deterministic refine. */
 export const reportAuditGenerationSchema = z
   .object({
     summary: z.string(),

@@ -84,7 +84,7 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
 
       if (!voiceCompleted) {
         log.warn(
-          `Voice assessment not completed (status=${voiceAssessmentStatus ?? "missing"}) — report withheld`,
+          `Voice assessment not completed (status=${voiceAssessmentStatus ?? "missing"}), report withheld`,
         );
         await step.do(
           "mark_application_evaluation_failed_voice_not_completed",
@@ -175,7 +175,7 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
                 disposeRpcResource(instance);
               }
             } catch {
-              // Batch may have already timed out and released — this is fine
+              // Batch may have already timed out and released, this is fine
               log.info(`Batch ${batchId} already released, no signal needed`);
             }
           });
@@ -183,7 +183,7 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
           log.info(`Report held in batch ${batchId}, waiting for remaining candidates`);
         }
       } else {
-        // No batch — this is a non-batched report (legacy or manual). Send individual notification.
+        // No batch, this is a non-batched report (legacy or manual). Send individual notification.
         const deliveries = await step.do(
           "notify_report_ready",
           notifyReportReady(interviewData, finalReport, db, log),

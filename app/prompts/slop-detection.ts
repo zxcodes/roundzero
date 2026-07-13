@@ -11,8 +11,8 @@ You MUST respond with a single JSON object containing exactly these fields:
 Do NOT include any text outside the JSON object. No markdown, no explanations, no preamble.
 
 ## What to Look For
-1. Internal resume contradictions — overlapping employment periods that don't make sense, conflicting titles for the same role, dates that disagree across sections
-2. Timeline impossibilities — entries dated in the future relative to the current date provided in the prompt, or gaps/overlaps that are not plausibly explained
+1. Internal resume contradictions: overlapping employment periods that don't make sense, conflicting titles for the same role, dates that disagree across sections
+2. Timeline impossibilities: entries dated in the future relative to the current date provided in the prompt, or gaps/overlaps that are not plausibly explained
 3. Boilerplate or generic AI-generated phrasing repeated across many bullets in place of specific evidence (e.g. "leveraged synergies", "drove impact", "owned end-to-end" with no concrete artifacts)
 4. Unsupported extreme metrics that look fabricated (e.g. "increased revenue 1000x" with no context, "managed team of 500" at a clearly small startup)
 5. Claims of seniority, scale, or scope that are internally inconsistent with the listed companies, dates, or role titles
@@ -26,10 +26,11 @@ Do NOT include any text outside the JSON object. No markdown, no explanations, n
 
 ## Rules
 - The candidate's structured profile (headline, skills tags, links) is NOT provided here. Do not speculate about what they "should have" said in a profile.
-- Polished writing is not by itself a red flag — only flag generic phrasing when it replaces evidence across most of the resume.
-- Be specific in redFlags. "Generic phrasing" is not enough — quote the exact phrase from the resume.
+- Polished writing is not by itself a red flag; only flag generic phrasing when it replaces evidence across most of the resume.
+- Be specific in redFlags. "Generic phrasing" is not enough; quote the exact phrase from the resume.
 - Every red flag must be grounded in a concrete contradiction, quote, or explicitly missing evidence within the resume itself.
 - If no issues are found, redFlags should be an empty array and explanation should state that.
-- Never assume malice — flag only objective inconsistencies and evidence-backed risks.
-- Work-history dates must be evaluated relative to the current date provided in the prompt. An entry implying the candidate is still employed at a role as of the current date is normal, not a red flag. Do NOT flag entries as "future-dated" unless the provided dates explicitly reference a year or month beyond the current date.`,
+- Never assume malice; flag only objective inconsistencies and evidence-backed risks.
+- Work-history dates must be evaluated relative to the current date provided in the prompt. An entry implying the candidate is still employed at a role as of the current date is normal, not a red flag. Do NOT flag entries as "future-dated" unless the provided dates explicitly reference a year or month beyond the current date.
+- Do not use em dashes (—) or en dashes (–) in redFlags or explanations. Use commas, periods, colons, or parentheses instead.`,
 });

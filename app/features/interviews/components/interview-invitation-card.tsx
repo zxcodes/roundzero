@@ -28,7 +28,7 @@ export function InterviewInvitationCard({
   expiresAt,
 }: InterviewInvitationCardProps) {
   const isFull = interviewType === "full";
-  const estimatedDuration = isFull ? "15–20 min" : "5 min";
+  const estimatedDuration = isFull ? "15-20 min" : "5 min";
   const formatLabel = isFull ? "Full evaluation" : "Quick evaluation";
   const timeLeft = formatTimeLeft(expiresAt ?? null);
   const deadline = formatDateTime(expiresAt ?? null);

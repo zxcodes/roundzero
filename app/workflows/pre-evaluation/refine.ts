@@ -12,7 +12,7 @@
  *   - drop `redFlags` that have no anchor in the resume text
  *   - clamp/round scores
  *
- * No second LLM call is needed at this stage — pre-eval volume is high and
+ * No second LLM call is needed at this stage, pre-eval volume is high and
  * cheap-only refinement is the right tradeoff. The deeper LLM audit happens
  * later in post-evaluation when there is a transcript to audit against.
  */
@@ -54,7 +54,7 @@ export function refinePreEvaluationResult(
   });
 
   // Drop items that look already satisfied by the resume. We only do this when
-  // the model's signal is non-empty — never invent "missing" items.
+  // the model's signal is non-empty, never invent "missing" items.
   const filtered = cleaned.filter((req) => {
     // If the requirement text overlaps strongly with the resume, the model
     // probably hallucinated a gap. Keep it only when the resume does NOT
@@ -118,7 +118,7 @@ export function refineSlopCheck(
     explanationRaw.length >= 12
       ? explanationRaw.slice(0, MAX_EXPLANATION_CHARS)
       : grounded.length > 0
-        ? "Authenticity concerns flagged — see redFlags for grounded examples."
+        ? "Authenticity concerns flagged; see redFlags for grounded examples."
         : "No authenticity concerns detected.";
 
   // Cross-field consistency enforcement: if no grounded red flags remain and

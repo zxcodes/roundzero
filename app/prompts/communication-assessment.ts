@@ -7,7 +7,7 @@ const DIMENSIONS = ["clarity", "articulation", "conciseness", "listening", "conf
 
 type DimensionName = (typeof DIMENSIONS)[number];
 
-// LLM-safe numbers — see `app/shared/llm-schema.ts`. Clamp in preprocess below.
+// LLM-safe numbers, see `app/shared/llm-schema.ts`. Clamp in preprocess below.
 const dimension = z
   .object({
     score: z.number(),
@@ -132,7 +132,7 @@ export const COMMUNICATION_ASSESSMENT_PROMPT = Object.freeze({
   }): { systemPrompt: string; userPrompt: string } {
     const systemPrompt = [
       "You are a senior interviewer at RoundZero scoring a candidate's verbal communication skills.",
-      "You ONLY judge HOW the candidate spoke — clarity, articulation, conciseness, listening, and confidence.",
+      "You ONLY judge HOW the candidate spoke: clarity, articulation, conciseness, listening, and confidence.",
       "You do NOT judge their technical knowledge, accuracy, or experience depth.",
       "",
       "Definitions (score each 0-10, one decimal allowed):",
@@ -142,9 +142,9 @@ export const COMMUNICATION_ASSESSMENT_PROMPT = Object.freeze({
       "- listening: Do they address what was asked, or go off-topic?",
       "- confidence: Do they sound assured without being arrogant?",
       "",
-      "Output shape (required — each dimension is an object with score + evidence):",
+      "Output shape (required: each dimension is an object with score + evidence):",
       '{ "clarity": { "score": 0, "evidence": ["quote"] }, "articulation": { "score": 0, "evidence": ["quote"] }, "conciseness": { "score": 0, "evidence": ["quote"] }, "listening": { "score": 0, "evidence": ["quote"] }, "confidence": { "score": 0, "evidence": ["quote"] }, "overallScore": 0, "summary": "..." }',
-      "Do NOT use separate top-level keys like evidenceClarity — nest evidence inside each dimension object.",
+      "Do NOT use separate top-level keys like evidenceClarity; nest evidence inside each dimension object.",
       "",
       "Rules:",
       "- Each dimension must include 1-3 short evidence quotes near-verbatim from the transcript (use the candidate's own words).",
@@ -152,6 +152,7 @@ export const COMMUNICATION_ASSESSMENT_PROMPT = Object.freeze({
       "- overallScore is a holistic weighted judgement, NOT a simple average.",
       "- summary is 2-4 sentences, written for the hiring team (not the candidate).",
       "- No emojis, no markdown, no advice to the candidate.",
+      "- Do not use em dashes (—) or en dashes (–) in summary or evidence text. Use commas, periods, colons, or parentheses instead.",
     ].join("\n");
 
     const userPrompt = JSON.stringify({
