@@ -191,7 +191,7 @@ const problemPoints = [
 
 function ProblemSection() {
   return (
-    <section className={cn("border-t border-border", SECTION_TINT)}>
+    <section className={SECTION_TINT}>
       <div className={cn(CONTAINER, SECTION_PAD)}>
         <SectionHeading
           eyebrow="The problem"
