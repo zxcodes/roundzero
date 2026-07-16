@@ -1,4 +1,4 @@
-import { env, WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers";
+import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers";
 
 import { updateApplicationStatus } from "@/features/applications/queries/queries_sql";
 import { isBatchFullyResolved } from "@/features/batches/server/release";
@@ -17,9 +17,6 @@ import {
   generateReport,
   loadExistingReport,
   loadVoiceAssessment,
-  markApplicationEvaluated,
-  markApplicationEvaluatedExisting,
-  notifyReportReady,
   type PostEvaluationPayload,
   persistReport,
   readInterviewData,
@@ -32,6 +29,7 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
     const log = createWorkflowLogger("post-evaluation", interviewId);
     const db = getDb();
     let applicationId: string | null = null;
+    let reportPersistenceCommitted = false;
 
     try {
       const existingReport = await step.do(
@@ -40,12 +38,52 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
       );
 
       if (existingReport) {
-        await step.do(
-          "mark_application_evaluated_existing_report",
-          markApplicationEvaluatedExisting(interviewId, db),
+        const interview = await step.do("read_existing_report_interview", async () =>
+          getInterviewContextById(db, { id: interviewId }),
         );
+        if (!interview) throw new Error(`Interview not found: ${interviewId}`);
+        applicationId = interview.applicationId;
 
-        log.info(`Report already exists, skipping: ${existingReport.id}`);
+        const persistence = await step.do(
+          "reconcile_existing_report",
+          persistReport(interviewId, { interview }, null, null, db, log),
+        );
+        reportPersistenceCommitted = true;
+
+        if (persistence.kind === "held") {
+          const batchId = persistence.batchId;
+          const fullyResolved = await step.do("check_batch_fully_resolved_existing", () =>
+            isBatchFullyResolved(db, batchId),
+          );
+          if (fullyResolved) {
+            await step.do("signal_batch_complete_existing", async () => {
+              const instance = await this.env.BATCH_ORCHESTRATION.get(batchId);
+              try {
+                await instance.sendEvent({
+                  type: "batch-reports-complete",
+                  payload: { batchId: persistence.batchId },
+                });
+              } finally {
+                disposeRpcResource(instance);
+              }
+            });
+          }
+        }
+
+        if (persistence.kind !== "held") {
+          await step.do(
+            "send_existing_report_ready_email",
+            sendReportReadyEmail(
+              { interview },
+              persistence.notificationDeliveries,
+              persistence.report,
+              db,
+              log,
+            ),
+          );
+        }
+
+        log.info(`Existing report reconciled: ${existingReport.id}`);
         return { interviewId, reportId: existingReport.id, status: "already_exists" as const };
       }
 
@@ -84,7 +122,7 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
 
       if (!voiceCompleted) {
         log.warn(
-          `Voice assessment not completed (status=${voiceAssessmentStatus ?? "missing"}) — report withheld`,
+          `Voice assessment not completed (status=${voiceAssessmentStatus ?? "missing"}), report withheld`,
         );
         await step.do(
           "mark_application_evaluation_failed_voice_not_completed",
@@ -147,59 +185,53 @@ export class PostEvaluationWorkflow extends WorkflowEntrypoint<Env, PostEvaluati
         "persist_report",
         persistReport(interviewId, interviewData, finalReport, model, db, log),
       );
-
-      await step.do("mark_application_evaluated_held", markApplicationEvaluated(interviewData, db));
+      reportPersistenceCommitted = true;
 
       // Check if this interview belongs to a batch and if the batch is fully resolved
-      const batchId = await step.do("check_batch_completion", async () => {
-        const interview = await getInterviewContextById(db, { id: interviewId });
-        return interview?.batchId ?? null;
-      });
+      const batchId = report.batchId;
 
-      if (batchId) {
+      if (batchId && report.kind === "held") {
         const fullyResolved = await step.do("check_batch_fully_resolved", async () => {
           return isBatchFullyResolved(db, batchId);
         });
 
         if (fullyResolved) {
           await step.do("signal_batch_complete", async () => {
+            const instance = await this.env.BATCH_ORCHESTRATION.get(batchId);
             try {
-              const instance = await env.BATCH_ORCHESTRATION.get(batchId);
-              try {
-                await instance.sendEvent({
-                  type: "batch-reports-complete",
-                  payload: { batchId },
-                });
-                log.info(`Sent early completion signal to batch ${batchId}`);
-              } finally {
-                disposeRpcResource(instance);
-              }
-            } catch {
-              // Batch may have already timed out and released — this is fine
-              log.info(`Batch ${batchId} already released, no signal needed`);
+              await instance.sendEvent({
+                type: "batch-reports-complete",
+                payload: { batchId },
+              });
+              log.info(`Sent early completion signal to batch ${batchId}`);
+            } finally {
+              disposeRpcResource(instance);
             }
           });
         } else {
           log.info(`Report held in batch ${batchId}, waiting for remaining candidates`);
         }
-      } else {
-        // No batch — this is a non-batched report (legacy or manual). Send individual notification.
-        const deliveries = await step.do(
-          "notify_report_ready",
-          notifyReportReady(interviewData, finalReport, db, log),
-        );
+      }
 
+      if (report.kind !== "held") {
         await step.do(
           "send_report_ready_email",
-          sendReportReadyEmail(interviewData, deliveries, finalReport, db, log),
+          sendReportReadyEmail(interviewData, report.notificationDeliveries, finalReport, db, log),
         );
       }
 
-      log.info(`Post-evaluation complete: ${report.id}`);
+      log.info(`Post-evaluation complete: ${report.report.id}`);
 
-      return { interviewId, reportId: report.id, status: "created" as const };
+      return { interviewId, reportId: report.report.id, status: "created" as const };
     } catch (error) {
-      log.error("Workflow failed, marking application as evaluation_failed", error);
+      if (reportPersistenceCommitted) {
+        log.error("Post-persistence side effect failed; preserving evaluated status", error);
+        throw error;
+      }
+      log.error(
+        "Workflow failed before report persistence, marking application as evaluation_failed",
+        error,
+      );
       await step.do(
         "mark_evaluation_failed",
         { retries: { limit: 5, delay: "5 seconds", backoff: "exponential" } },

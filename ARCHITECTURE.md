@@ -280,6 +280,7 @@ Source of truth:
   - `resume_key`
   - `metadata` profile snapshot
   - lifecycle status
+  - `queued_at`, set only while the application is `queued_for_batch`
 
 Current application statuses:
 
@@ -314,6 +315,7 @@ Architecturally:
 #### `job_batches`
 
 - groups interviews into ranked batch releases
+- a partial unique index permits at most one `forming` or `active` batch per job
 - stores:
   - `status` (`forming`, `active`, `released`)
   - `target_size`
@@ -322,6 +324,7 @@ Architecturally:
 #### `interviews`
 
 - links applications to interview sessions
+- unique per application; expired/cancelled rows are reset for a later attempt instead of inserting a second row
 - stores:
   - `type` (currently `full` in active flows)
   - `status` (`pending`, `in_progress`, `awaiting_voice`, `completed`, `expired`, `cancelled`)
@@ -485,6 +488,7 @@ Notifications are durable in-app records first, with Cloudflare Email Service as
 - `read_at`
 - email delivery status/error/attempt timestamps
 - provider message id
+- optional `dedupe_key`; `(user_id, type, dedupe_key)` is unique when present
 - `created_at`
 
 ### Supported notification types in code
@@ -538,7 +542,7 @@ Batch-oriented evaluation adds:
 - `evaluated_held` until release
 - batch release and backfill logic
 
-`final_report_target` controls how many reports a company should receive per job. The per-job value is clamped to the company's plan limit at create/edit time (see §13). Delivery is batch-aware rather than purely per-candidate.
+`final_report_target` caps delivered plus reserved reports for a job. A pending, in-progress, awaiting-voice, or completed interview reserves one slot until its report is released or the unfinished work is conditionally cancelled/expired. Waitlisted applications reserve nothing. Targets are bounded by the plan when created, published, or increased and cannot decrease; a plan downgrade does not invalidate existing commitments.
 
 ---
 
@@ -563,19 +567,19 @@ Paid features require `hasActiveSubscription()` — plan is not `free` and statu
 
 Gated capabilities:
 
-| Entitlement       | Rule                                                                    |
-| ----------------- | ----------------------------------------------------------------------- |
-| `jobs.open`       | `open` jobs count toward limit; drafts never consume a slot             |
-| `reports` per job | `final_report_target` default = plan limit; clamped to `1..perJobLimit` |
-| `team.invite`     | non-owner members + pending invites count toward limit                  |
-| `team.accept`     | gated on non-owner member count (owner excluded)                        |
-| `aiJobCreation`   | paid plans only                                                         |
+| Entitlement       | Rule                                                                                               |
+| ----------------- | -------------------------------------------------------------------------------------------------- |
+| `jobs.open`       | `open` jobs count toward limit; drafts never consume a slot                                        |
+| `reports` per job | target defaults to the plan limit; new values must be within the current limit and cannot decrease |
+| `team.invite`     | non-owner members + pending invites count toward limit                                             |
+| `team.accept`     | gated on non-owner member count (owner excluded)                                                   |
+| `aiJobCreation`   | paid plans only                                                                                    |
 
 ### Enforcement layers
 
 1. **Router context** — `_authenticated` `beforeLoad` exposes `entitlements` for UI gating (`useEntitlements()`)
 2. **Server boundary** — `readCompanyEntitlements()` / `enforceCompanyEntitlement()` always read fresh DB state (never stale loader snapshots)
-3. **Report targets** — `enforceReportTarget()` strict on user input, clamp on publish/downgrade
+3. **Report targets** — entitlement validation at create/publish/update plus a locked, conditional increase at the database transaction boundary
 
 ### Polar integration
 
@@ -626,7 +630,7 @@ Triggered from the application flow. Steps:
 6. run authenticity / consistency check
 7. run role-specific pre-evaluation
 8. persist `pre_evaluations`
-9. decide whether to hold or queue for batch
+9. under the job lock, decide whether quota is exhausted or the candidate can join the waitlist
 
 ### Text Interview
 
@@ -664,8 +668,8 @@ Started by `startPostEvaluation` only when **both** `interviews.status === 'comp
 3. load voice analysis (LLM over stored transcript)
 4. generate structured report with LLM
 5. refine and persist report
-6. move application to `evaluated_held`
-7. notify company and/or batch orchestration flow
+6. reconcile atomically against the locked batch: hold before release, or release immediately if the batch already released
+7. send an idempotent per-report notification only for an immediate/late release; normal batch release uses its digest
 
 Interview expiry does not start post-evaluation (partial text-only sessions have no report).
 
@@ -675,9 +679,13 @@ Batch release is a first-class workflow:
 
 1. candidates accumulate in a per-job pool (`queued_for_batch`)
 2. pool checks run on pre-eval completion and on the Worker scheduled handler
-3. when launch criteria are met, the app creates a batch and invites candidates (each invite gets a 12-hour completion window from `BATCH_CONFIG.INTERVIEW_EXPIRY_MS`; partial batch after 12h with `MIN_BATCH_SIZE`, or single candidate after 24h)
-4. completed reports are held at `evaluated_held` until batch release (`released_at` set on release)
-5. release sends `batch_ready` digest and can trigger backfill via `maybeLaunchNextBatch`
+3. under a job-row lock, capacity is `target - delivered - reserved`; launch claims at most the remaining capacity, configured batch size, and pool size
+4. launch atomically creates one active batch, resets/creates one interview per claimed application, and creates deduplicated invite notifications
+5. completed reports are held at `evaluated_held` until batch release; report persistence and release serialize on the batch row, so a late report releases immediately instead of becoming stranded
+6. timeout expires only due `pending | in_progress` interviews; `awaiting_voice` continues reserving its slot
+7. release sends one deduplicated `batch_ready` digest and checks for backfill after commit
+
+State-changing operations use a global lock order to avoid deadlocks: job admission locks `job → application → interview`; batch operations lock `batch → application → interview`; standalone withdrawal/cancellation locks `application → interview`. Backfill never acquires a job lock from inside a batch transaction; it runs after commit.
 
 ### Scheduled handlers (`app/server.ts`)
 

@@ -394,7 +394,8 @@ export async function getActiveInterviewsByJob(sql: Sql, args: getActiveIntervie
 
 export const resetInterviewInviteQuery = `-- name: resetInterviewInvite :one
 UPDATE interviews
-SET metadata = COALESCE(metadata, '{}'::jsonb) || $2,
+SET batch_id = NULL,
+    metadata = $2,
     status = 'pending',
     invited_at = $3,
     started_at = NULL,
@@ -403,7 +404,9 @@ SET metadata = COALESCE(metadata, '{}'::jsonb) || $2,
     cancelled_at = NULL,
     cancellation_reason = NULL,
     updated_at = now()
-WHERE id = $1
+WHERE interviews.id = $1
+  AND status IN ('expired', 'cancelled', 'pending', 'in_progress')
+  AND NOT EXISTS (SELECT 1 FROM reports WHERE application_id = interviews.application_id)
 RETURNING id, application_id, batch_id, agent_id, type, metadata, status, invited_at, started_at, completed_at, expired_at, cancelled_at, cancellation_reason, created_at, updated_at`;
 
 export interface resetInterviewInviteArgs {
@@ -453,6 +456,18 @@ export async function resetInterviewInvite(sql: Sql, args: resetInterviewInviteA
         createdAt: row[13],
         updatedAt: row[14]
     };
+}
+
+export const deleteCommunicationAssessmentByInterviewIdQuery = `-- name: deleteCommunicationAssessmentByInterviewId :exec
+DELETE FROM communication_assessments
+WHERE interview_id = $1`;
+
+export interface deleteCommunicationAssessmentByInterviewIdArgs {
+    interviewId: string;
+}
+
+export async function deleteCommunicationAssessmentByInterviewId(sql: Sql, args: deleteCommunicationAssessmentByInterviewIdArgs): Promise<void> {
+    await sql.unsafe(deleteCommunicationAssessmentByInterviewIdQuery, [args.interviewId]);
 }
 
 export const updateInterviewStatusQuery = `-- name: updateInterviewStatus :one
@@ -627,6 +642,8 @@ SET status = 'expired',
     expired_at = now(),
     updated_at = now()
 WHERE id = $1
+  AND status IN ('pending', 'in_progress')
+  AND (metadata->>'expiresAt')::timestamptz <= now()
 RETURNING id, application_id, batch_id, agent_id, type, metadata, status, invited_at, started_at, completed_at, expired_at, cancelled_at, cancellation_reason, created_at, updated_at`;
 
 export interface expireInterviewArgs {
@@ -683,6 +700,7 @@ SET status = 'cancelled',
     cancellation_reason = $2,
     updated_at = now()
 WHERE id = $1
+  AND status IN ('pending', 'in_progress', 'awaiting_voice')
 RETURNING id, application_id, batch_id, agent_id, type, metadata, status, invited_at, started_at, completed_at, expired_at, cancelled_at, cancellation_reason, created_at, updated_at`;
 
 export interface cancelInterviewArgs {
@@ -914,32 +932,6 @@ export async function getInterviewContextById(sql: Sql, args: getInterviewContex
         companyName: row[19],
         companyOwnerId: row[20],
         candidateName: row[21]
-    };
-}
-
-export const countActiveInterviewSlotsByJobQuery = `-- name: countActiveInterviewSlotsByJob :one
-SELECT count(*)::int AS count
-FROM interviews i
-JOIN applications a ON a.id = i.application_id
-WHERE a.job_id = $1
-  AND i.status IN ('pending', 'in_progress')`;
-
-export interface countActiveInterviewSlotsByJobArgs {
-    jobId: string;
-}
-
-export interface countActiveInterviewSlotsByJobRow {
-    count: number;
-}
-
-export async function countActiveInterviewSlotsByJob(sql: Sql, args: countActiveInterviewSlotsByJobArgs): Promise<countActiveInterviewSlotsByJobRow | null> {
-    const rows = await sql.unsafe(countActiveInterviewSlotsByJobQuery, [args.jobId]).values();
-    if (rows.length !== 1) {
-        return null;
-    }
-    const row = rows[0];
-    return {
-        count: row[0]
     };
 }
 

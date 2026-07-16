@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { getJobCapacityCounts } from "@/features/batches/queries/queries_sql";
 import {
   createInterview,
   getInterviewByApplicationId,
@@ -14,8 +15,12 @@ import {
   seedUser,
 } from "@/shared/__tests__/test-utils";
 
-import { createApplication } from "../queries/queries_sql";
-import { applyToJobWorkflow, updateApplicationStatusWorkflow } from "../services/workflows";
+import { createApplication, getApplicationById } from "../queries/queries_sql";
+import {
+  applyToJobWorkflow,
+  updateApplicationStatusWorkflow,
+  withdrawApplicationWorkflow,
+} from "../services/workflows";
 
 const sql = getTestDb();
 
@@ -298,9 +303,39 @@ describe("application notification workflows", () => {
     });
     expect(notifications).toHaveLength(1);
     expect(notifications[0].type).toBe("interview_invited");
+
+    const capacity = await getJobCapacityCounts(sql, { jobId: job.id });
+    expect(capacity?.reservedCount).toBe(1);
   });
 
-  it("creates a fresh interview when re-inviting after an expired interview", async () => {
+  it("rejects a manual invite at zero remaining capacity without partial state", async () => {
+    const { company, owner } = await seedCompany({ name: "Full House" });
+    const candidate = await seedUser({ role: "candidate" });
+    const { job } = await seedJob({ companyId: company.id, status: "open" });
+    await sql`UPDATE jobs SET final_report_target = 0 WHERE id = ${job.id}`;
+    const application = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id, "full.pdf"),
+      metadata: {},
+      status: "pre_screening",
+    });
+    expect(application).not.toBeNull();
+    if (!application) return;
+
+    await expect(
+      updateApplicationStatusWorkflow(sql, {
+        userId: owner.id,
+        applicationId: application.id,
+        status: "interview_invited",
+      }),
+    ).rejects.toThrow("No interview capacity remains");
+
+    expect((await getApplicationById(sql, { id: application.id }))?.status).toBe("pre_screening");
+    expect(await getInterviewByApplicationId(sql, { applicationId: application.id })).toBeNull();
+  });
+
+  it("resets the existing interview when re-inviting after expiry", async () => {
     const { company, owner } = await seedCompany({ name: "Revive" });
     const candidate = await seedUser({ role: "candidate" });
     const { job } = await seedJob({
@@ -349,7 +384,196 @@ describe("application notification workflows", () => {
       applicationId: application.id,
     });
     expect(latestInterview).not.toBeNull();
-    expect(latestInterview!.id).not.toBe(expiredInterview.id);
+    expect(latestInterview!.id).toBe(expiredInterview.id);
     expect(latestInterview!.status).toBe("pending");
+    const notifications = await getNotificationsByUser(sql, {
+      userId: candidate.id,
+      limit: "10",
+    });
+    expect(notifications).toHaveLength(1);
+    expect(notifications[0].type).toBe("interview_invited");
+  });
+
+  it("does not reinvite a completed interview", async () => {
+    const { company, owner } = await seedCompany({ name: "Complete" });
+    const candidate = await seedUser({ role: "candidate" });
+    const { job } = await seedJob({ companyId: company.id, status: "open" });
+    const application = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id, "complete.pdf"),
+      metadata: {},
+      status: "evaluation_failed",
+    });
+    expect(application).not.toBeNull();
+    if (!application) return;
+    const interview = await createInterview(sql, {
+      applicationId: application.id,
+      agentId: null,
+      type: "full",
+      metadata: {},
+      status: "completed",
+      invitedAt: new Date(),
+      startedAt: new Date(),
+      completedAt: new Date(),
+    });
+
+    await expect(
+      updateApplicationStatusWorkflow(sql, {
+        userId: owner.id,
+        applicationId: application.id,
+        status: "interview_invited",
+      }),
+    ).rejects.toThrow("post-evaluation");
+    expect((await getApplicationById(sql, { id: application.id }))?.status).toBe(
+      "evaluation_failed",
+    );
+    expect((await getInterviewByApplicationId(sql, { applicationId: application.id }))?.id).toBe(
+      interview?.id,
+    );
+  });
+
+  it("cancels unfinished work and backfills after a company rejection commits", async () => {
+    const { company, owner } = await seedCompany({ name: "Decisive" });
+    const candidate = await seedUser({ role: "candidate" });
+    const backup = await seedUser({ role: "candidate" });
+    const { job } = await seedJob({ companyId: company.id, status: "open" });
+    await sql`UPDATE jobs SET final_report_target = 1 WHERE id = ${job.id}`;
+    const application = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: {},
+      status: "interview_invited",
+    });
+    const waitlisted = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: backup.id,
+      resumeKey: makeTestResumeKey(backup.id),
+      metadata: {},
+      status: "queued_for_batch",
+    });
+    const interview = await createInterview(sql, {
+      applicationId: application!.id,
+      agentId: null,
+      type: "full",
+      metadata: { expiresAt: new Date(Date.now() + 60_000).toISOString() },
+      status: "pending",
+      invitedAt: new Date(),
+      startedAt: null,
+      completedAt: null,
+    });
+
+    await updateApplicationStatusWorkflow(sql, {
+      userId: owner.id,
+      applicationId: application!.id,
+      status: "rejected",
+    });
+
+    expect((await getApplicationById(sql, { id: application!.id }))?.status).toBe("rejected");
+    expect(
+      (await getInterviewByApplicationId(sql, { applicationId: application!.id }))?.status,
+    ).toBe("cancelled");
+    expect((await getApplicationById(sql, { id: waitlisted!.id }))?.status).toBe(
+      "interview_invited",
+    );
+    expect(interview).not.toBeNull();
+    expect(await getJobCapacityCounts(sql, { jobId: job.id })).toMatchObject({
+      deliveredCount: 0,
+      reservedCount: 1,
+    });
+  });
+
+  it("withdraws and backfills an unfinished candidate atomically", async () => {
+    const { company, owner } = await seedCompany({ name: "Backfill" });
+    const candidate = await seedUser({ role: "candidate" });
+    const backup = await seedUser({ role: "candidate" });
+    const { job } = await seedJob({ companyId: company.id, status: "open" });
+    await sql`UPDATE jobs SET final_report_target = 1 WHERE id = ${job.id}`;
+    const application = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: {},
+      status: "interview_invited",
+    });
+    const waitlisted = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: backup.id,
+      resumeKey: makeTestResumeKey(backup.id),
+      metadata: {},
+      status: "queued_for_batch",
+    });
+    await createInterview(sql, {
+      applicationId: application!.id,
+      agentId: null,
+      type: "full",
+      metadata: { expiresAt: new Date(Date.now() + 60_000).toISOString() },
+      status: "pending",
+      invitedAt: new Date(),
+      startedAt: null,
+      completedAt: null,
+    });
+
+    await withdrawApplicationWorkflow(sql, {
+      userId: candidate.id,
+      applicationId: application!.id,
+    });
+
+    expect((await getApplicationById(sql, { id: application!.id }))?.status).toBe("withdrawn");
+    expect(
+      (await getInterviewByApplicationId(sql, { applicationId: application!.id }))?.status,
+    ).toBe("cancelled");
+    expect((await getApplicationById(sql, { id: waitlisted!.id }))?.status).toBe(
+      "interview_invited",
+    );
+    expect(await getJobCapacityCounts(sql, { jobId: job.id })).toMatchObject({
+      deliveredCount: 0,
+      reservedCount: 1,
+    });
+    const ownerNotifications = await getNotificationsByUser(sql, {
+      userId: owner.id,
+      limit: "10",
+    });
+    expect(ownerNotifications.map((notification) => notification.type)).toContain(
+      "application_withdrawn",
+    );
+  });
+
+  it("rejects withdrawal after the interview has completed", async () => {
+    const { company } = await seedCompany({ name: "Committed" });
+    const candidate = await seedUser({ role: "candidate" });
+    const { job } = await seedJob({ companyId: company.id, status: "open" });
+    const application = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: {},
+      status: "interview_in_progress",
+    });
+    await createInterview(sql, {
+      applicationId: application!.id,
+      agentId: null,
+      type: "full",
+      metadata: {},
+      status: "completed",
+      invitedAt: new Date(),
+      startedAt: new Date(),
+      completedAt: new Date(),
+    });
+
+    await expect(
+      withdrawApplicationWorkflow(sql, {
+        userId: candidate.id,
+        applicationId: application!.id,
+      }),
+    ).rejects.toThrow("evaluation can no longer be withdrawn");
+    expect((await getApplicationById(sql, { id: application!.id }))?.status).toBe(
+      "interview_in_progress",
+    );
+    expect(await getJobCapacityCounts(sql, { jobId: job.id })).toMatchObject({
+      deliveredCount: 0,
+      reservedCount: 1,
+    });
   });
 });

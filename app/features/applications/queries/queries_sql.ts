@@ -1,9 +1,9 @@
 import { Sql } from "postgres";
 
 export const createApplicationQuery = `-- name: createApplication :one
-INSERT INTO applications (job_id, candidate_id, resume_key, metadata, status)
-VALUES ($1, $2, $3, $4, $5)
-RETURNING id, job_id, candidate_id, resume_key, metadata, status, created_at, updated_at`;
+INSERT INTO applications (job_id, candidate_id, resume_key, metadata, status, queued_at)
+VALUES ($1, $2, $3, $4, $5, CASE WHEN $5 = 'queued_for_batch' THEN now() ELSE NULL END)
+RETURNING id, job_id, candidate_id, resume_key, metadata, status, queued_at, created_at, updated_at`;
 
 export interface createApplicationArgs {
     jobId: string;
@@ -20,6 +20,7 @@ export interface createApplicationRow {
     resumeKey: string | null;
     metadata: any;
     status: string;
+    queuedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -37,8 +38,9 @@ export async function createApplication(sql: Sql, args: createApplicationArgs): 
         resumeKey: row[3],
         metadata: row[4],
         status: row[5],
-        createdAt: row[6],
-        updatedAt: row[7]
+        queuedAt: row[6],
+        createdAt: row[7],
+        updatedAt: row[8]
     };
 }
 
@@ -381,9 +383,13 @@ export async function getApplicationReviewById(sql: Sql, args: getApplicationRev
 export const updateApplicationStatusQuery = `-- name: updateApplicationStatus :one
 UPDATE applications
 SET status = $1,
+    queued_at = CASE
+      WHEN $1 = 'queued_for_batch' THEN COALESCE(queued_at, now())
+      ELSE NULL
+    END,
     updated_at = now()
 WHERE id = $2
-RETURNING id, job_id, candidate_id, resume_key, metadata, status, created_at, updated_at`;
+RETURNING id, job_id, candidate_id, resume_key, metadata, status, queued_at, created_at, updated_at`;
 
 export interface updateApplicationStatusArgs {
     status: string;
@@ -397,6 +403,7 @@ export interface updateApplicationStatusRow {
     resumeKey: string | null;
     metadata: any;
     status: string;
+    queuedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -414,8 +421,58 @@ export async function updateApplicationStatus(sql: Sql, args: updateApplicationS
         resumeKey: row[3],
         metadata: row[4],
         status: row[5],
-        createdAt: row[6],
-        updatedAt: row[7]
+        queuedAt: row[6],
+        createdAt: row[7],
+        updatedAt: row[8]
+    };
+}
+
+export const updateApplicationStatusIfCurrentQuery = `-- name: updateApplicationStatusIfCurrent :one
+UPDATE applications
+SET status = $1::text,
+    queued_at = CASE
+      WHEN $1::text = 'queued_for_batch' THEN COALESCE(queued_at, now())
+      ELSE NULL
+    END,
+    updated_at = now()
+WHERE id = $2
+  AND status = $3::text
+RETURNING id, job_id, candidate_id, resume_key, metadata, status, queued_at, created_at, updated_at`;
+
+export interface updateApplicationStatusIfCurrentArgs {
+    status: string;
+    id: string;
+    currentStatus: string;
+}
+
+export interface updateApplicationStatusIfCurrentRow {
+    id: string;
+    jobId: string;
+    candidateId: string;
+    resumeKey: string | null;
+    metadata: any;
+    status: string;
+    queuedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export async function updateApplicationStatusIfCurrent(sql: Sql, args: updateApplicationStatusIfCurrentArgs): Promise<updateApplicationStatusIfCurrentRow | null> {
+    const rows = await sql.unsafe(updateApplicationStatusIfCurrentQuery, [args.status, args.id, args.currentStatus]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        jobId: row[1],
+        candidateId: row[2],
+        resumeKey: row[3],
+        metadata: row[4],
+        status: row[5],
+        queuedAt: row[6],
+        createdAt: row[7],
+        updatedAt: row[8]
     };
 }
 
@@ -423,6 +480,10 @@ export const setShortlistDetailsQuery = `-- name: setShortlistDetails :one
 UPDATE applications
 SET metadata = COALESCE(metadata, '{}'::jsonb) || jsonb_build_object('shortlist', $1::jsonb),
     status = COALESCE($2::text, status),
+    queued_at = CASE
+      WHEN COALESCE($2::text, status) = 'queued_for_batch' THEN COALESCE(queued_at, now())
+      ELSE NULL
+    END,
     updated_at = now()
 WHERE id = $3
 RETURNING id, job_id, candidate_id, resume_key, metadata, status, created_at, updated_at`;

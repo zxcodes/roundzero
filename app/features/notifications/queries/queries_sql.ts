@@ -46,6 +46,57 @@ export async function createNotification(sql: Sql, args: createNotificationArgs)
     };
 }
 
+export const createDedupedNotificationQuery = `-- name: createDedupedNotification :one
+INSERT INTO notifications (user_id, type, payload, dedupe_key)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (user_id, type, dedupe_key) WHERE dedupe_key IS NOT NULL
+DO UPDATE SET dedupe_key = EXCLUDED.dedupe_key
+RETURNING id, user_id, type, payload, dedupe_key, read_at, email_delivery_status, email_delivery_error, email_delivery_attempted_at, email_delivery_sent_at, email_provider_message_id, created_at`;
+
+export interface createDedupedNotificationArgs {
+    userId: string;
+    type: string;
+    payload: any;
+    dedupeKey: string | null;
+}
+
+export interface createDedupedNotificationRow {
+    id: string;
+    userId: string;
+    type: string;
+    payload: any;
+    dedupeKey: string | null;
+    readAt: Date | null;
+    emailDeliveryStatus: string | null;
+    emailDeliveryError: string | null;
+    emailDeliveryAttemptedAt: Date | null;
+    emailDeliverySentAt: Date | null;
+    emailProviderMessageId: string | null;
+    createdAt: Date;
+}
+
+export async function createDedupedNotification(sql: Sql, args: createDedupedNotificationArgs): Promise<createDedupedNotificationRow | null> {
+    const rows = await sql.unsafe(createDedupedNotificationQuery, [args.userId, args.type, args.payload, args.dedupeKey]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        userId: row[1],
+        type: row[2],
+        payload: row[3],
+        dedupeKey: row[4],
+        readAt: row[5],
+        emailDeliveryStatus: row[6],
+        emailDeliveryError: row[7],
+        emailDeliveryAttemptedAt: row[8],
+        emailDeliverySentAt: row[9],
+        emailProviderMessageId: row[10],
+        createdAt: row[11]
+    };
+}
+
 export const getNotificationsByUserQuery = `-- name: getNotificationsByUser :many
 SELECT id, user_id, type, payload, read_at, email_delivery_status, email_delivery_error, email_delivery_attempted_at, email_delivery_sent_at, email_provider_message_id, created_at
 FROM notifications
@@ -86,6 +137,52 @@ export async function getNotificationsByUser(sql: Sql, args: getNotificationsByU
         emailProviderMessageId: row[9],
         createdAt: row[10]
     }));
+}
+
+export const getNotificationByIdQuery = `-- name: getNotificationById :one
+SELECT id, user_id, type, payload, dedupe_key, read_at, email_delivery_status, email_delivery_error, email_delivery_attempted_at, email_delivery_sent_at, email_provider_message_id, created_at
+FROM notifications
+WHERE id = $1`;
+
+export interface getNotificationByIdArgs {
+    id: string;
+}
+
+export interface getNotificationByIdRow {
+    id: string;
+    userId: string;
+    type: string;
+    payload: any;
+    dedupeKey: string | null;
+    readAt: Date | null;
+    emailDeliveryStatus: string | null;
+    emailDeliveryError: string | null;
+    emailDeliveryAttemptedAt: Date | null;
+    emailDeliverySentAt: Date | null;
+    emailProviderMessageId: string | null;
+    createdAt: Date;
+}
+
+export async function getNotificationById(sql: Sql, args: getNotificationByIdArgs): Promise<getNotificationByIdRow | null> {
+    const rows = await sql.unsafe(getNotificationByIdQuery, [args.id]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        userId: row[1],
+        type: row[2],
+        payload: row[3],
+        dedupeKey: row[4],
+        readAt: row[5],
+        emailDeliveryStatus: row[6],
+        emailDeliveryError: row[7],
+        emailDeliveryAttemptedAt: row[8],
+        emailDeliverySentAt: row[9],
+        emailProviderMessageId: row[10],
+        createdAt: row[11]
+    };
 }
 
 export const countUnreadNotificationsByUserQuery = `-- name: countUnreadNotificationsByUser :one

@@ -156,7 +156,7 @@ Current company flow:
 5. Manage subscription on `/dashboard/billing` (owner only)
 6. Create jobs (drafts always allowed; opening/publishing gated by active-job limit)
 7. Manage jobs (`draft` / `open` / `closed`; archived jobs are `closed` with `archived_at` set)
-8. Set per-job evaluation report target (clamped to plan limit)
+8. Set an increase-only per-job evaluation report target within the current plan limit
 9. View applicants per job
 10. Review applicants on dedicated applicant detail pages
 11. Update application statuses
@@ -349,7 +349,7 @@ RoundZero uses subscription plans with hard caps (no overage billing). Plan conf
 ### Gated features
 
 - **Active jobs** — only `open` jobs count toward the limit; companies can always create drafts
-- **Evaluation reports** — `final_report_target` per job defaults to the plan's reports/job limit and cannot exceed it
+- **Evaluation reports** — `final_report_target` defaults to the plan limit; new/increased targets cannot exceed the current limit and existing targets never decrease
 - **Team seats** — plan limits count invited teammates beyond the owner; pending invites consume invite slots; accept is gated on member count
 - **AI job creation** — paid plans with active/trialing subscription only
 - **AI pre-evaluation** — runs on all applicants on every plan (not gated)
@@ -505,11 +505,13 @@ Live output: score (0–10), missing requirements, confidence, model next step (
 
 ### 16.5 Final report target + batching
 
-- `final_report_target` per job (plan-clamped)
-- Quota counts **released** reports (`reports.released_at IS NOT NULL`), not merely generated
-- Strong fits enter `queued_for_batch`; invites sent on batch launch
+- `final_report_target` per job is increase-only and bounded by the current plan for new commitments
+- Quota consumption is **delivered + reserved**: released reports plus report-producing interviews; completed interviews remain reserved until release
+- Strong fits enter `queued_for_batch` as a capacity-free waitlist; invites are atomically claimed under a job lock
 - Reports held at `evaluated_held` until batch release (`batch_ready` digest)
+- Reports completed after batch release become visible immediately and send one deduplicated `report_ready` notification
 - **12-hour** interview window from batch launch; `awaiting_voice` not auto-expired
+- Successful expiry, cancellation, withdrawal, or company rejection checks for immediate backfill after commit
 - Scheduled crons: pool-check every 6h, eval-retry every 3h (`wrangler.jsonc`)
 
 ---
