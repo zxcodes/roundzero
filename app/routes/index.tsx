@@ -143,7 +143,6 @@ function Hero() {
     <section className="calm-hero relative overflow-hidden">
       <div className={cn(CONTAINER, "pb-0 pt-16 lg:pt-24")}>
         <div className="rise w-full text-left">
-          <Eyebrow>Early access</Eyebrow>
           <h1 className="mt-4 text-[clamp(2rem,3.6vw,4rem)] font-semibold leading-[1.06] tracking-[-0.035em] sm:whitespace-nowrap">
             Review candidates, not <Highlight>resumes</Highlight>.
           </h1>
