@@ -1,5 +1,7 @@
 import { vi } from "vitest";
 
+export class NonRetryableError extends Error {}
+
 const connectionString =
   process.env.TEST_DATABASE_URL ??
   "postgres://postgres:password@localhost:6312/postgres?sslmode=disable";

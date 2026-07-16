@@ -152,14 +152,34 @@ export function JobForm({
   const entitlements = useEntitlements();
   const reports = entitlements?.reports ?? FREE_REPORT_DEFAULTS;
   const reportLimit = reports.perJobLimit;
+  const existingReportTarget = defaultValues?.finalReportTarget ?? null;
   // Drafts are always allowed; opening a new job is gated. Editing a job that is
   // already open never consumes a new slot, so don't lock it.
   const openLocked =
     !(entitlements?.jobs.canOpenAnother ?? true) && defaultValues?.status !== "open";
   const defaultReportTarget =
     defaultValues?.finalReportTarget != null
-      ? Math.min(defaultValues.finalReportTarget, reportLimit)
+      ? defaultValues.finalReportTarget
       : reports.defaultTarget;
+  const targetAboveCurrentPlan =
+    existingReportTarget !== null && existingReportTarget > reportLimit;
+  const submitSchema = formSchema.superRefine((value, context) => {
+    const target = Number(value.finalReportTarget);
+    if (existingReportTarget !== null && target < existingReportTarget) {
+      context.addIssue({
+        code: "custom",
+        path: ["finalReportTarget"],
+        message: "The report target can only be increased.",
+      });
+    }
+    if (target > reportLimit && target !== existingReportTarget) {
+      context.addIssue({
+        code: "custom",
+        path: ["finalReportTarget"],
+        message: `Upgrade your plan to increase the report target above ${reportLimit}.`,
+      });
+    }
+  });
 
   const form = useForm({
     defaultValues: {
@@ -181,7 +201,7 @@ export function JobForm({
       expiresAt: defaultValues?.expiresAt ? defaultValues.expiresAt.toISOString().slice(0, 10) : "",
     },
 
-    validators: { onSubmit: formSchema },
+    validators: { onSubmit: submitSchema },
     canSubmitWhenInvalid: true,
 
     onSubmit: ({ value }) => {
@@ -728,9 +748,14 @@ export function JobForm({
                 .string()
                 .refine(
                   (val) =>
-                    Number.isInteger(Number(val)) && Number(val) >= 1 && Number(val) <= reportLimit,
+                    Number.isInteger(Number(val)) &&
+                    Number(val) >= (existingReportTarget ?? 1) &&
+                    (Number(val) <= reportLimit || Number(val) === existingReportTarget),
                   {
-                    message: `Final report target must be between ${reportTargetRangeLabel(reports)} on your current plan`,
+                    message:
+                      existingReportTarget !== null
+                        ? `The target cannot be decreased and increases must be within your current plan (${reportTargetRangeLabel(reports)})`
+                        : `Final report target must be between ${reportTargetRangeLabel(reports)} on your current plan`,
                   },
                 ),
             }}
@@ -743,6 +768,8 @@ export function JobForm({
                   <Input
                     id={field.name}
                     inputMode="numeric"
+                    min={existingReportTarget ?? 1}
+                    max={targetAboveCurrentPlan ? existingReportTarget : reportLimit}
                     placeholder={String(reportLimit)}
                     value={field.state.value}
                     onBlur={field.handleBlur}
@@ -750,8 +777,9 @@ export function JobForm({
                     aria-invalid={isInvalid}
                   />
                   <p className="text-muted-foreground text-xs">
-                    Maximum evaluation reports for this job on your plan (
-                    {reportTargetRangeLabel(reports)})
+                    {targetAboveCurrentPlan
+                      ? `Your existing target is above your current plan limit. You can keep it and edit other details, but must upgrade before increasing it.`
+                      : `Targets can be increased but not decreased because candidate evaluations may already be underway. Your plan allows ${reportTargetRangeLabel(reports)}.`}
                   </p>
                   {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
                 </Field>

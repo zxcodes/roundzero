@@ -2,6 +2,7 @@ import { jsx } from "react/jsx-runtime";
 
 import { BatchDigestEmailTemplate } from "@/features/notifications/components/batch-digest-email-template";
 import {
+  getNotificationById,
   markNotificationEmailDelivered,
   markNotificationEmailFailed,
   markNotificationEmailSkipped,
@@ -23,6 +24,10 @@ type BatchDigestEmailInput = {
 export async function sendBatchDigestEmail(input: BatchDigestEmailInput): Promise<void> {
   const db = getDb();
   try {
+    const notification = await getNotificationById(db, { id: input.notificationId });
+    if (notification?.emailDeliveryStatus === "sent") {
+      return;
+    }
     if (!isEmailDeliveryConfigured()) {
       await markNotificationEmailSkipped(db, {
         id: input.notificationId,
@@ -60,6 +65,7 @@ export async function sendBatchDigestEmail(input: BatchDigestEmailInput): Promis
         id: input.notificationId,
         errorMessage: message,
       });
+      throw error;
     }
   } finally {
     await db.end();

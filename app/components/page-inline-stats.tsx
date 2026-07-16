@@ -1,4 +1,4 @@
-export function PageInlineStats({ items }: { items: { value: number; label: string }[] }) {
+export function PageInlineStats({ items }: { items: { value: number | string; label: string }[] }) {
   if (items.length === 0) {
     return null;
   }

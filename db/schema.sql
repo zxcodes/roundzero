@@ -31,7 +31,9 @@ CREATE TABLE public.applications (
     metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
     status text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    queued_at timestamp with time zone,
+    CONSTRAINT applications_queued_at_matches_status CHECK (((status = 'queued_for_batch'::text) = (queued_at IS NOT NULL)))
 );
 
 
@@ -265,7 +267,8 @@ CREATE TABLE public.notifications (
     email_delivery_attempted_at timestamp with time zone,
     email_delivery_sent_at timestamp with time zone,
     email_provider_message_id text,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    dedupe_key text
 );
 
 
@@ -681,6 +684,13 @@ CREATE INDEX idx_interviews_application ON public.interviews USING btree (applic
 
 
 --
+-- Name: idx_interviews_application_unique; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_interviews_application_unique ON public.interviews USING btree (application_id);
+
+
+--
 -- Name: idx_interviews_batch; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -692,6 +702,13 @@ CREATE INDEX idx_interviews_batch ON public.interviews USING btree (batch_id);
 --
 
 CREATE INDEX idx_job_batches_job ON public.job_batches USING btree (job_id);
+
+
+--
+-- Name: idx_job_batches_one_active_per_job; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_job_batches_one_active_per_job ON public.job_batches USING btree (job_id) WHERE (status = ANY (ARRAY['forming'::text, 'active'::text]));
 
 
 --
@@ -720,6 +737,13 @@ CREATE INDEX idx_jobs_company ON public.jobs USING btree (company_id);
 --
 
 CREATE INDEX idx_jobs_status ON public.jobs USING btree (status);
+
+
+--
+-- Name: idx_notifications_dedupe; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_notifications_dedupe ON public.notifications USING btree (user_id, type, dedupe_key) WHERE (dedupe_key IS NOT NULL);
 
 
 --
@@ -969,4 +993,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260622161816'),
     ('20260629021838'),
     ('20260703114221'),
-    ('20260705072949');
+    ('20260705072949'),
+    ('20260715154907');

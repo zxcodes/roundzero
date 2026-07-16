@@ -1,12 +1,19 @@
 import type { Sql } from "postgres";
 
 import { getUserById } from "@/features/auth/queries/queries_sql";
+import {
+  getJobCapacityCounts,
+  getJobCapacityForUpdate,
+} from "@/features/batches/queries/queries_sql";
+import { checkAndLaunchBatch } from "@/features/batches/server/orchestration";
 import { getCandidateProfileByUserId } from "@/features/candidates/queries/queries_sql";
 import { getCompanyByMemberUserId } from "@/features/companies/queries/membership-queries_sql";
 import { getCompanyById } from "@/features/companies/queries/queries_sql";
 import { notifyCompanyTeam } from "@/features/companies/services/company-team-notifications";
 import {
+  cancelInterview,
   createInterview,
+  deleteCommunicationAssessmentByInterviewId,
   deleteInterviewMessagesByInterviewId,
   getInterviewByApplicationId,
   getInterviewContextById,
@@ -15,12 +22,16 @@ import {
 import { ensureInterviewRuntimeMetadata } from "@/features/interviews/shared/runtime";
 import { closeExpiredJobsQuery, getJobById } from "@/features/jobs/queries/queries_sql";
 import { notificationPayloadSchemas } from "@/features/notifications/config";
-import { createNotification } from "@/features/notifications/queries/queries_sql";
+import {
+  createDedupedNotification,
+  createNotification,
+} from "@/features/notifications/queries/queries_sql";
 import {
   deliverNotificationEmail,
   type NotificationEmailSender,
   sendNotificationEmail,
 } from "@/features/notifications/services/email";
+import { getReportByApplicationId } from "@/features/reports/queries/queries_sql";
 import { type ApplicationStatus, applicationStatusSchema, isValidTransition } from "@/shared/enums";
 
 import {
@@ -29,6 +40,7 @@ import {
   getApplicationByJobAndCandidate,
   setShortlistDetails,
   updateApplicationStatus as updateApplicationStatusQuery,
+  updateApplicationStatusIfCurrent,
 } from "../queries/queries_sql";
 import type { ShortlistDetails } from "../shortlist";
 
@@ -145,89 +157,190 @@ export const updateApplicationStatusWorkflow = async (
     throw new Error(`Cannot transition from "${currentStatus}" to "${input.status}"`);
   }
 
-  const updated = await updateApplicationStatusQuery(db, {
-    status: input.status,
-    id: input.applicationId,
-  });
+  if (currentStatus !== input.status && input.status === "interview_invited") {
+    const invitation = await db.begin(async (tx) => {
+      const transaction = tx as unknown as Sql;
+      const lockedJob = await getJobCapacityForUpdate(transaction, { id: application.jobId });
+      if (!lockedJob) throw new Error("Job not found");
+
+      const lockedRows = await tx`
+        SELECT id FROM applications WHERE id = ${input.applicationId} FOR UPDATE
+      `;
+      if (!lockedRows[0]) throw new Error("Application not found");
+      const lockedApplication = await getApplicationById(transaction, { id: input.applicationId });
+      if (!lockedApplication) throw new Error("Application not found");
+      const lockedStatus = applicationStatusSchema.parse(lockedApplication.status);
+      if (!isValidTransition(lockedStatus, "interview_invited")) {
+        throw new Error(`Cannot transition from "${lockedStatus}" to "interview_invited"`);
+      }
+
+      const existingInterview = await getInterviewByApplicationId(transaction, {
+        applicationId: lockedApplication.id,
+      });
+      const report = await getReportByApplicationId(transaction, {
+        applicationId: lockedApplication.id,
+      });
+      if (report) throw new Error("This application already has a report and cannot be reinvited");
+      if (existingInterview?.status === "completed") {
+        throw new Error(
+          "Completed interviews must be recovered through post-evaluation, not reinvited",
+        );
+      }
+
+      const activeInterview =
+        existingInterview?.status === "pending" ||
+        existingInterview?.status === "in_progress" ||
+        existingInterview?.status === "awaiting_voice";
+      if (activeInterview) {
+        const updated = await updateApplicationStatusIfCurrent(transaction, {
+          id: lockedApplication.id,
+          currentStatus: lockedStatus,
+          status: "interview_invited",
+        });
+        if (!updated) throw new Error("Application changed while inviting candidate");
+        return { application: updated, notification: null };
+      }
+
+      const capacity = await getJobCapacityCounts(transaction, { jobId: lockedApplication.jobId });
+      if (
+        !capacity ||
+        capacity.deliveredCount + capacity.reservedCount >= lockedJob.finalReportTarget
+      ) {
+        throw new Error("No interview capacity remains for this job");
+      }
+
+      const invitedAt = new Date();
+      const expiresAt = new Date(invitedAt.getTime() + 12 * 60 * 60 * 1000).toISOString();
+      const isReinvite = existingInterview !== null;
+      const interview = isReinvite
+        ? await resetInterviewInvite(transaction, {
+            id: existingInterview.id,
+            metadata: { expiresAt },
+            invitedAt,
+          })
+        : await createInterview(transaction, {
+            applicationId: lockedApplication.id,
+            agentId: null,
+            type: "full",
+            metadata: { expiresAt },
+            status: "pending",
+            invitedAt,
+            startedAt: null,
+            completedAt: null,
+          });
+      if (!interview) throw new Error("Failed to create interview invite");
+
+      if (isReinvite) {
+        await deleteInterviewMessagesByInterviewId(transaction, { interviewId: interview.id });
+        await deleteCommunicationAssessmentByInterviewId(transaction, {
+          interviewId: interview.id,
+        });
+      }
+      const interviewContext = await getInterviewContextById(transaction, { id: interview.id });
+      if (!interviewContext) throw new Error("Failed to load interview context");
+      await ensureInterviewRuntimeMetadata(transaction, interviewContext, {
+        forceJobSnapshotRefresh: isReinvite,
+      });
+
+      const updated = await updateApplicationStatusIfCurrent(transaction, {
+        id: lockedApplication.id,
+        currentStatus: lockedStatus,
+        status: "interview_invited",
+      });
+      if (!updated) throw new Error("Application changed while inviting candidate");
+
+      const payload = notificationPayloadSchemas.interview_invited.parse({
+        applicationId: lockedApplication.id,
+        interviewId: interview.id,
+        jobId: lockedApplication.jobId,
+        jobTitle: lockedApplication.jobTitle,
+        interviewType: interview.type,
+        expiresAt,
+      });
+      const notification = await createDedupedNotification(transaction, {
+        userId: lockedApplication.candidateId,
+        type: "interview_invited",
+        payload,
+        dedupeKey: `interview-invite:${interview.id}:${invitedAt.toISOString()}`,
+      });
+      return { application: updated, notification };
+    });
+
+    if (invitation.notification) {
+      const candidate = await getUserById(db, { id: invitation.application.candidateId });
+      await deliverNotificationEmail(db, {
+        notification: invitation.notification,
+        recipient: candidate ? { email: candidate.email } : null,
+        sendEmail: options?.sendNotificationEmail ?? sendNotificationEmail,
+      });
+    }
+    return { application: invitation.application };
+  }
+
+  const transition =
+    input.status === "rejected"
+      ? await db.begin(async (tx) => {
+          const transaction = tx as unknown as Sql;
+          const lockedJob = await getJobCapacityForUpdate(transaction, {
+            id: application.jobId,
+          });
+          if (!lockedJob) throw new Error("Job not found");
+
+          const rows = await tx`
+            SELECT status
+            FROM applications
+            WHERE id = ${input.applicationId}
+            FOR UPDATE
+          `;
+          const lockedStatus = applicationStatusSchema.parse(rows[0]?.status);
+          if (!isValidTransition(lockedStatus, "rejected")) {
+            throw new Error(`Cannot transition from "${lockedStatus}" to "rejected"`);
+          }
+
+          const interview = await getInterviewByApplicationId(transaction, {
+            applicationId: input.applicationId,
+          });
+          let capacityFreed = false;
+          if (
+            interview?.status === "pending" ||
+            interview?.status === "in_progress" ||
+            interview?.status === "awaiting_voice"
+          ) {
+            const cancelled = await cancelInterview(transaction, {
+              id: interview.id,
+              cancellationReason: "Company rejected application",
+            });
+            if (!cancelled) {
+              throw new Error("The interview changed while the application was being rejected.");
+            }
+            capacityFreed = true;
+          }
+
+          const updated = await updateApplicationStatusIfCurrent(transaction, {
+            status: "rejected",
+            currentStatus: lockedStatus,
+            id: input.applicationId,
+          });
+          if (!updated) throw new Error("Application changed while being rejected");
+          return { updated, capacityFreed, jobId: lockedJob.id };
+        })
+      : {
+          updated: await updateApplicationStatusQuery(db, {
+            status: input.status,
+            id: input.applicationId,
+          }),
+          capacityFreed: false,
+          jobId: application.jobId,
+        };
+
+  const updated = transition.updated;
 
   if (!updated) {
     throw new Error("Failed to update application status");
   }
 
-  if (currentStatus !== input.status && input.status === "interview_invited") {
-    const existingInterview = await getInterviewByApplicationId(db, {
-      applicationId: application.id,
-    });
-
-    const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString();
-
-    const inviteMetadata = { expiresAt };
-    const invitedAt = new Date();
-    const isReinvite =
-      existingInterview !== null &&
-      (existingInterview.status === "pending" || existingInterview.status === "in_progress");
-
-    const interview = isReinvite
-      ? await resetInterviewInvite(db, {
-          id: existingInterview.id,
-          metadata: inviteMetadata,
-          invitedAt,
-        })
-      : await createInterview(db, {
-          applicationId: application.id,
-          agentId: null,
-          type: "full",
-          metadata: inviteMetadata,
-          status: "pending",
-          invitedAt,
-          startedAt: null,
-          completedAt: null,
-        });
-
-    if (!interview) {
-      throw new Error("Failed to create interview invite");
-    }
-
-    if (isReinvite) {
-      await deleteInterviewMessagesByInterviewId(db, { interviewId: interview.id });
-    }
-
-    const interviewContext = await getInterviewContextById(db, { id: interview.id });
-    if (!interviewContext) {
-      throw new Error("Failed to load interview context");
-    }
-
-    await ensureInterviewRuntimeMetadata(db, interviewContext, {
-      forceJobSnapshotRefresh: isReinvite,
-    });
-
-    const expiresAtValue = expiresAt;
-
-    const payload = notificationPayloadSchemas.interview_invited.parse({
-      applicationId: application.id,
-      interviewId: interview.id,
-      jobId: application.jobId,
-      jobTitle: application.jobTitle,
-      interviewType: interview.type,
-      expiresAt: expiresAtValue,
-    });
-
-    const notification = await createNotification(db, {
-      userId: application.candidateId,
-      type: "interview_invited",
-      payload,
-    });
-
-    if (notification) {
-      const candidate = await getUserById(db, { id: application.candidateId });
-      await deliverNotificationEmail(db, {
-        notification,
-        recipient: candidate ? { email: candidate.email } : null,
-        sendEmail: options?.sendNotificationEmail ?? sendNotificationEmail,
-      });
-    }
-
-    return { application: updated };
+  if (transition.capacityFreed) {
+    await checkAndLaunchBatch(transition.jobId);
   }
 
   const shouldNotifyCandidateOnStatusChange =
@@ -366,18 +479,55 @@ export const withdrawApplicationWorkflow = async (
     throw new Error("Not authorized");
   }
 
-  const currentStatus = applicationStatusSchema.parse(application.status);
-  if (!isValidTransition(currentStatus, "withdrawn")) {
-    throw new Error(`Cannot withdraw an application with status "${currentStatus}"`);
-  }
+  const withdrawal = await db.begin(async (tx) => {
+    const transaction = tx as unknown as Sql;
+    const rows = await tx`
+      SELECT status, job_id
+      FROM applications
+      WHERE id = ${input.applicationId} AND candidate_id = ${input.userId}
+      FOR UPDATE
+    `;
+    const lockedApplication = rows[0];
+    if (!lockedApplication) throw new Error("Application not found or not authorized");
 
-  const updated = await updateApplicationStatusQuery(db, {
-    status: "withdrawn",
-    id: input.applicationId,
+    const currentStatus = applicationStatusSchema.parse(lockedApplication.status);
+    if (!isValidTransition(currentStatus, "withdrawn")) {
+      throw new Error(`Cannot withdraw an application with status "${currentStatus}"`);
+    }
+
+    const interview = await getInterviewByApplicationId(transaction, {
+      applicationId: input.applicationId,
+    });
+    let capacityFreed = false;
+    if (interview?.status === "completed") {
+      throw new Error("This interview is complete and its evaluation can no longer be withdrawn.");
+    }
+    if (
+      interview?.status === "pending" ||
+      interview?.status === "in_progress" ||
+      interview?.status === "awaiting_voice"
+    ) {
+      const cancelled = await cancelInterview(transaction, {
+        id: interview.id,
+        cancellationReason: "Candidate withdrew application",
+      });
+      if (!cancelled) {
+        throw new Error("The interview changed while the application was being withdrawn.");
+      }
+      capacityFreed = true;
+    }
+
+    const updated = await updateApplicationStatusIfCurrent(transaction, {
+      status: "withdrawn",
+      currentStatus,
+      id: input.applicationId,
+    });
+    if (!updated) throw new Error("Failed to withdraw application");
+    return { updated, capacityFreed, jobId: lockedApplication.job_id as string };
   });
 
-  if (!updated) {
-    throw new Error("Failed to withdraw application");
+  if (withdrawal.capacityFreed) {
+    await checkAndLaunchBatch(withdrawal.jobId);
   }
 
   const job = await getJobById(db, { id: application.jobId });
@@ -407,5 +557,5 @@ export const withdrawApplicationWorkflow = async (
     }
   }
 
-  return { application: updated };
+  return { application: withdrawal.updated };
 };

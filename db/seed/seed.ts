@@ -21,7 +21,6 @@ import {
   buildRoleSummary,
   buildVoiceTranscriptMessages,
   makeScoresFromOverall,
-  spreadScores,
 } from "./demo-data";
 import {
   closeSql,
@@ -58,8 +57,10 @@ type ApplicantStatus =
 
 type ApplicantPlan = {
   status: ApplicantStatus;
+  interviewStatus?: "pending" | "in_progress" | "awaiting_voice" | "completed";
   overallScore?: number;
-  releaseReport?: boolean;
+  reportState?: "held" | "released";
+  batch?: "active" | "released";
 };
 
 type ApplicationSeedContext = {
@@ -80,88 +81,183 @@ const DEV_CANDIDATE_RESUME_KEY =
 
 const jobTemplates = [
   {
-    title: "Senior Full-Stack Engineer",
-    target: 8,
+    title: "[Quota] Mixed Pipeline — Senior Full-Stack Engineer",
+    target: 4,
     status: "open",
     workplace: "remote",
     experience: "senior",
     salaryMin: 155000,
     salaryMax: 205000,
-    reportCount: 9,
+    plans: [
+      {
+        status: "evaluated",
+        interviewStatus: "completed",
+        overallScore: 8.8,
+        reportState: "released",
+        batch: "released",
+      },
+      { status: "interview_in_progress", interviewStatus: "completed", batch: "active" },
+      { status: "interview_invited", interviewStatus: "pending", batch: "active" },
+      {
+        status: "interview_in_progress",
+        interviewStatus: "awaiting_voice",
+        batch: "active",
+      },
+      { status: "queued_for_batch" },
+      { status: "queued_for_batch" },
+    ] satisfies ApplicantPlan[],
     description:
-      "Own end-to-end product features across our React/TypeScript frontend and Node.js/PostgreSQL backend. You'll partner with design and product on customer-facing workflows, mentor mid-level engineers, and help raise the bar on reliability and delivery speed.",
+      "Quota test: one delivered report, one processing report, two interviews underway, and two waitlisted candidates.",
   },
   {
-    title: "Frontend Engineer (React)",
-    target: 6,
+    title: "[Quota] Capacity Full — Frontend Engineer",
+    target: 3,
     status: "open",
     workplace: "hybrid",
     experience: "mid",
     salaryMin: 130000,
     salaryMax: 175000,
-    reportCount: 8,
+    plans: [
+      {
+        status: "evaluated",
+        interviewStatus: "completed",
+        overallScore: 8.4,
+        reportState: "released",
+        batch: "released",
+      },
+      { status: "interview_invited", interviewStatus: "pending", batch: "active" },
+      { status: "interview_in_progress", interviewStatus: "in_progress", batch: "active" },
+      { status: "queued_for_batch" },
+      { status: "queued_for_batch" },
+    ] satisfies ApplicantPlan[],
     description:
-      "Ship polished, accessible interfaces with React, TypeScript, and Tailwind. You'll own UI quality for high-traffic surfaces, contribute to our component library, and collaborate closely with design on rapid iteration.",
+      "Quota test: delivered plus reserved equals the target, so additional qualified candidates stay waitlisted.",
   },
   {
-    title: "Backend Engineer (Platform)",
-    target: 7,
+    title: "[Quota] Increase Target — Backend Engineer",
+    target: 3,
     status: "open",
     workplace: "remote",
     experience: "senior",
     salaryMin: 150000,
     salaryMax: 195000,
-    reportCount: 8,
-    activeBatch: true,
-    heldCount: 3,
+    plans: [
+      {
+        status: "evaluated",
+        interviewStatus: "completed",
+        overallScore: 8.5,
+        reportState: "released",
+        batch: "released",
+      },
+      { status: "interview_invited", interviewStatus: "pending" },
+      { status: "interview_in_progress", interviewStatus: "awaiting_voice" },
+      { status: "queued_for_batch" },
+      { status: "queued_for_batch" },
+    ] satisfies ApplicantPlan[],
     description:
-      "Design and operate scalable APIs, background jobs, and data pipelines powering RoundZero's interview and evaluation platform. Strong PostgreSQL and observability experience required.",
+      "Quota test: starts full at three reports with two waitlisted candidates. Increase the target to five to launch both candidates.",
   },
   {
-    title: "Product Designer",
-    target: 5,
+    title: "[Quota] Reject and Backfill — Product Designer",
+    target: 2,
     status: "open",
     workplace: "hybrid",
     experience: "mid",
     salaryMin: 125000,
     salaryMax: 165000,
-    reportCount: 7,
+    plans: [
+      {
+        status: "evaluated",
+        interviewStatus: "completed",
+        overallScore: 8.2,
+        reportState: "released",
+        batch: "released",
+      },
+      { status: "interview_invited", interviewStatus: "pending" },
+      { status: "queued_for_batch" },
+    ] satisfies ApplicantPlan[],
     description:
-      "Lead UX for hiring workflows used by recruiters and candidates daily. From research and wireframes through high-fidelity Figma — partner with PM and engineering to ship intuitive, trustworthy experiences.",
+      "Quota test: reject the pending interview candidate to free one slot and immediately invite the waitlisted candidate.",
   },
   {
-    title: "Data Engineer",
-    target: 6,
+    title: "[Quota] Active Batch — Data Engineer",
+    target: 4,
     status: "open",
     workplace: "remote",
     experience: "senior",
     salaryMin: 145000,
     salaryMax: 190000,
-    reportCount: 8,
+    plans: [
+      {
+        status: "evaluated_held",
+        interviewStatus: "completed",
+        overallScore: 8.7,
+        reportState: "held",
+        batch: "active",
+      },
+      {
+        status: "evaluated_held",
+        interviewStatus: "completed",
+        overallScore: 7.6,
+        reportState: "held",
+        batch: "active",
+      },
+      {
+        status: "interview_in_progress",
+        interviewStatus: "awaiting_voice",
+        batch: "active",
+      },
+      { status: "interview_invited", interviewStatus: "pending", batch: "active" },
+      { status: "queued_for_batch" },
+    ] satisfies ApplicantPlan[],
     description:
-      "Build reliable analytics pipelines and reporting infrastructure. You'll model hiring funnel data, improve data quality, and enable product and GTM teams with trustworthy metrics.",
+      "Quota test: two held reports and two unfinished interviews reserve every slot; awaiting voice remains active at release time.",
   },
   {
-    title: "Growth Product Manager",
-    target: 5,
+    title: "[Quota] Target Reached — Growth Product Manager",
+    target: 3,
     status: "open",
     workplace: "onsite",
     experience: "mid",
     salaryMin: 135000,
     salaryMax: 180000,
-    reportCount: 7,
+    plans: [
+      {
+        status: "evaluated",
+        interviewStatus: "completed",
+        overallScore: 9.1,
+        reportState: "released",
+        batch: "released",
+      },
+      {
+        status: "shortlisted",
+        interviewStatus: "completed",
+        overallScore: 8.4,
+        reportState: "released",
+        batch: "released",
+      },
+      {
+        status: "rejected",
+        interviewStatus: "completed",
+        overallScore: 6.2,
+        reportState: "released",
+        batch: "released",
+      },
+      { status: "queued_for_batch" },
+      { status: "queued_for_batch" },
+    ] satisfies ApplicantPlan[],
     description:
-      "Drive activation and retention across self-serve and sales-assisted motions. Own experiment design, funnel analysis, and cross-functional execution with engineering and design.",
+      "Quota test: all three reports are delivered; qualified candidates remain waitlisted and no new interviews launch.",
   },
   {
-    title: "DevOps Engineer",
+    title: "[Quota] Empty Draft — DevOps Engineer",
     target: 5,
     status: "draft",
     workplace: "onsite",
     experience: "senior",
     salaryMin: 140000,
     salaryMax: 185000,
-    reportCount: 0,
+    plans: [] satisfies ApplicantPlan[],
     description:
       "Own CI/CD, infrastructure as code, and production observability on Cloudflare Workers and AWS. Lead incident response and cost-efficiency initiatives as we scale.",
   },
@@ -199,57 +295,6 @@ const candidateStatusNotifications = new Set([
   "evaluated",
 ]);
 
-function buildApplicantPlans(reportCount: number, heldCount = 0): ApplicantPlan[] {
-  const earlyPipeline: ApplicantPlan[] = [
-    { status: "applied" },
-    { status: "applied" },
-    { status: "pre_screening" },
-    { status: "pre_screening" },
-    { status: "queued_for_batch" },
-    { status: "interview_invited" },
-    { status: "interview_in_progress" },
-  ];
-
-  const releasedScores = spreadScores(reportCount);
-  const heldScores = spreadScores(heldCount, 7.8, 6.8);
-
-  const heldPlans: ApplicantPlan[] = heldScores.map((overallScore) => ({
-    status: "evaluated_held",
-    overallScore,
-    releaseReport: false,
-  }));
-
-  const reportPlans: ApplicantPlan[] = releasedScores.map((overallScore, index) => {
-    let status: ApplicantStatus = "evaluated";
-    // Keep the top-ranked report in "evaluated" so the report page shows the
-    // primary Shortlist action; shortlist the runner-up for the Shortlisted inbox.
-    if (index === 1) status = "shortlisted";
-    if (index >= releasedScores.length - 2) status = "rejected";
-
-    return {
-      status,
-      overallScore,
-      releaseReport: true,
-    };
-  });
-
-  return [...earlyPipeline, ...heldPlans, ...reportPlans];
-}
-
-function interviewStatusForApplication(status: ApplicantStatus) {
-  if (status === "interview_invited") return "pending";
-  if (status === "interview_in_progress") return "in_progress";
-  if (
-    status === "evaluated_held" ||
-    status === "evaluated" ||
-    status === "shortlisted" ||
-    status === "rejected"
-  ) {
-    return "completed";
-  }
-  return null;
-}
-
 function clampPreScore(index: number, status: ApplicantStatus) {
   const base = status === "interview_invited" ? 6.8 : status === "interview_in_progress" ? 7.2 : 7.5;
   return Math.round((base + (index % 4) * 0.15) * 10) / 10;
@@ -271,7 +316,7 @@ const syntheticCandidateProfiles = [
   { name: "Priya Patel", picture: "https://i.pravatar.cc/300?img=45" },
   { name: "James Okonkwo", picture: "https://i.pravatar.cc/300?img=12" },
   { name: "Emily Rodriguez", picture: "https://i.pravatar.cc/300?img=9" },
-  { name: "David Kim", picture: "https://i.pravatar.cc/300?img=15" },
+  { name: "David Kim", picture: "https://i.pravatar.cc/300?img=13" },
   { name: "Aisha Rahman", picture: "https://i.pravatar.cc/300?img=48" },
   { name: "Michael Torres", picture: "https://i.pravatar.cc/300?img=13" },
   { name: "Hannah Nguyen", picture: "https://i.pravatar.cc/300?img=44" },
@@ -361,7 +406,8 @@ async function upsertCompanyProfile(companyId: string, ownerId: string, slug: st
   await sql`
     INSERT INTO companies (
       id, owner_id, name, slug, onboarding_completed_at, description, logo_key,
-      industry, company_size, location, website, founded_year, tech_stack, culture, social_links
+      industry, company_size, location, website, founded_year, tech_stack, culture, social_links,
+      subscription_plan, subscription_status
     ) VALUES (
       ${companyId}, ${ownerId}, ${demoCompanyProfile.name}, ${slug}, now(),
       ${demoCompanyProfile.description},
@@ -370,7 +416,9 @@ async function upsertCompanyProfile(companyId: string, ownerId: string, slug: st
       ${demoCompanyProfile.website}, ${demoCompanyProfile.foundedYear},
       ${sql.json(demoCompanyProfile.techStack)},
       ${demoCompanyProfile.culture},
-      ${sql.json(demoCompanyProfile.socialLinks)}
+      ${sql.json(demoCompanyProfile.socialLinks)},
+      ${"scale"},
+      ${"active"}
     )
     ON CONFLICT (id) DO UPDATE
     SET
@@ -385,6 +433,8 @@ async function upsertCompanyProfile(companyId: string, ownerId: string, slug: st
       tech_stack = EXCLUDED.tech_stack,
       culture = EXCLUDED.culture,
       social_links = EXCLUDED.social_links,
+      subscription_plan = EXCLUDED.subscription_plan,
+      subscription_status = EXCLUDED.subscription_status,
       updated_at = now()
   `;
 }
@@ -526,7 +576,9 @@ async function seedApplicationPipeline(ctx: ApplicationSeedContext) {
     ctx;
 
   await sql`
-    INSERT INTO applications (id, job_id, candidate_id, resume_key, metadata, status, created_at, updated_at)
+    INSERT INTO applications (
+      id, job_id, candidate_id, resume_key, metadata, status, queued_at, created_at, updated_at
+    )
     VALUES (
       ${applicationId},
       ${job.id},
@@ -540,17 +592,19 @@ async function seedApplicationPipeline(ctx: ApplicationSeedContext) {
         },
       })},
       ${plan.status},
+      ${plan.status === "queued_for_batch" ? updatedAt : null},
       ${createdAt},
       ${updatedAt}
     )
     ON CONFLICT (id) DO UPDATE
     SET
       status = EXCLUDED.status,
+      queued_at = EXCLUDED.queued_at,
       metadata = EXCLUDED.metadata,
       updated_at = EXCLUDED.updated_at
   `;
 
-  if (plan.status !== "applied" && plan.status !== "pre_screening" && plan.status !== "queued_for_batch") {
+  if (plan.status !== "applied" && plan.status !== "pre_screening") {
     const preScore = plan.overallScore ?? clampPreScore(index, plan.status);
     await sql`
       INSERT INTO pre_evaluations (
@@ -562,7 +616,7 @@ async function seedApplicationPipeline(ctx: ApplicationSeedContext) {
         ${preScore},
         ${sql.json(preScore >= 7 ? [] : ["Needs stronger production examples at scale"])},
         ${preScore >= 8 ? "high" : preScore >= 6 ? "medium" : "low"},
-        ${preScore >= 7 ? "invite_to_interview" : "manual_review"},
+        ${preScore >= 7 ? "interview_invited" : "hold"},
         ${"seed/demo"},
         ${"1.0.0"}
       )
@@ -574,7 +628,7 @@ async function seedApplicationPipeline(ctx: ApplicationSeedContext) {
     `;
   }
 
-  const interviewStatus = interviewStatusForApplication(plan.status);
+  const interviewStatus = plan.interviewStatus;
   if (!interviewStatus) {
     return;
   }
@@ -593,7 +647,7 @@ async function seedApplicationPipeline(ctx: ApplicationSeedContext) {
       ? new Date(startedAt.getTime() + randomInt(`${interviewId}-dur`, 28, 68) * 60 * 1000)
       : null;
 
-  const linkToBatch = batchId !== null && interviewStatus === "completed";
+  const linkToBatch = batchId !== null;
 
   await sql`
     INSERT INTO interviews (
@@ -631,7 +685,12 @@ async function seedApplicationPipeline(ctx: ApplicationSeedContext) {
     return;
   }
 
-  if (interviewStatus !== "completed" || plan.overallScore === undefined || !completedAt) {
+  if (
+    interviewStatus !== "completed" ||
+    plan.overallScore === undefined ||
+    plan.reportState === undefined ||
+    !completedAt
+  ) {
     return;
   }
 
@@ -654,7 +713,7 @@ async function seedApplicationPipeline(ctx: ApplicationSeedContext) {
   });
   const scores = makeScoresFromOverall(plan.overallScore, interviewId);
   const reportId = makeUuidFromSeed(`dashboard-seed-report-${interviewId}`);
-  const releasedAt = plan.releaseReport
+  const releasedAt = plan.reportState === "released"
     ? new Date(
         completedAt.getTime() + randomInt(`${reportId}-released`, 30, 180) * 60 * 1000,
       )
@@ -764,29 +823,153 @@ async function seedCompanyReportNotifications(companyId: string) {
   }
 }
 
+function expectedProgress(plans: ApplicantPlan[]) {
+  return {
+    delivered: plans.filter((plan) => plan.reportState === "released").length,
+    processing: plans.filter(
+      (plan) => plan.reportState !== "released" && plan.interviewStatus === "completed",
+    ).length,
+    underway: plans.filter(
+      (plan) =>
+        plan.reportState !== "released" &&
+        plan.interviewStatus !== undefined &&
+        ["pending", "in_progress", "awaiting_voice"].includes(plan.interviewStatus),
+    ).length,
+    waitlisted: plans.filter((plan) => plan.status === "queued_for_batch").length,
+  };
+}
+
+function validateScenario(template: (typeof jobTemplates)[number]) {
+  const progress = expectedProgress(template.plans);
+  if (progress.delivered + progress.processing + progress.underway > template.target) {
+    throw new Error(`${template.title} seeds more delivered and reserved reports than its target.`);
+  }
+
+  for (const plan of template.plans) {
+    if (plan.status === "queued_for_batch" && plan.interviewStatus !== undefined) {
+      throw new Error(`${template.title} gives a waitlisted application an interview.`);
+    }
+    if (plan.reportState !== undefined && plan.interviewStatus !== "completed") {
+      throw new Error(`${template.title} gives a report to an incomplete interview.`);
+    }
+    if (plan.reportState !== undefined && plan.overallScore === undefined) {
+      throw new Error(`${template.title} gives a report no score.`);
+    }
+    if (plan.batch !== undefined && plan.interviewStatus === undefined) {
+      throw new Error(`${template.title} assigns an application without an interview to a batch.`);
+    }
+    if (plan.reportState === "held" && plan.batch !== "active") {
+      throw new Error(`${template.title} has a held report outside an active batch.`);
+    }
+  }
+}
+
+async function resetSeededJobPipelines(jobs: SeedJob[]) {
+  for (const job of jobs) {
+    await sql.begin(async (tx) => {
+      await tx`DELETE FROM notifications WHERE payload->>'jobId' = ${job.id}`;
+      await tx`
+        DELETE FROM reports
+        WHERE application_id IN (SELECT id FROM applications WHERE job_id = ${job.id})
+      `;
+      await tx`
+        DELETE FROM communication_assessments
+        WHERE application_id IN (SELECT id FROM applications WHERE job_id = ${job.id})
+      `;
+      await tx`
+        DELETE FROM interview_messages
+        WHERE interview_id IN (
+          SELECT i.id
+          FROM interviews i
+          JOIN applications a ON a.id = i.application_id
+          WHERE a.job_id = ${job.id}
+        )
+      `;
+      await tx`
+        DELETE FROM interviews
+        WHERE application_id IN (SELECT id FROM applications WHERE job_id = ${job.id})
+      `;
+      await tx`
+        DELETE FROM pre_evaluations
+        WHERE application_id IN (SELECT id FROM applications WHERE job_id = ${job.id})
+      `;
+      await tx`DELETE FROM applications WHERE job_id = ${job.id}`;
+      await tx`DELETE FROM job_batches WHERE job_id = ${job.id}`;
+    });
+  }
+}
+
+async function assertSeededScenario(job: SeedJob, plans: ApplicantPlan[]) {
+  const expected = expectedProgress(plans);
+  const rows = await sql<
+    {
+      delivered: number;
+      processing: number;
+      underway: number;
+      waitlisted: number;
+    }[]
+  >`
+    SELECT
+      count(DISTINCT a.id) FILTER (WHERE released.application_id IS NOT NULL)::int AS delivered,
+      count(DISTINCT a.id) FILTER (
+        WHERE released.application_id IS NULL AND i.status = 'completed'
+      )::int AS processing,
+      count(DISTINCT a.id) FILTER (
+        WHERE released.application_id IS NULL
+          AND i.status IN ('pending', 'in_progress', 'awaiting_voice')
+      )::int AS underway,
+      count(DISTINCT a.id) FILTER (WHERE a.status = 'queued_for_batch')::int AS waitlisted
+    FROM applications a
+    LEFT JOIN interviews i ON i.application_id = a.id
+    LEFT JOIN (
+      SELECT DISTINCT application_id
+      FROM reports
+      WHERE released_at IS NOT NULL
+    ) released ON released.application_id = a.id
+    WHERE a.job_id = ${job.id}
+  `;
+
+  const actual = rows[0];
+  if (!actual || Object.keys(expected).some((key) => actual[key] !== expected[key])) {
+    throw new Error(
+      `${job.title} progress mismatch. Expected ${JSON.stringify(expected)}, received ${JSON.stringify(actual)}.`,
+    );
+  }
+
+  console.log(
+    `  ${job.title}: ${actual.delivered} delivered, ${actual.processing} processing, ${actual.underway} underway, ${actual.waitlisted} waitlisted`,
+  );
+}
+
 async function seedApplicationsAndReports(
   companyId: string,
   jobs: SeedJob[],
   candidates: CandidateUser[],
 ) {
   const openJobs = jobs.filter((_, index) => jobTemplates[index]?.status === "open");
+  await resetSeededJobPipelines(jobs);
 
   let candidateOffset = 0;
 
   for (let jobIndex = 0; jobIndex < openJobs.length; jobIndex++) {
     const job = openJobs[jobIndex]!;
     const template = jobTemplates[jobIndex]!;
-    const heldCount = template.heldCount ?? 0;
-    const plans = buildApplicantPlans(template.reportCount, heldCount);
+    const plans = template.plans;
+    validateScenario(template);
 
-    let batchId: string | null = null;
-    if (template.reportCount > 0 || template.activeBatch) {
-      batchId = makeUuidFromSeed(`dashboard-seed-batch-${job.id}`);
-      const batchStatus = template.activeBatch ? "active" : "released";
+    const batchIds: Partial<Record<"active" | "released", string>> = {};
+    for (const batchStatus of ["released", "active"] as const) {
+      const batchPlans = plans.filter((plan) => plan.batch === batchStatus);
+      if (batchPlans.length === 0) {
+        continue;
+      }
+
+      const batchId = makeUuidFromSeed(`dashboard-seed-batch-${job.id}-${batchStatus}`);
+      batchIds[batchStatus] = batchId;
       const launchedAt = new Date(
-        Date.now() - (template.activeBatch ? 2 : 10) * 24 * 60 * 60 * 1000,
+        Date.now() - (batchStatus === "active" ? 2 : 10) * 24 * 60 * 60 * 1000,
       );
-      const releasedAt = template.activeBatch
+      const releasedAt = batchStatus === "active"
         ? null
         : new Date(Date.now() - 5 * 24 * 60 * 60 * 1000);
 
@@ -796,7 +979,7 @@ async function seedApplicationsAndReports(
           ${batchId},
           ${job.id},
           ${batchStatus},
-          ${template.target},
+          ${batchPlans.length},
           ${launchedAt},
           ${releasedAt}
         )
@@ -827,13 +1010,14 @@ async function seedApplicationsAndReports(
         applicationId,
         interviewId: makeUuidFromSeed(`dashboard-seed-interview-${applicationId}`),
         index: candidateOffset + i,
-        batchId,
+        batchId: plan.batch ? (batchIds[plan.batch] ?? null) : null,
         createdAt,
         updatedAt,
       });
     }
 
     candidateOffset += plans.length;
+    await assertSeededScenario(job, plans);
   }
 
   await seedCompanyReportNotifications(companyId);
@@ -979,10 +1163,10 @@ async function seedDevCandidate(
 
   const devPlans: Array<{ jobIndex: number; plan: ApplicantPlan }> = [
     { jobIndex: 0, plan: { status: "applied" } },
-    { jobIndex: 1, plan: { status: "interview_invited" } },
-    { jobIndex: 2, plan: { status: "interview_in_progress" } },
-    { jobIndex: 3, plan: { status: "shortlisted", overallScore: 8.2, releaseReport: true } },
-    { jobIndex: 4, plan: { status: "evaluated", overallScore: 7.1, releaseReport: true } },
+    { jobIndex: 1, plan: { status: "pre_screening" } },
+    { jobIndex: 2, plan: { status: "applied" } },
+    { jobIndex: 3, plan: { status: "rejected" } },
+    { jobIndex: 4, plan: { status: "pre_screening" } },
   ];
 
   const candidateUser: CandidateUser = {
