@@ -34,9 +34,50 @@ RETURNING id, job_id, status, target_size, created_at, launched_at, released_at;
 -- name: getJobsWithQueuedCandidates :many
 SELECT DISTINCT j.id
 FROM jobs j
-JOIN applications a ON a.job_id = j.id
-WHERE a.status = 'queued_for_batch'
-  AND j.status = 'open';
+WHERE j.status = 'open'
+  AND (
+    EXISTS (
+      SELECT 1 FROM applications a
+      WHERE a.job_id = j.id AND a.status = 'queued_for_batch'
+    )
+    OR EXISTS (
+      SELECT 1 FROM job_batches b
+      WHERE b.job_id = j.id AND b.status IN ('forming', 'active')
+    )
+  );
+
+-- name: getBatchInviteNotificationDeliveries :many
+SELECT n.id, n.type, n.payload, n.email_delivery_status, u.email
+FROM interviews i
+JOIN applications a ON a.id = i.application_id
+JOIN users u ON u.id = a.candidate_id
+JOIN notifications n
+  ON n.user_id = u.id
+ AND n.type = 'interview_invited'
+ AND n.dedupe_key = 'interview:' || i.id::text
+WHERE i.batch_id = $1
+ORDER BY i.invited_at ASC;
+
+-- name: getBatchDigestNotificationDeliveries :many
+SELECT
+  n.id AS notification_id,
+  n.email_delivery_status,
+  u.email,
+  j.title AS job_title,
+  count(DISTINCT r.id)::int AS report_count,
+  max((r.scores->>'overall')::double precision)::double precision AS top_score,
+  (array_agg(cu.name ORDER BY (r.scores->>'overall')::double precision DESC NULLS LAST))[1] AS top_candidate_name
+FROM job_batches b
+JOIN jobs j ON j.id = b.job_id
+JOIN notifications n ON n.type = 'batch_ready' AND n.dedupe_key = 'batch:' || b.id::text
+JOIN users u ON u.id = n.user_id
+LEFT JOIN interviews i ON i.batch_id = b.id
+LEFT JOIN reports r ON r.interview_id = i.id AND r.released_at IS NOT NULL
+LEFT JOIN applications a ON a.id = r.application_id
+LEFT JOIN users cu ON cu.id = a.candidate_id
+WHERE b.id = sqlc.arg('batch_id')
+GROUP BY n.id, n.email_delivery_status, u.email, j.title
+ORDER BY n.id;
 
 -- name: getPoolCandidatesForJob :many
 SELECT
@@ -44,13 +85,71 @@ SELECT
   a.candidate_id,
   a.job_id,
   a.status,
+  a.queued_at,
   a.created_at,
   pe.score AS pre_evaluation_score
 FROM applications a
 LEFT JOIN pre_evaluations pe ON pe.application_id = a.id
 WHERE a.job_id = $1
   AND a.status = 'queued_for_batch'
-ORDER BY pe.score DESC NULLS LAST, a.created_at ASC;
+ORDER BY pe.score DESC NULLS LAST, a.queued_at ASC;
+
+-- name: claimQueuedApplication :one
+UPDATE applications
+SET status = 'interview_invited',
+    queued_at = NULL,
+    updated_at = now()
+WHERE id = $1
+  AND job_id = $2
+  AND status = 'queued_for_batch'
+RETURNING id, candidate_id;
+
+-- name: getOldestQueuedAtForJob :one
+SELECT min(queued_at) AS oldest_queued_at
+FROM applications
+WHERE job_id = $1
+  AND status = 'queued_for_batch';
+
+-- name: getJobCapacityForUpdate :one
+SELECT id, title, final_report_target, status, archived_at, expires_at
+FROM jobs
+WHERE id = $1
+FOR UPDATE;
+
+-- name: getJobCapacityCounts :one
+SELECT
+  count(DISTINCT a.id) FILTER (WHERE r.application_id IS NOT NULL)::int AS delivered_count,
+  count(DISTINCT a.id) FILTER (
+    WHERE r.application_id IS NULL
+      AND i.status IN ('pending', 'in_progress', 'awaiting_voice', 'completed')
+  )::int AS reserved_count
+FROM applications a
+LEFT JOIN interviews i ON i.application_id = a.id
+LEFT JOIN (
+  SELECT DISTINCT application_id
+  FROM reports
+  WHERE released_at IS NOT NULL
+) r ON r.application_id = a.id
+WHERE a.job_id = $1;
+
+-- name: getJobReportProgress :one
+SELECT
+  count(DISTINCT a.id) FILTER (WHERE r.application_id IS NOT NULL)::int AS delivered_count,
+  count(DISTINCT a.id) FILTER (
+    WHERE r.application_id IS NULL AND i.status = 'completed'
+  )::int AS processing_count,
+  count(DISTINCT a.id) FILTER (
+    WHERE r.application_id IS NULL AND i.status IN ('pending', 'in_progress', 'awaiting_voice')
+  )::int AS underway_count,
+  count(DISTINCT a.id) FILTER (WHERE a.status = 'queued_for_batch')::int AS waitlisted_count
+FROM applications a
+LEFT JOIN interviews i ON i.application_id = a.id
+LEFT JOIN (
+  SELECT DISTINCT application_id
+  FROM reports
+  WHERE released_at IS NOT NULL
+) r ON r.application_id = a.id
+WHERE a.job_id = $1;
 
 -- name: getHeldReportsForBatch :many
 SELECT
@@ -98,11 +197,13 @@ WHERE id IN (
     AND a.status = 'evaluated_held'
 );
 
--- name: assignInterviewToBatch :exec
+-- name: assignInterviewToBatch :one
 UPDATE interviews
 SET batch_id = $2,
     updated_at = now()
-WHERE id = $1;
+WHERE id = $1
+  AND batch_id IS NULL
+RETURNING id;
 
 -- name: getBatchDetail :one
 SELECT

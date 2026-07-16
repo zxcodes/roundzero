@@ -2,7 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import { createApplication } from "@/features/applications/queries/queries_sql";
 import { softDeleteUser } from "@/features/auth/queries/queries_sql";
-import { getTestDb, makeTestResumeKey, seedCompany, seedUser } from "@/shared/__tests__/test-utils";
+import {
+  createTestDbConnection,
+  getTestDb,
+  makeTestResumeKey,
+  seedCompany,
+  seedUser,
+  waitForBlockedQueryCount,
+} from "@/shared/__tests__/test-utils";
 
 import {
   archiveJob,
@@ -212,6 +219,74 @@ describe("updateJob", () => {
     });
 
     expect(result).toBeNull();
+  });
+
+  it("allows increasing the report target but rejects decreases", async () => {
+    const { company } = await seedCompany();
+    const created = await createJob(sql, makeJobArgs(company.id, { finalReportTarget: 5 }));
+
+    const increased = await updateJob(sql, {
+      ...makeJobArgs(company.id, { finalReportTarget: 10 }),
+      id: created!.id,
+      expiresAt: null,
+    });
+    expect(increased?.finalReportTarget).toBe(10);
+
+    const decreased = await updateJob(sql, {
+      ...makeJobArgs(company.id, { finalReportTarget: 3 }),
+      id: created!.id,
+      expiresAt: null,
+    });
+    expect(decreased).toBeNull();
+    expect((await getJobById(sql, { id: created!.id }))?.finalReportTarget).toBe(10);
+  });
+
+  it("prevents a stale target update from undoing a concurrent increase", async () => {
+    const { company } = await seedCompany();
+    const created = await createJob(sql, makeJobArgs(company.id, { finalReportTarget: 5 }));
+    const blocker = createTestDbConnection();
+    let releaseJobLock = () => {};
+    let markJobLockHeld = () => {};
+    const holdJobLock = new Promise<void>((resolve) => {
+      releaseJobLock = resolve;
+    });
+    const jobLockHeld = new Promise<void>((resolve) => {
+      markJobLockHeld = resolve;
+    });
+    const blockerTask = blocker.begin(async (tx) => {
+      await tx`SELECT id FROM jobs WHERE id = ${created!.id} FOR UPDATE`;
+      markJobLockHeld();
+      await holdJobLock;
+    });
+
+    await jobLockHeld;
+    const increase = updateJob(sql, {
+      ...makeJobArgs(company.id, { finalReportTarget: 10 }),
+      id: created!.id,
+    });
+    let staleUpdate: ReturnType<typeof updateJob>;
+    try {
+      await waitForBlockedQueryCount(sql, {
+        minimum: 1,
+        queryPattern: "%UPDATE jobs%final_report_target%",
+      });
+      staleUpdate = updateJob(sql, {
+        ...makeJobArgs(company.id, { finalReportTarget: 7 }),
+        id: created!.id,
+      });
+      await waitForBlockedQueryCount(sql, {
+        minimum: 2,
+        queryPattern: "%UPDATE jobs%final_report_target%",
+      });
+    } finally {
+      releaseJobLock();
+      await blockerTask;
+      await blocker.end();
+    }
+
+    expect((await increase)?.finalReportTarget).toBe(10);
+    expect(await staleUpdate!).toBeNull();
+    expect((await getJobById(sql, { id: created!.id }))?.finalReportTarget).toBe(10);
   });
 });
 

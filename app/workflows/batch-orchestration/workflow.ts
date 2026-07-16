@@ -1,8 +1,9 @@
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers";
 
 import {
+  dispatchBatchDigest,
   maybeLaunchNextBatch,
-  releaseBatchAndNotify,
+  reconcileBatchRelease,
 } from "@/features/batches/server/orchestration";
 import { createWorkflowLogger } from "@/shared/logger";
 
@@ -18,6 +19,7 @@ export class BatchOrchestrationWorkflow extends WorkflowEntrypoint<Env, BatchPay
 
     log.info(`Batch orchestration started for batch ${batchId}, job ${jobId}`);
 
+    let timedOut = false;
     try {
       // Wait for either:
       // 1. All reports ready (early signal from post-evaluation)
@@ -29,17 +31,24 @@ export class BatchOrchestrationWorkflow extends WorkflowEntrypoint<Env, BatchPay
 
       log.info("Batch completion signaled early");
     } catch {
+      timedOut = true;
       log.info("Batch timeout reached, releasing anyway");
     }
 
-    // Release the batch (idempotent) + dispatch digest email
+    // Reconcile durable DB state separately from retryable provider delivery.
     await step.do("release-batch", async () => {
-      const result = await releaseBatchAndNotify(batchId);
+      const result = await reconcileBatchRelease(batchId, {
+        expireDueInterviews: timedOut,
+      });
       if (result.released) {
         log.info(`Batch ${batchId} released with ${result.reportCount} report(s)`);
       } else {
         log.info(`Batch release skipped: ${result.reason}`);
       }
+    });
+
+    await step.do("dispatch-batch-digest", async () => {
+      await dispatchBatchDigest(batchId);
     });
 
     // Check for backfill

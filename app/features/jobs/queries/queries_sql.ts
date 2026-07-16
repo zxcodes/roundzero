@@ -341,6 +341,7 @@ SET title = $1,
     updated_at = now()
 WHERE id = $17
   AND company_id = $18
+  AND $15 >= final_report_target
 RETURNING id, company_id, title, description, requirements, screening_questions, status, location, workplace_type, employment_type, experience_level, salary_min, salary_max, salary_currency, team_size, headcount, final_report_target, expires_at, archived_at, created_at, updated_at`;
 
 export interface updateJobArgs {
@@ -390,6 +391,73 @@ export interface updateJobRow {
 
 export async function updateJob(sql: Sql, args: updateJobArgs): Promise<updateJobRow | null> {
     const rows = await sql.unsafe(updateJobQuery, [args.title, args.description, args.requirements, args.screeningQuestions, args.status, args.location, args.workplaceType, args.employmentType, args.experienceLevel, args.salaryMin, args.salaryMax, args.salaryCurrency, args.teamSize, args.headcount, args.finalReportTarget, args.expiresAt, args.id, args.companyId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        companyId: row[1],
+        title: row[2],
+        description: row[3],
+        requirements: row[4],
+        screeningQuestions: row[5],
+        status: row[6],
+        location: row[7],
+        workplaceType: row[8],
+        employmentType: row[9],
+        experienceLevel: row[10],
+        salaryMin: row[11],
+        salaryMax: row[12],
+        salaryCurrency: row[13],
+        teamSize: row[14],
+        headcount: row[15],
+        finalReportTarget: row[16],
+        expiresAt: row[17],
+        archivedAt: row[18],
+        createdAt: row[19],
+        updatedAt: row[20]
+    };
+}
+
+export const getOwnedJobForUpdateQuery = `-- name: getOwnedJobForUpdate :one
+SELECT id, company_id, title, description, requirements, screening_questions, status, location, workplace_type, employment_type, experience_level, salary_min, salary_max, salary_currency, team_size, headcount, final_report_target, expires_at, archived_at, created_at, updated_at
+FROM jobs
+WHERE id = $1
+  AND company_id = $2
+FOR UPDATE`;
+
+export interface getOwnedJobForUpdateArgs {
+    id: string;
+    companyId: string;
+}
+
+export interface getOwnedJobForUpdateRow {
+    id: string;
+    companyId: string;
+    title: string;
+    description: string;
+    requirements: any;
+    screeningQuestions: any;
+    status: string;
+    location: string | null;
+    workplaceType: string | null;
+    employmentType: string | null;
+    experienceLevel: string | null;
+    salaryMin: number | null;
+    salaryMax: number | null;
+    salaryCurrency: string;
+    teamSize: number | null;
+    headcount: number | null;
+    finalReportTarget: number;
+    expiresAt: Date | null;
+    archivedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export async function getOwnedJobForUpdate(sql: Sql, args: getOwnedJobForUpdateArgs): Promise<getOwnedJobForUpdateRow | null> {
+    const rows = await sql.unsafe(getOwnedJobForUpdateQuery, [args.id, args.companyId]).values();
     if (rows.length !== 1) {
         return null;
     }

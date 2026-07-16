@@ -5,6 +5,7 @@ import { jsx } from "react/jsx-runtime";
 import { NotificationEmailTemplate } from "@/features/notifications/components/notification-email-template";
 import { getNotificationPresentation } from "@/features/notifications/config";
 import {
+  getNotificationById,
   markNotificationEmailDelivered,
   markNotificationEmailFailed,
   markNotificationEmailSkipped,
@@ -111,6 +112,11 @@ export async function deliverNotificationEmail(
     sendEmail?: NotificationEmailSender;
   },
 ) {
+  const current = await getNotificationById(db, { id: input.notification.id });
+  if (!current || current.emailDeliveryStatus === "sent") {
+    return;
+  }
+
   if (!input.recipient?.email) {
     await markNotificationEmailSkipped(db, {
       id: input.notification.id,

@@ -136,4 +136,32 @@ describe("expireInterviewIfDue", () => {
     const application = await getApplicationById(sql, { id: applicationId });
     expect(application?.status).toBe("pre_screening");
   });
+
+  it("does not overwrite a cancellation that beat a stale expiry read", async () => {
+    const { interview, applicationId } = await seedInterview({
+      status: "pending",
+      expiresAt: new Date(Date.now() - 60 * 1000),
+    });
+    await sql.begin(async (tx) => {
+      await tx`SELECT id FROM applications WHERE id = ${applicationId} FOR UPDATE`;
+      await tx`UPDATE applications SET status = 'withdrawn' WHERE id = ${applicationId}`;
+      await tx`UPDATE interviews SET status = 'cancelled', cancelled_at = now() WHERE id = ${interview.id}`;
+    });
+
+    const result = await expireInterviewIfDue({
+      db: sql,
+      interview: {
+        id: interview.id,
+        applicationId,
+        status: "pending",
+        expiresAt: interview.metadata?.expiresAt ?? null,
+      },
+    });
+
+    expect(result.expiredNow).toBe(false);
+    const reloaded = await getInterviewContextById(sql, { id: interview.id });
+    expect(reloaded?.status).toBe("cancelled");
+    const application = await getApplicationById(sql, { id: applicationId });
+    expect(application?.status).toBe("withdrawn");
+  });
 });

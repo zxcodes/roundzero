@@ -7,8 +7,8 @@ import { env } from "cloudflare:workers";
 import { z } from "zod";
 
 import { updateApplicationStatus } from "@/features/applications/queries/queries_sql";
+import { withdrawApplicationWorkflow } from "@/features/applications/services/workflows";
 import {
-  cancelInterview,
   createCommunicationAssessment,
   createInterviewMessage,
   getCommunicationAssessmentByInterviewId,
@@ -288,18 +288,9 @@ export const cancelMyInterview = createServerFn({ method: "POST" })
       return effectiveInterview;
     }
 
-    const updated = await cancelInterview(db, {
-      id: data.interviewId,
-      cancellationReason: "Candidate cancelled via dashboard",
-    });
-
-    if (!updated) {
-      return null;
-    }
-
-    await updateApplicationStatus(db, {
-      id: effectiveInterview.applicationId,
-      status: "withdrawn",
+    await withdrawApplicationWorkflow(db, {
+      userId: context.userId,
+      applicationId: effectiveInterview.applicationId,
     });
 
     return await getInterviewForCandidateById(db, {

@@ -3,9 +3,9 @@ import { zodValidator } from "@tanstack/zod-adapter";
 import { generateText, NoObjectGeneratedError, NoOutputGeneratedError, Output } from "ai";
 import { z } from "zod";
 
+import { checkAndLaunchBatch } from "@/features/batches/server/orchestration";
 import { getCompanyByMemberUserId } from "@/features/companies/queries/membership-queries_sql";
 import { notifyCompanyTeam } from "@/features/companies/services/company-team-notifications";
-import type { Entitlements } from "@/features/entitlements/entitlements";
 import {
   enforceCompanyEntitlement,
   enforceReportTarget,
@@ -31,6 +31,7 @@ import {
   getArchivedJobsByCompanyId,
   getCandidateOpenJobsPaginated as getCandidateOpenJobsPaginatedQuery,
   getJobById,
+  getOwnedJobForUpdate,
   getJobsWithPipelineByCompanyId,
   getOpenJobCompanies,
   getOpenJobsByCompanyId as getOpenJobsByCompanyIdQuery,
@@ -149,7 +150,6 @@ export const updateJob = createServerFn({ method: "POST" })
   .validator(zodValidator(updateJobSchema))
   .handler(async ({ data, context }) => {
     const db = getDb();
-    const existing = data.status === "open" ? await getJobById(db, { id: data.id }) : null;
     const updateArgs = {
       id: data.id,
       companyId: context.company.id,
@@ -170,40 +170,54 @@ export const updateJob = createServerFn({ method: "POST" })
       expiresAt: data.expiresAt ?? null,
     };
 
-    const job =
-      data.status === "open"
-        ? await db.begin(async (tx) => {
-            const transaction = asSqlTransaction(tx);
-            await lockCompanyEntitlementScope(transaction, context.company.id);
+    const result = await db.begin(async (tx) => {
+      const transaction = asSqlTransaction(tx);
+      await lockCompanyEntitlementScope(transaction, context.company.id);
+      const existing = await getOwnedJobForUpdate(transaction, {
+        id: data.id,
+        companyId: context.company.id,
+      });
+      if (!existing) return null;
+      if (data.finalReportTarget < existing.finalReportTarget) {
+        throw new Error("The report target can only be increased.");
+      }
 
-            const existing = await getJobById(transaction, { id: data.id });
-            const entitlements: Entitlements =
-              existing && existing.status !== "open"
-                ? await enforceCompanyEntitlement(transaction, context.company.id, "jobs.open")
-                : await readCompanyEntitlements(transaction, context.company.id);
+      const targetIncreased = data.finalReportTarget > existing.finalReportTarget;
+      let finalReportTarget = existing.finalReportTarget;
+      if (targetIncreased) {
+        const entitlements = await readCompanyEntitlements(transaction, context.company.id);
+        finalReportTarget = enforceReportTarget(entitlements, data.finalReportTarget);
+      }
+      if (data.status === "open" && existing.status !== "open") {
+        const entitlements = await enforceCompanyEntitlement(
+          transaction,
+          context.company.id,
+          "jobs.open",
+        );
+        if (finalReportTarget > entitlements.reports.perJobLimit) {
+          throw new Error(
+            `Upgrade your plan to publish this job with a report target of ${finalReportTarget}.`,
+          );
+        }
+      }
 
-            return updateJobQuery(transaction, {
-              ...updateArgs,
-              finalReportTarget: enforceReportTarget(entitlements, data.finalReportTarget),
-            });
-          })
-        : await (async () => {
-            const entitlements = await readCompanyEntitlements(db, context.company.id);
-            return updateJobQuery(db, {
-              ...updateArgs,
-              finalReportTarget: enforceReportTarget(entitlements, data.finalReportTarget),
-            });
-          })();
+      const job = await updateJobQuery(transaction, { ...updateArgs, finalReportTarget });
+      if (!job) throw new Error("The report target can only be increased.");
+      return { job, previousStatus: existing.status, targetIncreased };
+    });
 
-    if (!job) {
-      throw new Error("Failed to update job: not found or not authorized");
+    if (!result) {
+      throw new Error("Job not found or not authorized");
     }
 
-    if (isJobPublishTransition(existing?.status, job.status)) {
-      await notifyJobPublished(db, context.company.id, job);
+    if (isJobPublishTransition(result.previousStatus, result.job.status)) {
+      await notifyJobPublished(db, context.company.id, result.job);
+    }
+    if (result.targetIncreased && result.job.status === "open") {
+      await checkAndLaunchBatch(result.job.id);
     }
 
-    return { job };
+    return { job: result.job };
   });
 
 export const archiveJob = createServerFn({ method: "POST" })
@@ -257,6 +271,11 @@ export const publishJob = createServerFn({ method: "POST" })
         context.company.id,
         "jobs.open",
       );
+      if (job.finalReportTarget > entitlements.reports.perJobLimit) {
+        throw new Error(
+          `Upgrade your plan to publish this job with a report target of ${job.finalReportTarget}.`,
+        );
+      }
 
       return updateJobQuery(transaction, {
         id: data.id,
@@ -275,7 +294,7 @@ export const publishJob = createServerFn({ method: "POST" })
         salaryCurrency: job.salaryCurrency,
         teamSize: job.teamSize,
         headcount: job.headcount,
-        finalReportTarget: enforceReportTarget(entitlements, job.finalReportTarget, "clamp"),
+        finalReportTarget: job.finalReportTarget,
         expiresAt: job.expiresAt,
       });
     });

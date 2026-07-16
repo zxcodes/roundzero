@@ -4,8 +4,14 @@ import type { Sql } from "postgres";
 import { BATCH_CONFIG } from "@/features/batches/config";
 import {
   assignInterviewToBatch,
+  claimQueuedApplication,
   createBatch,
+  getBatchDigestNotificationDeliveries,
+  getBatchInviteNotificationDeliveries,
   getFormingBatchForJob,
+  getJobCapacityCounts,
+  getJobCapacityForUpdate,
+  getOldestQueuedAtForJob,
   getPoolCandidatesForJob,
   updateBatchStatus,
 } from "@/features/batches/queries/queries_sql";
@@ -15,8 +21,7 @@ import {
   getInterviewContextById,
 } from "@/features/interviews/queries/queries_sql";
 import { ensureInterviewRuntimeMetadata } from "@/features/interviews/shared/runtime";
-import { getJobById } from "@/features/jobs/queries/queries_sql";
-import { createNotification } from "@/features/notifications/queries/queries_sql";
+import { createDedupedNotification } from "@/features/notifications/queries/queries_sql";
 import {
   deliverNotificationEmail,
   sendNotificationEmail,
@@ -47,14 +52,31 @@ export async function checkAndLaunchBatch(jobId: string): Promise<PoolCheckResul
   const result: PoolCheckResult = await db.begin(async (tx) => {
     const transaction = tx as unknown as Sql;
 
-    const job = await getJobById(transaction, { id: jobId });
+    const job = await getJobCapacityForUpdate(transaction, { id: jobId });
     if (!job) {
       return { launched: false, reason: "Job not found" };
     }
 
     const activeBatch = await getFormingBatchForJob(transaction, { jobId });
     if (activeBatch) {
-      return { launched: false, reason: "Batch already forming" };
+      return { launched: false, reason: `Batch already forming:${activeBatch.id}` };
+    }
+
+    if (
+      job.status !== "open" ||
+      job.archivedAt !== null ||
+      (job.expiresAt !== null && job.expiresAt <= new Date())
+    ) {
+      return { launched: false, reason: "Job is not accepting new interviews" };
+    }
+
+    const counts = await getJobCapacityCounts(transaction, { jobId });
+    const remaining = Math.max(
+      0,
+      (job.finalReportTarget ?? 0) - (counts?.deliveredCount ?? 0) - (counts?.reservedCount ?? 0),
+    );
+    if (remaining === 0) {
+      return { launched: false, reason: "No remaining report capacity" };
     }
 
     const pool = await getPoolCandidatesForJob(transaction, { jobId });
@@ -62,12 +84,12 @@ export async function checkAndLaunchBatch(jobId: string): Promise<PoolCheckResul
       return { launched: false, reason: "Pool is empty" };
     }
 
-    const targetSize =
-      typeof job.finalReportTarget === "number"
-        ? Math.min(job.finalReportTarget, BATCH_CONFIG.DEFAULT_TARGET_SIZE)
-        : BATCH_CONFIG.DEFAULT_TARGET_SIZE;
+    const targetSize = Math.min(remaining, BATCH_CONFIG.DEFAULT_TARGET_SIZE);
 
-    const oldestQueuedMs = pool.length > 0 ? Date.now() - new Date(pool[0].createdAt).getTime() : 0;
+    const oldest = await getOldestQueuedAtForJob(transaction, { jobId });
+    const oldestQueuedMs = oldest?.oldestQueuedAt
+      ? Date.now() - new Date(oldest.oldestQueuedAt).getTime()
+      : 0;
     const poolFormationTimeout = BATCH_CONFIG.POOL_FORMATION_TIMEOUT_MS;
 
     const shouldLaunch =
@@ -82,7 +104,7 @@ export async function checkAndLaunchBatch(jobId: string): Promise<PoolCheckResul
       };
     }
 
-    const inviteCount = Math.min(pool.length, targetSize);
+    const inviteCount = Math.min(pool.length, remaining, BATCH_CONFIG.DEFAULT_TARGET_SIZE);
     const candidatesToInvite = pool.slice(0, inviteCount);
 
     const batch = await createBatch(transaction, {
@@ -98,25 +120,35 @@ export async function checkAndLaunchBatch(jobId: string): Promise<PoolCheckResul
     const interviews: Map<string, { id: string; type: string }> = new Map();
 
     for (const candidate of candidatesToInvite) {
+      const claimed = await claimQueuedApplication(transaction, {
+        id: candidate.id,
+        jobId,
+      });
+      if (!claimed) {
+        throw new Error(`Failed to claim queued application ${candidate.id}`);
+      }
+
       const existingInterview = await getInterviewByApplicationId(transaction, {
         applicationId: candidate.id,
       });
 
-      const interview =
-        existingInterview ??
-        (await createInterview(transaction, {
-          applicationId: candidate.id,
-          agentId: null,
-          type: "full",
-          metadata: { expiresAt },
-          status: "pending",
-          invitedAt: new Date(),
-          startedAt: null,
-          completedAt: null,
-        }));
+      if (existingInterview) {
+        throw new Error(`Queued application ${candidate.id} already has an interview`);
+      }
+
+      const interview = await createInterview(transaction, {
+        applicationId: candidate.id,
+        agentId: null,
+        type: "full",
+        metadata: { expiresAt },
+        status: "pending",
+        invitedAt: new Date(),
+        startedAt: null,
+        completedAt: null,
+      });
 
       if (!interview) {
-        continue;
+        throw new Error(`Failed to create interview for application ${candidate.id}`);
       }
 
       interviews.set(candidate.id, { id: interview.id, type: interview.type });
@@ -128,10 +160,13 @@ export async function checkAndLaunchBatch(jobId: string): Promise<PoolCheckResul
         await ensureInterviewRuntimeMetadata(transaction, interviewContext);
       }
 
-      await assignInterviewToBatch(transaction, {
+      const assigned = await assignInterviewToBatch(transaction, {
         id: interview.id,
         batchId: batch.id,
       });
+      if (!assigned) {
+        throw new Error(`Failed to assign interview ${interview.id} to batch`);
+      }
     }
 
     await updateBatchStatus(transaction, {
@@ -150,11 +185,6 @@ export async function checkAndLaunchBatch(jobId: string): Promise<PoolCheckResul
     const userMap = new Map(users.map((u) => [u.id, u]));
 
     for (const candidate of candidatesToInvite) {
-      await transaction.unsafe(
-        `UPDATE applications SET status = 'interview_invited', updated_at = now() WHERE id = $1`,
-        [candidate.id],
-      );
-
       const user = userMap.get(candidate.candidateId) ?? null;
       if (!user) {
         continue;
@@ -173,10 +203,11 @@ export async function checkAndLaunchBatch(jobId: string): Promise<PoolCheckResul
         interviewType: interview.type,
         expiresAt,
       });
-      const notification = await createNotification(transaction, {
+      const notification = await createDedupedNotification(transaction, {
         userId: user.id,
         type: "interview_invited",
         payload,
+        dedupeKey: `interview:${interview.id}`,
       });
 
       if (notification) {
@@ -187,21 +218,63 @@ export async function checkAndLaunchBatch(jobId: string): Promise<PoolCheckResul
       }
     }
 
-    try {
-      const instance = await env.BATCH_ORCHESTRATION.create({
-        id: batch.id,
-        params: { batchId: batch.id, jobId: job.id },
-      });
-      disposeRpcResource(instance);
-    } catch (error) {
-      console.error(`Failed to trigger batch orchestration for batch ${batch.id}`, error);
-    }
-
     return { launched: true, batchId: batch.id, candidateCount: inviteCount };
   });
 
+  let workflowStartupError: unknown = null;
+  let batchId: string | null = null;
   if (result.launched) {
-    for (const pending of pendingEmails) {
+    batchId = result.batchId;
+    try {
+      const instance = await env.BATCH_ORCHESTRATION.create({
+        id: result.batchId,
+        params: { batchId: result.batchId, jobId },
+      });
+      disposeRpcResource(instance);
+    } catch (error) {
+      workflowStartupError = error;
+    }
+  } else if (result.reason.startsWith("Batch already forming:")) {
+    batchId = result.reason.slice("Batch already forming:".length);
+    try {
+      const existing = await env.BATCH_ORCHESTRATION.get(batchId);
+      try {
+        const status = await existing.status();
+        try {
+          if (
+            status.status === "errored" ||
+            status.status === "terminated" ||
+            status.status === "complete" ||
+            status.status === "unknown"
+          ) {
+            await existing.restart();
+          }
+          // queued/running/waiting/paused/waitingForPause instances are healthy.
+          // A terminal workflow paired with an active DB batch is inconsistent,
+          // so restart its idempotent release flow.
+        } finally {
+          disposeRpcResource(status);
+        }
+      } finally {
+        disposeRpcResource(existing);
+      }
+    } catch {
+      const repaired = await env.BATCH_ORCHESTRATION.create({
+        id: batchId,
+        params: { batchId, jobId },
+      });
+      disposeRpcResource(repaired);
+    }
+  }
+
+  if (batchId) {
+    const deliveries = result.launched
+      ? pendingEmails
+      : (await getBatchInviteNotificationDeliveries(db, { batchId })).map((delivery) => ({
+          notification: delivery,
+          recipient: delivery.email ? { email: delivery.email } : null,
+        }));
+    for (const pending of deliveries) {
       await deliverNotificationEmail(db, {
         notification: pending.notification,
         recipient: pending.recipient,
@@ -210,46 +283,48 @@ export async function checkAndLaunchBatch(jobId: string): Promise<PoolCheckResul
     }
   }
 
+  if (workflowStartupError) {
+    throw workflowStartupError;
+  }
+
   return result;
 }
 
-/** Release a batch and dispatch the digest email if delivery is configured.
- * Used by BatchOrchestrationWorkflow as a single durable step.
- */
-export async function releaseBatchAndNotify(batchId: string): Promise<BatchReleaseSummary> {
-  const summary = await releaseBatch(getDb(), batchId);
-  if (!summary.released || summary.notificationDeliveries.length === 0) {
-    return summary;
-  }
+/** Durably reconcile batch release state and notification rows. */
+export async function reconcileBatchRelease(
+  batchId: string,
+  options: { expireDueInterviews?: boolean } = {},
+): Promise<BatchReleaseSummary> {
+  return releaseBatch(getDb(), batchId, options);
+}
 
-  for (const delivery of summary.notificationDeliveries) {
-    await sendBatchDigestEmail({
-      notificationId: delivery.notification.id,
-      to: delivery.email,
-      batchId,
-      jobTitle: summary.jobTitle,
-      reportCount: summary.reportCount,
-      topScore: summary.topScore,
-      topCandidateName: summary.topCandidateName,
-    });
+/** Dispatch/retry digest emails from durable notification and report state. */
+export async function dispatchBatchDigest(batchId: string): Promise<void> {
+  const deliveries = await getBatchDigestNotificationDeliveries(getDb(), { batchId });
+  const failures: unknown[] = [];
+  for (const delivery of deliveries) {
+    try {
+      await sendBatchDigestEmail({
+        notificationId: delivery.notificationId,
+        to: delivery.email,
+        batchId,
+        jobTitle: delivery.jobTitle,
+        reportCount: delivery.reportCount,
+        topScore: delivery.topScore,
+        topCandidateName: delivery.topCandidateName,
+      });
+    } catch (error) {
+      failures.push(error);
+    }
   }
-
-  return summary;
+  if (failures.length > 0) {
+    throw new AggregateError(failures, "One or more batch digest emails failed");
+  }
 }
 
 /** After a batch releases, check if there's enough in the pool to launch the next batch.
  * Called by BatchOrchestrationWorkflow after release.
  */
 export async function maybeLaunchNextBatch(jobId: string): Promise<PoolCheckResult> {
-  const db = getDb();
-
-  const pool = await getPoolCandidatesForJob(db, { jobId });
-  if (pool.length >= BATCH_CONFIG.BACKFILL_THRESHOLD) {
-    return checkAndLaunchBatch(jobId);
-  }
-
-  return {
-    launched: false,
-    reason: `Pool has ${pool.length}, need ${BATCH_CONFIG.BACKFILL_THRESHOLD}`,
-  };
+  return checkAndLaunchBatch(jobId);
 }

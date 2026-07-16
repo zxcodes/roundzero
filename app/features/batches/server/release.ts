@@ -9,6 +9,7 @@ import {
   getBatchForUpdate,
   getCompanyOwnerForBatch,
   getHeldReportsForBatch,
+  getReportsByBatchId,
   releaseBatchApplications,
   releaseBatchReports,
   updateBatchStatus,
@@ -37,7 +38,11 @@ export type BatchReleaseSummary =
  * Idempotent — safe to call multiple times. Returns a summary so the caller can dispatch
  * the digest email after the transaction commits.
  */
-export async function releaseBatch(sql: Sql, batchId: string): Promise<BatchReleaseSummary> {
+export async function releaseBatch(
+  sql: Sql,
+  batchId: string,
+  options: { expireDueInterviews?: boolean } = {},
+): Promise<BatchReleaseSummary> {
   return await sql.begin(async (tx) => {
     const transaction = asSqlTransaction(tx);
 
@@ -47,16 +52,60 @@ export async function releaseBatch(sql: Sql, batchId: string): Promise<BatchRele
       return { released: false, reason: "not_found" } as const;
     }
 
-    if (lockedBatch.status === "released") {
-      return { released: false, reason: "already_released" } as const;
+    const alreadyReleased = lockedBatch.status === "released";
+
+    // Canonical batch order: batch -> application rows -> interview rows.
+    // Stable ordering also prevents two batch-wide operations from taking the
+    // same class of row locks in opposite order.
+    await transaction`
+      SELECT a.id
+      FROM applications a
+      JOIN interviews i ON i.application_id = a.id
+      WHERE i.batch_id = ${batchId}
+      ORDER BY a.id
+      FOR UPDATE OF a
+    `;
+    await transaction`
+      SELECT id
+      FROM interviews
+      WHERE batch_id = ${batchId}
+      ORDER BY id
+      FOR UPDATE
+    `;
+
+    if (options.expireDueInterviews && !alreadyReleased) {
+      // Canonical expiry predicate, executed here without invoking orchestration
+      // recursively while the batch lock is held. awaiting_voice is deliberately
+      // excluded and continues reserving capacity.
+      const expired = await transaction`
+        UPDATE interviews
+        SET status = 'expired', expired_at = now(), updated_at = now()
+        WHERE batch_id = ${batchId}
+          AND status IN ('pending', 'in_progress')
+          AND (metadata->>'expiresAt')::timestamptz <= now()
+        RETURNING application_id
+      `;
+      if (expired.length > 0) {
+        await transaction`
+          UPDATE applications
+          SET status = 'pre_screening', queued_at = NULL, updated_at = now()
+          WHERE id IN ${transaction(expired.map((row) => row.application_id))}
+            AND status IN ('interview_invited', 'interview_in_progress')
+        `;
+      }
     }
 
-    // Snapshot held reports BEFORE releasing — these are the rows that this call is releasing.
-    const heldReports = await getHeldReportsForBatch(transaction, { batchId });
+    // On retry, reconstruct the same digest from released reports and the
+    // stable dedupe rows rather than returning before email dispatch can retry.
+    const heldReports = alreadyReleased
+      ? await getReportsByBatchId(transaction, { batchId })
+      : await getHeldReportsForBatch(transaction, { batchId });
 
-    await releaseBatchReports(transaction, { batchId });
-    await releaseBatchApplications(transaction, { batchId });
-    await updateBatchStatus(transaction, { id: batchId, status: "released" });
+    if (!alreadyReleased) {
+      await releaseBatchReports(transaction, { batchId });
+      await releaseBatchApplications(transaction, { batchId });
+      await updateBatchStatus(transaction, { id: batchId, status: "released" });
+    }
 
     const ownerInfo = await getCompanyOwnerForBatch(transaction, { id: batchId });
 
@@ -91,6 +140,7 @@ export async function releaseBatch(sql: Sql, batchId: string): Promise<BatchRele
       companyId: ownerInfo.companyId,
       type: "batch_ready",
       payload,
+      dedupeKey: `batch:${batchId}`,
     });
 
     return {
@@ -112,9 +162,13 @@ export async function isBatchFullyResolved(sql: Sql, batchId: string): Promise<b
   const result = await sql
     .unsafe(
       `SELECT
-      COUNT(*) FILTER (WHERE status IN ('completed', 'expired', 'cancelled'))::int AS resolved,
+      COUNT(*) FILTER (
+        WHERE interviews.status IN ('expired', 'cancelled')
+           OR (interviews.status = 'completed' AND reports.id IS NOT NULL)
+      )::int AS resolved,
       COUNT(*)::int AS total
     FROM interviews
+    LEFT JOIN reports ON reports.interview_id = interviews.id
     WHERE batch_id = $1`,
       [batchId],
     )
