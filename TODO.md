@@ -1,5 +1,7 @@
 ## TODO
 
+- disable public jobs route for now.
+
 ## PROD THINGS
 
 - planetscale for db?
