@@ -81,7 +81,8 @@ ORDER BY i.created_at DESC;
 
 -- name: resetInterviewInvite :one
 UPDATE interviews
-SET metadata = COALESCE(metadata, '{}'::jsonb) || $2,
+SET batch_id = NULL,
+    metadata = $2,
     status = 'pending',
     invited_at = $3,
     started_at = NULL,
@@ -90,8 +91,14 @@ SET metadata = COALESCE(metadata, '{}'::jsonb) || $2,
     cancelled_at = NULL,
     cancellation_reason = NULL,
     updated_at = now()
-WHERE id = $1
+WHERE interviews.id = $1
+  AND status IN ('expired', 'cancelled', 'pending', 'in_progress')
+  AND NOT EXISTS (SELECT 1 FROM reports WHERE application_id = interviews.application_id)
 RETURNING *;
+
+-- name: deleteCommunicationAssessmentByInterviewId :exec
+DELETE FROM communication_assessments
+WHERE interview_id = $1;
 
 -- name: updateInterviewStatus :one
 UPDATE interviews
@@ -129,6 +136,8 @@ SET status = 'expired',
     expired_at = now(),
     updated_at = now()
 WHERE id = $1
+  AND status IN ('pending', 'in_progress')
+  AND (metadata->>'expiresAt')::timestamptz <= now()
 RETURNING *;
 
 -- name: cancelInterview :one
@@ -138,6 +147,7 @@ SET status = 'cancelled',
     cancellation_reason = $2,
     updated_at = now()
 WHERE id = $1
+  AND status IN ('pending', 'in_progress', 'awaiting_voice')
 RETURNING *;
 
 -- name: updateInterviewMetadata :one
@@ -177,13 +187,6 @@ JOIN jobs j ON j.id = a.job_id
 JOIN companies c ON c.id = j.company_id
 JOIN users u ON u.id = a.candidate_id
 WHERE i.id = $1;
-
--- name: countActiveInterviewSlotsByJob :one
-SELECT count(*)::int AS count
-FROM interviews i
-JOIN applications a ON a.id = i.application_id
-WHERE a.job_id = $1
-  AND i.status IN ('pending', 'in_progress');
 
 -- name: createCommunicationAssessment :one
 INSERT INTO communication_assessments (interview_id, application_id, status)

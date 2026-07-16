@@ -8,14 +8,12 @@ import type { z } from "zod";
 
 import {
   getApplicationById,
-  updateApplicationStatus,
+  updateApplicationStatusIfCurrent,
 } from "@/features/applications/queries/queries_sql";
 import { getUserById } from "@/features/auth/queries/queries_sql";
+import { getJobCapacityForUpdate } from "@/features/batches/queries/queries_sql";
 import { checkAndLaunchBatch } from "@/features/batches/server/orchestration";
-import {
-  countActiveInterviewSlotsByJob,
-  getInterviewByApplicationId,
-} from "@/features/interviews/queries/queries_sql";
+import { getInterviewByApplicationId } from "@/features/interviews/queries/queries_sql";
 import { getJobById } from "@/features/jobs/queries/queries_sql";
 import { createNotification } from "@/features/notifications/queries/queries_sql";
 import {
@@ -411,8 +409,13 @@ export function writePreEvaluation(
         )
         .values();
 
-      await updateApplicationStatus(transaction, {
+      const application = await getApplicationById(transaction, { id: applicationId });
+      if (!application || application.status !== "applied") {
+        return;
+      }
+      await updateApplicationStatusIfCurrent(transaction, {
         id: applicationId,
+        currentStatus: "applied",
         status: "pre_screening",
       });
     });
@@ -463,17 +466,18 @@ export function decideNextStep(
 
     const db = getDb();
     const job = applicationData.job;
-    const finalReportTarget = typeof job.finalReportTarget === "number" ? job.finalReportTarget : 5;
-
     const allocation = await db.begin(async (tx) => {
       const transaction = tx as unknown as Sql;
-
-      const lockedJobRows = await tx
-        .unsafe(`SELECT final_report_target FROM jobs WHERE id = $1 FOR UPDATE`, [job.id])
-        .values();
-
-      if (lockedJobRows.length !== 1) {
+      const lockedJob = await getJobCapacityForUpdate(transaction, { id: job.id });
+      if (!lockedJob) {
         throw new Error(`Job not found while acquiring quota lock: ${job.id}`);
+      }
+
+      const lockedApplications = await tx`
+        SELECT status FROM applications WHERE id = ${applicationId} FOR UPDATE
+      `;
+      if (lockedApplications[0]?.status !== "pre_screening") {
+        return { kind: "superseded" as const };
       }
 
       const interviewInTransaction = await getInterviewByApplicationId(transaction, {
@@ -486,8 +490,7 @@ export function decideNextStep(
         };
       }
 
-      const lockedFinalReportTarget =
-        typeof lockedJobRows[0]?.[0] === "number" ? lockedJobRows[0][0] : finalReportTarget;
+      const lockedFinalReportTarget = lockedJob.finalReportTarget;
 
       const completedReportsRows = await tx
         .unsafe(
@@ -500,40 +503,35 @@ export function decideNextStep(
           ? completedReportsRows[0][0]
           : 0;
 
-      const activeSlots = await countActiveInterviewSlotsByJob(transaction, { jobId: job.id });
-      const activeCount = activeSlots?.count ?? 0;
       const remainingReports = Math.max(0, lockedFinalReportTarget - releasedReports);
-      const availableInviteSlots = remainingReports - activeCount;
 
-      if (availableInviteSlots <= 0) {
+      if (remainingReports <= 0) {
         return {
           kind: "quota_exhausted" as const,
-          activeCount,
           releasedReports,
           limit: lockedFinalReportTarget,
         };
       }
 
       // Instead of creating an interview immediately, add candidate to pool
-      await updateApplicationStatus(transaction, {
+      const queued = await updateApplicationStatusIfCurrent(transaction, {
         id: applicationId,
+        currentStatus: "pre_screening",
         status: "queued_for_batch",
       });
+      if (!queued) return { kind: "superseded" as const };
 
       return {
         kind: "pooled" as const,
-        activeCount,
         releasedReports,
         limit: lockedFinalReportTarget,
         remainingReports,
-        availableInviteSlots,
       };
     });
 
     if (allocation.kind === "quota_exhausted") {
       log.result("decide", {
         action: "quota_exhausted",
-        active: allocation.activeCount,
         releasedReports: allocation.releasedReports,
         limit: allocation.limit,
       });
@@ -563,14 +561,19 @@ export function decideNextStep(
       return { action: "already_invited" as const };
     }
 
+    if (allocation.kind === "superseded") {
+      log.result("decide", { action: "superseded" });
+      return { action: "superseded" as const };
+    }
+
     log.result("decide", {
       action: "pooled",
       newStatus: "queued_for_batch",
-      availableSlots: allocation.availableInviteSlots,
+      remainingReports: allocation.remainingReports,
     });
 
-    // Trigger batch check asynchronously, if pool is large enough, launch immediately
-    checkAndLaunchBatch(job.id).catch((error) => {
+    // Wait for the launch check so the Worker does not terminate with work in flight.
+    await checkAndLaunchBatch(job.id).catch((error) => {
       log.warn(
         `Background batch check failed for job ${job.id}: ${error instanceof Error ? error.message : String(error)}`,
       );

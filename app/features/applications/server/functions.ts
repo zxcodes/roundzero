@@ -3,7 +3,7 @@ import { zodValidator } from "@tanstack/zod-adapter";
 import { env } from "cloudflare:workers";
 import { z } from "zod";
 
-import { getActiveBatchForJob } from "@/features/batches/queries/queries_sql";
+import { getActiveBatchForJob, getJobReportProgress } from "@/features/batches/queries/queries_sql";
 import { getCompanyByMemberUserId } from "@/features/companies/queries/membership-queries_sql";
 import { getActiveInterviewsByJob } from "@/features/interviews/queries/queries_sql";
 import { expireInterviewIfDue } from "@/features/interviews/server/expire";
@@ -168,11 +168,7 @@ export const getJobApplicantsView = createServerFn({ method: "GET" })
       return null;
     }
 
-    const [activeInterviews, applicants, activeBatch] = await Promise.all([
-      getActiveInterviewsByJob(db, { jobId: data.jobId }),
-      getApplicationsByJob(db, { jobId: data.jobId }),
-      getActiveBatchForJob(db, { jobId: data.jobId }),
-    ]);
+    const activeInterviews = await getActiveInterviewsByJob(db, { jobId: data.jobId });
 
     await Promise.all(
       activeInterviews.map((interview) =>
@@ -188,7 +184,24 @@ export const getJobApplicantsView = createServerFn({ method: "GET" })
       ),
     );
 
-    return { job, applicants, activeBatch };
+    const [applicants, activeBatch, progress] = await Promise.all([
+      getApplicationsByJob(db, { jobId: data.jobId }),
+      getActiveBatchForJob(db, { jobId: data.jobId }),
+      getJobReportProgress(db, { jobId: data.jobId }),
+    ]);
+
+    return {
+      job,
+      applicants,
+      activeBatch,
+      reportProgress: {
+        target: job.finalReportTarget,
+        delivered: progress?.deliveredCount ?? 0,
+        processing: progress?.processingCount ?? 0,
+        underway: progress?.underwayCount ?? 0,
+        waitlisted: progress?.waitlistedCount ?? 0,
+      },
+    };
   });
 
 export const updateApplicationStatus = createServerFn({ method: "POST" })

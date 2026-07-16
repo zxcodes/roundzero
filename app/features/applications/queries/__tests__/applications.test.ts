@@ -613,6 +613,36 @@ describe("getShortlistedApplicantsByCompany", () => {
 });
 
 describe("updateApplicationStatus", () => {
+  it("sets queue time once, preserves it while queued, and clears it on exit", async () => {
+    const { company } = await seedCompany();
+    const candidate = await seedUser({ role: "candidate" });
+    const job = await makeOpenJob(company.id);
+    const created = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: {},
+      status: "applied",
+    });
+
+    const entered = await updateApplicationStatus(sql, {
+      id: created!.id,
+      status: "queued_for_batch",
+    });
+    const preserved = await updateApplicationStatus(sql, {
+      id: created!.id,
+      status: "queued_for_batch",
+    });
+    const exited = await updateApplicationStatus(sql, {
+      id: created!.id,
+      status: "interview_invited",
+    });
+
+    expect(entered!.queuedAt).toBeInstanceOf(Date);
+    expect(preserved!.queuedAt).toEqual(entered!.queuedAt);
+    expect(exited!.queuedAt).toBeNull();
+  });
+
   it("updates the status and updated_at", async () => {
     const { company } = await seedCompany();
     const candidate = await seedUser({ role: "candidate" });

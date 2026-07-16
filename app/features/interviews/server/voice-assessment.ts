@@ -2,7 +2,6 @@ import { generateText, Output } from "ai";
 import { env } from "cloudflare:workers";
 import { z } from "zod";
 
-import { updateApplicationStatus } from "@/features/applications/queries/queries_sql";
 import {
   completeCommunicationAssessment,
   completeInterviewAfterVoice,
@@ -204,33 +203,81 @@ export async function finalizeVoiceAssessmentFromTranscript(input: {
     return false;
   }
 
-  const completedAssessment = await completeCommunicationAssessment(input.db, {
-    interviewId: input.interviewId,
-    transcript: transcriptForDb,
-    analysis: null,
-    audioKey: input.audioKey ?? null,
-  });
-  if (!completedAssessment) {
-    return false;
-  }
+  const transition = await input.db.begin(async (tx) => {
+    const transaction = tx as unknown as Parameters<
+      typeof getCommunicationAssessmentByInterviewId
+    >[0];
 
-  // Voice is mandatory: the interview is only fully `completed` now that both
-  // text and voice are done. Conditional (awaiting_voice → completed), so a
-  // late webhook can't resurrect an expired/cancelled interview.
-  const completedInterview = await completeInterviewAfterVoice(input.db, {
-    id: input.interviewId,
-  });
-  if (!completedInterview) {
-    await updateApplicationStatus(input.db, {
-      id: interview.applicationId,
-      status: "evaluation_failed",
+    // Canonical individual-transition order. Holding both locks makes voice
+    // completion serialize with cancellation and withdrawal.
+    const applications = await tx`
+      SELECT status FROM applications
+      WHERE id = ${interview.applicationId}
+      FOR UPDATE
+    `;
+    const interviews = await tx`
+      SELECT status FROM interviews
+      WHERE id = ${input.interviewId}
+      FOR UPDATE
+    `;
+    const applicationStatus = applications[0]?.status;
+    const interviewStatus = interviews[0]?.status;
+
+    if (
+      applicationStatus === "withdrawn" ||
+      applicationStatus === "rejected" ||
+      interviewStatus === "cancelled"
+    ) {
+      return { kind: "terminal_winner" } as const;
+    }
+    if (interviewStatus !== "awaiting_voice") {
+      return { kind: "not_awaiting_voice" } as const;
+    }
+
+    const completedAssessment = await completeCommunicationAssessment(transaction, {
+      interviewId: input.interviewId,
+      transcript: transcriptForDb,
+      analysis: null,
+      audioKey: input.audioKey ?? null,
     });
-    return false;
-  }
+    if (!completedAssessment) return { kind: "assessment_not_completed" } as const;
+
+    const completedInterview = await completeInterviewAfterVoice(transaction, {
+      id: input.interviewId,
+    });
+    if (!completedInterview) {
+      // Re-read under the locks rather than turning a winning terminal state
+      // into evaluation_failed based on a stale pre-transaction snapshot.
+      const current = await tx`
+        SELECT i.status AS interview_status, a.status AS application_status
+        FROM interviews i
+        JOIN applications a ON a.id = i.application_id
+        WHERE i.id = ${input.interviewId}
+      `;
+      if (
+        current[0]?.interview_status === "cancelled" ||
+        current[0]?.application_status === "withdrawn" ||
+        current[0]?.application_status === "rejected"
+      ) {
+        return { kind: "terminal_winner" } as const;
+      }
+      await tx`
+        UPDATE applications
+        SET status = 'evaluation_failed', updated_at = now()
+        WHERE id = ${interview.applicationId}
+          AND status IN ('interview_invited', 'interview_in_progress')
+      `;
+      return { kind: "completion_failed" } as const;
+    }
+
+    return { kind: "completed", applicationId: completedInterview.applicationId } as const;
+  });
+
+  if (transition.kind !== "completed") return false;
 
   await startPostEvaluation(input.db, {
     interviewId: input.interviewId,
-    applicationId: completedInterview.applicationId,
+    applicationId: transition.applicationId,
   });
 
   return true;
@@ -366,8 +413,7 @@ async function runVoiceAnalysis(
  *  - `interviews.status === 'completed'`;
  *  - `communication_assessments.status === 'completed'`.
  *
- * Idempotent: safe to call from voice finalization retries; duplicate workflow
- * `create` (already running) throws and is logged.
+ * Idempotent: a stable instance id is reconciled through Workflow get/status.
  */
 export async function startPostEvaluation(
   db: Parameters<typeof getCommunicationAssessmentByInterviewId>[0],
@@ -381,7 +427,10 @@ export async function startPostEvaluation(
   }
 
   const interview = await getInterviewContextById(db, { id: input.interviewId });
-  if (interview?.status !== "completed") {
+  if (
+    interview?.status !== "completed" ||
+    interview.applicationStatus !== "interview_in_progress"
+  ) {
     return;
   }
 
@@ -392,16 +441,42 @@ export async function startPostEvaluation(
     return;
   }
 
+  let instance: WorkflowInstance | null = null;
   try {
-    const instance = await env.POST_EVALUATION.create({
-      id: input.interviewId,
-      params: { interviewId: input.interviewId },
-    });
-    disposeRpcResource(instance);
+    try {
+      instance = await env.POST_EVALUATION.get(input.interviewId);
+    } catch {
+      const created = await env.POST_EVALUATION.create({
+        id: input.interviewId,
+        params: { interviewId: input.interviewId },
+      });
+      disposeRpcResource(created);
+      return;
+    }
+
+    const status = await instance.status();
+    try {
+      if (status.status === "errored" || status.status === "terminated") {
+        await instance.restart();
+      }
+      // queued/running/waiting/paused/complete are healthy. unknown and
+      // waitingForPause are conservatively left alone rather than duplicated.
+    } finally {
+      disposeRpcResource(status);
+    }
   } catch (error) {
+    await db`
+      UPDATE applications
+      SET status = 'evaluation_failed', updated_at = now()
+      WHERE id = ${input.applicationId}
+        AND status IN ('interview_invited', 'interview_in_progress')
+    `;
     console.error(
-      `[startPostEvaluation] failed to trigger post-evaluation for ${input.interviewId}`,
+      `[startPostEvaluation] failed to reconcile post-evaluation for ${input.interviewId}`,
       error,
     );
+    throw error;
+  } finally {
+    disposeRpcResource(instance);
   }
 }

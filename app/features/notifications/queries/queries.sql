@@ -3,12 +3,24 @@ INSERT INTO notifications (user_id, type, payload)
 VALUES ($1, $2, $3)
 RETURNING id, user_id, type, payload, read_at, email_delivery_status, email_delivery_error, email_delivery_attempted_at, email_delivery_sent_at, email_provider_message_id, created_at;
 
+-- name: createDedupedNotification :one
+INSERT INTO notifications (user_id, type, payload, dedupe_key)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (user_id, type, dedupe_key) WHERE dedupe_key IS NOT NULL
+DO UPDATE SET dedupe_key = EXCLUDED.dedupe_key
+RETURNING id, user_id, type, payload, dedupe_key, read_at, email_delivery_status, email_delivery_error, email_delivery_attempted_at, email_delivery_sent_at, email_provider_message_id, created_at;
+
 -- name: getNotificationsByUser :many
 SELECT id, user_id, type, payload, read_at, email_delivery_status, email_delivery_error, email_delivery_attempted_at, email_delivery_sent_at, email_provider_message_id, created_at
 FROM notifications
 WHERE user_id = $1
 ORDER BY created_at DESC
 LIMIT $2;
+
+-- name: getNotificationById :one
+SELECT id, user_id, type, payload, dedupe_key, read_at, email_delivery_status, email_delivery_error, email_delivery_attempted_at, email_delivery_sent_at, email_provider_message_id, created_at
+FROM notifications
+WHERE id = $1;
 
 -- name: countUnreadNotificationsByUser :one
 SELECT count(*)::int AS unread_count

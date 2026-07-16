@@ -69,7 +69,15 @@ SET title = $1,
     updated_at = now()
 WHERE id = $17
   AND company_id = $18
+  AND $15 >= final_report_target
 RETURNING *;
+
+-- name: getOwnedJobForUpdate :one
+SELECT *
+FROM jobs
+WHERE id = $1
+  AND company_id = $2
+FOR UPDATE;
 
 -- name: closeExpiredJobs :execrows
 UPDATE jobs
