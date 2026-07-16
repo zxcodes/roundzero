@@ -1,7 +1,7 @@
 # Batch Quota Correctness and Report Delivery Plan
 
 **Date:** 2026-07-14  
-**Status:** Approved design; ready for implementation  
+**Status:** Implemented and verified
 **Scope owner:** Batch orchestration, pre-evaluation allocation, post-evaluation persistence, job target editing, and company report-progress UI
 
 ## Problem
@@ -169,7 +169,7 @@ Use one lock order throughout the implementation:
 
 - entitlement-aware job update: company entitlement scope → job;
 - queueing/manual admission/batch launch: job → selected application rows → interview;
-- batch release/report persistence/timeout: batch → interview → application;
+- batch release/report persistence/timeout: batch → application → interview;
 - withdrawal/cancellation without a batch operation: application → interview;
 - never acquire a job lock while holding a batch lock;
 - invoke backfill only after the state-changing transaction commits.

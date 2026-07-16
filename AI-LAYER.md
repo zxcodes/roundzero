@@ -74,12 +74,15 @@ On workflow failure → application status `evaluation_failed` (recoverable via 
 
 ## Quota math
 
-Each job has `final_report_target` (plan-clamped: Free 1, Starter 3, Growth 5, Scale 10).
+Each job has an increase-only `final_report_target`, bounded by the current plan when it is created, published, or increased (Free 1, Starter 3, Growth 5, Scale 10). A later plan downgrade does not shrink an existing commitment.
 
 ```
-remainingReports = final_report_target - releasedReports  (reports.released_at IS NOT NULL)
-availableInviteSlots = remainingReports - activeInterviews(pending | in_progress)
+delivered = distinct applications with a released report
+reserved = distinct applications with an interview in pending | in_progress | awaiting_voice | completed and no released report
+availableInviteSlots = max(0, final_report_target - delivered - reserved)
 ```
+
+`queued_for_batch` is a waitlist and consumes no capacity. A completed interview remains reserved while its report is generated or held; releasing that report moves the same unit from reserved to delivered.
 
 ## Batch pooling (`queued_for_batch`)
 
@@ -107,7 +110,7 @@ Stop creating new interviews. Remaining candidates stay in pipeline; `position_f
 - Expiry applies only while `pending` or `in_progress` — **not** `awaiting_voice`
 - Cancel → interview `cancelled`, application `withdrawn`
 - Expire → interview `expired`, application returns to `pre_screening`
-- Freed quota slots can backfill from the pool on the next `checkAndLaunchBatch` / `maybeLaunchNextBatch` — not instant per-slot replacement
+- A successful expiry, cancellation, withdrawal, or company rejection immediately checks the pool for a one-slot backfill after the state-changing transaction commits
 
 ---
 
@@ -197,7 +200,7 @@ Not a fixed 60/40 split.
 
 # Report Limits
 
-`final_report_target` per job, enforced by `enforceReportTarget()`. Reports count toward quota only after **release** (`released_at` set at batch release or immediate release for non-batched paths).
+`final_report_target` per job is enforced at the server and transaction boundaries. Capacity is consumed by delivered reports plus reserved report-producing interviews; waitlisted applications consume no capacity. Targets may increase within the current plan entitlement but never decrease.
 
 ---
 

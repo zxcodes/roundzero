@@ -10,6 +10,10 @@ export default defineConfig(({ mode }) => {
           "./app/shared/__tests__/cloudflare-workers-mock.ts",
           import.meta.url,
         ).pathname,
+        "cloudflare:workflows": new URL(
+          "./app/shared/__tests__/cloudflare-workers-mock.ts",
+          import.meta.url,
+        ).pathname,
       },
     },
     test: {
@@ -25,9 +29,11 @@ export default defineConfig(({ mode }) => {
 
       // Run all test files sequentially in a single worker to avoid
       // cross-file DB conflicts (shared Postgres, TRUNCATE in afterEach).
+      // Keep module isolation enabled so file-scoped mocks cannot leak into
+      // later suites that exercise the same Workflow bindings.
       maxWorkers: 1,
       fileParallelism: false,
-      isolate: false,
+      isolate: true,
     },
   };
 });

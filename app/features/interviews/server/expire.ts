@@ -1,9 +1,7 @@
 import type { Sql } from "postgres";
 
-import {
-  getApplicationById,
-  updateApplicationStatus,
-} from "@/features/applications/queries/queries_sql";
+import { updateApplicationStatusIfCurrent } from "@/features/applications/queries/queries_sql";
+import { checkAndLaunchBatch } from "@/features/batches/server/orchestration";
 import { expireInterview } from "@/features/interviews/queries/queries_sql";
 import { shouldAutoExpireInterview } from "@/features/interviews/shared/expiry";
 
@@ -33,15 +31,37 @@ export const expireInterviewIfDue = async <T extends ExpirableInterview>(input: 
     return { interview: input.interview, expiredNow: false };
   }
 
-  await expireInterview(input.db, { id: input.interview.id });
+  const transition = await input.db.begin(async (tx) => {
+    const transaction = tx as unknown as Sql;
+    const rows = await tx`
+      SELECT job_id, status
+      FROM applications
+      WHERE id = ${input.interview.applicationId}
+      FOR UPDATE
+    `;
+    const application = rows[0];
+    if (!application) return null;
 
-  const application = await getApplicationById(input.db, { id: input.interview.applicationId });
-  if (application && application.status !== "rejected" && application.status !== "withdrawn") {
-    await updateApplicationStatus(input.db, {
-      id: input.interview.applicationId,
-      status: "pre_screening",
-    });
-  }
+    // Canonical order for individual terminal transitions: application first,
+    // then interview. expireInterview's conditional UPDATE takes the latter lock.
+    const expired = await expireInterview(transaction, { id: input.interview.id });
+    if (!expired) return null;
+
+    if (
+      application.status === "interview_invited" ||
+      application.status === "interview_in_progress"
+    ) {
+      await updateApplicationStatusIfCurrent(transaction, {
+        id: input.interview.applicationId,
+        currentStatus: application.status,
+        status: "pre_screening",
+      });
+    }
+    return application.job_id;
+  });
+
+  if (!transition) return { interview: input.interview, expiredNow: false };
+  await checkAndLaunchBatch(transition);
 
   return {
     interview: { ...input.interview, status: "expired" as const },

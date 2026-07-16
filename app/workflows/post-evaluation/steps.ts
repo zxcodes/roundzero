@@ -5,8 +5,10 @@ import type { Sql } from "postgres";
 import { jsx } from "react/jsx-runtime";
 import { z } from "zod";
 
-import { updateApplicationStatus } from "@/features/applications/queries/queries_sql";
-import { notifyCompanyTeam } from "@/features/companies/services/company-team-notifications";
+import {
+  type CompanyTeamNotificationDelivery,
+  notifyCompanyTeam,
+} from "@/features/companies/services/company-team-notifications";
 import {
   getCommunicationAssessmentByInterviewId,
   getInterviewContextById,
@@ -28,6 +30,7 @@ import { loadVoiceAssessmentContext } from "@/features/interviews/shared/voice-r
 import { getJobById } from "@/features/jobs/queries/queries_sql";
 import { ReportReadyEmailTemplate } from "@/features/notifications/components/report-ready-email-template";
 import {
+  getNotificationById,
   markNotificationEmailDelivered,
   markNotificationEmailFailed,
   markNotificationEmailSkipped,
@@ -54,7 +57,7 @@ import {
   transcriptHasEnoughSignal,
 } from "@/shared/ai-refine";
 import { isEmailDeliveryConfigured, sendReactTransactionalEmail } from "@/shared/email";
-import type { Recommendation } from "@/shared/enums";
+import { recommendationSchema } from "@/shared/enums";
 import type { createWorkflowLogger } from "@/shared/logger";
 import { notificationPayloadSchemas } from "@/shared/notifications-config";
 import { createChatModel, getModelChain } from "@/shared/openrouter";
@@ -219,20 +222,6 @@ export function loadExistingReport(
   return async () => {
     log.info("Loading existing report state");
     return await getReportByInterviewId(db, { interviewId });
-  };
-}
-
-export function markApplicationEvaluatedExisting(interviewId: string, db: Sql) {
-  return async () => {
-    const interview = await getInterviewContextById(db, { id: interviewId });
-    if (!interview) {
-      throw new Error(`Interview not found while reconciling status: ${interviewId}`);
-    }
-
-    await updateApplicationStatus(db, {
-      id: interview.applicationId,
-      status: "evaluated_held",
-    });
   };
 }
 
@@ -487,97 +476,144 @@ export function persistReport(
   interviewData: {
     interview: { applicationId: string };
   },
-  reportDraft: ReportModelResponse,
-  model: string,
+  reportDraft: ReportModelResponse | null,
+  model: string | null,
   db: Sql,
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
-  return async () => {
-    log.info("Persisting report to database");
+  return async (): Promise<
+    | {
+        kind: "held";
+        report: NonNullable<Awaited<ReturnType<typeof getReportByInterviewId>>>;
+        batchId: string;
+        notificationDeliveries: CompanyTeamNotificationDelivery[];
+      }
+    | {
+        kind: "released_now" | "already_reconciled";
+        report: NonNullable<Awaited<ReturnType<typeof getReportByInterviewId>>>;
+        batchId: string | null;
+        notificationDeliveries: CompanyTeamNotificationDelivery[];
+      }
+  > => {
+    log.info("Reconciling report persistence and release state");
 
-    let created = null;
+    // Reading the batch id before the transaction is safe: assignment is immutable
+    // once an interview is completed. It lets both persistence and release acquire
+    // the shared batch lock before touching interview/application rows.
+    const context = await getInterviewContextById(db, { id: interviewId });
+    if (!context) throw new Error(`Interview not found: ${interviewId}`);
 
-    try {
-      created = await createReport(db, {
-        interviewId,
-        applicationId: interviewData.interview.applicationId,
-        summary: reportDraft.summary,
-        strengths: reportDraft.strengths,
-        weaknesses: reportDraft.weaknesses,
-        insights: reportDraft.insights,
-        evidence: reportDraft.evidence,
-        screeningAnswers: reportDraft.screeningAnswers,
-        scores: reportDraft.scores,
-        recommendation: reportDraft.recommendation,
-        model,
-        promptVersion: POST_EVAL_PROMPT_VERSION,
-        refineVersion: REFINE_PROMPT_VERSION,
-        answerAuthenticity: reportDraft.answerAuthenticity,
+    return await db.begin(async (tx) => {
+      const transaction = tx as unknown as Sql;
+      let batchStatus: string | null = null;
+      if (context.batchId) {
+        const batches = await transaction`
+          SELECT status FROM job_batches WHERE id = ${context.batchId} FOR UPDATE
+        `;
+        if (!batches[0]) throw new Error(`Batch not found: ${context.batchId}`);
+        batchStatus = batches[0].status;
+      }
+
+      const applications = await transaction`
+        SELECT id FROM applications
+        WHERE id = ${interviewData.interview.applicationId}
+        FOR UPDATE
+      `;
+      if (!applications[0]) {
+        throw new Error(`Application not found: ${interviewData.interview.applicationId}`);
+      }
+      const interviews = await transaction`
+        SELECT status FROM interviews WHERE id = ${interviewId} FOR UPDATE
+      `;
+      if (interviews[0]?.status !== "completed") {
+        throw new NonRetryableError(`Interview is not report-producing: ${interviewId}`);
+      }
+
+      let report = await getReportByInterviewId(transaction, { interviewId });
+      const existed = report !== null;
+      if (!report) {
+        if (!reportDraft || !model) {
+          throw new Error(`Report draft missing for new report: ${interviewId}`);
+        }
+        report = await createReport(transaction, {
+          interviewId,
+          applicationId: interviewData.interview.applicationId,
+          summary: reportDraft.summary,
+          strengths: reportDraft.strengths,
+          weaknesses: reportDraft.weaknesses,
+          insights: reportDraft.insights,
+          evidence: reportDraft.evidence,
+          screeningAnswers: reportDraft.screeningAnswers,
+          scores: reportDraft.scores,
+          recommendation: reportDraft.recommendation,
+          model,
+          promptVersion: POST_EVAL_PROMPT_VERSION,
+          refineVersion: REFINE_PROMPT_VERSION,
+          answerAuthenticity: reportDraft.answerAuthenticity,
+        });
+      }
+      if (!report) throw new Error(`Failed to create report for interview ${interviewId}`);
+
+      const shouldRelease = context.batchId === null || batchStatus === "released";
+      const state = await transaction`
+        SELECT released_at FROM reports WHERE id = ${report.id}
+      `;
+      const wasReleased = state[0]?.released_at !== null;
+
+      if (!shouldRelease) {
+        if (!context.batchId) throw new Error(`Held report has no batch: ${report.id}`);
+        await transaction`
+          UPDATE applications
+          SET status = CASE
+                WHEN status IN ('rejected', 'shortlisted') THEN status
+                ELSE 'evaluated_held'
+              END,
+              queued_at = NULL,
+              updated_at = now()
+          WHERE id = ${interviewData.interview.applicationId}
+        `;
+        return {
+          kind: "held",
+          report,
+          batchId: context.batchId,
+          notificationDeliveries: [],
+        };
+      }
+
+      await transaction`UPDATE reports SET released_at = COALESCE(released_at, now()) WHERE id = ${report.id}`;
+      await transaction`
+        UPDATE applications
+        SET status = CASE
+              WHEN status IN ('rejected', 'shortlisted') THEN status
+              ELSE 'evaluated'
+            END,
+            queued_at = NULL,
+            updated_at = now()
+        WHERE id = ${interviewData.interview.applicationId}
+      `;
+
+      const job = await getJobById(transaction, { id: context.jobId });
+      if (!job) throw new Error(`Job not found: ${context.jobId}`);
+      const payload = notificationPayloadSchemas.report_ready.parse({
+        applicationId: context.applicationId,
+        jobId: context.jobId,
+        jobTitle: context.jobTitle,
+        candidateName: context.candidateName,
+        score: report.scores.overall,
       });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      log.warn(`Report create failed (possible duplicate): ${message}`);
-    }
+      const notificationDeliveries = await notifyCompanyTeam(transaction, {
+        companyId: job.companyId,
+        type: "report_ready",
+        payload,
+        dedupeKey: `report:${report.id}`,
+      });
 
-    if (created) {
-      return created;
-    }
-
-    const existing = await getReportByInterviewId(db, { interviewId });
-    if (existing) {
-      return existing;
-    }
-
-    throw new Error(`Failed to create report for interview ${interviewId}`);
-  };
-}
-
-export function markApplicationEvaluated(
-  interviewData: { interview: { applicationId: string } },
-  db: Sql,
-) {
-  return async () => {
-    await updateApplicationStatus(db, {
-      id: interviewData.interview.applicationId,
-      status: "evaluated_held",
-    });
-  };
-}
-
-export function notifyReportReady(
-  interviewData: {
-    interview: {
-      applicationId: string;
-      jobId: string;
-      jobTitle: string;
-      candidateName: string;
-    };
-  },
-  reportDraft: { scores: { overall: number } },
-  db: Sql,
-  log: ReturnType<typeof createWorkflowLogger>,
-) {
-  return async () => {
-    log.info("Creating report_ready notifications for company team");
-
-    const job = await getJobById(db, { id: interviewData.interview.jobId });
-    if (!job) {
-      log.warn("Job not found, skipping report_ready notifications");
-      return [];
-    }
-
-    const payload = notificationPayloadSchemas.report_ready.parse({
-      applicationId: interviewData.interview.applicationId,
-      jobId: interviewData.interview.jobId,
-      jobTitle: interviewData.interview.jobTitle,
-      candidateName: interviewData.interview.candidateName,
-      score: reportDraft.scores.overall,
-    });
-
-    return await notifyCompanyTeam(db, {
-      companyId: job.companyId,
-      type: "report_ready",
-      payload,
+      return {
+        kind: existed && wasReleased ? "already_reconciled" : "released_now",
+        report,
+        batchId: context.batchId,
+        notificationDeliveries,
+      };
     });
   };
 }
@@ -590,8 +626,11 @@ export function sendReportReadyEmail(
       candidateName: string;
     };
   },
-  deliveries: { notification: { id: string }; email: string }[],
-  reportDraft: { scores: { overall: number }; recommendation: Recommendation },
+  deliveries: {
+    notification: { id: string; emailDeliveryStatus?: string | null };
+    email: string;
+  }[],
+  reportDraft: { scores: { overall: number }; recommendation: string },
   db: Sql,
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
@@ -620,7 +659,12 @@ export function sendReportReadyEmail(
         ).toString()
       : "";
 
+    const failures: unknown[] = [];
     for (const delivery of deliveries) {
+      const current = await getNotificationById(db, { id: delivery.notification.id });
+      if (!current || current.emailDeliveryStatus === "sent") {
+        continue;
+      }
       if (!delivery.email) {
         log.warn("Recipient email unavailable, skipping email");
         await markNotificationEmailSkipped(db, {
@@ -639,7 +683,7 @@ export function sendReportReadyEmail(
             candidateName: interviewData.interview.candidateName,
             jobTitle: interviewData.interview.jobTitle,
             overallScore: clampCandidateScore(reportDraft.scores.overall),
-            recommendation: reportDraft.recommendation,
+            recommendation: recommendationSchema.parse(reportDraft.recommendation),
             reportUrl,
           }),
         });
@@ -656,7 +700,12 @@ export function sendReportReadyEmail(
           id: delivery.notification.id,
           errorMessage: message,
         });
+        failures.push(error);
       }
+    }
+
+    if (failures.length > 0) {
+      throw new AggregateError(failures, "One or more report-ready emails failed");
     }
   };
 }

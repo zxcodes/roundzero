@@ -3,6 +3,7 @@ import type { z } from "zod";
 
 import { listCompanyNotificationRecipients } from "@/features/companies/queries/membership-queries_sql";
 import {
+  createDedupedNotification,
   createNotification,
   type createNotificationRow,
 } from "@/features/notifications/queries/queries_sql";
@@ -25,6 +26,7 @@ export async function notifyCompanyTeam<T extends NotificationType>(
     companyId: string;
     type: T;
     payload: NotificationPayload<T>;
+    dedupeKey?: string;
   },
 ): Promise<CompanyTeamNotificationDelivery[]> {
   const recipients = await listCompanyNotificationRecipients(sql, {
@@ -34,11 +36,18 @@ export async function notifyCompanyTeam<T extends NotificationType>(
   const deliveries: CompanyTeamNotificationDelivery[] = [];
 
   for (const recipient of recipients) {
-    const notification = await createNotification(sql, {
-      userId: recipient.userId,
-      type: input.type,
-      payload: input.payload,
-    });
+    const notification = input.dedupeKey
+      ? await createDedupedNotification(sql, {
+          userId: recipient.userId,
+          type: input.type,
+          payload: input.payload,
+          dedupeKey: input.dedupeKey,
+        })
+      : await createNotification(sql, {
+          userId: recipient.userId,
+          type: input.type,
+          payload: input.payload,
+        });
 
     if (notification) {
       deliveries.push({

@@ -20,12 +20,18 @@ import {
   seedUser,
 } from "@/shared/__tests__/test-utils";
 
-const postEvalCreate = vi.hoisted(() => vi.fn(async () => ({ id: "post-eval-instance" })));
+const workflowMocks = vi.hoisted(() => ({
+  create: vi.fn(async () => ({ id: "post-eval-instance" })),
+  get: vi.fn<() => Promise<unknown>>(async () => {
+    throw new Error("instance not found");
+  }),
+}));
 
 vi.mock("cloudflare:workers", () => ({
   env: {
     POST_EVALUATION: {
-      create: postEvalCreate,
+      create: workflowMocks.create,
+      get: workflowMocks.get,
     },
   },
 }));
@@ -81,7 +87,9 @@ const seedAwaitingVoiceInterview = async () => {
 
 describe("voice assessment post-eval triggers", () => {
   beforeEach(() => {
-    postEvalCreate.mockClear();
+    workflowMocks.create.mockClear();
+    workflowMocks.get.mockClear();
+    workflowMocks.get.mockRejectedValue(new Error("instance not found"));
   });
 
   it("finalizes voice, completes the interview, and starts post-evaluation", async () => {
@@ -97,7 +105,7 @@ describe("voice assessment post-eval triggers", () => {
     });
 
     expect(ok).toBe(true);
-    expect(postEvalCreate).toHaveBeenCalledWith({
+    expect(workflowMocks.create).toHaveBeenCalledWith({
       id: interviewId,
       params: { interviewId },
     });
@@ -121,8 +129,12 @@ describe("voice assessment post-eval triggers", () => {
       messages: [{ role: "candidate", content: "First answer." }],
     });
     expect(firstPass).toBe(true);
-    postEvalCreate.mockClear();
-    postEvalCreate.mockRejectedValueOnce(new Error("workflow runtime down"));
+    workflowMocks.create.mockClear();
+    workflowMocks.get.mockResolvedValueOnce({
+      id: interviewId,
+      status: vi.fn(async () => ({ status: "running" })),
+      restart: vi.fn(),
+    });
 
     const secondPass = await finalizeVoiceAssessmentFromTranscript({
       db: sql,
@@ -131,14 +143,32 @@ describe("voice assessment post-eval triggers", () => {
     });
 
     expect(secondPass).toBe(true);
-    expect(postEvalCreate).toHaveBeenCalledWith({
-      id: interviewId,
-      params: { interviewId },
-    });
+    expect(workflowMocks.create).not.toHaveBeenCalled();
 
     const interview = await interviewQueries.getInterviewContextById(sql, { id: interviewId });
     expect(interview?.status).toBe("completed");
     expect(interview?.applicationId).toBe(applicationId);
+  });
+
+  it("restarts an errored post-evaluation instance without duplicating it", async () => {
+    const { interviewId, applicationId } = await seedAwaitingVoiceInterview();
+    await finalizeVoiceAssessmentFromTranscript({
+      db: sql,
+      interviewId,
+      messages: [{ role: "candidate", content: "First answer." }],
+    });
+    workflowMocks.create.mockClear();
+    const restart = vi.fn(async () => undefined);
+    workflowMocks.get.mockResolvedValueOnce({
+      id: interviewId,
+      status: vi.fn(async () => ({ status: "errored" })),
+      restart,
+    });
+
+    await startPostEvaluation(sql, { interviewId, applicationId });
+
+    expect(restart).toHaveBeenCalledOnce();
+    expect(workflowMocks.create).not.toHaveBeenCalled();
   });
 
   it("does not finalize voice when the interview is not awaiting_voice", async () => {
@@ -152,34 +182,58 @@ describe("voice assessment post-eval triggers", () => {
     });
 
     expect(ok).toBe(false);
-    expect(postEvalCreate).not.toHaveBeenCalled();
+    expect(workflowMocks.create).not.toHaveBeenCalled();
   });
 
-  it("marks evaluation_failed when interview completion fails after voice is saved", async () => {
+  it.each([
+    { applicationStatus: "withdrawn", interviewStatus: "cancelled" },
+    { applicationStatus: "rejected", interviewStatus: "cancelled" },
+  ])(
+    "preserves a $applicationStatus/$interviewStatus winner and does not start post-evaluation",
+    async ({ applicationStatus, interviewStatus }) => {
+      const { interviewId, applicationId } = await seedAwaitingVoiceInterview();
+      await sql.begin(async (tx) => {
+        await tx`SELECT id FROM applications WHERE id = ${applicationId} FOR UPDATE`;
+        await tx`UPDATE applications SET status = ${applicationStatus} WHERE id = ${applicationId}`;
+        await tx`UPDATE interviews SET status = ${interviewStatus} WHERE id = ${interviewId}`;
+      });
+
+      const ok = await finalizeVoiceAssessmentFromTranscript({
+        db: sql,
+        interviewId,
+        messages: [{ role: "candidate", content: "Late transcript." }],
+      });
+
+      expect(ok).toBe(false);
+      expect(workflowMocks.create).not.toHaveBeenCalled();
+
+      const application = await getApplicationById(sql, { id: applicationId });
+      expect(application?.status).toBe(applicationStatus);
+      const interview = await interviewQueries.getInterviewContextById(sql, { id: interviewId });
+      expect(interview?.status).toBe(interviewStatus);
+    },
+  );
+
+  it("marks recoverable state evaluation_failed when workflow creation fails", async () => {
     const { interviewId, applicationId } = await seedAwaitingVoiceInterview();
-    const spy = vi
-      .spyOn(interviewQueries, "completeInterviewAfterVoice")
-      .mockResolvedValueOnce(null);
+    workflowMocks.create.mockRejectedValueOnce(new Error("workflow runtime down"));
 
-    const ok = await finalizeVoiceAssessmentFromTranscript({
-      db: sql,
-      interviewId,
-      messages: [{ role: "candidate", content: "Saved but interview stuck." }],
-    });
-
-    expect(ok).toBe(false);
-    expect(postEvalCreate).not.toHaveBeenCalled();
+    await expect(
+      finalizeVoiceAssessmentFromTranscript({
+        db: sql,
+        interviewId,
+        messages: [{ role: "candidate", content: "Completed answer." }],
+      }),
+    ).rejects.toThrow("workflow runtime down");
 
     const application = await getApplicationById(sql, { id: applicationId });
     expect(application?.status).toBe("evaluation_failed");
-
-    spy.mockRestore();
   });
 
   it("startPostEvaluation no-ops without a completed interview and voice assessment", async () => {
     const { interviewId, applicationId } = await seedAwaitingVoiceInterview();
 
     await startPostEvaluation(sql, { interviewId, applicationId });
-    expect(postEvalCreate).not.toHaveBeenCalled();
+    expect(workflowMocks.create).not.toHaveBeenCalled();
   });
 });

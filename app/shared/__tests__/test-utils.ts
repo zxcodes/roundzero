@@ -14,6 +14,33 @@ const TEST_DATABASE_URL =
   appEnv.TEST_DATABASE_URL ??
   "postgres://postgres:password@localhost:6312/postgres?sslmode=disable";
 
+export const createTestDbConnection = () =>
+  postgres(TEST_DATABASE_URL, {
+    max: 1,
+    onnotice: () => {},
+  });
+
+export const waitForBlockedQueryCount = async (
+  sql: ReturnType<typeof postgres>,
+  input: { minimum: number; queryPattern: string },
+) => {
+  for (let attempt = 0; attempt < 200; attempt++) {
+    const [row] = await sql`
+      SELECT count(*)::int AS count
+      FROM pg_stat_activity
+      WHERE datname = current_database()
+        AND cardinality(pg_blocking_pids(pid)) > 0
+        AND query ILIKE ${input.queryPattern}
+    `;
+    if ((row?.count ?? 0) >= input.minimum) return;
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+
+  throw new Error(
+    `Timed out waiting for ${input.minimum} blocked quer${input.minimum === 1 ? "y" : "ies"}`,
+  );
+};
+
 let _sql: ReturnType<typeof postgres> | null = null;
 
 /** Get the shared test database connection. */
