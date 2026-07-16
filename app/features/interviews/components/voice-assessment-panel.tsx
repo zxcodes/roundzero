@@ -46,7 +46,7 @@ const normMessage = (m: ChatMessage): string =>
 // races the disconnect. We let a fast webhook win (the 2s DB poll picks it up
 // as soon as it lands), but keep this window short: the only thing the browser
 // transcript typically loses is the agent's closing pleasantry, which doesn't
-// affect scoring of the candidate — so a long wait is pure DX cost. If the
+// affect scoring of the candidate, so a long wait is pure DX cost. If the
 // webhook hasn't landed by now (slow webhook, local dev, or an outage) we
 // submit the browser transcript we already hold.
 const WEBHOOK_GRACE_MS = 3_000;
@@ -267,7 +267,7 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
     }
   }, [effectiveStatus]);
 
-  // Detect the call ending for ANY reason — the candidate clicking "End call",
+  // Detect the call ending for ANY reason, the candidate clicking "End call",
   // the agent's `end_call` system tool (a warm closing message + clean hang-up,
   // per ElevenLabs' recommended pattern), or an unexpected drop. Nudge the DB
   // poll so a webhook-completed assessment is picked up promptly; the grace
@@ -331,7 +331,7 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
   const onEndCall = () => {
     setClientError(null);
     chat.disconnect().catch(() => {
-      // non-fatal — the disconnect effect + grace fallback still finalise
+      // non-fatal, the disconnect effect + grace fallback still finalise
     });
   };
 
@@ -690,7 +690,7 @@ function VoiceEmptyState({ finalising, error }: { finalising: boolean; error: st
             ? error
             : finalising
               ? "We're scoring your responses now."
-              : "Speak naturally about your experience — there are no wrong answers."}
+              : "Speak naturally about your experience. There are no wrong answers."}
         </p>
       </div>
     </div>

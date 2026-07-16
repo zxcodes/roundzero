@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { PageInlineStats } from "@/components/page-inline-stats";
 import { DashboardJobApplicantsSkeleton } from "@/components/route-skeletons";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
@@ -93,7 +94,7 @@ type ApplicantsView = "ready" | "all";
 type ApplicantsFilter = JobApplicantsFilter;
 
 function JobApplicantsPage() {
-  const { job, applicants, activeBatch } = Route.useLoaderData();
+  const { job, applicants, activeBatch, reportProgress } = Route.useLoaderData();
   const { tab, view: searchView, filter: searchFilter } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const view: ApplicantsView = searchView ?? (searchFilter ? "all" : "ready");
@@ -153,11 +154,12 @@ function JobApplicantsPage() {
   );
 
   const applicantStatItems =
-    tab === "applicants" && applicants.length > 0
+    tab === "applicants"
       ? [
-          { value: applicants.length, label: "applicants" },
-          { value: releasedReportApplicants.length, label: "reports released" },
-          { value: activeInterviewApplicants.length, label: "active interview" },
+          { value: `${reportProgress.delivered} of ${reportProgress.target}`, label: "Delivered" },
+          { value: reportProgress.processing, label: "Reports processing" },
+          { value: reportProgress.underway, label: "Interviews underway" },
+          { value: reportProgress.waitlisted, label: "Waitlisted" },
         ]
       : [];
 
@@ -214,6 +216,7 @@ function JobApplicantsPage() {
         <ApplicantsTabContent
           applicants={applicants}
           activeBatch={activeBatch}
+          reportProgress={reportProgress}
           view={view}
           filter={filter}
           releasedReportApplicants={releasedReportApplicants}
@@ -232,6 +235,7 @@ function JobApplicantsPage() {
 function ApplicantsTabContent({
   applicants,
   activeBatch,
+  reportProgress,
   view,
   filter,
   releasedReportApplicants,
@@ -244,6 +248,7 @@ function ApplicantsTabContent({
 }: {
   applicants: JobApplicants;
   activeBatch: JobActiveBatch;
+  reportProgress: JobApplicantsView["reportProgress"];
   view: ApplicantsView;
   filter: ApplicantsFilter;
   releasedReportApplicants: JobApplicants;
@@ -256,11 +261,18 @@ function ApplicantsTabContent({
 }) {
   return (
     <div className="space-y-5">
-      {heldForReleaseCount > 0 ? (
-        <p className="text-sm text-muted-foreground">
-          <span className="font-medium text-foreground">{heldForReleaseCount}</span> held until
-          batch completes
-        </p>
+      {reportProgress.processing + reportProgress.underway > 0 ? (
+        <Alert className="border-border/60 bg-muted/30">
+          <AlertTitle>More evaluation results are pending</AlertTitle>
+          <AlertDescription>
+            {reportProgress.processing} completed interview
+            {reportProgress.processing === 1 ? " is" : "s are"} being processed and{" "}
+            {reportProgress.underway} candidate
+            {reportProgress.underway === 1 ? " is" : "s are"} still finishing their interviews.
+            Completed reports will appear here automatically. Candidates who do not finish will not
+            count toward your report target.
+          </AlertDescription>
+        </Alert>
       ) : null}
 
       <Tabs value={view} onValueChange={onViewChange}>
@@ -351,20 +363,11 @@ function ActiveBatchPanel({
   applicants: JobApplicants;
   batchId: string | null;
 }) {
-  if (applicants.length === 0) {
-    return (
-      <Empty className="rounded-2xl border-0 bg-muted/30">
-        <EmptyHeader>
-          <EmptyTitle>No active batch</EmptyTitle>
-          <EmptyDescription>Candidates will appear here when a batch is launched.</EmptyDescription>
-        </EmptyHeader>
-      </Empty>
-    );
-  }
-
-  const completed = applicants.filter((a) => a.status === "evaluated_held").length;
-  const inProgress = applicants.filter((a) => a.status === "interview_in_progress").length;
-  const invited = applicants.filter((a) => a.status === "interview_invited").length;
+  const completed = applicants.filter((applicant) => applicant.status === "evaluated_held").length;
+  const inProgress = applicants.filter(
+    (applicant) => applicant.status === "interview_in_progress",
+  ).length;
+  const invited = applicants.filter((applicant) => applicant.status === "interview_invited").length;
 
   return (
     <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">

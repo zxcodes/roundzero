@@ -4,6 +4,7 @@ import { getTestDb, seedUser } from "@/shared/__tests__/test-utils";
 
 import {
   countUnreadNotificationsByUser,
+  createDedupedNotification,
   createNotification,
   getNotificationsByUser,
   markAllNotificationsReadByUser,
@@ -16,6 +17,31 @@ import {
 const sql = getTestDb();
 
 describe("createNotification", () => {
+  it("reuses a notification with the same recipient, type, and dedupe key", async () => {
+    const user = await seedUser({ role: "candidate" });
+    const payload = { applicationId: crypto.randomUUID() };
+
+    const first = await createDedupedNotification(sql, {
+      userId: user.id,
+      type: "interview_invited",
+      payload,
+      dedupeKey: "interview:stable-id",
+    });
+    const second = await createDedupedNotification(sql, {
+      userId: user.id,
+      type: "interview_invited",
+      payload: { applicationId: crypto.randomUUID() },
+      dedupeKey: "interview:stable-id",
+    });
+
+    expect(second!.id).toBe(first!.id);
+    const [count] = await sql`
+      SELECT count(*)::int AS count FROM notifications
+      WHERE user_id = ${user.id} AND dedupe_key = 'interview:stable-id'
+    `;
+    expect(count!.count).toBe(1);
+  });
+
   it("creates a notification row with unread state by default", async () => {
     const user = await seedUser({ role: "candidate" });
 

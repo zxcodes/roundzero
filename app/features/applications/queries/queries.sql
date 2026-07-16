@@ -1,7 +1,7 @@
 -- name: createApplication :one
-INSERT INTO applications (job_id, candidate_id, resume_key, metadata, status)
-VALUES ($1, $2, $3, $4, $5)
-RETURNING id, job_id, candidate_id, resume_key, metadata, status, created_at, updated_at;
+INSERT INTO applications (job_id, candidate_id, resume_key, metadata, status, queued_at)
+VALUES ($1, $2, $3, $4, $5, CASE WHEN $5 = 'queued_for_batch' THEN now() ELSE NULL END)
+RETURNING id, job_id, candidate_id, resume_key, metadata, status, queued_at, created_at, updated_at;
 
 -- name: getApplicationByJobAndCandidate :one
 SELECT id, job_id, candidate_id, resume_key, metadata, status, created_at, updated_at
@@ -100,9 +100,25 @@ WHERE a.id = $1;
 -- name: updateApplicationStatus :one
 UPDATE applications
 SET status = $1,
+    queued_at = CASE
+      WHEN $1 = 'queued_for_batch' THEN COALESCE(queued_at, now())
+      ELSE NULL
+    END,
     updated_at = now()
 WHERE id = $2
-RETURNING id, job_id, candidate_id, resume_key, metadata, status, created_at, updated_at;
+RETURNING id, job_id, candidate_id, resume_key, metadata, status, queued_at, created_at, updated_at;
+
+-- name: updateApplicationStatusIfCurrent :one
+UPDATE applications
+SET status = sqlc.arg('status')::text,
+    queued_at = CASE
+      WHEN sqlc.arg('status')::text = 'queued_for_batch' THEN COALESCE(queued_at, now())
+      ELSE NULL
+    END,
+    updated_at = now()
+WHERE id = sqlc.arg('id')
+  AND status = sqlc.arg('current_status')::text
+RETURNING id, job_id, candidate_id, resume_key, metadata, status, queued_at, created_at, updated_at;
 
 -- name: setShortlistDetails :one
 -- Writes (or overwrites) metadata.shortlist and optionally flips the status to
@@ -110,6 +126,10 @@ RETURNING id, job_id, candidate_id, resume_key, metadata, status, created_at, up
 UPDATE applications
 SET metadata = COALESCE(metadata, '{}'::jsonb) || jsonb_build_object('shortlist', sqlc.arg('shortlist')::jsonb),
     status = COALESCE(sqlc.narg('status')::text, status),
+    queued_at = CASE
+      WHEN COALESCE(sqlc.narg('status')::text, status) = 'queued_for_batch' THEN COALESCE(queued_at, now())
+      ELSE NULL
+    END,
     updated_at = now()
 WHERE id = sqlc.arg('id')
 RETURNING id, job_id, candidate_id, resume_key, metadata, status, created_at, updated_at;

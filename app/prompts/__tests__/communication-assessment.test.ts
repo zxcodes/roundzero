@@ -34,7 +34,7 @@ describe("normalizeCommunicationAssessmentInput", () => {
     expect(parsed?.summary).toBe("The candidate struggles to deliver clear responses.");
   });
 
-  it("clamps nested 0–100 voice scores onto the 0–10 scale", () => {
+  it("clamps nested 0-100 voice scores onto the 0-10 scale", () => {
     const raw = {
       clarity: { score: 72, evidence: ["clear answer"] },
       articulation: { score: 68, evidence: ["precise wording"] },
