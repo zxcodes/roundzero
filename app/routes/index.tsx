@@ -74,8 +74,8 @@ function Hero() {
           </h1>
           <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <p className="min-w-0 max-w-xl text-[clamp(0.95rem,1.2vw,1.05rem)] leading-relaxed text-muted-foreground">
-              Evidence-backed reports on every applicant, before your team schedules a real
-              interview.
+              Pre-screen every applicant and review evidence-backed reports on selected candidates
+              before scheduling a human interview.
             </p>
             <div className="flex shrink-0 items-center gap-4">
               <PrimaryCta>Post a job</PrimaryCta>
@@ -116,8 +116,8 @@ const steps = [
   },
   {
     number: "02",
-    title: "Every applicant interviews",
-    body: "Candidates complete an adaptive first interview on their own time. Zero probes claims, asks follow-ups, and checks role fit.",
+    title: "Selected candidates interview",
+    body: "Strong matches complete an adaptive first interview on their own time. Zero probes claims, asks follow-ups, and checks role fit.",
   },
   {
     number: "03",
@@ -353,7 +353,7 @@ function ClosingSection() {
             Stop spending interviews on maybes.
           </h2>
           <p className="mx-auto mt-7 max-w-lg text-[1.05rem] leading-7 text-[#5f6169]">
-            Post a job. Let every applicant show their work. Meet the people who earn the time.
+            Post a job. Let strong candidates show their work. Meet the people who earn the time.
           </p>
           <div className="mt-9 flex justify-center">
             <PrimaryCta>Post your first job</PrimaryCta>

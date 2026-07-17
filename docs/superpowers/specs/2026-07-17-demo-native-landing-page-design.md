@@ -4,7 +4,7 @@
 
 Rebuild the public landing page as a production-ready B2B SaaS site for startups and small teams that want to hire without résumé triage or scheduled first-round screens. The page must feel like the existing RoundZero product demo, not like a generic SaaS template.
 
-The page has one job: make a hiring team understand that RoundZero conducts the first interview, evaluates every applicant, and hands the team a decision-ready report before a human spends time on the candidate.
+The page has one job: make a hiring team understand that RoundZero pre-screens every applicant, interviews selected candidates, and hands the team decision-ready reports before a human spends time on those candidates.
 
 ## Visual direction
 
@@ -27,7 +27,7 @@ Use the existing rebuilt header with the RoundZero mark. Desktop navigation cont
 
 ### Hero
 
-Use the left-aligned thesis `Review candidates, not resumes.` Explain in one sentence that every applicant arrives with an evidence-backed report before the hiring team schedules a real interview.
+Use the left-aligned thesis `Review candidates, not resumes.` Explain in one sentence that every applicant is pre-screened and selected candidates receive evidence-backed reports before the hiring team schedules a real interview.
 
 Primary action: Post a job. A secondary text link may move the visitor to the product flow.
 
@@ -40,7 +40,7 @@ The launch video is not part of the landing page. Do not add a replacement secti
 Present the real sequence as three editorial rows:
 
 1. Post the role and define what good looks like.
-2. Every applicant completes an adaptive first interview.
+2. Selected candidates complete an adaptive first interview.
 3. The team receives ranked, evidence-backed reports.
 
 The numbering is functional because the content is a real sequence. Use product crops and interface details rather than decorative cards.
