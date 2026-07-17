@@ -43,6 +43,16 @@ export function PublicHeader() {
                   className="rounded-full text-muted-foreground font-normal"
                   asChild
                 >
+                  <Link to="/" hash="product">
+                    Product
+                  </Link>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-full text-muted-foreground font-normal"
+                  asChild
+                >
                   <Link to="/jobs">Jobs</Link>
                 </Button>
                 <Button
@@ -77,7 +87,7 @@ export function PublicHeader() {
                 >
                   <Link to="/company/login">Log in</Link>
                 </Button>
-                <Button size="sm" className="rounded-full font-normal" asChild>
+                <Button size="sm" className="rounded-full px-4 font-normal" asChild>
                   <Link to="/company/login">Post a job</Link>
                 </Button>
               </div>
@@ -116,6 +126,16 @@ export function PublicHeader() {
                   asChild
                   onClick={onCloseMobileMenu}
                 >
+                  <Link to="/" hash="product">
+                    Product
+                  </Link>
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="justify-start text-muted-foreground"
+                  asChild
+                  onClick={onCloseMobileMenu}
+                >
                   <Link
                     to="/candidate/login"
                     activeProps={{ className: "text-foreground bg-accent" }}
@@ -139,11 +159,7 @@ export function PublicHeader() {
                   asChild
                   onClick={onCloseMobileMenu}
                 >
-                  <Link
-                    to="/"
-                    hash="pricing"
-                    activeProps={{ className: "text-foreground bg-accent" }}
-                  >
+                  <Link to="/" hash="pricing">
                     Pricing
                   </Link>
                 </Button>
