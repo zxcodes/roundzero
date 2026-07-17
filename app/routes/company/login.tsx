@@ -28,7 +28,7 @@ const valueProps = [
   },
   {
     title: "Evidence-backed reports",
-    body: "Every applicant arrives with a clear recommendation, strengths, concerns, and evidence from the conversation.",
+    body: "Evaluated candidates arrive with a clear recommendation, strengths, concerns, and evidence from the conversation.",
   },
   {
     title: "Hire with confidence",
@@ -52,7 +52,7 @@ function CompanyLoginPage() {
           Review candidates, not <span className="highlight">resumes</span>.
         </>
       }
-      lead="Post a job and RoundZero handles the initial screen. Every candidate gets a structured, adaptive AI interview, and you get a decision-ready report with evidence."
+      lead="Post a job and RoundZero handles the initial screen. Selected candidates complete a structured, adaptive AI interview, and you get a decision-ready report with evidence."
       valueProps={valueProps}
       trustPoints={["No credit card required", "Free to post jobs"]}
       formTitle="Get started"

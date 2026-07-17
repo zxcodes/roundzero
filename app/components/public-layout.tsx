@@ -43,6 +43,16 @@ export function PublicHeader() {
                   className="rounded-full text-muted-foreground font-normal"
                   asChild
                 >
+                  <Link to="/" hash="product">
+                    Product
+                  </Link>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-full text-muted-foreground font-normal"
+                  asChild
+                >
                   <Link to="/jobs">Jobs</Link>
                 </Button>
                 <Button
@@ -108,6 +118,20 @@ export function PublicHeader() {
                     activeProps={{ className: "text-foreground bg-accent" }}
                   >
                     Log in
+                  </Link>
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="justify-start text-muted-foreground"
+                  asChild
+                  onClick={onCloseMobileMenu}
+                >
+                  <Link
+                    to="/"
+                    hash="product"
+                    activeProps={{ className: "text-foreground bg-accent" }}
+                  >
+                    Product
                   </Link>
                 </Button>
                 <Button

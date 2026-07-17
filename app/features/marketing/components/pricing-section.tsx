@@ -56,7 +56,7 @@ export function MarketingPricingSection({ className }: { className?: string }) {
             </h2>
           </div>
           <p className="max-w-md text-[1.02rem] leading-7 text-muted-foreground lg:col-span-4 lg:col-start-9 lg:pb-1">
-            Every plan interviews applicants and includes evidence-backed reports. Upgrade for more
+            Every plan pre-screens applicants and includes evidence-backed reports. Upgrade for more
             active roles, reports, and teammates.
           </p>
         </div>
@@ -95,7 +95,7 @@ export function MarketingPricingSection({ className }: { className?: string }) {
                 </p>
 
                 <ul className="mt-7 flex-1 border-t border-black/10 pt-5">
-                  {config.features.slice(0, 5).map((feature) => (
+                  {config.features.map((feature) => (
                     <li key={feature} className="flex gap-2.5 py-1.5 text-[13px] leading-5">
                       <span className="mt-[0.48rem] size-1 shrink-0 rounded-full bg-current" />
                       {feature}
