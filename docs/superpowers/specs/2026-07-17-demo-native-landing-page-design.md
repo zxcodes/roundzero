@@ -15,27 +15,25 @@ The product demo is the source of truth.
 - Shape: restrained product-matched radii. Large rounding is reserved for the browser frame, not every section.
 - Color: no purple, rainbow gradients, decorative neon, or invented brand colors.
 - Copy: short declarative sentences. No em dashes, exaggerated claims, or generic AI language.
-- Motion: one slow neutral mesh field in the hero and closing section. Product movement should feel like the camera work in the demo. No floating cards or scattered scroll effects.
+- Motion: one slow neutral mesh field in the closing section. No floating cards or scattered scroll effects.
 
-The signature is a live neutral mesh field behind a tightly framed product surface. It should feel like the website and the product film are the same system.
+The signature is the contrast between a restrained editorial layout and the real RoundZero application surface.
 
 ## Page structure
 
 ### Header
 
-Rebuild the header so it belongs to the hero. It is transparent over the mesh at the top, gains a quiet translucent surface when sticky, and uses the existing RoundZero mark. Desktop navigation contains Product, Jobs, Pricing, and For candidates. Actions are Log in and Post a job. Mobile uses the existing Sheet pattern.
+Use the existing rebuilt header with the RoundZero mark. Desktop navigation contains Product, Jobs, Pricing, and For candidates. Actions are Log in and Post a job. Mobile uses the existing Sheet pattern.
 
 ### Hero
 
-Use a concise thesis: RoundZero replaces the first interview. Explain in one sentence that every applicant is interviewed and returned as an evidence-backed recommendation before the hiring team spends time on round one.
+Use the left-aligned thesis `Review candidates, not resumes.` Explain in one sentence that every applicant arrives with an evidence-backed report before the hiring team schedules a real interview.
 
-Primary action: Post a job. Secondary action: Watch the demo.
+Primary action: Post a job. A secondary text link may move the visitor to the product flow.
 
-The visual is one browser-like product surface, not a collage. It uses the sidebar-free report asset from the demo project and keeps the recommendation, verdict, strengths, concerns, and interview evidence legible. The neutral mesh sits behind the hero and remains subtle enough to preserve contrast.
+The visual is the original full application screenshot with its sidebar, navigation, and report surface visible. Preserve the screenshot's natural aspect ratio on desktop. On mobile, use the original 840-pixel crop from the pre-redesign landing page so the sidebar and report remain legible. Fade the bottom of the screenshot into white with the original mask gradient. Do not use the live shader in the hero.
 
-### Product demo
-
-Place the full product demo immediately after the hero in a dedicated player. Do not autoplay the 29-second file. Show a high-quality poster and a clear play action. The video is the primary proof of how the system works.
+The launch video is not part of the landing page. Do not add a replacement section. The product flow follows the hero directly.
 
 ### How it works
 
@@ -49,7 +47,7 @@ The numbering is functional because the content is a real sequence. Use product 
 
 ### Report deep dive
 
-Use the sidebar-free report image from `roundzero-demo/public/roundzero-report.png`. Crop and position it so the recommendation, score, verdict, strengths, concerns, and evidence are the focus. Do not display irrelevant navigation or an unreadably scaled full application shell.
+Use the sidebar-free report image from `roundzero-demo/public/roundzero-report.png`. Render it at its natural aspect ratio with `width: 100%` and `height: auto`. Do not use a fixed-height crop, `object-fit: cover`, or translated positioning. The candidate name, controls, score, verdict, strengths, concerns, and evidence must not be clipped.
 
 Pair it with direct copy explaining that every score has a traceable reason and that hiring teams can shortlist or reject from the report.
 
@@ -76,13 +74,12 @@ Keep the FAQ concise. End on the neutral mesh with one direct question and one P
 
 - Load the mesh only on the client and provide a static neutral fallback.
 - Reduce shader pixel density and stop or replace motion for `prefers-reduced-motion`.
-- Do not autoplay the full demo. Use `preload="metadata"` and an explicit play action.
 - Preserve keyboard focus, the skip link, semantic heading order, useful image alt text, and sufficient contrast.
-- Keep mobile layouts readable without horizontal overflow. Product frames may crop intentionally rather than shrink into illegibility.
+- Keep mobile layouts readable without horizontal overflow. The hero and report images must preserve the meaningful edges of their product surfaces.
 
 ## Verification
 
 - Run `bun run check`.
 - Review the page at desktop and mobile widths on the existing port 3000 server.
-- Confirm the header, anchor navigation, mobile Sheet, demo playback, pricing links, FAQ, and calls to action work.
+- Confirm the header, anchor navigation, mobile Sheet, pricing links, FAQ, and calls to action work.
 - Capture screenshots and remove any element that reads as ornamental, duplicated, or template-like.

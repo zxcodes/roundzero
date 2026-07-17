@@ -32,7 +32,7 @@ const valueProps = [
   },
   {
     title: "Never filtered by keywords",
-    body: "Companies see a scored report, not another résumé in the stack.",
+    body: "Companies see an evidence-backed report, not another résumé in the stack.",
   },
 ];
 

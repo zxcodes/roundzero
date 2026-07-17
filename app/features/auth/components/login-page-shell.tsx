@@ -34,7 +34,7 @@ function ValuePropList({ items, className }: { items: LoginValueProp[]; classNam
     <div className={cn("space-y-6", className)}>
       {items.map((item, i) => (
         <div key={item.title} className={cn(i !== 0 ? "border-t border-border pt-6" : "")}>
-          <h3 className="text-lg font-semibold tracking-[-0.01em]">{item.title}</h3>
+          <h2 className="text-lg font-semibold tracking-[-0.01em]">{item.title}</h2>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
         </div>
       ))}
@@ -110,7 +110,8 @@ export function LoginPageShell({
             <span className="lg:hidden">
               <Eyebrow>{roleEyebrow}</Eyebrow>
             </span>
-            <h2 className="mt-4 text-2xl font-semibold tracking-tight lg:mt-0">{formTitle}</h2>
+            <h1 className="mt-4 text-2xl font-semibold tracking-tight lg:hidden">{formTitle}</h1>
+            <h2 className="hidden text-2xl font-semibold tracking-tight lg:block">{formTitle}</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{formLead}</p>
           </div>
 
@@ -120,13 +121,19 @@ export function LoginPageShell({
             className="w-full gap-3 rounded-full"
             onClick={onSignIn}
             disabled={isSigningIn}
+            aria-busy={isSigningIn}
           >
             {isSigningIn ? (
-              <HugeiconsIcon icon={Loading03Icon} strokeWidth={2} className="size-4 animate-spin" />
+              <HugeiconsIcon
+                icon={Loading03Icon}
+                strokeWidth={2}
+                className="size-4 animate-spin"
+                aria-hidden="true"
+              />
             ) : (
               <GoogleIcon />
             )}
-            {isSigningIn ? "Signing in" : "Continue with Google"}
+            <span aria-live="polite">{isSigningIn ? "Signing in…" : "Continue with Google"}</span>
           </Button>
 
           <div className="space-y-6 lg:hidden">
