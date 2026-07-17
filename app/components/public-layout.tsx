@@ -126,11 +126,7 @@ export function PublicHeader() {
                   asChild
                   onClick={onCloseMobileMenu}
                 >
-                  <Link
-                    to="/"
-                    hash="product"
-                    activeProps={{ className: "text-foreground bg-accent" }}
-                  >
+                  <Link to="/" hash="product">
                     Product
                   </Link>
                 </Button>
@@ -163,11 +159,7 @@ export function PublicHeader() {
                   asChild
                   onClick={onCloseMobileMenu}
                 >
-                  <Link
-                    to="/"
-                    hash="pricing"
-                    activeProps={{ className: "text-foreground bg-accent" }}
-                  >
+                  <Link to="/" hash="pricing">
                     Pricing
                   </Link>
                 </Button>
