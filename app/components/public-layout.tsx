@@ -77,7 +77,7 @@ export function PublicHeader() {
                 >
                   <Link to="/company/login">Log in</Link>
                 </Button>
-                <Button size="sm" className="rounded-full font-normal" asChild>
+                <Button size="sm" className="rounded-full px-4 font-normal" asChild>
                   <Link to="/company/login">Post a job</Link>
                 </Button>
               </div>
