@@ -223,10 +223,8 @@
   }
 }
 
-/* ==========================================================================
-   Calm Document (landing page) theme — marketing-only layout primitives.
-   Inherits global tokens. Geist sans + mono eyebrows. App-matched radius.
-   ========================================================================== */
+/* Shared public-page typography. Marketing has its own layout system, while
+   auth, jobs, company, contact, and legal pages still use these quiet accents. */
 .calm {
   color: var(--foreground);
   background: var(--background);
@@ -243,58 +241,52 @@
   color: var(--muted-foreground);
 }
 
-/* Brushed marker highlight — a fixed-height band sitting behind the lower glyph
-   so it reads as an intentional highlighter accent, not a loose box. */
 .calm .highlight {
-  background-image: linear-gradient(rgba(49, 50, 54, 0.13), rgba(49, 50, 54, 0.13));
-  background-repeat: no-repeat;
-  background-size: 100% 0.42em;
-  background-position: 0 78%;
   padding: 0 0.06em;
   border-radius: 0.1em;
+  background-image: linear-gradient(rgb(49 50 54 / 13%), rgb(49 50 54 / 13%));
+  background-repeat: no-repeat;
+  background-position: 0 78%;
+  background-size: 100% 0.42em;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
 }
 
-.calm-hero,
-.calm-closing {
-  background: var(--background);
+/* RoundZero marketing system. The moving neutral field is the single visual
+   signature; product surfaces and editorial rules stay deliberately quiet. */
+.marketing-page {
+  --marketing-ink: #2e3038;
+  --marketing-muted: #71717a;
+  --marketing-surface: #f7f7f8;
+  --marketing-border: #e4e4e7;
+  --marketing-success: #2f7a4d;
+  color: var(--marketing-ink);
+  background: #fff;
+  font-feature-settings: "ss01", "cv11";
 }
 
-/* Product panels — border-only surfaces aligned with in-app panels. */
-.calm .panel {
-  overflow: hidden;
-  border: 1px solid oklch(from var(--border) l c h / 0.6);
-  border-radius: var(--radius-3xl);
-  background: var(--background);
+.marketing-page > header {
+  border-color: rgb(255 255 255 / 58%);
+  background: rgb(255 255 255 / 72%);
+  box-shadow:
+    0 1px 0 rgb(46 48 56 / 5%),
+    0 8px 32px rgb(46 48 56 / 4%);
+  backdrop-filter: blur(18px) saturate(145%);
+  -webkit-backdrop-filter: blur(18px) saturate(145%);
 }
 
-.calm .panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  border-bottom: 1px solid var(--border);
-  background: linear-gradient(180deg, #fcfcfc, #f5f5f5);
-  padding: 0.7rem 1.25rem;
+.marketing-eyebrow {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--marketing-muted);
 }
 
-.calm .pipeline-log-scroll {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.calm .pipeline-log-scroll::-webkit-scrollbar {
-  display: none;
-}
-
-.calm .spec-sheet {
-  border: 1px solid oklch(from var(--border) l c h / 0.6);
-  border-radius: var(--radius-3xl);
-  background: var(--background);
-}
-
-.calm-skip-link {
+.marketing-skip-link {
   position: absolute;
   top: 1rem;
   left: 1rem;
@@ -311,13 +303,50 @@
   transform: translateY(-160%);
   transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-.calm-skip-link:focus-visible {
+
+.marketing-skip-link:focus-visible {
   transform: translateY(0);
   outline: none;
   box-shadow: 0 0 0 3px oklch(0.21 0.006 264 / 0.18);
 }
 
-@keyframes calm-rise {
+.marketing-mesh {
+  position: absolute;
+  inset: 0;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 16% 12%, #fff 0, transparent 38%),
+    radial-gradient(circle at 86% 8%, #c9cbd1 0, transparent 44%),
+    radial-gradient(circle at 58% 78%, #a9acb3 0, transparent 52%), #e5e6e9;
+}
+
+.marketing-mesh::after {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: linear-gradient(180deg, rgb(255 255 255 / 18%), rgb(255 255 255 / 68%));
+  content: "";
+  pointer-events: none;
+}
+
+.marketing-hero {
+  background:
+    radial-gradient(circle at 84% 8%, rgb(216 221 218 / 35%), transparent 27rem),
+    radial-gradient(circle at 12% 32%, rgb(240 241 242 / 72%), transparent 25rem), #fff;
+}
+
+.marketing-hero-highlight {
+  padding: 0 0.06em;
+  border-radius: 0.1em;
+  background-image: linear-gradient(rgb(49 50 54 / 13%), rgb(49 50 54 / 13%));
+  background-repeat: no-repeat;
+  background-position: 0 78%;
+  background-size: 100% 0.42em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+@keyframes marketing-rise {
   from {
     opacity: 0;
     transform: translateY(12px);
@@ -327,53 +356,150 @@
     transform: none;
   }
 }
-.calm .rise {
-  animation: calm-rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+
+.marketing-rise {
+  animation: marketing-rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
-/* Hero screenshot — full width on desktop; cropped bleed on mobile only.
-   Radius and border match app panels (rounded-3xl border-border/60). */
-.calm-hero-shot {
+.marketing-hero-app {
   position: relative;
   overflow: hidden;
-  border: 1px solid oklch(from var(--border) l c h / 0.6);
-  border-bottom: none;
+  border: 1px solid rgb(255 255 255 / 88%);
+  border-bottom: 0;
   border-radius: var(--radius-3xl) var(--radius-3xl) 0 0;
+  background: rgb(255 255 255 / 62%);
+  box-shadow:
+    0 -1px 0 rgb(255 255 255 / 94%),
+    0 28px 90px rgb(46 48 56 / 13%),
+    0 8px 24px rgb(46 48 56 / 7%);
   mask-image: linear-gradient(to bottom, black 88%, transparent 100%);
   -webkit-mask-image: linear-gradient(to bottom, black 88%, transparent 100%);
 }
-.calm-hero-shot__img {
+
+.marketing-hero-app::before,
+.marketing-report-frame::before,
+.marketing-closing-glass::before {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgb(255 255 255 / 34%), transparent 28%);
+  content: "";
+  pointer-events: none;
+}
+
+.marketing-hero-app-image {
   display: block;
   width: 100%;
   height: auto;
-  border: none;
+  border: 0;
   border-radius: 0;
   box-shadow: none;
 }
 
+.marketing-report-frame {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 86%);
+  border-radius: 16px;
+  background: rgb(255 255 255 / 68%);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 92%) inset,
+    0 28px 70px rgb(46 48 56 / 13%),
+    0 8px 24px rgb(46 48 56 / 7%);
+  backdrop-filter: blur(18px) saturate(125%);
+  -webkit-backdrop-filter: blur(18px) saturate(125%);
+}
+
+.marketing-report-frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.marketing-closing {
+  min-height: 620px;
+  background: #ededee;
+}
+
+.marketing-closing .marketing-mesh::after {
+  background: rgb(255 255 255 / 10%);
+}
+
+.marketing-closing-glass {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 64%);
+  border-radius: 32px;
+  background: rgb(255 255 255 / 48%);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 88%) inset,
+    0 32px 90px rgb(46 48 56 / 13%);
+  backdrop-filter: blur(22px) saturate(130%);
+  -webkit-backdrop-filter: blur(22px) saturate(130%);
+}
+
+.marketing-pricing-featured {
+  z-index: 1;
+  border-color: rgb(255 255 255 / 78%);
+  background:
+    linear-gradient(145deg, rgb(255 255 255 / 78%), rgb(239 243 240 / 82%)), rgb(243 245 243 / 92%);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 92%) inset,
+    0 24px 60px rgb(46 48 56 / 10%);
+  backdrop-filter: blur(16px) saturate(125%);
+  -webkit-backdrop-filter: blur(16px) saturate(125%);
+}
+
 @media (max-width: 639px) {
-  .calm-hero-shot {
-    margin-left: -1.5rem;
+  .marketing-hero-app {
     width: 100vw;
-    padding-left: 1.5rem;
     height: min(82vw, 480px);
-    border: none;
+    margin-left: -1.5rem;
+    padding-left: 1.5rem;
+    border: 0;
     border-radius: 0;
     box-shadow: none;
     mask-image: linear-gradient(to bottom, black 82%, transparent 100%);
     -webkit-mask-image: linear-gradient(to bottom, black 82%, transparent 100%);
   }
-  .calm-hero-shot__img {
+
+  .marketing-hero-app-image {
     width: 840px;
     max-width: none;
+  }
+
+  .marketing-report-frame {
+    width: 100vw;
+    height: min(110vw, 520px);
+    margin-left: -1.25rem;
+    padding-left: 1.25rem;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    mask-image: linear-gradient(to bottom, black 82%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 82%, transparent 100%);
+  }
+
+  .marketing-report-frame img {
+    position: static;
+    width: 840px;
+    max-width: none;
+  }
+
+  .marketing-closing-glass {
+    border-radius: 24px;
+    backdrop-filter: blur(16px) saturate(120%);
+    -webkit-backdrop-filter: blur(16px) saturate(120%);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .calm .rise {
+  .marketing-rise {
     animation: none;
   }
-  .calm-skip-link {
+
+  .marketing-skip-link {
     transition: none;
   }
 }
