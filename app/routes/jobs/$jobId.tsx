@@ -8,7 +8,7 @@ import {
   UserGroupIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { createFileRoute, Link, notFound, useRouteContext } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 
 import { AppBreadcrumbs } from "@/components/app-breadcrumbs";
 import { PublicFooter, PublicHeader } from "@/components/public-layout";
@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CandidateApplySection } from "@/features/applications/components/candidate-apply-section";
 import { hasApplied } from "@/features/applications/server/functions";
+import { currentUserQueryKey, getCurrentUser } from "@/features/auth/server/functions";
 import { candidateLoginLink } from "@/features/auth/signup-search";
 import { getMyCandidateProfile } from "@/features/candidates/server/functions";
 import { JobStatusBadge } from "@/features/jobs/components/job-status-badge";
@@ -43,8 +44,19 @@ function companyInitials(name: string) {
 }
 
 export const Route = createFileRoute("/jobs/$jobId")({
-  beforeLoad: ({ params }) => {
+  beforeLoad: async ({ params, context }) => {
     validateUuidParams({ jobId: params.jobId });
+    const user = await context.queryClient.fetchQuery({
+      queryKey: currentUserQueryKey,
+      queryFn: () => getCurrentUser(),
+      staleTime: 30_000,
+    });
+
+    return {
+      user,
+      isCompany: user?.role === "company",
+      isCandidate: user?.role === "candidate",
+    };
   },
   loader: async ({ params, context }) => {
     const job = await getPublicJobById({ data: { id: params.jobId } });
@@ -94,7 +106,7 @@ function JobDetailPage() {
   const isCandidate = data.type === "candidate";
   const alreadyApplied = isCandidate ? data.alreadyApplied : false;
   const candidateProfile = isCandidate ? data.candidateProfile : null;
-  const { isCompany } = useRouteContext({ from: "__root__" });
+  const { user, isCompany } = Route.useRouteContext();
 
   const salary = formatSalaryFull(job.salaryMin, job.salaryMax, job.salaryCurrency);
   const requirements: string[] = Array.isArray(job.requirements) ? job.requirements : [];
@@ -108,7 +120,7 @@ function JobDetailPage() {
 
   return (
     <div className="calm min-h-svh bg-background text-foreground">
-      <PublicHeader />
+      <PublicHeader user={user} />
 
       <main>
         {isClosed ? (

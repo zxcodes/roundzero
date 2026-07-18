@@ -1,18 +1,14 @@
-import { GoogleOAuthProvider } from "@react-oauth/google";
 import {
   createRootRouteWithContext,
   HeadContent,
   Outlet,
   Scripts,
   useLocation,
-  useRouteContext,
 } from "@tanstack/react-router";
 
 import { NotFound } from "@/components/not-found";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
-import { AuthProvider } from "@/features/auth/provider";
-import { currentUserQueryKey, getCurrentUser } from "@/features/auth/server/functions";
 import type { RouterContext } from "@/router";
 import type { FileRoutesByTo } from "@/routeTree.gen";
 import {
@@ -103,42 +99,21 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       ...SITE_ICON_LINKS,
     ],
   }),
-  beforeLoad: async ({ context }) => {
-    try {
-      const user = await context.queryClient.fetchQuery({
-        queryKey: currentUserQueryKey,
-        queryFn: () => getCurrentUser(),
-        staleTime: 30_000,
-      });
-      return {
-        user,
-        isCompany: user?.role === "company",
-        isCandidate: user?.role === "candidate",
-      };
-    } catch {
-      return { user: null, isCompany: false, isCandidate: false };
-    }
-  },
   component: RootComponent,
   shellComponent: RootDocument,
   notFoundComponent: NotFound,
 });
 
 function RootComponent() {
-  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? "";
-
   return (
-    <GoogleOAuthProvider clientId={googleClientId}>
-      <AuthProvider>
-        <Outlet />
-        <Toaster />
-      </AuthProvider>
-    </GoogleOAuthProvider>
+    <>
+      <Outlet />
+      <Toaster />
+    </>
   );
 }
 
 function RootDocument({ children }: { children: React.ReactNode }) {
-  const { user } = useRouteContext({ from: "__root__" });
   const { pathname } = useLocation();
 
   const routes: (keyof FileRoutesByTo)[] = [
@@ -167,7 +142,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const isPublicRoute = !user && routes.some((route) => matchesRoute(route, pathname));
+  const isPublicRoute = routes.some((route) => matchesRoute(route, pathname));
 
   return (
     <html lang="en" suppressHydrationWarning data-force-light={isPublicRoute ? "true" : undefined}>
