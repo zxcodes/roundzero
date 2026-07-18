@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { releaseBatch } from "@/features/batches/server/release";
 import {
@@ -86,8 +86,8 @@ async function runReleasePersistenceRace(first: "persistence" | "release") {
       { interview: { applicationId: seeded.applicationId } },
       reportDraft,
       "test-model",
-      persistenceDb,
       createWorkflowLogger("test", seeded.interviewId),
+      () => persistenceDb,
     )();
   const release = () => releaseBatch(releaseDb, seeded.batchId);
 
@@ -128,16 +128,19 @@ async function runReleasePersistenceRace(first: "persistence" | "release") {
 describe("persistReport", () => {
   it("holds an active-batch report and reconciles it once the batch has released", async () => {
     const seeded = await seedCompletedBatchInterview("active");
+    const createDb = vi.fn(() => sql);
     const persist = persistReport(
       seeded.interviewId,
       { interview: { applicationId: seeded.applicationId } },
       reportDraft,
       "test-model",
-      sql,
       createWorkflowLogger("test", seeded.interviewId),
+      createDb,
     );
 
+    expect(createDb).not.toHaveBeenCalled();
     const held = await persist();
+    expect(createDb).toHaveBeenCalledOnce();
     expect(held).toMatchObject({ kind: "held", batchId: seeded.batchId });
     expect(held.notificationDeliveries).toHaveLength(0);
     const [heldState] = await sql`
@@ -153,8 +156,8 @@ describe("persistReport", () => {
       { interview: { applicationId: seeded.applicationId } },
       null,
       null,
-      sql,
       createWorkflowLogger("test", seeded.interviewId),
+      () => sql,
     )();
     expect(heldRetry).toMatchObject({ kind: "held", report: { id: held.report.id } });
 
@@ -168,8 +171,8 @@ describe("persistReport", () => {
       { interview: { applicationId: seeded.applicationId } },
       null,
       null,
-      sql,
       createWorkflowLogger("test", seeded.interviewId),
+      () => sql,
     )();
     expect(released).toMatchObject({ kind: "released_now", report: { id: held.report.id } });
     expect(released.notificationDeliveries).toHaveLength(1);
@@ -179,8 +182,8 @@ describe("persistReport", () => {
       { interview: { applicationId: seeded.applicationId } },
       null,
       null,
-      sql,
       createWorkflowLogger("test", seeded.interviewId),
+      () => sql,
     )();
     expect(releasedRetry).toMatchObject({
       kind: "already_reconciled",
@@ -204,8 +207,8 @@ describe("persistReport", () => {
       { interview: { applicationId: seeded.applicationId } },
       reportDraft,
       "test-model",
-      sql,
       createWorkflowLogger("test", seeded.interviewId),
+      () => sql,
     )();
 
     expect(result).toMatchObject({ kind: "released_now", batchId: seeded.batchId });
@@ -229,8 +232,8 @@ describe("persistReport", () => {
       { interview: { applicationId: seeded.applicationId } },
       reportDraft,
       "test-model",
-      sql,
       createWorkflowLogger("test", seeded.interviewId),
+      () => sql,
     )();
     expect(persisted).toMatchObject({ kind: "held" });
     await releaseBatch(sql, seeded.batchId);
