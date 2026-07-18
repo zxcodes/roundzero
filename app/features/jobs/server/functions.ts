@@ -3,7 +3,12 @@ import { zodValidator } from "@tanstack/zod-adapter";
 import { generateText, NoObjectGeneratedError, NoOutputGeneratedError, Output } from "ai";
 import { z } from "zod";
 
+import {
+  getApplicationByJobAndCandidate,
+  getApplicationsByJob,
+} from "@/features/applications/queries/queries_sql";
 import { checkAndLaunchBatch } from "@/features/batches/server/orchestration";
+import { getCandidateProfileByUserId } from "@/features/candidates/queries/queries_sql";
 import { getCompanyByMemberUserId } from "@/features/companies/queries/membership-queries_sql";
 import { notifyCompanyTeam } from "@/features/companies/services/company-team-notifications";
 import {
@@ -12,6 +17,8 @@ import {
   lockCompanyEntitlementScope,
   readCompanyEntitlements,
 } from "@/features/entitlements/server/enforcement";
+import { getActiveInterviewsByJob } from "@/features/interviews/queries/queries_sql";
+import { expireInterviewIfDue } from "@/features/interviews/server/expire";
 import {
   isJobPublishTransition,
   notifyJobPublished,
@@ -143,6 +150,60 @@ export const getJob = createServerFn({ method: "GET" })
     }
 
     return job;
+  });
+
+export const getAuthenticatedJobDetail = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .validator(zodValidator(jobIdSchema))
+  .handler(async ({ data, context }) => {
+    const db = getDb();
+    await db.unsafe(closeExpiredJobsQuery);
+    const job = await getJobById(db, { id: data.id });
+    if (!job) {
+      return null;
+    }
+
+    if (context.user.role === "company") {
+      const company = await getCompanyByMemberUserId(db, { userId: context.userId });
+      if (!company || company.id !== job.companyId) {
+        return null;
+      }
+
+      const activeInterviews = await getActiveInterviewsByJob(db, { jobId: job.id });
+      await Promise.all(
+        activeInterviews.map((interview) =>
+          expireInterviewIfDue({
+            db,
+            interview: {
+              id: interview.id,
+              applicationId: interview.applicationId,
+              status: interview.status,
+              expiresAt: interview.expiresAt,
+            },
+          }),
+        ),
+      );
+      const applicants = await getApplicationsByJob(db, { jobId: job.id });
+      return { type: "company" as const, job, applicants };
+    }
+
+    if (context.user.role !== "candidate" || job.status !== "open") {
+      return null;
+    }
+
+    const [application, candidateProfile] = await Promise.all([
+      getApplicationByJobAndCandidate(db, {
+        jobId: job.id,
+        candidateId: context.userId,
+      }),
+      getCandidateProfileByUserId(db, { userId: context.userId }),
+    ]);
+    return {
+      type: "candidate" as const,
+      job,
+      alreadyApplied: application !== null,
+      candidateProfile,
+    };
   });
 
 export const updateJob = createServerFn({ method: "POST" })
