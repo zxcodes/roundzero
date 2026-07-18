@@ -23,16 +23,16 @@ export const Route = createFileRoute("/candidate/login")({
 
 const valueProps = [
   {
-    title: "Get evaluated beyond your résumé",
-    body: "Show how you think and solve problems in a real conversation.",
+    title: "Evaluated beyond your résumé",
+    body: "Every application is reviewed for real role fit, not keyword matching.",
   },
   {
-    title: "Interview on your schedule",
-    body: "Twenty to forty minute async conversations, anytime, anywhere.",
+    title: "Interview when invited, on your time",
+    body: "Strong matches complete a twenty to forty minute async interview, anytime, anywhere.",
   },
   {
-    title: "Never filtered by keywords",
-    body: "Companies see an evidence-backed report, not another résumé in the stack.",
+    title: "Show how you think",
+    body: "Adaptive follow-ups and evidence-backed reports help companies see the substance of your work.",
   },
 ];
 
@@ -52,11 +52,11 @@ function CandidateLoginPage() {
           Skip the <span className="highlight">resume black hole</span>.
         </>
       }
-      lead="Most applications disappear into an inbox. On RoundZero, every application gets an AI interview, so companies see what you can actually do. No scheduling, no phone screens."
+      lead="Most applications disappear into an inbox. On RoundZero, every application is pre-screened for role fit, and selected candidates complete an adaptive AI interview on their own time. No scheduling, no phone screens."
       valueProps={valueProps}
       trustPoints={["Always free for candidates", "No hidden fees"]}
       formTitle="Get started"
-      formLead="Sign in to browse jobs, apply with one click, and show companies what you can do."
+      formLead="Sign in to browse jobs, apply with one click, and get evaluated beyond your résumé."
       crossLink={{
         prompt: "Looking to hire?",
         to: "/company/login",
