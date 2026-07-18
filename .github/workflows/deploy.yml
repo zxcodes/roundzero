@@ -82,7 +82,6 @@ jobs:
         run: |
           cat > .env.ci <<EOF
           NODE_ENV=${{ secrets.NODE_ENV }}
-          DATABASE_URL=${{ secrets.DATABASE_URL }}
           SESSION_SECRET=${{ secrets.SESSION_SECRET }}
           APP_URL=${{ secrets.APP_URL }}
           EMAIL_FROM=${{ secrets.EMAIL_FROM }}
