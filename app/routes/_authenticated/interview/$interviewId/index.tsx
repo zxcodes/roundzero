@@ -28,7 +28,7 @@ import { Route as ParentRoute } from "../$interviewId";
 
 type InterviewDetail = NonNullable<
   Awaited<ReturnType<typeof import("@/features/interviews/server/functions").getMyInterview>>
->;
+>["interview"];
 
 const statusConfig: Record<string, { label: string; tone: string }> = {
   pending: { label: "Ready", tone: "border-warning/20 bg-warning/10 text-warning" },

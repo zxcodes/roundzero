@@ -2,7 +2,7 @@ import type { UIMessage } from "@tanstack/ai";
 import { fetchServerSentEvents, useChat } from "@tanstack/ai-react";
 import { useMemo, useRef } from "react";
 
-import type { getMyInterviewMessages } from "@/features/interviews/server/functions";
+import type { getMyInterview } from "@/features/interviews/server/functions";
 import type { MessageIntegritySnapshot } from "@/features/interviews/shared/integrity";
 
 const readMessageText = (message: UIMessage) => {
@@ -24,9 +24,7 @@ const readMessageText = (message: UIMessage) => {
     .trim();
 };
 
-type InitialInterviewMessages = NonNullable<
-  Awaited<ReturnType<typeof getMyInterviewMessages>>
->["messages"];
+type InitialInterviewMessages = NonNullable<Awaited<ReturnType<typeof getMyInterview>>>["messages"];
 
 export function useInterviewChat(interviewId: string, initialMessages: InitialInterviewMessages) {
   const pendingIntegrityRef = useRef<MessageIntegritySnapshot | null>(null);
