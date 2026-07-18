@@ -3,7 +3,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ClientOnly, createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { InterviewWorkspacePageSkeleton } from "@/components/route-skeletons";
@@ -13,7 +13,6 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { InterviewChat } from "@/features/interviews/components/interview-chat";
-import { VoiceAssessmentPanel } from "@/features/interviews/components/voice-assessment-panel";
 import { useInterviewChat } from "@/features/interviews/hooks/use-interview-chat";
 import {
   cancelMyInterview,
@@ -25,6 +24,11 @@ import type { MessageIntegritySnapshot } from "@/features/interviews/shared/inte
 import { formatDeadlineLabel, formatTimeLeft } from "@/shared/date";
 
 import { Route as ParentRoute } from "../$interviewId";
+
+const VoiceAssessmentPanel = lazy(async () => {
+  const module = await import("@/features/interviews/components/voice-assessment-panel");
+  return { default: module.VoiceAssessmentPanel };
+});
 
 type InterviewDetail = NonNullable<
   Awaited<ReturnType<typeof import("@/features/interviews/server/functions").getMyInterview>>
@@ -56,7 +60,7 @@ function InterviewWorkspacePage() {
   const { interview, expiresAt, initialMessages } = ParentRoute.useLoaderData();
 
   return (
-    <ClientOnly>
+    <ClientOnly fallback={<InterviewWorkspacePageSkeleton />}>
       {/* Remount on status transitions so useChat re-reads `initialMessages`
           after the server seeds the greeting (pending → in_progress) and
           after the agent calls end_interview (in_progress → completed).
@@ -343,7 +347,19 @@ function InterviewWorkspaceContent({
           />
         </TabsContent>
         <TabsContent value="voice" className="mt-0 flex min-h-0 flex-1 flex-col">
-          <VoiceAssessmentPanel interviewId={interview.id} />
+          <Suspense
+            fallback={
+              <div className="flex min-h-0 flex-1 items-center justify-center text-muted-foreground">
+                <HugeiconsIcon
+                  icon={Loading03Icon}
+                  strokeWidth={2}
+                  className="size-5 animate-spin"
+                />
+              </div>
+            }
+          >
+            <VoiceAssessmentPanel interviewId={interview.id} />
+          </Suspense>
         </TabsContent>
       </Tabs>
     </>
