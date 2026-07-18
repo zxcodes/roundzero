@@ -13,7 +13,6 @@ import {
   createInterviewMessage,
   getCommunicationAssessmentByInterviewId,
   getInterviewContextById,
-  getInterviewForCandidateByApplicationId,
   getInterviewForCandidateById,
   getInterviewMessagesByInterviewId,
   getInterviewsByCandidate,
@@ -318,39 +317,6 @@ export const completeMyInterview = createServerFn({ method: "POST" })
       id: data.interviewId,
       candidateId: context.userId,
     });
-  });
-
-export const getInterviewForApplication = createServerFn({ method: "GET" })
-  .middleware([authMiddleware])
-  .validator(
-    zodValidator(
-      z.object({
-        applicationId: z.string().uuid(),
-      }),
-    ),
-  )
-  .handler(async ({ data, context }) => {
-    const db = getDb();
-
-    if (context.user.role !== "candidate") {
-      throw new Error("Only candidates can view interviews");
-    }
-
-    const interview = await getInterviewForCandidateByApplicationId(db, {
-      id: data.applicationId,
-      candidateId: context.userId,
-    });
-
-    if (!interview) {
-      return null;
-    }
-
-    const expired = await expireInterviewIfNeeded({ db, interview });
-    if (expired.expiredNow) {
-      return expired.interview;
-    }
-
-    return interview;
   });
 
 export const getMyVoiceAssessment = createServerFn({ method: "GET" })
