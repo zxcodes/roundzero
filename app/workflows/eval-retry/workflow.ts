@@ -1,4 +1,4 @@
-import { env, WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers";
+import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers";
 
 import { listStaleEvaluationFailedApplications } from "@/features/applications/queries/queries_sql";
 import {
@@ -40,30 +40,34 @@ export class EvalRetryWorkflow extends WorkflowEntrypoint<Env> {
 
     const results: SweepEntry[] = [];
     for (const row of rows) {
-      const entry = await step.do(
-        `retry-${row.id}`,
-        {
-          retries: { limit: 1, delay: "10 seconds", backoff: "exponential" },
-        },
-        async (): Promise<SweepEntry> => {
-          try {
+      let entry: SweepEntry;
+      try {
+        entry = await step.do(
+          `retry-${row.id}`,
+          {
+            retries: { limit: 1, delay: "10 seconds", backoff: "exponential" },
+          },
+          async (): Promise<SweepEntry> => {
             const db = getDb();
             const result = await retryEvaluation(
               db,
               row.id,
-              { preEvaluation: env.PRE_EVALUATION, postEvaluation: env.POST_EVALUATION },
+              {
+                preEvaluation: this.env.PRE_EVALUATION,
+                postEvaluation: this.env.POST_EVALUATION,
+              },
               { cap: EVAL_RETRY_AUTO_CAP, source: "cron" },
             );
             return { applicationId: row.id, status: "ok", result };
-          } catch (error) {
-            return {
-              applicationId: row.id,
-              status: "error",
-              message: error instanceof Error ? error.message : String(error),
-            };
-          }
-        },
-      );
+          },
+        );
+      } catch (error) {
+        entry = {
+          applicationId: row.id,
+          status: "error",
+          message: error instanceof Error ? error.message : String(error),
+        };
+      }
       results.push(entry);
     }
 
