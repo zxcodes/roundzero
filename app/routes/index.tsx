@@ -67,7 +67,7 @@ function PrimaryCta({ children }: { children: React.ReactNode }) {
 function Hero() {
   return (
     <section className="marketing-hero relative overflow-hidden">
-      <div className="mx-auto w-full max-w-[90rem] px-6 pb-0 pt-16 lg:px-12 lg:pt-24 xl:px-16">
+      <div className="mx-auto w-full max-w-360 px-6 pb-0 pt-16 lg:px-12 lg:pt-24 xl:px-16">
         <div className="marketing-rise w-full text-left">
           <h1 className="mt-4 text-[clamp(2rem,3.6vw,4rem)] font-semibold leading-[1.06] tracking-[-0.035em] sm:whitespace-nowrap">
             Review candidates, not <span className="marketing-hero-highlight">resumes</span>.
@@ -129,7 +129,7 @@ const steps = [
 function HowItWorks() {
   return (
     <section id="product" className="scroll-mt-20 border-b border-border bg-white">
-      <div className="mx-auto w-full max-w-[90rem] px-5 py-20 sm:px-8 lg:px-12 lg:py-32 xl:px-16">
+      <div className="mx-auto w-full max-w-360 px-5 py-20 sm:px-8 lg:px-12 lg:py-32 xl:px-16">
         <div className="grid gap-10 lg:grid-cols-12">
           <div className="lg:col-span-5">
             <div className="lg:sticky lg:top-28">
@@ -223,7 +223,7 @@ function ReportSection() {
 function CandidateSection() {
   return (
     <section className="border-b border-border bg-white">
-      <div className="mx-auto grid w-full max-w-[90rem] items-start gap-12 px-5 py-20 sm:px-8 lg:grid-cols-12 lg:px-12 lg:py-32 xl:px-16">
+      <div className="mx-auto grid w-full max-w-360 items-start gap-12 px-5 py-20 sm:px-8 lg:grid-cols-12 lg:px-12 lg:py-32 xl:px-16">
         <div className="lg:col-span-5">
           <Eyebrow>For candidates</Eyebrow>
           <h2 className="mt-5 max-w-xl text-balance text-[clamp(2.5rem,4.6vw,4.6rem)] font-medium leading-[0.98] tracking-[-0.052em]">
@@ -314,10 +314,10 @@ const faq = [
 function FaqSection() {
   return (
     <section className="border-b border-border bg-[#f7f7f8]">
-      <div className="mx-auto grid w-full max-w-[90rem] gap-10 px-5 py-20 sm:px-8 lg:grid-cols-12 lg:px-12 lg:py-28 xl:px-16">
+      <div className="mx-auto grid w-full max-w-360 gap-10 px-5 py-20 sm:px-8 lg:grid-cols-12 lg:px-12 lg:py-28 xl:px-16">
         <div className="lg:col-span-4">
           <Eyebrow>Questions</Eyebrow>
-          <h2 className="mt-5 text-[clamp(2.4rem,4vw,4rem)] font-medium leading-none tracking-[-0.05em]">
+          <h2 className="mt-5 text-[clamp(2.4rem,4vw,4rem)] font-medium leading-none tracking-tighter">
             The useful answers.
           </h2>
         </div>
@@ -346,7 +346,7 @@ function ClosingSection() {
   return (
     <section className="marketing-closing relative overflow-hidden">
       <div className="marketing-mesh" aria-hidden="true" />
-      <div className="relative z-10 mx-auto w-full max-w-[90rem] px-5 py-16 text-center sm:px-8 lg:px-12 lg:py-24 xl:px-16">
+      <div className="relative z-10 mx-auto w-full max-w-360 px-5 py-16 text-center sm:px-8 lg:px-12 lg:py-24 xl:px-16">
         <div className="marketing-closing-glass mx-auto max-w-6xl px-5 py-16 sm:px-10 lg:px-16 lg:py-24">
           <Eyebrow>Start with one role</Eyebrow>
           <h2 className="mx-auto mt-7 max-w-4xl text-balance text-[clamp(3rem,6.4vw,6.5rem)] font-medium leading-[0.92] tracking-[-0.065em]">
