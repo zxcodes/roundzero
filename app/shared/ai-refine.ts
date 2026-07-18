@@ -192,7 +192,21 @@ export function sanitizeUntrustedText(
     .join("\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
-  return joined.length > maxChars ? `${joined.slice(0, maxChars)}…[truncated]` : joined;
+  if (joined.length <= maxChars) return joined;
+
+  let end = maxChars;
+  const lastCodeUnit = joined.charCodeAt(end - 1);
+  const nextCodeUnit = joined.charCodeAt(end);
+  const splitsSurrogatePair =
+    lastCodeUnit >= 0xd800 &&
+    lastCodeUnit <= 0xdbff &&
+    nextCodeUnit >= 0xdc00 &&
+    nextCodeUnit <= 0xdfff;
+  if (splitsSurrogatePair) {
+    end -= 1;
+  }
+
+  return `${joined.slice(0, end)}…[truncated]`;
 }
 
 // ─── Transcript helpers ────────────────────────────────────────────────────
