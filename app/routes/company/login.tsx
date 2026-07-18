@@ -23,16 +23,16 @@ export const Route = createFileRoute("/company/login")({
 
 const valueProps = [
   {
-    title: "Adaptive interviews",
-    body: "Zero evaluates how candidates think and communicate, not just what is on their résumé.",
+    title: "Pre-screen every applicant",
+    body: "RoundZero reviews every application for role fit so your team does not dig through résumés by hand.",
+  },
+  {
+    title: "Selected candidates interview",
+    body: "Strong matches complete an adaptive AI interview on their own time. Zero probes claims, asks follow-ups, and checks role fit.",
   },
   {
     title: "Evidence-backed reports",
-    body: "Evaluated candidates arrive with a clear recommendation, strengths, concerns, and evidence from the conversation.",
-  },
-  {
-    title: "Hire with confidence",
-    body: "Clear recommendations before your team schedules a single human interview.",
+    body: "Get a recommendation, strengths, concerns, and conversation evidence before you schedule a human interview.",
   },
 ];
 
@@ -52,11 +52,11 @@ function CompanyLoginPage() {
           Review candidates, not <span className="highlight">resumes</span>.
         </>
       }
-      lead="Post a job and RoundZero handles the initial screen. Selected candidates complete a structured, adaptive AI interview, and you get a decision-ready report with evidence."
+      lead="Post a job and RoundZero pre-screens every applicant. Selected candidates complete an adaptive AI interview, and you get a decision-ready report with evidence."
       valueProps={valueProps}
       trustPoints={["No credit card required", "Free to post jobs"]}
       formTitle="Get started"
-      formLead="Sign in to post jobs, run AI interviews, and review decision-ready candidate reports."
+      formLead="Sign in to post jobs, pre-screen applicants, and review decision-ready candidate reports."
       crossLink={{
         prompt: "Looking to apply for jobs?",
         to: "/candidate/login",
