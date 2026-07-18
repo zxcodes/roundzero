@@ -56,6 +56,7 @@ import {
   type TranscriptMessage,
   transcriptHasEnoughSignal,
 } from "@/shared/ai-refine";
+import { getDb } from "@/shared/db";
 import { isEmailDeliveryConfigured, sendReactTransactionalEmail } from "@/shared/email";
 import { recommendationSchema } from "@/shared/enums";
 import type { createWorkflowLogger } from "@/shared/logger";
@@ -216,22 +217,22 @@ export function assessAnswerAuthenticity(
 
 export function loadExistingReport(
   interviewId: string,
-  db: Sql,
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
   return async () => {
     log.info("Loading existing report state");
+    const db = getDb();
     return await getReportByInterviewId(db, { interviewId });
   };
 }
 
 export function readInterviewData(
   interviewId: string,
-  db: Sql,
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
   return async (): Promise<ReadInterviewDataResult> => {
     log.info("Reading interview context and transcript");
+    const db = getDb();
 
     const interview = await getInterviewContextById(db, { id: interviewId });
     if (!interview) {
@@ -478,8 +479,8 @@ export function persistReport(
   },
   reportDraft: ReportModelResponse | null,
   model: string | null,
-  db: Sql,
   log: ReturnType<typeof createWorkflowLogger>,
+  createDb: () => Sql = getDb,
 ) {
   return async (): Promise<
     | {
@@ -496,6 +497,7 @@ export function persistReport(
       }
   > => {
     log.info("Reconciling report persistence and release state");
+    const db = createDb();
 
     // Reading the batch id before the transaction is safe: assignment is immutable
     // once an interview is completed. It lets both persistence and release acquire
@@ -631,7 +633,6 @@ export function sendReportReadyEmail(
     email: string;
   }[],
   reportDraft: { scores: { overall: number }; recommendation: string },
-  db: Sql,
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
   return async () => {
@@ -640,6 +641,7 @@ export function sendReportReadyEmail(
       return;
     }
 
+    const db = getDb();
     if (!isEmailDeliveryConfigured()) {
       log.info("Email delivery not configured, skipping email delivery");
       for (const delivery of deliveries) {
@@ -725,10 +727,10 @@ const voiceTranscriptDbSchema = z
 
 export function loadVoiceAssessment(
   interviewId: string,
-  db: Sql,
   log: ReturnType<typeof createWorkflowLogger>,
 ) {
   return async (): Promise<CommunicationAssessmentAnalysis> => {
+    const db = getDb();
     const row = await getCommunicationAssessmentByInterviewId(db, { interviewId });
     if (row?.status !== "completed") {
       throw new NonRetryableError(
