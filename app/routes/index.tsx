@@ -1,6 +1,6 @@
 import { ArrowRight01Icon, ArrowRight02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 
 import { PublicFooter, PublicHeader } from "@/components/public-layout";
 import {
@@ -10,10 +10,22 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { currentUserQueryKey, getCurrentUser } from "@/features/auth/server/functions";
 import { MarketingPricingSection } from "@/features/marketing/components/pricing-section";
 import { buildPageHead, DEFAULT_META_TITLE, HOMEPAGE_META_DESCRIPTION } from "@/shared/seo";
 
 export const Route = createFileRoute("/")({
+  beforeLoad: async ({ context }) => {
+    const user = await context.queryClient.fetchQuery({
+      queryKey: currentUserQueryKey,
+      queryFn: () => getCurrentUser(),
+      staleTime: 30_000,
+    });
+
+    if (user?.role) {
+      throw redirect({ to: "/dashboard" });
+    }
+  },
   head: () =>
     buildPageHead({
       title: DEFAULT_META_TITLE,
