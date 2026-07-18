@@ -5,7 +5,10 @@ import { z } from "zod";
 
 import { getActiveBatchForJob, getJobReportProgress } from "@/features/batches/queries/queries_sql";
 import { getCompanyByMemberUserId } from "@/features/companies/queries/membership-queries_sql";
-import { getActiveInterviewsByJob } from "@/features/interviews/queries/queries_sql";
+import {
+  getActiveInterviewsByJob,
+  getInterviewForCandidateByApplicationId,
+} from "@/features/interviews/queries/queries_sql";
 import { expireInterviewIfDue } from "@/features/interviews/server/expire";
 import { closeExpiredJobsQuery, getJobById } from "@/features/jobs/queries/queries_sql";
 import { loadApplicantReportTimeline } from "@/features/reports/server/timeline";
@@ -102,7 +105,13 @@ export const getMyApplicationDetail = createServerFn({ method: "GET" })
       throw new Error("Only candidates can view applications");
     }
 
-    const application = await getApplicationById(db, { id: data.applicationId });
+    const [application, interview] = await Promise.all([
+      getApplicationById(db, { id: data.applicationId }),
+      getInterviewForCandidateByApplicationId(db, {
+        id: data.applicationId,
+        candidateId: context.userId,
+      }),
+    ]);
     if (!application) {
       return null;
     }
@@ -111,7 +120,11 @@ export const getMyApplicationDetail = createServerFn({ method: "GET" })
       throw new Error("Not authorized to view this application");
     }
 
-    return application;
+    const effectiveInterview = interview
+      ? (await expireInterviewIfDue({ db, interview })).interview
+      : null;
+
+    return { application, interview: effectiveInterview };
   });
 
 export const getJobApplicants = createServerFn({ method: "GET" })

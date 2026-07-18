@@ -32,7 +32,6 @@ import {
 } from "@/features/applications/server/functions";
 import { hasShortlistNextSteps, parseShortlistDetails } from "@/features/applications/shortlist";
 import { InterviewInvitationCard } from "@/features/interviews/components/interview-invitation-card";
-import { getInterviewForApplication } from "@/features/interviews/server/functions";
 import { resolveInterviewAwareCandidateMeta } from "@/features/interviews/shared/candidate-display";
 import { formatDate, formatDateShort } from "@/shared/date";
 import { base64ToBlob } from "@/shared/resume";
@@ -46,20 +45,19 @@ export const Route = createFileRoute("/_authenticated/dashboard/application/$app
     validateUuidParams({ applicationId: params.applicationId });
   },
   loader: async ({ params }) => {
-    const [application, interview] = await Promise.all([
-      getMyApplicationDetail({ data: { applicationId: params.applicationId } }),
-      getInterviewForApplication({ data: { applicationId: params.applicationId } }),
-    ]);
-    if (!application) {
+    const data = await getMyApplicationDetail({
+      data: { applicationId: params.applicationId },
+    });
+    if (!data) {
       throw notFound();
     }
-    return { application, interview };
+    return data;
   },
   pendingComponent: DashboardApplicationDetailSkeleton,
   component: CandidateApplicationDetailPage,
 });
 
-type Application = NonNullable<Awaited<ReturnType<typeof getMyApplicationDetail>>>;
+type Application = NonNullable<Awaited<ReturnType<typeof getMyApplicationDetail>>>["application"];
 
 const HAPPY_PATH_STAGES = ["applied", "interviewing", "evaluated"] as const;
 
