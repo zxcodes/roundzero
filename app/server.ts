@@ -76,6 +76,7 @@ async function serveAsset(request: Request, env: Env): Promise<Response | null> 
 const appHandler = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+    const isCacheableRead = request.method === "GET" || request.method === "HEAD";
 
     if (url.pathname === "/api/polar/webhook" && request.method === "POST") {
       return handlePolarWebhook(request);
@@ -84,7 +85,7 @@ const appHandler = {
     const assetResponse = await serveAsset(request, env);
     if (assetResponse) return assetResponse;
 
-    if (request.method === "GET" && url.pathname === "/robots.txt") {
+    if (isCacheableRead && url.pathname === "/robots.txt") {
       const cached = await getCachedResponse(request);
       if (cached) return cached;
 
@@ -99,7 +100,7 @@ Sitemap: ${siteUrl}/sitemap.xml
       return response;
     }
 
-    if (request.method === "GET" && url.pathname === "/sitemap.xml") {
+    if (isCacheableRead && url.pathname === "/sitemap.xml") {
       const cached = await getCachedResponse(request);
       if (cached) return cached;
 
