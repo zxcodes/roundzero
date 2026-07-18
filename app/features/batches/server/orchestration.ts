@@ -179,7 +179,7 @@ export async function checkAndLaunchBatch(jobId: string): Promise<PoolCheckResul
       candidateIds.length > 0
         ? await transaction.unsafe<Array<{ id: string; email: string | null }>>(
             `SELECT id, email FROM users WHERE id = ANY($1::uuid[])`,
-            [candidateIds],
+            [`{${candidateIds.join(",")}}`],
           )
         : [];
     const userMap = new Map(users.map((u) => [u.id, u]));
