@@ -1,6 +1,6 @@
 import { ArrowRight01Icon, ArrowRight02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { PublicFooter, PublicHeader } from "@/components/public-layout";
 import {
@@ -14,11 +14,6 @@ import { MarketingPricingSection } from "@/features/marketing/components/pricing
 import { buildPageHead, DEFAULT_META_TITLE, HOMEPAGE_META_DESCRIPTION } from "@/shared/seo";
 
 export const Route = createFileRoute("/")({
-  beforeLoad: ({ context }) => {
-    if (context.user?.role) {
-      throw redirect({ to: "/dashboard" });
-    }
-  },
   head: () =>
     buildPageHead({
       title: DEFAULT_META_TITLE,

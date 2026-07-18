@@ -12,6 +12,7 @@ import { InviteAcceptSkeleton } from "@/components/route-skeletons";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { GoogleIcon } from "@/features/auth/components/google-icon";
+import { GoogleOAuthBoundary } from "@/features/auth/provider";
 import {
   acceptInvite,
   currentUserQueryKey,
@@ -44,8 +45,16 @@ export const Route = createFileRoute("/invite/$token")({
       ...noindexHead().meta,
     ],
   }),
-  component: InviteAcceptPage,
+  component: InviteAcceptRoute,
 });
+
+function InviteAcceptRoute() {
+  return (
+    <GoogleOAuthBoundary>
+      <InviteAcceptPage />
+    </GoogleOAuthBoundary>
+  );
+}
 
 const roleLabels = {
   admin: "Admin",
@@ -110,7 +119,7 @@ function InviteAcceptPage() {
 
   return (
     <div className="calm flex min-h-svh flex-col bg-background text-foreground">
-      <PublicHeader />
+      <PublicHeader user={user} />
       <main className="flex flex-1 items-center justify-center p-6">
         <div className="w-full max-w-md space-y-6">
           <div className="flex justify-center">

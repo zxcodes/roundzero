@@ -1,14 +1,20 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import { LoginPageShell } from "@/features/auth/components/login-page-shell";
-import { useAuth } from "@/features/auth/provider";
+import { GoogleSignInProvider, useGoogleSignIn } from "@/features/auth/provider";
+import { currentUserQueryKey, getCurrentUser } from "@/features/auth/server/functions";
 import { redirectAfterSignup, signupSearchSchema } from "@/features/auth/signup-search";
 import { buildPageHead, PAGE_SEO } from "@/shared/seo";
 
 export const Route = createFileRoute("/candidate/login")({
   validateSearch: signupSearchSchema,
-  beforeLoad: ({ context, search }) => {
-    if (context.user?.role) {
+  beforeLoad: async ({ context, search }) => {
+    const user = await context.queryClient.fetchQuery({
+      queryKey: currentUserQueryKey,
+      queryFn: () => getCurrentUser(),
+      staleTime: 30_000,
+    });
+    if (user?.role) {
       throw redirect(redirectAfterSignup(search));
     }
   },
@@ -18,8 +24,16 @@ export const Route = createFileRoute("/candidate/login")({
       description: PAGE_SEO.signIn.description,
       path: "/candidate/login",
     }),
-  component: CandidateLoginPage,
+  component: CandidateLoginRoute,
 });
+
+function CandidateLoginRoute() {
+  return (
+    <GoogleSignInProvider>
+      <CandidateLoginPage />
+    </GoogleSignInProvider>
+  );
+}
 
 const valueProps = [
   {
@@ -37,7 +51,7 @@ const valueProps = [
 ];
 
 function CandidateLoginPage() {
-  const { signIn, isSigningIn } = useAuth();
+  const { signIn, isSigningIn } = useGoogleSignIn();
   const signupSearch = Route.useSearch();
 
   const onSignIn = () => {
