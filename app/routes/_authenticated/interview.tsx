@@ -6,6 +6,7 @@ import { InterviewWorkspaceSkeleton } from "@/components/route-skeletons";
 import { SidebarInset, SidebarProvider, useSidebar } from "@/components/ui/sidebar";
 import { InterviewSidebar } from "@/features/interviews/components/interview-sidebar";
 import { getMyInterviews } from "@/features/interviews/server/functions";
+import { pickPreferredInterviewId } from "@/features/interviews/shared/candidate-display";
 import { useCommandPaletteShortcut } from "@/hooks/use-command-palette-shortcut";
 
 export const Route = createFileRoute("/_authenticated/interview")({
@@ -14,8 +15,17 @@ export const Route = createFileRoute("/_authenticated/interview")({
       throw redirect({ to: "/dashboard" });
     }
   },
-  loader: async () => {
+  loader: async ({ location }) => {
     const interviews = await getMyInterviews();
+    if (location.pathname === "/interview" || location.pathname === "/interview/") {
+      const preferredInterviewId = pickPreferredInterviewId(interviews);
+      if (preferredInterviewId) {
+        throw redirect({
+          to: "/interview/$interviewId",
+          params: { interviewId: preferredInterviewId },
+        });
+      }
+    }
     return { interviews };
   },
   pendingComponent: InterviewWorkspaceSkeleton,
