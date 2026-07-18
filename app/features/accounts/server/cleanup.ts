@@ -29,11 +29,7 @@ function deletedUserEmail(userId: string): string {
 async function deleteR2Objects(resumes: R2Bucket, keys: Array<string | null>): Promise<void> {
   const uniqueKeys = [...new Set(keys.filter((key): key is string => Boolean(key)))];
   for (const key of uniqueKeys) {
-    try {
-      await resumes.delete(key);
-    } catch (error) {
-      console.error(`[eraseDeletedAccount] failed to delete R2 object ${key}`, error);
-    }
+    await resumes.delete(key);
   }
 }
 
