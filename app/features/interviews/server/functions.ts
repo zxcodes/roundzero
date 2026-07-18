@@ -69,33 +69,6 @@ export const getMyInterview = createServerFn({ method: "GET" })
       return null;
     }
 
-    const expired = await expireInterviewIfNeeded({ db, interview });
-    if (expired.expiredNow) {
-      return expired.interview;
-    }
-
-    return interview;
-  });
-
-export const getMyInterviewMessages = createServerFn({ method: "GET" })
-  .middleware([authMiddleware])
-  .validator(zodValidator(interviewIdSchema))
-  .handler(async ({ data, context }) => {
-    const db = getDb();
-
-    if (context.user.role !== "candidate") {
-      throw new Error("Only candidates can view interviews");
-    }
-
-    const interview = await getInterviewForCandidateById(db, {
-      id: data.interviewId,
-      candidateId: context.userId,
-    });
-
-    if (!interview) {
-      return null;
-    }
-
     const [expired, messages] = await Promise.all([
       expireInterviewIfNeeded({ db, interview }),
       getInterviewMessagesByInterviewId(db, {
@@ -104,7 +77,7 @@ export const getMyInterviewMessages = createServerFn({ method: "GET" })
     ]);
 
     return {
-      status: expired.interview.status,
+      interview: expired.interview,
       messages: messages
         .filter((message) => message.role === "assistant" || message.role === "candidate")
         .map((message) => ({
