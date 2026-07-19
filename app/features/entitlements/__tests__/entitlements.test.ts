@@ -58,6 +58,34 @@ describe("deriveEntitlements", () => {
       "AI job creation is available on paid plans. Upgrade to unlock this feature.",
     );
   });
+
+  it.each(["inactive", "past_due", "canceled", "incomplete", "incomplete_expired", "unpaid"])(
+    "uses Free limits for a paid plan with %s status",
+    (subscriptionStatus) => {
+      const entitlements = deriveEntitlements({
+        subscriptionPlan: "scale",
+        subscriptionStatus,
+        jobCounts: null,
+      });
+
+      expect(entitlements.subscription.plan).toBe("free");
+      expect(entitlements.subscription.isActive).toBe(false);
+      expect(entitlements.jobs.active.limit).toBe(1);
+      expect(entitlements.reports.perJobLimit).toBe(1);
+      expect(entitlements.team.members.limit).toBe(1);
+    },
+  );
+
+  it("keeps paid limits while a subscription is active and scheduled to cancel", () => {
+    const entitlements = deriveEntitlements({
+      subscriptionPlan: "growth",
+      subscriptionStatus: "active",
+      jobCounts: null,
+    });
+
+    expect(entitlements.subscription.plan).toBe("growth");
+    expect(entitlements.jobs.active.limit).toBe(15);
+  });
 });
 
 describe("resolveReportTarget", () => {

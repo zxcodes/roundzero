@@ -1,12 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequestHeader } from "@tanstack/react-start/server";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 
-import {
-  getCompanyById,
-  setCompanyPolarCustomer,
-  updateCompanySubscription,
-} from "@/features/companies/queries/queries_sql";
+import { getCompanyById, setCompanyPolarCustomer } from "@/features/companies/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { appEnv } from "@/shared/env.app";
 import { assertCompanyOwner } from "@/shared/membership-auth";
@@ -14,12 +11,19 @@ import { companyMiddleware } from "@/shared/middleware";
 
 import {
   hasActiveSubscription,
+  requiresBillingPortal,
   SUBSCRIPTION_PLANS,
   type SubscriptionPlan,
   subscriptionPlanSchema,
 } from "../config";
+import {
+  assertCheckoutBelongsToCompany,
+  createPolarCheckout,
+  createPolarPortalSession,
+} from "../services/checkout";
 import { trySendSubscriptionWelcomeEmail } from "../services/email";
 import { getPolar } from "../services/polar";
+import { reconcilePolarSubscription } from "../services/subscription-state";
 
 const checkoutSchema = z.object({
   plan: subscriptionPlanSchema,
@@ -46,11 +50,13 @@ async function ensurePolarCustomer(input: {
   if (input.existingCustomerId) return input.existingCustomerId;
 
   const polar = getPolar();
-  const customer = await polar.customers.create({
-    email: input.email,
-    name: input.name,
-    externalId: input.companyId,
-  });
+  const customer = await polar.customers
+    .create({
+      email: input.email,
+      name: input.name,
+      externalId: input.companyId,
+    })
+    .catch(async () => await polar.customers.getExternal({ externalId: input.companyId }));
 
   const db = getDb();
   await setCompanyPolarCustomer(db, {
@@ -75,15 +81,13 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
     }
 
     if (
-      context.company.polarSubscriptionId &&
-      hasActiveSubscription({
-        subscriptionPlan: context.company.subscriptionPlan,
+      requiresBillingPortal({
+        polarSubscriptionId: context.company.polarSubscriptionId,
         subscriptionStatus: context.company.subscriptionStatus,
+        cancelAtPeriodEnd: context.company.subscriptionCancelAtPeriodEnd,
       })
     ) {
-      throw new Error(
-        "You already have an active subscription. Use the billing portal to change plans.",
-      );
+      throw new Error("Manage your existing subscription through the billing portal.");
     }
 
     await ensurePolarCustomer({
@@ -93,18 +97,12 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
       name: context.company.name,
     });
 
-    const polar = getPolar();
-    const checkout = await polar.checkouts.create({
-      products: [productId],
-      externalCustomerId: context.company.id,
-      successUrl: `${appEnv.APP_URL}/dashboard/billing?status=success&checkout_id={CHECKOUT_ID}`,
+    const url = await createPolarCheckout({
+      companyId: context.company.id,
+      productId,
+      customerIpAddress: getRequestHeader("cf-connecting-ip"),
     });
-
-    if (!checkout.url) {
-      throw new Error("Polar checkout session has no URL");
-    }
-
-    return { url: checkout.url };
+    return { url };
   });
 
 export const createBillingPortalSession = createServerFn({ method: "POST" })
@@ -116,12 +114,8 @@ export const createBillingPortalSession = createServerFn({ method: "POST" })
       throw new Error("No billing account on file. Subscribe first.");
     }
 
-    const polar = getPolar();
-    const session = await polar.customerSessions.create({
-      customerId: context.company.polarCustomerId,
-    });
-
-    return { url: session.customerPortalUrl };
+    const url = await createPolarPortalSession(context.company.polarCustomerId);
+    return { url };
   });
 
 export const syncCheckoutSubscription = createServerFn({ method: "POST" })
@@ -132,45 +126,33 @@ export const syncCheckoutSubscription = createServerFn({ method: "POST" })
 
     const polar = getPolar();
     const checkout = await polar.checkouts.get({ id: data.checkoutId });
+    assertCheckoutBelongsToCompany(checkout, context.company.id);
+
     const subscriptionId = checkout.subscriptionId;
     if (!subscriptionId) {
       throw new Error("Checkout has no subscription");
     }
 
     const subscription = await polar.subscriptions.get({ id: subscriptionId });
-    const productId = subscription.productId;
-    let plan: SubscriptionPlan = "free";
-    if (productId) {
-      if (productId === appEnv.POLAR_PRODUCT_ID_STARTER) plan = "starter";
-      else if (productId === appEnv.POLAR_PRODUCT_ID_GROWTH) plan = "growth";
-      else if (productId === appEnv.POLAR_PRODUCT_ID_SCALE) plan = "scale";
-    }
+    const result = await reconcilePolarSubscription(getDb(), subscription, context.company.id);
 
-    await setCompanyPolarCustomer(getDb(), {
-      id: context.company.id,
-      polarCustomerId: subscription.customerId,
-    });
-
-    await updateCompanySubscription(getDb(), {
-      polarCustomerId: subscription.customerId,
-      polarSubscriptionId: subscription.id,
-      polarProductId: productId,
-      subscriptionPlan: plan,
-      subscriptionStatus: subscription.status,
-      subscriptionCurrentPeriodEnd: subscription.currentPeriodEnd,
-      subscriptionCancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
-    });
-
-    if (subscription.status === "active" || subscription.status === "trialing") {
+    if (
+      result.applied &&
+      (subscription.status === "active" || subscription.status === "trialing")
+    ) {
       await trySendSubscriptionWelcomeEmail(getDb(), {
         polarSubscriptionId: subscription.id,
-        plan,
+        plan: result.plan,
       }).catch((error) => {
         console.error("[billing.syncCheckoutSubscription] failed to send welcome email", error);
       });
     }
 
-    return { success: true };
+    return {
+      success: true,
+      isActive: subscription.status === "active" || subscription.status === "trialing",
+      status: subscription.status,
+    };
   });
 
 export const getMySubscription = createServerFn({ method: "GET" })
@@ -185,16 +167,29 @@ export const getMySubscription = createServerFn({ method: "GET" })
 
     const rawPlan = company.subscriptionPlan ?? "free";
     const plan = SUBSCRIPTION_PLANS.find((p) => p === rawPlan) ?? "free";
+    const rawPendingPlan = company.subscriptionPendingPlan;
+    const pendingPlan =
+      SUBSCRIPTION_PLANS.find((candidate) => candidate === rawPendingPlan) ?? null;
+    const isActive = hasActiveSubscription({
+      subscriptionPlan: plan,
+      subscriptionStatus: company.subscriptionStatus,
+    });
+    const requiresPortal = requiresBillingPortal({
+      polarSubscriptionId: company.polarSubscriptionId,
+      subscriptionStatus: company.subscriptionStatus,
+      cancelAtPeriodEnd: company.subscriptionCancelAtPeriodEnd,
+    });
 
     return {
       plan,
+      entitlementPlan: isActive ? plan : "free",
       status: company.subscriptionStatus ?? "inactive",
       currentPeriodEnd: company.subscriptionCurrentPeriodEnd,
       cancelAtPeriodEnd: company.subscriptionCancelAtPeriodEnd,
       hasPolarCustomer: Boolean(company.polarCustomerId),
-      isActive: hasActiveSubscription({
-        subscriptionPlan: plan,
-        subscriptionStatus: company.subscriptionStatus,
-      }),
+      requiresPortal,
+      isActive,
+      pendingPlan,
+      pendingChangeAt: company.subscriptionPendingChangeAt,
     };
   });

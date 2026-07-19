@@ -108,7 +108,7 @@ export function BillingPage({
               key={id}
               plan={id}
               currentPlan={subscription.plan}
-              isPaid={subscription.isActive}
+              requiresPortal={subscription.requiresPortal}
               highlighted={highlightedPlan === id}
               onCheckout={onCheckout}
               checkingOut={checkoutMutation.isPending && checkoutMutation.variables === id}
@@ -156,8 +156,20 @@ function SubscriptionStatusAlert({
       <Alert variant="default" className="border-amber-500/50 bg-amber-500/10">
         <AlertTitle>Subscription canceled</AlertTitle>
         <AlertDescription>
-          Your subscription is canceled and will end on {periodEnd}. You can resubscribe after it
-          expires.
+          Your subscription will end on {periodEnd}. Use &quot;Manage billing&quot; before then if
+          you want to keep it renewing.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (subscription.pendingPlan && subscription.pendingChangeAt) {
+    return (
+      <Alert>
+        <AlertTitle>Plan change scheduled</AlertTitle>
+        <AlertDescription>
+          Your subscription will change to {PLAN_CONFIGS[subscription.pendingPlan].name} on{" "}
+          {formatDate(subscription.pendingChangeAt)}.
         </AlertDescription>
       </Alert>
     );
@@ -190,7 +202,7 @@ function CurrentPlanCard({
     ? formatDate(subscription.currentPeriodEnd)
     : null;
   const isFree = subscription.plan === "free";
-  const jobLimit = PLAN_CONFIGS[subscription.plan].includedJobs;
+  const jobLimit = PLAN_CONFIGS[subscription.entitlementPlan].includedJobs;
   const jobUsage = jobCounts?.openCount ?? 0;
   const atLimit = jobUsage >= jobLimit;
 
@@ -267,14 +279,14 @@ function CurrentPlanCard({
 function PlanCard({
   plan,
   currentPlan,
-  isPaid,
+  requiresPortal,
   highlighted,
   onCheckout,
   checkingOut,
 }: {
   plan: SubscriptionPlan;
   currentPlan: SubscriptionPlan;
-  isPaid: boolean;
+  requiresPortal: boolean;
   highlighted?: boolean;
   onCheckout: (plan: SubscriptionPlan) => void;
   checkingOut: boolean;
@@ -331,9 +343,9 @@ function PlanCard({
           <Button variant="outline" disabled>
             Default plan
           </Button>
-        ) : isPaid ? (
+        ) : requiresPortal ? (
           <Button variant="outline" disabled>
-            Manage billing to change
+            Use Manage billing
           </Button>
         ) : (
           <Button onClick={onClick} disabled={checkingOut}>
