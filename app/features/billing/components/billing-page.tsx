@@ -345,7 +345,7 @@ function PlanCard({
           </Button>
         ) : requiresPortal ? (
           <Button variant="outline" disabled>
-            Manage billing to change or recover
+            Use Manage billing
           </Button>
         ) : (
           <Button onClick={onClick} disabled={checkingOut}>
