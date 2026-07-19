@@ -7,6 +7,7 @@ import {
   assertAccountCanAuthenticate,
   canRestoreSoftDeletedAccount,
 } from "@/features/accounts/grace";
+import { scheduleOwnedSubscriptionCancellation } from "@/features/billing/services/account-deletion";
 import { getCandidateProfileByUserId } from "@/features/candidates/queries/queries_sql";
 import {
   createCompanyMember,
@@ -301,6 +302,7 @@ export const deleteAccount = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
     const db = getDb();
+    await scheduleOwnedSubscriptionCancellation(db, context.userId);
     await softDeleteUser(db, { id: context.userId });
     await clearSession(sessionConfig);
     return {};

@@ -74,7 +74,9 @@ export function DeleteAccountSection() {
             <AlertDialogDescription>
               Your account will be deactivated immediately. If you log back in within 30 days, your
               account will be restored automatically. After 30 days, your account and all associated
-              data will be permanently deleted and cannot be recovered.
+              data will be permanently deleted and cannot be recovered. If you own a paid company
+              subscription, it will be scheduled to stop renewing at the end of the current billing
+              period.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
