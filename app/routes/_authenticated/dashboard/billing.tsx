@@ -28,11 +28,13 @@ export const Route = createFileRoute("/_authenticated/dashboard/billing")({
   },
   loader: async ({ location }) => {
     const params = new URLSearchParams(location.searchStr);
+    let checkoutConfirmed = false;
     if (params.get("status") === "success") {
       const checkoutId = params.get("checkout_id");
       if (checkoutId) {
         try {
-          await syncCheckoutSubscription({ data: { checkoutId } });
+          const result = await syncCheckoutSubscription({ data: { checkoutId } });
+          checkoutConfirmed = result.isActive;
         } catch {
           // Ignore errors here — the webhook will eventually sync. Showing a stale
           // state briefly is better than crashing the billing page.
@@ -44,14 +46,14 @@ export const Route = createFileRoute("/_authenticated/dashboard/billing")({
     if (!subscription) {
       throw redirect({ to: "/onboarding/company" });
     }
-    return { subscription };
+    return { subscription, checkoutConfirmed };
   },
   pendingComponent: BillingPageSkeleton,
   component: BillingRoute,
 });
 
 function BillingRoute() {
-  const { subscription } = Route.useLoaderData();
+  const { subscription, checkoutConfirmed } = Route.useLoaderData();
   const search = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const handledStatus = useRef<string | null>(null);
@@ -61,13 +63,17 @@ function BillingRoute() {
     handledStatus.current = search.status;
 
     if (search.status === "success") {
-      toast.success("Subscription activated. Welcome aboard.");
+      if (checkoutConfirmed) {
+        toast.success("Subscription activated. Welcome aboard.");
+      } else {
+        toast.message("Checkout completed. Subscription confirmation is still pending.");
+      }
     } else {
       toast.message("Checkout cancelled.");
     }
 
     void navigate({ search: (prev) => ({ ...prev, status: undefined, checkout_id: undefined }) });
-  }, [search.status, navigate]);
+  }, [search.status, navigate, checkoutConfirmed]);
 
   const auth = useLoaderData({ from: "/_authenticated" });
   const jobCounts = auth.type === "company" ? auth.jobCounts : null;

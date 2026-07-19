@@ -67,6 +67,7 @@ export const cleanTestData = async () => {
   const sql = getTestDb();
   await sql`
     TRUNCATE
+      polar_webhook_receipts,
       reports,
       interview_messages,
       communication_assessments,
