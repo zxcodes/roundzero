@@ -27,7 +27,7 @@ import { asSqlTransaction } from "@/shared/db-transaction";
 import { userRoleSchema } from "@/shared/enums";
 import { emailsMatch, fetchGoogleUserInfo } from "@/shared/google-userinfo";
 import { authMiddleware } from "@/shared/middleware";
-import { isPlatformAdmin } from "@/shared/platform-admin";
+import { withPlatformAdminStatus } from "@/shared/platform-admin";
 import { isUniqueViolation } from "@/shared/postgres-errors";
 import { type SessionData, sessionConfig } from "@/shared/session";
 import { requiredTrimmedString } from "@/shared/validation";
@@ -114,7 +114,7 @@ export const loginWithGoogle = createServerFn({ method: "POST" })
       onboardingComplete = Boolean(profile?.onboardingCompletedAt);
     }
 
-    return { user: activeUser, onboardingComplete, restored };
+    return { user: withPlatformAdminStatus(activeUser), onboardingComplete, restored };
   });
 
 export const acceptInvite = createServerFn({ method: "POST" })
@@ -271,7 +271,7 @@ export const acceptInvite = createServerFn({ method: "POST" })
     const company = await getCompanyByMemberUserId(db, { userId: activeUser.id });
     const onboardingComplete = Boolean(company?.onboardingCompletedAt);
 
-    return { user: activeUser, onboardingComplete };
+    return { user: withPlatformAdminStatus(activeUser), onboardingComplete };
   });
 
 export const logout = createServerFn({ method: "POST" }).handler(async () => {
@@ -294,10 +294,7 @@ export const getCurrentUser = createServerFn({ method: "GET" }).handler(async ()
     return null;
   }
 
-  return {
-    ...user,
-    isPlatformAdmin: isPlatformAdmin(user.email),
-  };
+  return withPlatformAdminStatus(user);
 });
 
 export const deleteAccount = createServerFn({ method: "POST" })
@@ -327,5 +324,5 @@ export const updateUserName = createServerFn({ method: "POST" })
       throw new Error("Failed to update name");
     }
 
-    return { user };
+    return { user: withPlatformAdminStatus(user) };
   });

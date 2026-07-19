@@ -11,6 +11,9 @@ vi.mock("@/shared/env.app", () => ({
 describe("platform admin authorization", () => {
   let isPlatformAdmin: (email: string | null | undefined) => boolean;
   let assertPlatformAdmin: (email: string | null | undefined) => void;
+  let withPlatformAdminStatus: <T extends { email: string | null | undefined }>(
+    user: T,
+  ) => T & { isPlatformAdmin: boolean };
 
   beforeEach(async () => {
     vi.resetModules();
@@ -18,6 +21,7 @@ describe("platform admin authorization", () => {
     const mod = await import("@/shared/platform-admin");
     isPlatformAdmin = mod.isPlatformAdmin;
     assertPlatformAdmin = mod.assertPlatformAdmin;
+    withPlatformAdminStatus = mod.withPlatformAdminStatus;
   });
 
   afterEach(() => {
@@ -45,5 +49,18 @@ describe("platform admin authorization", () => {
   it("rejects missing emails", () => {
     expect(isPlatformAdmin(null)).toBe(false);
     expect(() => assertPlatformAdmin(null)).toThrow("Not authorized");
+  });
+
+  it("adds a consistent authorization flag to cached users", () => {
+    expect(withPlatformAdminStatus({ id: "admin", email: "admin@example.com" })).toEqual({
+      id: "admin",
+      email: "admin@example.com",
+      isPlatformAdmin: true,
+    });
+    expect(withPlatformAdminStatus({ id: "member", email: "member@example.com" })).toEqual({
+      id: "member",
+      email: "member@example.com",
+      isPlatformAdmin: false,
+    });
   });
 });

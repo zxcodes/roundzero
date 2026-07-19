@@ -2,6 +2,8 @@ import { createFileRoute, Outlet, redirect, useLocation } from "@tanstack/react-
 
 import { DashboardLayoutSkeleton } from "@/components/route-skeletons";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AuthProvider } from "@/features/auth/provider";
+import { currentUserQueryKey, getCurrentUser } from "@/features/auth/server/functions";
 import {
   parseSignupSearch,
   redirectAfterSignup,
@@ -19,15 +21,27 @@ import { noindexHead } from "@/shared/seo";
 export const Route = createFileRoute("/_authenticated")({
   head: () => noindexHead(),
   beforeLoad: async ({ context, location }) => {
+    const user = await context.queryClient.fetchQuery({
+      queryKey: currentUserQueryKey,
+      queryFn: () => getCurrentUser(),
+      staleTime: 30_000,
+    });
+
     // A session with no role (e.g. a brand-new identity) is not a usable app
-    // session — treat it as logged out. Public routes guard on `user?.role`,
-    // so this does not loop.
-    if (!context.user?.role) {
+    // session, so keep it outside the authenticated route tree.
+    if (!user?.role) {
       throw redirect({ to: "/" });
     }
 
-    if (context.user.role !== "company") {
+    const authContext = {
+      user,
+      isCompany: user.role === "company",
+      isCandidate: user.role === "candidate",
+    };
+
+    if (user.role !== "company") {
       return {
+        ...authContext,
         membershipRole: null,
         company: null,
         hasCompanyWorkspace: false,
@@ -52,6 +66,7 @@ export const Route = createFileRoute("/_authenticated")({
         });
 
         return {
+          ...authContext,
           membershipRole: parseCompanyMemberRole(companyContext.membership.role),
           company: companyContext.company,
           hasCompanyWorkspace: true,
@@ -64,6 +79,7 @@ export const Route = createFileRoute("/_authenticated")({
           throw redirect({ to: "/onboarding/no-workspace" });
         }
         return {
+          ...authContext,
           membershipRole: null,
           company: null,
           hasCompanyWorkspace: false,
@@ -78,6 +94,7 @@ export const Route = createFileRoute("/_authenticated")({
           });
         }
         return {
+          ...authContext,
           membershipRole: null,
           company: null,
           hasCompanyWorkspace: false,
@@ -163,5 +180,9 @@ function AuthenticatedPending() {
 }
 
 function AuthenticatedLayout() {
-  return <Outlet />;
+  return (
+    <AuthProvider>
+      <Outlet />
+    </AuthProvider>
+  );
 }
