@@ -102,7 +102,10 @@ CREATE TABLE public.companies (
     subscription_cancel_at_period_end boolean DEFAULT false NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    subscription_welcome_polar_subscription_id text
+    subscription_welcome_polar_subscription_id text,
+    polar_subscription_modified_at timestamp with time zone,
+    subscription_pending_plan text,
+    subscription_pending_change_at timestamp with time zone
 );
 
 
@@ -269,6 +272,23 @@ CREATE TABLE public.notifications (
     email_provider_message_id text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     dedupe_key text
+);
+
+
+--
+-- Name: polar_webhook_receipts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.polar_webhook_receipts (
+    id text NOT NULL,
+    event_type text NOT NULL,
+    event_timestamp timestamp with time zone NOT NULL,
+    status text NOT NULL,
+    attempt_count integer DEFAULT 1 NOT NULL,
+    last_error text,
+    processed_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -471,6 +491,14 @@ ALTER TABLE ONLY public.jobs
 
 ALTER TABLE ONLY public.notifications
     ADD CONSTRAINT notifications_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: polar_webhook_receipts polar_webhook_receipts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.polar_webhook_receipts
+    ADD CONSTRAINT polar_webhook_receipts_pkey PRIMARY KEY (id);
 
 
 --
@@ -994,4 +1022,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260629021838'),
     ('20260703114221'),
     ('20260705072949'),
-    ('20260715154907');
+    ('20260715154907'),
+    ('20260719022003');

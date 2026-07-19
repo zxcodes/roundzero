@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { hasActiveSubscription, PLAN_CONFIGS, SUBSCRIPTION_PLANS } from "../config";
+import {
+  hasActiveSubscription,
+  PLAN_CONFIGS,
+  requiresBillingPortal,
+  SUBSCRIPTION_PLANS,
+} from "../config";
 
 describe("hasActiveSubscription", () => {
   it("free plan is never active", () => {
@@ -60,6 +65,44 @@ describe("hasActiveSubscription", () => {
       hasActiveSubscription({ subscriptionPlan: undefined, subscriptionStatus: "active" }),
     ).toBe(false);
   });
+});
+
+describe("requiresBillingPortal", () => {
+  it.each(["active", "trialing", "past_due", "unpaid"])(
+    "uses the portal for a %s subscription",
+    (subscriptionStatus) => {
+      expect(
+        requiresBillingPortal({
+          polarSubscriptionId: "sub_123",
+          subscriptionStatus,
+          cancelAtPeriodEnd: false,
+        }),
+      ).toBe(true);
+    },
+  );
+
+  it("uses the portal for a subscription scheduled to cancel", () => {
+    expect(
+      requiresBillingPortal({
+        polarSubscriptionId: "sub_123",
+        subscriptionStatus: "active",
+        cancelAtPeriodEnd: true,
+      }),
+    ).toBe(true);
+  });
+
+  it.each(["canceled", "incomplete", "incomplete_expired"])(
+    "allows a new checkout for a terminal %s subscription",
+    (subscriptionStatus) => {
+      expect(
+        requiresBillingPortal({
+          polarSubscriptionId: "sub_123",
+          subscriptionStatus,
+          cancelAtPeriodEnd: false,
+        }),
+      ).toBe(false);
+    },
+  );
 });
 
 describe("PLAN_CONFIGS", () => {

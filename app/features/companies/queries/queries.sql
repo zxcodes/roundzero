@@ -100,6 +100,50 @@ SET polar_subscription_id = $1,
 WHERE polar_customer_id = $7
 RETURNING *;
 
+-- name: reconcileCompanySubscription :one
+UPDATE companies
+SET polar_customer_id = sqlc.arg('polar_customer_id'),
+    polar_subscription_id = sqlc.arg('polar_subscription_id'),
+    polar_product_id = sqlc.arg('polar_product_id'),
+    polar_subscription_modified_at = sqlc.arg('polar_subscription_modified_at'),
+    subscription_plan = sqlc.arg('subscription_plan'),
+    subscription_status = sqlc.arg('subscription_status'),
+    subscription_current_period_end = sqlc.arg('subscription_current_period_end'),
+    subscription_cancel_at_period_end = sqlc.arg('subscription_cancel_at_period_end'),
+    subscription_pending_plan = sqlc.narg('subscription_pending_plan'),
+    subscription_pending_change_at = sqlc.narg('subscription_pending_change_at'),
+    updated_at = now()
+WHERE id = sqlc.arg('id')
+  AND (
+    polar_subscription_modified_at IS NULL
+    OR polar_subscription_modified_at < sqlc.arg('polar_subscription_modified_at')
+    OR (
+      polar_subscription_modified_at = sqlc.arg('polar_subscription_modified_at')
+      AND polar_subscription_id IS NOT NULL
+    )
+  )
+RETURNING *;
+
+-- name: clearCurrentCompanySubscription :one
+UPDATE companies
+SET polar_subscription_id = NULL,
+    polar_product_id = NULL,
+    polar_subscription_modified_at = sqlc.arg('polar_subscription_modified_at'),
+    subscription_plan = 'free',
+    subscription_status = 'canceled',
+    subscription_current_period_end = NULL,
+    subscription_cancel_at_period_end = false,
+    subscription_pending_plan = NULL,
+    subscription_pending_change_at = NULL,
+    updated_at = now()
+WHERE id = sqlc.arg('id')
+  AND polar_subscription_id = sqlc.arg('polar_subscription_id')
+  AND (
+    polar_subscription_modified_at IS NULL
+    OR polar_subscription_modified_at <= sqlc.arg('polar_subscription_modified_at')
+  )
+RETURNING *;
+
 -- name: clearCompanySubscription :one
 UPDATE companies
 SET polar_subscription_id = NULL,

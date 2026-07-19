@@ -83,13 +83,16 @@ export function deriveEntitlements(input: {
   jobCounts: countJobsByCompanyAndStatusRow | null;
   teamCounts?: countTeamSlotsByCompanyRow | null;
 }): Entitlements {
-  const plan = normalizePlan(input.subscriptionPlan);
+  const storedPlan = normalizePlan(input.subscriptionPlan);
   const status = input.subscriptionStatus ?? "inactive";
+  const isActive = hasActiveSubscription({
+    subscriptionPlan: storedPlan,
+    subscriptionStatus: status,
+  });
+  const plan = isActive ? storedPlan : "free";
   const planConfig = PLAN_CONFIGS[plan];
   const jobCounts = input.jobCounts ?? ZERO_JOB_COUNTS;
   const teamCounts = input.teamCounts ?? ZERO_TEAM_COUNTS;
-  const isActive = hasActiveSubscription({ subscriptionPlan: plan, subscriptionStatus: status });
-
   const jobLimit = planConfig.includedJobs;
   const openJobs = jobCounts.openCount;
   const jobsAtLimit = openJobs >= jobLimit;

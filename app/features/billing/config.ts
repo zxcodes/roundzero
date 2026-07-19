@@ -134,3 +134,16 @@ export function hasActiveSubscription(input: {
   if (!status) return false;
   return ACTIVE_STATUS_SET.has(status);
 }
+
+const PORTAL_MANAGED_STATUS_SET = new Set(["active", "trialing", "past_due", "unpaid"]);
+
+/** Existing subscriptions that must be changed or recovered through Polar's portal. */
+export function requiresBillingPortal(input: {
+  polarSubscriptionId: string | null | undefined;
+  subscriptionStatus: string | null | undefined;
+  cancelAtPeriodEnd: boolean;
+}): boolean {
+  if (!input.polarSubscriptionId) return false;
+  if (input.cancelAtPeriodEnd) return true;
+  return PORTAL_MANAGED_STATUS_SET.has(input.subscriptionStatus ?? "");
+}
