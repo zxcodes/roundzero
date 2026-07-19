@@ -1,67 +1,83 @@
-# Candidate Screening Profiles and Personalized Job Matching Plan
+# Personalized Candidate Job Matching Plan
 
 ## Outcome
 
-Build two candidate-facing improvements:
+Give candidates a personalized **For you** jobs feed and a daily digest of new strong matches based primarily on their resume. Matching recommends jobs only: it never applies, changes application status, affects company-side candidate ranking, or hides the existing **All jobs** feed.
 
-1. Candidates optionally save common work-preference and eligibility answers once. Jobs select typed common screening requirements, applications snapshot the relevant answers, and Zero asks only missing or ambiguous items. Existing company-authored screening questions continue unchanged.
-2. Candidates get a personalized **For you** jobs feed and a daily digest of new strong matches. Matching recommends jobs only: it never applies, changes application status, affects company ranking, or hides the existing **All jobs** feed.
+Keep matching free. Candidate billing is out of scope until measured usage demonstrates a real need.
 
-Personalized matching remains free. Candidate billing is out of scope until measured usage demonstrates a real need.
+## Screening decision
 
-## Product rules
+Do not build reusable screening answers, a common-question catalog, application-time screening snapshots, or country-specific work-authorization logic.
 
-### Common screening answers
+RoundZero targets startups that generally want to evaluate skills first. The existing optional `jobs.screening_questions` system already covers companies with genuine logistical constraints:
 
-The optional candidate profile fields are:
+- companies can add any must-know question while creating or editing a job;
+- Zero asks those questions early in the interview;
+- answers and concerns already appear in the report.
 
-- current country and city/region;
-- country-scoped current work authorization;
-- country-scoped need for employer sponsorship now or in the future;
-- relocation willingness: yes, no, or depends;
-- workplace preferences: remote, hybrid, and/or onsite;
-- availability: immediate, two weeks, one month, two months, three-plus months, or negotiable.
+Preserve that complete path unchanged. Do not add candidate profile fields for authorization, sponsorship, relocation, workplace preference, or availability. Do not modify application, interview, or report schemas for common answers.
 
-Authorization and sponsorship are independent answers. Do not collect citizenship, nationality, visa type, immigration documents, document expiry, or permanent/temporary status. Never infer eligibility from a resume, name, location, or an LLM.
+The only screening change is to make AI-created jobs less presumptive:
 
-The company job form has two sections:
+1. Stop automatically generating 2–4 logistics/eligibility questions.
+2. AI-generated job drafts should default `screeningQuestions` to an empty array.
+3. Keep the existing company form for manually adding optional questions.
+4. Update its helper copy to recommend only must-know constraints and show examples such as time-zone overlap, onsite attendance, work authorization, or start date.
 
-- **Common screening** uses RoundZero's approved, versioned catalog and typed requirements.
-- **Additional questions** retains the current free-text question behavior.
+This avoids repeatedly asking candidates questions that the company never explicitly required while retaining flexibility for startups that do have a constraint.
 
-The initial common catalog supports:
+## Candidate experience
 
-- work authorization for an explicitly selected employment country;
-- whether sponsorship is available, unavailable, or considered case by case;
-- relocation to the listed job location;
-- confirmation of the job's workplace type;
-- required or preferred start timeline.
+The candidate jobs page defaults to two tabs:
 
-Do not infer an employment country from the existing free-text job location. Companies must select it when enabling authorization screening. Standard wording is rendered by RoundZero and cannot be rewritten as a standard question. Companies remain free to add custom questions.
+- **For you**: persisted personalized matches ordered by internal fit score;
+- **All jobs**: the existing searchable and filterable listing.
 
-On the job detail/application panel, show the actual profile values that will be reused. Applying remains one click with those defaults. An optional **Change for this application** action allows a correction without forcing every candidate through a form; the correction may also update the reusable profile only with explicit consent.
+The For you feed excludes jobs that are closed, archived, expired, owned by deleted users, dismissed by the candidate, or already applied to. All jobs remains available so the recommendation system never limits candidate choice.
 
-### Personalized jobs
+Match cards show:
 
-The candidate jobs page defaults to:
+- **Strong match**, **Good match**, or **Potential match**;
+- two or three evidence-backed reasons;
+- at most one material consideration;
+- when the match was refreshed;
+- the normal job information and explicit **View job** action.
 
-- **For you**: persisted personalized matches;
-- **All jobs**: the existing searchable/filterable listing.
+Do not show a percentage until scores have demonstrated calibration. Do not use language such as “perfect match,” “qualified,” or “guaranteed interview.” Candidates can dismiss a recommendation as not relevant; dismissal suppresses that candidate/job pair but does not train a model automatically.
 
-Match cards use **Strong match**, **Good match**, or **Potential match**, with two or three evidence-backed reasons and at most one material consideration. Do not show a percentage until scores have proven calibration. Candidates can dismiss an irrelevant recommendation.
+### Alerts
 
-The daily email is sent only when the candidate has alerting enabled and has new, unviewed strong matches. One digest contains multiple jobs. Feed recomputation itself does not create a notification.
+Add an email-match preference to candidate settings. The daily email is sent only when alerting is enabled and new, unviewed strong matches exist. One digest contains multiple jobs; never send one email per job. Feed recomputation itself does not create a notification.
+
+States:
+
+- no generated feed: explain that recommendations are being prepared and link to All jobs;
+- no strong matches: show broader good/potential matches;
+- matching failure: retain the previous successful feed and mark its refresh date;
+- stale resume: suggest updating the resume without blocking job discovery.
+
+## Matching architecture
+
+Use a hybrid pipeline:
+
+1. Extract a structured candidate matching profile when a resume changes.
+2. Extract a structured job matching profile when a job is published or materially edited.
+3. Use deterministic qualification overlap to retrieve at most 15–25 plausible jobs.
+4. Use one cheap DeepSeek V4 Flash request to rerank that bounded set and generate concise reasons.
+5. Persist one complete feed generation atomically.
+6. Recompute immediately for resume changes, lazily on stale feed visits, and daily for candidates with alerts enabled.
+
+Do not add vector infrastructure in the MVP. Structured retrieval is simpler, explainable, and sufficient for the current catalog size. Revisit embeddings only when measured retrieval quality or catalog scale requires them.
 
 ## Data model
 
-Create one additive dbmate migration. Keep all new application-facing documents versioned and validated by strict Zod schemas.
+Create one additive dbmate migration. Keep AI-produced documents versioned and validated with strict Zod schemas.
 
 ### `candidate_profiles`
 
 Add:
 
-- `common_answers JSONB NULL`;
-- `common_answers_updated_at TIMESTAMPTZ NULL`;
 - `matching_profile JSONB NULL`;
 - `matching_profile_source_hash TEXT NULL`;
 - `matching_profile_version TEXT NULL`;
@@ -71,15 +87,17 @@ Add:
 - `match_alerts_enabled BOOLEAN NOT NULL DEFAULT TRUE`;
 - `match_refresh_claimed_at TIMESTAMPTZ NULL`.
 
-Use one server-generated freshness timestamp for the common-answer document. Do not claim per-answer freshness.
+The AI-derived profile contains job-relevant evidence only:
 
-The AI-derived matching profile contains job-relevant evidence only: role families, recent titles, skills with resume evidence, relevant experience, seniority indicators, industries, responsibilities, and explicit education/certifications. It excludes identity and common eligibility answers.
+- role families and recent titles;
+- skills with supporting resume evidence;
+- relevant years of experience;
+- seniority indicators;
+- industries and domains;
+- responsibilities performed;
+- education and certifications explicitly present.
 
-### `jobs`
-
-Add `screening_requirements JSONB NULL`. Use a discriminated list of stable catalog items rather than free-text strings. Each item stores its catalog version, typed requirement, and required/preferred semantics.
-
-Do not put bulky internal matching data on `jobs`: current listing queries select `j.*`, so that would leak/inflate every public job response.
+It excludes name, email, authorization, nationality, inferred age, gender, and other protected attributes.
 
 ### `job_matching_profiles`
 
@@ -91,29 +109,18 @@ Create a one-to-one internal table keyed by `job_id` containing:
 - model and prompt version;
 - completion timestamp and normal timestamps.
 
-### `applications`
+Do not put internal matching profiles on `jobs`: current listing queries select `j.*`, which would leak and inflate every public job response.
 
-Add nullable `standard_screening_snapshot JSONB`. It is the canonical, immutable application-time record for standard requirements and answers. It contains:
-
-- schema, catalog, wording, and concern-policy versions;
-- capture timestamp;
-- each selected requirement and rendered question;
-- answered/missing state;
-- source: profile or application override;
-- the profile document's update timestamp when applicable.
-
-Final job validation, candidate profile read, duplicate guard, snapshot construction, and application insert must occur in one transaction. Trigger pre-evaluation only after commit. Retain the database unique constraint as the authoritative duplicate-application guard.
-
-Later profile edits affect future applications and matching only. Later job requirement edits affect future applications only. Reinvites reuse the same application snapshot.
+The structured job profile contains role family, required and preferred skills, seniority, experience, responsibilities, industry/domain, and explicit education or certification requirements.
 
 ### `candidate_job_matches`
 
-Create a table with unique `(candidate_id, job_id)` and indexes for candidate generation, feed reads, and digest selection. Store:
+Create a table with unique `(candidate_id, job_id)` and indexes for feed reads and digest selection. Store:
 
 - `generation_id`;
 - candidate- and job-profile source versions;
 - internal score and code-derived band;
-- evidence-backed reasons and deterministic consideration;
+- evidence-backed reasons and optional consideration;
 - algorithm, threshold, prompt, and model versions;
 - matched and first-strong timestamps;
 - viewed, dismissed, and digest-notified timestamps;
@@ -121,88 +128,32 @@ Create a table with unique `(candidate_id, job_id)` and indexes for candidate ge
 
 Preserve viewed, dismissed, first-strong, and notified timestamps across reranks. A score leaving and returning to the strong band must not become a new match again.
 
-## Common screening implementation
+Update account erasure to clear the candidate matching profile, matching errors, reasons, and match rows.
 
-### Schemas and SQL
-
-1. Add strict versioned schemas under the candidate/job features and country-code validation in shared enums.
-2. Extend candidate and job SQL queries; regenerate SQLC outputs.
-3. Update account erasure to clear common answers, application snapshots, interview standard results, matching profiles/reasons, and match rows.
-4. Treat legacy null documents as no common screening. Never fuzzy-convert existing custom questions.
-
-### Candidate UX
-
-Extend `app/features/candidates/components/candidate-settings.tsx` with **Work preferences and eligibility**. Keep every field optional and explain that only answers relevant to a submitted job are shared.
-
-Add a dismissible candidate-dashboard prompt when the profile is incomplete. Onboarding may mention the section but must not add a required step.
-
-The job apply panel shows selected common requirements, reused values, missing values, and the optional per-application correction. It must not expose unrelated profile answers.
-
-### Company UX
-
-Extend `app/features/jobs/components/job-form.tsx` and job schemas/server functions with **Common screening** above the existing free-text questions.
-
-Update AI job creation to return typed common requirement suggestions separately. It must stop generating duplicate visa, relocation, workplace, or availability strings as custom questions. Existing custom questions remain supported and ordered.
-
-Add concise compliance copy: answers are candidate attestations, RoundZero does not verify authorization, and employers remain responsible for jurisdiction-specific requirements. Obtain legal review of catalog wording before production, especially outside the US.
-
-### Interview ownership
-
-Keep the current custom-question pipeline intact:
-
-- custom questions remain snapshotted at invite time in `interviews.metadata.jobSnapshot.customQuestions`;
-- custom coverage remains the existing 1-based ordered map;
-- reinvites continue to refresh custom questions and reset their evidence.
-
-Load standard answers separately from `applications.standard_screening_snapshot`. Do not copy candidate answers into `jobSnapshot`, because account erasure currently preserves job snapshot data.
-
-Derive pending standard questions from missing or ambiguous snapshot items. Add a dedicated validated `record_standard_screening_answer` tool keyed by stable catalog item ID and store results separately in `interviews.metadata.standardScreeningResults`. Already answered items are private context with an explicit **do not re-ask** instruction. Allow one clarification for `depends`, inconsistency, changed information, or materially ambiguous context.
-
-### Reports
-
-Do not rewrite the current LLM custom-answer pipeline. Continue generating, auditing, ordering, and refining custom answers exactly as today.
-
-After custom refinement:
-
-1. Build standard entries deterministically from the application snapshot and any validated interview clarification.
-2. Compute standard concerns in code using a versioned policy.
-3. Add server-owned `kind`, `source`, and catalog ID metadata.
-4. Merge standard entries before custom entries.
-5. Apply any standard dealbreaker recommendation cap after the report audit so a later model pass cannot undo it.
-
-The report schema must continue parsing legacy four-field entries. Initial deterministic policies are:
-
-- sponsorship required and unavailable: dealbreaker;
-- relocation required and explicitly refused: dealbreaker;
-- required onsite attendance and explicitly remote-only: dealbreaker;
-- preferred start mismatch: minor;
-- missing, unknown, or depends: clarification/no automatic failure.
-
-## Personalized matching implementation
-
-### Resume and job extraction
+## Profile extraction
 
 Extract the existing PDF/DOCX-to-text logic from pre-evaluation into a server-only shared helper so pre-evaluation and matching use identical sanitization and limits.
 
-Add a dedicated `job_matching` task to `app/shared/openrouter.ts`. In production use DeepSeek V4 Flash explicitly in non-reasoning mode with a small output cap, strict structured output, and response healing. Do not inherit the Sonnet-first default chain. Select a cheap cross-provider fallback only after evaluation.
+Add a dedicated `job_matching` task to `app/shared/openrouter.ts`. In production use DeepSeek V4 Flash explicitly in non-reasoning mode with a small output cap, strict structured output, and response healing. Do not inherit the Sonnet-first default chain. Add a cheap cross-provider fallback only after evaluation demonstrates acceptable output quality.
 
-Resume refresh:
+### Candidate extraction
 
 1. Read the current resume version and calculate a source hash.
 2. Fetch and extract raw resume text inside one workflow step.
 3. Generate and validate the candidate matching profile.
-4. Persist only the structured profile; never return raw resume text as workflow state or write it to logs/Sentry.
-5. Abort stale work if the resume version changed before persistence.
+4. Persist only the structured profile; never return raw resume text as workflow state or write it to logs or Sentry.
+5. Abort stale work if the resume changed before persistence.
+6. Skip extraction and reranking when the source hash is unchanged.
 
-Job publish/material edit performs the equivalent extraction into `job_matching_profiles`. Draft edits need no match fan-out.
+### Job extraction
 
-### Retrieval and reranking
+Generate the job profile when a job is published or when matching-relevant fields of an open job change. Draft edits do not need matching work. A job event extracts only that job and must not immediately fan out to every candidate.
 
-Candidate refresh first queries live, open, unexpired, unapplied-to jobs with complete job matching profiles.
+## Retrieval and reranking
 
-Use explicit candidate/company data for logistical handling. In the MVP, workplace, relocation, authorization, sponsorship, and availability are soft considerations rather than hidden hard exclusions. Unknown data and absence from an AI-extracted profile never prove ineligibility. Certification absence is not a hard filter.
+Candidate refresh starts from live, open, unexpired, unapplied-to jobs with successful job matching profiles.
 
-Use deterministic qualification scoring to select at most 15–25 candidates for the LLM:
+Use deterministic qualification scoring to retrieve at most 15–25 jobs:
 
 - role family and responsibility alignment;
 - required-skill evidence;
@@ -210,89 +161,101 @@ Use deterministic qualification scoring to select at most 15–25 candidates for
 - domain alignment;
 - preferred-skill evidence.
 
-DeepSeek reranks qualification fit only. Code attaches logistical considerations afterward. Validate that the output has only supplied job IDs, no duplicates, and all required results. Derive display bands in code from versioned calibrated thresholds; never accept an independent model-provided band.
+Absence from a resume is unknown, not proof that the candidate lacks something. Missing certification evidence, a non-matching title, location, workplace type, or other logistics must not hard-exclude a role in the MVP.
 
-Publish each complete feed atomically:
+DeepSeek reranks qualification fit only. Existing job location and workplace type may be attached afterward as factual considerations, not eligibility decisions. Validate that model output contains only supplied job IDs, no duplicates, and all required results. Derive display bands in application code from versioned calibrated thresholds; never accept a separately generated model band.
+
+Publish each feed atomically:
 
 1. Create a new `generation_id`.
 2. Upsert all valid match rows in one transaction.
-3. Advance `candidate_profiles.serving_match_generation` only after the full set is valid.
-4. On any failure, leave the previous generation active.
+3. Advance `candidate_profiles.serving_match_generation` only after the complete set is valid.
+4. On failure, leave the previous generation active.
 
-Feed reads select only the serving generation and always recheck live job status, expiry, application existence, owner deletion, and dismissal. A changed/stale individual job is hidden without discarding the rest of the last successful feed.
+Feed reads select only the serving generation and always recheck current job status, expiry, application existence, owner deletion, and dismissal. If one job profile becomes stale, hide that job without discarding the rest of the previous feed.
 
-### Workflow shape
+## Workflow design
 
-Add one `JobMatchingWorkflow` class/binding with discriminated modes, but use one bounded instance per candidate or job:
+Use bounded workflow instances rather than one candidate-by-job sweep.
 
-- `candidate_refresh`: immediate after a changed resume and lazy when a stale feed is opened;
-- `job_extract`: immediate after publish or material open-job edit;
-- `reconcile`: daily bounded coordinator;
-- `digest`: daily bounded coordinator after reconciliation.
+### `JobMatchingWorkflow`
 
-A job event extracts only that job; it must not synchronously fan out to every candidate.
+One instance handles exactly one versioned unit:
 
-Daily reconciliation:
+- `candidate_refresh`: extract the candidate profile if needed, retrieve jobs, rerank, and publish one feed generation;
+- `job_extract`: extract and persist one job profile.
 
-1. Claims alert-enabled candidates in bounded pages using a lease/`FOR UPDATE SKIP LOCKED` pattern.
-2. Starts versioned candidate refresh instances in batches.
-3. Does not place the complete candidate/job corpus into workflow state.
-4. Uses deterministic unique instance IDs and idempotent writes.
-5. Releases expired claims so failures can retry.
+Resume save starts a candidate refresh after the profile mutation commits. Job publish or relevant open-job edit starts one job extraction after commit. Use unique versioned instance IDs and idempotent database writes.
 
-Candidates without alerts refresh lazily on **For you** visits while receiving the last successful feed immediately.
+### `MatchReconciliationWorkflow`
 
-### Feed, preferences, and digest
+Run daily as a bounded coordinator:
 
-Branch the candidate loader in `app/routes/_authenticated/dashboard/jobs/index.tsx` by tab so each phase calls only one server function. Preserve the company jobs path and the existing **All jobs** filters.
+1. Claim alert-enabled candidates in pages using leases or `FOR UPDATE SKIP LOCKED`.
+2. Start candidate-refresh workflow instances in batches.
+3. Cap candidates per run and stop when the configured daily budget is reached.
+4. Release expired claims so failed work can retry.
 
-Add matching status, source summary, alert preference, and refresh action to candidate settings. Add candidate-scoped server functions only; company APIs must never expose candidate recommendation scores, reasons, or feed data.
+It must not load the full candidate/job corpus into workflow state. Candidates without alerts refresh lazily when opening a stale For you feed, while receiving the previous feed immediately.
 
-Digest creation is transactionally deduplicated:
+### `MatchDigestWorkflow`
+
+Run after the reconciliation window. Digest creation is transactionally deduplicated:
 
 1. Lock eligible unnotified strong matches.
 2. Create one canonical `job_match_digest` notification keyed by candidate and UTC digest date.
 3. Mark included rows notified in the same transaction.
 4. Send one email through the existing retryable delivery path after commit.
 
-Only current, unviewed, undismissed matches with a first-strong timestamp qualify.
+Only current, unviewed, undismissed matches with a first-strong timestamp qualify. Email retry must not create another notification.
+
+Add all three bindings/schedules for development, staging, and production in `wrangler.jsonc`, export the workflow classes from `app/server.ts`, and regenerate Worker binding types.
+
+## Application integration
+
+Create a focused `app/features/job-matching/` module for schemas, queries, server functions, configuration, and candidate-only UI pieces.
+
+Branch the candidate loader in `app/routes/_authenticated/dashboard/jobs/index.tsx` by tab so each loader phase calls only one server function. Preserve the company jobs path and the existing All jobs filters. A stale-feed read may start a refresh asynchronously but must return the current feed in the same response.
+
+Add matching status, alert preference, and a refresh action to candidate settings. Company-facing APIs must never expose candidate recommendation scores, reasons, profiles, or feed data.
+
+The screening cleanup is localized to AI job creation and helper copy. Do not modify the application workflow, interview runtime, screening coverage, post-evaluation refinement, or report UI.
 
 ## Cost and billing
 
-At current DeepSeek V4 Flash pricing (approximately $0.09/M input and $0.18/M output), a compact 15–25 job rerank should cost about $0.0003–$0.001 per candidate refresh. Track actual input/output tokens, model, latency, and candidate count through AI Gateway analytics and structured workflow metrics.
+At current DeepSeek V4 Flash pricing (approximately $0.09/M input and $0.18/M output), a compact 15–25 job rerank should cost about $0.0003–$0.001 per candidate refresh. Track actual input/output tokens, model, latency, and refreshed-candidate count through AI Gateway analytics and structured workflow metrics.
 
-Set operational budgets before enabling email:
+Set operational limits before enabling email:
 
 - maximum cost per candidate refresh;
 - maximum daily matching spend;
 - maximum candidates claimed per reconciliation run;
-- alerts paused automatically when the daily budget is reached while the existing feed remains available.
+- alerts paused when the daily budget is reached while existing feeds remain available.
 
-Do not add candidate subscriptions now. Existing Polar customers, webhook ownership, entitlements, checkout, and billing UI are company-scoped; candidate billing would be a separate large project. Matching should improve candidate activity and applications, strengthening the existing company-paid marketplace. Revisit monetization only after measuring cost and demand.
+Do not add candidate subscriptions. Existing Polar customers, webhook ownership, entitlements, checkout, and billing UI are company-scoped, so candidate billing would be a separate large project. Free matching should increase candidate activity and applications, strengthening the existing company-paid side. Revisit monetization only after measuring cost and demand.
 
 ## Delivery phases
 
-### Phase 1: common screening foundation
+### Phase 1: screening cleanup and matching foundation
 
-- Add migration, strict schemas, SQLC queries, and account-erasure updates.
-- Add candidate settings and company common-screening controls.
-- Make application snapshots atomic and expose apply-time values/optional override.
-- Add interview skipping/clarification and deterministic report merge.
-- Update AI job creation.
-- Release the complete path together; do not expose company controls before interviews and reports consume them.
+- Stop AI job creation from generating default screening questions.
+- Update existing screening helper copy without changing its data flow.
+- Add the migration, strict matching schemas, SQLC queries, account-erasure changes, model task, shared resume extraction, and workflow bindings.
+- Backfill matching profiles for open jobs and candidates with resumes in bounded batches.
 
-### Phase 2: matching profiles and shadow evaluation
+### Phase 2: shadow evaluation
 
-- Add shared resume extraction, model task, job/candidate profile extraction, match storage, and workflow binding.
-- Backfill open job profiles and candidates with resumes in bounded batches.
-- Generate matches in shadow mode with no candidate bands, feed, notifications, or email.
-- Build and review a 100–200 pair evaluation set.
+- Generate persisted matches without exposing candidate bands, feed, notifications, or email.
+- Build and independently review a 100–200 pair evaluation set.
+- Calibrate band thresholds and compare deterministic ordering with hybrid reranking.
+- Measure cost, latency, malformed outputs, and workflow reliability.
 
 ### Phase 3: candidate feed
 
-- Enable **For you**, preserve **All jobs**, and add dismiss/view feedback.
+- Enable For you while preserving All jobs.
+- Add view and dismissal feedback.
 - Keep digest disabled.
-- Monitor precision, stale feeds, workflow failures, malformed model output, and cost.
+- Monitor precision, stale feeds, failures, bias indicators, and cost.
 
 ### Phase 4: daily digest
 
@@ -301,53 +264,48 @@ Do not add candidate subscriptions now. Existing Polar customers, webhook owners
 
 ## Verification
 
-### Common screening
+### Screening regression
 
-- Legacy jobs/applications/interviews/reports behave unchanged.
-- Concurrent profile/job edits cannot create a mixed application snapshot.
-- Post-application edits do not mutate snapshots; reinvites retain standard answers but refresh custom questions.
-- Answered standard questions are not re-asked; missing/depends answers can be clarified once.
-- Custom coverage, ordering, audit, and report answers remain unchanged.
-- Standard concern rules and final recommendation caps are deterministic.
-- Invalid catalog IDs, country codes, and answer shapes fail validation.
-- Companies never receive unrelated profile answers.
-- Account erasure removes every candidate-owned answer and matching artifact.
+- AI-created jobs have no screening questions unless a company adds them.
+- Manually added screening questions retain existing ordering, interview coverage, report answers, and concern behavior.
+- Existing jobs and reports require no migration or conversion.
 
-### Matching and workflow
+### Matching correctness
 
 - Unchanged hashes do not invoke extraction or reranking.
-- Older workflow versions cannot overwrite newer profile/job versions.
+- Older workflow versions cannot overwrite newer candidate/job profiles.
 - Concurrent refreshes expose one complete serving generation, never a partial mix.
 - Invented, missing, or duplicate model job IDs do not publish.
-- Soft preferences, sparse resumes, and absent certifications do not become exclusions.
+- Sparse resumes, absent certifications, title differences, location, and workplace type do not become hard exclusions.
 - Applied, dismissed, expired, closed, archived, and deleted-owner jobs are filtered at read time.
-- Interaction/notified timestamps survive reranking.
-- Scheduled claims are bounded and safe under overlap/retry.
+- Viewed, dismissed, first-strong, and notified timestamps survive reranking.
+- Scheduled claims are bounded and safe under overlap and retry.
 - Digest notification creation is atomic and email retry cannot duplicate it.
-- Raw resumes and common eligibility answers never appear in matching prompts, workflow state, logs, or Sentry.
+- Raw resumes never appear in workflow state, logs, Sentry, or persisted match rows.
 - Company-facing APIs cannot access candidate matching data.
 - Each candidate jobs loader path uses one server-function round trip.
 
 ### Quality and rollout gates
 
-Before feed beta, agree on and meet:
+Before feed beta, define and meet:
 
-- a reviewed precision target for the **Strong match** band;
-- zero confirmed false exclusions in authorization, location, relocation, and sparse-data cases;
+- a reviewed precision target for the Strong match band;
+- no confirmed false hard exclusions, because qualification uncertainty remains soft;
 - counterfactual checks showing names and protected attributes are absent from reranking inputs;
 - explicit review of school/employer prestige, graduation dates, and career-gap effects;
 - a candidate-feed freshness SLO;
 - maximum cost per refresh and daily budget;
 - acceptable malformed-output and workflow-failure rates.
 
-Run focused feature/workflow tests, the full test suite, `bun run check`, and a Wrangler dry-run. Complete legal/privacy review of reusable authorization wording and AI data processing before production rollout.
+Run focused matching/workflow tests, the full test suite, `bun run check`, and a Wrangler dry-run before rollout.
 
 ## Explicit non-goals
 
+- Reusable screening answers or a standard screening catalog.
+- Work-authorization, sponsorship, relocation, workplace, or availability fields on candidate profiles.
 - Auto-apply or applying without candidate action.
 - Employer-visible candidate recommendations from this matching system.
-- Changing pre-evaluation, interview eligibility, company applicant ranking, or report quota based on candidate job matches.
+- Changing pre-evaluation, interview eligibility, company applicant ranking, or report quota based on job matches.
 - Candidate subscriptions or candidate Polar customers.
 - Vector infrastructure, collaborative filtering, or model fine-tuning in the MVP.
-- Fuzzy conversion of existing custom screening questions.
 - Verification of immigration status or collection of supporting documents.
