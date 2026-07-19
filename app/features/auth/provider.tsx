@@ -36,6 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsSigningOut(true);
     try {
       await logout();
+      queryClient.removeQueries();
       queryClient.setQueryData(currentUserQueryKey, null);
       await router.navigate({ to: "/" });
       await router.invalidate();
@@ -84,6 +85,7 @@ function GoogleSignInController({ children }: { children: React.ReactNode }) {
         pendingRoleRef.current = undefined;
         pendingSignupSearchRef.current = {};
 
+        queryClient.removeQueries();
         queryClient.setQueryData(currentUserQueryKey, result.user);
 
         if (result.restored) {
