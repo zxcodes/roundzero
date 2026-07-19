@@ -1,8 +1,7 @@
 import { BubbleChatIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 
-import { InterviewWorkspaceSkeleton } from "@/components/route-skeletons";
 import {
   Empty,
   EmptyContent,
@@ -11,24 +10,8 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import { getMyInterviews } from "@/features/interviews/server/functions";
-import { pickPreferredInterviewId } from "@/features/interviews/shared/candidate-display";
 
 export const Route = createFileRoute("/_authenticated/interview/")({
-  loader: async () => {
-    const interviews = await getMyInterviews();
-
-    const preferredInterviewId = pickPreferredInterviewId(interviews);
-    if (preferredInterviewId) {
-      throw redirect({
-        to: "/interview/$interviewId",
-        params: { interviewId: preferredInterviewId },
-      });
-    }
-
-    return { interviews };
-  },
-  pendingComponent: InterviewWorkspaceSkeleton,
   component: InterviewIndexPage,
 });
 

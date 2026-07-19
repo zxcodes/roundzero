@@ -12,14 +12,14 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  InterviewThinkingBubble,
-  InterviewTranscript,
-} from "@/features/interviews/components/interview-transcript";
-import {
   CompletedInterviewBar,
   type InterviewEndVariant,
   interviewEndVisuals,
-} from "@/features/interviews/components/voice-assessment-panel";
+} from "@/features/interviews/components/interview-end-visuals";
+import {
+  InterviewThinkingBubble,
+  InterviewTranscript,
+} from "@/features/interviews/components/interview-transcript";
 import {
   appendCopySource,
   emptyComposeIntegritySnapshot,

@@ -41,9 +41,7 @@ import {
   updateApplicationStatus,
 } from "@/features/applications/server/functions";
 import { parseShortlistDetails } from "@/features/applications/shortlist";
-import { getPreEvaluationForApplication } from "@/features/pre-evaluations/server/functions";
 import { ReportSnapshotCard } from "@/features/reports/components/report-cards";
-import { getCompanyApplicantReportTimeline } from "@/features/reports/server/functions";
 import { formatDate } from "@/shared/date";
 import {
   APPLICATION_STATUS_TRANSITIONS,
@@ -64,15 +62,13 @@ export const Route = createFileRoute("/_authenticated/dashboard/applicants/$appl
     validateUuidParams({ applicationId: params.applicationId });
   },
   loader: async ({ params }) => {
-    const [data, preEvaluation, reportTimeline] = await Promise.all([
-      getCompanyApplicantReview({ data: { applicationId: params.applicationId } }),
-      getPreEvaluationForApplication({ data: { applicationId: params.applicationId } }),
-      getCompanyApplicantReportTimeline({ data: { applicationId: params.applicationId } }),
-    ]);
+    const data = await getCompanyApplicantReview({
+      data: { applicationId: params.applicationId },
+    });
     if (!data) {
       throw notFound();
     }
-    return { ...data, preEvaluation, reportTimeline };
+    return data;
   },
   pendingComponent: DashboardApplicantReviewSkeleton,
   component: ApplicantReviewPage,

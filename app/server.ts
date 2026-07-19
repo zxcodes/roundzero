@@ -7,12 +7,49 @@ import { getDb } from "./shared/db";
 import { isDev } from "./shared/env.app";
 import { sentryOptions } from "./shared/sentry";
 
+declare global {
+  interface CacheStorage {
+    readonly default: Cache;
+  }
+}
+
 export { AccountCleanupWorkflow } from "./workflows/account-cleanup/workflow";
 export { BatchOrchestrationWorkflow } from "./workflows/batch-orchestration/workflow";
 export { EvalRetryWorkflow } from "./workflows/eval-retry/workflow";
 export { PoolCheckWorkflow } from "./workflows/pool-check/workflow";
 export { PostEvaluationWorkflow } from "./workflows/post-evaluation/workflow";
 export { PreEvaluationWorkflow } from "./workflows/pre-evaluation/workflow";
+
+function getCacheKey(request: Request) {
+  const url = new URL(request.url);
+  url.search = "";
+  return new Request(url, { method: "GET" });
+}
+
+async function createCachedTextResponse(body: string, contentType: string, maxAge: number) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(body));
+  const etag = `"${Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("")}"`;
+
+  return new Response(body, {
+    headers: {
+      "Cache-Control": `public, max-age=${maxAge}`,
+      "Content-Type": contentType,
+      ETag: etag,
+    },
+  });
+}
+
+async function getCachedResponse(request: Request) {
+  const key = getCacheKey(request);
+  const matchRequest = new Request(key, { headers: request.headers });
+  return await caches.default.match(matchRequest);
+}
+
+function cacheResponse(request: Request, response: Response, ctx: ExecutionContext) {
+  ctx.waitUntil(caches.default.put(getCacheKey(request), response.clone()));
+}
 
 async function serveAsset(request: Request, env: Env): Promise<Response | null> {
   const url = new URL(request.url);
@@ -39,6 +76,7 @@ async function serveAsset(request: Request, env: Env): Promise<Response | null> 
 const appHandler = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+    const isCacheableRead = request.method === "GET" || request.method === "HEAD";
 
     if (url.pathname === "/api/polar/webhook" && request.method === "POST") {
       return handlePolarWebhook(request);
@@ -47,20 +85,25 @@ const appHandler = {
     const assetResponse = await serveAsset(request, env);
     if (assetResponse) return assetResponse;
 
-    if (url.pathname === "/robots.txt") {
+    if (isCacheableRead && url.pathname === "/robots.txt") {
+      const cached = await getCachedResponse(request);
+      if (cached) return cached;
+
       const siteUrl = env.APP_URL;
       const body = `User-agent: *
 Disallow:
 
 Sitemap: ${siteUrl}/sitemap.xml
 `;
-
-      return new Response(body, {
-        headers: { "Content-Type": "text/plain; charset=utf-8" },
-      });
+      const response = await createCachedTextResponse(body, "text/plain; charset=utf-8", 86_400);
+      cacheResponse(request, response, ctx);
+      return response;
     }
 
-    if (url.pathname === "/sitemap.xml") {
+    if (isCacheableRead && url.pathname === "/sitemap.xml") {
+      const cached = await getCachedResponse(request);
+      if (cached) return cached;
+
       const sql = getDb();
       const [jobs, companies] = await Promise.all([
         import("./features/jobs/queries/queries_sql").then((m) => m.getOpenJobs(sql)),
@@ -85,10 +128,9 @@ ${indexableCompanies.map((c) => `  <url><loc>${siteUrl}/companies/${c.slug}</loc
   <url><loc>${siteUrl}/privacy</loc><priority>0.3</priority></url>
   <url><loc>${siteUrl}/tos</loc><priority>0.3</priority></url>
 </urlset>`;
-
-      return new Response(xml, {
-        headers: { "Content-Type": "application/xml" },
-      });
+      const response = await createCachedTextResponse(xml, "application/xml; charset=utf-8", 300);
+      cacheResponse(request, response, ctx);
+      return response;
     }
 
     return (handler.fetch as (req: Request, env: Env, ctx: ExecutionContext) => Promise<Response>)(
