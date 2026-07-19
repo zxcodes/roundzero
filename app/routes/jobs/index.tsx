@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { currentUserQueryKey, getCurrentUser } from "@/features/auth/server/functions";
 import { JobListRow } from "@/features/jobs/components/job-list-row";
 import { getOpenJobsPaginated } from "@/features/jobs/server/functions";
 import { useDebouncedSearchInput } from "@/hooks/use-debounced-search-input";
@@ -76,6 +77,19 @@ const jobsSearchSchema = z.object({
 export const Route = createFileRoute("/jobs/")({
   validateSearch: jobsSearchSchema,
   search: { middlewares: [stripSearchParams(searchDefaults)] },
+  beforeLoad: async ({ context }) => {
+    const user = await context.queryClient.fetchQuery({
+      queryKey: currentUserQueryKey,
+      queryFn: () => getCurrentUser(),
+      staleTime: 30_000,
+    });
+
+    return {
+      user,
+      isCompany: user?.role === "company",
+      isCandidate: user?.role === "candidate",
+    };
+  },
   loaderDeps: ({ search }) => search,
   head: () =>
     buildPageHead({
@@ -104,6 +118,7 @@ type JobsResults = Awaited<ReturnType<typeof getOpenJobsPaginated>>;
 
 function JobsPage() {
   const { results } = Route.useLoaderData();
+  const { user } = Route.useRouteContext();
   const {
     search,
     type: typeFilter,
@@ -162,7 +177,7 @@ function JobsPage() {
 
   return (
     <div className="calm min-h-svh bg-background text-foreground">
-      <PublicHeader />
+      <PublicHeader user={user} />
 
       <main>
         <PublicPageHero

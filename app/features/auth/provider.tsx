@@ -1,4 +1,4 @@
-import { type TokenResponse, useGoogleLogin } from "@react-oauth/google";
+import { GoogleOAuthProvider, type TokenResponse, useGoogleLogin } from "@react-oauth/google";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { createContext, use, useRef, useState } from "react";
@@ -15,21 +15,61 @@ import {
 } from "./signup-search";
 
 interface AuthContextType {
-  signIn: (role?: UserRole, signupSearch?: SignupSearch) => void;
   signOut: () => Promise<void>;
-  isSigningIn: boolean;
   isSigningOut: boolean;
 }
 
+interface GoogleSignInContextType {
+  signIn: (role?: UserRole, signupSearch?: SignupSearch) => void;
+  isSigningIn: boolean;
+}
+
 const AuthContext = createContext<AuthContextType | null>(null);
+const GoogleSignInContext = createContext<GoogleSignInContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const [isSigningOut, setIsSigningOut] = useState(false);
+
+  const signOut = async () => {
+    setIsSigningOut(true);
+    try {
+      await logout();
+      queryClient.setQueryData(currentUserQueryKey, null);
+      await router.navigate({ to: "/" });
+      await router.invalidate();
+    } catch (error) {
+      console.error("Logout failed:", error);
+      toast.error("Failed to sign out");
+    } finally {
+      setIsSigningOut(false);
+    }
+  };
+
+  return <AuthContext value={{ signOut, isSigningOut }}>{children}</AuthContext>;
+}
+
+export function GoogleSignInProvider({ children }: { children: React.ReactNode }) {
+  return (
+    <GoogleOAuthBoundary>
+      <GoogleSignInController>{children}</GoogleSignInController>
+    </GoogleOAuthBoundary>
+  );
+}
+
+export function GoogleOAuthBoundary({ children }: { children: React.ReactNode }) {
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? "";
+
+  return <GoogleOAuthProvider clientId={googleClientId}>{children}</GoogleOAuthProvider>;
+}
+
+function GoogleSignInController({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const pendingRoleRef = useRef<UserRole | undefined>(undefined);
   const pendingSignupSearchRef = useRef<SignupSearch>({});
   const [isSigningIn, setIsSigningIn] = useState(false);
-  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const login = useGoogleLogin({
     onSuccess: async (tokenResponse: TokenResponse) => {
@@ -98,30 +138,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     login();
   };
 
-  const signOut = async () => {
-    setIsSigningOut(true);
-    try {
-      await logout();
-      queryClient.setQueryData(currentUserQueryKey, null);
-      await router.navigate({ to: "/" });
-      await router.invalidate();
-    } catch (error) {
-      console.error("Logout failed:", error);
-      toast.error("Failed to sign out");
-    } finally {
-      setIsSigningOut(false);
-    }
-  };
-
-  return (
-    <AuthContext value={{ signIn, signOut, isSigningIn, isSigningOut }}>{children}</AuthContext>
-  );
+  return <GoogleSignInContext value={{ signIn, isSigningIn }}>{children}</GoogleSignInContext>;
 }
 
 export function useAuth() {
   const context = use(AuthContext);
   if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+}
+
+export function useGoogleSignIn() {
+  const context = use(GoogleSignInContext);
+  if (!context) {
+    throw new Error("useGoogleSignIn must be used within a GoogleSignInProvider");
   }
   return context;
 }

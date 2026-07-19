@@ -1,16 +1,15 @@
 import { Menu01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Link, useRouteContext } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import type { User } from "@/router";
 
-export function PublicHeader() {
-  const { user } = useRouteContext({ from: "__root__" });
-
+export function PublicHeader({ user = null }: { user?: User | null }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const onCloseMobileMenu = () => {
