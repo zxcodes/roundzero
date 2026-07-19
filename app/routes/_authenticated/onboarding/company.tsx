@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { redirectAfterSignup, signupSearchSchema } from "@/features/auth/signup-search";
+import { signupSearchSchema } from "@/features/auth/signup-search";
 import { companyBootstrapQueryKey, createCompany } from "@/features/companies/server/functions";
 import {
   type CompanySize,
@@ -38,7 +38,6 @@ const sizeOptions = Object.entries(companySizeLabels).map(([value, label]) => ({
 
 function CompanyOnboardingPage() {
   const router = useRouter();
-  const signupSearch = Route.useSearch();
   const queryClient = useQueryClient();
 
   const onboardingSchema = z.object({
@@ -53,10 +52,7 @@ function CompanyOnboardingPage() {
     mutationFn: createCompanyFn,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: companyBootstrapQueryKey });
-      await router.navigate({
-        ...redirectAfterSignup(signupSearch),
-        replace: true,
-      });
+      await router.invalidate();
     },
     onError: () => {
       toast.error("Failed to create company. Please try again.");

@@ -82,6 +82,7 @@ function InviteAcceptPage() {
         },
       });
 
+      queryClient.removeQueries();
       queryClient.setQueryData(currentUserQueryKey, result.user);
 
       if (result.onboardingComplete) {
