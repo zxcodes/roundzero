@@ -206,8 +206,15 @@ export function fetchAndExtractResume(
     const bytes = new Uint8Array(arrayBuffer);
     log.info(`Resume format: ${contentType}, size: ${bytes.length} bytes`);
     const text = await extractResumeText(bytes, contentType);
-    log.result("extract_resume", { chars: text.length, words: text.split(/\s+/).length });
-    return text;
+    const resumeText = sanitizeUntrustedText(text, LIMITS.RESUME_TEXT);
+    log.result("extract_resume", {
+      extractedChars: text.length,
+      returnedChars: resumeText.length,
+      returnedBytes: new TextEncoder().encode(resumeText).byteLength,
+      words: resumeText.split(/\s+/).length,
+      truncated: text.length > LIMITS.RESUME_TEXT,
+    });
+    return resumeText;
   };
 }
 

@@ -20,8 +20,10 @@ async function softDeleteUser(userId: string, deletedAt: Date) {
   await sql`UPDATE users SET deleted_at = ${deletedAt} WHERE id = ${userId}`;
 }
 
-function makeFakeR2Bucket() {
-  const deleteFn = vi.fn<(key: string) => Promise<void>>(async () => undefined);
+function makeFakeR2Bucket(deleteImplementation?: (key: string) => Promise<void>) {
+  const deleteFn = vi.fn<(key: string) => Promise<void>>(
+    deleteImplementation ?? (async () => undefined),
+  );
   return {
     bucket: { delete: deleteFn } as unknown as R2Bucket,
     deleteFn,
@@ -170,6 +172,60 @@ async function seedCandidatePipeline() {
 }
 
 describe("eraseDeletedAccount", () => {
+  it("preserves database references and PII when R2 deletion fails", async () => {
+    const { candidate, application, interviewId, profileResumeKey, appResumeKey, audioKey } =
+      await seedCandidatePipeline();
+    await softDeleteUser(candidate.id, daysAgo(31));
+
+    const deletionError = new Error("R2 unavailable");
+    const { bucket, deleteFn } = makeFakeR2Bucket(async () => {
+      throw deletionError;
+    });
+
+    await expect(eraseDeletedAccount(sql, bucket, candidate.id)).rejects.toThrow(deletionError);
+    expect(deleteFn).toHaveBeenCalledTimes(1);
+
+    const [userRow] = await sql`
+      SELECT name, email, anonymized_at
+      FROM users
+      WHERE id = ${candidate.id}
+    `;
+    expect(userRow?.name).toBe(candidate.name);
+    expect(userRow?.email).toBe(candidate.email);
+    expect(userRow?.anonymized_at).toBeNull();
+
+    const [profileRow] = await sql`
+      SELECT resume_key
+      FROM candidate_profiles
+      WHERE user_id = ${candidate.id}
+    `;
+    expect(profileRow?.resume_key).toBe(profileResumeKey);
+
+    const [applicationRow] = await sql`
+      SELECT resume_key, metadata
+      FROM applications
+      WHERE id = ${application.id}
+    `;
+    expect(applicationRow?.resume_key).toBe(appResumeKey);
+    expect(applicationRow?.metadata).toEqual({
+      resumeText: "Jane Doe built distributed systems at Acme Corp.",
+    });
+
+    const [assessmentRow] = await sql`
+      SELECT audio_key
+      FROM communication_assessments
+      WHERE application_id = ${application.id}
+    `;
+    expect(assessmentRow?.audio_key).toBe(audioKey);
+
+    const [messageRow] = await sql`
+      SELECT content
+      FROM interview_messages
+      WHERE interview_id = ${interviewId}
+    `;
+    expect(messageRow?.content).toBe("My biggest project was rebuilding the payments API.");
+  });
+
   it("anonymizes a candidate and scrubs PII while preserving evaluation scores", async () => {
     const { candidate, application, interviewId, profileResumeKey, appResumeKey, audioKey } =
       await seedCandidatePipeline();

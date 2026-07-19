@@ -5,6 +5,6 @@ export const sentryDsn =
 
 export const sentryOptions = {
   dsn: sentryDsn,
-  sendDefaultPii: true,
-  tracesSampleRate: 1.0,
+  sendDefaultPii: false,
+  tracesSampleRate: 0.1,
 } as const;

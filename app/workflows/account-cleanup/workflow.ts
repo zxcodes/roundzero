@@ -1,4 +1,4 @@
-import { env, WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers";
+import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers";
 
 import { ACCOUNT_CLEANUP_SWEEP_LIMIT } from "@/features/accounts/config";
 import { listAccountsPendingErasure } from "@/features/accounts/queries/queries_sql";
@@ -30,25 +30,26 @@ export class AccountCleanupWorkflow extends WorkflowEntrypoint<Env> {
 
     const results: SweepEntry[] = [];
     for (const row of rows) {
-      const entry = await step.do(
-        `erase-${row.id}`,
-        { retries: { limit: 1, delay: "10 seconds", backoff: "exponential" } },
-        async (): Promise<SweepEntry> => {
-          try {
+      let entry: SweepEntry;
+      try {
+        entry = await step.do(
+          `erase-${row.id}`,
+          { retries: { limit: 1, delay: "10 seconds", backoff: "exponential" } },
+          async (): Promise<SweepEntry> => {
             const db = getDb();
-            const result = await eraseDeletedAccount(db, env.RESUMES, row.id);
+            const result = await eraseDeletedAccount(db, this.env.RESUMES, row.id);
             return { userId: row.id, status: "ok", erased: result.erased };
-          } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            console.error(`[AccountCleanupWorkflow] erase failed for ${row.id}: ${message}`, error);
-            return {
-              userId: row.id,
-              status: "error",
-              message,
-            };
-          }
-        },
-      );
+          },
+        );
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error(`[AccountCleanupWorkflow] erase failed for ${row.id}: ${message}`, error);
+        entry = {
+          userId: row.id,
+          status: "error",
+          message,
+        };
+      }
       results.push(entry);
     }
 

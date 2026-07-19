@@ -153,6 +153,15 @@ describe("sanitizeUntrustedText", () => {
     expect(out).not.toContain("ignore previous instructions");
     expect(out).not.toContain("### Instructions");
   });
+
+  it("truncates at a Unicode boundary within the Workflow step-result budget", () => {
+    const prefix = "a".repeat(LIMITS.RESUME_TEXT - 1);
+    const out = sanitizeUntrustedText(`${prefix}🚀trailing content`, LIMITS.RESUME_TEXT);
+
+    expect(out).toBe(`${prefix}…[truncated]`);
+    expect(out).not.toContain("�");
+    expect(new TextEncoder().encode(out).byteLength).toBeLessThan(1024 * 1024);
+  });
 });
 
 describe("sanitizeTranscriptMessages", () => {

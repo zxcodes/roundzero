@@ -1,7 +1,7 @@
 import { createFileRoute, notFound, Outlet, redirect } from "@tanstack/react-router";
 
 import { InterviewContentSkeleton } from "@/components/route-skeletons";
-import { getMyInterview, getMyInterviewMessages } from "@/features/interviews/server/functions";
+import { getMyInterview } from "@/features/interviews/server/functions";
 import { validateUuidParams } from "@/shared/validation";
 
 export const Route = createFileRoute("/_authenticated/interview/$interviewId")({
@@ -13,20 +13,14 @@ export const Route = createFileRoute("/_authenticated/interview/$interviewId")({
     validateUuidParams({ interviewId: params.interviewId });
   },
   loader: async ({ params }) => {
-    const [interview, chatState] = await Promise.all([
-      getMyInterview({ data: { interviewId: params.interviewId } }),
-      getMyInterviewMessages({ data: { interviewId: params.interviewId } }),
-    ]);
-    if (!interview) {
-      throw notFound();
-    }
-    if (!chatState) {
+    const data = await getMyInterview({ data: { interviewId: params.interviewId } });
+    if (!data) {
       throw notFound();
     }
     return {
-      interview,
-      expiresAt: interview.expiresAt,
-      initialMessages: chatState.messages,
+      interview: data.interview,
+      expiresAt: data.interview.expiresAt,
+      initialMessages: data.messages,
     };
   },
   pendingComponent: InterviewContentSkeleton,

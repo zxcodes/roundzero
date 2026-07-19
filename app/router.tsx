@@ -33,6 +33,7 @@ export function getRouter() {
     routeTree,
     scrollRestoration: true,
     defaultPreload: "intent",
+    defaultStaleTime: 30_000,
     defaultPreloadStaleTime: 30_000,
     defaultViewTransition: true,
     context: {

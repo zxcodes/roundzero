@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "roundzero",
-  "compatibility_date": "2026-04-23",
+  "compatibility_date": "2026-07-16",
   "compatibility_flags": ["nodejs_compat"],
   "main": "./app/server.ts",
   "upload_source_maps": true,
