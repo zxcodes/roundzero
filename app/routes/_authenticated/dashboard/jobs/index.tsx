@@ -62,6 +62,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useEntitlements } from "@/features/entitlements/hooks/use-entitlements";
+import { CandidateMatchFeed } from "@/features/job-matching/components/candidate-match-feed";
+import { getMyCandidateMatches } from "@/features/job-matching/server/functions";
 import { JobListRow } from "@/features/jobs/components/job-list-row";
 import { isJobClosingSoon } from "@/features/jobs/components/job-status-badge";
 import { canCopyPublicJobLink, copyPublicJobLink } from "@/features/jobs/copy-job-link";
@@ -91,6 +93,7 @@ import { publicJobUrl } from "@/shared/seo";
 
 const searchDefaults = {
   tab: "active",
+  candidateTab: "for-you",
   search: "",
   type: "all",
   level: "all",
@@ -103,6 +106,10 @@ const searchDefaults = {
 
 const dashboardJobsSearchSchema = z.object({
   tab: z.enum(["active", "archived"]).default(searchDefaults.tab).catch(searchDefaults.tab),
+  candidateTab: z
+    .enum(["for-you", "all"])
+    .default(searchDefaults.candidateTab)
+    .catch(searchDefaults.candidateTab),
   search: z.string().default(searchDefaults.search).catch(searchDefaults.search),
   type: z.string().default(searchDefaults.type).catch(searchDefaults.type),
   level: z.string().default(searchDefaults.level).catch(searchDefaults.level),
@@ -131,8 +138,16 @@ export const Route = createFileRoute("/_authenticated/dashboard/jobs/")({
       const counts = context.jobCounts ?? { openCount: 0, draftCount: 0, totalCount: 0 };
       return { type: "company" as const, jobs, counts };
     }
+    if (deps.candidateTab === "for-you") {
+      return {
+        type: "candidate" as const,
+        view: "for-you" as const,
+        matches: getMyCandidateMatches(),
+      };
+    }
     return {
       type: "candidate" as const,
+      view: "all" as const,
       paginatedJobs: getCandidateOpenJobsPaginated({
         data: {
           search: deps.search,
@@ -170,7 +185,7 @@ function JobsListPage() {
     return <CompanyJobsList jobs={data.jobs} counts={data.counts} />;
   }
 
-  return <CandidateJobsList paginatedJobs={data.paginatedJobs} />;
+  return <CandidateJobsPage data={data} />;
 }
 
 type PipelineJob = Awaited<ReturnType<typeof getMyJobsWithPipeline>>[number];
@@ -592,6 +607,61 @@ function ArchivedJobsTable({
 }
 
 type PaginatedJobs = Awaited<ReturnType<typeof getCandidateOpenJobsPaginated>>;
+
+type CandidateRouteData =
+  | {
+      type: "candidate";
+      view: "for-you";
+      matches: ReturnType<typeof getMyCandidateMatches>;
+    }
+  | {
+      type: "candidate";
+      view: "all";
+      paginatedJobs: ReturnType<typeof getCandidateOpenJobsPaginated>;
+    };
+
+function CandidateJobsPage({ data }: { data: CandidateRouteData }) {
+  const { candidateTab } = Route.useSearch();
+  const navigate = useNavigate({ from: "/dashboard/jobs/" });
+  const onTabChange = (value: string) => {
+    void navigate({
+      search: (previous) => ({
+        ...previous,
+        candidateTab: value as "for-you" | "all",
+        page: 1,
+      }),
+    });
+  };
+
+  return (
+    <div className="flex flex-col gap-6">
+      <section className="flex flex-col gap-1">
+        <h1 className="text-xl font-semibold tracking-tight">Jobs</h1>
+        <p className="text-sm text-muted-foreground">
+          Personalized recommendations and every open role.
+        </p>
+      </section>
+      <Tabs value={candidateTab} onValueChange={onTabChange}>
+        <TabsList>
+          <TabsTrigger value="for-you">For you</TabsTrigger>
+          <TabsTrigger value="all">All jobs</TabsTrigger>
+        </TabsList>
+      </Tabs>
+      {data.view === "for-you" ? (
+        <DeferredSection
+          promise={data.matches}
+          resetKey="for-you"
+          fallback={<CandidateJobsResultsSkeleton />}
+          sectionLabel="matches"
+        >
+          {(matches) => <CandidateMatchFeed data={matches} />}
+        </DeferredSection>
+      ) : (
+        <CandidateJobsList paginatedJobs={data.paginatedJobs} />
+      )}
+    </div>
+  );
+}
 
 function CandidateJobsList({ paginatedJobs }: { paginatedJobs: Promise<PaginatedJobs> }) {
   const {

@@ -113,6 +113,10 @@ export function NotificationInbox({
       data: { notificationId },
     });
     setOpen(false);
+    if (presentation.type === "job_match_digest") {
+      await router.navigate({ to: "/dashboard/jobs" });
+      return;
+    }
     await router.navigate({
       to: presentation.to,
       params: presentation.params,

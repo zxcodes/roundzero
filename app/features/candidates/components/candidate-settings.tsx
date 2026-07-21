@@ -15,6 +15,7 @@ import {
   type getMyCandidateProfile,
   updateMyCandidateProfile,
 } from "@/features/candidates/server/functions";
+import { MatchSettingsCard } from "@/features/job-matching/components/match-settings-card";
 import type { User } from "@/router";
 import { formatDateTime } from "@/shared/date";
 
@@ -170,6 +171,13 @@ export function CandidateSettings({
             </form.Field>
           </div>
         </section>
+
+        <MatchSettingsCard
+          alertsEnabled={profile.matchAlertsEnabled}
+          feedStatus={profile.matchFeedStatus}
+          refreshedAt={profile.matchFeedRefreshedAt}
+          hasResume={Boolean(profile.resumeKey)}
+        />
 
         <DeleteAccountSection />
       </div>
