@@ -54,6 +54,7 @@ export const notificationTypeSchema = z.enum([
   "job_published",
   "job_archived",
   "job_closed",
+  "job_match_digest",
 ]);
 
 /** Valid status transitions for applications.

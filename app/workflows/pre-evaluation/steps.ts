@@ -1,8 +1,6 @@
 import { generateText, Output } from "ai";
 import { env } from "cloudflare:workers";
 import { NonRetryableError } from "cloudflare:workflows";
-import { DocuText } from "docutext";
-import mammoth from "mammoth";
 import type { Sql } from "postgres";
 import type { z } from "zod";
 
@@ -38,6 +36,7 @@ import { normalizeCandidateScoreValue } from "@/shared/llm-schema";
 import type { createWorkflowLogger } from "@/shared/logger";
 import { notificationPayloadSchemas } from "@/shared/notifications-config";
 import { createChatModel, getModelChain } from "@/shared/openrouter";
+import { extractSanitizedResumeText } from "@/shared/resume-extraction.server";
 
 import { buildResumeAuthenticityPrompt, shouldInviteFromDeterministicRules } from "./policy";
 import { refinePreEvaluationResult, refineSlopCheck } from "./refine";
@@ -90,20 +89,6 @@ async function runPreEvalObject<T>(args: {
     },
     model,
   };
-}
-
-async function extractResumeText(bytes: Uint8Array, contentType: string): Promise<string> {
-  if (contentType === "application/pdf") {
-    const doc = DocuText.fromBuffer(bytes);
-    return doc.text;
-  }
-
-  if (contentType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
-    const result = await mammoth.extractRawText({ buffer: Buffer.from(bytes.buffer) });
-    return result.value;
-  }
-
-  throw new Error(`Unsupported resume format: ${contentType}`);
 }
 
 function getPromptForRoleType(roleType: string) {
@@ -205,14 +190,13 @@ export function fetchAndExtractResume(
 
     const bytes = new Uint8Array(arrayBuffer);
     log.info(`Resume format: ${contentType}, size: ${bytes.length} bytes`);
-    const text = await extractResumeText(bytes, contentType);
-    const resumeText = sanitizeUntrustedText(text, LIMITS.RESUME_TEXT);
+    const resumeText = await extractSanitizedResumeText(bytes, contentType);
     log.result("extract_resume", {
-      extractedChars: text.length,
+      extractedChars: resumeText.length,
       returnedChars: resumeText.length,
       returnedBytes: new TextEncoder().encode(resumeText).byteLength,
       words: resumeText.split(/\s+/).length,
-      truncated: text.length > LIMITS.RESUME_TEXT,
+      truncated: resumeText.length >= LIMITS.RESUME_TEXT,
     });
     return resumeText;
   };

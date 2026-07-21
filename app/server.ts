@@ -19,6 +19,9 @@ export { EvalRetryWorkflow } from "./workflows/eval-retry/workflow";
 export { PoolCheckWorkflow } from "./workflows/pool-check/workflow";
 export { PostEvaluationWorkflow } from "./workflows/post-evaluation/workflow";
 export { PreEvaluationWorkflow } from "./workflows/pre-evaluation/workflow";
+export { JobMatchingWorkflow } from "./workflows/job-matching/workflow";
+export { MatchDigestWorkflow } from "./workflows/match-digest/workflow";
+export { MatchReconciliationWorkflow } from "./workflows/match-reconciliation/workflow";
 
 function getCacheKey(request: Request) {
   const url = new URL(request.url);

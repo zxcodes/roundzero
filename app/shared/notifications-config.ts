@@ -53,6 +53,20 @@ const jobLifecyclePayloadSchema = z.object({
   status: jobStatusSchema,
 });
 
+export const jobMatchDigestPayloadSchema = z.object({
+  digestDate: z.string().date(),
+  jobs: z
+    .array(
+      z.object({
+        jobId: z.string().uuid(),
+        title: z.string().min(1),
+        companyName: z.string().min(1),
+      }),
+    )
+    .min(1)
+    .max(10),
+});
+
 export const notificationPayloadSchemas = {
   application_status_changed: applicationStatusChangedPayloadSchema,
   application_withdrawn: applicationWithdrawnPayloadSchema,
@@ -63,4 +77,5 @@ export const notificationPayloadSchemas = {
   job_published: jobLifecyclePayloadSchema,
   job_archived: jobLifecyclePayloadSchema,
   job_closed: jobLifecyclePayloadSchema,
+  job_match_digest: jobMatchDigestPayloadSchema,
 } satisfies Record<z.infer<typeof notificationTypeSchema>, z.ZodTypeAny>;
