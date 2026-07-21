@@ -20,6 +20,10 @@ import {
 import { getActiveInterviewsByJob } from "@/features/interviews/queries/queries_sql";
 import { expireInterviewIfDue } from "@/features/interviews/server/expire";
 import {
+  requestJobMatchingExtraction,
+  startJobMatchingExtraction,
+} from "@/features/job-matching/server/orchestration";
+import {
   isJobPublishTransition,
   notifyJobPublished,
 } from "@/features/jobs/services/job-lifecycle-notifications";
@@ -71,7 +75,7 @@ export const createJob = createServerFn({ method: "POST" })
       expiresAt: data.expiresAt ?? null,
     };
 
-    const job =
+    const result =
       data.status === "open"
         ? await db.begin(async (tx) => {
             const transaction = asSqlTransaction(tx);
@@ -82,28 +86,34 @@ export const createJob = createServerFn({ method: "POST" })
               "jobs.open",
             );
 
-            return createJobQuery(transaction, {
+            const job = await createJobQuery(transaction, {
               ...createArgs,
               finalReportTarget: enforceReportTarget(entitlements, data.finalReportTarget),
             });
+            const matchingRequest = job
+              ? await requestJobMatchingExtraction(transaction, job)
+              : null;
+            return { job, matchingRequest };
           })
         : await (async () => {
             const entitlements = await readCompanyEntitlements(db, context.company.id);
-            return createJobQuery(db, {
+            const job = await createJobQuery(db, {
               ...createArgs,
               finalReportTarget: enforceReportTarget(entitlements, data.finalReportTarget),
             });
+            return { job, matchingRequest: null };
           })();
 
-    if (!job) {
+    if (!result.job) {
       throw new Error("Failed to create job");
     }
 
-    if (isJobPublishTransition(null, job.status)) {
-      await notifyJobPublished(db, context.company.id, job);
+    if (isJobPublishTransition(null, result.job.status)) {
+      await notifyJobPublished(db, context.company.id, result.job);
     }
+    if (result.matchingRequest) await startJobMatchingExtraction(result.matchingRequest);
 
-    return { job };
+    return { job: result.job };
   });
 
 export const getMyJobsWithPipeline = createServerFn({ method: "GET" })
@@ -264,7 +274,9 @@ export const updateJob = createServerFn({ method: "POST" })
 
       const job = await updateJobQuery(transaction, { ...updateArgs, finalReportTarget });
       if (!job) throw new Error("The report target can only be increased.");
-      return { job, previousStatus: existing.status, targetIncreased };
+      const matchingRequest =
+        job.status === "open" ? await requestJobMatchingExtraction(transaction, job) : null;
+      return { job, previousStatus: existing.status, targetIncreased, matchingRequest };
     });
 
     if (!result) {
@@ -277,6 +289,7 @@ export const updateJob = createServerFn({ method: "POST" })
     if (result.targetIncreased && result.job.status === "open") {
       await checkAndLaunchBatch(result.job.id);
     }
+    if (result.matchingRequest) await startJobMatchingExtraction(result.matchingRequest);
 
     return { job: result.job };
   });
@@ -338,7 +351,7 @@ export const publishJob = createServerFn({ method: "POST" })
         );
       }
 
-      return updateJobQuery(transaction, {
+      const updated = await updateJobQuery(transaction, {
         id: data.id,
         companyId: context.company.id,
         title: job.title,
@@ -358,15 +371,20 @@ export const publishJob = createServerFn({ method: "POST" })
         finalReportTarget: job.finalReportTarget,
         expiresAt: job.expiresAt,
       });
+      const matchingRequest = updated
+        ? await requestJobMatchingExtraction(transaction, updated)
+        : null;
+      return { job: updated, matchingRequest };
     });
 
-    if (!updated) {
+    if (!updated.job) {
       throw new Error("Failed to publish job");
     }
 
-    await notifyJobPublished(db, context.company.id, updated);
+    await notifyJobPublished(db, context.company.id, updated.job);
+    if (updated.matchingRequest) await startJobMatchingExtraction(updated.matchingRequest);
 
-    return { job: updated };
+    return { job: updated.job };
   });
 
 // --- Public Server Functions ---
@@ -504,13 +522,13 @@ const SYSTEM_PROMPT = `You are an expert technical recruiter and job description
 
 IMPORTANT: Do NOT prepend colons (:), dashes (-), bullets, or any markdown formatting to text values. The title should be "Senior UX Designer" not ": Senior UX Designer". The description should be plain paragraphs, not a list.
 
-Never refuse, apologize, or ask for more input in any field. Do not use titles like "Error" or descriptions that explain what information is missing. Even brief prompts should be expanded into a complete posting — infer reasonable role details, requirements, and screening questions when the user omits them.
+Never refuse, apologize, or ask for more input in any field. Do not use titles like "Error" or descriptions that explain what information is missing. Even brief prompts should be expanded into a complete posting — infer reasonable role details and requirements when the user omits them.
 
 Guidelines:
 - Write a professional, engaging job description that would attract top-tier candidates
 - Requirements should be specific and actionable (e.g., "5+ years of React experience" not just "React experience")
 - Include 4-8 relevant requirements based on the role
-- Include 2-4 screening questions. These are NOT technical or competency questions — they are short, informatory logistics/eligibility questions used to qualify candidates early (e.g. work authorization/visa status, willingness to relocate, salary expectations, notice period, availability/start date, on-site vs remote preference). Tailor them to the role and location (e.g. ask about relocation only if the role is onsite/hybrid, ask about visa status based on the location). Never include questions that test skills, knowledge, or problem-solving.
+- Always return an empty screeningQuestions array. Companies add must-know logistics constraints themselves.
 - Salary should be realistic for the role and location; if unsure, use reasonable market ranges
 - Team size and headcount should be realistic; use null if not inferable from the prompt
 - Experience level should map to: junior (0-2y), mid (2-5y), senior (5-8y), staff (8-12y), lead (5+ y with leadership), principal (10+ y)
@@ -650,6 +668,7 @@ export const generateJobWithAI = createServerFn({ method: "POST" })
 
       const validated = jobFieldsSchema.safeParse({
         ...cleaned,
+        screeningQuestions: [],
         status: "draft",
         expiresAt: null,
         finalReportTarget: enforceReportTarget(entitlements, null),

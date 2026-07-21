@@ -350,9 +350,8 @@ export function JobForm({
             return (
               <div className="space-y-2">
                 <p className="text-xs text-muted-foreground">
-                  Short logistics and eligibility questions (e.g. work authorization, relocation,
-                  salary expectations, notice period) the interview agent will ask candidates to
-                  qualify them early.
+                  Add only must-know constraints Zero should ask first, such as time-zone overlap,
+                  onsite attendance, work authorization, or start date.
                 </p>
                 <div className="flex gap-2">
                   <Input

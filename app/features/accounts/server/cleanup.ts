@@ -6,6 +6,7 @@ import {
   archiveOpenJobsForCompany,
   countOtherActiveCompanyMembers,
   deleteFeedbackForUser,
+  deleteCandidateJobMatchesForUser,
   deleteNotificationsForUser,
   getUserErasureState,
   listOwnedCompanyIdsForUser,
@@ -34,6 +35,7 @@ async function deleteR2Objects(resumes: R2Bucket, keys: Array<string | null>): P
 }
 
 async function scrubUserDataInTransaction(tx: Sql, userId: string): Promise<boolean> {
+  await deleteCandidateJobMatchesForUser(tx, { candidateId: userId });
   await scrubCandidateProfileForUser(tx, { userId });
   await scrubApplicationsForUser(tx, { candidateId: userId });
   await redactInterviewsForUser(tx, { candidateId: userId });
