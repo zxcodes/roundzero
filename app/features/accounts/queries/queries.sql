@@ -41,8 +41,26 @@ WHERE a.candidate_id = $1
 UPDATE candidate_profiles
 SET resume_key = NULL,
     resume_updated_at = NULL,
+    matching_profile = NULL,
+    matching_profile_source_hash = NULL,
+    matching_profile_version = NULL,
+    matching_profile_status = 'pending',
+    matching_profile_error = NULL,
+    serving_match_generation = NULL,
+    serving_match_input_hash = NULL,
+    match_feed_status = 'pending',
+    match_feed_error = NULL,
+    match_feed_refreshed_at = NULL,
+    match_alerts_enabled = false,
+    match_alerts_enabled_at = NULL,
+    match_refresh_token = NULL,
+    match_refresh_claimed_at = NULL,
     updated_at = now()
 WHERE user_id = $1;
+
+-- name: deleteCandidateJobMatchesForUser :exec
+DELETE FROM candidate_job_matches
+WHERE candidate_id = $1;
 
 -- name: scrubApplicationsForUser :exec
 UPDATE applications
