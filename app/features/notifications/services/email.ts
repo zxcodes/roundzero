@@ -2,8 +2,12 @@ import type { Sql } from "postgres";
 import type { ReactElement } from "react";
 import { jsx } from "react/jsx-runtime";
 
+import { JobMatchDigestEmailTemplate } from "@/features/notifications/components/job-match-digest-email-template";
 import { NotificationEmailTemplate } from "@/features/notifications/components/notification-email-template";
-import { getNotificationPresentation } from "@/features/notifications/config";
+import {
+  getNotificationPresentation,
+  notificationPayloadSchemas,
+} from "@/features/notifications/config";
 import {
   getNotificationById,
   markNotificationEmailDelivered,
@@ -49,6 +53,8 @@ function getNotificationFromName(type: string): string {
     case "interview_invited":
     case "application_withdrawn":
       return "RoundZero Alert";
+    case "job_match_digest":
+      return "RoundZero Matches";
     default:
       return "RoundZero";
   }
@@ -152,20 +158,31 @@ export async function deliverNotificationEmail(
   }
 
   try {
+    const digestPayload =
+      input.notification.type === "job_match_digest"
+        ? notificationPayloadSchemas.job_match_digest.safeParse(input.notification.payload)
+        : null;
+    const react =
+      digestPayload?.success && appUrl
+        ? jsx(JobMatchDigestEmailTemplate, {
+            jobs: digestPayload.data.jobs,
+            jobsUrl: new URL("/dashboard/jobs/?candidateTab=for-you", appUrl).toString(),
+          })
+        : jsx(NotificationEmailTemplate, {
+            previewText:
+              "previewText" in presentation && typeof presentation.previewText === "string"
+                ? presentation.previewText
+                : presentation.title,
+            body: presentation.body,
+            ctaHref: meta.ctaHref ?? link,
+            ctaLabel: meta.ctaLabel,
+            deadlineText: meta.deadlineText,
+          });
     const delivery = await sendEmail({
       to: input.recipient.email,
       fromName: getNotificationFromName(input.notification.type),
       subject: presentation.title,
-      react: jsx(NotificationEmailTemplate, {
-        previewText:
-          "previewText" in presentation && typeof presentation.previewText === "string"
-            ? presentation.previewText
-            : presentation.title,
-        body: presentation.body,
-        ctaHref: meta.ctaHref ?? link,
-        ctaLabel: meta.ctaLabel,
-        deadlineText: meta.deadlineText,
-      }),
+      react,
     });
 
     await markNotificationEmailDelivered(db, {
