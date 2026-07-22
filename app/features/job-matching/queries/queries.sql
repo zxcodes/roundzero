@@ -305,6 +305,18 @@ WHERE j.status = 'open'
 ORDER BY j.created_at, j.id
 LIMIT $1;
 
+-- name: HasReadyOpenJobMatchingProfile :one
+SELECT EXISTS (
+  SELECT 1
+  FROM jobs j
+  JOIN job_matching_profiles p ON p.job_id = j.id
+  WHERE j.status = 'open'
+    AND j.archived_at IS NULL
+    AND (j.expires_at IS NULL OR j.expires_at > now())
+    AND p.extraction_status = 'ready'
+    AND p.completed_source_hash = p.requested_source_hash
+) AS ready;
+
 -- name: ListDigestCandidates :many
 SELECT DISTINCT cp.user_id, u.email
 FROM candidate_profiles cp
