@@ -21,6 +21,7 @@ import {
   publishCandidateMatchGenerationIfCurrent,
   saveCandidateMatchingProfileIfCurrent,
   saveJobMatchingProfileIfCurrent,
+  setCandidateMatchRefreshPhaseIfCurrent,
   touchCandidateMatchFeedIfCurrent,
   upsertCandidateJobMatch,
 } from "@/features/job-matching/queries/queries_sql";
@@ -115,6 +116,11 @@ export class JobMatchingWorkflow extends WorkflowEntrypoint<Env, JobMatchingWork
         const db = getDb();
         const state = await getCandidateMatchingState(db, { userId: payload.candidateId });
         if (!state?.resumeKey || state.matchRefreshToken !== payload.refreshToken) return null;
+        await setCandidateMatchRefreshPhaseIfCurrent(db, {
+          userId: payload.candidateId,
+          refreshToken: payload.refreshToken,
+          phase: "reading_resume",
+        });
         return {
           resumeKey: state.resumeKey,
           existingProfile: state.matchingProfile,
@@ -172,6 +178,11 @@ export class JobMatchingWorkflow extends WorkflowEntrypoint<Env, JobMatchingWork
 
       const retrieval = await step.do("retrieve-jobs", async () => {
         const db = getDb();
+        await setCandidateMatchRefreshPhaseIfCurrent(db, {
+          userId: payload.candidateId,
+          refreshToken: payload.refreshToken,
+          phase: "finding_jobs",
+        });
         const rows = await listEligibleJobsForCandidateMatching(db, {
           candidateId: payload.candidateId,
         });
@@ -221,19 +232,22 @@ export class JobMatchingWorkflow extends WorkflowEntrypoint<Env, JobMatchingWork
               promptVersion: MATCHING_CONFIG.rerankerPromptVersion,
               usage: { inputTokens: 0, outputTokens: 0, latencyMs: 0 },
             }
-          : await step.do(
-              "rerank-jobs",
-              { retries, timeout: "5 minutes" },
-              async () =>
-                await rerankJobs({
-                  candidate: extracted.profile,
-                  jobs: retrieval.map((job) => ({
-                    id: job.id,
-                    profile: job.profile,
-                    retrievalScore: job.retrievalScore,
-                  })),
-                }),
-            );
+          : await step.do("rerank-jobs", { retries, timeout: "5 minutes" }, async () => {
+              const db = getDb();
+              await setCandidateMatchRefreshPhaseIfCurrent(db, {
+                userId: payload.candidateId,
+                refreshToken: payload.refreshToken,
+                phase: "ranking_matches",
+              });
+              return await rerankJobs({
+                candidate: extracted.profile,
+                jobs: retrieval.map((job) => ({
+                  id: job.id,
+                  profile: job.profile,
+                  retrievalScore: job.retrievalScore,
+                })),
+              });
+            });
 
       await step.do("record-reranker-usage", async () => {
         console.info({
@@ -252,6 +266,11 @@ export class JobMatchingWorkflow extends WorkflowEntrypoint<Env, JobMatchingWork
       const generationId = await step.do("create-generation-id", async () => crypto.randomUUID());
       const published = await step.do("publish-feed-generation", async () => {
         const db = getDb();
+        await setCandidateMatchRefreshPhaseIfCurrent(db, {
+          userId: payload.candidateId,
+          refreshToken: payload.refreshToken,
+          phase: "updating_feed",
+        });
         return await db.begin(async (tx) => {
           const transaction = asSqlTransaction(tx);
           const locked = await lockCandidateMatchRefresh(transaction, {

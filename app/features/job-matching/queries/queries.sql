@@ -57,7 +57,13 @@ SELECT id, user_id, resume_key, resume_updated_at, matching_profile,
        serving_match_generation, serving_match_input_hash,
        match_feed_status, match_feed_error, match_feed_refreshed_at,
        match_alerts_enabled, match_alerts_enabled_at,
-       match_refresh_token, match_refresh_claimed_at
+       match_refresh_token, match_refresh_claimed_at, match_refresh_phase
+FROM candidate_profiles
+WHERE user_id = $1;
+
+-- name: GetCandidateMatchRefreshProgress :one
+SELECT match_feed_status, match_feed_error, match_feed_refreshed_at,
+       match_refresh_claimed_at, match_refresh_phase
 FROM candidate_profiles
 WHERE user_id = $1;
 
@@ -81,6 +87,7 @@ SET matching_profile_status = 'failed',
     match_feed_status = 'failed',
     match_feed_error = sqlc.arg('error_message'),
     match_refresh_claimed_at = NULL,
+    match_refresh_phase = NULL,
     updated_at = now()
 WHERE user_id = sqlc.arg('user_id')
   AND match_refresh_token = sqlc.arg('refresh_token')
@@ -90,6 +97,7 @@ RETURNING *;
 UPDATE candidate_profiles
 SET match_refresh_token = sqlc.arg('refresh_token'),
     match_refresh_claimed_at = now(),
+    match_refresh_phase = 'queued',
     match_feed_status = 'processing',
     match_feed_error = NULL,
     updated_at = now()
@@ -101,6 +109,15 @@ WHERE user_id = sqlc.arg('user_id')
     OR match_refresh_claimed_at < sqlc.arg('claim_cutoff')
   )
 RETURNING user_id, match_refresh_token, resume_key;
+
+-- name: SetCandidateMatchRefreshPhaseIfCurrent :one
+UPDATE candidate_profiles
+SET match_refresh_phase = sqlc.arg('phase'),
+    updated_at = now()
+WHERE user_id = sqlc.arg('user_id')
+  AND match_refresh_token = sqlc.arg('refresh_token')
+  AND match_feed_status = 'processing'
+RETURNING user_id, match_refresh_phase;
 
 -- name: LockCandidateMatchRefresh :one
 SELECT user_id, resume_key, matching_profile_source_hash, match_refresh_token
@@ -114,6 +131,7 @@ SET match_feed_status = 'ready',
     match_feed_error = NULL,
     match_feed_refreshed_at = now(),
     match_refresh_claimed_at = NULL,
+    match_refresh_phase = NULL,
     updated_at = now()
 WHERE user_id = sqlc.arg('user_id')
   AND match_refresh_token = sqlc.arg('refresh_token')
@@ -124,6 +142,7 @@ UPDATE candidate_profiles
 SET match_feed_status = 'failed',
     match_feed_error = sqlc.arg('error_message'),
     match_refresh_claimed_at = NULL,
+    match_refresh_phase = NULL,
     updated_at = now()
 WHERE user_id = sqlc.arg('user_id')
   AND match_refresh_token = sqlc.arg('refresh_token')
@@ -189,6 +208,7 @@ SET serving_match_generation = sqlc.arg('generation_id'),
     match_feed_error = NULL,
     match_feed_refreshed_at = now(),
     match_refresh_claimed_at = NULL,
+    match_refresh_phase = NULL,
     updated_at = now()
 WHERE user_id = sqlc.arg('user_id')
   AND match_refresh_token = sqlc.arg('refresh_token')
@@ -258,6 +278,7 @@ WITH candidates AS (
 UPDATE candidate_profiles cp
 SET match_refresh_token = gen_random_uuid(),
     match_refresh_claimed_at = now(),
+    match_refresh_phase = 'queued',
     match_feed_status = 'processing',
     match_feed_error = NULL,
     updated_at = now()

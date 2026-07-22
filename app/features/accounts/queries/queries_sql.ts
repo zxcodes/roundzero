@@ -144,6 +144,7 @@ SET resume_key = NULL,
     match_alerts_enabled_at = NULL,
     match_refresh_token = NULL,
     match_refresh_claimed_at = NULL,
+    match_refresh_phase = NULL,
     updated_at = now()
 WHERE user_id = $1`;
 

@@ -3,17 +3,60 @@ import { describe, expect, it } from "vitest";
 import { getTestDb, seedCandidateProfile, seedJob } from "@/shared/__tests__/test-utils";
 
 import {
+  claimCandidateMatchRefresh,
   getCandidateMatchFeed,
+  getCandidateMatchRefreshProgress,
   hasReadyOpenJobMatchingProfile,
   listDigestCandidates,
   lockCandidateDigestMatches,
   markCandidateMatchViewed,
+  setCandidateMatchRefreshPhaseIfCurrent,
+  touchCandidateMatchFeedIfCurrent,
   upsertCandidateJobMatch,
 } from "../queries_sql";
 
 const sql = getTestDb();
 
 describe("candidate match persistence", () => {
+  it("persists refresh phases only for the active workflow token", async () => {
+    const { user } = await seedCandidateProfile();
+    const refreshToken = crypto.randomUUID();
+
+    await claimCandidateMatchRefresh(sql, {
+      userId: user.id,
+      refreshToken,
+      force: true,
+      claimCutoff: new Date(),
+    });
+    expect(await getCandidateMatchRefreshProgress(sql, { userId: user.id })).toMatchObject({
+      matchFeedStatus: "processing",
+      matchRefreshPhase: "queued",
+    });
+
+    expect(
+      await setCandidateMatchRefreshPhaseIfCurrent(sql, {
+        userId: user.id,
+        refreshToken: crypto.randomUUID(),
+        phase: "ranking_matches",
+      }),
+    ).toBeNull();
+    await setCandidateMatchRefreshPhaseIfCurrent(sql, {
+      userId: user.id,
+      refreshToken,
+      phase: "reading_resume",
+    });
+    expect(await getCandidateMatchRefreshProgress(sql, { userId: user.id })).toMatchObject({
+      matchFeedStatus: "processing",
+      matchRefreshPhase: "reading_resume",
+    });
+
+    await touchCandidateMatchFeedIfCurrent(sql, { userId: user.id, refreshToken });
+    expect(await getCandidateMatchRefreshProgress(sql, { userId: user.id })).toMatchObject({
+      matchFeedStatus: "ready",
+      matchRefreshPhase: null,
+    });
+  });
+
   it("reports whether at least one current open-job profile is ready", async () => {
     const { job } = await seedJob({ status: "open" });
 

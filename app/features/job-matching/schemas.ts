@@ -94,6 +94,15 @@ export const matchReasonsSchema = z.array(matchReasonSchema).max(3);
 
 export const matchingStatusSchema = z.enum(["pending", "processing", "ready", "failed"]);
 
+export const matchRefreshPhaseSchema = z.enum([
+  "queued",
+  "reading_resume",
+  "finding_jobs",
+  "ranking_matches",
+  "updating_feed",
+]);
+
 export type CandidateMatchingProfile = z.infer<typeof candidateMatchingProfileSchema>;
 export type JobMatchingProfile = z.infer<typeof jobMatchingProfileSchema>;
 export type MatchReason = z.infer<typeof matchReasonSchema>;
+export type MatchRefreshPhase = z.infer<typeof matchRefreshPhaseSchema>;
