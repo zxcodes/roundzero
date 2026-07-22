@@ -14,14 +14,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardAction,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
   Empty,
   EmptyContent,
   EmptyDescription,
@@ -29,6 +21,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { JobListRow } from "@/features/jobs/components/job-list-row";
 import { formatRelativeTime } from "@/shared/date";
 
 import type { MatchBand } from "../config";
@@ -149,9 +142,9 @@ export function CandidateMatchFeed({ data }: { data: MatchFeed | null }) {
           </EmptyHeader>
         </Empty>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="divide-y divide-border/50 overflow-hidden rounded-3xl border border-border/60">
           {data.items.map((match) => (
-            <CandidateMatchCard key={match.jobId} match={match} />
+            <CandidateMatchRow key={match.jobId} match={match} />
           ))}
         </div>
       )}
@@ -159,7 +152,7 @@ export function CandidateMatchFeed({ data }: { data: MatchFeed | null }) {
   );
 }
 
-function CandidateMatchCard({ match }: { match: MatchItem }) {
+function CandidateMatchRow({ match }: { match: MatchItem }) {
   const router = useRouter();
   const navigate = useNavigate();
   const viewFn = useServerFn(viewMyCandidateMatch);
@@ -174,51 +167,65 @@ function CandidateMatchCard({ match }: { match: MatchItem }) {
     onError: () => toast.error("Could not dismiss this match."),
   });
 
-  const onView = async () => {
-    await viewMutation.mutateAsync({ data: { jobId: match.jobId } });
-    await navigate({ to: "/jobs/$jobId", params: { jobId: match.jobId } });
+  const onOpen = () => {
+    viewMutation.mutate({ data: { jobId: match.jobId } });
+  };
+  const onView = () => {
+    onOpen();
+    void navigate({ to: "/dashboard/jobs/$jobId", params: { jobId: match.jobId } });
   };
   const onDismiss = () => dismissMutation.mutate({ data: { jobId: match.jobId } });
   const band = match.band as MatchBand;
 
   return (
-    <Card variant="bordered" size="sm">
-      <CardHeader className="pt-4">
-        <CardTitle>{match.title}</CardTitle>
-        <p className="text-sm text-muted-foreground">{match.companyName}</p>
-        <CardAction>
-          <Badge variant={band === "strong" ? "default" : "secondary"}>
-            {bandLabel[band] ?? "Potential match"}
-          </Badge>
-        </CardAction>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3 py-4">
-        {match.reasons.length > 0 ? (
-          <ul className="flex list-disc flex-col gap-1.5 pl-5 text-sm">
-            {match.reasons.map((reason) => (
-              <li key={`${reason.candidateFactId}:${reason.jobFactId}`}>{reason.text}</li>
-            ))}
-          </ul>
-        ) : null}
-        {match.reasons.length < 2 ? (
-          <p className="text-sm text-muted-foreground">
-            Limited positive evidence in your resume—review the role details before deciding.
-          </p>
-        ) : null}
-        {match.consideration ? (
-          <p className="text-xs text-muted-foreground">{match.consideration}</p>
-        ) : null}
-      </CardContent>
-      <CardFooter className="justify-between border-t py-4">
-        <Button variant="ghost" size="sm" onClick={onDismiss} disabled={dismissMutation.isPending}>
-          <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} data-icon="inline-start" />
-          Not relevant
-        </Button>
-        <Button size="sm" onClick={onView} disabled={viewMutation.isPending}>
-          View job
-          <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} data-icon="inline-end" />
-        </Button>
-      </CardFooter>
-    </Card>
+    <JobListRow
+      job={{ ...match, id: match.jobId }}
+      jobTo="/dashboard/jobs/$jobId"
+      showCompanyName
+      onOpen={onOpen}
+      badge={
+        <Badge variant={band === "strong" ? "default" : "secondary"}>
+          {bandLabel[band] ?? "Potential match"}
+        </Badge>
+      }
+      details={
+        <div className="space-y-2">
+          {match.reasons.length > 0 ? (
+            <ul className="flex list-disc flex-col gap-1 pl-5 text-sm text-foreground/90">
+              {match.reasons.slice(0, 2).map((reason) => (
+                <li key={`${reason.candidateFactId}:${reason.jobFactId}`} className="line-clamp-1">
+                  {reason.text}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {match.reasons.length < 2 ? (
+            <p className="text-sm text-muted-foreground">
+              Limited positive evidence in your resume—review the role details before deciding.
+            </p>
+          ) : null}
+          {match.consideration ? (
+            <p className="line-clamp-1 text-xs text-muted-foreground">{match.consideration}</p>
+          ) : null}
+        </div>
+      }
+      actions={
+        <>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onDismiss}
+            disabled={dismissMutation.isPending}
+          >
+            <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} data-icon="inline-start" />
+            Not relevant
+          </Button>
+          <Button size="sm" onClick={onView}>
+            View job
+            <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} data-icon="inline-end" />
+          </Button>
+        </>
+      }
+    />
   );
 }
