@@ -42,7 +42,7 @@ import {
   workplaceTypeSchema,
 } from "@/shared/enums";
 import { SALARY_BRACKETS } from "@/shared/format";
-import { buildPageHead, PAGE_SEO } from "@/shared/seo";
+import { buildPageHead, NOINDEX_FOLLOW_ROBOTS, PAGE_SEO } from "@/shared/seo";
 
 const searchDefaults = {
   search: "",
@@ -74,6 +74,11 @@ const jobsSearchSchema = z.object({
   page: z.number().int().min(1).default(searchDefaults.page).catch(searchDefaults.page),
 });
 
+const hasActiveJobsSearch = (search: z.infer<typeof jobsSearchSchema>) =>
+  Object.entries(searchDefaults).some(
+    ([key, value]) => search[key as keyof typeof search] !== value,
+  );
+
 export const Route = createFileRoute("/jobs/")({
   validateSearch: jobsSearchSchema,
   search: { middlewares: [stripSearchParams(searchDefaults)] },
@@ -91,12 +96,6 @@ export const Route = createFileRoute("/jobs/")({
     };
   },
   loaderDeps: ({ search }) => search,
-  head: () =>
-    buildPageHead({
-      title: PAGE_SEO.jobs.title,
-      description: PAGE_SEO.jobs.description,
-      path: "/jobs",
-    }),
   loader: ({ deps }) => ({
     results: getOpenJobsPaginated({
       data: {
@@ -110,7 +109,15 @@ export const Route = createFileRoute("/jobs/")({
         page: deps.page,
       },
     }),
+    isFiltered: hasActiveJobsSearch(deps),
   }),
+  head: ({ loaderData }) =>
+    buildPageHead({
+      title: PAGE_SEO.jobs.title,
+      description: PAGE_SEO.jobs.description,
+      path: "/jobs",
+      robots: loaderData?.isFiltered ? NOINDEX_FOLLOW_ROBOTS : undefined,
+    }),
   component: JobsPage,
 });
 

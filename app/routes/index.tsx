@@ -12,7 +12,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { currentUserQueryKey, getCurrentUser } from "@/features/auth/server/functions";
 import { MarketingPricingSection } from "@/features/marketing/components/pricing-section";
-import { buildPageHead, DEFAULT_META_TITLE, HOMEPAGE_META_DESCRIPTION } from "@/shared/seo";
+import {
+  buildPageHead,
+  DEFAULT_META_TITLE,
+  HOMEPAGE_META_DESCRIPTION,
+  homepageJsonLd,
+} from "@/shared/seo";
 
 export const Route = createFileRoute("/")({
   beforeLoad: async ({ context }) => {
@@ -31,6 +36,7 @@ export const Route = createFileRoute("/")({
       title: DEFAULT_META_TITLE,
       description: HOMEPAGE_META_DESCRIPTION,
       path: "/",
+      scripts: [homepageJsonLd(faq)],
     }),
   component: HomePage,
 });

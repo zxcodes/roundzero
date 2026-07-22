@@ -6,6 +6,7 @@ import { handlePolarWebhook } from "./features/billing/webhook";
 import { getDb } from "./shared/db";
 import { isDev } from "./shared/env.app";
 import { sentryOptions } from "./shared/sentry";
+import { escapeXml } from "./shared/seo";
 
 declare global {
   interface CacheStorage {
@@ -40,6 +41,7 @@ async function createCachedTextResponse(body: string, contentType: string, maxAg
       "Cache-Control": `public, max-age=${maxAge}`,
       "Content-Type": contentType,
       ETag: etag,
+      "X-Content-Type-Options": "nosniff",
     },
   });
 }
@@ -92,9 +94,12 @@ const appHandler = {
       const cached = await getCachedResponse(request);
       if (cached) return cached;
 
-      const siteUrl = env.APP_URL;
+      const siteUrl = env.APP_URL.replace(/\/$/, "");
       const body = `User-agent: *
-Disallow:
+Allow: /
+Disallow: /api/interview-chat
+Disallow: /api/voice-webhook
+Disallow: /api/polar/
 
 Sitemap: ${siteUrl}/sitemap.xml
 `;
@@ -113,7 +118,8 @@ Sitemap: ${siteUrl}/sitemap.xml
         import("./features/companies/queries/queries_sql").then((m) => m.getAllCompanies(sql)),
       ]);
 
-      const siteUrl = env.APP_URL;
+      const siteUrl = env.APP_URL.replace(/\/$/, "");
+      const escapedSiteUrl = escapeXml(siteUrl);
       const indexableCompanies = companies.filter(
         (company) =>
           company.openJobCount > 0 ||
@@ -121,15 +127,15 @@ Sitemap: ${siteUrl}/sitemap.xml
       );
       const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>${siteUrl}/</loc><priority>1.0</priority></url>
-  <url><loc>${siteUrl}/jobs</loc><priority>0.9</priority></url>
-  <url><loc>${siteUrl}/companies</loc><priority>0.9</priority></url>
+  <url><loc>${escapedSiteUrl}/</loc></url>
+  <url><loc>${escapedSiteUrl}/jobs</loc></url>
+  <url><loc>${escapedSiteUrl}/companies</loc></url>
 
-${jobs.map((j) => `  <url><loc>${siteUrl}/jobs/${j.id}</loc><lastmod>${new Date(j.updatedAt).toISOString()}</lastmod><priority>0.8</priority></url>`).join("\n")}
-${indexableCompanies.map((c) => `  <url><loc>${siteUrl}/companies/${c.slug}</loc><lastmod>${new Date(c.updatedAt).toISOString()}</lastmod><priority>0.7</priority></url>`).join("\n")}
-  <url><loc>${siteUrl}/contact</loc><priority>0.4</priority></url>
-  <url><loc>${siteUrl}/privacy</loc><priority>0.3</priority></url>
-  <url><loc>${siteUrl}/tos</loc><priority>0.3</priority></url>
+${jobs.map((j) => `  <url><loc>${escapedSiteUrl}/jobs/${escapeXml(j.id)}</loc><lastmod>${new Date(j.updatedAt).toISOString()}</lastmod></url>`).join("\n")}
+${indexableCompanies.map((c) => `  <url><loc>${escapedSiteUrl}/companies/${escapeXml(c.slug)}</loc><lastmod>${new Date(c.updatedAt).toISOString()}</lastmod></url>`).join("\n")}
+  <url><loc>${escapedSiteUrl}/contact</loc></url>
+  <url><loc>${escapedSiteUrl}/privacy</loc></url>
+  <url><loc>${escapedSiteUrl}/tos</loc></url>
 </urlset>`;
       const response = await createCachedTextResponse(xml, "application/xml; charset=utf-8", 300);
       cacheResponse(request, response, ctx);
