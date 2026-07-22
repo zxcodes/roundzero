@@ -9,6 +9,7 @@ import {
   hasReadyOpenJobMatchingProfile,
   listDigestCandidates,
   lockCandidateDigestMatches,
+  markCandidateDigestMatchesNotified,
   markCandidateMatchViewed,
   setCandidateMatchRefreshPhaseIfCurrent,
   touchCandidateMatchFeedIfCurrent,
@@ -184,6 +185,38 @@ describe("candidate match persistence", () => {
     expect(await getCandidateMatchFeed(sql, { userId: user.id })).toHaveLength(1);
     await sql`UPDATE jobs SET status = 'closed', updated_at = now() WHERE id = ${job.id}`;
     expect(await getCandidateMatchFeed(sql, { userId: user.id })).toHaveLength(0);
+  });
+
+  it("marks a digest's selected job ids as notified", async () => {
+    const { user } = await seedCandidateProfile();
+    const { job } = await seedJob({ status: "open" });
+    await upsertCandidateJobMatch(sql, {
+      candidateId: user.id,
+      jobId: job.id,
+      generationId: crypto.randomUUID(),
+      candidateProfileSourceHash: "candidate-v1",
+      jobProfileSourceHash: "job-v1",
+      score: 90,
+      band: "strong",
+      reasons: [],
+      consideration: null,
+      algorithmVersion: "v1",
+      thresholdVersion: "v1",
+      promptVersion: "v1",
+      model: "test",
+    });
+
+    await markCandidateDigestMatchesNotified(sql, {
+      candidateId: user.id,
+      jobIdsCsv: job.id,
+    });
+
+    const [match] = await sql`
+      SELECT digest_notified_at
+      FROM candidate_job_matches
+      WHERE candidate_id = ${user.id} AND job_id = ${job.id}
+    `;
+    expect(match?.digest_notified_at).toBeInstanceOf(Date);
   });
 
   it("applies live-feed eligibility rules to digest matches", async () => {

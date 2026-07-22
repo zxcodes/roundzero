@@ -420,5 +420,5 @@ FOR UPDATE OF m SKIP LOCKED;
 UPDATE candidate_job_matches
 SET digest_notified_at = now(), updated_at = now()
 WHERE candidate_id = sqlc.arg('candidate_id')
-  AND job_id = ANY(sqlc.arg('job_ids')::uuid[])
+  AND job_id = ANY(string_to_array(sqlc.arg('job_ids_csv'), ',')::uuid[])
   AND digest_notified_at IS NULL;
