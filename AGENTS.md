@@ -1,5 +1,10 @@
 # Agent Notes
 
+## Workflow Preferences
+
+- For straightforward fixes, do not create design specs or implementation plans unless the user explicitly requests them.
+- Do not create Git commits unless the user explicitly requests a commit.
+
 ## Key References
 
 - **`PLATFORM.md`** — product spec (what RoundZero does, flow, agents, interviews, reports, billing, MVP scope).
