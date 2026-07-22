@@ -9,11 +9,12 @@ import { MATCHING_CONFIG } from "../config";
 import {
   dismissCandidateMatch,
   getCandidateMatchFeed,
+  getCandidateMatchRefreshProgress,
   getCandidateMatchingState,
   markCandidateMatchViewed,
   updateCandidateMatchAlerts,
 } from "../queries/queries_sql";
-import { matchReasonsSchema, matchingStatusSchema } from "../schemas";
+import { matchReasonsSchema, matchRefreshPhaseSchema, matchingStatusSchema } from "../schemas";
 import { claimAndStartCandidateRefresh } from "./orchestration";
 
 const jobIdSchema = z.object({ jobId: z.string().uuid() });
@@ -42,13 +43,19 @@ export const getMyCandidateMatches = createServerFn({ method: "GET" })
       state.resumeUpdatedAt &&
       state.resumeUpdatedAt.getTime() < Date.now() - MATCHING_CONFIG.resumeStaleMs,
     );
-    if (state.resumeKey && stale) {
-      await claimAndStartCandidateRefresh({ db, candidateId: context.userId });
-    }
+    const refreshStarted =
+      state.resumeKey && stale
+        ? await claimAndStartCandidateRefresh({ db, candidateId: context.userId })
+        : false;
 
     return {
-      status: matchingStatusSchema.catch("pending").parse(state.matchFeedStatus),
-      hasError: Boolean(state.matchFeedError),
+      status: refreshStarted
+        ? ("processing" as const)
+        : matchingStatusSchema.catch("pending").parse(state.matchFeedStatus),
+      refreshPhase: refreshStarted
+        ? ("queued" as const)
+        : matchRefreshPhaseSchema.nullable().catch(null).parse(state.matchRefreshPhase),
+      hasError: refreshStarted ? false : Boolean(state.matchFeedError),
       refreshedAt: state.matchFeedRefreshedAt,
       resumeUpdatedAt: state.resumeUpdatedAt,
       resumeIsStale,
@@ -59,6 +66,22 @@ export const getMyCandidateMatches = createServerFn({ method: "GET" })
         if (!reasons.success) return [];
         return [{ ...row, reasons: reasons.data }];
       }),
+    };
+  });
+
+export const getMyCandidateMatchRefreshProgress = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }) => {
+    requireCandidate(context.user.role);
+    const progress = await getCandidateMatchRefreshProgress(getDb(), {
+      userId: context.userId,
+    });
+    if (!progress) return null;
+    return {
+      status: matchingStatusSchema.catch("pending").parse(progress.matchFeedStatus),
+      phase: matchRefreshPhaseSchema.nullable().catch(null).parse(progress.matchRefreshPhase),
+      error: progress.matchFeedError,
+      refreshedAt: progress.matchFeedRefreshedAt,
     };
   });
 

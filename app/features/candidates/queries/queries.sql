@@ -32,6 +32,7 @@ SET resume_key = $1,
     END,
     match_refresh_token = CASE WHEN $1 IS DISTINCT FROM resume_key THEN NULL ELSE match_refresh_token END,
     match_refresh_claimed_at = CASE WHEN $1 IS DISTINCT FROM resume_key THEN NULL ELSE match_refresh_claimed_at END,
+    match_refresh_phase = CASE WHEN $1 IS DISTINCT FROM resume_key THEN NULL ELSE match_refresh_phase END,
     updated_at = now()
 WHERE user_id = $2
 RETURNING *;

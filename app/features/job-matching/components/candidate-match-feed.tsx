@@ -5,9 +5,10 @@ import {
   Loading03Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { useEffect } from "react";
 import { toast } from "sonner";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -21,13 +22,16 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { Progress } from "@/components/ui/progress";
 import { JobListRow } from "@/features/jobs/components/job-list-row";
 import { formatRelativeTime } from "@/shared/date";
 
 import type { MatchBand } from "../config";
+import type { MatchRefreshPhase } from "../schemas";
 import {
   dismissMyCandidateMatch,
   type getMyCandidateMatches,
+  getMyCandidateMatchRefreshProgress,
   refreshMyCandidateMatches,
   viewMyCandidateMatch,
 } from "../server/functions";
@@ -41,19 +45,48 @@ const bandLabel: Record<MatchBand, string> = {
   potential: "Potential match",
 };
 
+const refreshPhasePresentation: Record<MatchRefreshPhase, { label: string; progress: number }> = {
+  queued: { label: "Starting the refresh", progress: 10 },
+  reading_resume: { label: "Reading your resume", progress: 30 },
+  finding_jobs: { label: "Finding relevant open roles", progress: 50 },
+  ranking_matches: { label: "Ranking your matches", progress: 75 },
+  updating_feed: { label: "Updating your job feed", progress: 90 },
+};
+
 export function CandidateMatchFeed({ data }: { data: MatchFeed | null }) {
   const router = useRouter();
   const refreshFn = useServerFn(refreshMyCandidateMatches);
+  const progressFn = useServerFn(getMyCandidateMatchRefreshProgress);
   const refreshMutation = useMutation({
     mutationFn: refreshFn,
-    onSuccess: async () => {
-      toast.success("Refreshing your matches");
+    onSuccess: async (result) => {
+      if (!result.started) toast.error("Could not start a new refresh.");
       await router.invalidate();
     },
     onError: () => toast.error("Could not refresh matches."),
   });
+  const progressQuery = useQuery({
+    queryKey: [
+      "candidate-match-refresh-progress",
+      data?.status,
+      data?.refreshedAt?.getTime() ?? null,
+    ],
+    queryFn: progressFn,
+    enabled: data?.status === "processing",
+    refetchInterval: (query) => (query.state.data?.status === "processing" ? 2_000 : false),
+  });
+
+  useEffect(() => {
+    const latestStatus = progressQuery.data?.status;
+    if (data?.status !== "processing" || !latestStatus || latestStatus === "processing") return;
+    void router.invalidate();
+  }, [data?.status, progressQuery.data?.status, router]);
 
   const onRefresh = () => refreshMutation.mutate({});
+  const refreshStatus = progressQuery.data?.status ?? data?.status;
+  const isRefreshing = refreshStatus === "processing";
+  const refreshPhase = progressQuery.data?.phase ?? data?.refreshPhase ?? "queued";
+  const refreshPresentation = refreshPhasePresentation[refreshPhase];
 
   if (!data?.hasResume) {
     return (
@@ -76,7 +109,7 @@ export function CandidateMatchFeed({ data }: { data: MatchFeed | null }) {
     );
   }
 
-  if (!data.refreshedAt && data.status !== "failed") {
+  if (!data.refreshedAt && data.status !== "failed" && !isRefreshing) {
     return (
       <Empty className="rounded-3xl border border-border/60">
         <EmptyHeader>
@@ -94,6 +127,24 @@ export function CandidateMatchFeed({ data }: { data: MatchFeed | null }) {
 
   return (
     <div className="flex flex-col gap-4">
+      {isRefreshing ? (
+        <Alert className="border-border/60 bg-muted/30">
+          <HugeiconsIcon icon={Loading03Icon} strokeWidth={2} className="animate-spin" />
+          <AlertTitle>Refreshing your matches</AlertTitle>
+          <AlertDescription className="space-y-2">
+            <p>{refreshPresentation.label}. Your existing matches remain available.</p>
+            <Progress
+              value={refreshPresentation.progress}
+              role="progressbar"
+              aria-label="Job match refresh progress"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={refreshPresentation.progress}
+              className="h-1.5"
+            />
+          </AlertDescription>
+        </Alert>
+      ) : null}
       {data.hasError ? (
         <Alert>
           <AlertTitle>Latest refresh did not finish</AlertTitle>
@@ -118,15 +169,15 @@ export function CandidateMatchFeed({ data }: { data: MatchFeed | null }) {
           variant="outline"
           size="sm"
           onClick={onRefresh}
-          disabled={refreshMutation.isPending}
+          disabled={refreshMutation.isPending || isRefreshing}
         >
           <HugeiconsIcon
             icon={Loading03Icon}
             strokeWidth={2}
             data-icon="inline-start"
-            className={refreshMutation.isPending ? "animate-spin" : undefined}
+            className={refreshMutation.isPending || isRefreshing ? "animate-spin" : undefined}
           />
-          Refresh
+          {isRefreshing ? "Refreshing" : "Refresh"}
         </Button>
       </div>
       {data.items.length === 0 ? (
@@ -135,9 +186,15 @@ export function CandidateMatchFeed({ data }: { data: MatchFeed | null }) {
             <EmptyMedia variant="icon">
               <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} />
             </EmptyMedia>
-            <EmptyTitle>No personalized matches yet</EmptyTitle>
+            <EmptyTitle>
+              {isRefreshing && !data.refreshedAt
+                ? "Your personalized matches are on the way"
+                : "No personalized matches yet"}
+            </EmptyTitle>
             <EmptyDescription>
-              We’ll keep checking as new roles are published. All jobs is always available.
+              {isRefreshing && !data.refreshedAt
+                ? "Your results will appear here when this refresh finishes."
+                : "We’ll keep checking as new roles are published. All jobs is always available."}
             </EmptyDescription>
           </EmptyHeader>
         </Empty>

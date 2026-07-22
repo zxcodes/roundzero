@@ -282,7 +282,7 @@ SELECT id, user_id, resume_key, resume_updated_at, matching_profile,
        serving_match_generation, serving_match_input_hash,
        match_feed_status, match_feed_error, match_feed_refreshed_at,
        match_alerts_enabled, match_alerts_enabled_at,
-       match_refresh_token, match_refresh_claimed_at
+       match_refresh_token, match_refresh_claimed_at, match_refresh_phase
 FROM candidate_profiles
 WHERE user_id = $1`;
 
@@ -309,6 +309,7 @@ export interface GetCandidateMatchingStateRow {
     matchAlertsEnabledAt: Date | null;
     matchRefreshToken: string | null;
     matchRefreshClaimedAt: Date | null;
+    matchRefreshPhase: string | null;
 }
 
 export async function getCandidateMatchingState(sql: Sql, args: GetCandidateMatchingStateArgs): Promise<GetCandidateMatchingStateRow | null> {
@@ -335,7 +336,41 @@ export async function getCandidateMatchingState(sql: Sql, args: GetCandidateMatc
         matchAlertsEnabled: row[14],
         matchAlertsEnabledAt: row[15],
         matchRefreshToken: row[16],
-        matchRefreshClaimedAt: row[17]
+        matchRefreshClaimedAt: row[17],
+        matchRefreshPhase: row[18]
+    };
+}
+
+export const getCandidateMatchRefreshProgressQuery = `-- name: GetCandidateMatchRefreshProgress :one
+SELECT match_feed_status, match_feed_error, match_feed_refreshed_at,
+       match_refresh_claimed_at, match_refresh_phase
+FROM candidate_profiles
+WHERE user_id = $1`;
+
+export interface GetCandidateMatchRefreshProgressArgs {
+    userId: string;
+}
+
+export interface GetCandidateMatchRefreshProgressRow {
+    matchFeedStatus: string;
+    matchFeedError: string | null;
+    matchFeedRefreshedAt: Date | null;
+    matchRefreshClaimedAt: Date | null;
+    matchRefreshPhase: string | null;
+}
+
+export async function getCandidateMatchRefreshProgress(sql: Sql, args: GetCandidateMatchRefreshProgressArgs): Promise<GetCandidateMatchRefreshProgressRow | null> {
+    const rows = await sql.unsafe(getCandidateMatchRefreshProgressQuery, [args.userId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        matchFeedStatus: row[0],
+        matchFeedError: row[1],
+        matchFeedRefreshedAt: row[2],
+        matchRefreshClaimedAt: row[3],
+        matchRefreshPhase: row[4]
     };
 }
 
@@ -350,7 +385,7 @@ SET matching_profile = $1,
 WHERE user_id = $4
   AND resume_key = $5
   AND match_refresh_token = $6
-RETURNING id, user_id, onboarding_completed_at, resume_key, resume_updated_at, created_at, updated_at, matching_profile, matching_profile_source_hash, matching_profile_version, matching_profile_status, matching_profile_error, serving_match_generation, serving_match_input_hash, match_feed_status, match_feed_error, match_feed_refreshed_at, match_alerts_enabled, match_alerts_enabled_at, match_refresh_token, match_refresh_claimed_at`;
+RETURNING id, user_id, onboarding_completed_at, resume_key, resume_updated_at, created_at, updated_at, matching_profile, matching_profile_source_hash, matching_profile_version, matching_profile_status, matching_profile_error, serving_match_generation, serving_match_input_hash, match_feed_status, match_feed_error, match_feed_refreshed_at, match_alerts_enabled, match_alerts_enabled_at, match_refresh_token, match_refresh_claimed_at, match_refresh_phase`;
 
 export interface SaveCandidateMatchingProfileIfCurrentArgs {
     matchingProfile: any | null;
@@ -383,6 +418,7 @@ export interface SaveCandidateMatchingProfileIfCurrentRow {
     matchAlertsEnabledAt: Date | null;
     matchRefreshToken: string | null;
     matchRefreshClaimedAt: Date | null;
+    matchRefreshPhase: string | null;
 }
 
 export async function saveCandidateMatchingProfileIfCurrent(sql: Sql, args: SaveCandidateMatchingProfileIfCurrentArgs): Promise<SaveCandidateMatchingProfileIfCurrentRow | null> {
@@ -412,7 +448,8 @@ export async function saveCandidateMatchingProfileIfCurrent(sql: Sql, args: Save
         matchAlertsEnabled: row[17],
         matchAlertsEnabledAt: row[18],
         matchRefreshToken: row[19],
-        matchRefreshClaimedAt: row[20]
+        matchRefreshClaimedAt: row[20],
+        matchRefreshPhase: row[21]
     };
 }
 
@@ -423,10 +460,11 @@ SET matching_profile_status = 'failed',
     match_feed_status = 'failed',
     match_feed_error = $1,
     match_refresh_claimed_at = NULL,
+    match_refresh_phase = NULL,
     updated_at = now()
 WHERE user_id = $2
   AND match_refresh_token = $3
-RETURNING id, user_id, onboarding_completed_at, resume_key, resume_updated_at, created_at, updated_at, matching_profile, matching_profile_source_hash, matching_profile_version, matching_profile_status, matching_profile_error, serving_match_generation, serving_match_input_hash, match_feed_status, match_feed_error, match_feed_refreshed_at, match_alerts_enabled, match_alerts_enabled_at, match_refresh_token, match_refresh_claimed_at`;
+RETURNING id, user_id, onboarding_completed_at, resume_key, resume_updated_at, created_at, updated_at, matching_profile, matching_profile_source_hash, matching_profile_version, matching_profile_status, matching_profile_error, serving_match_generation, serving_match_input_hash, match_feed_status, match_feed_error, match_feed_refreshed_at, match_alerts_enabled, match_alerts_enabled_at, match_refresh_token, match_refresh_claimed_at, match_refresh_phase`;
 
 export interface MarkCandidateProfileFailedIfCurrentArgs {
     errorMessage: string | null;
@@ -456,6 +494,7 @@ export interface MarkCandidateProfileFailedIfCurrentRow {
     matchAlertsEnabledAt: Date | null;
     matchRefreshToken: string | null;
     matchRefreshClaimedAt: Date | null;
+    matchRefreshPhase: string | null;
 }
 
 export async function markCandidateProfileFailedIfCurrent(sql: Sql, args: MarkCandidateProfileFailedIfCurrentArgs): Promise<MarkCandidateProfileFailedIfCurrentRow | null> {
@@ -485,7 +524,8 @@ export async function markCandidateProfileFailedIfCurrent(sql: Sql, args: MarkCa
         matchAlertsEnabled: row[17],
         matchAlertsEnabledAt: row[18],
         matchRefreshToken: row[19],
-        matchRefreshClaimedAt: row[20]
+        matchRefreshClaimedAt: row[20],
+        matchRefreshPhase: row[21]
     };
 }
 
@@ -493,6 +533,7 @@ export const claimCandidateMatchRefreshQuery = `-- name: ClaimCandidateMatchRefr
 UPDATE candidate_profiles
 SET match_refresh_token = $1,
     match_refresh_claimed_at = now(),
+    match_refresh_phase = 'queued',
     match_feed_status = 'processing',
     match_feed_error = NULL,
     updated_at = now()
@@ -528,6 +569,38 @@ export async function claimCandidateMatchRefresh(sql: Sql, args: ClaimCandidateM
         userId: row[0],
         matchRefreshToken: row[1],
         resumeKey: row[2]
+    };
+}
+
+export const setCandidateMatchRefreshPhaseIfCurrentQuery = `-- name: SetCandidateMatchRefreshPhaseIfCurrent :one
+UPDATE candidate_profiles
+SET match_refresh_phase = $1,
+    updated_at = now()
+WHERE user_id = $2
+  AND match_refresh_token = $3
+  AND match_feed_status = 'processing'
+RETURNING user_id, match_refresh_phase`;
+
+export interface SetCandidateMatchRefreshPhaseIfCurrentArgs {
+    phase: string | null;
+    userId: string;
+    refreshToken: string | null;
+}
+
+export interface SetCandidateMatchRefreshPhaseIfCurrentRow {
+    userId: string;
+    matchRefreshPhase: string | null;
+}
+
+export async function setCandidateMatchRefreshPhaseIfCurrent(sql: Sql, args: SetCandidateMatchRefreshPhaseIfCurrentArgs): Promise<SetCandidateMatchRefreshPhaseIfCurrentRow | null> {
+    const rows = await sql.unsafe(setCandidateMatchRefreshPhaseIfCurrentQuery, [args.phase, args.userId, args.refreshToken]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        userId: row[0],
+        matchRefreshPhase: row[1]
     };
 }
 
@@ -568,10 +641,11 @@ SET match_feed_status = 'ready',
     match_feed_error = NULL,
     match_feed_refreshed_at = now(),
     match_refresh_claimed_at = NULL,
+    match_refresh_phase = NULL,
     updated_at = now()
 WHERE user_id = $1
   AND match_refresh_token = $2
-RETURNING id, user_id, onboarding_completed_at, resume_key, resume_updated_at, created_at, updated_at, matching_profile, matching_profile_source_hash, matching_profile_version, matching_profile_status, matching_profile_error, serving_match_generation, serving_match_input_hash, match_feed_status, match_feed_error, match_feed_refreshed_at, match_alerts_enabled, match_alerts_enabled_at, match_refresh_token, match_refresh_claimed_at`;
+RETURNING id, user_id, onboarding_completed_at, resume_key, resume_updated_at, created_at, updated_at, matching_profile, matching_profile_source_hash, matching_profile_version, matching_profile_status, matching_profile_error, serving_match_generation, serving_match_input_hash, match_feed_status, match_feed_error, match_feed_refreshed_at, match_alerts_enabled, match_alerts_enabled_at, match_refresh_token, match_refresh_claimed_at, match_refresh_phase`;
 
 export interface TouchCandidateMatchFeedIfCurrentArgs {
     userId: string;
@@ -600,6 +674,7 @@ export interface TouchCandidateMatchFeedIfCurrentRow {
     matchAlertsEnabledAt: Date | null;
     matchRefreshToken: string | null;
     matchRefreshClaimedAt: Date | null;
+    matchRefreshPhase: string | null;
 }
 
 export async function touchCandidateMatchFeedIfCurrent(sql: Sql, args: TouchCandidateMatchFeedIfCurrentArgs): Promise<TouchCandidateMatchFeedIfCurrentRow | null> {
@@ -629,7 +704,8 @@ export async function touchCandidateMatchFeedIfCurrent(sql: Sql, args: TouchCand
         matchAlertsEnabled: row[17],
         matchAlertsEnabledAt: row[18],
         matchRefreshToken: row[19],
-        matchRefreshClaimedAt: row[20]
+        matchRefreshClaimedAt: row[20],
+        matchRefreshPhase: row[21]
     };
 }
 
@@ -638,10 +714,11 @@ UPDATE candidate_profiles
 SET match_feed_status = 'failed',
     match_feed_error = $1,
     match_refresh_claimed_at = NULL,
+    match_refresh_phase = NULL,
     updated_at = now()
 WHERE user_id = $2
   AND match_refresh_token = $3
-RETURNING id, user_id, onboarding_completed_at, resume_key, resume_updated_at, created_at, updated_at, matching_profile, matching_profile_source_hash, matching_profile_version, matching_profile_status, matching_profile_error, serving_match_generation, serving_match_input_hash, match_feed_status, match_feed_error, match_feed_refreshed_at, match_alerts_enabled, match_alerts_enabled_at, match_refresh_token, match_refresh_claimed_at`;
+RETURNING id, user_id, onboarding_completed_at, resume_key, resume_updated_at, created_at, updated_at, matching_profile, matching_profile_source_hash, matching_profile_version, matching_profile_status, matching_profile_error, serving_match_generation, serving_match_input_hash, match_feed_status, match_feed_error, match_feed_refreshed_at, match_alerts_enabled, match_alerts_enabled_at, match_refresh_token, match_refresh_claimed_at, match_refresh_phase`;
 
 export interface MarkCandidateFeedFailedIfCurrentArgs {
     errorMessage: string | null;
@@ -671,6 +748,7 @@ export interface MarkCandidateFeedFailedIfCurrentRow {
     matchAlertsEnabledAt: Date | null;
     matchRefreshToken: string | null;
     matchRefreshClaimedAt: Date | null;
+    matchRefreshPhase: string | null;
 }
 
 export async function markCandidateFeedFailedIfCurrent(sql: Sql, args: MarkCandidateFeedFailedIfCurrentArgs): Promise<MarkCandidateFeedFailedIfCurrentRow | null> {
@@ -700,7 +778,8 @@ export async function markCandidateFeedFailedIfCurrent(sql: Sql, args: MarkCandi
         matchAlertsEnabled: row[17],
         matchAlertsEnabledAt: row[18],
         matchRefreshToken: row[19],
-        matchRefreshClaimedAt: row[20]
+        matchRefreshClaimedAt: row[20],
+        matchRefreshPhase: row[21]
     };
 }
 
@@ -863,11 +942,12 @@ SET serving_match_generation = $1,
     match_feed_error = NULL,
     match_feed_refreshed_at = now(),
     match_refresh_claimed_at = NULL,
+    match_refresh_phase = NULL,
     updated_at = now()
 WHERE user_id = $3
   AND match_refresh_token = $4
   AND matching_profile_source_hash = $5
-RETURNING id, user_id, onboarding_completed_at, resume_key, resume_updated_at, created_at, updated_at, matching_profile, matching_profile_source_hash, matching_profile_version, matching_profile_status, matching_profile_error, serving_match_generation, serving_match_input_hash, match_feed_status, match_feed_error, match_feed_refreshed_at, match_alerts_enabled, match_alerts_enabled_at, match_refresh_token, match_refresh_claimed_at`;
+RETURNING id, user_id, onboarding_completed_at, resume_key, resume_updated_at, created_at, updated_at, matching_profile, matching_profile_source_hash, matching_profile_version, matching_profile_status, matching_profile_error, serving_match_generation, serving_match_input_hash, match_feed_status, match_feed_error, match_feed_refreshed_at, match_alerts_enabled, match_alerts_enabled_at, match_refresh_token, match_refresh_claimed_at, match_refresh_phase`;
 
 export interface PublishCandidateMatchGenerationIfCurrentArgs {
     generationId: string | null;
@@ -899,6 +979,7 @@ export interface PublishCandidateMatchGenerationIfCurrentRow {
     matchAlertsEnabledAt: Date | null;
     matchRefreshToken: string | null;
     matchRefreshClaimedAt: Date | null;
+    matchRefreshPhase: string | null;
 }
 
 export async function publishCandidateMatchGenerationIfCurrent(sql: Sql, args: PublishCandidateMatchGenerationIfCurrentArgs): Promise<PublishCandidateMatchGenerationIfCurrentRow | null> {
@@ -928,7 +1009,8 @@ export async function publishCandidateMatchGenerationIfCurrent(sql: Sql, args: P
         matchAlertsEnabled: row[17],
         matchAlertsEnabledAt: row[18],
         matchRefreshToken: row[19],
-        matchRefreshClaimedAt: row[20]
+        matchRefreshClaimedAt: row[20],
+        matchRefreshPhase: row[21]
     };
 }
 
@@ -1141,7 +1223,7 @@ SET match_alerts_enabled = $1,
     match_alerts_enabled_at = CASE WHEN $1::boolean THEN now() ELSE NULL END,
     updated_at = now()
 WHERE user_id = $2
-RETURNING id, user_id, onboarding_completed_at, resume_key, resume_updated_at, created_at, updated_at, matching_profile, matching_profile_source_hash, matching_profile_version, matching_profile_status, matching_profile_error, serving_match_generation, serving_match_input_hash, match_feed_status, match_feed_error, match_feed_refreshed_at, match_alerts_enabled, match_alerts_enabled_at, match_refresh_token, match_refresh_claimed_at`;
+RETURNING id, user_id, onboarding_completed_at, resume_key, resume_updated_at, created_at, updated_at, matching_profile, matching_profile_source_hash, matching_profile_version, matching_profile_status, matching_profile_error, serving_match_generation, serving_match_input_hash, match_feed_status, match_feed_error, match_feed_refreshed_at, match_alerts_enabled, match_alerts_enabled_at, match_refresh_token, match_refresh_claimed_at, match_refresh_phase`;
 
 export interface UpdateCandidateMatchAlertsArgs {
     enabled: boolean;
@@ -1170,6 +1252,7 @@ export interface UpdateCandidateMatchAlertsRow {
     matchAlertsEnabledAt: Date | null;
     matchRefreshToken: string | null;
     matchRefreshClaimedAt: Date | null;
+    matchRefreshPhase: string | null;
 }
 
 export async function updateCandidateMatchAlerts(sql: Sql, args: UpdateCandidateMatchAlertsArgs): Promise<UpdateCandidateMatchAlertsRow | null> {
@@ -1199,7 +1282,8 @@ export async function updateCandidateMatchAlerts(sql: Sql, args: UpdateCandidate
         matchAlertsEnabled: row[17],
         matchAlertsEnabledAt: row[18],
         matchRefreshToken: row[19],
-        matchRefreshClaimedAt: row[20]
+        matchRefreshClaimedAt: row[20],
+        matchRefreshPhase: row[21]
     };
 }
 
@@ -1219,6 +1303,7 @@ WITH candidates AS (
 UPDATE candidate_profiles cp
 SET match_refresh_token = gen_random_uuid(),
     match_refresh_claimed_at = now(),
+    match_refresh_phase = 'queued',
     match_feed_status = 'processing',
     match_feed_error = NULL,
     updated_at = now()

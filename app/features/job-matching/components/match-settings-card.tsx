@@ -50,6 +50,7 @@ export function MatchSettingsCard({
     alertsMutation.mutate({ data: { enabled: checked === true } });
   };
   const onRefresh = () => refreshMutation.mutate({});
+  const isRefreshing = feedStatus === "processing";
 
   return (
     <Card variant="bordered" size="sm">
@@ -89,15 +90,15 @@ export function MatchSettingsCard({
             variant="outline"
             size="sm"
             onClick={onRefresh}
-            disabled={!hasResume || refreshMutation.isPending}
+            disabled={!hasResume || refreshMutation.isPending || isRefreshing}
           >
             <HugeiconsIcon
               icon={Loading03Icon}
               strokeWidth={2}
               data-icon="inline-start"
-              className={refreshMutation.isPending ? "animate-spin" : undefined}
+              className={refreshMutation.isPending || isRefreshing ? "animate-spin" : undefined}
             />
-            Refresh now
+            {isRefreshing ? "Refreshing" : "Refresh now"}
           </Button>
         </div>
       </CardContent>

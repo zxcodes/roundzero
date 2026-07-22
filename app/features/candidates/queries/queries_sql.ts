@@ -3,7 +3,7 @@ import { Sql } from "postgres";
 export const createCandidateProfileQuery = `-- name: createCandidateProfile :one
 INSERT INTO candidate_profiles (user_id, resume_key, onboarding_completed_at, resume_updated_at)
 VALUES ($1, $2, now(), CASE WHEN $2::text IS NOT NULL THEN now() ELSE NULL END)
-RETURNING id, user_id, onboarding_completed_at, resume_key, resume_updated_at, created_at, updated_at, matching_profile, matching_profile_source_hash, matching_profile_version, matching_profile_status, matching_profile_error, serving_match_generation, serving_match_input_hash, match_feed_status, match_feed_error, match_feed_refreshed_at, match_alerts_enabled, match_alerts_enabled_at, match_refresh_token, match_refresh_claimed_at`;
+RETURNING id, user_id, onboarding_completed_at, resume_key, resume_updated_at, created_at, updated_at, matching_profile, matching_profile_source_hash, matching_profile_version, matching_profile_status, matching_profile_error, serving_match_generation, serving_match_input_hash, match_feed_status, match_feed_error, match_feed_refreshed_at, match_alerts_enabled, match_alerts_enabled_at, match_refresh_token, match_refresh_claimed_at, match_refresh_phase`;
 
 export interface createCandidateProfileArgs {
     userId: string;
@@ -32,6 +32,7 @@ export interface createCandidateProfileRow {
     matchAlertsEnabledAt: Date | null;
     matchRefreshToken: string | null;
     matchRefreshClaimedAt: Date | null;
+    matchRefreshPhase: string | null;
 }
 
 export async function createCandidateProfile(sql: Sql, args: createCandidateProfileArgs): Promise<createCandidateProfileRow | null> {
@@ -61,12 +62,13 @@ export async function createCandidateProfile(sql: Sql, args: createCandidateProf
         matchAlertsEnabled: row[17],
         matchAlertsEnabledAt: row[18],
         matchRefreshToken: row[19],
-        matchRefreshClaimedAt: row[20]
+        matchRefreshClaimedAt: row[20],
+        matchRefreshPhase: row[21]
     };
 }
 
 export const getCandidateProfileByUserIdQuery = `-- name: getCandidateProfileByUserId :one
-SELECT id, user_id, onboarding_completed_at, resume_key, resume_updated_at, created_at, updated_at, matching_profile, matching_profile_source_hash, matching_profile_version, matching_profile_status, matching_profile_error, serving_match_generation, serving_match_input_hash, match_feed_status, match_feed_error, match_feed_refreshed_at, match_alerts_enabled, match_alerts_enabled_at, match_refresh_token, match_refresh_claimed_at
+SELECT id, user_id, onboarding_completed_at, resume_key, resume_updated_at, created_at, updated_at, matching_profile, matching_profile_source_hash, matching_profile_version, matching_profile_status, matching_profile_error, serving_match_generation, serving_match_input_hash, match_feed_status, match_feed_error, match_feed_refreshed_at, match_alerts_enabled, match_alerts_enabled_at, match_refresh_token, match_refresh_claimed_at, match_refresh_phase
 FROM candidate_profiles
 WHERE user_id = $1`;
 
@@ -96,6 +98,7 @@ export interface getCandidateProfileByUserIdRow {
     matchAlertsEnabledAt: Date | null;
     matchRefreshToken: string | null;
     matchRefreshClaimedAt: Date | null;
+    matchRefreshPhase: string | null;
 }
 
 export async function getCandidateProfileByUserId(sql: Sql, args: getCandidateProfileByUserIdArgs): Promise<getCandidateProfileByUserIdRow | null> {
@@ -125,7 +128,8 @@ export async function getCandidateProfileByUserId(sql: Sql, args: getCandidatePr
         matchAlertsEnabled: row[17],
         matchAlertsEnabledAt: row[18],
         matchRefreshToken: row[19],
-        matchRefreshClaimedAt: row[20]
+        matchRefreshClaimedAt: row[20],
+        matchRefreshPhase: row[21]
     };
 }
 
@@ -153,9 +157,10 @@ SET resume_key = $1,
     END,
     match_refresh_token = CASE WHEN $1 IS DISTINCT FROM resume_key THEN NULL ELSE match_refresh_token END,
     match_refresh_claimed_at = CASE WHEN $1 IS DISTINCT FROM resume_key THEN NULL ELSE match_refresh_claimed_at END,
+    match_refresh_phase = CASE WHEN $1 IS DISTINCT FROM resume_key THEN NULL ELSE match_refresh_phase END,
     updated_at = now()
 WHERE user_id = $2
-RETURNING id, user_id, onboarding_completed_at, resume_key, resume_updated_at, created_at, updated_at, matching_profile, matching_profile_source_hash, matching_profile_version, matching_profile_status, matching_profile_error, serving_match_generation, serving_match_input_hash, match_feed_status, match_feed_error, match_feed_refreshed_at, match_alerts_enabled, match_alerts_enabled_at, match_refresh_token, match_refresh_claimed_at`;
+RETURNING id, user_id, onboarding_completed_at, resume_key, resume_updated_at, created_at, updated_at, matching_profile, matching_profile_source_hash, matching_profile_version, matching_profile_status, matching_profile_error, serving_match_generation, serving_match_input_hash, match_feed_status, match_feed_error, match_feed_refreshed_at, match_alerts_enabled, match_alerts_enabled_at, match_refresh_token, match_refresh_claimed_at, match_refresh_phase`;
 
 export interface updateCandidateProfileArgs {
     resumeKey: string | null;
@@ -184,6 +189,7 @@ export interface updateCandidateProfileRow {
     matchAlertsEnabledAt: Date | null;
     matchRefreshToken: string | null;
     matchRefreshClaimedAt: Date | null;
+    matchRefreshPhase: string | null;
 }
 
 export async function updateCandidateProfile(sql: Sql, args: updateCandidateProfileArgs): Promise<updateCandidateProfileRow | null> {
@@ -213,7 +219,8 @@ export async function updateCandidateProfile(sql: Sql, args: updateCandidateProf
         matchAlertsEnabled: row[17],
         matchAlertsEnabledAt: row[18],
         matchRefreshToken: row[19],
-        matchRefreshClaimedAt: row[20]
+        matchRefreshClaimedAt: row[20],
+        matchRefreshPhase: row[21]
     };
 }
 

@@ -90,7 +90,8 @@ CREATE TABLE public.candidate_profiles (
     match_alerts_enabled boolean DEFAULT true NOT NULL,
     match_alerts_enabled_at timestamp with time zone DEFAULT now(),
     match_refresh_token uuid,
-    match_refresh_claimed_at timestamp with time zone
+    match_refresh_claimed_at timestamp with time zone,
+    match_refresh_phase text
 );
 
 
@@ -1149,4 +1150,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260705072949'),
     ('20260715154907'),
     ('20260719022003'),
-    ('20260721090921');
+    ('20260721090921'),
+    ('20260722040827');
