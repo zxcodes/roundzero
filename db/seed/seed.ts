@@ -4,16 +4,17 @@
  *
  * Phase 1 — synthetic candidate pool (applicant pool for dashboard demos)
  * Phase 2 — rich company dashboard for a real dev company account
- * Phase 3 — candidate journey for a real dev candidate account
  *
  * Run:
  *   bun run db:seed
  *   bun run db:seed you@company.com
- *   bun run db:seed you@company.com you@candidate.com
  *
- * Requires: sign up in dev mode first. Company and/or candidate phases skip
- * gracefully when the matching account is missing.
+ * Requires: sign up in dev mode first. The company phase skips gracefully
+ * when the matching account is missing. Candidate accounts are never mutated.
  */
+import { MATCHING_CONFIG } from "../../app/features/job-matching/config";
+import { hashStableValue } from "../../app/features/job-matching/hash";
+
 import {
   buildCommunicationAnalysis,
   buildInterviewChatMessages,
@@ -76,18 +77,23 @@ type ApplicationSeedContext = {
   updatedAt: Date;
 };
 
-const DEV_CANDIDATE_RESUME_KEY =
-  "resumes/8e32773d-d9d8-4eb7-997f-d91a3c8d52d9/a2a64299-e9c3-4294-b929-9099b2d6757a--mohammed-farmaan.pdf";
-
 const jobTemplates = [
   {
-    title: "[Quota] Mixed Pipeline — Senior Full-Stack Engineer",
+    title: "Senior Full-Stack Engineer",
     target: 4,
     status: "open",
     workplace: "remote",
     experience: "senior",
     salaryMin: 155000,
     salaryMax: 205000,
+    requirements: [
+      "6+ years building production web applications across frontend and backend systems",
+      "Advanced experience with React, TypeScript, Node.js, and relational databases",
+      "A track record of owning features from technical design through production monitoring",
+      "Experience designing APIs, data models, and asynchronous workflows",
+      "Strong product judgment and clear written communication in a remote environment",
+      "Comfort mentoring engineers and improving team-wide engineering practices",
+    ],
     plans: [
       {
         status: "evaluated",
@@ -106,17 +112,28 @@ const jobTemplates = [
       { status: "queued_for_batch" },
       { status: "queued_for_batch" },
     ] satisfies ApplicantPlan[],
-    description:
-      "Quota test: one delivered report, one processing report, two interviews underway, and two waitlisted candidates.",
+    description: `RoundZero is building a hiring platform that helps teams evaluate applicants consistently without losing the human context behind each decision. As a Senior Full-Stack Engineer, you will own high-impact product areas used by recruiters, hiring managers, and candidates throughout the interview process.
+
+You will design and ship end-to-end features across our React and TypeScript frontend, Node.js services, PostgreSQL data layer, and asynchronous workflows. Recent projects include real-time interview experiences, evidence-backed candidate reports, job matching, notification systems, and tools that help recruiting teams move from hundreds of applicants to a confident shortlist.
+
+This is a senior individual-contributor role with meaningful product influence. You will work directly with design and product, write technical proposals, review architecture, mentor teammates, and stay close to production through observability and customer feedback.`,
   },
   {
-    title: "[Quota] Capacity Full — Frontend Engineer",
+    title: "Frontend Engineer",
     target: 3,
     status: "open",
     workplace: "hybrid",
     experience: "mid",
     salaryMin: 130000,
     salaryMax: 175000,
+    requirements: [
+      "3+ years building polished production interfaces with React and TypeScript",
+      "Strong command of semantic HTML, modern CSS, responsive design, and accessibility",
+      "Experience contributing to a shared component library or design system",
+      "Ability to translate product and design intent into maintainable UI architecture",
+      "Familiarity with frontend testing, performance profiling, and browser debugging",
+      "Clear communication and comfort collaborating through design and code reviews",
+    ],
     plans: [
       {
         status: "evaluated",
@@ -130,17 +147,28 @@ const jobTemplates = [
       { status: "queued_for_batch" },
       { status: "queued_for_batch" },
     ] satisfies ApplicantPlan[],
-    description:
-      "Quota test: delivered plus reserved equals the target, so additional qualified candidates stay waitlisted.",
+    description: `The candidate and recruiter experience is the product at RoundZero. We are looking for a Frontend Engineer who cares about the details that make complex hiring workflows feel calm, fast, and trustworthy.
+
+You will build responsive React and TypeScript interfaces for interview setup, candidate communication, evaluation reports, job discovery, and team collaboration. You will also strengthen our design system, accessibility coverage, loading states, and performance across both public pages and authenticated dashboards.
+
+You will partner closely with product design from early prototypes through implementation. The role is a good fit for someone who can reason about component boundaries and data states while still noticing typography, interaction feedback, keyboard behavior, and the final few pixels that make an experience feel finished.`,
   },
   {
-    title: "[Quota] Increase Target — Backend Engineer",
+    title: "Backend Engineer",
     target: 3,
     status: "open",
     workplace: "remote",
     experience: "senior",
     salaryMin: 150000,
     salaryMax: 195000,
+    requirements: [
+      "5+ years building and operating backend services in a production environment",
+      "Strong experience with TypeScript or another typed server-side language",
+      "Deep knowledge of PostgreSQL schema design, transactions, indexing, and query performance",
+      "Experience with queues, durable workflows, retries, idempotency, and distributed systems",
+      "Ability to design secure APIs and reason about authorization and data lifecycle concerns",
+      "Practical experience with observability, incident response, and production debugging",
+    ],
     plans: [
       {
         status: "evaluated",
@@ -154,17 +182,28 @@ const jobTemplates = [
       { status: "queued_for_batch" },
       { status: "queued_for_batch" },
     ] satisfies ApplicantPlan[],
-    description:
-      "Quota test: starts full at three reports with two waitlisted candidates. Increase the target to five to launch both candidates.",
+    description: `RoundZero coordinates long-running interview, evaluation, reporting, and notification workflows where correctness matters as much as speed. We are hiring a Backend Engineer to make those systems dependable as usage and product complexity grow.
+
+You will design APIs and data models, build durable asynchronous workflows, improve query performance, and establish clear failure-recovery paths across the platform. The work spans PostgreSQL, Cloudflare Workers, queues, object storage, third-party AI providers, email delivery, and the internal services that connect them.
+
+You will collaborate with product engineers on system boundaries and lead technical work involving idempotency, authorization, privacy, observability, and operational tooling. You should enjoy turning ambiguous reliability problems into simple systems that other engineers can confidently build on.`,
   },
   {
-    title: "[Quota] Reject and Backfill — Product Designer",
+    title: "Product Designer",
     target: 2,
     status: "open",
     workplace: "hybrid",
     experience: "mid",
     salaryMin: 125000,
     salaryMax: 165000,
+    requirements: [
+      "4+ years designing B2B or workflow-heavy software products",
+      "A portfolio showing strong interaction design, systems thinking, and visual craft",
+      "Experience planning and conducting user interviews or usability studies",
+      "Ability to move between journey maps, prototypes, detailed UI, and implementation review",
+      "Fluency with Figma components, variables, prototyping, and design-system workflows",
+      "Clear written rationale and comfort working closely with engineers and product leaders",
+    ],
     plans: [
       {
         status: "evaluated",
@@ -176,17 +215,28 @@ const jobTemplates = [
       { status: "interview_invited", interviewStatus: "pending" },
       { status: "queued_for_batch" },
     ] satisfies ApplicantPlan[],
-    description:
-      "Quota test: reject the pending interview candidate to free one slot and immediately invite the waitlisted candidate.",
+    description: `Hiring software often asks people to manage deeply human decisions through interfaces that feel like spreadsheets. RoundZero is looking for a Product Designer to make those workflows clearer, more considered, and easier to trust for both recruiting teams and candidates.
+
+You will lead design across discovery, user research, journey mapping, prototypes, and production-ready interface specifications. Initial areas include job setup, applicant triage, interview progress, candidate reports, matching explanations, and the collaboration patterns teams use to reach a hiring decision.
+
+You will work in a tight product trio with engineering and product, validate ideas with customers, and contribute reusable patterns to our design system. We value designers who can simplify complicated states without hiding important information and who stay involved through implementation rather than stopping at handoff.`,
   },
   {
-    title: "[Quota] Active Batch — Data Engineer",
+    title: "Data Engineer",
     target: 4,
     status: "open",
     workplace: "remote",
     experience: "senior",
     salaryMin: 145000,
     salaryMax: 190000,
+    requirements: [
+      "5+ years building production data pipelines, models, or analytics infrastructure",
+      "Advanced SQL skills and experience with a modern warehouse or analytical database",
+      "Experience designing reliable batch and event-driven ingestion workflows",
+      "Strong understanding of data quality, lineage, observability, and access controls",
+      "Ability to translate product questions into durable, well-documented data models",
+      "Experience partnering with product, engineering, and business stakeholders",
+    ],
     plans: [
       {
         status: "evaluated_held",
@@ -210,17 +260,28 @@ const jobTemplates = [
       { status: "interview_invited", interviewStatus: "pending", batch: "active" },
       { status: "queued_for_batch" },
     ] satisfies ApplicantPlan[],
-    description:
-      "Quota test: two held reports and two unfinished interviews reserve every slot; awaiting voice remains active at release time.",
+    description: `RoundZero generates structured signals across jobs, applications, interviews, evaluations, and hiring decisions. We are hiring a Data Engineer to turn that operational data into a trustworthy foundation for product analytics, customer reporting, and internal decision-making.
+
+You will build ingestion pipelines and analytical models, define quality checks, improve warehouse performance, and document the meaning and lineage of important metrics. You will also help us design event contracts and operational schemas so new product capabilities produce useful data from the start.
+
+The role combines hands-on engineering with close partnership across product, engineering, customer success, and operations. You should care about reproducibility, privacy, and making it easy for others to answer important questions without rebuilding the same logic in multiple dashboards.`,
   },
   {
-    title: "[Quota] Target Reached — Growth Product Manager",
+    title: "Growth Product Manager",
     target: 3,
     status: "open",
     workplace: "onsite",
     experience: "mid",
     salaryMin: 135000,
     salaryMax: 180000,
+    requirements: [
+      "4+ years in product management with ownership of activation, engagement, or retention",
+      "Experience combining qualitative research with funnel and cohort analysis",
+      "A strong record of designing experiments and turning results into product decisions",
+      "Ability to write clear product requirements and align design, engineering, and go-to-market teams",
+      "Comfort working with SQL, analytics tools, and imperfect early-stage data",
+      "Strong customer empathy and judgment about responsible growth in a hiring product",
+    ],
     plans: [
       {
         status: "evaluated",
@@ -246,22 +307,136 @@ const jobTemplates = [
       { status: "queued_for_batch" },
       { status: "queued_for_batch" },
     ] satisfies ApplicantPlan[],
-    description:
-      "Quota test: all three reports are delivered; qualified candidates remain waitlisted and no new interviews launch.",
+    description: `RoundZero helps recruiting teams reach a useful first outcome quickly: publish a role, evaluate applicants, and identify candidates worth deeper human attention. We are looking for a Growth Product Manager to make that path clearer and improve the habits that bring teams back for every new role.
+
+You will own opportunities across onboarding, activation, team adoption, candidate engagement, and retention. The work includes interviewing customers, analyzing funnels and cohorts, shaping experiments, writing product requirements, and partnering with design and engineering through launch and measurement.
+
+This is product-led growth work in a high-trust domain. We are not interested in dark patterns or vanity metrics. You will be expected to balance commercial outcomes with candidate experience, recruiter confidence, and the long-term quality of the hiring decisions our product supports.`,
   },
   {
-    title: "[Quota] Empty Draft — DevOps Engineer",
+    title: "DevOps Engineer",
     target: 5,
     status: "draft",
     workplace: "onsite",
     experience: "senior",
     salaryMin: 140000,
     salaryMax: 185000,
+    requirements: [
+      "5+ years operating cloud infrastructure for production software products",
+      "Strong experience with infrastructure as code, CI/CD, and automated environment management",
+      "Hands-on knowledge of Cloudflare, AWS, or comparable edge and cloud platforms",
+      "Experience designing monitoring, alerting, incident response, and disaster-recovery practices",
+      "Ability to improve security, reliability, and cost efficiency without slowing product delivery",
+      "Clear documentation and a collaborative approach to enabling application engineers",
+    ],
     plans: [] satisfies ApplicantPlan[],
-    description:
-      "Own CI/CD, infrastructure as code, and production observability on Cloudflare Workers and AWS. Lead incident response and cost-efficiency initiatives as we scale.",
+    description: `RoundZero runs interactive candidate experiences and durable background workflows across Cloudflare and AWS. We are looking for a DevOps Engineer to make our delivery platform, production environments, and operational practices reliable enough to scale with the product.
+
+You will own infrastructure as code, CI/CD pipelines, environment management, secrets, monitoring, alerting, and incident-response tooling. You will work with application engineers to improve deployment safety, diagnose production behavior, and design practical recovery plans for critical services and data.
+
+The role also includes capacity planning, security hardening, and cloud cost visibility. Success means engineers can ship confidently, failures are detected and understood quickly, and the platform remains simple enough for a small team to operate without unnecessary process.`,
   },
 ] as const;
+
+type SeedJobFactCategory =
+  | "role_family"
+  | "required_skill"
+  | "seniority"
+  | "domain"
+  | "responsibility";
+
+type SeedJobMatchingFacts = {
+  roleFamilies: string[];
+  requiredSkills: string[];
+  domains?: string[];
+  responsibilities?: string[];
+};
+
+const jobMatchingFacts: Record<string, SeedJobMatchingFacts> = {
+  "Senior Full-Stack Engineer": {
+    roleFamilies: ["full-stack-engineer", "frontend-engineer", "backend-engineer"],
+    requiredSkills: ["typescript", "react", "node-js", "postgresql", "api-development"],
+    domains: ["b2b-saas"],
+    responsibilities: ["product-development", "cloud-infrastructure", "technical-mentoring"],
+  },
+  "Frontend Engineer": {
+    roleFamilies: ["frontend-engineer"],
+    requiredSkills: ["typescript", "react", "html", "css", "accessibility"],
+    domains: ["b2b-saas"],
+    responsibilities: ["product-development", "design-systems", "performance-optimization"],
+  },
+  "Backend Engineer": {
+    roleFamilies: ["backend-engineer"],
+    requiredSkills: ["typescript", "node-js", "postgresql", "api-development", "distributed-systems"],
+    domains: ["b2b-saas"],
+    responsibilities: ["cloud-infrastructure", "database-design", "production-operations"],
+  },
+  "Product Designer": {
+    roleFamilies: ["product-designer"],
+    requiredSkills: ["figma", "interaction-design", "user-research", "design-systems"],
+    domains: ["b2b-saas"],
+    responsibilities: ["product-development", "prototyping", "usability-testing"],
+  },
+  "Data Engineer": {
+    roleFamilies: ["data-engineer"],
+    requiredSkills: ["sql", "data-pipelines", "data-modeling", "data-quality"],
+    domains: ["analytics"],
+    responsibilities: ["database-design", "data-governance", "production-operations"],
+  },
+  "Growth Product Manager": {
+    roleFamilies: ["product-manager", "growth-product-manager"],
+    requiredSkills: ["product-analytics", "experimentation", "sql", "user-research"],
+    domains: ["b2b-saas", "product-led-growth"],
+    responsibilities: ["product-development", "growth-strategy", "stakeholder-management"],
+  },
+  "DevOps Engineer": {
+    roleFamilies: ["devops-engineer", "site-reliability-engineer"],
+    requiredSkills: ["cloudflare", "aws", "infrastructure-as-code", "ci-cd", "observability"],
+    domains: ["cloud-infrastructure"],
+    responsibilities: ["cloud-infrastructure", "production-operations", "incident-response"],
+  },
+};
+
+const matchingFactLabelOverrides: Record<string, string> = {
+  aws: "AWS",
+  "b2b-saas": "B2B SaaS",
+  "ci-cd": "CI/CD",
+  css: "CSS",
+  figma: "Figma",
+  html: "HTML",
+  "node-js": "Node.js",
+  postgresql: "PostgreSQL",
+  react: "React",
+  sql: "SQL",
+  typescript: "TypeScript",
+};
+
+const matchingFactLabel = (canonicalId: string) =>
+  matchingFactLabelOverrides[canonicalId] ??
+  canonicalId
+    .split("-")
+    .map((word) => `${word[0]?.toUpperCase() ?? ""}${word.slice(1)}`)
+    .join(" ");
+
+const makeMatchingFact = (category: SeedJobFactCategory, canonicalId: string) => ({
+  id: `job-${category.replaceAll("_", "-")}-${canonicalId}`,
+  category,
+  canonicalId,
+  label: matchingFactLabel(canonicalId),
+});
+
+const buildSeedJobMatchingProfile = (
+  template: (typeof jobTemplates)[number],
+  facts: SeedJobMatchingFacts,
+) => ({
+  facts: [
+    ...facts.roleFamilies.map((id) => makeMatchingFact("role_family", id)),
+    ...facts.requiredSkills.map((id) => makeMatchingFact("required_skill", id)),
+    makeMatchingFact("seniority", template.experience),
+    ...(facts.domains ?? []).map((id) => makeMatchingFact("domain", id)),
+    ...(facts.responsibilities ?? []).map((id) => makeMatchingFact("responsibility", id)),
+  ],
+});
 
 const screeningQuestions = [
   "What are your salary expectations for this role?",
@@ -288,13 +463,6 @@ const demoCompanyProfile = {
   },
 } as const;
 
-const candidateStatusNotifications = new Set([
-  "interview_invited",
-  "shortlisted",
-  "rejected",
-  "evaluated",
-]);
-
 function clampPreScore(index: number, status: ApplicantStatus) {
   const base = status === "interview_invited" ? 6.8 : status === "interview_in_progress" ? 7.2 : 7.5;
   return Math.round((base + (index % 4) * 0.15) * 10) / 10;
@@ -302,10 +470,12 @@ function clampPreScore(index: number, status: ApplicantStatus) {
 
 function parseEmailArgs() {
   const emails = process.argv.slice(2).filter((arg) => arg.includes("@"));
-  return {
-    companyEmail: emails.find((_, index) => index === 0) ?? undefined,
-    candidateEmail: emails.find((_, index) => index === 1) ?? undefined,
-  };
+  if (emails.length > 1) {
+    throw new Error(
+      "The seed accepts one optional company email. Candidate accounts are never seeded.",
+    );
+  }
+  return emails[0];
 }
 
 // ─── Phase 1: synthetic candidate pool ─────────────────────────────
@@ -476,12 +646,7 @@ async function seedJobs(companyId: string) {
       ) VALUES (
         ${jobId}, ${companyId}, ${template.title},
         ${template.description},
-        ${sql.json([
-          "Relevant production experience in a similar stack",
-          "Clear written and verbal communication",
-          "Demonstrated ownership from design through rollout",
-          "Comfort operating with ambiguity and tight feedback loops",
-        ])},
+        ${sql.json(template.requirements)},
         ${sql.json(screeningQuestions)},
         ${template.status},
         ${template.workplace === "remote" ? "Remote (US timezones)" : "San Francisco, CA"},
@@ -500,11 +665,65 @@ async function seedJobs(companyId: string) {
       SET
         title = EXCLUDED.title,
         description = EXCLUDED.description,
+        requirements = EXCLUDED.requirements,
+        screening_questions = EXCLUDED.screening_questions,
         status = EXCLUDED.status,
+        location = EXCLUDED.location,
+        workplace_type = EXCLUDED.workplace_type,
+        employment_type = EXCLUDED.employment_type,
+        experience_level = EXCLUDED.experience_level,
+        salary_min = EXCLUDED.salary_min,
+        salary_max = EXCLUDED.salary_max,
+        salary_currency = EXCLUDED.salary_currency,
+        team_size = EXCLUDED.team_size,
+        headcount = EXCLUDED.headcount,
         final_report_target = EXCLUDED.final_report_target,
         expires_at = EXCLUDED.expires_at,
         updated_at = now()
     `;
+
+    const facts = jobMatchingFacts[template.title];
+    if (!facts) {
+      throw new Error(`Missing seed matching facts for ${template.title}`);
+    }
+
+    if (template.status === "open") {
+      const sourceHash = await hashStableValue({
+        title: template.title.trim(),
+        description: template.description.trim(),
+        requirements: template.requirements,
+        experienceLevel: template.experience,
+        profileVersion: MATCHING_CONFIG.jobProfileVersion,
+      });
+      const matchingProfile = buildSeedJobMatchingProfile(template, facts);
+
+      await sql`
+        INSERT INTO job_matching_profiles (
+          job_id, requested_source_hash, completed_source_hash, source_version,
+          extraction_status, matching_profile, model, prompt_version,
+          extraction_token, extraction_claimed_at, completed_at
+        ) VALUES (
+          ${jobId}, ${sourceHash}, ${sourceHash}, ${MATCHING_CONFIG.jobProfileVersion},
+          ${"ready"}, ${sql.json(matchingProfile)}, ${"seed"},
+          ${MATCHING_CONFIG.jobProfileVersion},
+          ${makeUuidFromSeed(`seed-job-matching-profile-${jobId}`)}, NULL, now()
+        )
+        ON CONFLICT (job_id) DO UPDATE
+        SET
+          requested_source_hash = EXCLUDED.requested_source_hash,
+          completed_source_hash = EXCLUDED.completed_source_hash,
+          source_version = EXCLUDED.source_version,
+          extraction_status = EXCLUDED.extraction_status,
+          extraction_error = NULL,
+          matching_profile = EXCLUDED.matching_profile,
+          model = EXCLUDED.model,
+          prompt_version = EXCLUDED.prompt_version,
+          extraction_token = EXCLUDED.extraction_token,
+          extraction_claimed_at = NULL,
+          completed_at = now(),
+          updated_at = now()
+      `;
+    }
 
     jobs.push({ id: jobId, title: template.title, finalReportTarget: template.target });
   }
@@ -1074,157 +1293,17 @@ async function seedCompanyDashboard(companyEmail?: string) {
   return { companyId, jobs, owner };
 }
 
-// ─── Phase 3: dev candidate journey ────────────────────────────────
-
-async function seedCandidateNotification(input: {
-  applicationId: string;
-  candidateId: string;
-  jobId: string;
-  jobTitle: string;
-  companyName: string;
-  status: ApplicantStatus;
-  updatedAt: Date;
-  index: number;
-}) {
-  if (!candidateStatusNotifications.has(input.status)) {
-    return;
-  }
-
-  await sql`
-    INSERT INTO notifications (id, user_id, type, payload, read_at, created_at)
-    VALUES (
-      ${makeUuidFromSeed(`seed-candidate-notification-${input.applicationId}`)},
-      ${input.candidateId},
-      ${"application_status_changed"},
-      ${sql.json({
-        applicationId: input.applicationId,
-        jobId: input.jobId,
-        jobTitle: input.jobTitle,
-        companyName: input.companyName,
-        status: input.status,
-      })},
-      ${input.index % 2 === 0 ? input.updatedAt : null},
-      ${input.updatedAt}
-    )
-    ON CONFLICT (id) DO UPDATE
-    SET
-      payload = EXCLUDED.payload,
-      read_at = EXCLUDED.read_at,
-      created_at = EXCLUDED.created_at
-  `;
-}
-
-async function seedDevCandidate(
-  candidateEmail: string | undefined,
-  companyContext: Awaited<ReturnType<typeof seedCompanyDashboard>>,
-) {
-  const candidate = await loadDevUser("candidate", candidateEmail);
-
-  if (!candidate) {
-    if (candidateEmail) {
-      throw new Error(
-        `No candidate user found for ${candidateEmail}. Sign up as candidate in dev mode first.`,
-      );
-    }
-    console.log("  Dev candidate journey: skipped (no dev candidate user)");
-    return;
-  }
-
-  await sql`
-    INSERT INTO candidate_profiles (
-      id, user_id, onboarding_completed_at, resume_key, resume_updated_at
-    )
-    VALUES (
-      ${makeUuidFromSeed(`seed-dev-profile-${candidate.id}`)},
-      ${candidate.id},
-      now(),
-      ${DEV_CANDIDATE_RESUME_KEY},
-      now()
-    )
-    ON CONFLICT (user_id) DO UPDATE
-    SET
-      resume_key = EXCLUDED.resume_key,
-      resume_updated_at = now(),
-      onboarding_completed_at = now(),
-      updated_at = now()
-  `;
-
-  if (!companyContext) {
-    console.log(`  Dev candidate profile: ${candidate.name} <${candidate.email}> (no company jobs to apply to)`);
-    return;
-  }
-
-  const { companyId, jobs } = companyContext;
-  const openJobs = jobs.filter((_, index) => jobTemplates[index]?.status === "open");
-  if (openJobs.length < 5) {
-    console.log(`  Dev candidate profile: ${candidate.name} <${candidate.email}> (insufficient open jobs)`);
-    return;
-  }
-
-  const devPlans: Array<{ jobIndex: number; plan: ApplicantPlan }> = [
-    { jobIndex: 0, plan: { status: "applied" } },
-    { jobIndex: 1, plan: { status: "pre_screening" } },
-    { jobIndex: 2, plan: { status: "applied" } },
-    { jobIndex: 3, plan: { status: "rejected" } },
-    { jobIndex: 4, plan: { status: "pre_screening" } },
-  ];
-
-  const candidateUser: CandidateUser = {
-    id: candidate.id,
-    name: candidate.name,
-    email: candidate.email,
-  };
-
-  for (let i = 0; i < devPlans.length; i++) {
-    const { jobIndex, plan } = devPlans[i]!;
-    const job = openJobs[jobIndex]!;
-    const applicationId = makeUuidFromSeed(`seed-dev-app-${candidate.id}-${job.id}`);
-    const createdAt = new Date(Date.now() - (devPlans.length - i) * 24 * 60 * 60 * 1000);
-    const updatedAt = new Date(createdAt.getTime() + 6 * 60 * 60 * 1000);
-
-    await seedApplicationPipeline({
-      job,
-      jobTitle: job.title,
-      candidate: candidateUser,
-      plan,
-      applicationId,
-      interviewId: makeUuidFromSeed(`seed-dev-interview-${applicationId}`),
-      index: i + 100,
-      batchId: null,
-      createdAt,
-      updatedAt,
-    });
-
-    await seedCandidateNotification({
-      applicationId,
-      candidateId: candidate.id,
-      jobId: job.id,
-      jobTitle: job.title,
-      companyName: demoCompanyProfile.name,
-      status: plan.status,
-      updatedAt,
-      index: i,
-    });
-  }
-
-  console.log(`  Dev candidate journey: ${candidate.name} <${candidate.email}> (${devPlans.length} applications)`);
-}
-
 // ─── Main ──────────────────────────────────────────────────────────
 
-const { companyEmail, candidateEmail } = parseEmailArgs();
-
 try {
+  const companyEmail = parseEmailArgs();
   console.log("Starting RoundZero seed...\n");
 
   console.log("Phase 1 — synthetic candidate pool");
   await seedSyntheticCandidates();
 
   console.log("\nPhase 2 — company dashboard");
-  const companyContext = await seedCompanyDashboard(companyEmail);
-
-  console.log("\nPhase 3 — dev candidate journey");
-  await seedDevCandidate(candidateEmail, companyContext);
+  await seedCompanyDashboard(companyEmail);
 
   console.log("\nSeed completed successfully.");
 } catch (error) {

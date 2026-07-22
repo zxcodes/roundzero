@@ -133,7 +133,7 @@ export function LoginPageShell({
             ) : (
               <GoogleIcon />
             )}
-            <span aria-live="polite">{isSigningIn ? "Signing in…" : "Continue with Google"}</span>
+            <span aria-live="polite">{isSigningIn ? "Signing in" : "Continue with Google"}</span>
           </Button>
 
           <div className="space-y-6 lg:hidden">

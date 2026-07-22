@@ -2,6 +2,7 @@ import {
   Alert02Icon,
   Archive01Icon,
   BubbleChatIcon,
+  Briefcase01Icon,
   Cancel01Icon,
   InformationCircleIcon,
   Rocket01Icon,
@@ -26,6 +27,7 @@ const notificationTone = {
   job_published: "border-active/20 bg-active/10 text-active",
   job_archived: "border-warning/20 bg-warning/10 text-warning",
   job_closed: "border-danger/20 bg-danger/10 text-danger",
+  job_match_digest: "border-active/20 bg-active/10 text-active",
 } as const;
 
 const statusChangedIcon = (status: z.infer<typeof applicationStatusSchema>): IconSvgElement => {
@@ -264,6 +266,29 @@ export const getNotificationPresentation = (notification: { type: string; payloa
       body: `${payload.data.candidateName} has withdrawn their application for ${payload.data.jobTitle}.`,
       to: "/dashboard/job-applicants/$jobId" as const,
       params: { jobId: payload.data.jobId },
+    };
+  }
+
+  if (type === "job_match_digest") {
+    const payload = notificationPayloadSchemas.job_match_digest.safeParse(
+      toRecord(notification.payload),
+    );
+    if (!payload.success) return null;
+
+    const first = payload.data.jobs[0];
+    const remaining = payload.data.jobs.length - 1;
+    return {
+      type,
+      tone: notificationTone[type],
+      icon: Briefcase01Icon,
+      title: `${payload.data.jobs.length} strong job ${payload.data.jobs.length === 1 ? "match" : "matches"}`,
+      previewText: `New roles selected for you on RoundZero`,
+      body: first
+        ? `${first.title} at ${first.companyName}${remaining > 0 ? ` and ${remaining} more` : ""}.`
+        : "New strong matches are ready.",
+      to: "/dashboard/jobs" as const,
+      params: {},
+      meta: { ctaLabel: "View matches" },
     };
   }
 

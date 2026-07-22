@@ -4,7 +4,9 @@ import { zodValidator } from "@tanstack/zod-adapter";
 import { env } from "cloudflare:workers";
 import { z } from "zod";
 
+import { claimAndStartCandidateRefresh } from "@/features/job-matching/server/orchestration";
 import { getDb } from "@/shared/db";
+import { asSqlTransaction } from "@/shared/db-transaction";
 import { authMiddleware } from "@/shared/middleware";
 import { arrayBufferToBase64, sanitizeResumeFileName } from "@/shared/resume";
 import { type SessionData, sessionConfig } from "@/shared/session";
@@ -12,6 +14,7 @@ import { zodValidatorWithFormattedErrors } from "@/shared/validation";
 
 import {
   createCandidateProfile as createCandidateProfileQuery,
+  deleteCandidateJobMatches,
   getCandidateProfileByUserId,
   updateCandidateProfile as updateCandidateProfileQuery,
 } from "../queries/queries_sql";
@@ -95,6 +98,10 @@ export const createCandidateProfile = createServerFn({ method: "POST" })
       throw new Error("Failed to create candidate profile");
     }
 
+    if (profile.resumeKey) {
+      await claimAndStartCandidateRefresh({ db, candidateId: context.userId });
+    }
+
     return { profile };
   });
 
@@ -120,13 +127,25 @@ export const updateMyCandidateProfile = createServerFn({ method: "POST" })
       throw new Error("No candidate profile found");
     }
 
-    const profile = await updateCandidateProfileQuery(db, {
-      resumeKey: data.resumeKey,
-      userId: context.userId,
+    const resumeChanged = data.resumeKey !== existing.resumeKey;
+    const profile = await db.begin(async (tx) => {
+      const transaction = asSqlTransaction(tx);
+      const updated = await updateCandidateProfileQuery(transaction, {
+        resumeKey: data.resumeKey,
+        userId: context.userId,
+      });
+      if (resumeChanged && data.resumeKey === null) {
+        await deleteCandidateJobMatches(transaction, { candidateId: context.userId });
+      }
+      return updated;
     });
 
     if (!profile) {
       throw new Error("Failed to update candidate profile");
+    }
+
+    if (data.resumeKey && resumeChanged) {
+      await claimAndStartCandidateRefresh({ db, candidateId: context.userId });
     }
 
     return { profile };
