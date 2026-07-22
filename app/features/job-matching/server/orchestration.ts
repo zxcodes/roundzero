@@ -15,7 +15,6 @@ export type JobMatchingWorkflowPayload =
       type: "candidate_refresh";
       candidateId: string;
       refreshToken: string;
-      force: boolean;
     }
   | {
       type: "job_extract";
@@ -87,14 +86,11 @@ export async function startJobMatchingExtraction(request: {
 export async function claimAndStartCandidateRefresh(input: {
   db: Sql;
   candidateId: string;
-  force?: boolean;
 }): Promise<boolean> {
   const refreshToken = crypto.randomUUID();
-  const force = input.force ?? false;
   const claim = await claimCandidateMatchRefresh(input.db, {
     userId: input.candidateId,
     refreshToken,
-    force,
     claimCutoff: new Date(Date.now() - MATCHING_CONFIG.refreshLeaseMs),
   });
   if (!claim?.matchRefreshToken) return false;
@@ -106,7 +102,6 @@ export async function claimAndStartCandidateRefresh(input: {
         type: "candidate_refresh",
         candidateId: input.candidateId,
         refreshToken,
-        force,
       },
     });
     return true;

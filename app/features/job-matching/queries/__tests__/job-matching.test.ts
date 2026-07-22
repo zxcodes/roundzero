@@ -18,6 +18,27 @@ import {
 const sql = getTestDb();
 
 describe("candidate match persistence", () => {
+  it("does not replace an active refresh claim", async () => {
+    const { user } = await seedCandidateProfile();
+    const firstToken = crypto.randomUUID();
+
+    expect(
+      await claimCandidateMatchRefresh(sql, {
+        userId: user.id,
+        refreshToken: firstToken,
+        claimCutoff: new Date(Date.now() - 60_000),
+      }),
+    ).toMatchObject({ matchRefreshToken: firstToken });
+
+    expect(
+      await claimCandidateMatchRefresh(sql, {
+        userId: user.id,
+        refreshToken: crypto.randomUUID(),
+        claimCutoff: new Date(Date.now() - 60_000),
+      }),
+    ).toBeNull();
+  });
+
   it("persists refresh phases only for the active workflow token", async () => {
     const { user } = await seedCandidateProfile();
     const refreshToken = crypto.randomUUID();
@@ -25,7 +46,6 @@ describe("candidate match persistence", () => {
     await claimCandidateMatchRefresh(sql, {
       userId: user.id,
       refreshToken,
-      force: true,
       claimCutoff: new Date(),
     });
     expect(await getCandidateMatchRefreshProgress(sql, { userId: user.id })).toMatchObject({

@@ -540,16 +540,14 @@ SET match_refresh_token = $1,
 WHERE user_id = $2
   AND resume_key IS NOT NULL
   AND (
-    $3::boolean
-    OR match_refresh_claimed_at IS NULL
-    OR match_refresh_claimed_at < $4
+    match_refresh_claimed_at IS NULL
+    OR match_refresh_claimed_at < $3
   )
 RETURNING user_id, match_refresh_token, resume_key`;
 
 export interface ClaimCandidateMatchRefreshArgs {
     refreshToken: string | null;
     userId: string;
-    force: boolean;
     claimCutoff: Date | null;
 }
 
@@ -560,7 +558,7 @@ export interface ClaimCandidateMatchRefreshRow {
 }
 
 export async function claimCandidateMatchRefresh(sql: Sql, args: ClaimCandidateMatchRefreshArgs): Promise<ClaimCandidateMatchRefreshRow | null> {
-    const rows = await sql.unsafe(claimCandidateMatchRefreshQuery, [args.refreshToken, args.userId, args.force, args.claimCutoff]).values();
+    const rows = await sql.unsafe(claimCandidateMatchRefreshQuery, [args.refreshToken, args.userId, args.claimCutoff]).values();
     if (rows.length !== 1) {
         return null;
     }

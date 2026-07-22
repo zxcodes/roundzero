@@ -99,7 +99,6 @@ export class MatchReconciliationWorkflow extends WorkflowEntrypoint<Env> {
                       type: "candidate_refresh" as const,
                       candidateId: candidate.userId,
                       refreshToken: candidate.matchRefreshToken,
-                      force: false,
                     } satisfies JobMatchingWorkflowPayload,
                   },
                 ]

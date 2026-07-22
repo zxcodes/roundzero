@@ -3,6 +3,35 @@ import { describe, expect, it } from "vitest";
 import { candidateFeedInputHash } from "../feed-fingerprint";
 
 describe("candidate feed input fingerprint", () => {
+  it("changes when the candidate or a job matching profile changes", async () => {
+    const job = {
+      id: crypto.randomUUID(),
+      profileSourceHash: "job-v1",
+      location: "Remote",
+      workplaceType: "remote",
+    };
+    const initial = await candidateFeedInputHash("candidate-v1", [job]);
+
+    expect(await candidateFeedInputHash("candidate-v2", [job])).not.toBe(initial);
+    expect(
+      await candidateFeedInputHash("candidate-v1", [{ ...job, profileSourceHash: "job-v2" }]),
+    ).not.toBe(initial);
+  });
+
+  it("changes when an eligible job is added or removed", async () => {
+    const first = {
+      id: crypto.randomUUID(),
+      profileSourceHash: "job-v1",
+      location: null,
+      workplaceType: null,
+    };
+    const second = { ...first, id: crypto.randomUUID() };
+
+    expect(await candidateFeedInputHash("candidate-v1", [first, second])).not.toBe(
+      await candidateFeedInputHash("candidate-v1", [first]),
+    );
+  });
+
   it("changes when job location or workplace type changes", async () => {
     const baseJob = {
       id: crypto.randomUUID(),
