@@ -234,17 +234,19 @@ function CandidateSection() {
         <div className="lg:col-span-5">
           <Eyebrow>For candidates</Eyebrow>
           <h2 className="mt-5 max-w-xl text-balance text-[clamp(2.5rem,4.6vw,4.6rem)] font-medium leading-[0.98] tracking-[-0.052em]">
-            Let people show how they think.
+            Find the fit. Then show your thinking.
           </h2>
           <p className="mt-6 max-w-md text-[1.02rem] leading-7 text-muted-foreground">
-            No calendar coordination. No one-way video. Candidates answer on their own time and get
-            evaluated on the substance of their work.
+            Upload your résumé once. RoundZero ranks open roles against your experience and emails
+            you when a strong match appears. You choose where to apply, then interview on your own
+            time.
           </p>
           <ul className="mt-9 space-y-3">
             {[
-              "Complete it whenever you are ready.",
-              "No camera or one-way video.",
-              "Follow-up questions adapt to each answer.",
+              "See open roles ranked by fit.",
+              "Get one email when new strong matches appear.",
+              "Apply when the role feels right—nothing is automatic.",
+              "Complete the first interview without scheduling.",
             ].map((item) => (
               <li key={item} className="flex items-center gap-3 text-sm text-foreground/80">
                 <span className="size-1.5 shrink-0 rounded-full bg-[#2f7a4d]" />
@@ -256,13 +258,36 @@ function CandidateSection() {
             to="/candidate/login"
             className="mt-9 inline-flex items-center gap-1.5 text-sm font-medium hover:text-foreground/70"
           >
-            Candidate login
+            Find matched jobs
             <HugeiconsIcon icon={ArrowRight02Icon} strokeWidth={2} className="size-4" />
           </Link>
         </div>
 
         <div className="lg:col-span-6 lg:col-start-7">
           <div className="border-y border-black/12">
+            <div className="grid grid-cols-[88px_1fr] gap-4 border-b border-black/12 py-6">
+              <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-[#2f7a4d]">
+                Strong fit
+              </span>
+              <div>
+                <p className="text-[clamp(1.15rem,1.8vw,1.45rem)] font-medium tracking-[-0.025em]">
+                  Senior Full-Stack Engineer
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">Remote · Full time</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-[88px_1fr] gap-4 border-b border-black/12 py-6">
+              <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+                Why
+              </span>
+              <p className="text-[clamp(1rem,1.5vw,1.2rem)] leading-7 text-muted-foreground">
+                Your TypeScript product work, API experience, and PostgreSQL background align with
+                the role.
+              </p>
+            </div>
+            <div className="border-b border-black/12 py-4 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+              After you apply
+            </div>
             <div className="grid grid-cols-[88px_1fr] gap-4 border-b border-black/12 py-6">
               <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
                 Zero
@@ -291,6 +316,11 @@ function CandidateSection() {
 }
 
 const faq = [
+  {
+    question: "How does job matching work?",
+    answer:
+      "Candidates upload a résumé, and RoundZero compares their experience with current open jobs. Each candidate gets a ranked feed with reasons for every match and can opt into one daily email when new strong matches appear. RoundZero never applies on a candidate's behalf.",
+  },
   {
     question: "How does the interview work?",
     answer:

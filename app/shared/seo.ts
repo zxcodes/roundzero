@@ -10,7 +10,7 @@ export const TWITTER_DESCRIPTION =
   "Stop screening resumes. Review ranked candidates backed by real evaluation.";
 
 export const HOMEPAGE_META_DESCRIPTION =
-  "Every applicant is evaluated automatically. Get ranked candidates, structured reports, and evidence-backed recommendations before the first human interview.";
+  "RoundZero helps teams evaluate applicants with evidence-backed interviews and helps candidates discover ranked job matches based on their experience.";
 
 export const NOINDEX_ROBOTS = "noindex, nofollow";
 
