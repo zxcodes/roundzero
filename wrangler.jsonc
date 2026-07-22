@@ -105,7 +105,7 @@
       "vars": {
         "CLOUDFLARE_ACCOUNT_ID": "5634bacd1c09247fdaa26ef02fbcf6ef",
         "AI_GATEWAY_ID": "roundzero",
-        "MATCH_DIGEST_ENABLED": "false",
+        "MATCH_DIGEST_ENABLED": "true",
       },
       "r2_buckets": [
         {
@@ -182,7 +182,7 @@
       "vars": {
         "CLOUDFLARE_ACCOUNT_ID": "5634bacd1c09247fdaa26ef02fbcf6ef",
         "AI_GATEWAY_ID": "roundzero-prod",
-        "MATCH_DIGEST_ENABLED": "false",
+        "MATCH_DIGEST_ENABLED": "true",
       },
       "r2_buckets": [
         {
