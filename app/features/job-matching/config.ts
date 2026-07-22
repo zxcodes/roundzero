@@ -1,7 +1,7 @@
 export const MATCHING_CONFIG = {
   candidateProfileVersion: "candidate-profile-v5",
   jobProfileVersion: "job-profile-v2",
-  algorithmVersion: "qualification-overlap-v2",
+  algorithmVersion: "qualification-overlap-v3",
   thresholdVersion: "bands-v2",
   rerankerPromptVersion: "job-reranker-v2",
   feedStaleMs: 24 * 60 * 60 * 1000,

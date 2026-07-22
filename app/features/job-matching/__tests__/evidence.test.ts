@@ -30,7 +30,7 @@ describe("match evidence", () => {
       {
         candidateFactId: "skill-react",
         jobFactId: "job-react",
-        text: "React aligns with React.",
+        text: "Your React experience matches a required skill.",
       },
     ]);
   });
@@ -69,7 +69,28 @@ describe("match evidence", () => {
       {
         candidateFactId: "skill-react",
         jobFactId: "job-react",
-        text: "React aligns with React.",
+        text: "Your React experience matches a required skill.",
+      },
+    ]);
+  });
+
+  it("fills missing model evidence from deterministic canonical overlaps", () => {
+    const job: JobMatchingProfile = {
+      facts: [
+        {
+          id: "job-react",
+          category: "required_skill",
+          canonicalId: "react",
+          label: "React",
+        },
+      ],
+    };
+
+    expect(validateAndRenderEvidence(candidate, job, [])).toEqual([
+      {
+        candidateFactId: "skill-react",
+        jobFactId: "job-react",
+        text: "Your React experience matches a required skill.",
       },
     ]);
   });
