@@ -272,7 +272,7 @@ function CandidateSection() {
         <div className="lg:col-span-6 lg:col-start-7">
           <div className="rounded-[2rem] bg-[#f3f5f3] p-6 sm:p-8 lg:p-10">
             <div>
-              <span className="inline-flex rounded-full bg-[#dcebe0] px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-[#2f7a4d]">
+              <span className="inline-flex rounded-full bg-[#dcebe0] px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--marketing-success-ink)]">
                 Strong fit
               </span>
               <h3 className="mt-5 text-[clamp(1.65rem,2.6vw,2.35rem)] font-medium leading-tight tracking-[-0.04em]">
@@ -316,7 +316,7 @@ function CandidateSection() {
                 </div>
               </div>
 
-              <p className="mt-7 rounded-2xl bg-[#eaf3ed] px-4 py-3 font-mono text-[10px] uppercase leading-5 tracking-[0.12em] text-[#2f7a4d]">
+              <p className="mt-7 rounded-2xl bg-[#eaf3ed] px-4 py-3 font-mono text-[10px] uppercase leading-5 tracking-[0.12em] text-[var(--marketing-success-ink)]">
                 Observed signal: explains failure modes and tradeoffs with concrete detail
               </p>
             </div>

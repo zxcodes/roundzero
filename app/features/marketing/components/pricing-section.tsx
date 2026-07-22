@@ -18,9 +18,11 @@ const tiers: Tier[] = SUBSCRIPTION_PLANS.map((plan) => ({
 }));
 
 function TierCta({ plan, featured }: Tier) {
+  // Distinct link text per destination (identical-links a11y).
+  const label = plan === "free" ? "Start free" : `Choose ${PLAN_CONFIGS[plan].name}`;
   const content = (
     <>
-      {plan === "free" ? "Start free" : "Choose plan"}
+      {label}
       <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-4" />
     </>
   );
@@ -78,7 +80,7 @@ export function MarketingPricingSection({ className }: { className?: string }) {
               >
                 <div className="min-h-5">
                   {tier.featured ? (
-                    <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#2f7a4d]">
+                    <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--marketing-success-ink)]">
                       Recommended
                     </span>
                   ) : null}
