@@ -264,51 +264,57 @@ function CandidateSection() {
         </div>
 
         <div className="lg:col-span-6 lg:col-start-7">
-          <div className="border-y border-black/12">
-            <div className="grid grid-cols-[88px_1fr] gap-4 border-b border-black/12 py-6">
-              <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-[#2f7a4d]">
+          <div className="rounded-[2rem] bg-[#f3f5f3] p-6 sm:p-8 lg:p-10">
+            <div>
+              <span className="inline-flex rounded-full bg-[#dcebe0] px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-[#2f7a4d]">
                 Strong fit
               </span>
-              <div>
-                <p className="text-[clamp(1.15rem,1.8vw,1.45rem)] font-medium tracking-[-0.025em]">
-                  Senior Full-Stack Engineer
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">Remote · Full time</p>
-              </div>
+              <h3 className="mt-5 text-[clamp(1.65rem,2.6vw,2.35rem)] font-medium leading-tight tracking-[-0.04em]">
+                Senior Full-Stack Engineer
+              </h3>
+              <p className="mt-2 text-sm text-muted-foreground">Remote · Full time</p>
             </div>
-            <div className="grid grid-cols-[88px_1fr] gap-4 border-b border-black/12 py-6">
-              <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
-                Why
-              </span>
-              <p className="text-[clamp(1rem,1.5vw,1.2rem)] leading-7 text-muted-foreground">
+
+            <div className="mt-7 max-w-2xl">
+              <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                Why it matches
+              </p>
+              <p className="mt-2 text-[clamp(1rem,1.5vw,1.18rem)] leading-7 text-foreground/70">
                 Your TypeScript product work, API experience, and PostgreSQL background align with
                 the role.
               </p>
             </div>
-            <div className="border-b border-black/12 py-4 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
-              After you apply
-            </div>
-            <div className="grid grid-cols-[88px_1fr] gap-4 border-b border-black/12 py-6">
-              <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
-                Zero
-              </span>
-              <p className="text-[clamp(1rem,1.5vw,1.2rem)] leading-7">
-                What broke when a client reconnected after being offline?
+
+            <div className="mt-9 rounded-3xl bg-white/85 p-6 sm:p-7">
+              <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                After you apply
               </p>
-            </div>
-            <div className="grid grid-cols-[88px_1fr] gap-4 py-6">
-              <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
-                Candidate
-              </span>
-              <p className="text-[clamp(1rem,1.5vw,1.2rem)] leading-7 text-muted-foreground">
-                We replayed the missed entries, then deduplicated them against a sliding window in
-                IndexedDB. The tradeoff was storage pressure on long offline sessions.
+
+              <div className="mt-7 space-y-7">
+                <div className="grid gap-2 sm:grid-cols-[88px_1fr] sm:gap-4">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                    Zero
+                  </span>
+                  <p className="text-[clamp(1rem,1.5vw,1.15rem)] leading-7">
+                    What broke when a client reconnected after being offline?
+                  </p>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-[88px_1fr] sm:gap-4">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                    Candidate
+                  </span>
+                  <p className="text-[clamp(1rem,1.5vw,1.15rem)] leading-7 text-muted-foreground">
+                    We replayed the missed entries, then deduplicated them against a sliding window
+                    in IndexedDB. The tradeoff was storage pressure on long offline sessions.
+                  </p>
+                </div>
+              </div>
+
+              <p className="mt-7 rounded-2xl bg-[#eaf3ed] px-4 py-3 font-mono text-[10px] uppercase leading-5 tracking-[0.12em] text-[#2f7a4d]">
+                Observed signal: explains failure modes and tradeoffs with concrete detail
               </p>
             </div>
           </div>
-          <p className="mt-5 max-w-xl font-mono text-[11px] uppercase tracking-[0.12em] text-[#2f7a4d]">
-            Observed signal: explains failure modes and tradeoffs with concrete detail
-          </p>
         </div>
       </div>
     </section>
