@@ -134,7 +134,7 @@ export const updateMyCandidateProfile = createServerFn({ method: "POST" })
         resumeKey: data.resumeKey,
         userId: context.userId,
       });
-      if (resumeChanged) {
+      if (resumeChanged && data.resumeKey === null) {
         await deleteCandidateJobMatches(transaction, { candidateId: context.userId });
       }
       return updated;

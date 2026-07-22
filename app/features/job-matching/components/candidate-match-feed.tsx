@@ -224,12 +224,20 @@ function CandidateMatchRow({ match }: { match: MatchItem }) {
     onError: () => toast.error("Could not dismiss this match."),
   });
 
-  const onOpen = () => {
-    viewMutation.mutate({ data: { jobId: match.jobId } });
+  const viewAndNavigate = async () => {
+    try {
+      await viewMutation.mutateAsync({ data: { jobId: match.jobId } });
+      await navigate({ to: "/dashboard/jobs/$jobId", params: { jobId: match.jobId } });
+    } catch {
+      toast.error("Could not open this recommendation.");
+    }
+  };
+  const onOpen = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    void viewAndNavigate();
   };
   const onView = () => {
-    onOpen();
-    void navigate({ to: "/dashboard/jobs/$jobId", params: { jobId: match.jobId } });
+    void viewAndNavigate();
   };
   const onDismiss = () => dismissMutation.mutate({ data: { jobId: match.jobId } });
   const band = match.band as MatchBand;
@@ -277,7 +285,7 @@ function CandidateMatchRow({ match }: { match: MatchItem }) {
             <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} data-icon="inline-start" />
             Not relevant
           </Button>
-          <Button size="sm" onClick={onView}>
+          <Button size="sm" onClick={onView} disabled={viewMutation.isPending}>
             View job
             <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} data-icon="inline-end" />
           </Button>

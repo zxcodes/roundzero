@@ -1,5 +1,5 @@
 export const MATCHING_CONFIG = {
-  candidateProfileVersion: "candidate-profile-v4",
+  candidateProfileVersion: "candidate-profile-v5",
   jobProfileVersion: "job-profile-v2",
   algorithmVersion: "qualification-overlap-v2",
   thresholdVersion: "bands-v2",

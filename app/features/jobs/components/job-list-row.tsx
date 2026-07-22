@@ -30,7 +30,7 @@ type JobListRowProps = {
   badge?: React.ReactNode;
   details?: React.ReactNode;
   actions?: React.ReactNode;
-  onOpen?: () => void;
+  onOpen?: (event: React.MouseEvent<HTMLAnchorElement>) => void;
 };
 
 export function JobListRow({
