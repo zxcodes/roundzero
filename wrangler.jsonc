@@ -82,7 +82,7 @@
       "name": "match-reconciliation",
       "binding": "MATCH_RECONCILIATION",
       "class_name": "MatchReconciliationWorkflow",
-      "schedules": ["0 1 * * *"],
+      "schedules": ["0 * * * *"],
     },
     {
       "name": "match-digest",
@@ -162,7 +162,7 @@
           "name": "match-reconciliation-staging",
           "binding": "MATCH_RECONCILIATION",
           "class_name": "MatchReconciliationWorkflow",
-          "schedules": ["0 1 * * *"],
+          "schedules": ["0 * * * *"],
         },
         {
           "name": "match-digest-staging",
@@ -239,7 +239,7 @@
           "name": "match-reconciliation-production",
           "binding": "MATCH_RECONCILIATION",
           "class_name": "MatchReconciliationWorkflow",
-          "schedules": ["0 1 * * *"],
+          "schedules": ["0 * * * *"],
         },
         {
           "name": "match-digest-production",

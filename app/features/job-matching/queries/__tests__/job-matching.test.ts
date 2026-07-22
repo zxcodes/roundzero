@@ -4,6 +4,7 @@ import { getTestDb, seedCandidateProfile, seedJob } from "@/shared/__tests__/tes
 
 import {
   getCandidateMatchFeed,
+  hasReadyOpenJobMatchingProfile,
   listDigestCandidates,
   lockCandidateDigestMatches,
   markCandidateMatchViewed,
@@ -13,6 +14,30 @@ import {
 const sql = getTestDb();
 
 describe("candidate match persistence", () => {
+  it("reports whether at least one current open-job profile is ready", async () => {
+    const { job } = await seedJob({ status: "open" });
+
+    expect((await hasReadyOpenJobMatchingProfile(sql))?.ready).toBe(false);
+
+    await sql`
+      INSERT INTO job_matching_profiles (
+        job_id, requested_source_hash, completed_source_hash, source_version,
+        extraction_status, matching_profile, extraction_token
+      ) VALUES (
+        ${job.id}, 'job-v1', 'job-v1', 'v1', 'ready', ${sql.json({ facts: [] })}, ${crypto.randomUUID()}
+      )
+    `;
+
+    expect((await hasReadyOpenJobMatchingProfile(sql))?.ready).toBe(true);
+
+    await sql`
+      UPDATE job_matching_profiles
+      SET requested_source_hash = 'job-v2', updated_at = now()
+      WHERE job_id = ${job.id}
+    `;
+    expect((await hasReadyOpenJobMatchingProfile(sql))?.ready).toBe(false);
+  });
+
   it("preserves candidate interaction timestamps across reranks", async () => {
     const { user } = await seedCandidateProfile();
     const { job } = await seedJob({ status: "open" });

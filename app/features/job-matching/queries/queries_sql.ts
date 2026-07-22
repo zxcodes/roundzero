@@ -1322,6 +1322,33 @@ export async function listOpenJobsMissingMatchingProfile(sql: Sql, args: ListOpe
     }));
 }
 
+export const hasReadyOpenJobMatchingProfileQuery = `-- name: HasReadyOpenJobMatchingProfile :one
+SELECT EXISTS (
+  SELECT 1
+  FROM jobs j
+  JOIN job_matching_profiles p ON p.job_id = j.id
+  WHERE j.status = 'open'
+    AND j.archived_at IS NULL
+    AND (j.expires_at IS NULL OR j.expires_at > now())
+    AND p.extraction_status = 'ready'
+    AND p.completed_source_hash = p.requested_source_hash
+) AS ready`;
+
+export interface HasReadyOpenJobMatchingProfileRow {
+    ready: boolean;
+}
+
+export async function hasReadyOpenJobMatchingProfile(sql: Sql): Promise<HasReadyOpenJobMatchingProfileRow | null> {
+    const rows = await sql.unsafe(hasReadyOpenJobMatchingProfileQuery, []).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        ready: row[0]
+    };
+}
+
 export const listDigestCandidatesQuery = `-- name: ListDigestCandidates :many
 SELECT DISTINCT cp.user_id, u.email
 FROM candidate_profiles cp

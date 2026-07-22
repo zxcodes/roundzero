@@ -4,6 +4,7 @@ import { MATCHING_CONFIG } from "@/features/job-matching/config";
 import {
   claimCandidateRefreshBatch,
   claimJobProfileRecoveryBatch,
+  hasReadyOpenJobMatchingProfile,
   listOpenJobsMissingMatchingProfile,
 } from "@/features/job-matching/queries/queries_sql";
 import {
@@ -63,6 +64,19 @@ export class MatchReconciliationWorkflow extends WorkflowEntrypoint<Env> {
           })),
         );
       });
+    }
+
+    if (jobRequests.length > 0) {
+      const hasReadyJobs = await step.do("check-ready-job-profiles", async () => {
+        const db = getDb();
+        return await hasReadyOpenJobMatchingProfile(db);
+      });
+
+      // Job extraction workflows run asynchronously. If this environment has no ready profiles
+      // yet, leave candidate refreshes for a later pass so they cannot publish an empty feed.
+      if (!hasReadyJobs?.ready) {
+        return { recoveredJobs: jobRequests.length, refreshedCandidates: 0 };
+      }
     }
 
     const candidates = await step.do("claim-candidate-refreshes", async () => {
