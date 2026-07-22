@@ -16,6 +16,28 @@ const compatibleJobCategories: Record<
   certification: new Set(["certification"]),
 };
 
+const renderEvidenceText = (
+  candidateFact: CandidateMatchingProfile["facts"][number],
+  jobFact: JobMatchingProfile["facts"][number],
+): string => {
+  switch (candidateFact.category) {
+    case "role_family":
+      return `Your ${candidateFact.label.toLowerCase()} background aligns with this role.`;
+    case "skill":
+      return `Your ${candidateFact.label} experience matches a ${jobFact.category === "required_skill" ? "required" : "preferred"} skill.`;
+    case "seniority":
+      return `Your ${candidateFact.label.toLowerCase()} experience aligns with this role's level.`;
+    case "domain":
+      return `Your ${candidateFact.label.toLowerCase()} background is relevant to this role.`;
+    case "responsibility":
+      return `Your experience with ${candidateFact.label.toLowerCase()} aligns with this role's responsibilities.`;
+    case "education":
+      return `Your ${candidateFact.label.toLowerCase()} background aligns with this role's education needs.`;
+    case "certification":
+      return `Your ${candidateFact.label} certification is relevant to this role.`;
+  }
+};
+
 export function validateAndRenderEvidence(
   candidate: CandidateMatchingProfile,
   job: JobMatchingProfile,
@@ -25,7 +47,7 @@ export function validateAndRenderEvidence(
   const jobFacts = new Map(job.facts.map((fact) => [fact.id, fact]));
   const pairKeys = new Set<string>();
 
-  return pairs.flatMap((pair) => {
+  const renderPair = (pair: EvidencePair): MatchReason[] => {
     const candidateFact = candidateFacts.get(pair.candidateFactId);
     const jobFact = jobFacts.get(pair.jobFactId);
     if (!candidateFact || !jobFact) return [];
@@ -45,10 +67,22 @@ export function validateAndRenderEvidence(
       {
         candidateFactId: pair.candidateFactId,
         jobFactId: pair.jobFactId,
-        text: `${candidateFact.label} aligns with ${jobFact.label}.`,
+        text: renderEvidenceText(candidateFact, jobFact),
       },
     ];
-  });
+  };
+
+  const selected = pairs.flatMap(renderPair);
+  if (selected.length >= 3) return selected;
+
+  for (const candidateFact of candidate.facts) {
+    for (const jobFact of job.facts) {
+      if (selected.length >= 3) return selected;
+      selected.push(...renderPair({ candidateFactId: candidateFact.id, jobFactId: jobFact.id }));
+    }
+  }
+
+  return selected;
 }
 
 export const capScoreForEvidence = (score: number, evidenceCount: number): number =>

@@ -256,13 +256,12 @@ function CandidateMatchRow({ match }: { match: MatchItem }) {
       details={
         <div className="space-y-2">
           {match.reasons.length > 0 ? (
-            <ul className="flex list-disc flex-col gap-1 pl-5 text-sm text-foreground/90">
-              {match.reasons.slice(0, 2).map((reason) => (
-                <li key={`${reason.candidateFactId}:${reason.jobFactId}`} className="line-clamp-1">
-                  {reason.text}
-                </li>
-              ))}
-            </ul>
+            <p className="line-clamp-2 text-sm text-foreground/90">
+              {match.reasons
+                .slice(0, 2)
+                .map((reason) => reason.text)
+                .join(" ")}
+            </p>
           ) : null}
           {match.reasons.length < 2 ? (
             <p className="text-sm text-muted-foreground">
