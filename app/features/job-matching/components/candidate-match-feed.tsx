@@ -266,7 +266,7 @@ function CandidateMatchRow({ match }: { match: MatchItem }) {
           ) : null}
           {match.reasons.length < 2 ? (
             <p className="text-sm text-muted-foreground">
-              Limited positive evidence in your resume—review the role details before deciding.
+              Limited positive evidence in your resume. Review the role details before deciding.
             </p>
           ) : null}
           {match.consideration ? (
