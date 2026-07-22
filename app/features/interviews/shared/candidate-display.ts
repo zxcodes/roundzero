@@ -37,21 +37,3 @@ export function resolveInterviewAwareCandidateMeta<T extends InterviewAwareMeta>
 
   return baseMeta;
 }
-
-export function pickPreferredInterviewId(
-  interviews: Array<{ id: string; status: string }>,
-): string | null {
-  if (interviews.length === 0) {
-    return null;
-  }
-
-  const priority = ["in_progress", "awaiting_voice", "pending", "completed", "cancelled"] as const;
-  for (const status of priority) {
-    const match = interviews.find((interview) => interview.status === status);
-    if (match) {
-      return match.id;
-    }
-  }
-
-  return null;
-}
