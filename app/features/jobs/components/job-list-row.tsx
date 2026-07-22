@@ -3,6 +3,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { Link, useNavigate } from "@tanstack/react-router";
 
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import type { EmploymentType, ExperienceLevel, WorkplaceType } from "@/shared/enums";
 import { employmentTypeLabels, experienceLevelLabels, workplaceTypeLabels } from "@/shared/enums";
 import { formatSalary } from "@/shared/format";
@@ -77,12 +78,15 @@ export function JobListRow({
     ) : null);
 
   return (
-    <div className="group transition-colors hover:bg-muted/40">
+    <div className="group relative transition-colors hover:bg-muted/40">
       <Link
         to={jobTo}
         params={{ jobId: job.id }}
         onClick={onOpen}
-        className="flex min-w-0 flex-1 items-start gap-4 px-5 py-4 no-underline hover:no-underline md:px-6 md:py-5"
+        className={cn(
+          "flex min-w-0 flex-1 items-start gap-4 px-5 py-4 no-underline hover:no-underline md:px-6 md:py-5",
+          actions ? "md:pr-80" : null,
+        )}
       >
         <div className="min-w-0 flex-1 space-y-3">
           <div className="space-y-1.5">
@@ -151,7 +155,12 @@ export function JobListRow({
           ) : null}
         </div>
 
-        <div className="flex shrink-0 items-center gap-3">
+        <div
+          className={cn(
+            "flex shrink-0 items-center gap-3",
+            actions ? "md:absolute md:top-5 md:right-6" : null,
+          )}
+        >
           {badge}
           {actions ? null : (
             <HugeiconsIcon
@@ -163,7 +172,7 @@ export function JobListRow({
         </div>
       </Link>
       {actions ? (
-        <div className="-mt-2 flex items-center justify-end gap-2 px-5 pb-4 md:px-6 md:pb-5">
+        <div className="-mt-2 flex items-center justify-end gap-2 px-5 pb-4 md:absolute md:right-6 md:bottom-5 md:mt-0 md:p-0">
           {actions}
         </div>
       ) : null}
