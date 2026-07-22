@@ -245,7 +245,7 @@ function CandidateSection() {
             {[
               "See open roles ranked by fit.",
               "Get one email when new strong matches appear.",
-              "Apply when the role feels right—nothing is automatic.",
+              "Apply when the role feels right. Nothing is automatic.",
               "Complete the first interview without scheduling.",
             ].map((item) => (
               <li key={item} className="flex items-center gap-3 text-sm text-foreground/80">
