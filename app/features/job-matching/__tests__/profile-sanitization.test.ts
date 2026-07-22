@@ -26,6 +26,12 @@ describe("candidate matching profile sanitization", () => {
           label: "Female candidates",
         },
         {
+          id: "raw-employer",
+          category: "domain",
+          canonicalId: "google",
+          label: "Google",
+        },
+        {
           id: "raw-degree",
           category: "education",
           canonicalId: "bachelors-computer-science",
