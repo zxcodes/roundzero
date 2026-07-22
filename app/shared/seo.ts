@@ -1,4 +1,4 @@
-export const DEFAULT_META_TITLE = "RoundZero | Review Candidates, Not Resumes";
+export const DEFAULT_META_TITLE = "AI Candidate Screening & First-Round Interviews | RoundZero";
 
 export const DEFAULT_META_DESCRIPTION =
   "RoundZero automatically interviews and evaluates applicants, delivering ranked candidates, structured reports, and evidence-backed recommendations before the first human interview.";
@@ -10,13 +10,14 @@ export const TWITTER_DESCRIPTION =
   "Stop screening resumes. Review ranked candidates backed by real evaluation.";
 
 export const HOMEPAGE_META_DESCRIPTION =
-  "RoundZero helps teams evaluate applicants with evidence-backed interviews and helps candidates discover ranked job matches based on their experience.";
+  "Screen every applicant with adaptive, asynchronous AI interviews and review evidence-backed candidate reports before the first human interview.";
 
-export const NOINDEX_ROBOTS = "noindex, nofollow";
+export const NOINDEX_ROBOTS = "noindex, nofollow, noarchive";
+export const NOINDEX_FOLLOW_ROBOTS = "noindex, follow, noarchive";
 
 export const PAGE_SEO = {
   jobs: {
-    title: "Jobs | RoundZero",
+    title: "Browse Open Jobs | RoundZero",
     description:
       "Discover opportunities from companies using RoundZero to evaluate candidates based on experience, reasoning, and communication.",
   },
@@ -68,6 +69,13 @@ export const EMAIL_PREVIEW = {
 
 type JsonLdScript = { type: "application/ld+json"; children: string };
 
+function serializeJsonLd(value: Record<string, unknown>): string {
+  return JSON.stringify(value)
+    .replaceAll("<", "\\u003c")
+    .replaceAll("\u2028", "\\u2028")
+    .replaceAll("\u2029", "\\u2029");
+}
+
 type PageHeadOptions = {
   title: string;
   description: string;
@@ -75,15 +83,22 @@ type PageHeadOptions = {
   ogDescription?: string;
   twitterDescription?: string;
   robots?: string;
+  ogType?: "website" | "article";
+  imageUrl?: string;
+  imageAlt?: string;
   scripts?: JsonLdScript[];
 };
 
 export function appUrl(): string {
-  return import.meta.env.VITE_APP_URL;
+  return import.meta.env.VITE_APP_URL.replace(/\/$/, "");
+}
+
+export function absoluteUrl(path: string): string {
+  return `${appUrl()}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
 export function publicJobUrl(jobId: string): string {
-  return `${appUrl()}/jobs/${jobId}`;
+  return absoluteUrl(`/jobs/${jobId}`);
 }
 
 export function truncateDescription(text: string, maxLength = 160): string {
@@ -95,9 +110,11 @@ export function truncateDescription(text: string, maxLength = 160): string {
 }
 
 export function buildPageHead(options: PageHeadOptions) {
-  const canonicalUrl = `${appUrl()}${options.path}`;
+  const canonicalUrl = absoluteUrl(options.path);
   const ogDescription = options.ogDescription ?? options.description;
   const twitterDescription = options.twitterDescription ?? ogDescription;
+  const imageUrl = options.imageUrl ?? absoluteUrl("/og-default.png");
+  const imageAlt = options.imageAlt ?? "RoundZero — review candidates, not resumes";
 
   const meta: Array<Record<string, string>> = [
     { title: options.title },
@@ -105,8 +122,20 @@ export function buildPageHead(options: PageHeadOptions) {
     { property: "og:title", content: options.title },
     { property: "og:description", content: ogDescription },
     { property: "og:url", content: canonicalUrl },
+    { property: "og:type", content: options.ogType ?? "website" },
+    { property: "og:site_name", content: "RoundZero" },
+    { property: "og:locale", content: "en_US" },
+    { property: "og:image", content: imageUrl },
+    { property: "og:image:secure_url", content: imageUrl },
+    { property: "og:image:type", content: "image/png" },
+    { property: "og:image:width", content: "1200" },
+    { property: "og:image:height", content: "630" },
+    { property: "og:image:alt", content: imageAlt },
+    { name: "twitter:card", content: "summary_large_image" },
     { name: "twitter:title", content: options.title },
     { name: "twitter:description", content: twitterDescription },
+    { name: "twitter:image", content: imageUrl },
+    { name: "twitter:image:alt", content: imageAlt },
   ];
 
   if (options.robots) {
@@ -126,6 +155,72 @@ export function noindexHead() {
   };
 }
 
+export type HomepageFaq = {
+  question: string;
+  answer: string;
+};
+
+export function buildHomepageSchema(faq: HomepageFaq[]): Record<string, unknown> {
+  const siteUrl = absoluteUrl("/");
+  const organizationId = `${siteUrl}#organization`;
+  const websiteId = `${siteUrl}#website`;
+  const applicationId = `${siteUrl}#software`;
+  const graph: Array<Record<string, unknown>> = [
+    {
+      "@type": "Organization",
+      "@id": organizationId,
+      name: "RoundZero",
+      url: siteUrl,
+      logo: {
+        "@type": "ImageObject",
+        url: absoluteUrl("/android-chrome-512x512.png"),
+        width: 512,
+        height: 512,
+      },
+    },
+    {
+      "@type": "WebSite",
+      "@id": websiteId,
+      name: "RoundZero",
+      url: siteUrl,
+      publisher: { "@id": organizationId },
+      inLanguage: "en",
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": applicationId,
+      name: "RoundZero",
+      url: siteUrl,
+      applicationCategory: "BusinessApplication",
+      applicationSubCategory: "Recruiting Software",
+      operatingSystem: "Web",
+      description: DEFAULT_META_DESCRIPTION,
+      provider: { "@id": organizationId },
+    },
+  ];
+
+  if (faq.length > 0) {
+    graph.push({
+      "@type": "FAQPage",
+      "@id": `${siteUrl}#faq`,
+      mainEntity: faq.map((item) => ({
+        "@type": "Question",
+        name: item.question,
+        acceptedAnswer: { "@type": "Answer", text: item.answer },
+      })),
+    });
+  }
+
+  return { "@context": "https://schema.org", "@graph": graph };
+}
+
+export function homepageJsonLd(faq: HomepageFaq[]): JsonLdScript {
+  return {
+    type: "application/ld+json",
+    children: serializeJsonLd(buildHomepageSchema(faq)),
+  };
+}
+
 const employmentTypeToSchema = (type: string): string => {
   const map: Record<string, string> = {
     full_time: "FULL_TIME",
@@ -135,6 +230,193 @@ const employmentTypeToSchema = (type: string): string => {
   };
   return map[type] ?? "OTHER";
 };
+
+const US_STATE_CODES = new Set([
+  "AL",
+  "AK",
+  "AZ",
+  "AR",
+  "CA",
+  "CO",
+  "CT",
+  "DE",
+  "FL",
+  "GA",
+  "HI",
+  "ID",
+  "IL",
+  "IN",
+  "IA",
+  "KS",
+  "KY",
+  "LA",
+  "ME",
+  "MD",
+  "MA",
+  "MI",
+  "MN",
+  "MS",
+  "MO",
+  "MT",
+  "NE",
+  "NV",
+  "NH",
+  "NJ",
+  "NM",
+  "NY",
+  "NC",
+  "ND",
+  "OH",
+  "OK",
+  "OR",
+  "PA",
+  "RI",
+  "SC",
+  "SD",
+  "TN",
+  "TX",
+  "UT",
+  "VT",
+  "VA",
+  "WA",
+  "WV",
+  "WI",
+  "WY",
+  "DC",
+]);
+
+const COUNTRY_ALIASES: Record<string, string> = {
+  US: "US",
+  USA: "US",
+  "UNITED STATES": "US",
+  "UNITED STATES OF AMERICA": "US",
+  UK: "GB",
+  GB: "GB",
+  "UNITED KINGDOM": "GB",
+  UAE: "AE",
+  "UNITED ARAB EMIRATES": "AE",
+  AUSTRALIA: "AU",
+  AUSTRIA: "AT",
+  BELGIUM: "BE",
+  BRAZIL: "BR",
+  CANADA: "CA",
+  CZECHIA: "CZ",
+  "CZECH REPUBLIC": "CZ",
+  DENMARK: "DK",
+  FINLAND: "FI",
+  FRANCE: "FR",
+  GERMANY: "DE",
+  INDIA: "IN",
+  IRELAND: "IE",
+  ITALY: "IT",
+  JAPAN: "JP",
+  MEXICO: "MX",
+  NETHERLANDS: "NL",
+  "NEW ZEALAND": "NZ",
+  NORWAY: "NO",
+  POLAND: "PL",
+  PORTUGAL: "PT",
+  ROMANIA: "RO",
+  SINGAPORE: "SG",
+  "SOUTH AFRICA": "ZA",
+  SPAIN: "ES",
+  SWEDEN: "SE",
+  SWITZERLAND: "CH",
+};
+
+function normalizedCountry(value: string): string | null {
+  return COUNTRY_ALIASES[value.trim().toUpperCase()] ?? null;
+}
+
+function buildJobLocationProperties(job: JobPostingSchemaInput): Record<string, unknown> | null {
+  const location = job.location?.trim();
+  if (!location) {
+    return null;
+  }
+
+  if (job.workplaceType === "remote") {
+    const restriction = location.match(/^remote\s*(?:[-–—:]|\()\s*([^)]+)\)?$/i)?.[1];
+    const country = restriction ? normalizedCountry(restriction) : null;
+    if (!country) {
+      return null;
+    }
+    return {
+      jobLocationType: "TELECOMMUTE",
+      applicantLocationRequirements: { "@type": "Country", name: country },
+    };
+  }
+
+  const parts = location
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const finalPart = parts.at(-1);
+  if (!finalPart) {
+    return null;
+  }
+
+  const upperFinalPart = finalPart.toUpperCase();
+  if (parts.length > 1 && US_STATE_CODES.has(upperFinalPart)) {
+    return {
+      jobLocation: {
+        "@type": "Place",
+        address: {
+          "@type": "PostalAddress",
+          addressLocality: parts.slice(0, -1).join(", "),
+          addressRegion: upperFinalPart,
+          addressCountry: "US",
+        },
+      },
+    };
+  }
+
+  const country = normalizedCountry(finalPart);
+  if (!country) {
+    return null;
+  }
+  const locality = parts.slice(0, -1).join(", ");
+  return {
+    jobLocation: {
+      "@type": "Place",
+      address: {
+        "@type": "PostalAddress",
+        ...(locality ? { addressLocality: locality } : {}),
+        addressCountry: country,
+      },
+    },
+  };
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function buildJobPostingDescription(job: JobPostingSchemaInput): string {
+  const paragraphs = job.description
+    .split(/\n{2,}/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean)
+    .map((paragraph) => `<p>${escapeHtml(paragraph).replaceAll("\n", "<br>")}</p>`);
+  const requirements = Array.isArray(job.requirements)
+    ? job.requirements.filter(
+        (requirement): requirement is string =>
+          typeof requirement === "string" && requirement.trim().length > 0,
+      )
+    : [];
+
+  if (requirements.length > 0) {
+    paragraphs.push(
+      `<ul>${requirements.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`,
+    );
+  }
+
+  return paragraphs.join("");
+}
 
 export type JobPostingSchemaInput = {
   id: string;
@@ -164,13 +446,18 @@ export function buildJobPageSeo(job: JobPostingSchemaInput) {
   return { title, description };
 }
 
-export function buildJobPostingSchema(job: JobPostingSchemaInput): Record<string, unknown> {
+export function buildJobPostingSchema(job: JobPostingSchemaInput): Record<string, unknown> | null {
+  const locationProperties = buildJobLocationProperties(job);
+  if (!locationProperties) {
+    return null;
+  }
+
   const jobUrl = publicJobUrl(job.id);
   const schema: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "JobPosting",
     title: job.title,
-    description: job.description,
+    description: buildJobPostingDescription(job),
     url: jobUrl,
     identifier: {
       "@type": "PropertyValue",
@@ -184,29 +471,23 @@ export function buildJobPostingSchema(job: JobPostingSchemaInput): Record<string
       url: `${appUrl()}/companies/${job.companySlug}`,
     },
     datePosted: typeof job.createdAt === "string" ? job.createdAt : job.createdAt.toISOString(),
+    ...locationProperties,
   };
 
   if (job.employmentType) {
     schema.employmentType = employmentTypeToSchema(job.employmentType);
   }
 
-  if (job.workplaceType === "remote") {
-    schema.jobLocationType = "TELECOMMUTE";
-  } else if (job.location) {
-    schema.jobLocation = {
-      "@type": "Place",
-      address: { "@type": "PostalAddress", addressLocality: job.location },
-    };
-  }
-
   if (job.salaryMin || job.salaryMax) {
+    const salaryValue =
+      job.salaryMin && job.salaryMax
+        ? { "@type": "QuantitativeValue", minValue: job.salaryMin, maxValue: job.salaryMax }
+        : { "@type": "QuantitativeValue", value: job.salaryMin ?? job.salaryMax };
+
     schema.baseSalary = {
       "@type": "MonetaryAmount",
       currency: job.salaryCurrency,
-      value:
-        job.salaryMin && job.salaryMax
-          ? { "@type": "QuantitativeValue", minValue: job.salaryMin, maxValue: job.salaryMax }
-          : { "@type": "QuantitativeValue", value: job.salaryMin ?? job.salaryMax },
+      value: { ...salaryValue, unitText: "YEAR" },
     };
   }
 
@@ -222,10 +503,14 @@ export function buildJobPostingSchema(job: JobPostingSchemaInput): Record<string
   return schema;
 }
 
-export function jobPostingJsonLd(job: JobPostingSchemaInput): JsonLdScript {
+export function jobPostingJsonLd(job: JobPostingSchemaInput): JsonLdScript | null {
+  const schema = buildJobPostingSchema(job);
+  if (!schema) {
+    return null;
+  }
   return {
     type: "application/ld+json",
-    children: JSON.stringify(buildJobPostingSchema(job)),
+    children: serializeJsonLd(schema),
   };
 }
 
@@ -240,12 +525,13 @@ export type OrganizationSchemaInput = {
 };
 
 export function buildOrganizationSchema(company: OrganizationSchemaInput): Record<string, unknown> {
-  const profileUrl = `${appUrl()}/companies/${company.slug}`;
+  const profileUrl = absoluteUrl(`/companies/${company.slug}`);
   const schema: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Organization",
+    "@id": `${profileUrl}#organization`,
     name: company.name,
-    url: company.website ?? profileUrl,
+    url: profileUrl,
   };
 
   if (company.description) {
@@ -270,8 +556,42 @@ export function buildOrganizationSchema(company: OrganizationSchemaInput): Recor
 export function organizationJsonLd(company: OrganizationSchemaInput): JsonLdScript {
   return {
     type: "application/ld+json",
-    children: JSON.stringify(buildOrganizationSchema(company)),
+    children: serializeJsonLd(buildOrganizationSchema(company)),
   };
+}
+
+export type BreadcrumbSchemaItem = {
+  name: string;
+  path: string;
+};
+
+export function buildBreadcrumbSchema(items: BreadcrumbSchemaItem[]): Record<string, unknown> {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      item: absoluteUrl(item.path),
+    })),
+  };
+}
+
+export function breadcrumbJsonLd(items: BreadcrumbSchemaItem[]): JsonLdScript {
+  return {
+    type: "application/ld+json",
+    children: serializeJsonLd(buildBreadcrumbSchema(items)),
+  };
+}
+
+export function escapeXml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&apos;");
 }
 
 export const SITE_ICON_LINKS = [

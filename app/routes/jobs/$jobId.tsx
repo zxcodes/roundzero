@@ -31,7 +31,13 @@ import { formatDate, formatDaysLeft } from "@/shared/date";
 import type { EmploymentType, ExperienceLevel, WorkplaceType } from "@/shared/enums";
 import { employmentTypeLabels, experienceLevelLabels, workplaceTypeLabels } from "@/shared/enums";
 import { formatSalaryFull } from "@/shared/format";
-import { buildJobPageSeo, buildPageHead, jobPostingJsonLd, NOINDEX_ROBOTS } from "@/shared/seo";
+import {
+  breadcrumbJsonLd,
+  buildJobPageSeo,
+  buildPageHead,
+  jobPostingJsonLd,
+  NOINDEX_ROBOTS,
+} from "@/shared/seo";
 import { validateUuidParams } from "@/shared/validation";
 
 function companyInitials(name: string) {
@@ -87,13 +93,23 @@ export const Route = createFileRoute("/jobs/$jobId")({
 
     const { title, description } = buildJobPageSeo(job);
     const isClosed = job.status !== "open";
+    const jobSchema = jobPostingJsonLd(job);
 
     return buildPageHead({
       title,
       description,
       path: `/jobs/${job.id}`,
+      ogType: "article",
       robots: isClosed ? NOINDEX_ROBOTS : undefined,
-      scripts: isClosed ? undefined : [jobPostingJsonLd(job)],
+      scripts: isClosed
+        ? undefined
+        : [
+            ...(jobSchema ? [jobSchema] : []),
+            breadcrumbJsonLd([
+              { name: "Jobs", path: "/jobs" },
+              { name: job.title, path: `/jobs/${job.id}` },
+            ]),
+          ],
     });
   },
   pendingComponent: JobDetailSkeleton,

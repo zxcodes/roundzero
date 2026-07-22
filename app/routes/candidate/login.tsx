@@ -4,7 +4,7 @@ import { LoginPageShell } from "@/features/auth/components/login-page-shell";
 import { GoogleSignInProvider, useGoogleSignIn } from "@/features/auth/provider";
 import { currentUserQueryKey, getCurrentUser } from "@/features/auth/server/functions";
 import { redirectAfterSignup, signupSearchSchema } from "@/features/auth/signup-search";
-import { buildPageHead, PAGE_SEO } from "@/shared/seo";
+import { buildPageHead, NOINDEX_ROBOTS, PAGE_SEO } from "@/shared/seo";
 
 export const Route = createFileRoute("/candidate/login")({
   validateSearch: signupSearchSchema,
@@ -23,6 +23,7 @@ export const Route = createFileRoute("/candidate/login")({
       title: PAGE_SEO.signIn.title,
       description: PAGE_SEO.signIn.description,
       path: "/candidate/login",
+      robots: NOINDEX_ROBOTS,
     }),
   component: CandidateLoginRoute,
 });

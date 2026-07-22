@@ -39,10 +39,6 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         content: DEFAULT_META_DESCRIPTION,
       },
       {
-        name: "keywords",
-        content: "hiring, ai interview, recruitment, jobs, candidates, talent acquisition",
-      },
-      {
         property: "og:title",
         content: DEFAULT_META_TITLE,
       },

@@ -30,7 +30,7 @@ import { publicCompanyDetailTrail } from "@/shared/breadcrumb-trails";
 import type { CompanySize, Industry } from "@/shared/enums";
 import { companySizeLabels, industryLabels } from "@/shared/enums";
 import { getPublicAssetUrl } from "@/shared/r2";
-import { buildPageHead, organizationJsonLd } from "@/shared/seo";
+import { breadcrumbJsonLd, buildPageHead, NOINDEX_ROBOTS, organizationJsonLd } from "@/shared/seo";
 
 type CompanyDetail = NonNullable<Awaited<ReturnType<typeof getCompanyBySlug>>>;
 type LoaderData = { company: CompanyDetail; jobs: Array<unknown> };
@@ -64,17 +64,20 @@ export const Route = createFileRoute("/companies/$slug")({
         title: "Company Not Found | RoundZero",
         description: "This company profile could not be found on RoundZero.",
         path: "/companies",
+        robots: NOINDEX_ROBOTS,
       });
     }
 
     const seo = companySeo(data);
     const logoUrl = data.company.logoKey ? getPublicAssetUrl(data.company.logoKey) : null;
+    const isIndexable = data.jobs.length > 0 || Boolean(data.company.description?.trim().length);
 
     return buildPageHead({
       title: seo.title,
       description: seo.description,
       path: `/companies/${data.company.slug}`,
       ogDescription: seo.ogDescription,
+      robots: isIndexable ? undefined : NOINDEX_ROBOTS,
       scripts: [
         organizationJsonLd({
           name: data.company.name,
@@ -85,6 +88,10 @@ export const Route = createFileRoute("/companies/$slug")({
           foundedYear: data.company.foundedYear,
           logoUrl,
         }),
+        breadcrumbJsonLd([
+          { name: "Companies", path: "/companies" },
+          { name: data.company.name, path: `/companies/${data.company.slug}` },
+        ]),
       ],
     });
   },

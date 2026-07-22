@@ -41,7 +41,7 @@ import {
   industrySchema,
 } from "@/shared/enums";
 import { getPublicAssetUrl } from "@/shared/r2";
-import { buildPageHead, PAGE_SEO } from "@/shared/seo";
+import { buildPageHead, NOINDEX_FOLLOW_ROBOTS, PAGE_SEO } from "@/shared/seo";
 
 const searchDefaults = { search: "", industry: "all", size: "all", page: 1 } as const;
 
@@ -52,16 +52,15 @@ const companiesSearchSchema = z.object({
   page: z.number().int().min(1).default(searchDefaults.page).catch(searchDefaults.page),
 });
 
+const hasActiveCompaniesSearch = (search: z.infer<typeof companiesSearchSchema>) =>
+  Object.entries(searchDefaults).some(
+    ([key, value]) => search[key as keyof typeof search] !== value,
+  );
+
 export const Route = createFileRoute("/companies/")({
   validateSearch: companiesSearchSchema,
   search: { middlewares: [stripSearchParams(searchDefaults)] },
   loaderDeps: ({ search }) => search,
-  head: () =>
-    buildPageHead({
-      title: PAGE_SEO.companies.title,
-      description: PAGE_SEO.companies.description,
-      path: "/companies",
-    }),
   loader: async ({ deps }) => {
     const result = await getAllCompaniesPaginated({
       data: {
@@ -71,8 +70,15 @@ export const Route = createFileRoute("/companies/")({
         page: deps.page,
       },
     });
-    return result;
+    return { ...result, isFiltered: hasActiveCompaniesSearch(deps) };
   },
+  head: ({ loaderData }) =>
+    buildPageHead({
+      title: PAGE_SEO.companies.title,
+      description: PAGE_SEO.companies.description,
+      path: "/companies",
+      robots: loaderData?.isFiltered ? NOINDEX_FOLLOW_ROBOTS : undefined,
+    }),
   pendingComponent: CompaniesListSkeleton,
   component: CompaniesPage,
 });
