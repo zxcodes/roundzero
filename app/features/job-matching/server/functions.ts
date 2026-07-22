@@ -92,7 +92,6 @@ export const refreshMyCandidateMatches = createServerFn({ method: "POST" })
     const started = await claimAndStartCandidateRefresh({
       db: getDb(),
       candidateId: context.userId,
-      force: true,
     });
     return { started };
   });

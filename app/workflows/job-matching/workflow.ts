@@ -213,7 +213,7 @@ export class JobMatchingWorkflow extends WorkflowEntrypoint<Env, JobMatchingWork
         candidateFeedInputHash(extracted.sourceHash, retrieval),
       );
 
-      if (!payload.force && inputHash === candidate.servingInputHash) {
+      if (inputHash === candidate.servingInputHash) {
         await step.do("touch-unchanged-feed", async () => {
           const db = getDb();
           await touchCandidateMatchFeedIfCurrent(db, {
@@ -253,7 +253,6 @@ export class JobMatchingWorkflow extends WorkflowEntrypoint<Env, JobMatchingWork
         console.info({
           event: "candidate_job_matching_reranker_usage",
           candidateId: payload.candidateId,
-          force: payload.force,
           jobs: retrieval.length,
           model: ranked.model,
           inputTokens: ranked.usage.inputTokens,

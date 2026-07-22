@@ -104,8 +104,7 @@ SET match_refresh_token = sqlc.arg('refresh_token'),
 WHERE user_id = sqlc.arg('user_id')
   AND resume_key IS NOT NULL
   AND (
-    sqlc.arg('force')::boolean
-    OR match_refresh_claimed_at IS NULL
+    match_refresh_claimed_at IS NULL
     OR match_refresh_claimed_at < sqlc.arg('claim_cutoff')
   )
 RETURNING user_id, match_refresh_token, resume_key;
