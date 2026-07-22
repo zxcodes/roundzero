@@ -278,10 +278,13 @@
    signature; product surfaces and editorial rules stay deliberately quiet. */
 .marketing-page {
   --marketing-ink: #2e3038;
-  --marketing-muted: #71717a;
+  /* Zinc-600: ≥4.5:1 on white and tinted marketing surfaces (#f3f5f3). */
+  --marketing-muted: #52525b;
   --marketing-surface: #f7f7f8;
   --marketing-border: #e4e4e7;
   --marketing-success: #2f7a4d;
+  /* Darker success ink for small text on mint/success tints (≥4.5:1). */
+  --marketing-success-ink: #1f5c38;
   color: var(--marketing-ink);
   background: #fff;
   font-feature-settings: "ss01", "cv11";
