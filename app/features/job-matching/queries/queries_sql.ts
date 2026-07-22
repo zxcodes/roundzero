@@ -1635,15 +1635,15 @@ export const markCandidateDigestMatchesNotifiedQuery = `-- name: MarkCandidateDi
 UPDATE candidate_job_matches
 SET digest_notified_at = now(), updated_at = now()
 WHERE candidate_id = $1
-  AND job_id = ANY($2::uuid[])
+  AND job_id = ANY(string_to_array($2, ',')::uuid[])
   AND digest_notified_at IS NULL`;
 
 export interface MarkCandidateDigestMatchesNotifiedArgs {
     candidateId: string;
-    jobIds: string[];
+    jobIdsCsv: string;
 }
 
 export async function markCandidateDigestMatchesNotified(sql: Sql, args: MarkCandidateDigestMatchesNotifiedArgs): Promise<void> {
-    await sql.unsafe(markCandidateDigestMatchesNotifiedQuery, [args.candidateId, args.jobIds]);
+    await sql.unsafe(markCandidateDigestMatchesNotifiedQuery, [args.candidateId, args.jobIdsCsv]);
 }
 

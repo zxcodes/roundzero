@@ -70,7 +70,7 @@ export class MatchDigestWorkflow extends WorkflowEntrypoint<Env> {
 
           await markCandidateDigestMatchesNotified(transaction, {
             candidateId: candidate.userId,
-            jobIds: matches.map((match) => match.jobId),
+            jobIdsCsv: matches.map((match) => match.jobId).join(","),
           });
           return { notification, created: true };
         });
