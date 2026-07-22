@@ -69,6 +69,15 @@ sql:
           runtime: node
           driver: postgres
   - schema: "db/migrations"
+    queries: "app/features/job-matching/queries/queries.sql"
+    engine: postgresql
+    codegen:
+      - out: app/features/job-matching/queries
+        plugin: ts
+        options:
+          runtime: node
+          driver: postgres
+  - schema: "db/migrations"
     queries: "app/features/notifications/queries/queries.sql"
     engine: postgresql
     codegen:

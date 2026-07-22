@@ -41,6 +41,7 @@ type Task =
   | "post_eval_audit"
   | "interview"
   | "job_creation"
+  | "job_matching"
   | "answer_authenticity";
 
 type EnvKey = "dev" | "staging" | "prod";
@@ -71,6 +72,11 @@ const MODEL_CHAINS = {
     prod: ["google/gemini-2.5-pro", "anthropic/claude-sonnet-4.5"],
   },
   job_creation: DEFAULT_CHAIN,
+  job_matching: {
+    dev: ["openrouter/free"],
+    staging: ["deepseek/deepseek-v4-flash"],
+    prod: ["deepseek/deepseek-v4-flash"],
+  },
   interview: {
     dev: ["meta-llama/llama-3.3-70b-instruct:free"],
     staging: ["deepseek/deepseek-v4-flash"],

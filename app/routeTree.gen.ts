@@ -9,65 +9,59 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TosRouteImport } from './routes/tos'
-import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as ContactRouteImport } from './routes/contact'
-import { Route as AdminRouteImport } from './routes/admin'
-import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as JobsIndexRouteImport } from './routes/jobs/index'
-import { Route as CompaniesIndexRouteImport } from './routes/companies/index'
-import { Route as AdminIndexRouteImport } from './routes/admin/index'
-import { Route as JobsJobIdRouteImport } from './routes/jobs/$jobId'
-import { Route as InviteTokenRouteImport } from './routes/invite/$token'
-import { Route as CompanyLoginRouteImport } from './routes/company/login'
-import { Route as CompaniesSlugRouteImport } from './routes/companies/$slug'
-import { Route as CandidateLoginRouteImport } from './routes/candidate/login'
-import { Route as ApiVoiceWebhookRouteImport } from './routes/api/voice-webhook'
-import { Route as ApiInterviewChatRouteImport } from './routes/api/interview-chat'
-import { Route as AdminFeedbackRouteImport } from './routes/admin/feedback'
-import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
-import { Route as AuthenticatedInterviewRouteImport } from './routes/_authenticated/interview'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as TosRouteImport } from './routes/tos'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
-import { Route as AuthenticatedInterviewIndexRouteImport } from './routes/_authenticated/interview/index'
+import { Route as AuthenticatedInterviewRouteImport } from './routes/_authenticated/interview'
+import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminFeedbackRouteImport } from './routes/admin/feedback'
+import { Route as ApiInterviewChatRouteImport } from './routes/api/interview-chat'
+import { Route as ApiVoiceWebhookRouteImport } from './routes/api/voice-webhook'
+import { Route as CandidateLoginRouteImport } from './routes/candidate/login'
+import { Route as CompaniesIndexRouteImport } from './routes/companies/index'
+import { Route as CompaniesSlugRouteImport } from './routes/companies/$slug'
+import { Route as CompanyLoginRouteImport } from './routes/company/login'
+import { Route as InviteTokenRouteImport } from './routes/invite/$token'
+import { Route as JobsIndexRouteImport } from './routes/jobs/index'
+import { Route as JobsJobIdRouteImport } from './routes/jobs/$jobId'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard/index'
-import { Route as AuthenticatedOnboardingNoWorkspaceRouteImport } from './routes/_authenticated/onboarding/no-workspace'
-import { Route as AuthenticatedOnboardingCompanyRouteImport } from './routes/_authenticated/onboarding/company'
-import { Route as AuthenticatedOnboardingCandidateRouteImport } from './routes/_authenticated/onboarding/candidate'
-import { Route as AuthenticatedInterviewInterviewIdRouteImport } from './routes/_authenticated/interview/$interviewId'
-import { Route as AuthenticatedDashboardTeamRouteImport } from './routes/_authenticated/dashboard/team'
-import { Route as AuthenticatedDashboardSupportRouteImport } from './routes/_authenticated/dashboard/support'
-import { Route as AuthenticatedDashboardShortlistedRouteImport } from './routes/_authenticated/dashboard/shortlisted'
-import { Route as AuthenticatedDashboardSettingsRouteImport } from './routes/_authenticated/dashboard/settings'
-import { Route as AuthenticatedDashboardBillingRouteImport } from './routes/_authenticated/dashboard/billing'
-import { Route as AuthenticatedDashboardAwaitingReviewRouteImport } from './routes/_authenticated/dashboard/awaiting-review'
 import { Route as AuthenticatedDashboardApplicationsRouteImport } from './routes/_authenticated/dashboard/applications'
-import { Route as AuthenticatedInterviewInterviewIdIndexRouteImport } from './routes/_authenticated/interview/$interviewId/index'
-import { Route as AuthenticatedDashboardJobsIndexRouteImport } from './routes/_authenticated/dashboard/jobs/index'
-import { Route as AuthenticatedDashboardJobsNewRouteImport } from './routes/_authenticated/dashboard/jobs/new'
-import { Route as AuthenticatedDashboardJobsJobIdRouteImport } from './routes/_authenticated/dashboard/jobs/$jobId'
-import { Route as AuthenticatedDashboardJobBatchesBatchIdRouteImport } from './routes/_authenticated/dashboard/job-batches/$batchId'
-import { Route as AuthenticatedDashboardJobApplicantsJobIdRouteImport } from './routes/_authenticated/dashboard/job-applicants/$jobId'
-import { Route as AuthenticatedDashboardApplicationApplicationIdRouteImport } from './routes/_authenticated/dashboard/application/$applicationId'
+import { Route as AuthenticatedDashboardAwaitingReviewRouteImport } from './routes/_authenticated/dashboard/awaiting-review'
+import { Route as AuthenticatedDashboardBillingRouteImport } from './routes/_authenticated/dashboard/billing'
+import { Route as AuthenticatedDashboardSettingsRouteImport } from './routes/_authenticated/dashboard/settings'
+import { Route as AuthenticatedDashboardShortlistedRouteImport } from './routes/_authenticated/dashboard/shortlisted'
+import { Route as AuthenticatedDashboardSupportRouteImport } from './routes/_authenticated/dashboard/support'
+import { Route as AuthenticatedDashboardTeamRouteImport } from './routes/_authenticated/dashboard/team'
+import { Route as AuthenticatedInterviewIndexRouteImport } from './routes/_authenticated/interview/index'
+import { Route as AuthenticatedInterviewInterviewIdRouteImport } from './routes/_authenticated/interview/$interviewId'
+import { Route as AuthenticatedOnboardingCandidateRouteImport } from './routes/_authenticated/onboarding/candidate'
+import { Route as AuthenticatedOnboardingCompanyRouteImport } from './routes/_authenticated/onboarding/company'
+import { Route as AuthenticatedOnboardingNoWorkspaceRouteImport } from './routes/_authenticated/onboarding/no-workspace'
 import { Route as AuthenticatedDashboardApplicantsApplicationIdRouteImport } from './routes/_authenticated/dashboard/applicants/$applicationId'
-import { Route as AuthenticatedDashboardJobsJobIdIndexRouteImport } from './routes/_authenticated/dashboard/jobs/$jobId/index'
+import { Route as AuthenticatedDashboardApplicationApplicationIdRouteImport } from './routes/_authenticated/dashboard/application/$applicationId'
+import { Route as AuthenticatedDashboardJobApplicantsJobIdRouteImport } from './routes/_authenticated/dashboard/job-applicants/$jobId'
+import { Route as AuthenticatedDashboardJobBatchesBatchIdRouteImport } from './routes/_authenticated/dashboard/job-batches/$batchId'
+import { Route as AuthenticatedDashboardJobsIndexRouteImport } from './routes/_authenticated/dashboard/jobs/index'
+import { Route as AuthenticatedDashboardJobsJobIdRouteImport } from './routes/_authenticated/dashboard/jobs/$jobId'
+import { Route as AuthenticatedDashboardJobsNewRouteImport } from './routes/_authenticated/dashboard/jobs/new'
+import { Route as AuthenticatedInterviewInterviewIdIndexRouteImport } from './routes/_authenticated/interview/$interviewId/index'
 import { Route as AuthenticatedDashboardApplicantReportsApplicationIdIndexRouteImport } from './routes/_authenticated/dashboard/applicant-reports/$applicationId/index'
-import { Route as AuthenticatedDashboardJobsJobIdEditRouteImport } from './routes/_authenticated/dashboard/jobs/$jobId/edit'
 import { Route as AuthenticatedDashboardApplicantReportsApplicationIdFullRouteImport } from './routes/_authenticated/dashboard/applicant-reports/$applicationId/full'
+import { Route as AuthenticatedDashboardJobsJobIdIndexRouteImport } from './routes/_authenticated/dashboard/jobs/$jobId/index'
+import { Route as AuthenticatedDashboardJobsJobIdEditRouteImport } from './routes/_authenticated/dashboard/jobs/$jobId/edit'
 
-const TosRoute = TosRouteImport.update({
-  id: '/tos',
-  path: '/tos',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ContactRoute = ContactRouteImport.update({
-  id: '/contact',
-  path: '/contact',
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -75,73 +69,24 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRoute = AuthenticatedRouteImport.update({
-  id: '/_authenticated',
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
-const JobsIndexRoute = JobsIndexRouteImport.update({
-  id: '/jobs/',
-  path: '/jobs/',
+const TosRoute = TosRouteImport.update({
+  id: '/tos',
+  path: '/tos',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CompaniesIndexRoute = CompaniesIndexRouteImport.update({
-  id: '/companies/',
-  path: '/companies/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminIndexRoute = AdminIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AdminRoute,
-} as any)
-const JobsJobIdRoute = JobsJobIdRouteImport.update({
-  id: '/jobs/$jobId',
-  path: '/jobs/$jobId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InviteTokenRoute = InviteTokenRouteImport.update({
-  id: '/invite/$token',
-  path: '/invite/$token',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CompanyLoginRoute = CompanyLoginRouteImport.update({
-  id: '/company/login',
-  path: '/company/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CompaniesSlugRoute = CompaniesSlugRouteImport.update({
-  id: '/companies/$slug',
-  path: '/companies/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CandidateLoginRoute = CandidateLoginRouteImport.update({
-  id: '/candidate/login',
-  path: '/candidate/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiVoiceWebhookRoute = ApiVoiceWebhookRouteImport.update({
-  id: '/api/voice-webhook',
-  path: '/api/voice-webhook',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiInterviewChatRoute = ApiInterviewChatRouteImport.update({
-  id: '/api/interview-chat',
-  path: '/api/interview-chat',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminFeedbackRoute = AdminFeedbackRouteImport.update({
-  id: '/feedback',
-  path: '/feedback',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
-  id: '/onboarding',
-  path: '/onboarding',
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedInterviewRoute = AuthenticatedInterviewRouteImport.update({
@@ -149,81 +94,70 @@ const AuthenticatedInterviewRoute = AuthenticatedInterviewRouteImport.update({
   path: '/interview',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
+const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedInterviewIndexRoute =
-  AuthenticatedInterviewIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedInterviewRoute,
-  } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminFeedbackRoute = AdminFeedbackRouteImport.update({
+  id: '/feedback',
+  path: '/feedback',
+  getParentRoute: () => AdminRoute,
+} as any)
+const ApiInterviewChatRoute = ApiInterviewChatRouteImport.update({
+  id: '/api/interview-chat',
+  path: '/api/interview-chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiVoiceWebhookRoute = ApiVoiceWebhookRouteImport.update({
+  id: '/api/voice-webhook',
+  path: '/api/voice-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CandidateLoginRoute = CandidateLoginRouteImport.update({
+  id: '/candidate/login',
+  path: '/candidate/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompaniesIndexRoute = CompaniesIndexRouteImport.update({
+  id: '/companies/',
+  path: '/companies/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompaniesSlugRoute = CompaniesSlugRouteImport.update({
+  id: '/companies/$slug',
+  path: '/companies/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompanyLoginRoute = CompanyLoginRouteImport.update({
+  id: '/company/login',
+  path: '/company/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InviteTokenRoute = InviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JobsIndexRoute = JobsIndexRouteImport.update({
+  id: '/jobs/',
+  path: '/jobs/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JobsJobIdRoute = JobsJobIdRouteImport.update({
+  id: '/jobs/$jobId',
+  path: '/jobs/$jobId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedDashboardIndexRoute =
   AuthenticatedDashboardIndexRouteImport.update({
     id: '/',
     path: '/',
-    getParentRoute: () => AuthenticatedDashboardRoute,
-  } as any)
-const AuthenticatedOnboardingNoWorkspaceRoute =
-  AuthenticatedOnboardingNoWorkspaceRouteImport.update({
-    id: '/no-workspace',
-    path: '/no-workspace',
-    getParentRoute: () => AuthenticatedOnboardingRoute,
-  } as any)
-const AuthenticatedOnboardingCompanyRoute =
-  AuthenticatedOnboardingCompanyRouteImport.update({
-    id: '/company',
-    path: '/company',
-    getParentRoute: () => AuthenticatedOnboardingRoute,
-  } as any)
-const AuthenticatedOnboardingCandidateRoute =
-  AuthenticatedOnboardingCandidateRouteImport.update({
-    id: '/candidate',
-    path: '/candidate',
-    getParentRoute: () => AuthenticatedOnboardingRoute,
-  } as any)
-const AuthenticatedInterviewInterviewIdRoute =
-  AuthenticatedInterviewInterviewIdRouteImport.update({
-    id: '/$interviewId',
-    path: '/$interviewId',
-    getParentRoute: () => AuthenticatedInterviewRoute,
-  } as any)
-const AuthenticatedDashboardTeamRoute =
-  AuthenticatedDashboardTeamRouteImport.update({
-    id: '/team',
-    path: '/team',
-    getParentRoute: () => AuthenticatedDashboardRoute,
-  } as any)
-const AuthenticatedDashboardSupportRoute =
-  AuthenticatedDashboardSupportRouteImport.update({
-    id: '/support',
-    path: '/support',
-    getParentRoute: () => AuthenticatedDashboardRoute,
-  } as any)
-const AuthenticatedDashboardShortlistedRoute =
-  AuthenticatedDashboardShortlistedRouteImport.update({
-    id: '/shortlisted',
-    path: '/shortlisted',
-    getParentRoute: () => AuthenticatedDashboardRoute,
-  } as any)
-const AuthenticatedDashboardSettingsRoute =
-  AuthenticatedDashboardSettingsRouteImport.update({
-    id: '/settings',
-    path: '/settings',
-    getParentRoute: () => AuthenticatedDashboardRoute,
-  } as any)
-const AuthenticatedDashboardBillingRoute =
-  AuthenticatedDashboardBillingRouteImport.update({
-    id: '/billing',
-    path: '/billing',
-    getParentRoute: () => AuthenticatedDashboardRoute,
-  } as any)
-const AuthenticatedDashboardAwaitingReviewRoute =
-  AuthenticatedDashboardAwaitingReviewRouteImport.update({
-    id: '/awaiting-review',
-    path: '/awaiting-review',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
 const AuthenticatedDashboardApplicationsRoute =
@@ -232,40 +166,76 @@ const AuthenticatedDashboardApplicationsRoute =
     path: '/applications',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
-const AuthenticatedInterviewInterviewIdIndexRoute =
-  AuthenticatedInterviewInterviewIdIndexRouteImport.update({
+const AuthenticatedDashboardAwaitingReviewRoute =
+  AuthenticatedDashboardAwaitingReviewRouteImport.update({
+    id: '/awaiting-review',
+    path: '/awaiting-review',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardBillingRoute =
+  AuthenticatedDashboardBillingRouteImport.update({
+    id: '/billing',
+    path: '/billing',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardSettingsRoute =
+  AuthenticatedDashboardSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardShortlistedRoute =
+  AuthenticatedDashboardShortlistedRouteImport.update({
+    id: '/shortlisted',
+    path: '/shortlisted',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardSupportRoute =
+  AuthenticatedDashboardSupportRouteImport.update({
+    id: '/support',
+    path: '/support',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardTeamRoute =
+  AuthenticatedDashboardTeamRouteImport.update({
+    id: '/team',
+    path: '/team',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedInterviewIndexRoute =
+  AuthenticatedInterviewIndexRouteImport.update({
     id: '/',
     path: '/',
-    getParentRoute: () => AuthenticatedInterviewInterviewIdRoute,
+    getParentRoute: () => AuthenticatedInterviewRoute,
   } as any)
-const AuthenticatedDashboardJobsIndexRoute =
-  AuthenticatedDashboardJobsIndexRouteImport.update({
-    id: '/jobs/',
-    path: '/jobs/',
-    getParentRoute: () => AuthenticatedDashboardRoute,
+const AuthenticatedInterviewInterviewIdRoute =
+  AuthenticatedInterviewInterviewIdRouteImport.update({
+    id: '/$interviewId',
+    path: '/$interviewId',
+    getParentRoute: () => AuthenticatedInterviewRoute,
   } as any)
-const AuthenticatedDashboardJobsNewRoute =
-  AuthenticatedDashboardJobsNewRouteImport.update({
-    id: '/jobs/new',
-    path: '/jobs/new',
-    getParentRoute: () => AuthenticatedDashboardRoute,
+const AuthenticatedOnboardingCandidateRoute =
+  AuthenticatedOnboardingCandidateRouteImport.update({
+    id: '/candidate',
+    path: '/candidate',
+    getParentRoute: () => AuthenticatedOnboardingRoute,
   } as any)
-const AuthenticatedDashboardJobsJobIdRoute =
-  AuthenticatedDashboardJobsJobIdRouteImport.update({
-    id: '/jobs/$jobId',
-    path: '/jobs/$jobId',
-    getParentRoute: () => AuthenticatedDashboardRoute,
+const AuthenticatedOnboardingCompanyRoute =
+  AuthenticatedOnboardingCompanyRouteImport.update({
+    id: '/company',
+    path: '/company',
+    getParentRoute: () => AuthenticatedOnboardingRoute,
   } as any)
-const AuthenticatedDashboardJobBatchesBatchIdRoute =
-  AuthenticatedDashboardJobBatchesBatchIdRouteImport.update({
-    id: '/job-batches/$batchId',
-    path: '/job-batches/$batchId',
-    getParentRoute: () => AuthenticatedDashboardRoute,
+const AuthenticatedOnboardingNoWorkspaceRoute =
+  AuthenticatedOnboardingNoWorkspaceRouteImport.update({
+    id: '/no-workspace',
+    path: '/no-workspace',
+    getParentRoute: () => AuthenticatedOnboardingRoute,
   } as any)
-const AuthenticatedDashboardJobApplicantsJobIdRoute =
-  AuthenticatedDashboardJobApplicantsJobIdRouteImport.update({
-    id: '/job-applicants/$jobId',
-    path: '/job-applicants/$jobId',
+const AuthenticatedDashboardApplicantsApplicationIdRoute =
+  AuthenticatedDashboardApplicantsApplicationIdRouteImport.update({
+    id: '/applicants/$applicationId',
+    path: '/applicants/$applicationId',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
 const AuthenticatedDashboardApplicationApplicationIdRoute =
@@ -274,10 +244,52 @@ const AuthenticatedDashboardApplicationApplicationIdRoute =
     path: '/application/$applicationId',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
-const AuthenticatedDashboardApplicantsApplicationIdRoute =
-  AuthenticatedDashboardApplicantsApplicationIdRouteImport.update({
-    id: '/applicants/$applicationId',
-    path: '/applicants/$applicationId',
+const AuthenticatedDashboardJobApplicantsJobIdRoute =
+  AuthenticatedDashboardJobApplicantsJobIdRouteImport.update({
+    id: '/job-applicants/$jobId',
+    path: '/job-applicants/$jobId',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardJobBatchesBatchIdRoute =
+  AuthenticatedDashboardJobBatchesBatchIdRouteImport.update({
+    id: '/job-batches/$batchId',
+    path: '/job-batches/$batchId',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardJobsIndexRoute =
+  AuthenticatedDashboardJobsIndexRouteImport.update({
+    id: '/jobs/',
+    path: '/jobs/',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardJobsJobIdRoute =
+  AuthenticatedDashboardJobsJobIdRouteImport.update({
+    id: '/jobs/$jobId',
+    path: '/jobs/$jobId',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardJobsNewRoute =
+  AuthenticatedDashboardJobsNewRouteImport.update({
+    id: '/jobs/new',
+    path: '/jobs/new',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedInterviewInterviewIdIndexRoute =
+  AuthenticatedInterviewInterviewIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedInterviewInterviewIdRoute,
+  } as any)
+const AuthenticatedDashboardApplicantReportsApplicationIdIndexRoute =
+  AuthenticatedDashboardApplicantReportsApplicationIdIndexRouteImport.update({
+    id: '/applicant-reports/$applicationId/',
+    path: '/applicant-reports/$applicationId/',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardApplicantReportsApplicationIdFullRoute =
+  AuthenticatedDashboardApplicantReportsApplicationIdFullRouteImport.update({
+    id: '/applicant-reports/$applicationId/full',
+    path: '/applicant-reports/$applicationId/full',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
 const AuthenticatedDashboardJobsJobIdIndexRoute =
@@ -286,23 +298,11 @@ const AuthenticatedDashboardJobsJobIdIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedDashboardJobsJobIdRoute,
   } as any)
-const AuthenticatedDashboardApplicantReportsApplicationIdIndexRoute =
-  AuthenticatedDashboardApplicantReportsApplicationIdIndexRouteImport.update({
-    id: '/applicant-reports/$applicationId/',
-    path: '/applicant-reports/$applicationId/',
-    getParentRoute: () => AuthenticatedDashboardRoute,
-  } as any)
 const AuthenticatedDashboardJobsJobIdEditRoute =
   AuthenticatedDashboardJobsJobIdEditRouteImport.update({
     id: '/edit',
     path: '/edit',
     getParentRoute: () => AuthenticatedDashboardJobsJobIdRoute,
-  } as any)
-const AuthenticatedDashboardApplicantReportsApplicationIdFullRoute =
-  AuthenticatedDashboardApplicantReportsApplicationIdFullRouteImport.update({
-    id: '/applicant-reports/$applicationId/full',
-    path: '/applicant-reports/$applicationId/full',
-    getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -597,32 +597,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/tos': {
-      id: '/tos'
-      path: '/tos'
-      fullPath: '/tos'
-      preLoaderRoute: typeof TosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/contact': {
-      id: '/contact'
-      path: '/contact'
-      fullPath: '/contact'
-      preLoaderRoute: typeof ContactRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -632,95 +611,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/jobs/': {
-      id: '/jobs/'
-      path: '/jobs'
-      fullPath: '/jobs/'
-      preLoaderRoute: typeof JobsIndexRouteImport
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/companies/': {
-      id: '/companies/'
-      path: '/companies'
-      fullPath: '/companies/'
-      preLoaderRoute: typeof CompaniesIndexRouteImport
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/': {
-      id: '/admin/'
-      path: '/'
-      fullPath: '/admin/'
-      preLoaderRoute: typeof AdminIndexRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/jobs/$jobId': {
-      id: '/jobs/$jobId'
-      path: '/jobs/$jobId'
-      fullPath: '/jobs/$jobId'
-      preLoaderRoute: typeof JobsJobIdRouteImport
+    '/tos': {
+      id: '/tos'
+      path: '/tos'
+      fullPath: '/tos'
+      preLoaderRoute: typeof TosRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/invite/$token': {
-      id: '/invite/$token'
-      path: '/invite/$token'
-      fullPath: '/invite/$token'
-      preLoaderRoute: typeof InviteTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/company/login': {
-      id: '/company/login'
-      path: '/company/login'
-      fullPath: '/company/login'
-      preLoaderRoute: typeof CompanyLoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/companies/$slug': {
-      id: '/companies/$slug'
-      path: '/companies/$slug'
-      fullPath: '/companies/$slug'
-      preLoaderRoute: typeof CompaniesSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/candidate/login': {
-      id: '/candidate/login'
-      path: '/candidate/login'
-      fullPath: '/candidate/login'
-      preLoaderRoute: typeof CandidateLoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/voice-webhook': {
-      id: '/api/voice-webhook'
-      path: '/api/voice-webhook'
-      fullPath: '/api/voice-webhook'
-      preLoaderRoute: typeof ApiVoiceWebhookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/interview-chat': {
-      id: '/api/interview-chat'
-      path: '/api/interview-chat'
-      fullPath: '/api/interview-chat'
-      preLoaderRoute: typeof ApiInterviewChatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/feedback': {
-      id: '/admin/feedback'
-      path: '/feedback'
-      fullPath: '/admin/feedback'
-      preLoaderRoute: typeof AdminFeedbackRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/_authenticated/onboarding': {
-      id: '/_authenticated/onboarding'
-      path: '/onboarding'
-      fullPath: '/onboarding'
-      preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/interview': {
@@ -730,95 +653,95 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInterviewRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/dashboard': {
-      id: '/_authenticated/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+    '/_authenticated/onboarding': {
+      id: '/_authenticated/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/interview/': {
-      id: '/_authenticated/interview/'
+    '/admin/': {
+      id: '/admin/'
       path: '/'
-      fullPath: '/interview/'
-      preLoaderRoute: typeof AuthenticatedInterviewIndexRouteImport
-      parentRoute: typeof AuthenticatedInterviewRoute
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/feedback': {
+      id: '/admin/feedback'
+      path: '/feedback'
+      fullPath: '/admin/feedback'
+      preLoaderRoute: typeof AdminFeedbackRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/api/interview-chat': {
+      id: '/api/interview-chat'
+      path: '/api/interview-chat'
+      fullPath: '/api/interview-chat'
+      preLoaderRoute: typeof ApiInterviewChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/voice-webhook': {
+      id: '/api/voice-webhook'
+      path: '/api/voice-webhook'
+      fullPath: '/api/voice-webhook'
+      preLoaderRoute: typeof ApiVoiceWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/candidate/login': {
+      id: '/candidate/login'
+      path: '/candidate/login'
+      fullPath: '/candidate/login'
+      preLoaderRoute: typeof CandidateLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/companies/': {
+      id: '/companies/'
+      path: '/companies'
+      fullPath: '/companies/'
+      preLoaderRoute: typeof CompaniesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/companies/$slug': {
+      id: '/companies/$slug'
+      path: '/companies/$slug'
+      fullPath: '/companies/$slug'
+      preLoaderRoute: typeof CompaniesSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/company/login': {
+      id: '/company/login'
+      path: '/company/login'
+      fullPath: '/company/login'
+      preLoaderRoute: typeof CompanyLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invite/$token': {
+      id: '/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/invite/$token'
+      preLoaderRoute: typeof InviteTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/jobs/': {
+      id: '/jobs/'
+      path: '/jobs'
+      fullPath: '/jobs/'
+      preLoaderRoute: typeof JobsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/jobs/$jobId': {
+      id: '/jobs/$jobId'
+      path: '/jobs/$jobId'
+      fullPath: '/jobs/$jobId'
+      preLoaderRoute: typeof JobsJobIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/dashboard/': {
       id: '/_authenticated/dashboard/'
       path: '/'
       fullPath: '/dashboard/'
       preLoaderRoute: typeof AuthenticatedDashboardIndexRouteImport
-      parentRoute: typeof AuthenticatedDashboardRoute
-    }
-    '/_authenticated/onboarding/no-workspace': {
-      id: '/_authenticated/onboarding/no-workspace'
-      path: '/no-workspace'
-      fullPath: '/onboarding/no-workspace'
-      preLoaderRoute: typeof AuthenticatedOnboardingNoWorkspaceRouteImport
-      parentRoute: typeof AuthenticatedOnboardingRoute
-    }
-    '/_authenticated/onboarding/company': {
-      id: '/_authenticated/onboarding/company'
-      path: '/company'
-      fullPath: '/onboarding/company'
-      preLoaderRoute: typeof AuthenticatedOnboardingCompanyRouteImport
-      parentRoute: typeof AuthenticatedOnboardingRoute
-    }
-    '/_authenticated/onboarding/candidate': {
-      id: '/_authenticated/onboarding/candidate'
-      path: '/candidate'
-      fullPath: '/onboarding/candidate'
-      preLoaderRoute: typeof AuthenticatedOnboardingCandidateRouteImport
-      parentRoute: typeof AuthenticatedOnboardingRoute
-    }
-    '/_authenticated/interview/$interviewId': {
-      id: '/_authenticated/interview/$interviewId'
-      path: '/$interviewId'
-      fullPath: '/interview/$interviewId'
-      preLoaderRoute: typeof AuthenticatedInterviewInterviewIdRouteImport
-      parentRoute: typeof AuthenticatedInterviewRoute
-    }
-    '/_authenticated/dashboard/team': {
-      id: '/_authenticated/dashboard/team'
-      path: '/team'
-      fullPath: '/dashboard/team'
-      preLoaderRoute: typeof AuthenticatedDashboardTeamRouteImport
-      parentRoute: typeof AuthenticatedDashboardRoute
-    }
-    '/_authenticated/dashboard/support': {
-      id: '/_authenticated/dashboard/support'
-      path: '/support'
-      fullPath: '/dashboard/support'
-      preLoaderRoute: typeof AuthenticatedDashboardSupportRouteImport
-      parentRoute: typeof AuthenticatedDashboardRoute
-    }
-    '/_authenticated/dashboard/shortlisted': {
-      id: '/_authenticated/dashboard/shortlisted'
-      path: '/shortlisted'
-      fullPath: '/dashboard/shortlisted'
-      preLoaderRoute: typeof AuthenticatedDashboardShortlistedRouteImport
-      parentRoute: typeof AuthenticatedDashboardRoute
-    }
-    '/_authenticated/dashboard/settings': {
-      id: '/_authenticated/dashboard/settings'
-      path: '/settings'
-      fullPath: '/dashboard/settings'
-      preLoaderRoute: typeof AuthenticatedDashboardSettingsRouteImport
-      parentRoute: typeof AuthenticatedDashboardRoute
-    }
-    '/_authenticated/dashboard/billing': {
-      id: '/_authenticated/dashboard/billing'
-      path: '/billing'
-      fullPath: '/dashboard/billing'
-      preLoaderRoute: typeof AuthenticatedDashboardBillingRouteImport
-      parentRoute: typeof AuthenticatedDashboardRoute
-    }
-    '/_authenticated/dashboard/awaiting-review': {
-      id: '/_authenticated/dashboard/awaiting-review'
-      path: '/awaiting-review'
-      fullPath: '/dashboard/awaiting-review'
-      preLoaderRoute: typeof AuthenticatedDashboardAwaitingReviewRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
     '/_authenticated/dashboard/applications': {
@@ -828,46 +751,88 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardApplicationsRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
-    '/_authenticated/interview/$interviewId/': {
-      id: '/_authenticated/interview/$interviewId/'
+    '/_authenticated/dashboard/awaiting-review': {
+      id: '/_authenticated/dashboard/awaiting-review'
+      path: '/awaiting-review'
+      fullPath: '/dashboard/awaiting-review'
+      preLoaderRoute: typeof AuthenticatedDashboardAwaitingReviewRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/billing': {
+      id: '/_authenticated/dashboard/billing'
+      path: '/billing'
+      fullPath: '/dashboard/billing'
+      preLoaderRoute: typeof AuthenticatedDashboardBillingRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/settings': {
+      id: '/_authenticated/dashboard/settings'
+      path: '/settings'
+      fullPath: '/dashboard/settings'
+      preLoaderRoute: typeof AuthenticatedDashboardSettingsRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/shortlisted': {
+      id: '/_authenticated/dashboard/shortlisted'
+      path: '/shortlisted'
+      fullPath: '/dashboard/shortlisted'
+      preLoaderRoute: typeof AuthenticatedDashboardShortlistedRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/support': {
+      id: '/_authenticated/dashboard/support'
+      path: '/support'
+      fullPath: '/dashboard/support'
+      preLoaderRoute: typeof AuthenticatedDashboardSupportRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/team': {
+      id: '/_authenticated/dashboard/team'
+      path: '/team'
+      fullPath: '/dashboard/team'
+      preLoaderRoute: typeof AuthenticatedDashboardTeamRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/interview/': {
+      id: '/_authenticated/interview/'
       path: '/'
-      fullPath: '/interview/$interviewId/'
-      preLoaderRoute: typeof AuthenticatedInterviewInterviewIdIndexRouteImport
-      parentRoute: typeof AuthenticatedInterviewInterviewIdRoute
+      fullPath: '/interview/'
+      preLoaderRoute: typeof AuthenticatedInterviewIndexRouteImport
+      parentRoute: typeof AuthenticatedInterviewRoute
     }
-    '/_authenticated/dashboard/jobs/': {
-      id: '/_authenticated/dashboard/jobs/'
-      path: '/jobs'
-      fullPath: '/dashboard/jobs/'
-      preLoaderRoute: typeof AuthenticatedDashboardJobsIndexRouteImport
-      parentRoute: typeof AuthenticatedDashboardRoute
+    '/_authenticated/interview/$interviewId': {
+      id: '/_authenticated/interview/$interviewId'
+      path: '/$interviewId'
+      fullPath: '/interview/$interviewId'
+      preLoaderRoute: typeof AuthenticatedInterviewInterviewIdRouteImport
+      parentRoute: typeof AuthenticatedInterviewRoute
     }
-    '/_authenticated/dashboard/jobs/new': {
-      id: '/_authenticated/dashboard/jobs/new'
-      path: '/jobs/new'
-      fullPath: '/dashboard/jobs/new'
-      preLoaderRoute: typeof AuthenticatedDashboardJobsNewRouteImport
-      parentRoute: typeof AuthenticatedDashboardRoute
+    '/_authenticated/onboarding/candidate': {
+      id: '/_authenticated/onboarding/candidate'
+      path: '/candidate'
+      fullPath: '/onboarding/candidate'
+      preLoaderRoute: typeof AuthenticatedOnboardingCandidateRouteImport
+      parentRoute: typeof AuthenticatedOnboardingRoute
     }
-    '/_authenticated/dashboard/jobs/$jobId': {
-      id: '/_authenticated/dashboard/jobs/$jobId'
-      path: '/jobs/$jobId'
-      fullPath: '/dashboard/jobs/$jobId'
-      preLoaderRoute: typeof AuthenticatedDashboardJobsJobIdRouteImport
-      parentRoute: typeof AuthenticatedDashboardRoute
+    '/_authenticated/onboarding/company': {
+      id: '/_authenticated/onboarding/company'
+      path: '/company'
+      fullPath: '/onboarding/company'
+      preLoaderRoute: typeof AuthenticatedOnboardingCompanyRouteImport
+      parentRoute: typeof AuthenticatedOnboardingRoute
     }
-    '/_authenticated/dashboard/job-batches/$batchId': {
-      id: '/_authenticated/dashboard/job-batches/$batchId'
-      path: '/job-batches/$batchId'
-      fullPath: '/dashboard/job-batches/$batchId'
-      preLoaderRoute: typeof AuthenticatedDashboardJobBatchesBatchIdRouteImport
-      parentRoute: typeof AuthenticatedDashboardRoute
+    '/_authenticated/onboarding/no-workspace': {
+      id: '/_authenticated/onboarding/no-workspace'
+      path: '/no-workspace'
+      fullPath: '/onboarding/no-workspace'
+      preLoaderRoute: typeof AuthenticatedOnboardingNoWorkspaceRouteImport
+      parentRoute: typeof AuthenticatedOnboardingRoute
     }
-    '/_authenticated/dashboard/job-applicants/$jobId': {
-      id: '/_authenticated/dashboard/job-applicants/$jobId'
-      path: '/job-applicants/$jobId'
-      fullPath: '/dashboard/job-applicants/$jobId'
-      preLoaderRoute: typeof AuthenticatedDashboardJobApplicantsJobIdRouteImport
+    '/_authenticated/dashboard/applicants/$applicationId': {
+      id: '/_authenticated/dashboard/applicants/$applicationId'
+      path: '/applicants/$applicationId'
+      fullPath: '/dashboard/applicants/$applicationId'
+      preLoaderRoute: typeof AuthenticatedDashboardApplicantsApplicationIdRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
     '/_authenticated/dashboard/application/$applicationId': {
@@ -877,11 +842,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardApplicationApplicationIdRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
-    '/_authenticated/dashboard/applicants/$applicationId': {
-      id: '/_authenticated/dashboard/applicants/$applicationId'
-      path: '/applicants/$applicationId'
-      fullPath: '/dashboard/applicants/$applicationId'
-      preLoaderRoute: typeof AuthenticatedDashboardApplicantsApplicationIdRouteImport
+    '/_authenticated/dashboard/job-applicants/$jobId': {
+      id: '/_authenticated/dashboard/job-applicants/$jobId'
+      path: '/job-applicants/$jobId'
+      fullPath: '/dashboard/job-applicants/$jobId'
+      preLoaderRoute: typeof AuthenticatedDashboardJobApplicantsJobIdRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/job-batches/$batchId': {
+      id: '/_authenticated/dashboard/job-batches/$batchId'
+      path: '/job-batches/$batchId'
+      fullPath: '/dashboard/job-batches/$batchId'
+      preLoaderRoute: typeof AuthenticatedDashboardJobBatchesBatchIdRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/jobs/': {
+      id: '/_authenticated/dashboard/jobs/'
+      path: '/jobs'
+      fullPath: '/dashboard/jobs/'
+      preLoaderRoute: typeof AuthenticatedDashboardJobsIndexRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/jobs/$jobId': {
+      id: '/_authenticated/dashboard/jobs/$jobId'
+      path: '/jobs/$jobId'
+      fullPath: '/dashboard/jobs/$jobId'
+      preLoaderRoute: typeof AuthenticatedDashboardJobsJobIdRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/jobs/new': {
+      id: '/_authenticated/dashboard/jobs/new'
+      path: '/jobs/new'
+      fullPath: '/dashboard/jobs/new'
+      preLoaderRoute: typeof AuthenticatedDashboardJobsNewRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/interview/$interviewId/': {
+      id: '/_authenticated/interview/$interviewId/'
+      path: '/'
+      fullPath: '/interview/$interviewId/'
+      preLoaderRoute: typeof AuthenticatedInterviewInterviewIdIndexRouteImport
+      parentRoute: typeof AuthenticatedInterviewInterviewIdRoute
+    }
+    '/_authenticated/dashboard/applicant-reports/$applicationId/': {
+      id: '/_authenticated/dashboard/applicant-reports/$applicationId/'
+      path: '/applicant-reports/$applicationId'
+      fullPath: '/dashboard/applicant-reports/$applicationId/'
+      preLoaderRoute: typeof AuthenticatedDashboardApplicantReportsApplicationIdIndexRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/applicant-reports/$applicationId/full': {
+      id: '/_authenticated/dashboard/applicant-reports/$applicationId/full'
+      path: '/applicant-reports/$applicationId/full'
+      fullPath: '/dashboard/applicant-reports/$applicationId/full'
+      preLoaderRoute: typeof AuthenticatedDashboardApplicantReportsApplicationIdFullRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
     '/_authenticated/dashboard/jobs/$jobId/': {
@@ -891,26 +905,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardJobsJobIdIndexRouteImport
       parentRoute: typeof AuthenticatedDashboardJobsJobIdRoute
     }
-    '/_authenticated/dashboard/applicant-reports/$applicationId/': {
-      id: '/_authenticated/dashboard/applicant-reports/$applicationId/'
-      path: '/applicant-reports/$applicationId'
-      fullPath: '/dashboard/applicant-reports/$applicationId/'
-      preLoaderRoute: typeof AuthenticatedDashboardApplicantReportsApplicationIdIndexRouteImport
-      parentRoute: typeof AuthenticatedDashboardRoute
-    }
     '/_authenticated/dashboard/jobs/$jobId/edit': {
       id: '/_authenticated/dashboard/jobs/$jobId/edit'
       path: '/edit'
       fullPath: '/dashboard/jobs/$jobId/edit'
       preLoaderRoute: typeof AuthenticatedDashboardJobsJobIdEditRouteImport
       parentRoute: typeof AuthenticatedDashboardJobsJobIdRoute
-    }
-    '/_authenticated/dashboard/applicant-reports/$applicationId/full': {
-      id: '/_authenticated/dashboard/applicant-reports/$applicationId/full'
-      path: '/applicant-reports/$applicationId/full'
-      fullPath: '/dashboard/applicant-reports/$applicationId/full'
-      preLoaderRoute: typeof AuthenticatedDashboardApplicantReportsApplicationIdFullRouteImport
-      parentRoute: typeof AuthenticatedDashboardRoute
     }
   }
 }

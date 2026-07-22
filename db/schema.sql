@@ -38,6 +38,34 @@ CREATE TABLE public.applications (
 
 
 --
+-- Name: candidate_job_matches; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.candidate_job_matches (
+    candidate_id uuid NOT NULL,
+    job_id uuid NOT NULL,
+    generation_id uuid NOT NULL,
+    candidate_profile_source_hash text NOT NULL,
+    job_profile_source_hash text NOT NULL,
+    score double precision NOT NULL,
+    band text NOT NULL,
+    reasons jsonb DEFAULT '[]'::jsonb NOT NULL,
+    consideration text,
+    algorithm_version text NOT NULL,
+    threshold_version text NOT NULL,
+    prompt_version text NOT NULL,
+    model text NOT NULL,
+    matched_at timestamp with time zone DEFAULT now() NOT NULL,
+    first_strong_at timestamp with time zone,
+    viewed_at timestamp with time zone,
+    dismissed_at timestamp with time zone,
+    digest_notified_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: candidate_profiles; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -48,7 +76,22 @@ CREATE TABLE public.candidate_profiles (
     resume_key text,
     resume_updated_at timestamp with time zone,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    matching_profile jsonb,
+    matching_profile_source_hash text,
+    matching_profile_version text,
+    matching_profile_status text DEFAULT 'pending'::text NOT NULL,
+    matching_profile_error text,
+    serving_match_generation uuid,
+    serving_match_input_hash text,
+    match_feed_status text DEFAULT 'pending'::text NOT NULL,
+    match_feed_error text,
+    match_feed_refreshed_at timestamp with time zone,
+    match_alerts_enabled boolean DEFAULT true NOT NULL,
+    match_alerts_enabled_at timestamp with time zone DEFAULT now(),
+    match_refresh_token uuid,
+    match_refresh_claimed_at timestamp with time zone,
+    match_refresh_phase text
 );
 
 
@@ -227,6 +270,28 @@ CREATE TABLE public.job_batches (
 
 
 --
+-- Name: job_matching_profiles; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.job_matching_profiles (
+    job_id uuid NOT NULL,
+    requested_source_hash text NOT NULL,
+    completed_source_hash text,
+    source_version text NOT NULL,
+    extraction_status text DEFAULT 'pending'::text NOT NULL,
+    extraction_error text,
+    matching_profile jsonb,
+    model text,
+    prompt_version text,
+    extraction_token uuid NOT NULL,
+    extraction_claimed_at timestamp with time zone,
+    completed_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: jobs; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -382,6 +447,14 @@ ALTER TABLE ONLY public.applications
 
 
 --
+-- Name: candidate_job_matches candidate_job_matches_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.candidate_job_matches
+    ADD CONSTRAINT candidate_job_matches_pkey PRIMARY KEY (candidate_id, job_id);
+
+
+--
 -- Name: candidate_profiles candidate_profiles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -478,6 +551,14 @@ ALTER TABLE ONLY public.job_batches
 
 
 --
+-- Name: job_matching_profiles job_matching_profiles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.job_matching_profiles
+    ADD CONSTRAINT job_matching_profiles_pkey PRIMARY KEY (job_id);
+
+
+--
 -- Name: jobs jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -569,6 +650,20 @@ CREATE INDEX idx_applications_candidate ON public.applications USING btree (cand
 --
 
 CREATE INDEX idx_applications_job ON public.applications USING btree (job_id);
+
+
+--
+-- Name: idx_candidate_job_matches_digest; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_candidate_job_matches_digest ON public.candidate_job_matches USING btree (candidate_id, generation_id, first_strong_at) WHERE ((band = 'strong'::text) AND (viewed_at IS NULL) AND (dismissed_at IS NULL) AND (digest_notified_at IS NULL));
+
+
+--
+-- Name: idx_candidate_job_matches_feed; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_candidate_job_matches_feed ON public.candidate_job_matches USING btree (candidate_id, generation_id, score DESC) WHERE (dismissed_at IS NULL);
 
 
 --
@@ -747,6 +842,13 @@ CREATE INDEX idx_job_batches_status ON public.job_batches USING btree (status) W
 
 
 --
+-- Name: idx_job_matching_profiles_recovery; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_job_matching_profiles_recovery ON public.job_matching_profiles USING btree (extraction_status, extraction_claimed_at);
+
+
+--
 -- Name: idx_jobs_archived; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -837,6 +939,22 @@ ALTER TABLE ONLY public.applications
 
 ALTER TABLE ONLY public.applications
     ADD CONSTRAINT applications_job_id_fkey FOREIGN KEY (job_id) REFERENCES public.jobs(id) ON DELETE RESTRICT;
+
+
+--
+-- Name: candidate_job_matches candidate_job_matches_candidate_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.candidate_job_matches
+    ADD CONSTRAINT candidate_job_matches_candidate_id_fkey FOREIGN KEY (candidate_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: candidate_job_matches candidate_job_matches_job_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.candidate_job_matches
+    ADD CONSTRAINT candidate_job_matches_job_id_fkey FOREIGN KEY (job_id) REFERENCES public.jobs(id) ON DELETE CASCADE;
 
 
 --
@@ -960,6 +1078,14 @@ ALTER TABLE ONLY public.job_batches
 
 
 --
+-- Name: job_matching_profiles job_matching_profiles_job_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.job_matching_profiles
+    ADD CONSTRAINT job_matching_profiles_job_id_fkey FOREIGN KEY (job_id) REFERENCES public.jobs(id) ON DELETE CASCADE;
+
+
+--
 -- Name: jobs jobs_company_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1023,4 +1149,6 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260703114221'),
     ('20260705072949'),
     ('20260715154907'),
-    ('20260719022003');
+    ('20260719022003'),
+    ('20260721090921'),
+    ('20260722040827');

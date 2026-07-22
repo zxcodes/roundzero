@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { getTestDb, seedCandidateProfile, seedUser } from "@/shared/__tests__/test-utils";
+import { upsertCandidateJobMatch } from "@/features/job-matching/queries/queries_sql";
+import { getTestDb, seedCandidateProfile, seedJob, seedUser } from "@/shared/__tests__/test-utils";
 
 import {
   createCandidateProfile,
+  deleteCandidateJobMatches,
   getCandidateProfileByUserId,
   updateCandidateProfile,
 } from "../queries_sql";
@@ -110,5 +112,62 @@ describe("updateCandidateProfile", () => {
     });
 
     expect(result).toBeNull();
+  });
+
+  it("invalidates matching state and removes matches when a resume is removed", async () => {
+    const { user } = await seedCandidateProfile();
+    const { job } = await seedJob({ status: "open" });
+    const generationId = crypto.randomUUID();
+    const refreshToken = crypto.randomUUID();
+    await sql`
+      UPDATE candidate_profiles
+      SET matching_profile = ${sql.json({ facts: [] })},
+          matching_profile_source_hash = 'candidate-v1',
+          matching_profile_version = 'v1',
+          matching_profile_status = 'ready',
+          serving_match_generation = ${generationId},
+          serving_match_input_hash = 'input-v1',
+          match_feed_status = 'ready',
+          match_feed_refreshed_at = now(),
+          match_refresh_token = ${refreshToken},
+          match_refresh_claimed_at = now()
+      WHERE user_id = ${user.id}
+    `;
+    await upsertCandidateJobMatch(sql, {
+      candidateId: user.id,
+      jobId: job.id,
+      generationId,
+      candidateProfileSourceHash: "candidate-v1",
+      jobProfileSourceHash: "job-v1",
+      score: 59,
+      band: "potential",
+      reasons: [],
+      consideration: null,
+      algorithmVersion: "v1",
+      thresholdVersion: "v1",
+      promptVersion: "v1",
+      model: "test",
+    });
+
+    const updated = await updateCandidateProfile(sql, { userId: user.id, resumeKey: null });
+    await deleteCandidateJobMatches(sql, { candidateId: user.id });
+
+    expect(updated).toMatchObject({
+      resumeKey: null,
+      resumeUpdatedAt: null,
+      matchingProfile: null,
+      matchingProfileSourceHash: null,
+      matchingProfileVersion: null,
+      servingMatchGeneration: null,
+      servingMatchInputHash: null,
+      matchFeedRefreshedAt: null,
+      matchAlertsEnabledAt: null,
+      matchRefreshToken: null,
+      matchRefreshClaimedAt: null,
+    });
+    const matches = await sql`
+      SELECT 1 FROM candidate_job_matches WHERE candidate_id = ${user.id}
+    `;
+    expect(matches).toHaveLength(0);
   });
 });
