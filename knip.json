@@ -1,6 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "entry": ["app/router.tsx", "app/routeTree.gen.ts", "app/routes/**/*.{ts,tsx}"],
+  "entry": ["app/client.tsx", "app/router.tsx", "app/routeTree.gen.ts", "app/routes/**/*.{ts,tsx}"],
   "project": ["app/**/*.{ts,tsx}"],
   "ignore": ["app/components/ui/**"],
   "ignoreBinaries": ["sqlc", "polar"],
