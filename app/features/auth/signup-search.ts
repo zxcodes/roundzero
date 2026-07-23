@@ -6,7 +6,13 @@ import { type SubscriptionPlan, subscriptionPlanSchema } from "@/features/billin
 export const billingSignupRedirect = "/dashboard/billing";
 
 export function sanitizeRedirect(url: unknown): string | undefined {
-  if (typeof url !== "string" || !url.startsWith("/") || url.startsWith("//")) {
+  if (
+    typeof url !== "string" ||
+    !url.startsWith("/") ||
+    url.startsWith("//") ||
+    url === "/onboarding" ||
+    url.startsWith("/onboarding/")
+  ) {
     return undefined;
   }
   return url;
