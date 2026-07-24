@@ -82,6 +82,7 @@ function Hero() {
     <section className="marketing-hero relative overflow-hidden">
       <div className="mx-auto w-full max-w-360 px-6 pb-0 pt-16 lg:px-12 lg:pt-24 xl:px-16">
         <div className="marketing-rise w-full text-left">
+          <Eyebrow>Early access</Eyebrow>
           <h1 className="mt-4 text-[clamp(2rem,3.6vw,4rem)] font-semibold leading-[1.06] tracking-[-0.035em] sm:whitespace-nowrap">
             Review candidates, not <span className="marketing-hero-highlight">resumes</span>.
           </h1>
