@@ -1541,6 +1541,71 @@ export async function completeInterviewTurnWithAssistant(sql: Sql, args: complet
     };
 }
 
+export const completeInterviewTurnWithAssistantAndSubmitForVoiceQuery = `-- name: completeInterviewTurnWithAssistantAndSubmitForVoice :one
+WITH locked_interview AS MATERIALIZED (
+  SELECT interviews.id
+  FROM interviews
+  WHERE interviews.id = $1
+    AND interviews.status = 'in_progress'
+  FOR UPDATE
+), inserted AS (
+  INSERT INTO interview_messages (interview_id, turn_id, role, content)
+  SELECT locked_interview.id, $2, 'assistant', $3
+  FROM locked_interview
+  ON CONFLICT (interview_id, turn_id, role) DO NOTHING
+  RETURNING id, interview_id, role, content, created_at, position
+), completed AS (
+  UPDATE interview_messages candidate_message
+  SET generation_status = 'completed'
+  WHERE candidate_message.interview_id = $1
+    AND candidate_message.turn_id = $2
+    AND candidate_message.role = 'candidate'
+    AND candidate_message.generation_status = 'processing'
+    AND EXISTS (SELECT 1 FROM inserted)
+  RETURNING candidate_message.id
+), submitted AS (
+  UPDATE interviews interview
+  SET status = 'awaiting_voice',
+      updated_at = now()
+  WHERE interview.id = $1
+    AND EXISTS (SELECT 1 FROM completed)
+  RETURNING interview.id
+)
+SELECT inserted.id, inserted.interview_id, inserted.role, inserted.content, inserted.created_at, inserted.position
+FROM inserted
+WHERE EXISTS (SELECT 1 FROM submitted)`;
+
+export interface completeInterviewTurnWithAssistantAndSubmitForVoiceArgs {
+    interviewId: string;
+    turnId: string;
+    content: string;
+}
+
+export interface completeInterviewTurnWithAssistantAndSubmitForVoiceRow {
+    id: string;
+    interviewId: string;
+    role: string;
+    content: string;
+    createdAt: Date;
+    position: string | null;
+}
+
+export async function completeInterviewTurnWithAssistantAndSubmitForVoice(sql: Sql, args: completeInterviewTurnWithAssistantAndSubmitForVoiceArgs): Promise<completeInterviewTurnWithAssistantAndSubmitForVoiceRow | null> {
+    const rows = await sql.unsafe(completeInterviewTurnWithAssistantAndSubmitForVoiceQuery, [args.interviewId, args.turnId, args.content]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        interviewId: row[1],
+        role: row[2],
+        content: row[3],
+        createdAt: row[4],
+        position: row[5]
+    };
+}
+
 export const claimInterviewGreetingQuery = `-- name: claimInterviewGreeting :one
 INSERT INTO interview_messages (interview_id, turn_id, role, content, generation_status)
 VALUES ($1, 'greeting', 'assistant', '', 'processing')

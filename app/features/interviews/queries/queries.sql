@@ -305,6 +305,40 @@ SELECT inserted.*
 FROM inserted
 WHERE EXISTS (SELECT 1 FROM completed);
 
+-- name: completeInterviewTurnWithAssistantAndSubmitForVoice :one
+WITH locked_interview AS MATERIALIZED (
+  SELECT interviews.id
+  FROM interviews
+  WHERE interviews.id = sqlc.arg('interview_id')
+    AND interviews.status = 'in_progress'
+  FOR UPDATE
+), inserted AS (
+  INSERT INTO interview_messages (interview_id, turn_id, role, content)
+  SELECT locked_interview.id, sqlc.arg('turn_id'), 'assistant', sqlc.arg('content')
+  FROM locked_interview
+  ON CONFLICT (interview_id, turn_id, role) DO NOTHING
+  RETURNING id, interview_id, role, content, created_at, position
+), completed AS (
+  UPDATE interview_messages candidate_message
+  SET generation_status = 'completed'
+  WHERE candidate_message.interview_id = sqlc.arg('interview_id')
+    AND candidate_message.turn_id = sqlc.arg('turn_id')
+    AND candidate_message.role = 'candidate'
+    AND candidate_message.generation_status = 'processing'
+    AND EXISTS (SELECT 1 FROM inserted)
+  RETURNING candidate_message.id
+), submitted AS (
+  UPDATE interviews interview
+  SET status = 'awaiting_voice',
+      updated_at = now()
+  WHERE interview.id = sqlc.arg('interview_id')
+    AND EXISTS (SELECT 1 FROM completed)
+  RETURNING interview.id
+)
+SELECT inserted.*
+FROM inserted
+WHERE EXISTS (SELECT 1 FROM submitted);
+
 -- name: claimInterviewGreeting :one
 INSERT INTO interview_messages (interview_id, turn_id, role, content, generation_status)
 VALUES ($1, 'greeting', 'assistant', '', 'processing')

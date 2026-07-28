@@ -133,9 +133,9 @@ Hybrid architecture — **not** WebSockets for chat; **SSE** for turn streaming.
 3. **Tools** — server-side tool loop (`maxIterations(5)`):
    - `check_resume_gap` — verify claims against resume/profile
    - `record_screening_coverage` — track requirement coverage
-   - `end_interview` — submit for voice when coverage rules met
-4. **Manual submit** — `completeMyInterview` also moves to `awaiting_voice`
-5. **Post-eval blocked** until voice assessment completes
+4. **Atomic response** — validated structured output chooses `continue` or `finish`; a finishing response persists the farewell and moves to `awaiting_voice` in one SQL statement
+5. **Manual submit** — `completeMyInterview` also moves to `awaiting_voice`
+6. **Post-eval blocked** until voice assessment completes
 
 ## System prompt
 

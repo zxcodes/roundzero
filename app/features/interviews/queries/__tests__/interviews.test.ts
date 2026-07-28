@@ -12,6 +12,7 @@ import {
   claimInterviewTurn,
   completeInterviewGreeting,
   completeInterviewTurnWithAssistant,
+  completeInterviewTurnWithAssistantAndSubmitForVoice,
   completeInterviewAfterVoice,
   createInterview,
   createInterviewMessage,
@@ -197,6 +198,52 @@ describe("interview queries", () => {
       content: "My next answer",
     });
     expect(nextClaim).not.toBeNull();
+  });
+
+  it("atomically persists a closing response and submits the interview for voice", async () => {
+    const setup = await makeApplication();
+    const interview = await createInterview(sql, {
+      applicationId: setup.applicationId,
+      agentId: null,
+      type: "full",
+      metadata: {},
+      status: "in_progress",
+      invitedAt: new Date(),
+      startedAt: new Date(),
+      completedAt: null,
+    });
+    const turnId = crypto.randomUUID();
+
+    await claimInterviewTurn(sql, {
+      interviewId: interview!.id,
+      turnId,
+      content: "That covers everything from my side.",
+    });
+    const closingMessage = await completeInterviewTurnWithAssistantAndSubmitForVoice(sql, {
+      interviewId: interview!.id,
+      turnId,
+      content: "Thanks for your thoughtful answers, Amina. Take care.",
+    });
+    const duplicateClosing = await completeInterviewTurnWithAssistantAndSubmitForVoice(sql, {
+      interviewId: interview!.id,
+      turnId,
+      content: "This duplicate must not be persisted.",
+    });
+    const candidateView = await getInterviewForCandidateById(sql, {
+      id: interview!.id,
+      candidateId: setup.candidateId,
+    });
+    const messages = await getInterviewMessagesByInterviewId(sql, {
+      interviewId: interview!.id,
+    });
+
+    expect(closingMessage?.content).toBe("Thanks for your thoughtful answers, Amina. Take care.");
+    expect(duplicateClosing).toBeNull();
+    expect(candidateView?.status).toBe("awaiting_voice");
+    expect(messages.map((message) => message.content)).toEqual([
+      "That covers everything from my side.",
+      "Thanks for your thoughtful answers, Amina. Take care.",
+    ]);
   });
 
   it("atomically claims one greeting and hides it until generation completes", async () => {

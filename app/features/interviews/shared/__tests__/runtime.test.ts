@@ -8,6 +8,7 @@ import {
   updateInterviewMetadata,
 } from "@/features/interviews/queries/queries_sql";
 import {
+  buildInterviewSystemPrompt,
   buildInterviewJobSnapshot,
   ensureInterviewRuntimeMetadata,
   jobSnapshotFromLegacyContextState,
@@ -90,6 +91,24 @@ const seedInterviewContext = async () => {
 };
 
 describe("interview runtime metadata", () => {
+  it("separates continuing questions from the finishing response action", async () => {
+    const { interviewId } = await seedInterviewContext();
+    const interview = await getInterviewContextById(sql, { id: interviewId });
+    const metadata = await ensureInterviewRuntimeMetadata(sql, interview!);
+    const runtimeContext = await loadInterviewRuntimeContext(sql, interview!, metadata);
+    const prompt = buildInterviewSystemPrompt({
+      runtimeContext,
+      screeningCoverage: { "1": "answered" },
+      assistantTurnCount: 4,
+      maxQuestions: 5,
+    });
+
+    expect(prompt).toContain("Choose action='continue' with reason=null");
+    expect(prompt).toContain("Choose action='finish' with a concise reason");
+    expect(prompt).toContain("There is no fixed minimum or maximum number of questions");
+    expect(prompt).not.toContain("end_interview");
+  });
+
   it("ignores legacy bloated metadata keys while keeping valid fields", () => {
     const expiresAt = new Date().toISOString();
     const parsed = parseInterviewMetadata({
