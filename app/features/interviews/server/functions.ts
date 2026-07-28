@@ -9,8 +9,10 @@ import { z } from "zod";
 import { updateApplicationStatus } from "@/features/applications/queries/queries_sql";
 import { withdrawApplicationWorkflow } from "@/features/applications/services/workflows";
 import {
+  claimInterviewGreeting,
+  completeInterviewGreeting,
   createCommunicationAssessment,
-  createInterviewMessage,
+  failInterviewGreeting,
   getCommunicationAssessmentByInterviewId,
   getInterviewContextById,
   getInterviewForCandidateById,
@@ -177,43 +179,56 @@ export const startMyInterview = createServerFn({ method: "POST" })
     });
 
     if (!existingMessages.some((message) => message.role === "assistant")) {
-      const { model, fallbacks } = getModelChain("interview");
-      const greeting = await chat({
-        adapter: createOpenRouterText(model, env.OPENROUTER_API_KEY, {
-          httpReferer: env.APP_URL,
-          appTitle: "RoundZero",
-        }),
-        messages: [
-          {
-            role: "user",
-            content: `Open the interview. Greet ${runtimeContext.candidateName || "the candidate"} warmly by name, then ask your first company-supplied screening question. If there are no company questions, start with a question about a specific project, role, or technology from their resume. Plain conversational English only.`,
-          },
-        ],
-        systemPrompts: [
-          buildInterviewSystemPrompt({
-            runtimeContext,
-            screeningCoverage: metadata.screeningCoverage ?? {},
-            assistantTurnCount: existingMessages.filter((message) => message.role === "assistant")
-              .length,
-            maxQuestions: 5,
-          }),
-        ],
-        modelOptions: {
-          ...(fallbacks.length > 0 ? { models: fallbacks } : {}),
-          parallelToolCalls: false,
-          temperature: 0.3,
-          maxCompletionTokens: 150,
-        },
-        stream: false,
-      });
+      const greetingClaim = await claimInterviewGreeting(db, { interviewId: data.interviewId });
+      if (greetingClaim) {
+        try {
+          const { model, fallbacks } = getModelChain("interview");
+          const greeting = await chat({
+            adapter: createOpenRouterText(model, env.OPENROUTER_API_KEY, {
+              httpReferer: env.APP_URL,
+              appTitle: "RoundZero",
+            }),
+            messages: [
+              {
+                role: "user",
+                content: `Open the interview. Greet ${runtimeContext.candidateName || "the candidate"} warmly by name, then ask your first company-supplied screening question. If there are no company questions, start with a question about a specific project, role, or technology from their resume. Plain conversational English only.`,
+              },
+            ],
+            systemPrompts: [
+              buildInterviewSystemPrompt({
+                runtimeContext,
+                screeningCoverage: metadata.screeningCoverage ?? {},
+                assistantTurnCount: existingMessages.filter(
+                  (message) => message.role === "assistant",
+                ).length,
+                maxQuestions: 5,
+              }),
+            ],
+            modelOptions: {
+              ...(fallbacks.length > 0 ? { models: fallbacks } : {}),
+              parallelToolCalls: false,
+              temperature: 0.3,
+              maxCompletionTokens: 150,
+            },
+            stream: false,
+          });
 
-      const content = greeting.trim();
-      if (content.length > 0) {
-        await createInterviewMessage(db, {
-          interviewId: data.interviewId,
-          role: "assistant",
-          content,
-        });
+          const content = greeting.trim();
+          if (content.length === 0) {
+            throw new Error("The interview assistant did not produce a greeting");
+          }
+
+          const savedGreeting = await completeInterviewGreeting(db, {
+            interviewId: data.interviewId,
+            content,
+          });
+          if (!savedGreeting) {
+            throw new Error("Could not persist the interview greeting");
+          }
+        } catch (error) {
+          await failInterviewGreeting(db, { interviewId: data.interviewId });
+          throw error;
+        }
       }
     }
 

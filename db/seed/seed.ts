@@ -740,10 +740,15 @@ async function seedInterviewMessages(
   await sql`DELETE FROM interview_messages WHERE interview_id = ${interviewId}`;
 
   const messages = buildInterviewChatMessages({ candidateName, jobTitle, index });
-  for (const message of messages) {
+  for (const [messageIndex, message] of messages.entries()) {
     await sql`
-      INSERT INTO interview_messages (interview_id, role, content)
-      VALUES (${interviewId}, ${message.role}, ${message.content})
+      INSERT INTO interview_messages (interview_id, turn_id, role, content)
+      VALUES (
+        ${interviewId},
+        ${`seed-${index}-${messageIndex}`},
+        ${message.role},
+        ${message.content}
+      )
     `;
   }
 }

@@ -47,7 +47,9 @@ export function useInterviewChat(interviewId: string, initialMessages: InitialIn
 
   const chat = useChat({
     connection,
+    threadId: interviewId,
     forwardedProps: { interviewId },
+    queue: "drop",
     initialMessages: initialMessages.map((message) => ({
       id: message.id,
       role: message.role === "assistant" ? "assistant" : "user",

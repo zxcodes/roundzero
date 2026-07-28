@@ -1,8 +1,10 @@
 import {
   chat,
   chatParamsFromRequest,
+  EventType,
   type ModelMessage,
   maxIterations,
+  type StreamChunk,
   toolDefinition,
   toServerSentEventsResponse,
   type UIMessage,
@@ -14,7 +16,9 @@ import { env } from "cloudflare:workers";
 import { z } from "zod";
 
 import {
-  createInterviewMessage,
+  claimInterviewTurn,
+  completeInterviewTurnWithAssistant,
+  failInterviewTurn,
   getInterviewContextById,
   getInterviewForCandidateById,
   getInterviewMessagesByInterviewId,
@@ -159,17 +163,14 @@ export const Route = createFileRoute("/api/interview-chat")({
           .reverse()
           .find((message) => message.role === "user");
         const candidateText = latestCandidateMessage ? readMessageText(latestCandidateMessage) : "";
-        if (candidateText.length === 0) {
+        const turnId =
+          latestCandidateMessage &&
+          "id" in latestCandidateMessage &&
+          typeof latestCandidateMessage.id === "string"
+            ? latestCandidateMessage.id
+            : params.runId;
+        if (!turnId || turnId.length > 200 || candidateText.length === 0) {
           return new Response("Message content is required", { status: 400 });
-        }
-
-        const savedCandidateMessage = await createInterviewMessage(db, {
-          interviewId,
-          role: "candidate",
-          content: candidateText,
-        });
-        if (!savedCandidateMessage) {
-          return new Response("Could not persist the message", { status: 500 });
         }
 
         const interviewContext = await getInterviewContextById(db, { id: interviewId });
@@ -181,6 +182,20 @@ export const Route = createFileRoute("/api/interview-chat")({
           db,
           interviewContext,
         );
+        const runtimeContext = await loadInterviewRuntimeContext(
+          db,
+          interviewContext,
+          runtimeMetadata,
+        );
+        const savedCandidateMessage = await claimInterviewTurn(db, {
+          interviewId,
+          turnId,
+          content: candidateText,
+        });
+        if (!savedCandidateMessage) {
+          return new Response("An interview response is already being generated", { status: 409 });
+        }
+
         let integrityMetadataDirty = false;
 
         const messageIntegrity = parsedRequest.data.messageIntegrity;
@@ -197,27 +212,23 @@ export const Route = createFileRoute("/api/interview-chat")({
           integrityMetadataDirty = true;
         }
 
-        const runtimeContext = await loadInterviewRuntimeContext(
-          db,
-          interviewContext,
-          runtimeMetadata,
-        );
-
         const history = await getInterviewMessagesByInterviewId(db, { interviewId });
         const assistantTurnCount = history.filter((message) => message.role === "assistant").length;
         const userRequestedEnd =
           /\b(end|finish|submit|stop|done|wrap up|that's all|no more questions)\b/i.test(
             candidateText,
           );
-        const basePrompt = buildInterviewSystemPrompt({
-          runtimeContext,
-          screeningCoverage: runtimeMetadata.screeningCoverage ?? {},
-          assistantTurnCount,
-          maxQuestions: 5,
-        });
-        const systemPrompt = userRequestedEnd
-          ? `${basePrompt}\n\nThe candidate just explicitly asked to end. Close warmly in one short message and call end_interview this turn. Ask no further questions.`
-          : basePrompt;
+        const getSystemPrompt = () => {
+          const basePrompt = buildInterviewSystemPrompt({
+            runtimeContext,
+            screeningCoverage: runtimeMetadata.screeningCoverage ?? {},
+            assistantTurnCount,
+            maxQuestions: 5,
+          });
+          return userRequestedEnd
+            ? `${basePrompt}\n\nThe candidate just explicitly asked to end. Close warmly in one short message and call end_interview this turn. Ask no further questions.`
+            : basePrompt;
+        };
 
         const flushIntegrityMetadata = async () => {
           if (!integrityMetadataDirty) {
@@ -242,18 +253,22 @@ export const Route = createFileRoute("/api/interview-chat")({
         // (fires before the next iteration resets the accumulator) and fall back
         // to it when the terminal content is empty.
         let lastAssistantContent = "";
+        let savedAssistantMessage: Awaited<ReturnType<typeof completeInterviewTurnWithAssistant>> =
+          null;
         const stream = chat({
           adapter: createOpenRouterText(model, env.OPENROUTER_API_KEY, {
             httpReferer: env.APP_URL,
             appTitle: "RoundZero",
           }),
-          messages: history.map(
-            (message): ModelMessage => ({
-              role: message.role === "assistant" ? "assistant" : "user",
-              content: message.content,
-            }),
-          ),
-          systemPrompts: [systemPrompt],
+          messages: history
+            .map(
+              (message): ModelMessage => ({
+                role: message.role === "assistant" ? "assistant" : "user",
+                content: message.content,
+              }),
+            )
+            .concat({ role: "user", content: savedCandidateMessage.content }),
+          systemPrompts: [getSystemPrompt()],
           tools: [
             checkResumeGapDef.server(async ({ claim }) => ({
               matched: isAnchoredTo(claim, runtimeContext.candidateSummary, {
@@ -293,6 +308,9 @@ export const Route = createFileRoute("/api/interview-chat")({
             }),
           ],
           abortController,
+          threadId: params.threadId,
+          runId: params.runId,
+          parentRunId: params.parentRunId,
           agentLoopStrategy: maxIterations(5),
           modelOptions: {
             ...(fallbacks.length > 0 ? { models: fallbacks } : {}),
@@ -302,19 +320,13 @@ export const Route = createFileRoute("/api/interview-chat")({
           },
           middleware: [
             {
-              name: "flush-integrity-metadata",
-              onFinish: async () => {
-                await flushIntegrityMetadata();
-              },
-              onAbort: async () => {
-                await flushIntegrityMetadata();
-              },
-              onError: async () => {
-                await flushIntegrityMetadata();
-              },
+              name: "refresh-interview-prompt",
+              onConfig: () => ({
+                systemPrompts: [getSystemPrompt()],
+              }),
             },
             {
-              name: "persist-assistant-message",
+              name: "finalize-interview-turn",
               onToolPhaseComplete: (context) => {
                 const text = context.accumulatedContent.trim();
                 if (text.length > 0) {
@@ -322,22 +334,96 @@ export const Route = createFileRoute("/api/interview-chat")({
                 }
               },
               onFinish: async (_context, info) => {
-                const content = info.content.trim() || lastAssistantContent;
-                if (content.length === 0) {
-                  return;
-                }
+                try {
+                  await flushIntegrityMetadata();
 
-                await createInterviewMessage(db, {
-                  interviewId,
-                  role: "assistant",
-                  content,
-                });
+                  const content = info.content.trim() || lastAssistantContent;
+                  if (content.length === 0) {
+                    throw new Error("The interview assistant did not produce a response");
+                  }
+
+                  savedAssistantMessage = await completeInterviewTurnWithAssistant(db, {
+                    interviewId,
+                    turnId,
+                    content,
+                  });
+                  if (!savedAssistantMessage) {
+                    throw new Error("Could not persist the interview assistant response");
+                  }
+                } catch (error) {
+                  await failInterviewTurn(db, { interviewId, turnId });
+                  throw error;
+                }
+              },
+              onAbort: async () => {
+                try {
+                  await flushIntegrityMetadata();
+                } finally {
+                  await failInterviewTurn(db, { interviewId, turnId });
+                }
+              },
+              onError: async () => {
+                try {
+                  await flushIntegrityMetadata();
+                } finally {
+                  await failInterviewTurn(db, { interviewId, turnId });
+                }
               },
             },
           ],
         });
 
-        return toServerSentEventsResponse(stream, { abortController });
+        const bufferedResponse = async function* (): AsyncGenerator<StreamChunk> {
+          let finishReason: Extract<StreamChunk, { type: EventType.RUN_FINISHED }>["finishReason"] =
+            null;
+          yield {
+            type: EventType.RUN_STARTED,
+            threadId: params.threadId,
+            runId: params.runId,
+            parentRunId: params.parentRunId,
+            timestamp: Date.now(),
+          };
+
+          for await (const chunk of stream) {
+            // Tool-loop iterations are private. Only the finalized response below
+            // is allowed to become a candidate-visible transcript message.
+            if (chunk.type === EventType.RUN_FINISHED) {
+              finishReason = chunk.finishReason;
+            }
+          }
+
+          if (!savedAssistantMessage) {
+            throw new Error("The interview assistant did not produce a response");
+          }
+
+          const timestamp = Date.now();
+          yield {
+            type: EventType.TEXT_MESSAGE_START,
+            messageId: savedAssistantMessage.id,
+            role: "assistant",
+            timestamp,
+          };
+          yield {
+            type: EventType.TEXT_MESSAGE_CONTENT,
+            messageId: savedAssistantMessage.id,
+            delta: savedAssistantMessage.content,
+            timestamp,
+          };
+          yield {
+            type: EventType.TEXT_MESSAGE_END,
+            messageId: savedAssistantMessage.id,
+            timestamp,
+          };
+          yield {
+            type: EventType.RUN_FINISHED,
+            threadId: params.threadId,
+            runId: params.runId,
+            finishReason,
+            timestamp,
+          };
+        };
+
+        return toServerSentEventsResponse(bufferedResponse(), { abortController });
       },
     },
   },

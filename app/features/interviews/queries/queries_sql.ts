@@ -1392,18 +1392,42 @@ export async function updateCommunicationAssessmentAnalysis(sql: Sql, args: upda
     };
 }
 
-export const createInterviewMessageQuery = `-- name: createInterviewMessage :one
-INSERT INTO interview_messages (interview_id, role, content)
-VALUES ($1, $2, $3)
-RETURNING id, interview_id, role, content, created_at, position`;
+export const claimInterviewTurnQuery = `-- name: claimInterviewTurn :one
+WITH retried AS (
+  UPDATE interview_messages turn_message
+  SET generation_status = 'processing'
+  WHERE turn_message.interview_id = $1
+    AND turn_message.turn_id = $2
+    AND turn_message.role = 'candidate'
+    AND turn_message.generation_status = 'failed'
+    AND NOT EXISTS (
+      SELECT 1
+      FROM interview_messages active_turn
+      WHERE active_turn.interview_id = $1
+        AND active_turn.role = 'candidate'
+        AND active_turn.generation_status = 'processing'
+    )
+  RETURNING turn_message.id, turn_message.interview_id, turn_message.role,
+            turn_message.content, turn_message.created_at, turn_message.position
+), inserted AS (
+  INSERT INTO interview_messages (interview_id, turn_id, role, content, generation_status)
+  SELECT $1, $2, 'candidate', $3, 'processing'
+  WHERE NOT EXISTS (SELECT 1 FROM retried)
+  ON CONFLICT DO NOTHING
+  RETURNING id, interview_id, role, content, created_at, position
+)
+SELECT id, interview_id, role, content, created_at, position FROM retried
+UNION ALL
+SELECT id, interview_id, role, content, created_at, position FROM inserted
+LIMIT 1`;
 
-export interface createInterviewMessageArgs {
+export interface claimInterviewTurnArgs {
     interviewId: string;
-    role: string;
+    turnId: string;
     content: string;
 }
 
-export interface createInterviewMessageRow {
+export interface claimInterviewTurnRow {
     id: string;
     interviewId: string;
     role: string;
@@ -1412,8 +1436,8 @@ export interface createInterviewMessageRow {
     position: string | null;
 }
 
-export async function createInterviewMessage(sql: Sql, args: createInterviewMessageArgs): Promise<createInterviewMessageRow | null> {
-    const rows = await sql.unsafe(createInterviewMessageQuery, [args.interviewId, args.role, args.content]).values();
+export async function claimInterviewTurn(sql: Sql, args: claimInterviewTurnArgs): Promise<claimInterviewTurnRow | null> {
+    const rows = await sql.unsafe(claimInterviewTurnQuery, [args.interviewId, args.turnId, args.content]).values();
     if (rows.length !== 1) {
         return null;
     }
@@ -1428,10 +1452,207 @@ export async function createInterviewMessage(sql: Sql, args: createInterviewMess
     };
 }
 
+export const createInterviewMessageQuery = `-- name: createInterviewMessage :one
+INSERT INTO interview_messages (interview_id, turn_id, role, content)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (interview_id, turn_id, role) DO NOTHING
+RETURNING id, interview_id, role, content, created_at, position`;
+
+export interface createInterviewMessageArgs {
+    interviewId: string;
+    turnId: string;
+    role: string;
+    content: string;
+}
+
+export interface createInterviewMessageRow {
+    id: string;
+    interviewId: string;
+    role: string;
+    content: string;
+    createdAt: Date;
+    position: string | null;
+}
+
+export async function createInterviewMessage(sql: Sql, args: createInterviewMessageArgs): Promise<createInterviewMessageRow | null> {
+    const rows = await sql.unsafe(createInterviewMessageQuery, [args.interviewId, args.turnId, args.role, args.content]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        interviewId: row[1],
+        role: row[2],
+        content: row[3],
+        createdAt: row[4],
+        position: row[5]
+    };
+}
+
+export const completeInterviewTurnWithAssistantQuery = `-- name: completeInterviewTurnWithAssistant :one
+WITH inserted AS (
+  INSERT INTO interview_messages (interview_id, turn_id, role, content)
+  VALUES ($1, $2, 'assistant', $3)
+  ON CONFLICT (interview_id, turn_id, role) DO NOTHING
+  RETURNING id, interview_id, role, content, created_at, position
+), completed AS (
+  UPDATE interview_messages candidate_message
+  SET generation_status = 'completed'
+  WHERE candidate_message.interview_id = $1
+    AND candidate_message.turn_id = $2
+    AND candidate_message.role = 'candidate'
+    AND candidate_message.generation_status = 'processing'
+    AND EXISTS (SELECT 1 FROM inserted)
+  RETURNING candidate_message.id
+)
+SELECT inserted.id, inserted.interview_id, inserted.role, inserted.content, inserted.created_at, inserted.position
+FROM inserted
+WHERE EXISTS (SELECT 1 FROM completed)`;
+
+export interface completeInterviewTurnWithAssistantArgs {
+    interviewId: string;
+    turnId: string;
+    content: string;
+}
+
+export interface completeInterviewTurnWithAssistantRow {
+    id: string;
+    interviewId: string;
+    role: string;
+    content: string;
+    createdAt: Date;
+    position: string | null;
+}
+
+export async function completeInterviewTurnWithAssistant(sql: Sql, args: completeInterviewTurnWithAssistantArgs): Promise<completeInterviewTurnWithAssistantRow | null> {
+    const rows = await sql.unsafe(completeInterviewTurnWithAssistantQuery, [args.interviewId, args.turnId, args.content]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        interviewId: row[1],
+        role: row[2],
+        content: row[3],
+        createdAt: row[4],
+        position: row[5]
+    };
+}
+
+export const claimInterviewGreetingQuery = `-- name: claimInterviewGreeting :one
+INSERT INTO interview_messages (interview_id, turn_id, role, content, generation_status)
+VALUES ($1, 'greeting', 'assistant', '', 'processing')
+ON CONFLICT (interview_id, turn_id, role) DO NOTHING
+RETURNING id, interview_id, role, content, created_at, position`;
+
+export interface claimInterviewGreetingArgs {
+    interviewId: string;
+}
+
+export interface claimInterviewGreetingRow {
+    id: string;
+    interviewId: string;
+    role: string;
+    content: string;
+    createdAt: Date;
+    position: string | null;
+}
+
+export async function claimInterviewGreeting(sql: Sql, args: claimInterviewGreetingArgs): Promise<claimInterviewGreetingRow | null> {
+    const rows = await sql.unsafe(claimInterviewGreetingQuery, [args.interviewId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        interviewId: row[1],
+        role: row[2],
+        content: row[3],
+        createdAt: row[4],
+        position: row[5]
+    };
+}
+
+export const completeInterviewGreetingQuery = `-- name: completeInterviewGreeting :one
+UPDATE interview_messages
+SET content = $2,
+    generation_status = 'completed'
+WHERE interview_id = $1
+  AND turn_id = 'greeting'
+  AND role = 'assistant'
+  AND generation_status = 'processing'
+RETURNING id, interview_id, role, content, created_at, position`;
+
+export interface completeInterviewGreetingArgs {
+    interviewId: string;
+    content: string;
+}
+
+export interface completeInterviewGreetingRow {
+    id: string;
+    interviewId: string;
+    role: string;
+    content: string;
+    createdAt: Date;
+    position: string | null;
+}
+
+export async function completeInterviewGreeting(sql: Sql, args: completeInterviewGreetingArgs): Promise<completeInterviewGreetingRow | null> {
+    const rows = await sql.unsafe(completeInterviewGreetingQuery, [args.interviewId, args.content]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        interviewId: row[1],
+        role: row[2],
+        content: row[3],
+        createdAt: row[4],
+        position: row[5]
+    };
+}
+
+export const failInterviewGreetingQuery = `-- name: failInterviewGreeting :exec
+DELETE FROM interview_messages
+WHERE interview_id = $1
+  AND turn_id = 'greeting'
+  AND role = 'assistant'
+  AND generation_status = 'processing'`;
+
+export interface failInterviewGreetingArgs {
+    interviewId: string;
+}
+
+export async function failInterviewGreeting(sql: Sql, args: failInterviewGreetingArgs): Promise<void> {
+    await sql.unsafe(failInterviewGreetingQuery, [args.interviewId]);
+}
+
+export const failInterviewTurnQuery = `-- name: failInterviewTurn :exec
+UPDATE interview_messages
+SET generation_status = 'failed'
+WHERE interview_id = $1
+  AND turn_id = $2
+  AND role = 'candidate'
+  AND generation_status = 'processing'`;
+
+export interface failInterviewTurnArgs {
+    interviewId: string;
+    turnId: string;
+}
+
+export async function failInterviewTurn(sql: Sql, args: failInterviewTurnArgs): Promise<void> {
+    await sql.unsafe(failInterviewTurnQuery, [args.interviewId, args.turnId]);
+}
+
 export const getInterviewMessagesByInterviewIdQuery = `-- name: getInterviewMessagesByInterviewId :many
 SELECT id, interview_id, role, content, created_at, position
 FROM interview_messages
 WHERE interview_id = $1
+  AND (generation_status IS NULL OR generation_status = 'completed')
 ORDER BY position ASC`;
 
 export interface getInterviewMessagesByInterviewIdArgs {
