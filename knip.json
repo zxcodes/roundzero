@@ -1,16 +1,13 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "entry": ["app/client.tsx", "app/router.tsx", "app/routeTree.gen.ts", "app/routes/**/*.{ts,tsx}"],
-  "project": ["app/**/*.{ts,tsx}"],
+  "project": ["app/**/*.{ts,tsx}", "app/**/*.css"],
   "ignore": ["app/components/ui/**"],
   "ignoreBinaries": ["sqlc", "polar"],
   "ignoreDependencies": [
     "@fontsource-variable/geist-mono",
     "@fontsource-variable/geist",
-    "tailwindcss",
-    "tw-animate-css",
     "vaul",
-    "shadcn",
     "@tanstack/router-plugin",
     "@snaplet/copycat"
   ],
