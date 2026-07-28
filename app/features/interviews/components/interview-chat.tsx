@@ -1,13 +1,16 @@
 import {
+  Alert02Icon,
   ArrowUp01Icon,
   BubbleChatIcon,
   Loading03Icon,
   Mic01Icon,
+  RefreshIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
+import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
@@ -38,6 +41,7 @@ type InterviewChatProps = {
   isCancelled: boolean;
   isExpired: boolean;
   isStreaming: boolean;
+  hasError: boolean;
   /**
    * True while the model is between turns — sent but no visible text yet
    * (status `submitted`, or `streaming` with only tool-call parts so far).
@@ -52,6 +56,7 @@ type InterviewChatProps = {
   onContinueToVoice?: () => void;
   voiceCtaLabel?: string;
   onSend: (content: string, integrity: MessageIntegritySnapshot) => Promise<void>;
+  onRetry: () => Promise<void>;
 };
 
 export function InterviewChat({
@@ -61,10 +66,12 @@ export function InterviewChat({
   isCancelled,
   isExpired,
   isStreaming,
+  hasError,
   isThinking,
   onContinueToVoice,
   voiceCtaLabel,
   onSend,
+  onRetry,
 }: InterviewChatProps) {
   const [content, setContent] = useState("");
   const composeIntegrityRef = useRef<MessageIntegritySnapshot>(emptyComposeIntegritySnapshot());
@@ -114,7 +121,7 @@ export function InterviewChat({
 
   const onSubmit = async () => {
     const trimmed = content.trim();
-    if (!trimmed || !canSend || isStreaming || isThinking) {
+    if (!trimmed || !canSend || isStreaming || isThinking || hasError) {
       return;
     }
 
@@ -265,6 +272,29 @@ export function InterviewChat({
         </div>
       ) : (
         <div className="shrink-0 bg-card px-4 pb-4 pt-3 md:px-6 md:pb-5">
+          {hasError ? (
+            <Alert variant="destructive" className="mb-3">
+              <HugeiconsIcon icon={Alert02Icon} strokeWidth={2} className="size-4" />
+              <AlertTitle>Zero couldn&apos;t respond</AlertTitle>
+              <AlertDescription>
+                Your answer is saved. Retry to continue the interview.
+              </AlertDescription>
+              <AlertAction>
+                <Button variant="outline" size="sm" onClick={onRetry} disabled={isStreaming}>
+                  {isStreaming ? (
+                    <HugeiconsIcon
+                      icon={Loading03Icon}
+                      strokeWidth={2}
+                      className="size-4 animate-spin"
+                    />
+                  ) : (
+                    <HugeiconsIcon icon={RefreshIcon} strokeWidth={2} className="size-4" />
+                  )}
+                  {isStreaming ? "Retrying" : "Retry"}
+                </Button>
+              </AlertAction>
+            </Alert>
+          ) : null}
           <div className="flex items-end gap-2 rounded-2xl border border-border/60 bg-background px-3 py-2 transition-colors focus-within:border-primary/40">
             <Textarea
               ref={composerRef}
@@ -272,8 +302,14 @@ export function InterviewChat({
               onChange={onComposerChange}
               onPaste={onComposerPaste}
               onKeyDown={onComposerKeyDown}
-              placeholder={canSend ? "Write your answer..." : "Start the interview to answer"}
-              disabled={!canSend || isThinking}
+              placeholder={
+                hasError
+                  ? "Retry the previous answer to continue"
+                  : canSend
+                    ? "Write your answer..."
+                    : "Start the interview to answer"
+              }
+              disabled={!canSend || isThinking || hasError}
               className="field-sizing-content max-h-44 min-h-10 flex-1 resize-none overflow-y-auto border-0 bg-transparent px-1 py-2 text-sm leading-6 text-foreground placeholder:text-muted-foreground focus-visible:border-transparent focus-visible:ring-0"
               rows={1}
             />
@@ -283,7 +319,9 @@ export function InterviewChat({
               className="mb-0.5 size-9 shrink-0 rounded-full bg-primary text-primary-foreground transition-transform hover:scale-[1.02] hover:bg-primary/90 active:scale-[0.98] disabled:scale-100 disabled:bg-muted disabled:text-muted-foreground"
               onMouseDown={onSendMouseDown}
               onClick={onSubmit}
-              disabled={!canSend || isStreaming || isThinking || content.trim().length === 0}
+              disabled={
+                !canSend || isStreaming || isThinking || hasError || content.trim().length === 0
+              }
             >
               {isStreaming || isThinking ? (
                 <HugeiconsIcon

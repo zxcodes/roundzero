@@ -221,6 +221,11 @@ function InterviewWorkspaceContent({
     }
   };
 
+  const onRetryMessage = async () => {
+    await chat.retryMessage();
+    await router.invalidate();
+  };
+
   return (
     <>
       <header className="flex shrink-0 flex-col gap-3 border-b border-border/60 bg-card px-4 py-3.5 md:flex-row md:items-center md:justify-between md:px-6 md:py-4">
@@ -340,8 +345,10 @@ function InterviewWorkspaceContent({
             isCancelled={interview.status === "cancelled"}
             isExpired={interview.status === "expired"}
             isStreaming={chat.isStreaming}
+            hasError={Boolean(chat.error)}
             isThinking={chat.isThinking}
             onSend={onSendMessage}
+            onRetry={onRetryMessage}
             onContinueToVoice={onContinueToVoice}
             voiceCtaLabel={voiceCtaLabel}
           />

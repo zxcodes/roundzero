@@ -242,6 +242,17 @@ export const Route = createFileRoute("/api/interview-chat")({
           integrityMetadataDirty = false;
         };
 
+        const logTurnFailure = (stage: "finish" | "abort" | "error", error: unknown) => {
+          console.error("Interview chat turn failed", {
+            stage,
+            interviewId,
+            turnId,
+            threadId: params.threadId,
+            runId: params.runId,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        };
+
         const { model, fallbacks } = getModelChain("interview");
         const abortController = new AbortController();
         // The closing turn writes its farewell text *and* calls end_interview in
@@ -351,18 +362,21 @@ export const Route = createFileRoute("/api/interview-chat")({
                     throw new Error("Could not persist the interview assistant response");
                   }
                 } catch (error) {
+                  logTurnFailure("finish", error);
                   await failInterviewTurn(db, { interviewId, turnId });
                   throw error;
                 }
               },
-              onAbort: async () => {
+              onAbort: async (_context, info) => {
+                logTurnFailure("abort", info.reason ?? "Chat run aborted");
                 try {
                   await flushIntegrityMetadata();
                 } finally {
                   await failInterviewTurn(db, { interviewId, turnId });
                 }
               },
-              onError: async () => {
+              onError: async (_context, info) => {
+                logTurnFailure("error", info.error);
                 try {
                   await flushIntegrityMetadata();
                 } finally {
