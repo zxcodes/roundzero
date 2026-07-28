@@ -171,13 +171,19 @@ const INJECTION_LINE_PATTERNS: RegExp[] = [
  * untrusted content into the system prompt", but in practice we have to —
  * resume text is the whole point of the evaluation. This helper just makes
  * the obvious attacks ineffective.
+ *
+ * Also strips U+0000. PDF extractors (e.g. DocuText) can emit null bytes in
+ * otherwise valid text; Postgres rejects 0x00 in text/jsonb ("invalid byte
+ * sequence for encoding UTF8"), which would fail resume persistence.
  */
 export function sanitizeUntrustedText(
   input: unknown,
   maxChars: number = LIMITS.UNTRUSTED_TEXT,
 ): string {
   if (typeof input !== "string") return "";
-  const lines = input.split(/\r?\n/);
+  // Postgres text/jsonb cannot store U+0000; drop before any further work.
+  const withoutNulls = input.replaceAll("\u0000", "");
+  const lines = withoutNulls.split(/\r?\n/);
   const kept: string[] = [];
   for (const line of lines) {
     if (INJECTION_LINE_PATTERNS.some((re) => re.test(line))) continue;
