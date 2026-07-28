@@ -41,6 +41,9 @@ export const Route = createFileRoute("/")({
   component: HomePage,
 });
 
+const PRODUCT_HUNT_URL =
+  "https://www.producthunt.com/products/roundzero?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-roundzero";
+
 function HomePage() {
   return (
     <div className="marketing-page min-h-svh bg-background text-foreground">
@@ -48,6 +51,7 @@ function HomePage() {
         Skip to main content
       </a>
       <PublicHeader />
+      <ProductHuntMobileBanner />
       <main id="main-content">
         <Hero />
         <HowItWorks />
@@ -59,6 +63,30 @@ function HomePage() {
       </main>
       <PublicFooter />
     </div>
+  );
+}
+
+function ProductHuntMobileBanner() {
+  return (
+    <a
+      href={PRODUCT_HUNT_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="product-hunt-mobile-banner sticky top-14 z-40 flex h-8 items-center justify-start gap-2 px-6 sm:hidden"
+    >
+      <span className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-(--marketing-muted)">
+        Product Hunt
+      </span>
+      <span aria-hidden="true" className="text-[11px] text-black/20">
+        ·
+      </span>
+      <span className="text-[12px] tracking-[-0.01em] text-foreground/70">Find us there</span>
+      <HugeiconsIcon
+        icon={ArrowRight02Icon}
+        strokeWidth={2}
+        className="size-3 text-foreground/40"
+      />
+    </a>
   );
 }
 
@@ -103,6 +131,20 @@ function Hero() {
               </Link>
             </div>
           </div>
+          <a
+            href={PRODUCT_HUNT_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-5 hidden sm:inline-block"
+          >
+            <img
+              alt="RoundZero - AI interviews that replace first-round screening. | Product Hunt"
+              width={250}
+              height={54}
+              src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1204759&theme=dark&t=1785243666068"
+              className="h-auto w-[200px]"
+            />
+          </a>
         </div>
 
         <div className="marketing-rise marketing-hero-app mt-10 lg:mt-14">
