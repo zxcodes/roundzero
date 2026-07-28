@@ -63,7 +63,7 @@ function InterviewWorkspacePage() {
     <ClientOnly fallback={<InterviewWorkspacePageSkeleton />}>
       {/* Remount on status transitions so useChat re-reads `initialMessages`
           after the server seeds the greeting (pending → in_progress) and
-          after the agent calls end_interview (in_progress → completed).
+          after the agent finishes the chat (in_progress → awaiting_voice).
           useChat consumes initialMessages on mount only. */}
       <InterviewWorkspaceContent
         key={`${interview.id}:${interview.status}`}

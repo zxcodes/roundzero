@@ -18,11 +18,11 @@ import { z } from "zod";
 import {
   claimInterviewTurn,
   completeInterviewTurnWithAssistant,
+  completeInterviewTurnWithAssistantAndSubmitForVoice,
   failInterviewTurn,
   getInterviewContextById,
   getInterviewForCandidateById,
   getInterviewMessagesByInterviewId,
-  submitInterviewForVoice,
   updateInterviewMetadata,
 } from "@/features/interviews/queries/queries_sql";
 import { expireInterviewIfDue } from "@/features/interviews/server/expire";
@@ -73,18 +73,35 @@ const recordScreeningCoverageDef = toolDefinition({
   }),
 });
 
-const endInterviewDef = toolDefinition({
-  name: "end_interview",
-  description:
-    "Submit the text interview and move the candidate to the required voice step. Call this after you have already written a warm closing message to the candidate.",
-  inputSchema: z.object({
-    reason: z.string().min(1),
-  }),
-  outputSchema: z.object({
-    completed: z.boolean(),
-    reason: z.string(),
-  }),
-});
+const interviewResponseSchema = z
+  .object({
+    action: z
+      .enum(["continue", "finish"])
+      .describe("Continue asking questions, or finish when you have enough signal."),
+    message: z.string().min(1).describe("The candidate-visible response."),
+    reason: z
+      .string()
+      .min(1)
+      .nullable()
+      .describe("A concise completion reason for finish, otherwise null."),
+  })
+  .strict()
+  .superRefine((response, context) => {
+    if (response.action === "finish" && response.reason === null) {
+      context.addIssue({
+        code: "custom",
+        path: ["reason"],
+        message: "A finish response requires a reason",
+      });
+    }
+    if (response.action === "continue" && response.reason !== null) {
+      context.addIssue({
+        code: "custom",
+        path: ["reason"],
+        message: "A continue response must use a null reason",
+      });
+    }
+  });
 
 const readMessageText = (message: UIMessage | ModelMessage) => {
   if ("parts" in message && Array.isArray(message.parts)) {
@@ -226,7 +243,7 @@ export const Route = createFileRoute("/api/interview-chat")({
             maxQuestions: 5,
           });
           return userRequestedEnd
-            ? `${basePrompt}\n\nThe candidate just explicitly asked to end. Close warmly in one short message and call end_interview this turn. Ask no further questions.`
+            ? `${basePrompt}\n\nThe candidate just explicitly asked to end. Choose action='finish' with one short, warm closing message and ask no further questions.`
             : basePrompt;
         };
 
@@ -255,17 +272,6 @@ export const Route = createFileRoute("/api/interview-chat")({
 
         const { model, fallbacks } = getModelChain("interview");
         const abortController = new AbortController();
-        // The closing turn writes its farewell text *and* calls end_interview in
-        // the same agent-loop iteration. The follow-up iteration that consumes the
-        // tool result emits no text, so by `onFinish` the run's accumulated
-        // `info.content` is empty and the farewell would be dropped — which made
-        // the last assistant message vanish once the route reloaded from the DB.
-        // Capture the last non-empty iteration text at each tool-phase boundary
-        // (fires before the next iteration resets the accumulator) and fall back
-        // to it when the terminal content is empty.
-        let lastAssistantContent = "";
-        let savedAssistantMessage: Awaited<ReturnType<typeof completeInterviewTurnWithAssistant>> =
-          null;
         const stream = chat({
           adapter: createOpenRouterText(model, env.OPENROUTER_API_KEY, {
             httpReferer: env.APP_URL,
@@ -312,12 +318,9 @@ export const Route = createFileRoute("/api/interview-chat")({
 
               return { ok: true };
             }),
-            endInterviewDef.server(async ({ reason }) => {
-              await submitInterviewForVoice(db, { id: interviewId });
-
-              return { completed: true, reason };
-            }),
           ],
+          outputSchema: interviewResponseSchema,
+          stream: true,
           abortController,
           threadId: params.threadId,
           runId: params.runId,
@@ -326,6 +329,7 @@ export const Route = createFileRoute("/api/interview-chat")({
           modelOptions: {
             ...(fallbacks.length > 0 ? { models: fallbacks } : {}),
             parallelToolCalls: false,
+            plugins: [{ id: "response-healing" }],
             temperature: 0.3,
             maxCompletionTokens: 150,
           },
@@ -336,60 +340,14 @@ export const Route = createFileRoute("/api/interview-chat")({
                 systemPrompts: [getSystemPrompt()],
               }),
             },
-            {
-              name: "finalize-interview-turn",
-              onToolPhaseComplete: (context) => {
-                const text = context.accumulatedContent.trim();
-                if (text.length > 0) {
-                  lastAssistantContent = text;
-                }
-              },
-              onFinish: async (_context, info) => {
-                try {
-                  await flushIntegrityMetadata();
-
-                  const content = info.content.trim() || lastAssistantContent;
-                  if (content.length === 0) {
-                    throw new Error("The interview assistant did not produce a response");
-                  }
-
-                  savedAssistantMessage = await completeInterviewTurnWithAssistant(db, {
-                    interviewId,
-                    turnId,
-                    content,
-                  });
-                  if (!savedAssistantMessage) {
-                    throw new Error("Could not persist the interview assistant response");
-                  }
-                } catch (error) {
-                  logTurnFailure("finish", error);
-                  await failInterviewTurn(db, { interviewId, turnId });
-                  throw error;
-                }
-              },
-              onAbort: async (_context, info) => {
-                logTurnFailure("abort", info.reason ?? "Chat run aborted");
-                try {
-                  await flushIntegrityMetadata();
-                } finally {
-                  await failInterviewTurn(db, { interviewId, turnId });
-                }
-              },
-              onError: async (_context, info) => {
-                logTurnFailure("error", info.error);
-                try {
-                  await flushIntegrityMetadata();
-                } finally {
-                  await failInterviewTurn(db, { interviewId, turnId });
-                }
-              },
-            },
           ],
         });
 
         const bufferedResponse = async function* (): AsyncGenerator<StreamChunk> {
           let finishReason: Extract<StreamChunk, { type: EventType.RUN_FINISHED }>["finishReason"] =
             null;
+          let response: z.infer<typeof interviewResponseSchema> | null = null;
+          let turnCompleted = false;
           yield {
             type: EventType.RUN_STARTED,
             threadId: params.threadId,
@@ -398,43 +356,81 @@ export const Route = createFileRoute("/api/interview-chat")({
             timestamp: Date.now(),
           };
 
-          for await (const chunk of stream) {
-            // Tool-loop iterations are private. Only the finalized response below
-            // is allowed to become a candidate-visible transcript message.
-            if (chunk.type === EventType.RUN_FINISHED) {
-              finishReason = chunk.finishReason;
+          try {
+            for await (const chunk of stream) {
+              // Tool-loop iterations and structured JSON deltas are private. Only
+              // the validated decision below becomes candidate-visible content.
+              if (chunk.type === EventType.RUN_FINISHED) {
+                finishReason = chunk.finishReason;
+              }
+              if (chunk.type === EventType.RUN_ERROR) {
+                throw new Error(chunk.message || "Interview generation failed");
+              }
+              if (chunk.type === EventType.CUSTOM && chunk.name === "structured-output.complete") {
+                response = interviewResponseSchema.parse(chunk.value.object);
+              }
+            }
+
+            if (!response) {
+              throw new Error("The interview assistant did not produce a response decision");
+            }
+
+            await flushIntegrityMetadata();
+
+            const savedAssistantMessage =
+              response.action === "finish"
+                ? await completeInterviewTurnWithAssistantAndSubmitForVoice(db, {
+                    interviewId,
+                    turnId,
+                    content: response.message,
+                  })
+                : await completeInterviewTurnWithAssistant(db, {
+                    interviewId,
+                    turnId,
+                    content: response.message,
+                  });
+            if (!savedAssistantMessage) {
+              throw new Error("Could not persist the interview assistant response");
+            }
+            turnCompleted = true;
+
+            const timestamp = Date.now();
+            yield {
+              type: EventType.TEXT_MESSAGE_START,
+              messageId: savedAssistantMessage.id,
+              role: "assistant",
+              timestamp,
+            };
+            yield {
+              type: EventType.TEXT_MESSAGE_CONTENT,
+              messageId: savedAssistantMessage.id,
+              delta: savedAssistantMessage.content,
+              timestamp,
+            };
+            yield {
+              type: EventType.TEXT_MESSAGE_END,
+              messageId: savedAssistantMessage.id,
+              timestamp,
+            };
+            yield {
+              type: EventType.RUN_FINISHED,
+              threadId: params.threadId,
+              runId: params.runId,
+              finishReason,
+              timestamp,
+            };
+          } catch (error) {
+            logTurnFailure(abortController.signal.aborted ? "abort" : "error", error);
+            throw error;
+          } finally {
+            if (!turnCompleted) {
+              try {
+                await flushIntegrityMetadata();
+              } finally {
+                await failInterviewTurn(db, { interviewId, turnId });
+              }
             }
           }
-
-          if (!savedAssistantMessage) {
-            throw new Error("The interview assistant did not produce a response");
-          }
-
-          const timestamp = Date.now();
-          yield {
-            type: EventType.TEXT_MESSAGE_START,
-            messageId: savedAssistantMessage.id,
-            role: "assistant",
-            timestamp,
-          };
-          yield {
-            type: EventType.TEXT_MESSAGE_CONTENT,
-            messageId: savedAssistantMessage.id,
-            delta: savedAssistantMessage.content,
-            timestamp,
-          };
-          yield {
-            type: EventType.TEXT_MESSAGE_END,
-            messageId: savedAssistantMessage.id,
-            timestamp,
-          };
-          yield {
-            type: EventType.RUN_FINISHED,
-            threadId: params.threadId,
-            runId: params.runId,
-            finishReason,
-            timestamp,
-          };
         };
 
         return toServerSentEventsResponse(bufferedResponse(), { abortController });
