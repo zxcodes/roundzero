@@ -101,8 +101,14 @@ export function useInterviewChat(interviewId: string, initialMessages: InitialIn
     }
   };
 
+  const retryMessage = async () => {
+    await chat.reload();
+  };
+
   return {
+    error: chat.error,
     messages,
+    retryMessage,
     sendMessage,
     status: chat.status,
     isStreaming: chat.isLoading,
