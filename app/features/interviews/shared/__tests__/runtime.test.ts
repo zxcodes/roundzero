@@ -236,6 +236,7 @@ describe("interview runtime metadata", () => {
     });
     await createInterviewMessage(sql, {
       interviewId,
+      turnId: crypto.randomUUID(),
       role: "candidate",
       content: "Old transcript should not survive re-invite metadata refresh.",
     });

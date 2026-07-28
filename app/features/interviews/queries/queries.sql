@@ -250,13 +250,95 @@ WHERE interview_id = $1
   AND analysis IS NULL
 RETURNING *;
 
+-- name: claimInterviewTurn :one
+WITH retried AS (
+  UPDATE interview_messages turn_message
+  SET generation_status = 'processing'
+  WHERE turn_message.interview_id = $1
+    AND turn_message.turn_id = $2
+    AND turn_message.role = 'candidate'
+    AND turn_message.generation_status = 'failed'
+    AND NOT EXISTS (
+      SELECT 1
+      FROM interview_messages active_turn
+      WHERE active_turn.interview_id = $1
+        AND active_turn.role = 'candidate'
+        AND active_turn.generation_status = 'processing'
+    )
+  RETURNING turn_message.id, turn_message.interview_id, turn_message.role,
+            turn_message.content, turn_message.created_at, turn_message.position
+), inserted AS (
+  INSERT INTO interview_messages (interview_id, turn_id, role, content, generation_status)
+  SELECT $1, $2, 'candidate', $3, 'processing'
+  WHERE NOT EXISTS (SELECT 1 FROM retried)
+  ON CONFLICT DO NOTHING
+  RETURNING id, interview_id, role, content, created_at, position
+)
+SELECT * FROM retried
+UNION ALL
+SELECT * FROM inserted
+LIMIT 1;
+
 -- name: createInterviewMessage :one
-INSERT INTO interview_messages (interview_id, role, content)
-VALUES ($1, $2, $3)
+INSERT INTO interview_messages (interview_id, turn_id, role, content)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (interview_id, turn_id, role) DO NOTHING
 RETURNING id, interview_id, role, content, created_at, position;
+
+-- name: completeInterviewTurnWithAssistant :one
+WITH inserted AS (
+  INSERT INTO interview_messages (interview_id, turn_id, role, content)
+  VALUES ($1, $2, 'assistant', $3)
+  ON CONFLICT (interview_id, turn_id, role) DO NOTHING
+  RETURNING id, interview_id, role, content, created_at, position
+), completed AS (
+  UPDATE interview_messages candidate_message
+  SET generation_status = 'completed'
+  WHERE candidate_message.interview_id = $1
+    AND candidate_message.turn_id = $2
+    AND candidate_message.role = 'candidate'
+    AND candidate_message.generation_status = 'processing'
+    AND EXISTS (SELECT 1 FROM inserted)
+  RETURNING candidate_message.id
+)
+SELECT inserted.*
+FROM inserted
+WHERE EXISTS (SELECT 1 FROM completed);
+
+-- name: claimInterviewGreeting :one
+INSERT INTO interview_messages (interview_id, turn_id, role, content, generation_status)
+VALUES ($1, 'greeting', 'assistant', '', 'processing')
+ON CONFLICT (interview_id, turn_id, role) DO NOTHING
+RETURNING id, interview_id, role, content, created_at, position;
+
+-- name: completeInterviewGreeting :one
+UPDATE interview_messages
+SET content = $2,
+    generation_status = 'completed'
+WHERE interview_id = $1
+  AND turn_id = 'greeting'
+  AND role = 'assistant'
+  AND generation_status = 'processing'
+RETURNING id, interview_id, role, content, created_at, position;
+
+-- name: failInterviewGreeting :exec
+DELETE FROM interview_messages
+WHERE interview_id = $1
+  AND turn_id = 'greeting'
+  AND role = 'assistant'
+  AND generation_status = 'processing';
+
+-- name: failInterviewTurn :exec
+UPDATE interview_messages
+SET generation_status = 'failed'
+WHERE interview_id = $1
+  AND turn_id = $2
+  AND role = 'candidate'
+  AND generation_status = 'processing';
 
 -- name: getInterviewMessagesByInterviewId :many
 SELECT id, interview_id, role, content, created_at, position
 FROM interview_messages
 WHERE interview_id = $1
+  AND (generation_status IS NULL OR generation_status = 'completed')
 ORDER BY position ASC;

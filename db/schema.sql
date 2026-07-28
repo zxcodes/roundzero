@@ -213,7 +213,10 @@ CREATE TABLE public.interview_messages (
     role text NOT NULL,
     content text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    "position" bigint NOT NULL
+    "position" bigint NOT NULL,
+    turn_id text NOT NULL,
+    generation_status text,
+    CONSTRAINT interview_messages_generation_status_check CHECK (((generation_status IS NULL) OR (generation_status = ANY (ARRAY['processing'::text, 'completed'::text, 'failed'::text]))))
 );
 
 
@@ -926,6 +929,20 @@ CREATE INDEX idx_users_pending_erasure ON public.users USING btree (deleted_at) 
 
 
 --
+-- Name: interview_messages_interview_turn_role_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX interview_messages_interview_turn_role_key ON public.interview_messages USING btree (interview_id, turn_id, role);
+
+
+--
+-- Name: interview_messages_one_processing_turn_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX interview_messages_one_processing_turn_key ON public.interview_messages USING btree (interview_id) WHERE ((role = 'candidate'::text) AND (generation_status = 'processing'::text));
+
+
+--
 -- Name: applications applications_candidate_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1151,4 +1168,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260715154907'),
     ('20260719022003'),
     ('20260721090921'),
-    ('20260722040827');
+    ('20260722040827'),
+    ('20260728034113');

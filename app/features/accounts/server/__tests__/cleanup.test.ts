@@ -77,8 +77,13 @@ async function seedCandidatePipeline() {
   `;
 
   await sql`
-    INSERT INTO interview_messages (interview_id, role, content)
-    VALUES (${interview.id}, 'user', 'My biggest project was rebuilding the payments API.')
+    INSERT INTO interview_messages (interview_id, turn_id, role, content)
+    VALUES (
+      ${interview.id},
+      ${crypto.randomUUID()},
+      'user',
+      'My biggest project was rebuilding the payments API.'
+    )
   `;
 
   const audioKey = `voice/${candidate.id}/session-audio.webm`;

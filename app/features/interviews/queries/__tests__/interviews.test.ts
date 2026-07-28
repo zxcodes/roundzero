@@ -8,10 +8,17 @@ import {
 import { getTestDb, makeTestResumeKey, seedCompany, seedUser } from "@/shared/__tests__/test-utils";
 
 import {
+  claimInterviewGreeting,
+  claimInterviewTurn,
+  completeInterviewGreeting,
+  completeInterviewTurnWithAssistant,
   completeInterviewAfterVoice,
   createInterview,
+  createInterviewMessage,
+  failInterviewTurn,
   getInterviewContextById,
   getInterviewForCandidateById,
+  getInterviewMessagesByInterviewId,
   submitInterviewForVoice,
   updateInterviewStatus,
 } from "../queries_sql";
@@ -121,6 +128,119 @@ describe("interview queries", () => {
     });
     expect(candidateView).not.toBeNull();
     expect(candidateView!.status).toBe("completed");
+  });
+
+  it("allows only one active generation and permits a failed turn to retry", async () => {
+    const setup = await makeApplication();
+    const interview = await createInterview(sql, {
+      applicationId: setup.applicationId,
+      agentId: null,
+      type: "full",
+      metadata: {},
+      status: "in_progress",
+      invitedAt: new Date(),
+      startedAt: new Date(),
+      completedAt: null,
+    });
+    const firstTurnId = crypto.randomUUID();
+    const secondTurnId = crypto.randomUUID();
+
+    const firstClaim = await claimInterviewTurn(sql, {
+      interviewId: interview!.id,
+      turnId: firstTurnId,
+      content: "My first answer",
+    });
+    const duplicateClaim = await claimInterviewTurn(sql, {
+      interviewId: interview!.id,
+      turnId: firstTurnId,
+      content: "My first answer",
+    });
+    const overlappingClaim = await claimInterviewTurn(sql, {
+      interviewId: interview!.id,
+      turnId: secondTurnId,
+      content: "A competing answer",
+    });
+
+    expect(firstClaim).not.toBeNull();
+    expect(duplicateClaim).toBeNull();
+    expect(overlappingClaim).toBeNull();
+
+    await failInterviewTurn(sql, { interviewId: interview!.id, turnId: firstTurnId });
+    const messagesAfterFailure = await getInterviewMessagesByInterviewId(sql, {
+      interviewId: interview!.id,
+    });
+    expect(messagesAfterFailure).toEqual([]);
+
+    const retryClaim = await claimInterviewTurn(sql, {
+      interviewId: interview!.id,
+      turnId: firstTurnId,
+      content: "My first answer",
+    });
+    expect(retryClaim?.id).toBe(firstClaim?.id);
+
+    const assistantMessage = await completeInterviewTurnWithAssistant(sql, {
+      interviewId: interview!.id,
+      turnId: firstTurnId,
+      content: "Thanks. Tell me about another project.",
+    });
+    const duplicateAssistant = await completeInterviewTurnWithAssistant(sql, {
+      interviewId: interview!.id,
+      turnId: firstTurnId,
+      content: "This duplicate must not be persisted.",
+    });
+    expect(assistantMessage).not.toBeNull();
+    expect(duplicateAssistant).toBeNull();
+
+    const nextClaim = await claimInterviewTurn(sql, {
+      interviewId: interview!.id,
+      turnId: secondTurnId,
+      content: "My next answer",
+    });
+    expect(nextClaim).not.toBeNull();
+  });
+
+  it("atomically claims one greeting and hides it until generation completes", async () => {
+    const setup = await makeApplication();
+    const interview = await createInterview(sql, {
+      applicationId: setup.applicationId,
+      agentId: null,
+      type: "full",
+      metadata: {},
+      status: "in_progress",
+      invitedAt: new Date(),
+      startedAt: new Date(),
+      completedAt: null,
+    });
+
+    const firstClaim = await claimInterviewGreeting(sql, { interviewId: interview!.id });
+    const duplicateClaim = await claimInterviewGreeting(sql, { interviewId: interview!.id });
+    const messagesWhileGenerating = await getInterviewMessagesByInterviewId(sql, {
+      interviewId: interview!.id,
+    });
+
+    expect(firstClaim).not.toBeNull();
+    expect(duplicateClaim).toBeNull();
+    expect(messagesWhileGenerating).toEqual([]);
+
+    const greeting = await completeInterviewGreeting(sql, {
+      interviewId: interview!.id,
+      content: "Welcome, Amina. Tell me about a project you owned.",
+    });
+    const visibleMessages = await getInterviewMessagesByInterviewId(sql, {
+      interviewId: interview!.id,
+    });
+
+    expect(greeting?.content).toBe("Welcome, Amina. Tell me about a project you owned.");
+    expect(visibleMessages).toHaveLength(1);
+    expect(visibleMessages[0]?.content).toBe(greeting?.content);
+
+    const duplicateGreeting = await createInterviewMessage(sql, {
+      interviewId: interview!.id,
+      turnId: "greeting",
+      role: "assistant",
+      content: "This duplicate must not be persisted.",
+    });
+    expect(duplicateGreeting).toBeNull();
   });
 });
 
