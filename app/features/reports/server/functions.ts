@@ -1,10 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
-import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 
 import { getApplicationReviewById } from "@/features/applications/queries/queries_sql";
 import { getDb } from "@/shared/db";
+import { ExpectedError } from "@/shared/expected-error";
 import { companyMiddleware } from "@/shared/middleware";
+import { zodValidator } from "@/shared/validation";
 
 import { loadApplicantReportTimeline } from "./timeline";
 
@@ -24,7 +25,7 @@ export const getCompanyApplicantReportTimeline = createServerFn({ method: "GET" 
     }
 
     if (application.companyId !== context.company.id) {
-      throw new Error("Not authorized to view this applicant");
+      throw new ExpectedError("forbidden", "Not authorized to view this applicant");
     }
 
     return await loadApplicantReportTimeline(db, application);

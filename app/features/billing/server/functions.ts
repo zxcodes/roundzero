@@ -1,13 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeader } from "@tanstack/react-start/server";
-import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 
 import { getCompanyById, setCompanyPolarCustomer } from "@/features/companies/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { appEnv } from "@/shared/env.app";
+import { ExpectedError } from "@/shared/expected-error";
 import { assertCompanyOwner } from "@/shared/membership-auth";
 import { companyMiddleware } from "@/shared/middleware";
+import { zodValidator } from "@/shared/validation";
 
 import {
   hasActiveSubscription,
@@ -77,7 +78,7 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
     const productId = productIdForPlan(plan);
 
     if (!productId) {
-      throw new Error("This plan is not purchasable");
+      throw new ExpectedError("invalid_input", "This plan is not purchasable");
     }
 
     if (
@@ -87,7 +88,10 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
         cancelAtPeriodEnd: context.company.subscriptionCancelAtPeriodEnd,
       })
     ) {
-      throw new Error("Manage your existing subscription through the billing portal.");
+      throw new ExpectedError(
+        "invalid_state",
+        "Manage your existing subscription through the billing portal.",
+      );
     }
 
     await ensurePolarCustomer({
@@ -111,7 +115,7 @@ export const createBillingPortalSession = createServerFn({ method: "POST" })
     assertCompanyOwner(context.membership.role);
 
     if (!context.company.polarCustomerId) {
-      throw new Error("No billing account on file. Subscribe first.");
+      throw new ExpectedError("setup_required", "No billing account on file. Subscribe first.");
     }
 
     const url = await createPolarPortalSession(context.company.polarCustomerId);

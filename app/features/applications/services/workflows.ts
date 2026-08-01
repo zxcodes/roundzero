@@ -33,6 +33,8 @@ import {
 } from "@/features/notifications/services/email";
 import { getReportByApplicationId } from "@/features/reports/queries/queries_sql";
 import { type ApplicationStatus, applicationStatusSchema, isValidTransition } from "@/shared/enums";
+import { ExpectedError } from "@/shared/expected-error";
+import { isUniqueViolation } from "@/shared/postgres-errors";
 
 import {
   createApplication as createApplicationQuery,
@@ -70,18 +72,21 @@ export const applyToJobWorkflow = async (
 
   const user = await getUserById(db, { id: input.userId });
   if (user?.role !== "candidate") {
-    throw new Error("Only candidates can apply to jobs");
+    throw new ExpectedError("forbidden", "Only candidates can apply to jobs");
   }
 
   const job = await getJobById(db, { id: input.jobId });
   if (!job) {
-    throw new Error("Job not found");
+    throw new ExpectedError("not_found", "Job not found");
   }
   if (job.status !== "open") {
-    throw new Error("This job is not accepting applications");
+    throw new ExpectedError("invalid_state", "This job is not accepting applications");
   }
   if (job.expiresAt && job.expiresAt <= new Date()) {
-    throw new Error("This job has expired and is no longer accepting applications");
+    throw new ExpectedError(
+      "expired",
+      "This job has expired and is no longer accepting applications",
+    );
   }
 
   const existing = await getApplicationByJobAndCandidate(db, {
@@ -89,21 +94,29 @@ export const applyToJobWorkflow = async (
     candidateId: input.userId,
   });
   if (existing) {
-    throw new Error("You have already applied to this job");
+    throw new ExpectedError("already_exists", "You have already applied to this job");
   }
 
   const profile = await getCandidateProfileByUserId(db, { userId: input.userId });
   if (!profile?.resumeKey) {
-    throw new Error("Add your resume to your profile before applying");
+    throw new ExpectedError("setup_required", "Add your resume to your profile before applying");
   }
 
-  const application = await createApplicationQuery(db, {
-    jobId: input.jobId,
-    candidateId: input.userId,
-    resumeKey: profile.resumeKey,
-    metadata: {},
-    status: "applied",
-  });
+  let application;
+  try {
+    application = await createApplicationQuery(db, {
+      jobId: input.jobId,
+      candidateId: input.userId,
+      resumeKey: profile.resumeKey,
+      metadata: {},
+      status: "applied",
+    });
+  } catch (error) {
+    if (isUniqueViolation(error)) {
+      throw new ExpectedError("already_exists", "You have already applied to this job");
+    }
+    throw error;
+  }
 
   if (!application) {
     throw new Error("Failed to submit application");
@@ -139,39 +152,47 @@ export const updateApplicationStatusWorkflow = async (
     id: input.applicationId,
   });
   if (!application) {
-    throw new Error("Application not found");
+    throw new ExpectedError("not_found", "Application not found");
   }
 
   const company = await getCompanyByMemberUserId(db, { userId: input.userId });
   if (!company) {
-    throw new Error("Not authorized");
+    throw new ExpectedError("forbidden", "Not authorized");
   }
 
   const job = await getJobById(db, { id: application.jobId });
   if (!job || job.companyId !== company.id) {
-    throw new Error("Not authorized");
+    throw new ExpectedError("forbidden", "Not authorized");
   }
 
   const currentStatus = applicationStatusSchema.parse(application.status);
   if (!isValidTransition(currentStatus, input.status)) {
-    throw new Error(`Cannot transition from "${currentStatus}" to "${input.status}"`);
+    throw new ExpectedError(
+      "invalid_state",
+      `Cannot transition from "${currentStatus}" to "${input.status}"`,
+    );
   }
 
   if (currentStatus !== input.status && input.status === "interview_invited") {
     const invitation = await db.begin(async (tx) => {
       const transaction = tx as unknown as Sql;
       const lockedJob = await getJobCapacityForUpdate(transaction, { id: application.jobId });
-      if (!lockedJob) throw new Error("Job not found");
+      if (!lockedJob) throw new ExpectedError("not_found", "Job not found");
 
       const lockedRows = await tx`
         SELECT id FROM applications WHERE id = ${input.applicationId} FOR UPDATE
       `;
-      if (!lockedRows[0]) throw new Error("Application not found");
+      if (!lockedRows[0]) throw new ExpectedError("not_found", "Application not found");
       const lockedApplication = await getApplicationById(transaction, { id: input.applicationId });
-      if (!lockedApplication) throw new Error("Application not found");
+      if (!lockedApplication) {
+        throw new Error(`Locked application ${input.applicationId} could not be loaded`);
+      }
       const lockedStatus = applicationStatusSchema.parse(lockedApplication.status);
       if (!isValidTransition(lockedStatus, "interview_invited")) {
-        throw new Error(`Cannot transition from "${lockedStatus}" to "interview_invited"`);
+        throw new ExpectedError(
+          "conflict",
+          `Cannot transition from "${lockedStatus}" to "interview_invited"`,
+        );
       }
 
       const existingInterview = await getInterviewByApplicationId(transaction, {
@@ -180,9 +201,15 @@ export const updateApplicationStatusWorkflow = async (
       const report = await getReportByApplicationId(transaction, {
         applicationId: lockedApplication.id,
       });
-      if (report) throw new Error("This application already has a report and cannot be reinvited");
+      if (report) {
+        throw new ExpectedError(
+          "invalid_state",
+          "This application already has a report and cannot be reinvited",
+        );
+      }
       if (existingInterview?.status === "completed") {
-        throw new Error(
+        throw new ExpectedError(
+          "invalid_state",
           "Completed interviews must be recovered through post-evaluation, not reinvited",
         );
       }
@@ -197,16 +224,18 @@ export const updateApplicationStatusWorkflow = async (
           currentStatus: lockedStatus,
           status: "interview_invited",
         });
-        if (!updated) throw new Error("Application changed while inviting candidate");
+        if (!updated) {
+          throw new ExpectedError("conflict", "Application changed while inviting candidate");
+        }
         return { application: updated, notification: null };
       }
 
       const capacity = await getJobCapacityCounts(transaction, { jobId: lockedApplication.jobId });
-      if (
-        !capacity ||
-        capacity.deliveredCount + capacity.reservedCount >= lockedJob.finalReportTarget
-      ) {
-        throw new Error("No interview capacity remains for this job");
+      if (!capacity) {
+        throw new Error(`Capacity data missing for job ${lockedApplication.jobId}`);
+      }
+      if (capacity.deliveredCount + capacity.reservedCount >= lockedJob.finalReportTarget) {
+        throw new ExpectedError("quota_exceeded", "No interview capacity remains for this job");
       }
 
       const invitedAt = new Date();
@@ -247,7 +276,9 @@ export const updateApplicationStatusWorkflow = async (
         currentStatus: lockedStatus,
         status: "interview_invited",
       });
-      if (!updated) throw new Error("Application changed while inviting candidate");
+      if (!updated) {
+        throw new ExpectedError("conflict", "Application changed while inviting candidate");
+      }
 
       const payload = notificationPayloadSchemas.interview_invited.parse({
         applicationId: lockedApplication.id,
@@ -284,7 +315,7 @@ export const updateApplicationStatusWorkflow = async (
           const lockedJob = await getJobCapacityForUpdate(transaction, {
             id: application.jobId,
           });
-          if (!lockedJob) throw new Error("Job not found");
+          if (!lockedJob) throw new ExpectedError("not_found", "Job not found");
 
           const rows = await tx`
             SELECT status
@@ -292,9 +323,15 @@ export const updateApplicationStatusWorkflow = async (
             WHERE id = ${input.applicationId}
             FOR UPDATE
           `;
+          if (!rows[0]) {
+            throw new ExpectedError("not_found", "Application not found");
+          }
           const lockedStatus = applicationStatusSchema.parse(rows[0]?.status);
           if (!isValidTransition(lockedStatus, "rejected")) {
-            throw new Error(`Cannot transition from "${lockedStatus}" to "rejected"`);
+            throw new ExpectedError(
+              "conflict",
+              `Cannot transition from "${lockedStatus}" to "rejected"`,
+            );
           }
 
           const interview = await getInterviewByApplicationId(transaction, {
@@ -311,7 +348,10 @@ export const updateApplicationStatusWorkflow = async (
               cancellationReason: "Company rejected application",
             });
             if (!cancelled) {
-              throw new Error("The interview changed while the application was being rejected.");
+              throw new ExpectedError(
+                "conflict",
+                "The interview changed while the application was being rejected.",
+              );
             }
             capacityFreed = true;
           }
@@ -321,7 +361,9 @@ export const updateApplicationStatusWorkflow = async (
             currentStatus: lockedStatus,
             id: input.applicationId,
           });
-          if (!updated) throw new Error("Application changed while being rejected");
+          if (!updated) {
+            throw new ExpectedError("conflict", "Application changed while being rejected");
+          }
           return { updated, capacityFreed, jobId: lockedJob.id };
         })
       : {
@@ -336,7 +378,7 @@ export const updateApplicationStatusWorkflow = async (
   const updated = transition.updated;
 
   if (!updated) {
-    throw new Error("Failed to update application status");
+    throw new ExpectedError("conflict", "Application changed while updating its status");
   }
 
   if (transition.capacityFreed) {
@@ -389,23 +431,26 @@ export const shortlistApplicantWorkflow = async (
 ) => {
   const application = await getApplicationById(db, { id: input.applicationId });
   if (!application) {
-    throw new Error("Application not found");
+    throw new ExpectedError("not_found", "Application not found");
   }
 
   const company = await getCompanyByMemberUserId(db, { userId: input.userId });
   if (!company) {
-    throw new Error("Not authorized");
+    throw new ExpectedError("forbidden", "Not authorized");
   }
 
   const job = await getJobById(db, { id: application.jobId });
   if (!job || job.companyId !== company.id) {
-    throw new Error("Not authorized");
+    throw new ExpectedError("forbidden", "Not authorized");
   }
 
   const currentStatus = applicationStatusSchema.parse(application.status);
   const alreadyShortlisted = currentStatus === "shortlisted";
   if (!alreadyShortlisted && !isValidTransition(currentStatus, "shortlisted")) {
-    throw new Error(`Cannot shortlist an application with status "${currentStatus}"`);
+    throw new ExpectedError(
+      "invalid_state",
+      `Cannot shortlist an application with status "${currentStatus}"`,
+    );
   }
 
   const shortlist: ShortlistDetails = {
@@ -420,7 +465,7 @@ export const shortlistApplicantWorkflow = async (
   });
 
   if (!updated) {
-    throw new Error("Failed to shortlist applicant");
+    throw new ExpectedError("conflict", "Application changed while shortlisting applicant");
   }
 
   // First shortlist always notifies; edits only when explicitly requested.
@@ -467,16 +512,16 @@ export const withdrawApplicationWorkflow = async (
 ) => {
   const user = await getUserById(db, { id: input.userId });
   if (user?.role !== "candidate") {
-    throw new Error("Only candidates can withdraw applications");
+    throw new ExpectedError("forbidden", "Only candidates can withdraw applications");
   }
 
   const application = await getApplicationById(db, { id: input.applicationId });
   if (!application) {
-    throw new Error("Application not found");
+    throw new ExpectedError("not_found", "Application not found");
   }
 
   if (application.candidateId !== input.userId) {
-    throw new Error("Not authorized");
+    throw new ExpectedError("forbidden", "Not authorized");
   }
 
   const withdrawal = await db.begin(async (tx) => {
@@ -488,11 +533,16 @@ export const withdrawApplicationWorkflow = async (
       FOR UPDATE
     `;
     const lockedApplication = rows[0];
-    if (!lockedApplication) throw new Error("Application not found or not authorized");
+    if (!lockedApplication) {
+      throw new ExpectedError("not_found", "Application not found or not authorized");
+    }
 
     const currentStatus = applicationStatusSchema.parse(lockedApplication.status);
     if (!isValidTransition(currentStatus, "withdrawn")) {
-      throw new Error(`Cannot withdraw an application with status "${currentStatus}"`);
+      throw new ExpectedError(
+        "invalid_state",
+        `Cannot withdraw an application with status "${currentStatus}"`,
+      );
     }
 
     const interview = await getInterviewByApplicationId(transaction, {
@@ -500,7 +550,10 @@ export const withdrawApplicationWorkflow = async (
     });
     let capacityFreed = false;
     if (interview?.status === "completed") {
-      throw new Error("This interview is complete and its evaluation can no longer be withdrawn.");
+      throw new ExpectedError(
+        "invalid_state",
+        "This interview is complete and its evaluation can no longer be withdrawn.",
+      );
     }
     if (
       interview?.status === "pending" ||
@@ -512,7 +565,10 @@ export const withdrawApplicationWorkflow = async (
         cancellationReason: "Candidate withdrew application",
       });
       if (!cancelled) {
-        throw new Error("The interview changed while the application was being withdrawn.");
+        throw new ExpectedError(
+          "conflict",
+          "The interview changed while the application was being withdrawn.",
+        );
       }
       capacityFreed = true;
     }
@@ -522,7 +578,7 @@ export const withdrawApplicationWorkflow = async (
       currentStatus,
       id: input.applicationId,
     });
-    if (!updated) throw new Error("Failed to withdraw application");
+    if (!updated) throw new ExpectedError("conflict", "Application changed while being withdrawn");
     return { updated, capacityFreed, jobId: lockedApplication.job_id as string };
   });
 

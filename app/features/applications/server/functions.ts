@@ -1,5 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { zodValidator } from "@tanstack/zod-adapter";
 import { env } from "cloudflare:workers";
 import { z } from "zod";
 
@@ -14,8 +13,10 @@ import { closeExpiredJobsQuery, getJobById } from "@/features/jobs/queries/queri
 import { loadApplicantReportTimeline } from "@/features/reports/server/timeline";
 import { getDb } from "@/shared/db";
 import { applicationStatusSchema } from "@/shared/enums";
+import { ExpectedError } from "@/shared/expected-error";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
 import { arrayBufferToBase64 } from "@/shared/resume";
+import { zodValidator } from "@/shared/validation";
 import { disposeRpcResource } from "@/shared/workflow-rpc";
 
 import {
@@ -86,7 +87,7 @@ export const getMyApplications = createServerFn({ method: "GET" })
     const db = getDb();
 
     if (context.user.role !== "candidate") {
-      throw new Error("Only candidates can view applications");
+      throw new ExpectedError("forbidden", "Only candidates can view applications");
     }
 
     const applications = await getApplicationsByCandidate(db, {
@@ -102,7 +103,7 @@ export const getMyApplicationDetail = createServerFn({ method: "GET" })
     const db = getDb();
 
     if (context.user.role !== "candidate") {
-      throw new Error("Only candidates can view applications");
+      throw new ExpectedError("forbidden", "Only candidates can view applications");
     }
 
     const [application, interview] = await Promise.all([
@@ -117,7 +118,7 @@ export const getMyApplicationDetail = createServerFn({ method: "GET" })
     }
 
     if (application.candidateId !== context.userId) {
-      throw new Error("Not authorized to view this application");
+      throw new ExpectedError("forbidden", "Not authorized to view this application");
     }
 
     const effectiveInterview = interview
@@ -139,10 +140,10 @@ export const getJobApplicants = createServerFn({ method: "GET" })
       getJobById(db, { id: data.jobId }),
     ]);
     if (!company) {
-      throw new Error("No company found");
+      throw new ExpectedError("setup_required", "No company found");
     }
     if (!job || job.companyId !== company.id) {
-      throw new Error("Job not found or not authorized");
+      throw new ExpectedError("not_found", "Job not found or not authorized");
     }
 
     const [activeInterviews, applicants] = await Promise.all([
@@ -273,10 +274,14 @@ export const retryApplicationEvaluation = createServerFn({ method: "POST" })
       return null;
     }
     if (review.companyId !== context.company.id) {
-      throw new Error("Not authorized to retry evaluation for this application");
+      throw new ExpectedError(
+        "forbidden",
+        "Not authorized to retry evaluation for this application",
+      );
     }
     if (review.status !== "evaluation_failed") {
-      throw new Error(
+      throw new ExpectedError(
+        "invalid_state",
         `Cannot retry evaluation — application is in "${review.status}", not evaluation_failed`,
       );
     }
@@ -315,32 +320,32 @@ export const getApplicationResume = createServerFn({ method: "POST" })
 
     const application = await getApplicationById(db, { id: data.applicationId });
     if (!application?.resumeKey) {
-      throw new Error("Resume not found");
+      throw new ExpectedError("not_found", "Resume not found");
     }
 
     if (context.user.role === "candidate" && application.candidateId !== context.userId) {
-      throw new Error("Not authorized");
+      throw new ExpectedError("forbidden", "Not authorized");
     }
 
     if (context.user.role === "company") {
       const company = await getCompanyByMemberUserId(db, { userId: context.userId });
       if (!company) {
-        throw new Error("Not authorized");
+        throw new ExpectedError("forbidden", "Not authorized");
       }
 
       const job = await getJobById(db, { id: application.jobId });
       if (!job || job.companyId !== company.id) {
-        throw new Error("Not authorized");
+        throw new ExpectedError("forbidden", "Not authorized");
       }
     }
 
     if (context.user.role !== "candidate" && context.user.role !== "company") {
-      throw new Error("Not authorized");
+      throw new ExpectedError("forbidden", "Not authorized");
     }
 
     const object = await env.RESUMES.get(application.resumeKey);
     if (!object) {
-      throw new Error("Resume not found");
+      throw new Error(`Resume object missing from R2: ${application.resumeKey}`);
     }
     return {
       base64: arrayBufferToBase64(await object.arrayBuffer()),
@@ -360,7 +365,7 @@ export const getCompanyApplicantReview = createServerFn({ method: "GET" })
     }
 
     if (application.companyId !== context.company.id) {
-      throw new Error("Not authorized to view this applicant");
+      throw new ExpectedError("forbidden", "Not authorized to view this applicant");
     }
 
     const applicantsPromise = getApplicationsByJob(db, { jobId: application.jobId });

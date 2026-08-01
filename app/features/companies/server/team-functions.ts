@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { clearSession } from "@tanstack/react-start/server";
-import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 
 import { getUserByEmail } from "@/features/auth/queries/queries_sql";
@@ -13,11 +12,13 @@ import {
 import { getDb } from "@/shared/db";
 import { asSqlTransaction } from "@/shared/db-transaction";
 import { companyInvitationRoleSchema } from "@/shared/enums";
+import { ExpectedError } from "@/shared/expected-error";
 import { emailsMatch, normalizeEmail } from "@/shared/google-userinfo";
 import { assertCanManageTeam, assertCompanyOwner } from "@/shared/membership-auth";
 import { companyMiddleware } from "@/shared/middleware";
+import { isUniqueViolation } from "@/shared/postgres-errors";
 import { sessionConfig } from "@/shared/session";
-import { zodValidatorWithFormattedErrors } from "@/shared/validation";
+import { zodValidator } from "@/shared/validation";
 
 import {
   createInvitation,
@@ -112,12 +113,12 @@ export const getTeamOverview = createServerFn({ method: "GET" })
 
 export const inviteMember = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
-  .validator(zodValidatorWithFormattedErrors(inviteMemberSchema))
+  .validator(zodValidator(inviteMemberSchema))
   .handler(async ({ data, context }) => {
     assertCanManageTeam(context.membership.role);
 
     if (emailsMatch(data.email, context.user.email)) {
-      throw new Error("You cannot invite yourself");
+      throw new ExpectedError("invalid_input", "You cannot invite yourself");
     }
 
     const db = getDb();
@@ -127,7 +128,7 @@ export const inviteMember = createServerFn({ method: "POST" })
       email: data.email,
     });
     if (existingMember) {
-      throw new Error("This person is already a team member");
+      throw new ExpectedError("already_exists", "This person is already a team member");
     }
 
     const pendingInvite = await getPendingInvitationByEmail(db, {
@@ -135,7 +136,7 @@ export const inviteMember = createServerFn({ method: "POST" })
       email: data.email,
     });
     if (pendingInvite) {
-      throw new Error("An invitation is already pending for this email");
+      throw new ExpectedError("already_exists", "An invitation is already pending for this email");
     }
 
     await revokeExpiredInvitationsByEmail(db, {
@@ -146,34 +147,45 @@ export const inviteMember = createServerFn({ method: "POST" })
     const existingUser = await getUserByEmail(db, { email: data.email });
     if (existingUser) {
       if (existingUser.role === "candidate") {
-        throw new Error("This email is registered as a candidate account");
+        throw new ExpectedError("conflict", "This email is registered as a candidate account");
       }
 
       const otherMembership = await getActiveMembershipByUserId(db, {
         userId: existingUser.id,
       });
       if (otherMembership) {
-        throw new Error("This person already belongs to a company");
+        throw new ExpectedError("conflict", "This person already belongs to a company");
       }
     }
 
     const token = newInviteToken();
     const expiresAt = inviteExpiryAt();
 
-    const invitation = await db.begin(async (tx) => {
-      const transaction = asSqlTransaction(tx);
-      await lockCompanyEntitlementScope(transaction, context.company.id);
-      await enforceCompanyEntitlement(transaction, context.company.id, "team.invite");
+    let invitation;
+    try {
+      invitation = await db.begin(async (tx) => {
+        const transaction = asSqlTransaction(tx);
+        await lockCompanyEntitlementScope(transaction, context.company.id);
+        await enforceCompanyEntitlement(transaction, context.company.id, "team.invite");
 
-      return createInvitation(transaction, {
-        companyId: context.company.id,
-        email: data.email,
-        role: data.role,
-        token,
-        invitedBy: context.userId,
-        expiresAt,
+        return createInvitation(transaction, {
+          companyId: context.company.id,
+          email: data.email,
+          role: data.role,
+          token,
+          invitedBy: context.userId,
+          expiresAt,
+        });
       });
-    });
+    } catch (error) {
+      if (isUniqueViolation(error)) {
+        throw new ExpectedError(
+          "already_exists",
+          "An invitation is already pending for this email",
+        );
+      }
+      throw error;
+    }
 
     if (!invitation) {
       throw new Error("Failed to create invitation");
@@ -218,7 +230,7 @@ export const revokeInvitation = createServerFn({ method: "POST" })
     });
 
     if (!revoked) {
-      throw new Error("Invitation not found or already handled");
+      throw new ExpectedError("conflict", "Invitation not found or already handled");
     }
 
     return {};
@@ -242,7 +254,7 @@ export const resendInvitation = createServerFn({ method: "POST" })
     });
 
     if (!updated) {
-      throw new Error("Invitation not found or already handled");
+      throw new ExpectedError("conflict", "Invitation not found or already handled");
     }
 
     try {
@@ -270,15 +282,15 @@ export const removeMember = createServerFn({ method: "POST" })
     const target = await getMembershipById(db, { id: data.memberId });
 
     if (!target || target.companyId !== context.company.id || target.status !== "active") {
-      throw new Error("Team member not found");
+      throw new ExpectedError("not_found", "Team member not found");
     }
 
     if (target.role === "owner") {
-      throw new Error("Cannot remove the company owner");
+      throw new ExpectedError("forbidden", "Cannot remove the company owner");
     }
 
     if (target.userId === context.userId) {
-      throw new Error("You cannot remove yourself from the team");
+      throw new ExpectedError("forbidden", "You cannot remove yourself from the team");
     }
 
     const removed = await removeCompanyMember(db, {
@@ -287,7 +299,7 @@ export const removeMember = createServerFn({ method: "POST" })
     });
 
     if (!removed) {
-      throw new Error("Failed to remove team member");
+      throw new ExpectedError("conflict", "The team member was already removed");
     }
 
     // The removed user keeps their global `company` role; with no active
@@ -308,15 +320,15 @@ export const transferOwnership = createServerFn({ method: "POST" })
     const target = await getMembershipById(db, { id: data.memberId });
 
     if (!target || target.companyId !== context.company.id || target.status !== "active") {
-      throw new Error("Team member not found");
+      throw new ExpectedError("not_found", "Team member not found");
     }
 
     if (target.role === "owner") {
-      throw new Error("This member is already the owner");
+      throw new ExpectedError("already_exists", "This member is already the owner");
     }
 
     if (target.userId === context.userId) {
-      throw new Error("You are already the owner");
+      throw new ExpectedError("already_exists", "You are already the owner");
     }
 
     await db.begin(async (tx) => {
@@ -349,7 +361,7 @@ export const leaveCompany = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
   .handler(async ({ context }) => {
     if (context.membership.role === "owner") {
-      throw new Error("Transfer ownership before leaving the team");
+      throw new ExpectedError("invalid_state", "Transfer ownership before leaving the team");
     }
 
     const db = getDb();
@@ -359,7 +371,7 @@ export const leaveCompany = createServerFn({ method: "POST" })
     });
 
     if (!removed) {
-      throw new Error("Failed to leave team");
+      throw new ExpectedError("conflict", "You no longer belong to this team");
     }
 
     // Clear this user's session so they're signed out immediately. Their

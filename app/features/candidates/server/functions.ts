@@ -1,16 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
-import { zodValidator } from "@tanstack/zod-adapter";
 import { env } from "cloudflare:workers";
 import { z } from "zod";
 
 import { claimAndStartCandidateRefresh } from "@/features/job-matching/server/orchestration";
 import { getDb } from "@/shared/db";
 import { asSqlTransaction } from "@/shared/db-transaction";
+import { ExpectedError } from "@/shared/expected-error";
 import { authMiddleware } from "@/shared/middleware";
+import { isUniqueViolation } from "@/shared/postgres-errors";
 import { arrayBufferToBase64, sanitizeResumeFileName } from "@/shared/resume";
 import { type SessionData, sessionConfig } from "@/shared/session";
-import { zodValidatorWithFormattedErrors } from "@/shared/validation";
+import { zodValidator } from "@/shared/validation";
 
 import {
   createCandidateProfile as createCandidateProfileQuery,
@@ -46,7 +47,10 @@ const uploadResumeSchema = z
       ],
       "Unsupported file format. Use PDF or DOCX",
     ),
-    fileBase64: z.string().min(1),
+    fileBase64: z
+      .string()
+      .min(1)
+      .regex(/^(?:[A-Za-z\d+/]{4})*(?:[A-Za-z\d+/]{2}==|[A-Za-z\d+/]{3}=)?$/, "Invalid file data"),
   })
   .refine(
     (data) => {
@@ -72,7 +76,7 @@ const buildResumeKey = (
 
 const assertResumeKeyBelongsToUser = (resumeKey: string, userId: string) => {
   if (!resumeKey.startsWith(`resumes/${userId}/`)) {
-    throw new Error("Invalid resume key");
+    throw new ExpectedError("forbidden", "Invalid resume key");
   }
 };
 
@@ -86,13 +90,21 @@ export const createCandidateProfile = createServerFn({ method: "POST" })
 
     const existing = await getCandidateProfileByUserId(db, { userId: context.userId });
     if (existing) {
-      throw new Error("You already have a candidate profile");
+      throw new ExpectedError("already_exists", "You already have a candidate profile");
     }
 
-    const profile = await createCandidateProfileQuery(db, {
-      userId: context.userId,
-      resumeKey: data.resumeKey ?? null,
-    });
+    let profile;
+    try {
+      profile = await createCandidateProfileQuery(db, {
+        userId: context.userId,
+        resumeKey: data.resumeKey ?? null,
+      });
+    } catch (error) {
+      if (isUniqueViolation(error)) {
+        throw new ExpectedError("already_exists", "You already have a candidate profile");
+      }
+      throw error;
+    }
 
     if (!profile) {
       throw new Error("Failed to create candidate profile");
@@ -124,7 +136,7 @@ export const updateMyCandidateProfile = createServerFn({ method: "POST" })
 
     const existing = await getCandidateProfileByUserId(db, { userId: context.userId });
     if (!existing) {
-      throw new Error("No candidate profile found");
+      throw new ExpectedError("setup_required", "No candidate profile found");
     }
 
     const resumeChanged = data.resumeKey !== existing.resumeKey;
@@ -141,7 +153,7 @@ export const updateMyCandidateProfile = createServerFn({ method: "POST" })
     });
 
     if (!profile) {
-      throw new Error("Failed to update candidate profile");
+      throw new ExpectedError("conflict", "Candidate profile changed while being updated");
     }
 
     if (data.resumeKey && resumeChanged) {
@@ -153,10 +165,10 @@ export const updateMyCandidateProfile = createServerFn({ method: "POST" })
 
 export const uploadResume = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .validator(zodValidatorWithFormattedErrors(uploadResumeSchema))
+  .validator(zodValidator(uploadResumeSchema))
   .handler(async ({ data, context }) => {
     if (context.user.role !== "candidate") {
-      throw new Error("Only candidates can upload resumes");
+      throw new ExpectedError("forbidden", "Only candidates can upload resumes");
     }
     const resumeKey = buildResumeKey(context.userId, data.fileName, data.contentType);
     const bytes = Uint8Array.from(atob(data.fileBase64), (c) => c.charCodeAt(0));
@@ -173,7 +185,7 @@ export const getResume = createServerFn({ method: "POST" })
     assertResumeKeyBelongsToUser(data.resumeKey, context.userId);
     const object = await env.RESUMES.get(data.resumeKey);
     if (!object) {
-      throw new Error("Resume not found");
+      throw new Error(`Resume object missing from R2: ${data.resumeKey}`);
     }
     return {
       base64: arrayBufferToBase64(await object.arrayBuffer()),

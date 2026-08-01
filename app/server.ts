@@ -62,7 +62,15 @@ async function serveAsset(request: Request, env: Env): Promise<Response | null> 
     return null;
   }
 
-  const key = decodeURIComponent(url.pathname.slice("/api/assets/".length));
+  let key: string;
+  try {
+    key = decodeURIComponent(url.pathname.slice("/api/assets/".length));
+  } catch (error) {
+    if (error instanceof URIError) {
+      return new Response("Invalid asset path", { status: 400 });
+    }
+    throw error;
+  }
   const object = await env.RESUMES.get(key);
   if (!object) {
     return new Response("Not found", { status: 404 });

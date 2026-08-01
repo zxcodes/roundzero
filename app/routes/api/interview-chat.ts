@@ -141,7 +141,15 @@ export const Route = createFileRoute("/api/interview-chat")({
           return new Response("Not authenticated", { status: 401 });
         }
 
-        const params = await chatParamsFromRequest(request);
+        let params: Awaited<ReturnType<typeof chatParamsFromRequest>>;
+        try {
+          params = await chatParamsFromRequest(request);
+        } catch (error) {
+          if (error instanceof Response && error.status === 400) {
+            return new Response("Invalid interview request", { status: 400 });
+          }
+          throw error;
+        }
         const parsedRequest = requestSchema.safeParse(params.forwardedProps);
         if (!parsedRequest.success) {
           return new Response("Invalid interview request", { status: 400 });
@@ -438,14 +446,23 @@ export const Route = createFileRoute("/api/interview-chat")({
               timestamp,
             };
           } catch (error) {
-            logTurnFailure(abortController.signal.aborted ? "abort" : "error", error);
+            const aborted = error instanceof Error && error.name === "AbortError";
+            logTurnFailure(aborted ? "abort" : "error", error);
+            if (aborted) {
+              return;
+            }
+            Sentry.captureException(error);
             throw error;
           } finally {
             if (!turnCompleted) {
               try {
-                await flushIntegrityMetadata();
-              } finally {
-                await failInterviewTurn(db, { interviewId, turnId });
+                try {
+                  await flushIntegrityMetadata();
+                } finally {
+                  await failInterviewTurn(db, { interviewId, turnId });
+                }
+              } catch (cleanupError) {
+                Sentry.captureException(cleanupError);
               }
             }
           }
@@ -456,3 +473,4 @@ export const Route = createFileRoute("/api/interview-chat")({
     },
   },
 });
+import * as Sentry from "@sentry/tanstackstart-react";

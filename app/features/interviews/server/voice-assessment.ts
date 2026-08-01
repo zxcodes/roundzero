@@ -16,6 +16,7 @@ import {
   communicationAssessmentSchema,
   parseCommunicationAssessment,
 } from "@/prompts/communication-assessment";
+import { ExpectedError } from "@/shared/expected-error";
 import { createChatModel } from "@/shared/openrouter";
 import { disposeRpcResource } from "@/shared/workflow-rpc";
 import { refineCommunicationAnalysis } from "@/workflows/post-evaluation/refine";
@@ -59,12 +60,12 @@ async function verifyElevenLabsSignature(
   const signature = parts.find((p) => p.startsWith("v0="));
 
   if (!timestamp || !signature) {
-    throw new Error("No signature hash found with expected scheme v0");
+    throw new ExpectedError("invalid_input", "No signature hash found with expected scheme v0");
   }
 
   const reqTimestamp = Number(timestamp) * 1000;
   if (reqTimestamp < Date.now() - 30 * 60 * 1000) {
-    throw new Error("Timestamp outside the tolerance zone");
+    throw new ExpectedError("invalid_input", "Timestamp outside the tolerance zone");
   }
 
   const enc = new TextEncoder();
@@ -84,10 +85,29 @@ async function verifyElevenLabsSignature(
       .join("");
 
   if (signature !== digest) {
-    throw new Error("Signature hash does not match");
+    throw new ExpectedError("invalid_input", "Signature hash does not match");
   }
 
-  return JSON.parse(rawBody);
+  try {
+    return JSON.parse(rawBody);
+  } catch {
+    throw new ExpectedError("invalid_input", "Invalid webhook payload");
+  }
+}
+
+function parseElevenLabsWebhookPayload(rawBody: string) {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(rawBody);
+  } catch {
+    throw new ExpectedError("invalid_input", "Invalid webhook payload");
+  }
+
+  const result = elevenLabsWebhookEventSchema.safeParse(parsed);
+  if (!result.success) {
+    throw new ExpectedError("invalid_input", "Invalid webhook payload");
+  }
+  return result.data;
 }
 
 export async function parseElevenLabsWebhookEvent(request: Request) {
@@ -95,17 +115,20 @@ export async function parseElevenLabsWebhookEvent(request: Request) {
   const secret = env.ELEVENLABS_WEBHOOK_SECRET;
 
   if (!secret) {
-    const parsed = JSON.parse(rawBody);
-    return elevenLabsWebhookEventSchema.parse(parsed);
+    return parseElevenLabsWebhookPayload(rawBody);
   }
 
   const signature = request.headers.get("elevenlabs-signature");
   if (!signature) {
-    throw new Error("Missing elevenlabs-signature header");
+    throw new ExpectedError("invalid_input", "Missing elevenlabs-signature header");
   }
 
   const verified = await verifyElevenLabsSignature(rawBody, signature, secret);
-  return elevenLabsWebhookEventSchema.parse(verified);
+  const result = elevenLabsWebhookEventSchema.safeParse(verified);
+  if (!result.success) {
+    throw new ExpectedError("invalid_input", "Invalid webhook payload");
+  }
+  return result.data;
 }
 
 export function getWebhookConversationId(

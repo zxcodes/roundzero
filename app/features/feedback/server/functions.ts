@@ -1,10 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
-import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 
 import { getActiveMembershipByUserId } from "@/features/companies/queries/membership-queries_sql";
 import { getDb } from "@/shared/db";
 import { authMiddleware } from "@/shared/middleware";
+import { zodValidator } from "@/shared/validation";
 import { requiredTrimmedString } from "@/shared/validation";
 
 import { createFeedback as createFeedbackQuery } from "../queries/queries_sql";

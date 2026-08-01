@@ -1,8 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
-import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 
 import { isEmailDeliveryConfigured, sendTransactionalEmail } from "@/shared/email";
+import { zodValidator } from "@/shared/validation";
 
 function escapeHtml(value: string): string {
   return value

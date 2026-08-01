@@ -3,6 +3,7 @@ import type { Sql } from "postgres";
 import { countTeamSlotsByCompany } from "@/features/companies/queries/membership-queries_sql";
 import { getCompanyById } from "@/features/companies/queries/queries_sql";
 import { countJobsByCompanyAndStatus } from "@/features/jobs/queries/queries_sql";
+import { ExpectedError } from "@/shared/expected-error";
 
 import { deriveEntitlements, type Entitlements, resolveReportTarget } from "../entitlements";
 
@@ -51,24 +52,30 @@ export async function enforceCompanyEntitlement(
 
   if (entitlement === "jobs.open" && !entitlements.jobs.canOpenAnother) {
     const limit = entitlements.jobs.active.limit;
-    throw new Error(
+    throw new ExpectedError(
+      "quota_exceeded",
       `Your plan includes ${limit} active job${limit === 1 ? "" : "s"}. Upgrade to post more.`,
     );
   }
 
   if (entitlement === "team.invite" && !entitlements.team.canInviteAnother) {
     const limit = entitlements.team.members.limit;
-    throw new Error(
+    throw new ExpectedError(
+      "quota_exceeded",
       `Your plan includes ${limit} team member${limit === 1 ? "" : "s"}. Upgrade to invite more.`,
     );
   }
 
   if (entitlement === "team.accept" && entitlements.team.members.atLimit) {
-    throw new Error("This team has reached its member limit. Ask the owner to upgrade the plan.");
+    throw new ExpectedError(
+      "quota_exceeded",
+      "This team has reached its member limit. Ask the owner to upgrade the plan.",
+    );
   }
 
   if (entitlement === "aiJobCreation" && !entitlements.aiJobCreation.enabled) {
-    throw new Error(
+    throw new ExpectedError(
+      "quota_exceeded",
       entitlements.aiJobCreation.disabledReason ??
         "AI job creation is not available on your current plan.",
     );
@@ -95,7 +102,8 @@ export function enforceReportTarget(
 
   if (requestedTarget != null && resolved !== requestedTarget) {
     const { minTarget, perJobLimit } = entitlements.reports;
-    throw new Error(
+    throw new ExpectedError(
+      "quota_exceeded",
       `Your plan allows ${minTarget}-${perJobLimit} evaluation report${perJobLimit === 1 ? "" : "s"} per job.`,
     );
   }

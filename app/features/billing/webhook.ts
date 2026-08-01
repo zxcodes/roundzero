@@ -1,5 +1,6 @@
 import type { Subscription } from "@polar-sh/sdk/models/components/subscription";
 import { validateEvent, WebhookVerificationError } from "@polar-sh/sdk/webhooks";
+import * as Sentry from "@sentry/cloudflare";
 import type { Sql } from "postgres";
 
 import {
@@ -80,6 +81,7 @@ export async function handlePolarWebhook(request: Request): Promise<Response> {
     welcomeSend = result.welcomeSend;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    Sentry.captureException(error);
     console.error("[polar.webhook] handler error", event.type, error);
     await markPolarWebhookFailed(db, {
       id: webhookId,

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { CandidateDashboard } from "@/features/dashboard/components/candidate-dashboard";
 import { CompanyDashboard } from "@/features/dashboard/components/company-dashboard";
 import { getDashboardMetrics } from "@/features/dashboard/server/functions";
+import { ExpectedError } from "@/shared/expected-error";
 import { PAGE_SEO } from "@/shared/seo";
 
 type DashboardMetricsResult = Awaited<ReturnType<typeof getDashboardMetrics>>;
@@ -43,7 +44,7 @@ export const Route = createFileRoute("/_authenticated/dashboard/")({
   loader: ({ context }) => {
     const role = context.user?.role;
     if (role !== "company" && role !== "candidate") {
-      throw new Error("Dashboard requires an authenticated user role");
+      throw new ExpectedError("setup_required", "Dashboard requires an authenticated user role");
     }
 
     const metricsPromise = getDashboardMetrics();

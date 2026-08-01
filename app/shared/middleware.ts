@@ -5,6 +5,7 @@ import { getUserById } from "@/features/auth/queries/queries_sql";
 import { getActiveMembershipByUserId } from "@/features/companies/queries/membership-queries_sql";
 import { getCompanyById } from "@/features/companies/queries/queries_sql";
 import { getDb } from "@/shared/db";
+import { ExpectedError } from "@/shared/expected-error";
 import { assertPlatformAdmin } from "@/shared/platform-admin";
 import { type SessionData, sessionConfig } from "@/shared/session";
 
@@ -16,14 +17,14 @@ export const authMiddleware = createMiddleware().server(async ({ next }) => {
   const session = await useSession<SessionData>(sessionConfig);
 
   if (!session.data.userId) {
-    throw new Error("Not authenticated");
+    throw new ExpectedError("unauthenticated", "Not authenticated");
   }
 
   const db = getDb();
   const user = await getUserById(db, { id: session.data.userId });
 
   if (!user) {
-    throw new Error("Not authenticated");
+    throw new ExpectedError("unauthenticated", "Not authenticated");
   }
 
   return next({ context: { userId: user.id, user } });
@@ -42,13 +43,13 @@ export const companyMiddleware = createMiddleware()
     const membership = await getActiveMembershipByUserId(db, { userId: context.userId });
 
     if (!membership) {
-      throw new Error("No company found");
+      throw new ExpectedError("setup_required", "No company found");
     }
 
     const company = await getCompanyById(db, { id: membership.companyId });
 
     if (!company) {
-      throw new Error("No company found");
+      throw new Error(`Company ${membership.companyId} for membership ${membership.id} not found`);
     }
 
     return next({ context: { company, membership } });

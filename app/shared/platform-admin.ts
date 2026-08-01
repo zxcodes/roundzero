@@ -1,4 +1,5 @@
 import { appEnv } from "@/shared/env.app";
+import { ExpectedError } from "@/shared/expected-error";
 import {
   buildPlatformAdminAllowlist,
   isPlatformAdminEmail,
@@ -17,6 +18,6 @@ export function withPlatformAdminStatus<T extends { email: string | null | undef
 
 export function assertPlatformAdmin(email: string | null | undefined): void {
   if (!isPlatformAdmin(email)) {
-    throw new Error("Not authorized");
+    throw new ExpectedError("forbidden", "Not authorized");
   }
 }

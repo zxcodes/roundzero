@@ -1,9 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
-import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 
 import { getDb } from "@/shared/db";
+import { ExpectedError } from "@/shared/expected-error";
 import { authMiddleware } from "@/shared/middleware";
+import { zodValidator } from "@/shared/validation";
 
 import { MATCHING_CONFIG } from "../config";
 import {
@@ -21,7 +22,9 @@ const jobIdSchema = z.object({ jobId: z.string().uuid() });
 const alertsSchema = z.object({ enabled: z.boolean() });
 
 const requireCandidate = (role: string | null) => {
-  if (role !== "candidate") throw new Error("Only candidates can manage job matches");
+  if (role !== "candidate") {
+    throw new ExpectedError("forbidden", "Only candidates can manage job matches");
+  }
 };
 
 export const getMyCandidateMatches = createServerFn({ method: "GET" })
@@ -136,6 +139,6 @@ export const updateMyMatchAlerts = createServerFn({ method: "POST" })
       userId: context.userId,
       enabled: data.enabled,
     });
-    if (!profile) throw new Error("Candidate profile not found");
+    if (!profile) throw new ExpectedError("setup_required", "Candidate profile not found");
     return { enabled: profile.matchAlertsEnabled };
   });

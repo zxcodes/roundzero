@@ -12,6 +12,9 @@ export async function fetchGoogleUserInfo(accessToken: string): Promise<GoogleUs
   });
 
   if (!userResponse.ok) {
+    if (userResponse.status === 400 || userResponse.status === 401) {
+      throw new ExpectedError("unauthenticated", "Google sign-in expired. Please try again.");
+    }
     throw new Error("Failed to fetch Google user info");
   }
 
@@ -39,3 +42,4 @@ export function normalizeEmail(email: string): string {
 export function emailsMatch(a: string, b: string): boolean {
   return normalizeEmail(a) === normalizeEmail(b);
 }
+import { ExpectedError } from "@/shared/expected-error";

@@ -1,7 +1,6 @@
 import { chat, EventType, type RealtimeToken } from "@tanstack/ai";
 import { createOpenRouterText } from "@tanstack/ai-openrouter";
 import { createServerFn } from "@tanstack/react-start";
-import { zodValidator } from "@tanstack/zod-adapter";
 import { env } from "cloudflare:workers";
 import { z } from "zod";
 
@@ -34,8 +33,10 @@ import {
 } from "@/features/interviews/shared/runtime";
 import { loadVoiceAssessmentContext } from "@/features/interviews/shared/voice-runtime";
 import { getDb } from "@/shared/db";
+import { ExpectedError } from "@/shared/expected-error";
 import { authMiddleware } from "@/shared/middleware";
 import { getModelChain } from "@/shared/openrouter";
+import { zodValidator } from "@/shared/validation";
 
 const interviewIdSchema = z.object({
   interviewId: z.string().uuid(),
@@ -57,7 +58,7 @@ export const getMyInterview = createServerFn({ method: "GET" })
     const db = getDb();
 
     if (context.user.role !== "candidate") {
-      throw new Error("Only candidates can view interviews");
+      throw new ExpectedError("forbidden", "Only candidates can view interviews");
     }
 
     const interview = await getInterviewForCandidateById(db, {
@@ -94,7 +95,7 @@ export const getMyInterviews = createServerFn({ method: "GET" })
     const db = getDb();
 
     if (context.user.role !== "candidate") {
-      throw new Error("Only candidates can view interviews");
+      throw new ExpectedError("forbidden", "Only candidates can view interviews");
     }
 
     const interviews = await getInterviewsByCandidate(db, {
@@ -118,7 +119,7 @@ export const startMyInterview = createServerFn({ method: "POST" })
     const db = getDb();
 
     if (context.user.role !== "candidate") {
-      throw new Error("Only candidates can start interviews");
+      throw new ExpectedError("forbidden", "Only candidates can start interviews");
     }
 
     const interview = await getInterviewForCandidateById(db, {
@@ -134,7 +135,7 @@ export const startMyInterview = createServerFn({ method: "POST" })
     const effectiveInterview = expired.interview;
 
     if (effectiveInterview.status === "expired") {
-      throw new Error("Interview has expired");
+      throw new ExpectedError("expired", "Interview has expired");
     }
 
     if (
@@ -145,7 +146,7 @@ export const startMyInterview = createServerFn({ method: "POST" })
     }
 
     if (effectiveInterview.status === "cancelled") {
-      throw new Error("Interview is no longer available");
+      throw new ExpectedError("invalid_state", "Interview is no longer available");
     }
 
     const wasAlreadyActive = effectiveInterview.status === "in_progress";
@@ -254,7 +255,7 @@ export const cancelMyInterview = createServerFn({ method: "POST" })
     const db = getDb();
 
     if (context.user.role !== "candidate") {
-      throw new Error("Only candidates can cancel interviews");
+      throw new ExpectedError("forbidden", "Only candidates can cancel interviews");
     }
 
     const interview = await getInterviewForCandidateById(db, {
@@ -274,7 +275,7 @@ export const cancelMyInterview = createServerFn({ method: "POST" })
     }
 
     if (effectiveInterview.status === "completed") {
-      throw new Error("Completed interviews cannot be cancelled");
+      throw new ExpectedError("invalid_state", "Completed interviews cannot be cancelled");
     }
 
     if (effectiveInterview.status === "cancelled") {
@@ -299,7 +300,7 @@ export const completeMyInterview = createServerFn({ method: "POST" })
     const db = getDb();
 
     if (context.user.role !== "candidate") {
-      throw new Error("Only candidates can complete interviews");
+      throw new ExpectedError("forbidden", "Only candidates can complete interviews");
     }
 
     const interview = await getInterviewForCandidateById(db, {
@@ -315,7 +316,7 @@ export const completeMyInterview = createServerFn({ method: "POST" })
     const effectiveInterview = expired.interview;
 
     if (effectiveInterview.status === "expired") {
-      throw new Error("Interview has expired");
+      throw new ExpectedError("expired", "Interview has expired");
     }
 
     if (
@@ -326,7 +327,7 @@ export const completeMyInterview = createServerFn({ method: "POST" })
     }
 
     if (effectiveInterview.status === "cancelled") {
-      throw new Error("Interview is no longer available");
+      throw new ExpectedError("invalid_state", "Interview is no longer available");
     }
 
     const updated = await submitInterviewForVoice(db, { id: data.interviewId });
@@ -347,7 +348,7 @@ export const getMyVoiceAssessment = createServerFn({ method: "GET" })
     const db = getDb();
 
     if (context.user.role !== "candidate") {
-      throw new Error("Only candidates can view voice assessments");
+      throw new ExpectedError("forbidden", "Only candidates can view voice assessments");
     }
 
     const interview = await getInterviewForCandidateById(db, {
@@ -398,7 +399,7 @@ export const getMyVoiceToken = createServerFn({ method: "POST" })
   .validator(zodValidator(interviewIdSchema))
   .handler(async ({ data, context }): Promise<RealtimeToken> => {
     if (context.user.role !== "candidate") {
-      throw new Error("Only candidates can start voice assessments");
+      throw new ExpectedError("forbidden", "Only candidates can start voice assessments");
     }
 
     const apiKey = env.ELEVENLABS_API_KEY;
@@ -413,17 +414,17 @@ export const getMyVoiceToken = createServerFn({ method: "POST" })
       candidateId: context.userId,
     });
     if (!interview) {
-      throw new Error("Interview not found");
+      throw new ExpectedError("not_found", "Interview not found");
     }
     if (interview.status !== "awaiting_voice") {
-      throw new Error("Voice assessment is not available yet");
+      throw new ExpectedError("invalid_state", "Voice assessment is not available yet");
     }
 
     const existing = await getCommunicationAssessmentByInterviewId(db, {
       interviewId: interview.id,
     });
     if (existing?.status === "completed" || existing?.status === "skipped") {
-      throw new Error("Voice assessment is already complete");
+      throw new ExpectedError("already_exists", "Voice assessment is already complete");
     }
 
     if (!existing) {
@@ -498,7 +499,7 @@ export const getMyVoiceAssessmentTranscript = createServerFn({ method: "GET" })
   .validator(zodValidator(interviewIdSchema))
   .handler(async ({ data, context }) => {
     if (context.user.role !== "candidate") {
-      throw new Error("Only candidates can view voice assessment transcripts");
+      throw new ExpectedError("forbidden", "Only candidates can view voice assessment transcripts");
     }
 
     const db = getDb();
@@ -522,7 +523,7 @@ export const registerMyVoiceAssessmentSession = createServerFn({ method: "POST" 
   .validator(zodValidator(registerVoiceAssessmentSessionSchema))
   .handler(async ({ data, context }) => {
     if (context.user.role !== "candidate") {
-      throw new Error("Only candidates can start voice assessments");
+      throw new ExpectedError("forbidden", "Only candidates can start voice assessments");
     }
 
     const db = getDb();
@@ -554,7 +555,7 @@ export const completeMyVoiceAssessment = createServerFn({ method: "POST" })
   .validator(zodValidator(completeVoiceAssessmentSchema))
   .handler(async ({ data, context }) => {
     if (context.user.role !== "candidate") {
-      throw new Error("Only candidates can complete voice assessments");
+      throw new ExpectedError("forbidden", "Only candidates can complete voice assessments");
     }
 
     const db = getDb();
