@@ -139,17 +139,17 @@ Hybrid architecture — **not** WebSockets for chat; **SSE** for turn streaming.
 
 ## System prompt
 
-`buildInterviewSystemPrompt()` in `app/features/interviews/shared/runtime.ts` — job, candidate summary, pre-eval context, screening questions, coverage state, turn limits.
+`buildInterviewSystemPrompt()` in `app/features/interviews/shared/runtime.ts` — job, candidate summary, pre-eval context, screening questions, coverage state, and role-relevant completion policy. Company questions are mandatory unless the candidate explicitly ends the interview. After they are resolved, Zero decides when it has enough evidence without a minimum, maximum, target, or turn count; long or unrelated work history is not exhaustively covered.
 
 ## Model selection
 
 Source of truth: `app/shared/openrouter.ts` (`MODEL_CHAINS.interview`):
 
-| Env     | Primary                                  | Fallback                                               |
-| ------- | ---------------------------------------- | ------------------------------------------------------ |
-| dev     | `meta-llama/llama-3.3-70b-instruct:free` | —                                                      |
-| staging | `deepseek/deepseek-v4-flash`             | —                                                      |
-| prod    | `anthropic/claude-sonnet-4.5`            | `anthropic/claude-haiku-4.5` → `google/gemini-2.5-pro` |
+| Env     | Primary                       | Fallback                                               |
+| ------- | ----------------------------- | ------------------------------------------------------ |
+| dev     | `deepseek/deepseek-v4-flash`  | —                                                      |
+| staging | `deepseek/deepseek-v4-flash`  | —                                                      |
+| prod    | `anthropic/claude-sonnet-4.5` | `anthropic/claude-haiku-4.5` → `google/gemini-2.5-pro` |
 
 Fallbacks are OpenRouter `models` on the request (see `createChatModel` / `modelOptions.models`).
 

@@ -54,6 +54,19 @@ export type InterviewJobSnapshot = z.infer<typeof interviewJobSnapshotSchema>;
 export type ScreeningCoverage = z.infer<typeof screeningCoverageSchema>;
 export type InterviewMetadata = z.infer<typeof interviewMetadataSchema>;
 
+export const areRequiredScreeningQuestionsResolved = (
+  questionCount: number,
+  screeningCoverage: ScreeningCoverage,
+) => {
+  for (let questionIndex = 1; questionIndex <= questionCount; questionIndex += 1) {
+    if (!(String(questionIndex) in screeningCoverage)) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
 /** Full in-memory interview context, never persisted on interviews.metadata. */
 export type InterviewRuntimeContext = {
   interviewId: string;
@@ -269,10 +282,8 @@ export async function ensureInterviewRuntimeMetadata(
 export function buildInterviewSystemPrompt(args: {
   runtimeContext: InterviewRuntimeContext;
   screeningCoverage: ScreeningCoverage;
-  assistantTurnCount: number;
-  maxQuestions: number;
 }): string {
-  const { runtimeContext, screeningCoverage, maxQuestions } = args;
+  const { runtimeContext, screeningCoverage } = args;
   const reqs =
     runtimeContext.jobRequirements.length > 0
       ? runtimeContext.jobRequirements.map((requirement) => `- ${requirement}`).join("\n")
@@ -308,11 +319,6 @@ export function buildInterviewSystemPrompt(args: {
       ? runtimeContext.preEvaluation.authenticityFlags.map((flag) => `- ${flag}`).join("\n")
       : "(no direct contradictions flagged)";
   const candidateName = runtimeContext.candidateName || "the candidate";
-  const customQuestionCount = runtimeContext.customQuestions.length;
-  const substantiveTarget = maxQuestions;
-  const totalTarget = customQuestionCount + substantiveTarget;
-  const pacing = `Full interview. Cover every one of the ${customQuestionCount} company question(s) AND ~${substantiveTarget} substantive probing question(s). Aim for ~${totalTarget} total turns.`;
-
   const uncoveredIndexes = runtimeContext.customQuestions
     .map((_, index) => index + 1)
     .filter((questionIndex) => !(String(questionIndex) in screeningCoverage));
@@ -333,7 +339,7 @@ export function buildInterviewSystemPrompt(args: {
     "RESPONSE DECISION: every turn must choose exactly one action in the required structured response:",
     "1. Choose action='continue' with reason=null when you need more signal. Its message must acknowledge the candidate's answer in 1 sentence maximum, then ask exactly 1 question.",
     "2. Choose action='finish' with a concise reason when you are satisfied with the interview. Its message must be one short, warm closing statement with no question.",
-    "3. You alone decide when you have enough signal. There is no fixed minimum or maximum number of questions.",
+    "3. There is no fixed minimum, maximum, target, or turn count. Decide from the quality and relevance of the evidence, never from interview length.",
     "4. For action='continue', NEVER ask two or more questions in the same message.",
     "5. For action='continue', NEVER say phrases like 'I have a few questions', 'Next:', 'Question 2:', or list multiple items.",
     "6. For action='continue', STOP writing immediately after your first question. Do not continue.",
@@ -341,8 +347,8 @@ export function buildInterviewSystemPrompt(args: {
     "8. Do not use em dashes (—) or en dashes (–). Use commas, periods, colons, or parentheses instead.",
     "9. Keep the message under 80 words.",
     "10. Vary transitions. Probe tradeoffs and judgment, not just facts.",
-    "11. Every question MUST be grounded in the candidate's actual work history (the Resume / profile section below). Reference specific projects, roles, technologies, and outcomes they list.",
-    "12. If the candidate's resume/work history is present, your job is to dig into it: question every claim, probe for depth, push for specifics. Do NOT ask generic job-description questions.",
+    "11. Every deep-dive question MUST be grounded in the candidate's actual work history (the Resume / profile section below) and relevant to the role. Reference specific projects, roles, technologies, and outcomes they list.",
+    "12. Do not exhaustively cover the candidate's work history. Select only the highest-signal experiences and claims for this role, probe them for depth and specifics, and ignore unrelated history.",
     "13. Only ask generic job-role questions if the Resume / profile section says '(not provided)'. Otherwise, your questions must trace directly back to something in their resume.",
     "",
     "VALID example:",
@@ -364,7 +370,9 @@ export function buildInterviewSystemPrompt(args: {
     "- Once a company question is resolved, silently call record_screening_coverage with its 1-based questionIndex and status='answered' or 'skipped'.",
     "",
     "Pacing:",
-    `- ${pacing}`,
+    "- After required company questions, prioritize unresolved role requirements, relevant missing evidence, material resume claims, technical depth, ownership, outcomes, tradeoffs, and authenticity concerns.",
+    "- Continue only while another role-relevant question is likely to materially improve the hiring signal. Finish once the evidence is sufficient to assess this candidate for this role.",
+    "- A long resume does not require a long interview. Do not ask about every role, project, technology, or claim.",
     "- If the candidate explicitly asks to end or withdraw, choose action='finish' with one short, warm closing message. User intent wins.",
     "- Otherwise, only choose action='finish' after every company question has been covered AND you have enough probing signal.",
     "",

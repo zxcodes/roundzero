@@ -8,6 +8,7 @@ import {
   updateInterviewMetadata,
 } from "@/features/interviews/queries/queries_sql";
 import {
+  areRequiredScreeningQuestionsResolved,
   buildInterviewSystemPrompt,
   buildInterviewJobSnapshot,
   ensureInterviewRuntimeMetadata,
@@ -99,14 +100,22 @@ describe("interview runtime metadata", () => {
     const prompt = buildInterviewSystemPrompt({
       runtimeContext,
       screeningCoverage: { "1": "answered" },
-      assistantTurnCount: 4,
-      maxQuestions: 5,
     });
 
     expect(prompt).toContain("Choose action='continue' with reason=null");
     expect(prompt).toContain("Choose action='finish' with a concise reason");
-    expect(prompt).toContain("There is no fixed minimum or maximum number of questions");
+    expect(prompt).toContain("There is no fixed minimum, maximum, target, or turn count");
+    expect(prompt).toContain("A long resume does not require a long interview");
+    expect(prompt).toContain("highest-signal experiences and claims for this role");
     expect(prompt).not.toContain("end_interview");
+  });
+
+  it("requires every company screening question before normal completion", () => {
+    expect(areRequiredScreeningQuestionsResolved(0, {})).toBe(true);
+    expect(areRequiredScreeningQuestionsResolved(2, { "1": "answered" })).toBe(false);
+    expect(areRequiredScreeningQuestionsResolved(2, { "1": "answered", "2": "skipped" })).toBe(
+      true,
+    );
   });
 
   it("ignores legacy bloated metadata keys while keeping valid fields", () => {
