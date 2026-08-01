@@ -13,7 +13,7 @@ describe("platform admin allowlist", () => {
 
     expect(allowlist.size).toBe(2);
     expect(isPlatformAdminEmail("admin@example.com", allowlist)).toBe(true);
-    expect(isPlatformAdminEmail("OPS@roundzero.dev", allowlist)).toBe(true);
+    expect(isPlatformAdminEmail("OPS@tryroundzero.com", allowlist)).toBe(true);
   });
 
   it("rejects empty or missing allowlists", () => {

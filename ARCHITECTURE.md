@@ -742,10 +742,10 @@ See `PLAN.md` for the full build plan. Based on the current architecture, likely
 
 ### Environments
 
-| Env        | Branch    | URL                     | Workers Plan                   |
-| ---------- | --------- | ----------------------- | ------------------------------ |
-| staging    | `staging` | `staging.roundzero.dev` | Paid (or Free if < 3 MiB gzip) |
-| production | `main`    | `roundzero.dev`         | Paid                           |
+| Env        | Branch    | URL                        | Workers Plan                   |
+| ---------- | --------- | -------------------------- | ------------------------------ |
+| staging    | `staging` | `staging.tryroundzero.com` | Paid (or Free if < 3 MiB gzip) |
+| production | `main`    | `tryroundzero.com`         | Paid                           |
 
 ### CI/CD
 
@@ -794,7 +794,7 @@ wrangler hyperdrive create roundzero-db-staging \
 | ---------------------------- | ------------------------------------------------------------------------------------- |
 | `DATABASE_URL`               | Postgres connection string for dbmate migrations                                      |
 | `SESSION_SECRET`             | Cookie signing key                                                                    |
-| `APP_URL`                    | Canonical app URL (`https://staging.roundzero.dev`)                                   |
+| `APP_URL`                    | Canonical app URL (`https://staging.tryroundzero.com`)                                |
 | `EMAIL_FROM`                 | Transactional email from address (Cloudflare Email Service; domain must be onboarded) |
 | `OPENROUTER_API_KEY`         | LLM inference                                                                         |
 | `AI_GATEWAY_TOKEN`           | Cloudflare AI Gateway                                                                 |
