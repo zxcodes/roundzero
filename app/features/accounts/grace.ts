@@ -1,4 +1,5 @@
 import { ACCOUNT_ERASURE_GRACE_DAYS } from "@/features/accounts/config";
+import { ExpectedError } from "@/shared/expected-error";
 
 export type AccountDeletionState = {
   deletedAt: Date | null;
@@ -30,10 +31,10 @@ export function isEligibleForErasure(state: AccountDeletionState | null | undefi
 
 export function assertAccountCanAuthenticate(state: AccountDeletionState): void {
   if (state.anonymizedAt) {
-    throw new Error("This account has been permanently deleted");
+    throw new ExpectedError("forbidden", "This account has been permanently deleted");
   }
 
   if (state.deletedAt && isPastDeletionGrace(state.deletedAt)) {
-    throw new Error("This account has been permanently deleted");
+    throw new ExpectedError("forbidden", "This account has been permanently deleted");
   }
 }

@@ -12,6 +12,7 @@ import {
   parseElevenLabsWebhookEvent,
 } from "@/features/interviews/server/voice-assessment";
 import { getDb } from "@/shared/db";
+import { ExpectedError } from "@/shared/expected-error";
 
 export const Route = createFileRoute("/api/voice-webhook")({
   server: {
@@ -21,6 +22,9 @@ export const Route = createFileRoute("/api/voice-webhook")({
         try {
           event = await parseElevenLabsWebhookEvent(request);
         } catch (error) {
+          if (!(error instanceof ExpectedError)) {
+            throw error;
+          }
           const message = error instanceof Error ? error.message : "Invalid webhook payload";
           return new Response(message, { status: 400 });
         }

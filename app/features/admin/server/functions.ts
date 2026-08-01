@@ -1,5 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 
 import {
@@ -16,6 +15,7 @@ import {
 } from "@/features/feedback/queries/queries_sql";
 import { getDb } from "@/shared/db";
 import { platformAdminMiddleware } from "@/shared/middleware";
+import { zodValidator } from "@/shared/validation";
 
 export const ADMIN_FEEDBACK_PAGE_SIZE = 25;
 

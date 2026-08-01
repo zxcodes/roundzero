@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { clearSession, updateSession, useSession } from "@tanstack/react-start/server";
-import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 
 import {
@@ -26,12 +25,13 @@ import {
 import { getDb } from "@/shared/db";
 import { asSqlTransaction } from "@/shared/db-transaction";
 import { userRoleSchema } from "@/shared/enums";
+import { ExpectedError } from "@/shared/expected-error";
 import { emailsMatch, fetchGoogleUserInfo } from "@/shared/google-userinfo";
 import { authMiddleware } from "@/shared/middleware";
 import { withPlatformAdminStatus } from "@/shared/platform-admin";
 import { isUniqueViolation } from "@/shared/postgres-errors";
 import { type SessionData, sessionConfig } from "@/shared/session";
-import { requiredTrimmedString } from "@/shared/validation";
+import { requiredTrimmedString, zodValidator } from "@/shared/validation";
 
 import {
   getUserByGoogleId,
@@ -58,7 +58,7 @@ export const loginWithGoogle = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const googleUser = await fetchGoogleUserInfo(data.access_token);
     if (!googleUser.verified_email) {
-      throw new Error("Google account email must be verified");
+      throw new ExpectedError("forbidden", "Google account email must be verified");
     }
 
     const db = getDb();
@@ -125,11 +125,11 @@ export const acceptInvite = createServerFn({ method: "POST" })
     const invitation = await getInvitationByToken(db, { token: data.token });
 
     if (!invitation || invitation.acceptedAt || invitation.revokedAt) {
-      throw new Error("Invitation not found or no longer valid");
+      throw new ExpectedError("not_found", "Invitation not found or no longer valid");
     }
 
     if (invitation.expiresAt.getTime() <= Date.now()) {
-      throw new Error("This invitation has expired");
+      throw new ExpectedError("expired", "This invitation has expired");
     }
 
     const session = await useSession<SessionData>(sessionConfig);
@@ -138,10 +138,13 @@ export const acceptInvite = createServerFn({ method: "POST" })
     if (data.access_token) {
       const googleUser = await fetchGoogleUserInfo(data.access_token);
       if (!googleUser.verified_email) {
-        throw new Error("Google account email must be verified");
+        throw new ExpectedError("forbidden", "Google account email must be verified");
       }
       if (!emailsMatch(googleUser.email, invitation.email)) {
-        throw new Error(`Sign in with the Google account for ${invitation.email}`);
+        throw new ExpectedError(
+          "forbidden",
+          `Sign in with the Google account for ${invitation.email}`,
+        );
       }
 
       const existing = await getUserByGoogleId(db, { googleId: googleUser.id });
@@ -178,18 +181,21 @@ export const acceptInvite = createServerFn({ method: "POST" })
     } else if (session.data.userId) {
       const sessionUser = await getUserById(db, { id: session.data.userId });
       if (!sessionUser) {
-        throw new Error("Not authenticated");
+        throw new ExpectedError("unauthenticated", "Not authenticated");
       }
       if (!emailsMatch(sessionUser.email, invitation.email)) {
-        throw new Error(`Sign in with ${invitation.email} to accept this invitation`);
+        throw new ExpectedError(
+          "forbidden",
+          `Sign in with ${invitation.email} to accept this invitation`,
+        );
       }
       activeUser = sessionUser;
     } else {
-      throw new Error("Sign in with Google to accept this invitation");
+      throw new ExpectedError("unauthenticated", "Sign in with Google to accept this invitation");
     }
 
     if (activeUser.role === "candidate") {
-      throw new Error("This email is registered as a candidate account");
+      throw new ExpectedError("conflict", "This email is registered as a candidate account");
     }
 
     if (!activeUser.role) {
@@ -208,17 +214,17 @@ export const acceptInvite = createServerFn({ method: "POST" })
 
         const freshInvitation = await getInvitationByToken(transaction, { token: data.token });
         if (!freshInvitation || freshInvitation.acceptedAt || freshInvitation.revokedAt) {
-          throw new Error("Invitation not found or no longer valid");
+          throw new ExpectedError("not_found", "Invitation not found or no longer valid");
         }
         if (freshInvitation.expiresAt.getTime() <= Date.now()) {
-          throw new Error("This invitation has expired");
+          throw new ExpectedError("expired", "This invitation has expired");
         }
 
         const existingMembership = await getActiveMembershipByUserId(transaction, {
           userId: activeUser.id,
         });
         if (existingMembership) {
-          throw new Error("You already belong to a company");
+          throw new ExpectedError("already_exists", "You already belong to a company");
         }
 
         const company = await getCompanyById(transaction, { id: freshInvitation.companyId });
@@ -245,7 +251,7 @@ export const acceptInvite = createServerFn({ method: "POST" })
             throw new Error("Failed to rejoin company");
           }
         } else if (priorMembership) {
-          throw new Error("You already belong to a company");
+          throw new ExpectedError("already_exists", "You already belong to a company");
         } else {
           await createCompanyMember(transaction, {
             companyId: freshInvitation.companyId,
@@ -257,12 +263,12 @@ export const acceptInvite = createServerFn({ method: "POST" })
 
         const accepted = await markInvitationAccepted(transaction, { id: freshInvitation.id });
         if (!accepted) {
-          throw new Error("Invitation not found or no longer valid");
+          throw new ExpectedError("conflict", "Invitation not found or no longer valid");
         }
       });
     } catch (error) {
       if (isUniqueViolation(error)) {
-        throw new Error("You already belong to a company");
+        throw new ExpectedError("already_exists", "You already belong to a company");
       }
       throw error;
     }
@@ -323,7 +329,7 @@ export const updateUserName = createServerFn({ method: "POST" })
     });
 
     if (!user) {
-      throw new Error("Failed to update name");
+      throw new ExpectedError("unauthenticated", "Your account is no longer available");
     }
 
     return { user: withPlatformAdminStatus(user) };

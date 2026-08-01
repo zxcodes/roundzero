@@ -19,6 +19,7 @@ import { getInterviewsByCandidate } from "@/features/interviews/queries/queries_
 import { shouldAutoExpireInterview } from "@/features/interviews/shared/expiry";
 import { getJobsWithPipelineByCompanyId } from "@/features/jobs/queries/queries_sql";
 import { getDb } from "@/shared/db";
+import { ExpectedError } from "@/shared/expected-error";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
 
 const emptyHeroSummary = {
@@ -213,7 +214,7 @@ export const getDashboardMetrics = createServerFn({ method: "GET" })
     const db = getDb();
 
     if (!context.user.role) {
-      throw new Error("User not found or role not set");
+      throw new ExpectedError("setup_required", "User not found or role not set");
     }
 
     if (context.user.role === "company") {

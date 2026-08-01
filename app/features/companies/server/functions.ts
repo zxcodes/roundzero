@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
-import { zodValidator } from "@tanstack/zod-adapter";
 import { env } from "cloudflare:workers";
 import type { Sql } from "postgres";
 import { z } from "zod";
@@ -9,8 +8,10 @@ import { countJobsByCompanyAndStatus } from "@/features/jobs/queries/queries_sql
 import { getDb } from "@/shared/db";
 import { asSqlTransaction } from "@/shared/db-transaction";
 import { companySizeSchema, industrySchema, MAX_COMPANY_DESCRIPTION_LENGTH } from "@/shared/enums";
+import { ExpectedError } from "@/shared/expected-error";
 import { assertCanManageCompanyProfile } from "@/shared/membership-auth";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
+import { isUniqueViolation } from "@/shared/postgres-errors";
 import { type SessionData, sessionConfig } from "@/shared/session";
 import {
   nullableTrimmedString,
@@ -18,7 +19,7 @@ import {
   optionalTrimmedString,
   optionalTrimmedUrl,
   requiredTrimmedString,
-  zodValidatorWithFormattedErrors,
+  zodValidator,
 } from "@/shared/validation";
 
 import {
@@ -120,7 +121,10 @@ const uploadCompanyLogoSchema = z
       ],
       "Unsupported image format. Use PNG, JPG, WEBP, or SVG",
     ),
-    fileBase64: z.string().min(1),
+    fileBase64: z
+      .string()
+      .min(1)
+      .regex(/^(?:[A-Za-z\d+/]{4})*(?:[A-Za-z\d+/]{2}==|[A-Za-z\d+/]{3}=)?$/, "Invalid file data"),
   })
   .refine(
     (data) => {
@@ -155,7 +159,7 @@ const buildLogoKey = (
 
 const assertLogoKeyBelongsToUser = (logoKey: string, userId: string) => {
   if (!logoKey.startsWith(`company-logos/${userId}/`)) {
-    throw new Error("Invalid company logo key");
+    throw new ExpectedError("forbidden", "Invalid company logo key");
   }
 };
 
@@ -187,7 +191,7 @@ export const createCompany = createServerFn({ method: "POST" })
     const db = getDb();
 
     if (context.user.role !== "company") {
-      throw new Error("Only company accounts can create a workspace");
+      throw new ExpectedError("forbidden", "Only company accounts can create a workspace");
     }
 
     const [existing, priorMembership] = await Promise.all([
@@ -199,43 +203,52 @@ export const createCompany = createServerFn({ method: "POST" })
       }),
     ]);
     if (existing) {
-      throw new Error("You already belong to a company");
+      throw new ExpectedError("already_exists", "You already belong to a company");
     }
 
     if (priorMembership) {
-      throw new Error(
+      throw new ExpectedError(
+        "setup_required",
         "Your account has no active company workspace. Accept an invitation to join a team.",
       );
     }
 
     const slug = await generateUniqueSlug(data.name);
 
-    const company = await db.begin(async (tx) => {
-      const transaction = asSqlTransaction(tx);
+    let company;
+    try {
+      company = await db.begin(async (tx) => {
+        const transaction = asSqlTransaction(tx);
 
-      const created = await createCompanyQuery(transaction, {
-        ownerId: context.userId,
-        name: data.name,
-        slug,
-        description: data.description ?? null,
-        logoKey: null,
-        industry: data.industry ?? null,
-        companySize: data.companySize ?? null,
+        const created = await createCompanyQuery(transaction, {
+          ownerId: context.userId,
+          name: data.name,
+          slug,
+          description: data.description ?? null,
+          logoKey: null,
+          industry: data.industry ?? null,
+          companySize: data.companySize ?? null,
+        });
+
+        if (!created) {
+          throw new Error("Failed to create company");
+        }
+
+        await createCompanyMember(transaction, {
+          companyId: created.id,
+          userId: context.userId,
+          role: "owner",
+          invitedBy: null,
+        });
+
+        return created;
       });
-
-      if (!created) {
-        throw new Error("Failed to create company");
+    } catch (error) {
+      if (isUniqueViolation(error)) {
+        throw new ExpectedError("conflict", "A workspace already exists for this account or name");
       }
-
-      await createCompanyMember(transaction, {
-        companyId: created.id,
-        userId: context.userId,
-        role: "owner",
-        invitedBy: null,
-      });
-
-      return created;
-    });
+      throw error;
+    }
 
     return { company };
   });
@@ -320,7 +333,7 @@ export const updateCompanyProfile = createServerFn({ method: "POST" })
 
 export const uploadCompanyLogo = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
-  .validator(zodValidatorWithFormattedErrors(uploadCompanyLogoSchema))
+  .validator(zodValidator(uploadCompanyLogoSchema))
   .handler(async ({ data, context }) => {
     assertCanManageCompanyProfile(context.membership.role);
 

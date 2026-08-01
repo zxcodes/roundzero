@@ -1,5 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { zodValidator } from "@tanstack/zod-adapter";
 import { generateText, NoObjectGeneratedError, NoOutputGeneratedError, Output } from "ai";
 import { z } from "zod";
 
@@ -29,8 +28,10 @@ import {
 } from "@/features/jobs/services/job-lifecycle-notifications";
 import { getDb } from "@/shared/db";
 import { asSqlTransaction } from "@/shared/db-transaction";
+import { ExpectedError } from "@/shared/expected-error";
 import { authMiddleware, companyMiddleware } from "@/shared/middleware";
 import { createChatModel } from "@/shared/openrouter";
+import { zodValidator } from "@/shared/validation";
 
 import {
   archiveJob as archiveJobQuery,
@@ -250,7 +251,7 @@ export const updateJob = createServerFn({ method: "POST" })
       });
       if (!existing) return null;
       if (data.finalReportTarget < existing.finalReportTarget) {
-        throw new Error("The report target can only be increased.");
+        throw new ExpectedError("invalid_input", "The report target can only be increased.");
       }
 
       const targetIncreased = data.finalReportTarget > existing.finalReportTarget;
@@ -266,21 +267,24 @@ export const updateJob = createServerFn({ method: "POST" })
           "jobs.open",
         );
         if (finalReportTarget > entitlements.reports.perJobLimit) {
-          throw new Error(
+          throw new ExpectedError(
+            "quota_exceeded",
             `Upgrade your plan to publish this job with a report target of ${finalReportTarget}.`,
           );
         }
       }
 
       const job = await updateJobQuery(transaction, { ...updateArgs, finalReportTarget });
-      if (!job) throw new Error("The report target can only be increased.");
+      if (!job) {
+        throw new ExpectedError("conflict", "The report target can only be increased.");
+      }
       const matchingRequest =
         job.status === "open" ? await requestJobMatchingExtraction(transaction, job) : null;
       return { job, previousStatus: existing.status, targetIncreased, matchingRequest };
     });
 
     if (!result) {
-      throw new Error("Job not found or not authorized");
+      throw new ExpectedError("not_found", "Job not found or not authorized");
     }
 
     if (isJobPublishTransition(result.previousStatus, result.job.status)) {
@@ -301,7 +305,7 @@ export const archiveJob = createServerFn({ method: "POST" })
     const db = getDb();
     const archived = await archiveJobQuery(db, { id: data.id, companyId: context.company.id });
     if (!archived) {
-      throw new Error("Job not found, not authorized, or already archived");
+      throw new ExpectedError("conflict", "Job not found, not authorized, or already archived");
     }
 
     await notifyCompanyTeam(db, {
@@ -329,15 +333,18 @@ export const publishJob = createServerFn({ method: "POST" })
 
       const job = await getJobById(transaction, { id: data.id });
       if (!job || job.companyId !== context.company.id) {
-        throw new Error("Job not found or not authorized");
+        throw new ExpectedError("not_found", "Job not found or not authorized");
       }
 
       if (job.status !== "draft") {
-        throw new Error("Only draft jobs can be published");
+        throw new ExpectedError("invalid_state", "Only draft jobs can be published");
       }
 
       if (job.expiresAt && job.expiresAt <= new Date()) {
-        throw new Error("This job has already expired. Update the deadline before publishing.");
+        throw new ExpectedError(
+          "expired",
+          "This job has already expired. Update the deadline before publishing.",
+        );
       }
 
       const entitlements = await enforceCompanyEntitlement(
@@ -346,7 +353,8 @@ export const publishJob = createServerFn({ method: "POST" })
         "jobs.open",
       );
       if (job.finalReportTarget > entitlements.reports.perJobLimit) {
-        throw new Error(
+        throw new ExpectedError(
+          "quota_exceeded",
           `Upgrade your plan to publish this job with a report target of ${job.finalReportTarget}.`,
         );
       }
@@ -378,7 +386,7 @@ export const publishJob = createServerFn({ method: "POST" })
     });
 
     if (!updated.job) {
-      throw new Error("Failed to publish job");
+      throw new ExpectedError("conflict", "The job changed while it was being published");
     }
 
     await notifyJobPublished(db, context.company.id, updated.job);
@@ -681,7 +689,8 @@ export const generateJobWithAI = createServerFn({ method: "POST" })
       }
 
       if (looksLikeRefusalOutput(validated.data)) {
-        throw new Error(
+        throw new ExpectedError(
+          "invalid_input",
           "We couldn't turn that into a job posting. Describe the role, seniority, location or remote setup, and compensation if you have it, then try again.",
         );
       }
@@ -695,9 +704,9 @@ export const generateJobWithAI = createServerFn({ method: "POST" })
           (error.message.includes("No object generated") ||
             error.message.includes("No output generated")))
       ) {
-        throw new Error(
-          "We couldn't turn that into a job posting. Describe the role, seniority, location or remote setup, and compensation if you have it, then try again.",
-        );
+        throw new Error("We couldn't generate a complete job posting. Please try again.", {
+          cause: error,
+        });
       }
 
       if (error instanceof Error && error.message) {

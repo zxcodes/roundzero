@@ -1,6 +1,7 @@
 import type { Checkout } from "@polar-sh/sdk/models/components/checkout";
 
 import { appEnv } from "@/shared/env.app";
+import { ExpectedError } from "@/shared/expected-error";
 
 import { getPolar } from "./polar";
 
@@ -35,6 +36,6 @@ export function assertCheckoutBelongsToCompany(
   companyId: string,
 ): void {
   if (checkout.externalCustomerId !== companyId) {
-    throw new Error("Checkout does not belong to this company");
+    throw new ExpectedError("forbidden", "Checkout does not belong to this company");
   }
 }

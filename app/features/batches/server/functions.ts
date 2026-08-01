@@ -7,7 +7,6 @@
  * Pure DB release logic lives in `./release.ts`.
  */
 import { createServerFn } from "@tanstack/react-start";
-import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 
 import {
@@ -18,7 +17,9 @@ import {
 import { getCompanyByMemberUserId } from "@/features/companies/queries/membership-queries_sql";
 import { getJobById } from "@/features/jobs/queries/queries_sql";
 import { getDb } from "@/shared/db";
+import { ExpectedError } from "@/shared/expected-error";
 import { authMiddleware } from "@/shared/middleware";
+import { zodValidator } from "@/shared/validation";
 
 const batchIdSchema = z.object({ batchId: z.string().uuid() });
 
@@ -36,7 +37,7 @@ export const getBatchOverview = createServerFn({ method: "GET" })
       return null;
     }
     if (!company) {
-      throw new Error("Not authorized to view this batch");
+      throw new ExpectedError("forbidden", "Not authorized to view this batch");
     }
 
     const [job, reports, interviews] = await Promise.all([
@@ -45,7 +46,7 @@ export const getBatchOverview = createServerFn({ method: "GET" })
       getInterviewsByBatchWithCandidate(db, { batchId: data.batchId }),
     ]);
     if (!job || job.companyId !== company.id) {
-      throw new Error("Not authorized to view this batch");
+      throw new ExpectedError("forbidden", "Not authorized to view this batch");
     }
 
     return {

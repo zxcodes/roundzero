@@ -1,4 +1,5 @@
 import type { CompanyMemberRole } from "@/shared/enums";
+import { ExpectedError } from "@/shared/expected-error";
 
 /**
  * Company role permissions (MVP):
@@ -11,19 +12,19 @@ import type { CompanyMemberRole } from "@/shared/enums";
  */
 export const assertCanManageTeam = (role: string) => {
   if (role !== "owner" && role !== "admin") {
-    throw new Error("Not authorized to manage team members");
+    throw new ExpectedError("forbidden", "Not authorized to manage team members");
   }
 };
 
 export const assertCanManageCompanyProfile = (role: string) => {
   if (role !== "owner" && role !== "admin") {
-    throw new Error("Not authorized to update company profile");
+    throw new ExpectedError("forbidden", "Not authorized to update company profile");
   }
 };
 
 export const assertCompanyOwner = (role: string) => {
   if (role !== "owner") {
-    throw new Error("Only the company owner can manage billing");
+    throw new ExpectedError("forbidden", "Only the company owner can manage billing");
   }
 };
 

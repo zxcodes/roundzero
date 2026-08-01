@@ -1,7 +1,9 @@
 import { notFound } from "@tanstack/react-router";
-import { zodValidator } from "@tanstack/zod-adapter";
+import { zodValidator as tanstackZodValidator } from "@tanstack/zod-adapter";
 import type { ZodSchema } from "zod";
 import { z } from "zod";
+
+import { ExpectedError } from "@/shared/expected-error";
 
 const uuidSchema = z.string().uuid();
 
@@ -13,8 +15,8 @@ export function validateUuidParams(params: Record<string, string | undefined>) {
   }
 }
 
-export function zodValidatorWithFormattedErrors<T extends ZodSchema>(schema: T) {
-  const validator = zodValidator(schema);
+export function zodValidator<T extends ZodSchema>(schema: T) {
+  const validator = tanstackZodValidator(schema);
   return {
     ...validator,
     parse: (input: unknown) => {
@@ -23,7 +25,7 @@ export function zodValidatorWithFormattedErrors<T extends ZodSchema>(schema: T) 
       } catch (err) {
         if (err instanceof z.ZodError && err.issues?.length) {
           const messages = err.issues.map((issue) => issue.message);
-          throw new Error(messages.join(", "));
+          throw new ExpectedError("invalid_input", messages.join(", "));
         }
         throw err;
       }
