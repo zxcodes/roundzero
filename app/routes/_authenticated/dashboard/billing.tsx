@@ -46,6 +46,9 @@ export const Route = createFileRoute("/_authenticated/dashboard/billing")({
     if (!subscription) {
       throw redirect({ to: "/onboarding/company" });
     }
+    if (params.get("status") === "success" && subscription.isActive) {
+      checkoutConfirmed = true;
+    }
     return { subscription, checkoutConfirmed };
   },
   pendingComponent: BillingPageSkeleton,

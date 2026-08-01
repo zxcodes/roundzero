@@ -130,7 +130,7 @@ export const syncCheckoutSubscription = createServerFn({ method: "POST" })
 
     const subscriptionId = checkout.subscriptionId;
     if (!subscriptionId) {
-      throw new Error("Checkout has no subscription");
+      return { success: false, isActive: false, status: "pending" as const };
     }
 
     const subscription = await polar.subscriptions.get({ id: subscriptionId });
