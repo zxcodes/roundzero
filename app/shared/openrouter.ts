@@ -78,7 +78,7 @@ const MODEL_CHAINS = {
     prod: ["deepseek/deepseek-v4-flash"],
   },
   interview: {
-    dev: ["meta-llama/llama-3.3-70b-instruct:free"],
+    dev: ["deepseek/deepseek-v4-flash"],
     staging: ["deepseek/deepseek-v4-flash"],
     prod: ["anthropic/claude-sonnet-4.5", "anthropic/claude-haiku-4.5", "google/gemini-2.5-pro"],
   },

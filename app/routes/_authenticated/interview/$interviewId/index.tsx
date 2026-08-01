@@ -58,15 +58,15 @@ export const Route = createFileRoute("/_authenticated/interview/$interviewId/")(
 
 function InterviewWorkspacePage() {
   const { interview, expiresAt, initialMessages } = ParentRoute.useLoaderData();
+  const lastMessageId = initialMessages[initialMessages.length - 1]?.id ?? "empty";
 
   return (
     <ClientOnly fallback={<InterviewWorkspacePageSkeleton />}>
-      {/* Remount on status transitions so useChat re-reads `initialMessages`
-          after the server seeds the greeting (pending → in_progress) and
-          after the agent finishes the chat (in_progress → awaiting_voice).
-          useChat consumes initialMessages on mount only. */}
+      {/* useChat consumes initialMessages on mount only. Remount whenever the
+          durable transcript or status changes so starts, completed turns, and
+          server-side completion reconcile with the client state. */}
       <InterviewWorkspaceContent
-        key={`${interview.id}:${interview.status}`}
+        key={`${interview.id}:${interview.status}:${lastMessageId}`}
         interview={interview}
         expiresAt={expiresAt}
         initialMessages={initialMessages}
@@ -88,6 +88,8 @@ function InterviewWorkspaceContent({
 
   const isPending = interview.status === "pending";
   const isInProgress = interview.status === "in_progress";
+  const needsGreeting = initialMessages.length === 0;
+  const canStart = isPending || (isInProgress && needsGreeting);
 
   const startInterviewFn = useServerFn(startMyInterview);
   const cancelInterviewFn = useServerFn(cancelMyInterview);
@@ -131,7 +133,7 @@ function InterviewWorkspaceContent({
     tone: "bg-muted text-muted-foreground",
   };
 
-  const canSend = interview.status === "in_progress";
+  const canSend = isInProgress && !needsGreeting;
   const isAwaitingVoice = interview.status === "awaiting_voice";
   const isEnded =
     interview.status === "completed" ||
@@ -141,7 +143,7 @@ function InterviewWorkspaceContent({
   const isCompleted = interview.status === "completed";
   const isCancelled = interview.status === "cancelled";
   const isExpired = interview.status === "expired";
-  const isStarting = isPending && startMutation.isPending;
+  const isStarting = canStart && startMutation.isPending;
   const isSubmitting = isInProgress && completeMutation.isPending;
   const deadline = formatDeadlineLabel(expiresAt);
   const timeLeft = formatTimeLeft(expiresAt);
@@ -271,10 +273,10 @@ function InterviewWorkspaceContent({
             </Button>
           ) : null}
 
-          {isPending || isInProgress ? (
+          {canStart || isInProgress ? (
             <Button
               size="sm"
-              onClick={isPending ? onStart : onComplete}
+              onClick={canStart ? onStart : onComplete}
               disabled={startMutation.isPending || completeMutation.isPending}
             >
               {isStarting || isSubmitting ? (
@@ -290,7 +292,7 @@ function InterviewWorkspaceContent({
                 ? "Starting"
                 : isSubmitting
                   ? "Submitting"
-                  : isPending
+                  : canStart
                     ? "Start"
                     : "Submit"}
             </Button>

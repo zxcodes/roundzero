@@ -1,5 +1,4 @@
-import type { RealtimeToken } from "@tanstack/ai";
-import { chat } from "@tanstack/ai";
+import { chat, EventType, type RealtimeToken } from "@tanstack/ai";
 import { createOpenRouterText } from "@tanstack/ai-openrouter";
 import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
@@ -151,21 +150,6 @@ export const startMyInterview = createServerFn({ method: "POST" })
 
     const wasAlreadyActive = effectiveInterview.status === "in_progress";
 
-    if (!wasAlreadyActive) {
-      const updated = await updateInterviewStatus(db, {
-        id: data.interviewId,
-        status: "in_progress",
-      });
-      if (!updated) {
-        return null;
-      }
-
-      await updateApplicationStatus(db, {
-        id: effectiveInterview.applicationId,
-        status: "interview_in_progress",
-      });
-    }
-
     const interviewContext = await getInterviewContextById(db, { id: data.interviewId });
     if (!interviewContext) {
       return null;
@@ -183,7 +167,7 @@ export const startMyInterview = createServerFn({ method: "POST" })
       if (greetingClaim) {
         try {
           const { model, fallbacks } = getModelChain("interview");
-          const greeting = await chat({
+          const greetingStream = chat({
             adapter: createOpenRouterText(model, env.OPENROUTER_API_KEY, {
               httpReferer: env.APP_URL,
               appTitle: "RoundZero",
@@ -198,20 +182,27 @@ export const startMyInterview = createServerFn({ method: "POST" })
               buildInterviewSystemPrompt({
                 runtimeContext,
                 screeningCoverage: metadata.screeningCoverage ?? {},
-                assistantTurnCount: existingMessages.filter(
-                  (message) => message.role === "assistant",
-                ).length,
-                maxQuestions: 5,
               }),
             ],
             modelOptions: {
               ...(fallbacks.length > 0 ? { models: fallbacks } : {}),
               parallelToolCalls: false,
+              reasoning: { effort: "none" },
               temperature: 0.3,
-              maxCompletionTokens: 150,
+              maxCompletionTokens: 300,
             },
-            stream: false,
+            stream: true,
           });
+
+          let greeting = "";
+          for await (const chunk of greetingStream) {
+            if (chunk.type === EventType.RUN_ERROR) {
+              throw new Error(chunk.message || "Interview greeting generation failed");
+            }
+            if (chunk.type === EventType.TEXT_MESSAGE_CONTENT) {
+              greeting += chunk.delta;
+            }
+          }
 
           const content = greeting.trim();
           if (content.length === 0) {
@@ -230,6 +221,21 @@ export const startMyInterview = createServerFn({ method: "POST" })
           throw error;
         }
       }
+    }
+
+    if (!wasAlreadyActive) {
+      const updated = await updateInterviewStatus(db, {
+        id: data.interviewId,
+        status: "in_progress",
+      });
+      if (!updated) {
+        return null;
+      }
+
+      await updateApplicationStatus(db, {
+        id: effectiveInterview.applicationId,
+        status: "interview_in_progress",
+      });
     }
 
     if (wasAlreadyActive) {

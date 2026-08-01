@@ -32,6 +32,7 @@ import {
   messageIntegritySnapshotSchema,
 } from "@/features/interviews/shared/integrity";
 import {
+  areRequiredScreeningQuestionsResolved,
   buildInterviewSystemPrompt,
   ensureInterviewRuntimeMetadata,
   type InterviewMetadata,
@@ -102,6 +103,14 @@ const interviewResponseSchema = z
       });
     }
   });
+
+const interviewContinueResponseSchema = z
+  .object({
+    action: z.literal("continue"),
+    message: z.string().min(1).describe("The candidate-visible response."),
+    reason: z.null(),
+  })
+  .strict();
 
 const readMessageText = (message: UIMessage | ModelMessage) => {
   if ("parts" in message && Array.isArray(message.parts)) {
@@ -230,17 +239,23 @@ export const Route = createFileRoute("/api/interview-chat")({
         }
 
         const history = await getInterviewMessagesByInterviewId(db, { interviewId });
-        const assistantTurnCount = history.filter((message) => message.role === "assistant").length;
         const userRequestedEnd =
-          /\b(end|finish|submit|stop|done|wrap up|that's all|no more questions)\b/i.test(
+          /\b(?:end|finish|submit|stop|wrap up)\s+(?:this|the|my)\s+interview\b|\b(?:want|would like|need)\s+to\s+(?:end|finish|stop)\b|\b(?:i(?:'m| am)\s+done|that's all|no more questions)\b/i.test(
             candidateText,
           );
+        const canFinish =
+          userRequestedEnd ||
+          areRequiredScreeningQuestionsResolved(
+            runtimeContext.customQuestions.length,
+            runtimeMetadata.screeningCoverage ?? {},
+          );
+        const turnResponseSchema = canFinish
+          ? interviewResponseSchema
+          : interviewContinueResponseSchema;
         const getSystemPrompt = () => {
           const basePrompt = buildInterviewSystemPrompt({
             runtimeContext,
             screeningCoverage: runtimeMetadata.screeningCoverage ?? {},
-            assistantTurnCount,
-            maxQuestions: 5,
           });
           return userRequestedEnd
             ? `${basePrompt}\n\nThe candidate just explicitly asked to end. Choose action='finish' with one short, warm closing message and ask no further questions.`
@@ -319,7 +334,7 @@ export const Route = createFileRoute("/api/interview-chat")({
               return { ok: true };
             }),
           ],
-          outputSchema: interviewResponseSchema,
+          outputSchema: turnResponseSchema,
           stream: true,
           abortController,
           threadId: params.threadId,
@@ -330,8 +345,9 @@ export const Route = createFileRoute("/api/interview-chat")({
             ...(fallbacks.length > 0 ? { models: fallbacks } : {}),
             parallelToolCalls: false,
             plugins: [{ id: "response-healing" }],
+            reasoning: { effort: "none" },
             temperature: 0.3,
-            maxCompletionTokens: 150,
+            maxCompletionTokens: 300,
           },
           middleware: [
             {
@@ -367,7 +383,9 @@ export const Route = createFileRoute("/api/interview-chat")({
                 throw new Error(chunk.message || "Interview generation failed");
               }
               if (chunk.type === EventType.CUSTOM && chunk.name === "structured-output.complete") {
-                response = interviewResponseSchema.parse(chunk.value.object);
+                response = interviewResponseSchema.parse(
+                  turnResponseSchema.parse(chunk.value.object),
+                );
               }
             }
 
