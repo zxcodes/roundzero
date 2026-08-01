@@ -78,7 +78,6 @@ export function InterviewChat({
   const transcriptRef = useRef<HTMLDivElement | null>(null);
   const transcriptEndRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
-  const wasStreamingRef = useRef(false);
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
       transcriptEndRef.current?.scrollIntoView({ block: "end" });
@@ -108,16 +107,18 @@ export function InterviewChat({
   }, [isStreaming]);
 
   useEffect(() => {
-    if (!wasStreamingRef.current && isStreaming) {
-      wasStreamingRef.current = true;
+    if (!canSend || isStreaming || isThinking || hasError) {
       return;
     }
 
-    if (wasStreamingRef.current && !isStreaming && canSend) {
+    const frame = requestAnimationFrame(() => {
       composerRef.current?.focus();
-      wasStreamingRef.current = false;
-    }
-  }, [isStreaming, canSend]);
+    });
+
+    return () => {
+      cancelAnimationFrame(frame);
+    };
+  }, [canSend, hasError, isStreaming, isThinking]);
 
   const onSubmit = async () => {
     const trimmed = content.trim();
