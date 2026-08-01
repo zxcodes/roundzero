@@ -38,7 +38,7 @@ vi.mock("@/shared/env.app", () => ({
     POLAR_PRODUCT_ID_STARTER: "starter-product-id",
     POLAR_PRODUCT_ID_GROWTH: "growth-product-id",
     POLAR_PRODUCT_ID_SCALE: "scale-product-id",
-    EMAIL_FROM: "test@roundzero.dev",
+    EMAIL_FROM: "test@tryroundzero.com",
     APP_URL: "http://localhost:3000",
   },
 }));

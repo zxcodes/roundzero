@@ -8,12 +8,12 @@ import {
 describe("platform admin allowlist", () => {
   it("normalizes and deduplicates admin emails", () => {
     const allowlist = buildPlatformAdminAllowlist(
-      " Admin@Example.com , admin@example.com , Ops@RoundZero.dev ",
+      " Admin@Example.com , admin@example.com , Ops@TryRoundZero.com ",
     );
 
     expect(allowlist.size).toBe(2);
     expect(isPlatformAdminEmail("admin@example.com", allowlist)).toBe(true);
-    expect(isPlatformAdminEmail("OPS@roundzero.dev", allowlist)).toBe(true);
+    expect(isPlatformAdminEmail("OPS@tryroundzero.com", allowlist)).toBe(true);
   });
 
   it("rejects empty or missing allowlists", () => {

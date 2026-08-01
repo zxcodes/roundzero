@@ -67,7 +67,7 @@ export function SubscriptionWelcomeEmail(props: SubscriptionWelcomeEmailProps) {
 SubscriptionWelcomeEmail.PreviewProps = {
   plan: "growth",
   companyName: "Acme Corp",
-  dashboardUrl: "https://roundzero.dev/dashboard",
+  dashboardUrl: "https://tryroundzero.com/dashboard",
 } satisfies SubscriptionWelcomeEmailProps;
 
 const bodyStyle: React.CSSProperties = {

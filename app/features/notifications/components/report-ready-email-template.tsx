@@ -74,7 +74,7 @@ ReportReadyEmailTemplate.PreviewProps = {
   jobTitle: "Senior Frontend Engineer",
   overallScore: 8.2,
   recommendation: "yes" as const,
-  reportUrl: "https://roundzero.dev/dashboard/applicant-reports/123",
+  reportUrl: "https://tryroundzero.com/dashboard/applicant-reports/123",
 } satisfies ReportReadyEmailTemplateProps;
 
 const bodyStyle: React.CSSProperties = {
