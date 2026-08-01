@@ -25,7 +25,7 @@ export const submitContactForm = createServerFn({ method: "POST" })
     }
 
     await sendTransactionalEmail({
-      to: "contact@roundzero.dev",
+      to: "contact@tryroundzero.com",
       fromName: "RoundZero Contact",
       subject: `Contact form submission from ${data.email}`,
       html: `<p><strong>From:</strong> ${escapeHtml(data.email)}</p><p>${escapeHtml(data.query).replace(/\n/g, "<br />")}</p>`,

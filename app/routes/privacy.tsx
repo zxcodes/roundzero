@@ -229,8 +229,8 @@ function PrivacyPage() {
         <p>
           For account deletion, use the self-service control in Settings. For other privacy
           requests, contact us at{" "}
-          <LegalLink href="mailto:support@roundzero.dev">support@roundzero.dev</LegalLink>. We will
-          respond within a reasonable timeframe.
+          <LegalLink href="mailto:support@tryroundzero.com">support@tryroundzero.com</LegalLink>. We
+          will respond within a reasonable timeframe.
         </p>
       </LegalSection>
 
@@ -280,7 +280,7 @@ function PrivacyPage() {
         <p>
           If you have any questions or concerns about this Privacy Policy or our data practices,
           please contact us at:{" "}
-          <LegalLink href="mailto:support@roundzero.dev">support@roundzero.dev</LegalLink>
+          <LegalLink href="mailto:support@tryroundzero.com">support@tryroundzero.com</LegalLink>
         </p>
       </LegalSection>
     </LegalPage>

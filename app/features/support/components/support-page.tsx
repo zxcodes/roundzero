@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-export const SUPPORT_EMAIL = "support@roundzero.dev";
+export const SUPPORT_EMAIL = "support@tryroundzero.com";
 
 type SupportPageProps = {
   isCompany: boolean;

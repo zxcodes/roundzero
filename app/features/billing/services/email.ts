@@ -24,7 +24,7 @@ export async function sendSubscriptionWelcomeEmail(input: {
 
   const dashboardUrl = appEnv.APP_URL
     ? `${appEnv.APP_URL}/dashboard`
-    : "https://roundzero.dev/dashboard";
+    : "https://tryroundzero.com/dashboard";
 
   await sendReactTransactionalEmail({
     to: input.to,

@@ -452,13 +452,13 @@ const demoCompanyProfile = {
   industry: "technology",
   companySize: "11-50",
   location: "San Francisco, CA",
-  website: "https://roundzero.dev",
+  website: "https://tryroundzero.com",
   foundedYear: 2022,
   techStack: ["TypeScript", "React", "Node.js", "PostgreSQL", "Cloudflare Workers"],
   culture:
     "High ownership, fast shipping, strong product taste. We bias toward clarity, measurable outcomes, and respectful candidate experiences.",
   socialLinks: {
-    Website: "https://roundzero.dev",
+    Website: "https://tryroundzero.com",
     LinkedIn: "https://linkedin.com/company/roundzero",
   },
 } as const;
