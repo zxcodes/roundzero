@@ -62,7 +62,7 @@ CompanyInviteEmailTemplate.PreviewProps = {
   companyName: "Acme Corp",
   inviterName: "Jane Doe",
   roleLabel: "Admin",
-  inviteUrl: "https://roundzero.dev/invite/example-token",
+  inviteUrl: "https://tryroundzero.com/invite/example-token",
 } satisfies CompanyInviteEmailTemplateProps;
 
 const bodyStyle: React.CSSProperties = {

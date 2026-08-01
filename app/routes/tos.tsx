@@ -152,7 +152,8 @@ function TermsPage() {
         </ul>
         <p>
           If you need help with account deletion or have questions about what data is removed,
-          contact <LegalLink href="mailto:support@roundzero.dev">support@roundzero.dev</LegalLink>.
+          contact{" "}
+          <LegalLink href="mailto:support@tryroundzero.com">support@tryroundzero.com</LegalLink>.
         </p>
       </LegalSection>
 
@@ -201,7 +202,7 @@ function TermsPage() {
       <LegalSection title="13. Contact Us">
         <p>
           If you have any questions about these Terms, please contact us at:{" "}
-          <LegalLink href="mailto:support@roundzero.dev">support@roundzero.dev</LegalLink>
+          <LegalLink href="mailto:support@tryroundzero.com">support@tryroundzero.com</LegalLink>
         </p>
       </LegalSection>
     </LegalPage>

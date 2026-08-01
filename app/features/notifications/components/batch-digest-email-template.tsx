@@ -82,7 +82,7 @@ BatchDigestEmailTemplate.PreviewProps = {
   reportCount: 5,
   topScore: 9.2,
   topCandidateName: "Sarah Chen",
-  batchUrl: "https://roundzero.dev/dashboard/job-batches/123",
+  batchUrl: "https://tryroundzero.com/dashboard/job-batches/123",
 } satisfies BatchDigestEmailTemplateProps;
 
 const bodyStyle: React.CSSProperties = {
