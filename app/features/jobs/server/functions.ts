@@ -23,6 +23,10 @@ import {
   startJobMatchingExtraction,
 } from "@/features/job-matching/server/orchestration";
 import {
+  getMissingPublishFields,
+  missingPublishFieldsMessage,
+} from "@/features/jobs/publish-readiness";
+import {
   isJobPublishTransition,
   notifyJobPublished,
 } from "@/features/jobs/services/job-lifecycle-notifications";
@@ -338,6 +342,14 @@ export const publishJob = createServerFn({ method: "POST" })
 
       if (job.status !== "draft") {
         throw new ExpectedError("invalid_state", "Only draft jobs can be published");
+      }
+
+      const missingFields = getMissingPublishFields(job);
+      if (missingFields.length > 0) {
+        throw new ExpectedError(
+          "invalid_state",
+          `Complete the ${missingPublishFieldsMessage(missingFields)} before publishing this job.`,
+        );
       }
 
       if (job.expiresAt && job.expiresAt <= new Date()) {

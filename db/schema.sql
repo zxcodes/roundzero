@@ -273,6 +273,46 @@ CREATE TABLE public.job_batches (
 
 
 --
+-- Name: job_import_batches; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.job_import_batches (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    company_id uuid NOT NULL,
+    created_by uuid NOT NULL,
+    source_kind text NOT NULL,
+    source_label text NOT NULL,
+    status text DEFAULT 'ready'::text NOT NULL,
+    discovered_count integer DEFAULT 0 NOT NULL,
+    imported_count integer DEFAULT 0 NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: job_import_items; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.job_import_items (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    batch_id uuid NOT NULL,
+    source_platform text NOT NULL,
+    source_external_id text NOT NULL,
+    source_url text,
+    source_updated_at timestamp with time zone,
+    normalized_payload jsonb NOT NULL,
+    warnings jsonb DEFAULT '[]'::jsonb NOT NULL,
+    inferred_fields jsonb DEFAULT '[]'::jsonb NOT NULL,
+    status text DEFAULT 'ready'::text NOT NULL,
+    error text,
+    imported_job_id uuid,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: job_matching_profiles; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -319,7 +359,12 @@ CREATE TABLE public.jobs (
     expires_at timestamp with time zone,
     archived_at timestamp with time zone,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    source_platform text,
+    source_external_id text,
+    source_url text,
+    source_updated_at timestamp with time zone,
+    import_batch_id uuid
 );
 
 
@@ -551,6 +596,30 @@ ALTER TABLE ONLY public.interviews
 
 ALTER TABLE ONLY public.job_batches
     ADD CONSTRAINT job_batches_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: job_import_batches job_import_batches_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.job_import_batches
+    ADD CONSTRAINT job_import_batches_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: job_import_items job_import_items_batch_id_source_platform_source_external_i_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.job_import_items
+    ADD CONSTRAINT job_import_items_batch_id_source_platform_source_external_i_key UNIQUE (batch_id, source_platform, source_external_id);
+
+
+--
+-- Name: job_import_items job_import_items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.job_import_items
+    ADD CONSTRAINT job_import_items_pkey PRIMARY KEY (id);
 
 
 --
@@ -845,6 +914,20 @@ CREATE INDEX idx_job_batches_status ON public.job_batches USING btree (status) W
 
 
 --
+-- Name: idx_job_import_batches_company_created; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_job_import_batches_company_created ON public.job_import_batches USING btree (company_id, created_at DESC);
+
+
+--
+-- Name: idx_job_import_items_batch; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_job_import_items_batch ON public.job_import_items USING btree (batch_id, created_at);
+
+
+--
 -- Name: idx_job_matching_profiles_recovery; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -870,6 +953,13 @@ CREATE INDEX idx_jobs_company ON public.jobs USING btree (company_id);
 --
 
 CREATE INDEX idx_jobs_status ON public.jobs USING btree (status);
+
+
+--
+-- Name: idx_jobs_unique_import_origin; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_jobs_unique_import_origin ON public.jobs USING btree (company_id, source_platform, source_external_id) WHERE ((source_platform IS NOT NULL) AND (source_external_id IS NOT NULL));
 
 
 --
@@ -1095,6 +1185,38 @@ ALTER TABLE ONLY public.job_batches
 
 
 --
+-- Name: job_import_batches job_import_batches_company_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.job_import_batches
+    ADD CONSTRAINT job_import_batches_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id) ON DELETE RESTRICT;
+
+
+--
+-- Name: job_import_batches job_import_batches_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.job_import_batches
+    ADD CONSTRAINT job_import_batches_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.users(id) ON DELETE RESTRICT;
+
+
+--
+-- Name: job_import_items job_import_items_batch_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.job_import_items
+    ADD CONSTRAINT job_import_items_batch_id_fkey FOREIGN KEY (batch_id) REFERENCES public.job_import_batches(id) ON DELETE CASCADE;
+
+
+--
+-- Name: job_import_items job_import_items_imported_job_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.job_import_items
+    ADD CONSTRAINT job_import_items_imported_job_id_fkey FOREIGN KEY (imported_job_id) REFERENCES public.jobs(id) ON DELETE RESTRICT;
+
+
+--
 -- Name: job_matching_profiles job_matching_profiles_job_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1108,6 +1230,14 @@ ALTER TABLE ONLY public.job_matching_profiles
 
 ALTER TABLE ONLY public.jobs
     ADD CONSTRAINT jobs_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id) ON DELETE RESTRICT;
+
+
+--
+-- Name: jobs jobs_import_batch_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.jobs
+    ADD CONSTRAINT jobs_import_batch_id_fkey FOREIGN KEY (import_batch_id) REFERENCES public.job_import_batches(id) ON DELETE RESTRICT;
 
 
 --
@@ -1169,4 +1299,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260719022003'),
     ('20260721090921'),
     ('20260722040827'),
-    ('20260728034113');
+    ('20260728034113'),
+    ('20260802125802');

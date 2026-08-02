@@ -1,0 +1,133 @@
+-- name: createJobImportBatch :one
+INSERT INTO job_import_batches (
+  company_id, created_by, source_kind, source_label, status, discovered_count
+)
+VALUES ($1, $2, $3, $4, 'ready', $5)
+RETURNING *;
+
+-- name: createJobImportItem :one
+INSERT INTO job_import_items (
+  batch_id, source_platform, source_external_id, source_url, source_updated_at,
+  normalized_payload, warnings, inferred_fields, status
+)
+VALUES (
+  sqlc.arg('batch_id')::uuid,
+  sqlc.arg('source_platform'),
+  sqlc.arg('source_external_id'),
+  sqlc.narg('source_url'),
+  sqlc.narg('source_updated_at')::timestamptz,
+  sqlc.arg('normalized_payload')::jsonb,
+  sqlc.arg('warnings')::jsonb,
+  sqlc.arg('inferred_fields')::jsonb,
+  CASE WHEN EXISTS (
+    SELECT 1
+    FROM jobs j
+    JOIN job_import_batches b ON b.id = sqlc.arg('batch_id')::uuid
+    WHERE j.company_id = b.company_id
+      AND j.source_platform = sqlc.arg('source_platform')
+      AND j.source_external_id = sqlc.arg('source_external_id')
+  ) THEN 'duplicate' ELSE 'ready' END
+)
+RETURNING *;
+
+-- name: getJobImportBatchForCompany :one
+SELECT *
+FROM job_import_batches
+WHERE id = $1 AND company_id = $2;
+
+-- name: getJobImportBatchForUpdate :one
+SELECT *
+FROM job_import_batches
+WHERE id = $1 AND company_id = $2
+FOR UPDATE;
+
+-- name: listJobImportItemsForCompany :many
+SELECT i.*
+FROM job_import_items i
+JOIN job_import_batches b ON b.id = i.batch_id
+WHERE i.batch_id = $1
+  AND b.company_id = $2
+ORDER BY i.created_at, i.id;
+
+-- name: listSelectedJobImportItemsForCompany :many
+SELECT i.*
+FROM job_import_items i
+JOIN job_import_batches b ON b.id = i.batch_id
+WHERE i.batch_id = sqlc.arg('batch_id')::uuid
+  AND b.company_id = sqlc.arg('company_id')::uuid
+  AND i.id = ANY(string_to_array(sqlc.arg('item_ids_csv'), ',')::uuid[])
+  AND i.status = 'ready'
+ORDER BY i.created_at, i.id;
+
+-- name: createImportedJob :one
+INSERT INTO jobs (
+  company_id, title, description, requirements, screening_questions, status,
+  location, workplace_type, employment_type, experience_level,
+  salary_min, salary_max, salary_currency, team_size, headcount,
+  final_report_target, expires_at, source_platform, source_external_id,
+  source_url, source_updated_at, import_batch_id
+)
+VALUES (
+  sqlc.arg('company_id')::uuid,
+  sqlc.arg('title'),
+  sqlc.arg('description'),
+  sqlc.arg('requirements')::jsonb,
+  '[]'::jsonb,
+  'draft',
+  sqlc.narg('location'),
+  sqlc.arg('workplace_type'),
+  sqlc.arg('employment_type'),
+  sqlc.arg('experience_level'),
+  sqlc.narg('salary_min')::int,
+  sqlc.narg('salary_max')::int,
+  sqlc.arg('salary_currency'),
+  NULL,
+  sqlc.narg('headcount')::int,
+  sqlc.arg('final_report_target')::int,
+  sqlc.narg('expires_at')::timestamptz,
+  sqlc.arg('source_platform'),
+  sqlc.arg('source_external_id'),
+  sqlc.narg('source_url'),
+  sqlc.narg('source_updated_at')::timestamptz,
+  sqlc.arg('import_batch_id')::uuid
+)
+ON CONFLICT (company_id, source_platform, source_external_id)
+  WHERE source_platform IS NOT NULL AND source_external_id IS NOT NULL
+DO NOTHING
+RETURNING *;
+
+-- name: markJobImportItemImported :one
+UPDATE job_import_items
+SET status = 'imported',
+    imported_job_id = $2,
+    error = NULL,
+    updated_at = now()
+WHERE id = $1
+RETURNING *;
+
+-- name: updateJobImportItemEnrichment :one
+UPDATE job_import_items
+SET normalized_payload = sqlc.arg('normalized_payload')::jsonb,
+    warnings = sqlc.arg('warnings')::jsonb,
+    inferred_fields = sqlc.arg('inferred_fields')::jsonb,
+    updated_at = now()
+WHERE id = sqlc.arg('id')::uuid
+RETURNING *;
+
+-- name: markJobImportItemDuplicate :one
+UPDATE job_import_items
+SET status = 'duplicate',
+    error = 'This source job has already been imported.',
+    updated_at = now()
+WHERE id = $1
+RETURNING *;
+
+-- name: completeJobImportBatch :one
+UPDATE job_import_batches
+SET status = 'completed',
+    imported_count = (
+      SELECT count(*)::int FROM job_import_items WHERE batch_id = $1 AND status = 'imported'
+    ),
+    updated_at = now()
+WHERE id = $1
+RETURNING *;

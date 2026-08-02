@@ -18,6 +18,46 @@ export function JobsResultsSkeleton() {
   );
 }
 
+export function JobImportSkeleton() {
+  return (
+    <div className="flex flex-col gap-6 pb-24">
+      <div className="flex flex-col gap-2">
+        <Skeleton className="h-7 w-52" />
+        <Skeleton className="h-4 w-72" />
+      </div>
+      <div className="flex gap-6">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <Skeleton key={index} className="h-4 w-24" />
+        ))}
+      </div>
+      <div className="flex flex-col gap-3 rounded-2xl border p-3">
+        <div className="flex justify-between gap-3">
+          <Skeleton className="h-9 w-80" />
+          <Skeleton className="h-9 w-96" />
+        </div>
+        <Skeleton className="h-9 w-full" />
+      </div>
+      <div className="overflow-hidden rounded-2xl border">
+        <div className="grid grid-cols-[2rem_2fr_repeat(4,1fr)_5rem] gap-3 border-b p-3">
+          {Array.from({ length: 7 }).map((_, index) => (
+            <Skeleton key={index} className="h-4 w-full" />
+          ))}
+        </div>
+        {Array.from({ length: 7 }).map((_, row) => (
+          <div
+            key={row}
+            className="grid grid-cols-[2rem_2fr_repeat(4,1fr)_5rem] gap-3 border-b p-3 last:border-b-0"
+          >
+            {Array.from({ length: 7 }).map((_, column) => (
+              <Skeleton key={column} className="h-8 w-full" />
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function JobListResultsSkeleton() {
   return (
     <>
