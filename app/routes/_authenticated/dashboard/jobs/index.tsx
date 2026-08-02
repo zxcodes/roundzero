@@ -8,6 +8,7 @@ import {
   Loading03Icon,
   Rocket01Icon,
   Search01Icon,
+  Upload04Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
@@ -236,12 +237,20 @@ function CompanyJobsList({ jobs, counts }: { jobs: Promise<CompanyJobs>; counts:
       description="Manage your job postings and track applicants."
       statItems={statItems}
       headerAction={
-        <Button size="sm" asChild>
-          <Link to="/dashboard/jobs/new" className="no-underline hover:no-underline">
-            <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-3.5" />
-            Post a job
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" asChild>
+            <Link to="/dashboard/jobs/import" className="no-underline hover:no-underline">
+              <HugeiconsIcon icon={Upload04Icon} strokeWidth={2} className="size-3.5" />
+              Import
+            </Link>
+          </Button>
+          <Button size="sm" asChild>
+            <Link to="/dashboard/jobs/new" className="no-underline hover:no-underline">
+              <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-3.5" />
+              Post a job
+            </Link>
+          </Button>
+        </div>
       }
     >
       {atLimit ? (
