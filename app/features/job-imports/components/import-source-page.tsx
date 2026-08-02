@@ -1,6 +1,8 @@
 import {
   ArrowLeft01Icon,
   Briefcase01Icon,
+  CheckmarkCircle02Icon,
+  InformationCircleIcon,
   Link04Icon,
   Loading03Icon,
   Upload04Icon,
@@ -12,10 +14,16 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -31,8 +39,7 @@ const supportedSources = [
   { name: "Ashby", method: "Careers page or job URL" },
   { name: "Recruitee", method: "Careers page or job URL" },
   { name: "SmartRecruiters", method: "Careers page or job URL" },
-  { name: "Other public sites", method: "One Schema.org job URL" },
-  { name: "CSV", method: "File with up to 50 jobs" },
+  { name: "Other public sites", method: "Schema.org job URL" },
 ];
 
 export function ImportSourcePage() {
@@ -88,84 +95,121 @@ export function ImportSourcePage() {
   };
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-6 pb-16">
-      <Button variant="ghost" size="sm" asChild className="-ml-3 self-start">
-        <Link to="/dashboard/jobs">
-          <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} data-icon="inline-start" />
-          Back to jobs
-        </Link>
-      </Button>
-      <div className="flex flex-col gap-1">
-        <h1 className="text-xl font-semibold tracking-tight">Import jobs</h1>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          Bring your existing postings into RoundZero. Every imported job starts as a draft.
-        </p>
+    <div className="space-y-10 pb-16">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="space-y-1">
+          <h1 className="text-xl font-semibold tracking-tight">Import jobs</h1>
+          <p className="max-w-2xl text-sm text-muted-foreground">
+            Bring your existing postings into RoundZero. Every imported job starts as a draft.
+          </p>
+        </div>
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/dashboard/jobs">
+            <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} data-icon="inline-start" />
+            Back to jobs
+          </Link>
+        </Button>
       </div>
 
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Choose your source</CardTitle>
-            <CardDescription>
-              Paste a public careers URL or upload a structured CSV file.
-            </CardDescription>
+      <div className="grid items-stretch gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(24rem,0.85fr)]">
+        <Card variant="bordered" className="h-full min-h-[32rem]">
+          <CardHeader className="border-b border-border/60 px-5 py-5 md:px-6">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="space-y-1">
+                <CardTitle>Choose where your jobs live</CardTitle>
+                <CardDescription>
+                  Connect a public careers page, a single job URL, or a CSV export.
+                </CardDescription>
+              </div>
+              <Badge variant="secondary" className="gap-1.5">
+                <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-3.5" />
+                No login required
+              </Badge>
+            </div>
           </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="url">
-              <TabsList>
-                <TabsTrigger value="url">Careers page or job URL</TabsTrigger>
-                <TabsTrigger value="csv">CSV file</TabsTrigger>
+          <CardContent className="flex flex-1 flex-col px-5 py-6 md:px-6">
+            <div className="mb-7 grid grid-cols-3 divide-x rounded-2xl bg-muted/40 px-2 py-3">
+              {["Add a source", "Review jobs", "Import drafts"].map((label, index) => (
+                <div key={label} className="flex items-center justify-center gap-2 px-2">
+                  <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-background text-[11px] font-semibold ring-1 ring-border/70">
+                    {index + 1}
+                  </span>
+                  <span className="hidden text-xs font-medium text-muted-foreground sm:inline">
+                    {label}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <Tabs defaultValue="url" className="flex flex-1 flex-col">
+              <TabsList className="grid w-full grid-cols-2 sm:max-w-lg">
+                <TabsTrigger value="url">Public URL</TabsTrigger>
+                <TabsTrigger value="csv">CSV upload</TabsTrigger>
               </TabsList>
-              <TabsContent value="url" className="pt-5">
-                <form onSubmit={onUrlSubmit}>
+              <TabsContent value="url" className="flex-1 pt-7">
+                <form onSubmit={onUrlSubmit} className="max-w-3xl">
                   <FieldGroup>
                     <Field>
-                      <FieldLabel htmlFor="job-import-url">Public URL</FieldLabel>
-                      <Input
-                        id="job-import-url"
-                        type="url"
-                        required
-                        value={url}
-                        onChange={onUrlChange}
-                        placeholder="https://jobs.lever.co/your-company"
-                      />
+                      <FieldLabel htmlFor="job-import-url">Careers page or job URL</FieldLabel>
+                      <div className="flex flex-col gap-2 sm:flex-row">
+                        <Input
+                          id="job-import-url"
+                          type="url"
+                          required
+                          value={url}
+                          onChange={onUrlChange}
+                          placeholder="https://jobs.lever.co/your-company"
+                          className="h-11 flex-1"
+                        />
+                        <Button
+                          type="submit"
+                          size="lg"
+                          className="sm:min-w-40"
+                          disabled={urlMutation.isPending || !url.trim()}
+                        >
+                          {urlMutation.isPending ? (
+                            <HugeiconsIcon
+                              icon={Loading03Icon}
+                              strokeWidth={2}
+                              data-icon="inline-start"
+                              className="animate-spin"
+                            />
+                          ) : (
+                            <HugeiconsIcon
+                              icon={Link04Icon}
+                              strokeWidth={2}
+                              data-icon="inline-start"
+                            />
+                          )}
+                          Preview jobs
+                        </Button>
+                      </div>
                       <FieldDescription>
-                        We detect the platform and preview up to 50 jobs before importing anything.
+                        We detect the platform and show up to 50 jobs for review before saving
+                        anything.
                       </FieldDescription>
                     </Field>
-                    <Button type="submit" disabled={urlMutation.isPending || !url.trim()}>
-                      {urlMutation.isPending ? (
-                        <HugeiconsIcon
-                          icon={Loading03Icon}
-                          strokeWidth={2}
-                          data-icon="inline-start"
-                          className="animate-spin"
-                        />
-                      ) : (
-                        <HugeiconsIcon icon={Link04Icon} strokeWidth={2} data-icon="inline-start" />
-                      )}
-                      Preview jobs
-                    </Button>
                   </FieldGroup>
                 </form>
               </TabsContent>
-              <TabsContent value="csv" className="pt-5">
-                <form onSubmit={onCsvSubmit}>
+              <TabsContent value="csv" className="flex-1 pt-7">
+                <form onSubmit={onCsvSubmit} className="max-w-3xl">
                   <FieldGroup>
                     <Field>
-                      <FieldLabel htmlFor="job-import-csv">CSV file</FieldLabel>
+                      <FieldLabel htmlFor="job-import-csv">Upload a CSV export</FieldLabel>
                       <Input
                         id="job-import-csv"
                         type="file"
                         accept=".csv,text/csv"
                         onChange={onFileChange}
+                        className="h-11"
                       />
                       <FieldDescription>
                         Up to 50 jobs and 256 KB. Title and description are required.
                       </FieldDescription>
                     </Field>
                     <div className="flex flex-wrap gap-2">
-                      <Button type="submit" disabled={csvMutation.isPending || !file}>
+                      <Button type="submit" size="lg" disabled={csvMutation.isPending || !file}>
                         {csvMutation.isPending ? (
                           <HugeiconsIcon
                             icon={Loading03Icon}
@@ -182,7 +226,12 @@ export function ImportSourcePage() {
                         )}
                         Preview CSV
                       </Button>
-                      <Button type="button" variant="outline" onClick={onDownloadTemplate}>
+                      <Button
+                        type="button"
+                        size="lg"
+                        variant="outline"
+                        onClick={onDownloadTemplate}
+                      >
                         Download template
                       </Button>
                     </div>
@@ -191,44 +240,65 @@ export function ImportSourcePage() {
               </TabsContent>
             </Tabs>
           </CardContent>
+          <CardFooter className="border-t border-border/60 bg-muted/20 px-5 py-4 md:px-6">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-background ring-1 ring-border/60">
+                <HugeiconsIcon icon={InformationCircleIcon} strokeWidth={2} className="size-4" />
+              </div>
+              <div className="space-y-0.5">
+                <p className="text-sm font-medium">Job details only</p>
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  Candidates and applications remain in your existing hiring platform.
+                </p>
+              </div>
+            </div>
+          </CardFooter>
         </Card>
 
-        <Card>
-          <CardHeader>
+        <Card variant="bordered" className="h-full min-h-[32rem]">
+          <CardHeader className="border-b border-border/60 px-5 py-5 md:px-6">
             <div className="flex items-start justify-between gap-3">
-              <div className="flex flex-col gap-1">
+              <div className="space-y-1">
                 <CardTitle>Supported sources</CardTitle>
-                <CardDescription>Public job data—no platform login required.</CardDescription>
+                <CardDescription>Import directly from these public job pages.</CardDescription>
               </div>
-              <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} className="size-5" />
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted/50">
+                <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} className="size-4.5" />
+              </div>
             </div>
           </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <div className="divide-y rounded-2xl border">
+          <CardContent className="flex flex-1 flex-col px-5 py-5 md:px-6">
+            <div className="grid grid-cols-2 gap-2.5">
               {supportedSources.map((source) => (
                 <div
                   key={source.name}
-                  className="flex items-center justify-between gap-3 px-3 py-2.5"
+                  className="rounded-xl bg-muted/35 p-3.5 ring-1 ring-border/40"
                 >
-                  <span className="text-sm font-medium">{source.name}</span>
-                  <Badge variant="outline" className="max-w-44 truncate">
-                    {source.method}
-                  </Badge>
+                  <p className="text-sm font-medium">{source.name}</p>
+                  <p className="mt-1 text-xs leading-snug text-muted-foreground">{source.method}</p>
                 </div>
               ))}
             </div>
-            <PlatformRequestDialog />
+
+            <div className="mt-3 rounded-xl bg-muted/35 p-3.5 ring-1 ring-border/40">
+              <div className="flex items-center gap-2">
+                <HugeiconsIcon icon={Upload04Icon} strokeWidth={2} className="size-4" />
+                <p className="text-sm font-medium">CSV</p>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Upload a structured file with up to 50 jobs.
+              </p>
+            </div>
+
+            <div className="mt-auto border-t border-border/60 pt-5">
+              <p className="mb-3 text-xs leading-relaxed text-muted-foreground">
+                Don’t see your hiring platform? Tell us what to support next.
+              </p>
+              <PlatformRequestDialog />
+            </div>
           </CardContent>
         </Card>
       </div>
-
-      <Alert>
-        <AlertTitle>What gets imported?</AlertTitle>
-        <AlertDescription>
-          RoundZero imports job details only. Candidates and applications stay in your existing
-          platform.
-        </AlertDescription>
-      </Alert>
     </div>
   );
 }
