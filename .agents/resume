@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+pg_state="$HOME/.local/state/roundzero"
+pg_bin="$(dirname "$(find /usr/lib/postgresql -path '*/bin/pg_ctl' -print | sort -V | tail -n 1)")"
+
+start_cluster() {
+  local name="$1"
+  local port="$2"
+  local data_dir="$pg_state/$name"
+  local log_file="$pg_state/$name.log"
+
+  if pg_isready -q -h 127.0.0.1 -p "$port"; then
+    echo "$name is ready on port $port"
+    return
+  fi
+
+  if [[ ! -s "$data_dir/PG_VERSION" ]]; then
+    echo "$name has not been initialized; run .agents/setup" >&2
+    exit 1
+  fi
+
+  "$pg_bin/pg_ctl" -D "$data_dir" -l "$log_file" -w -t 4 start
+  echo "$name started on port $port"
+}
+
+start_cluster postgres-dev 6311
+start_cluster postgres-test 6312
