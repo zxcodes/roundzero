@@ -1,0 +1,131 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$repo_root"
+
+echo "==> Installing system dependencies"
+if ! command -v pg_isready >/dev/null 2>&1 || ! command -v curl >/dev/null 2>&1 || ! command -v xz >/dev/null 2>&1; then
+  sudo apt-get update
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates curl postgresql postgresql-client xz-utils
+fi
+
+echo "==> Ensuring Node.js is available"
+node_version="22.18.0"
+if ! command -v node >/dev/null 2>&1 || [[ "$(node --version)" != "v$node_version" ]]; then
+  case "$(uname -m)" in
+    x86_64) node_arch="x64" ;;
+    aarch64 | arm64) node_arch="arm64" ;;
+    *) echo "Unsupported architecture for Node.js: $(uname -m)" >&2; exit 1 ;;
+  esac
+
+  node_dir="$HOME/.local/lib/node-v$node_version"
+  if [[ ! -x "$node_dir/bin/node" ]]; then
+    node_tmp="$(mktemp -d)"
+    trap 'rm -rf "$node_tmp"' EXIT
+    curl -fsSL "https://nodejs.org/dist/v${node_version}/node-v${node_version}-linux-${node_arch}.tar.xz" \
+      | tar -xJ --strip-components=1 -C "$node_tmp"
+    mkdir -p "$(dirname "$node_dir")"
+    rm -rf "$node_dir"
+    mv "$node_tmp" "$node_dir"
+    trap - EXIT
+  fi
+  mkdir -p "$HOME/.local/bin"
+  for executable in node npm npx corepack; do
+    ln -sfn "$node_dir/bin/$executable" "$HOME/.local/bin/$executable"
+  done
+  export PATH="$HOME/.local/bin:$PATH"
+fi
+
+echo "==> Ensuring Bun is available"
+if ! command -v bun >/dev/null 2>&1; then
+  curl -fsSL https://bun.sh/install | bash
+  export BUN_INSTALL="$HOME/.bun"
+  export PATH="$BUN_INSTALL/bin:$PATH"
+  mkdir -p "$HOME/.local/bin"
+  ln -sfn "$BUN_INSTALL/bin/bun" "$HOME/.local/bin/bun"
+  ln -sfn "$BUN_INSTALL/bin/bunx" "$HOME/.local/bin/bunx"
+fi
+
+echo "==> Installing JavaScript dependencies"
+bun install --frozen-lockfile
+
+echo "==> Ensuring sqlc is available"
+sqlc_version="1.30.0"
+if ! command -v sqlc >/dev/null 2>&1 || [[ "$(sqlc version)" != "v$sqlc_version" ]]; then
+  case "$(uname -m)" in
+    x86_64) sqlc_arch="amd64" ;;
+    aarch64 | arm64) sqlc_arch="arm64" ;;
+    *) echo "Unsupported architecture for sqlc: $(uname -m)" >&2; exit 1 ;;
+  esac
+
+  sqlc_tmp="$(mktemp -d)"
+  trap 'rm -rf "$sqlc_tmp"' EXIT
+  curl -fsSL \
+    "https://github.com/sqlc-dev/sqlc/releases/download/v${sqlc_version}/sqlc_${sqlc_version}_linux_${sqlc_arch}.tar.gz" \
+    | tar -xz -C "$sqlc_tmp"
+  mkdir -p "$HOME/.local/bin"
+  install -m 0755 "$sqlc_tmp/sqlc" "$HOME/.local/bin/sqlc"
+  rm -rf "$sqlc_tmp"
+  trap - EXIT
+  export PATH="$HOME/.local/bin:$PATH"
+fi
+
+echo "==> Creating local environment file"
+if [[ ! -f .env ]]; then
+  cp -- .env.example .env
+fi
+
+echo "==> Initializing PostgreSQL clusters"
+pg_bin="$(dirname "$(find /usr/lib/postgresql -path '*/bin/initdb' -print | sort -V | tail -n 1)")"
+pg_state="$HOME/.local/state/roundzero"
+mkdir -p "$pg_state"
+
+initialize_cluster() {
+  local name="$1"
+  local port="$2"
+  local data_dir="$pg_state/$name"
+
+  if [[ ! -s "$data_dir/PG_VERSION" ]]; then
+    local password_file
+    password_file="$(mktemp)"
+    chmod 600 "$password_file"
+    printf '%s\n' 'password' > "$password_file"
+    "$pg_bin/initdb" \
+      --pgdata="$data_dir" \
+      --username=postgres \
+      --pwfile="$password_file" \
+      --auth-local=trust \
+      --auth-host=scram-sha-256 \
+      --encoding=UTF8 \
+      --no-locale
+    rm -f "$password_file"
+  fi
+
+  if ! grep -Fqx "include = 'roundzero-orb.conf'" "$data_dir/postgresql.conf"; then
+    printf "\ninclude = 'roundzero-orb.conf'\n" >> "$data_dir/postgresql.conf"
+  fi
+  cat > "$data_dir/roundzero-orb.conf" <<EOF
+port = $port
+listen_addresses = '127.0.0.1'
+unix_socket_directories = '$pg_state'
+fsync = off
+synchronous_commit = off
+full_page_writes = off
+EOF
+}
+
+initialize_cluster postgres-dev 6311
+initialize_cluster postgres-test 6312
+
+echo "==> Starting PostgreSQL clusters"
+"$repo_root/.agents/resume"
+
+echo "==> Applying database migrations"
+bunx dbmate --no-dump-schema --url 'postgresql://postgres:password@localhost:6311/postgres?sslmode=disable' migrate up
+bunx dbmate --no-dump-schema --url 'postgresql://postgres:password@localhost:6312/postgres?sslmode=disable' migrate up
+
+echo "==> Generating SQL query types"
+bun run sqlgen
+
+echo "==> Orb setup complete"
