@@ -35,6 +35,14 @@ const legacyContextStateSchema = z
 
 export const screeningCoverageSchema = z.record(z.string(), z.enum(["answered", "skipped"]));
 
+export const interviewContinueResponseSchema = z
+  .object({
+    action: z.literal("continue"),
+    message: z.string().min(1).describe("The candidate-visible response."),
+    reason: z.null(),
+  })
+  .strict();
+
 /** Frozen job context at invite time, the only large payload persisted on interviews. */
 export const interviewJobSnapshotSchema = z.object({
   jobDescription: z.string(),
