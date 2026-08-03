@@ -81,8 +81,8 @@ const formSchema = z
     headcount: optionalPositiveInt,
     finalReportTarget: z
       .string()
-      .refine((val) => Number.isInteger(Number(val)) && Number(val) >= 1 && Number(val) <= 15, {
-        message: "Final report target must be between 1 and 15",
+      .refine((val) => Number.isInteger(Number(val)) && Number(val) >= 1 && Number(val) <= 50, {
+        message: "Final report target must be between 1 and 50",
       }),
     expiresAt: z.string(),
   })

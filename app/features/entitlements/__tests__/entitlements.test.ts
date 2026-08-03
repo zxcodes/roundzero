@@ -33,8 +33,8 @@ describe("deriveEntitlements", () => {
 
     expect(entitlements.subscription.plan).toBe("free");
     expect(entitlements.jobs.active.limit).toBe(1);
-    expect(entitlements.reports.perJobLimit).toBe(1);
-    expect(entitlements.reports.defaultTarget).toBe(1);
+    expect(entitlements.reports.perJobLimit).toBe(5);
+    expect(entitlements.reports.defaultTarget).toBe(5);
     expect(entitlements.team.members.limit).toBe(1);
     expect(entitlements.aiJobCreation.enabled).toBe(false);
     expect(entitlements.jobImport.enabled).toBe(false);
@@ -94,7 +94,7 @@ describe("deriveEntitlements", () => {
       expect(entitlements.subscription.plan).toBe("free");
       expect(entitlements.subscription.isActive).toBe(false);
       expect(entitlements.jobs.active.limit).toBe(1);
-      expect(entitlements.reports.perJobLimit).toBe(1);
+      expect(entitlements.reports.perJobLimit).toBe(5);
       expect(entitlements.team.members.limit).toBe(1);
     },
   );
@@ -119,7 +119,7 @@ describe("resolveReportTarget", () => {
       jobCounts: null,
     });
 
-    expect(resolveReportTarget(entitlements, 10)).toBe(3);
+    expect(resolveReportTarget(entitlements, 20)).toBe(15);
     expect(resolveReportTarget(entitlements, 2)).toBe(2);
   });
 
@@ -130,7 +130,7 @@ describe("resolveReportTarget", () => {
       jobCounts: null,
     });
 
-    expect(resolveReportTarget(entitlements, undefined)).toBe(5);
+    expect(resolveReportTarget(entitlements, undefined)).toBe(25);
     expect(resolveReportTarget(entitlements, 0)).toBe(1);
   });
 });
@@ -185,8 +185,8 @@ describe("enforceReportTarget", () => {
       jobCounts: null,
     });
 
-    expect(() => enforceReportTarget(entitlements, 10)).toThrow(
-      "Your plan allows 1-3 evaluation reports per job.",
+    expect(() => enforceReportTarget(entitlements, 20)).toThrow(
+      "Your plan allows 1-15 evaluation reports per job.",
     );
   });
 
@@ -197,6 +197,6 @@ describe("enforceReportTarget", () => {
       jobCounts: null,
     });
 
-    expect(enforceReportTarget(entitlements, 10, "clamp")).toBe(3);
+    expect(enforceReportTarget(entitlements, 20, "clamp")).toBe(15);
   });
 });
