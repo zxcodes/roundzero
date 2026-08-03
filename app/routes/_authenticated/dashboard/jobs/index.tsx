@@ -21,6 +21,7 @@ import {
   useRouter,
 } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -32,8 +33,19 @@ import {
   CompanyJobsTableSkeleton,
 } from "@/components/route-skeletons";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Empty,
   EmptyContent,
@@ -68,12 +80,13 @@ import { getMyCandidateMatches } from "@/features/job-matching/server/functions"
 import { JobListRow } from "@/features/jobs/components/job-list-row";
 import { isJobClosingSoon } from "@/features/jobs/components/job-status-badge";
 import { canCopyPublicJobLink, copyPublicJobLink } from "@/features/jobs/copy-job-link";
+import { getJobPublishBlockReason } from "@/features/jobs/publish-readiness";
 import {
   getCandidateOpenJobsPaginated,
   getMyArchivedJobs,
   type getMyJobCounts,
   getMyJobsWithPipeline,
-  publishJob,
+  publishJobs,
 } from "@/features/jobs/server/functions";
 import { useDebouncedSearchInput } from "@/hooks/use-debounced-search-input";
 import { formatDate, formatDaysLeft } from "@/shared/date";
@@ -204,12 +217,15 @@ function CompanyJobsList({ jobs, counts }: { jobs: Promise<CompanyJobs>; counts:
   const entitlements = useEntitlements();
   const jobLimit = entitlements?.jobs.active.limit ?? counts.openCount;
   const atLimit = entitlements?.jobs.active.atLimit ?? false;
+  const availableSlots = entitlements?.jobs.active.remaining ?? Number.MAX_SAFE_INTEGER;
 
-  const publishJobFn = useServerFn(publishJob);
-  const publishJobMutation = useMutation({
-    mutationFn: publishJobFn,
-    onSuccess: async () => {
-      toast.success("Job published successfully");
+  const publishJobsFn = useServerFn(publishJobs);
+  const publishJobsMutation = useMutation({
+    mutationFn: publishJobsFn,
+    onSuccess: async ({ jobs: publishedJobs }) => {
+      toast.success(
+        `${publishedJobs.length} ${publishedJobs.length === 1 ? "job" : "jobs"} published successfully`,
+      );
       await router.invalidate();
     },
     onError: (error) => {
@@ -217,8 +233,8 @@ function CompanyJobsList({ jobs, counts }: { jobs: Promise<CompanyJobs>; counts:
     },
   });
 
-  const onPublish = async (jobId: string) => {
-    await publishJobMutation.mutateAsync({ data: { id: jobId } });
+  const onPublish = async (jobIds: string[]) => {
+    await publishJobsMutation.mutateAsync({ data: { ids: jobIds } });
   };
 
   const onTabChange = (value: string) => {
@@ -289,9 +305,10 @@ function CompanyJobsList({ jobs, counts }: { jobs: Promise<CompanyJobs>; counts:
                 <ActiveJobsTable
                   jobs={tab === "active" ? (resolvedJobs as PipelineJob[]) : []}
                   onPublish={onPublish}
-                  isPending={publishJobMutation.isPending}
+                  isPending={publishJobsMutation.isPending}
                   atLimit={atLimit}
                   jobLimit={jobLimit}
+                  availableSlots={availableSlots}
                 />
               </TabsContent>
 
@@ -325,13 +342,56 @@ function ActiveJobsTable({
   isPending,
   atLimit,
   jobLimit,
+  availableSlots,
 }: {
   jobs: PipelineJob[];
-  onPublish: (jobId: string) => Promise<void>;
+  onPublish: (jobIds: string[]) => Promise<void>;
   isPending: boolean;
   atLimit: boolean;
   jobLimit: number;
+  availableSlots: number;
 }) {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [confirmationIds, setConfirmationIds] = useState<string[]>([]);
+  const publishableDraftIds = jobs
+    .filter((job) => getJobPublishBlockReason(job) === null)
+    .map((job) => job.id);
+  const selectedPublishableIds = publishableDraftIds.filter((id) => selectedIds.has(id));
+  const allPublishableSelected =
+    publishableDraftIds.length > 0 && selectedPublishableIds.length === publishableDraftIds.length;
+  const somePublishableSelected = selectedPublishableIds.length > 0 && !allPublishableSelected;
+  const selectedExceedsLimit = selectedPublishableIds.length > availableSlots;
+  const allExceedsLimit = publishableDraftIds.length > availableSlots;
+
+  const onToggleAll = (checked: boolean | "indeterminate") => {
+    setSelectedIds(checked === true ? new Set(publishableDraftIds) : new Set());
+  };
+  const onToggleJob = (jobId: string, checked: boolean | "indeterminate") => {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (checked === true) next.add(jobId);
+      else next.delete(jobId);
+      return next;
+    });
+  };
+  const onClearSelection = () => setSelectedIds(new Set());
+  const onPublishSelectedClick = () => setConfirmationIds(selectedPublishableIds);
+  const onPublishAllClick = () => setConfirmationIds(publishableDraftIds);
+  const onConfirmationOpenChange = (open: boolean) => {
+    if (!open) setConfirmationIds([]);
+  };
+  const onConfirmPublish = async () => {
+    const ids = confirmationIds;
+    if (ids.length === 0) return;
+    try {
+      await onPublish(ids);
+    } catch {
+      return;
+    }
+    setSelectedIds(new Set());
+    setConfirmationIds([]);
+  };
+
   if (jobs.length === 0) {
     return (
       <Empty className="rounded-2xl border-0 bg-muted/30">
@@ -358,9 +418,62 @@ function ActiveJobsTable({
 
   return (
     <div className="min-w-0 overflow-hidden rounded-3xl border border-border/60">
+      {publishableDraftIds.length > 0 ? (
+        <div className="flex flex-col gap-3 border-b border-border/60 bg-muted/20 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-0.5">
+            <p className="text-sm font-medium">
+              {selectedPublishableIds.length > 0
+                ? `${selectedPublishableIds.length} ${selectedPublishableIds.length === 1 ? "draft" : "drafts"} selected`
+                : `${publishableDraftIds.length} ${publishableDraftIds.length === 1 ? "draft is" : "drafts are"} ready to publish`}
+            </p>
+            {selectedExceedsLimit || (selectedPublishableIds.length === 0 && allExceedsLimit) ? (
+              <p className="text-xs text-destructive">
+                Your plan has {availableSlots} active job {availableSlots === 1 ? "slot" : "slots"}
+                remaining. Select fewer drafts.
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Published jobs become visible to candidates immediately.
+              </p>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {selectedPublishableIds.length > 0 ? (
+              <>
+                <Button variant="ghost" size="sm" onClick={onClearSelection} disabled={isPending}>
+                  Clear
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={onPublishSelectedClick}
+                  disabled={isPending || selectedExceedsLimit}
+                >
+                  <HugeiconsIcon icon={Rocket01Icon} strokeWidth={2} data-icon="inline-start" />
+                  Publish selected
+                </Button>
+              </>
+            ) : (
+              <Button size="sm" onClick={onPublishAllClick} disabled={isPending || allExceedsLimit}>
+                <HugeiconsIcon icon={Rocket01Icon} strokeWidth={2} data-icon="inline-start" />
+                Publish all drafts
+              </Button>
+            )}
+          </div>
+        </div>
+      ) : null}
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-10">
+              <Checkbox
+                aria-label="Select all drafts ready to publish"
+                checked={
+                  allPublishableSelected ? true : somePublishableSelected ? "indeterminate" : false
+                }
+                onCheckedChange={onToggleAll}
+                disabled={publishableDraftIds.length === 0 || isPending}
+              />
+            </TableHead>
             <TableHead className="min-w-48">Title</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="text-right">Applicants</TableHead>
@@ -375,9 +488,18 @@ function ActiveJobsTable({
             const stale = isStaleJob(job);
             const closingLabel = formatDaysLeft(job.expiresAt);
             const closingSoon = isJobClosingSoon(job);
+            const publishBlockReason = getJobPublishBlockReason(job);
+            const canPublish = publishBlockReason === null;
 
-            const onPublishClick = () => {
-              void onPublish(job.id);
+            const onSelectJob = (checked: boolean | "indeterminate") => {
+              onToggleJob(job.id, checked);
+            };
+            const onPublishClick = async () => {
+              try {
+                await onPublish([job.id]);
+              } catch {
+                return;
+              }
             };
 
             const showCopyLink = canCopyPublicJobLink(job);
@@ -387,7 +509,30 @@ function ActiveJobsTable({
             };
 
             return (
-              <TableRow key={job.id}>
+              <TableRow key={job.id} data-state={selectedIds.has(job.id) ? "selected" : undefined}>
+                <TableCell>
+                  {job.status === "draft" ? (
+                    canPublish ? (
+                      <Checkbox
+                        aria-label={`Select ${job.title}`}
+                        checked={selectedIds.has(job.id)}
+                        onCheckedChange={onSelectJob}
+                        disabled={isPending}
+                      />
+                    ) : (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="inline-flex cursor-not-allowed">
+                            <Checkbox aria-label={`${job.title} cannot be published`} disabled />
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{publishBlockReason}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )
+                  ) : null}
+                </TableCell>
                 <TableCell className="whitespace-normal">
                   <div className="space-y-0.5">
                     <Link
@@ -435,7 +580,7 @@ function ActiveJobsTable({
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-1">
                     {job.status === "draft" ? (
-                      atLimit ? (
+                      atLimit || !canPublish ? (
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <span>
@@ -451,7 +596,9 @@ function ActiveJobsTable({
                           </TooltipTrigger>
                           <TooltipContent>
                             <p>
-                              You've reached the {jobLimit} active job limit on your current plan
+                              {atLimit
+                                ? `You've reached the ${jobLimit} active job limit on your current plan`
+                                : publishBlockReason}
                             </p>
                           </TooltipContent>
                         </Tooltip>
@@ -519,6 +666,35 @@ function ActiveJobsTable({
           })}
         </TableBody>
       </Table>
+      <AlertDialog open={confirmationIds.length > 0} onOpenChange={onConfirmationOpenChange}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Publish {confirmationIds.length} {confirmationIds.length === 1 ? "job" : "jobs"}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              These jobs will immediately become visible to candidates. You can close or archive
+              them later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={onConfirmPublish} disabled={isPending}>
+              {isPending ? (
+                <HugeiconsIcon
+                  icon={Loading03Icon}
+                  strokeWidth={2}
+                  data-icon="inline-start"
+                  className="animate-spin"
+                />
+              ) : (
+                <HugeiconsIcon icon={Rocket01Icon} strokeWidth={2} data-icon="inline-start" />
+              )}
+              {isPending ? "Publishing" : "Publish jobs"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
