@@ -1,5 +1,6 @@
 import type { Sql } from "postgres";
 
+import { dismissCompanyJobImportPrompt } from "@/features/companies/queries/queries_sql";
 import { readCompanyEntitlements } from "@/features/entitlements/server/enforcement";
 import { getMissingPublishFields } from "@/features/jobs/publish-readiness";
 import { asSqlTransaction } from "@/shared/db-transaction";
@@ -292,6 +293,9 @@ export async function importSelectedJobDrafts(args: {
     }
 
     await completeJobImportBatch(transaction, { batchId: args.batchId });
+    if (imported.length > 0) {
+      await dismissCompanyJobImportPrompt(transaction, { id: args.companyId });
+    }
     return { imported, skipped };
   });
 }

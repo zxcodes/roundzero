@@ -27,6 +27,7 @@ import {
 import {
   clearCompanySubscription,
   createCompany,
+  dismissCompanyJobImportPrompt,
   getAllCompanies,
   getCompanyById,
   getCompanyByOwnerId,
@@ -109,6 +110,20 @@ describe("createCompany", () => {
         companySize: null,
       }),
     ).rejects.toThrow();
+  });
+});
+
+describe("dismissCompanyJobImportPrompt", () => {
+  it("persists the import announcement dismissal", async () => {
+    const { company } = await seedCompany();
+    const initial = await getCompanyById(sql, { id: company.id });
+    expect(initial?.jobImportPromptDismissedAt).toBeNull();
+
+    const updated = await dismissCompanyJobImportPrompt(sql, { id: company.id });
+    expect(updated?.jobImportPromptDismissedAt).toBeInstanceOf(Date);
+
+    const found = await getCompanyById(sql, { id: company.id });
+    expect(found?.jobImportPromptDismissedAt).toBeInstanceOf(Date);
   });
 });
 
