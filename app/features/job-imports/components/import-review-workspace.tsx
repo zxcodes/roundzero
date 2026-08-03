@@ -570,8 +570,9 @@ export function ImportReviewWorkspace({ initialPreview }: { initialPreview: JobI
               <span key={job.jobId}>
                 {index > 0 ? ", " : null}
                 <Link
-                  to="/dashboard/jobs/$jobId"
+                  to="/dashboard/job-applicants/$jobId"
                   params={{ jobId: job.jobId }}
+                  search={{ tab: "posting" }}
                   className="font-medium underline underline-offset-4"
                 >
                   {job.title}
