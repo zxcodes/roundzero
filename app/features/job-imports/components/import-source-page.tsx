@@ -197,13 +197,22 @@ export function ImportSourcePage() {
                   <FieldGroup>
                     <Field>
                       <FieldLabel htmlFor="job-import-csv">Upload a CSV export</FieldLabel>
-                      <Input
+                      <input
                         id="job-import-csv"
                         type="file"
                         accept=".csv,text/csv"
                         onChange={onFileChange}
-                        className="h-11"
+                        className="peer sr-only"
                       />
+                      <label
+                        htmlFor="job-import-csv"
+                        className="flex h-11 w-full cursor-pointer items-center gap-3 rounded-3xl border border-transparent bg-input/50 px-3 text-sm outline-none transition-[color,box-shadow,background-color] peer-focus-visible:border-ring peer-focus-visible:ring-3 peer-focus-visible:ring-ring/30"
+                      >
+                        <span className="font-medium">Choose file</span>
+                        <span className="min-w-0 truncate text-muted-foreground">
+                          {file ? file.name : "No file chosen"}
+                        </span>
+                      </label>
                       <FieldDescription>
                         Up to 50 jobs and 256 KB. Title and description are required.
                       </FieldDescription>
