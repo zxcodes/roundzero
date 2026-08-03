@@ -39,7 +39,7 @@ export function JobImportAnnouncement() {
       <HugeiconsIcon icon={Upload04Icon} strokeWidth={2} className="size-4" />
       <AlertTitle className="flex flex-wrap items-center gap-2">
         Already hiring elsewhere?
-        <Badge variant="secondary">New</Badge>
+        <Badge variant="secondary">Growth</Badge>
       </AlertTitle>
       <AlertDescription className="max-w-4xl">
         Import up to 50 jobs at once from Greenhouse, Lever, Ashby, Recruitee, SmartRecruiters,

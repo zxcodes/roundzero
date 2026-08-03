@@ -37,7 +37,30 @@ describe("deriveEntitlements", () => {
     expect(entitlements.reports.defaultTarget).toBe(1);
     expect(entitlements.team.members.limit).toBe(1);
     expect(entitlements.aiJobCreation.enabled).toBe(false);
+    expect(entitlements.jobImport.enabled).toBe(false);
   });
+
+  it.each([
+    ["free", "inactive", false],
+    ["starter", "active", false],
+    ["growth", "active", true],
+    ["scale", "trialing", true],
+    ["growth", "past_due", false],
+  ])(
+    "gates job importing for %s with %s status",
+    (subscriptionPlan, subscriptionStatus, enabled) => {
+      const entitlements = deriveEntitlements({
+        subscriptionPlan,
+        subscriptionStatus,
+        jobCounts: null,
+      });
+
+      expect(entitlements.jobImport.enabled).toBe(enabled);
+      expect(entitlements.jobImport.disabledReason).toBe(
+        enabled ? null : "Job importing is available on the Growth plan and above.",
+      );
+    },
+  );
 
   it("enables AI job creation only for paid plans in good standing", () => {
     const active = deriveEntitlements({
