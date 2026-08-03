@@ -290,7 +290,7 @@ export function ImportSourcePage() {
               </p>
             </div>
 
-            <div className="mt-auto border-t border-border/60 pt-5">
+            <div className="mt-auto pt-5">
               <p className="mb-3 text-xs leading-relaxed text-muted-foreground">
                 Don’t see your hiring platform? Tell us what to support next.
               </p>
