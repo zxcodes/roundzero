@@ -247,8 +247,9 @@ function JobImportTableRow({
         {item.error ? <p className="mt-1 max-w-52 text-xs text-destructive">{item.error}</p> : null}
         {item.status === "imported" && item.importedJobId ? (
           <Link
-            to="/dashboard/jobs/$jobId"
+            to="/dashboard/job-applicants/$jobId"
             params={{ jobId: item.importedJobId }}
+            search={{ tab: "posting" }}
             className="mt-1 block text-xs text-primary underline-offset-4 hover:underline"
           >
             Open imported draft
