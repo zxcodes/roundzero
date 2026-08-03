@@ -87,6 +87,10 @@ export const jobIdSchema = z.object({
   id: z.string().uuid(),
 });
 
+export const jobIdsSchema = z.object({
+  ids: z.array(z.string().uuid()).min(1).max(50),
+});
+
 /**
  * Schema used for AI job generation via structured outputs.
  * Numeric fields use LLM-safe shapes (no `.positive()` / `.min()` on numbers).

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { jobFieldsSchema, jobIdSchema, updateJobSchema } from "../schemas";
+import { jobFieldsSchema, jobIdSchema, jobIdsSchema, updateJobSchema } from "../schemas";
 
 describe("jobFieldsSchema", () => {
   const validJob = {
@@ -179,5 +179,21 @@ describe("jobIdSchema", () => {
 
   it("rejects missing id", () => {
     expect(() => jobIdSchema.parse({})).toThrow();
+  });
+});
+
+describe("jobIdsSchema", () => {
+  it("accepts a bounded bulk publish selection", () => {
+    const ids = [crypto.randomUUID(), crypto.randomUUID()];
+    expect(jobIdsSchema.parse({ ids })).toEqual({ ids });
+  });
+
+  it("rejects empty and oversized selections", () => {
+    expect(jobIdsSchema.safeParse({ ids: [] }).success).toBe(false);
+    expect(
+      jobIdsSchema.safeParse({
+        ids: Array.from({ length: 51 }, () => crypto.randomUUID()),
+      }).success,
+    ).toBe(false);
   });
 });
