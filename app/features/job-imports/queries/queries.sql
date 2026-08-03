@@ -5,6 +5,12 @@ INSERT INTO job_import_batches (
 VALUES ($1, $2, $3, $4, 'ready', $5)
 RETURNING *;
 
+-- name: deleteExpiredJobImportBatches :exec
+DELETE FROM job_import_batches
+WHERE company_id = $1
+  AND status <> 'completed'
+  AND created_at < now() - interval '30 days';
+
 -- name: createJobImportItem :one
 INSERT INTO job_import_items (
   batch_id, source_platform, source_external_id, source_url, source_updated_at,
@@ -39,6 +45,12 @@ WHERE id = $1 AND company_id = $2;
 SELECT *
 FROM job_import_batches
 WHERE id = $1 AND company_id = $2
+FOR UPDATE;
+
+-- name: lockJobImportCompany :one
+SELECT id
+FROM companies
+WHERE id = $1
 FOR UPDATE;
 
 -- name: listJobImportItemsForCompany :many
@@ -110,9 +122,67 @@ UPDATE job_import_items
 SET normalized_payload = sqlc.arg('normalized_payload')::jsonb,
     warnings = sqlc.arg('warnings')::jsonb,
     inferred_fields = sqlc.arg('inferred_fields')::jsonb,
+    enrichment_token = NULL,
+    enrichment_claimed_at = NULL,
+    revision = revision + 1,
     updated_at = now()
 WHERE id = sqlc.arg('id')::uuid
+  AND batch_id = sqlc.arg('batch_id')::uuid
+  AND status = 'ready'
+  AND enrichment_token = sqlc.arg('enrichment_token')::uuid
+  AND revision = sqlc.arg('expected_revision')::bigint
 RETURNING *;
+
+-- name: updateReadyJobImportItem :one
+UPDATE job_import_items i
+SET normalized_payload = sqlc.arg('normalized_payload')::jsonb,
+    warnings = sqlc.arg('warnings')::jsonb,
+    inferred_fields = sqlc.arg('inferred_fields')::jsonb,
+    enrichment_token = NULL,
+    enrichment_claimed_at = NULL,
+    revision = i.revision + 1,
+    updated_at = now()
+FROM job_import_batches b
+WHERE i.id = sqlc.arg('id')::uuid
+  AND i.batch_id = sqlc.arg('batch_id')::uuid
+  AND b.id = i.batch_id
+  AND b.company_id = sqlc.arg('company_id')::uuid
+  AND b.status = 'ready'
+  AND i.status = 'ready'
+  AND i.revision = sqlc.arg('expected_revision')::bigint
+RETURNING i.*;
+
+-- name: reserveJobImportEnrichmentAttempts :many
+WITH eligible AS (
+  SELECT i.id
+  FROM job_import_items i
+  JOIN job_import_batches b ON b.id = i.batch_id
+  WHERE i.batch_id = sqlc.arg('batch_id')::uuid
+    AND b.company_id = sqlc.arg('company_id')::uuid
+    AND b.status = 'ready'
+    AND i.status = 'ready'
+    AND i.id = ANY(string_to_array(sqlc.arg('item_ids_csv'), ',')::uuid[])
+    AND i.enrichment_attempts < 2
+    AND (i.enrichment_token IS NULL OR i.enrichment_claimed_at < now() - interval '15 minutes')
+  ORDER BY i.created_at, i.id
+  FOR UPDATE OF i
+), reserved AS (
+  UPDATE job_import_items i
+  SET enrichment_attempts = enrichment_attempts + 1,
+      enrichment_token = sqlc.arg('enrichment_token')::uuid,
+      enrichment_claimed_at = now(),
+      revision = revision + 1,
+      updated_at = now()
+  FROM eligible e
+  WHERE i.id = e.id
+    AND (SELECT count(*) FROM job_import_enrichment_attempts WHERE company_id = sqlc.arg('company_id')::uuid AND created_at >= now() - interval '24 hours')
+      + (SELECT count(*) FROM eligible) <= 100
+  RETURNING i.*
+), attempts AS (
+  INSERT INTO job_import_enrichment_attempts (item_id, company_id)
+  SELECT id, sqlc.arg('company_id')::uuid FROM reserved
+)
+SELECT * FROM reserved;
 
 -- name: markJobImportItemDuplicate :one
 UPDATE job_import_items
@@ -122,11 +192,13 @@ SET status = 'duplicate',
 WHERE id = $1
 RETURNING *;
 
--- name: completeJobImportBatch :one
+-- name: finalizeJobImportBatch :one
 UPDATE job_import_batches
-SET status = 'completed',
+SET status = CASE WHEN EXISTS (
+      SELECT 1 FROM job_import_items i WHERE i.batch_id = $1 AND i.status = 'ready'
+    ) THEN 'ready' ELSE 'completed' END,
     imported_count = (
-      SELECT count(*)::int FROM job_import_items WHERE batch_id = $1 AND status = 'imported'
+      SELECT count(*)::int FROM job_import_items i WHERE i.batch_id = $1 AND i.status = 'imported'
     ),
     updated_at = now()
 WHERE id = $1

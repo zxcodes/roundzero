@@ -12,7 +12,6 @@ import { useMutation } from "@tanstack/react-query";
 import { Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -46,6 +45,8 @@ export function ImportSourcePage() {
   const router = useRouter();
   const [url, setUrl] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [urlError, setUrlError] = useState<string | null>(null);
+  const [csvError, setCsvError] = useState<string | null>(null);
   const previewUrlFn = useServerFn(previewJobsFromUrl);
   const previewCsvFn = useServerFn(previewJobsFromCsv);
 
@@ -56,33 +57,45 @@ export function ImportSourcePage() {
     });
     await router.invalidate();
   };
-  const onPreviewError = (error: Error) => {
-    toast.error(error.message || "Could not read jobs from that source.");
-  };
   const urlMutation = useMutation({
     mutationFn: previewUrlFn,
     onSuccess: onPreviewSuccess,
-    onError: onPreviewError,
+    onError: (error: Error) =>
+      setUrlError(
+        error.message || "We could not read that page. Check the URL or request support.",
+      ),
   });
   const csvMutation = useMutation({
     mutationFn: previewCsvFn,
     onSuccess: onPreviewSuccess,
-    onError: onPreviewError,
+    onError: (error: Error) =>
+      setCsvError(error.message || "We could not read this CSV. Check its columns and try again."),
   });
 
-  const onUrlChange = (event: React.ChangeEvent<HTMLInputElement>) => setUrl(event.target.value);
-  const onFileChange = (event: React.ChangeEvent<HTMLInputElement>) =>
+  const onUrlChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setUrl(event.target.value);
+    setUrlError(null);
+  };
+  const onFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setFile(event.target.files?.[0] ?? null);
+    setCsvError(null);
+  };
   const onUrlSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setUrlError(null);
     urlMutation.mutate({ data: { url } });
   };
   const onCsvSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!file) {
-      toast.error("Choose a CSV file first.");
+      setCsvError("Choose a CSV file first.");
       return;
     }
+    if (file.size > 262_144) {
+      setCsvError("This file is larger than 256 KB. Split it into a smaller CSV and try again.");
+      return;
+    }
+    setCsvError(null);
     csvMutation.mutate({ data: { fileName: file.name, csv: await file.text() } });
   };
   const onDownloadTemplate = () => {
@@ -154,11 +167,13 @@ export function ImportSourcePage() {
                       <div className="flex flex-col gap-2 sm:flex-row">
                         <Input
                           id="job-import-url"
+                          name="job-import-url"
+                          autoComplete="off"
                           type="url"
                           required
                           value={url}
                           onChange={onUrlChange}
-                          placeholder="https://jobs.lever.co/your-company"
+                          placeholder="https://jobs.lever.co/your-company…"
                           className="h-11 flex-1"
                         />
                         <Button
@@ -166,6 +181,7 @@ export function ImportSourcePage() {
                           size="lg"
                           className="sm:min-w-40"
                           disabled={urlMutation.isPending || !url.trim()}
+                          aria-busy={urlMutation.isPending}
                         >
                           {urlMutation.isPending ? (
                             <HugeiconsIcon
@@ -181,9 +197,14 @@ export function ImportSourcePage() {
                               data-icon="inline-start"
                             />
                           )}
-                          Preview jobs
+                          {urlMutation.isPending ? "Reading page…" : "Preview jobs"}
                         </Button>
                       </div>
+                      {urlError ? (
+                        <p className="text-sm text-destructive" role="alert">
+                          {urlError}
+                        </p>
+                      ) : null}
                       <FieldDescription>
                         We detect the platform and show up to 50 jobs for review before saving
                         anything.
@@ -199,6 +220,7 @@ export function ImportSourcePage() {
                       <FieldLabel htmlFor="job-import-csv">Upload a CSV export</FieldLabel>
                       <input
                         id="job-import-csv"
+                        name="job-import-csv"
                         type="file"
                         accept=".csv,text/csv"
                         onChange={onFileChange}
@@ -216,9 +238,19 @@ export function ImportSourcePage() {
                       <FieldDescription>
                         Up to 50 jobs and 256 KB. Title and description are required.
                       </FieldDescription>
+                      {csvError ? (
+                        <p className="text-sm text-destructive" role="alert">
+                          {csvError}
+                        </p>
+                      ) : null}
                     </Field>
                     <div className="flex flex-wrap gap-2">
-                      <Button type="submit" size="lg" disabled={csvMutation.isPending || !file}>
+                      <Button
+                        type="submit"
+                        size="lg"
+                        disabled={csvMutation.isPending || !file}
+                        aria-busy={csvMutation.isPending}
+                      >
                         {csvMutation.isPending ? (
                           <HugeiconsIcon
                             icon={Loading03Icon}
@@ -233,7 +265,7 @@ export function ImportSourcePage() {
                             data-icon="inline-start"
                           />
                         )}
-                        Preview CSV
+                        {csvMutation.isPending ? "Reading CSV…" : "Preview CSV"}
                       </Button>
                       <Button
                         type="button"

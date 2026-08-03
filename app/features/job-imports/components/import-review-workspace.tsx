@@ -7,9 +7,9 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { Link, useBlocker } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { PageInlineStats } from "@/components/page-inline-stats";
@@ -46,11 +46,14 @@ import {
   type JobImportReviewFilter,
   summarizeJobImportSuggestions,
 } from "@/features/job-imports/readiness";
-import type { JobImportItemOverride, JobImportPreview } from "@/features/job-imports/schemas";
+import type { EditableJobImportPayload, JobImportPreview } from "@/features/job-imports/schemas";
 import {
   enrichSelectedJobImports,
+  getJobImportPreview,
   importSelectedJobs,
+  saveJobImportItems,
 } from "@/features/job-imports/server/functions";
+import { getMissingPublishFields } from "@/features/jobs/publish-readiness";
 import {
   employmentTypeLabels,
   employmentTypeSchema,
@@ -64,6 +67,8 @@ import { ImportComplete } from "./import-complete";
 
 type ImportResult = Awaited<ReturnType<typeof importSelectedJobs>>;
 type SuggestionSummary = ReturnType<typeof summarizeJobImportSuggestions>;
+type SaveStatus = "idle" | "saving" | "saved" | "error";
+type PendingEdit = { id: string; job: EditableJobImportPayload };
 
 const options = <T extends string>(labels: Record<T, string>) =>
   Object.entries(labels) as Array<[T, string]>;
@@ -84,8 +89,26 @@ export function ImportReviewWorkspace({ initialPreview }: { initialPreview: JobI
   const [bulkEmployment, setBulkEmployment] = useState("");
   const [bulkExperience, setBulkExperience] = useState("");
   const [result, setResult] = useState<ImportResult | null>(null);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [inspectorDirty, setInspectorDirty] = useState(false);
+  const previewRef = useRef(initialPreview);
+  const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const pendingEditsRef = useRef(new Map<string, EditableJobImportPayload>());
+  const saveDrainingRef = useRef(false);
+  const saveFailedRef = useRef(false);
   const enrichFn = useServerFn(enrichSelectedJobImports);
+  const loadPreviewFn = useServerFn(getJobImportPreview);
   const importFn = useServerFn(importSelectedJobs);
+  const saveFn = useServerFn(saveJobImportItems);
+
+  const hasUnsavedChanges = saveStatus === "saving" || saveStatus === "error" || inspectorDirty;
+  useBlocker({
+    shouldBlockFn: () =>
+      !window.confirm("Some job import changes have not been saved. Leave and discard them?"),
+    enableBeforeUnload: hasUnsavedChanges,
+    disabled: !hasUnsavedChanges,
+  });
 
   const counts = getJobImportReadinessCounts(preview.items, mappings);
   const filteredItems = filterJobImportItems({ items: preview.items, mappings, filter, search });
@@ -99,6 +122,10 @@ export function ImportReviewWorkspace({ initialPreview }: { initialPreview: JobI
   const inspectorItem = preview.items.find((item) => item.id === inspectorId) ?? null;
 
   const mutationError = (error: Error) => toast.error(error.message || "The import failed.");
+  const applyPreview = (nextPreview: JobImportPreview) => {
+    previewRef.current = nextPreview;
+    setPreview(nextPreview);
+  };
   const enrichMutation = useMutation({
     mutationFn: enrichFn,
     onSuccess: (nextPreview) => {
@@ -108,7 +135,7 @@ export function ImportReviewWorkspace({ initialPreview }: { initialPreview: JobI
         selectedIds,
         mappings,
       });
-      setPreview(nextPreview);
+      applyPreview(nextPreview);
       setMappings((current) => {
         const next = { ...current };
         for (const item of nextPreview.items) {
@@ -129,6 +156,13 @@ export function ImportReviewWorkspace({ initialPreview }: { initialPreview: JobI
     mutationFn: importFn,
     onSuccess: async (nextResult) => {
       setResult(nextResult);
+      applyPreview(nextResult.preview);
+      setMappings(initialJobImportMappings(nextResult.preview));
+      setSelectedIds(
+        new Set(
+          nextResult.preview.items.filter((item) => item.status === "ready").map((item) => item.id),
+        ),
+      );
       if (nextResult.imported.length > 0) {
         await queryClient.invalidateQueries({ queryKey: companyBootstrapQueryKey });
       }
@@ -136,6 +170,55 @@ export function ImportReviewWorkspace({ initialPreview }: { initialPreview: JobI
     },
     onError: mutationError,
   });
+  const operationPending = enrichMutation.isPending || importMutation.isPending;
+
+  const drainSaves = async () => {
+    if (saveDrainingRef.current) return;
+    saveDrainingRef.current = true;
+    saveFailedRef.current = false;
+    setSaveError(null);
+    setSaveStatus("saving");
+    while (pendingEditsRef.current.size > 0) {
+      const pending = new Map(pendingEditsRef.current);
+      pendingEditsRef.current.clear();
+      try {
+        const currentPreview = previewRef.current;
+        const items = Array.from(pending, ([id, job]) => {
+          const current = currentPreview.items.find((item) => item.id === id);
+          if (!current || current.status !== "ready") {
+            throw new Error("A job changed and can no longer be edited. Reload the saved import.");
+          }
+          return { id, job, expectedRevision: current.revision };
+        });
+        const nextPreview = await saveFn({
+          data: { batchId: currentPreview.batchId, items },
+        });
+        previewRef.current = nextPreview;
+      } catch (error) {
+        for (const [id, job] of pending) {
+          if (!pendingEditsRef.current.has(id)) pendingEditsRef.current.set(id, job);
+        }
+        saveFailedRef.current = true;
+        setSaveError(error instanceof Error ? error.message : "These changes could not be saved.");
+        setSaveStatus("error");
+        saveDrainingRef.current = false;
+        return;
+      }
+    }
+    saveDrainingRef.current = false;
+    applyPreview(previewRef.current);
+    setMappings(initialJobImportMappings(previewRef.current));
+    setInspectorDirty(false);
+    setSaveStatus("saved");
+  };
+  const queueSave = (edits: PendingEdit[]) => {
+    for (const edit of edits) pendingEditsRef.current.set(edit.id, edit.job);
+    if (saveDrainingRef.current) {
+      setSaveStatus("saving");
+      return;
+    }
+    saveQueueRef.current = drainSaves();
+  };
 
   const onSearchChange = (event: React.ChangeEvent<HTMLInputElement>) =>
     setSearch(event.target.value);
@@ -164,15 +247,56 @@ export function ImportReviewWorkspace({ initialPreview }: { initialPreview: JobI
   };
   const onMappingChange = (id: string, mapping: JobImportMapping) => {
     setMappings((current) => ({ ...current, [id]: mapping }));
+    const item = previewRef.current.items.find((candidate) => candidate.id === id);
+    if (!item) return;
+    queueSave([
+      {
+        id,
+        job: {
+          title: item.job.title,
+          description: item.job.description,
+          requirements: item.job.requirements,
+          location: item.job.location,
+          workplaceType: mapping.workplaceType,
+          employmentType: mapping.employmentType,
+          experienceLevel: mapping.experienceLevel,
+          salaryMin: item.job.salaryMin,
+          salaryMax: item.job.salaryMax,
+          salaryCurrency: item.job.salaryCurrency,
+          headcount: item.job.headcount,
+          expiresAt: item.job.expiresAt,
+        },
+      },
+    ]);
+  };
+  const onSave = (itemId: string, job: EditableJobImportPayload) => {
+    queueSave([{ id: itemId, job }]);
   };
   const applyBulkMapping = (update: Partial<JobImportMapping>) => {
-    setMappings((current) => {
-      const next = { ...current };
-      for (const item of selectedItems) {
-        next[item.id] = { ...current[item.id], ...update };
-      }
-      return next;
+    const nextMappings = { ...mappings };
+    const edits = selectedItems.map((item) => {
+      const mapping = { ...mappings[item.id], ...update };
+      nextMappings[item.id] = mapping;
+      return {
+        id: item.id,
+        job: {
+          title: item.job.title,
+          description: item.job.description,
+          requirements: item.job.requirements,
+          location: item.job.location,
+          workplaceType: mapping.workplaceType,
+          employmentType: mapping.employmentType,
+          experienceLevel: mapping.experienceLevel,
+          salaryMin: item.job.salaryMin,
+          salaryMax: item.job.salaryMax,
+          salaryCurrency: item.job.salaryCurrency,
+          headcount: item.job.headcount,
+          expiresAt: item.job.expiresAt,
+        },
+      };
     });
+    setMappings(nextMappings);
+    queueSave(edits);
   };
   const onBulkWorkplaceChange = (value: string) => {
     applyBulkMapping({ workplaceType: workplaceTypeSchema.parse(value) });
@@ -193,15 +317,12 @@ export function ImportReviewWorkspace({ initialPreview }: { initialPreview: JobI
       data: { batchId: preview.batchId, itemIds: suggestableItems.map((item) => item.id) },
     });
   };
-  const onImport = () => {
-    const items: JobImportItemOverride[] = selectedItems.map((item) => ({
-      id: item.id,
-      workplaceType: mappings[item.id]?.workplaceType ?? null,
-      employmentType: mappings[item.id]?.employmentType ?? null,
-      experienceLevel: mappings[item.id]?.experienceLevel ?? null,
-    }));
-    if (items.length === 0) return;
-    importMutation.mutate({ data: { batchId: preview.batchId, items } });
+  const onImport = async () => {
+    const itemIds = selectedItems.map((item) => item.id);
+    if (itemIds.length === 0) return;
+    await saveQueueRef.current;
+    if (saveFailedRef.current || inspectorDirty) return;
+    importMutation.mutate({ data: { batchId: preview.batchId, itemIds } });
   };
   const onPreview = (id: string) => setInspectorId(id);
   const onCloseInspector = () => setInspectorId(null);
@@ -209,8 +330,61 @@ export function ImportReviewWorkspace({ initialPreview }: { initialPreview: JobI
     setFilter("all");
     setSearch("");
   };
+  const onRetrySave = () => {
+    if (pendingEditsRef.current.size > 0) saveQueueRef.current = drainSaves();
+  };
+  const onReloadSaved = async () => {
+    try {
+      const nextPreview = await loadPreviewFn({ data: { batchId: preview.batchId } });
+      if (!nextPreview) {
+        setSaveError("This job import no longer exists.");
+        return;
+      }
+      applyPreview(nextPreview);
+      setMappings(initialJobImportMappings(nextPreview));
+      setInspectorDirty(false);
+      pendingEditsRef.current.clear();
+      saveFailedRef.current = false;
+      setSaveError(null);
+      setSaveStatus("idle");
+    } catch (error) {
+      setSaveError(
+        error instanceof Error ? error.message : "The saved import could not be loaded.",
+      );
+    }
+  };
 
-  if (result) return <ImportComplete result={result} />;
+  const durableResult: ImportResult = {
+    imported: preview.items.flatMap((item) =>
+      item.status === "imported" && item.importedJobId
+        ? [
+            {
+              itemId: item.id,
+              jobId: item.importedJobId,
+              title: item.job.title,
+              missingFields: getMissingPublishFields(item.job),
+            },
+          ]
+        : [],
+    ),
+    skipped: preview.items.flatMap((item) =>
+      item.status === "failed" || item.status === "duplicate"
+        ? [
+            {
+              itemId: item.id,
+              title: item.job.title,
+              reason:
+                item.error ??
+                (item.status === "duplicate"
+                  ? "This source job has already been imported."
+                  : "Import failed."),
+            },
+          ]
+        : [],
+    ),
+    preview,
+  };
+  if (preview.status === "completed") return <ImportComplete result={durableResult} />;
 
   return (
     <div className="flex flex-col gap-6 pb-24">
@@ -250,14 +424,21 @@ export function ImportReviewWorkspace({ initialPreview }: { initialPreview: JobI
               className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
             />
             <Input
+              aria-label="Search imported jobs"
+              name="job-import-search"
+              autoComplete="off"
               value={search}
               onChange={onSearchChange}
-              placeholder="Search title or location"
+              placeholder="Search title or location…"
               className="pl-9"
             />
           </div>
-          <Tabs value={filter} onValueChange={onFilterChange}>
-            <TabsList>
+          <Tabs
+            value={filter}
+            onValueChange={onFilterChange}
+            className="max-w-full overflow-x-auto"
+          >
+            <TabsList className="w-max">
               <TabsTrigger value="all">All</TabsTrigger>
               <TabsTrigger value="needs_review">Needs review ({counts.needsReview})</TabsTrigger>
               <TabsTrigger value="ready">Ready ({counts.ready})</TabsTrigger>
@@ -318,7 +499,12 @@ export function ImportReviewWorkspace({ initialPreview }: { initialPreview: JobI
                 variant="outline"
                 size="sm"
                 onClick={onSuggest}
-                disabled={suggestableItems.length === 0 || enrichMutation.isPending}
+                disabled={
+                  suggestableItems.length === 0 ||
+                  operationPending ||
+                  saveStatus === "saving" ||
+                  saveStatus === "error"
+                }
               >
                 {enrichMutation.isPending ? (
                   <HugeiconsIcon
@@ -359,6 +545,43 @@ export function ImportReviewWorkspace({ initialPreview }: { initialPreview: JobI
           </AlertDescription>
         </Alert>
       ) : null}
+      {saveError ? (
+        <Alert variant="destructive" role="alert">
+          <AlertTitle>Changes were not saved</AlertTitle>
+          <AlertDescription className="flex flex-col items-start gap-3">
+            <span>{saveError}</span>
+            <span className="flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" onClick={onRetrySave}>
+                Try saving again
+              </Button>
+              <Button variant="ghost" size="sm" onClick={onReloadSaved}>
+                Reload saved version
+              </Button>
+            </span>
+          </AlertDescription>
+        </Alert>
+      ) : null}
+      {result ? (
+        <Alert aria-live="polite">
+          <AlertTitle>{result.imported.length} drafts imported</AlertTitle>
+          <AlertDescription>
+            <span>{importableItems.length} jobs remain ready for review. Imported drafts: </span>
+            {result.imported.map((job, index) => (
+              <span key={job.jobId}>
+                {index > 0 ? ", " : null}
+                <Link
+                  to="/dashboard/jobs/$jobId"
+                  params={{ jobId: job.jobId }}
+                  className="font-medium underline underline-offset-4"
+                >
+                  {job.title}
+                </Link>
+              </span>
+            ))}
+            {result.skipped.map((job) => ` ${job.title ?? "Job"} — ${job.reason}`).join("")}
+          </AlertDescription>
+        </Alert>
+      ) : null}
 
       {filteredItems.length > 0 ? (
         <JobImportTable
@@ -369,6 +592,7 @@ export function ImportReviewWorkspace({ initialPreview }: { initialPreview: JobI
           onToggleVisible={onToggleVisible}
           onPreview={onPreview}
           onMappingChange={onMappingChange}
+          disabled={operationPending || saveStatus === "saving" || saveStatus === "error"}
         />
       ) : (
         <Empty className="rounded-2xl border">
@@ -403,7 +627,13 @@ export function ImportReviewWorkspace({ initialPreview }: { initialPreview: JobI
           </div>
           <Button
             onClick={onImport}
-            disabled={selectedItems.length === 0 || importMutation.isPending}
+            disabled={
+              selectedItems.length === 0 ||
+              operationPending ||
+              saveStatus === "saving" ||
+              saveStatus === "error"
+            }
+            aria-busy={importMutation.isPending}
           >
             {importMutation.isPending ? (
               <HugeiconsIcon
@@ -419,10 +649,13 @@ export function ImportReviewWorkspace({ initialPreview }: { initialPreview: JobI
       ) : null}
 
       <JobImportInspector
+        key={inspectorItem ? `${inspectorItem.id}-${inspectorItem.revision}` : undefined}
         item={inspectorItem}
-        mapping={inspectorItem ? mappings[inspectorItem.id] : undefined}
+        disabled={operationPending || saveStatus === "saving"}
+        saveStatus={saveStatus}
         onClose={onCloseInspector}
-        onMappingChange={onMappingChange}
+        onDirtyChange={setInspectorDirty}
+        onSave={onSave}
       />
     </div>
   );

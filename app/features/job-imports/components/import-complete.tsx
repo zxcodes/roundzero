@@ -1,6 +1,6 @@
 import { CheckmarkCircle02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useRouter } from "@tanstack/react-router";
+import { Link, useRouter } from "@tanstack/react-router";
 
 import { PageInlineStats } from "@/components/page-inline-stats";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -66,7 +66,13 @@ export function ImportComplete({ result }: { result: ImportResult }) {
                 key={job.jobId}
                 className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
               >
-                <span className="text-sm font-medium">{job.title}</span>
+                <Link
+                  to="/dashboard/jobs/$jobId"
+                  params={{ jobId: job.jobId }}
+                  className="text-sm font-medium underline-offset-4 hover:underline"
+                >
+                  {job.title}
+                </Link>
                 <div className="flex flex-wrap gap-1.5">
                   {job.missingFields.map((field) => (
                     <Badge key={field} variant="destructive">
@@ -87,11 +93,33 @@ export function ImportComplete({ result }: { result: ImportResult }) {
         </Alert>
       )}
 
+      {ready > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Drafts ready for final review</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col divide-y rounded-2xl border p-0">
+            {result.imported
+              .filter((job) => job.missingFields.length === 0)
+              .map((job) => (
+                <Link
+                  key={job.jobId}
+                  to="/dashboard/jobs/$jobId"
+                  params={{ jobId: job.jobId }}
+                  className="px-4 py-3 text-sm font-medium underline-offset-4 hover:underline"
+                >
+                  {job.title}
+                </Link>
+              ))}
+          </CardContent>
+        </Card>
+      ) : null}
+
       {result.skipped.length > 0 ? (
         <Alert variant="destructive">
           <AlertTitle>{result.skipped.length} jobs were skipped</AlertTitle>
           <AlertDescription>
-            {result.skipped.map((job) => job.title ?? job.reason).join(", ")}
+            {result.skipped.map((job) => `${job.title ?? "Job"} — ${job.reason}`).join("; ")}
           </AlertDescription>
         </Alert>
       ) : null}
