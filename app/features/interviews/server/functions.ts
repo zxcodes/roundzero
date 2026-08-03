@@ -29,6 +29,7 @@ import {
 import {
   buildInterviewSystemPrompt,
   ensureInterviewRuntimeMetadata,
+  interviewContinueResponseSchema,
   loadInterviewRuntimeContext,
 } from "@/features/interviews/shared/runtime";
 import { loadVoiceAssessmentContext } from "@/features/interviews/shared/voice-runtime";
@@ -185,9 +186,11 @@ export const startMyInterview = createServerFn({ method: "POST" })
                 screeningCoverage: metadata.screeningCoverage ?? {},
               }),
             ],
+            outputSchema: interviewContinueResponseSchema,
             modelOptions: {
               ...(fallbacks.length > 0 ? { models: fallbacks } : {}),
               parallelToolCalls: false,
+              plugins: [{ id: "response-healing" }],
               reasoning: { effort: "none" },
               temperature: 0.3,
               maxCompletionTokens: 300,
@@ -195,24 +198,23 @@ export const startMyInterview = createServerFn({ method: "POST" })
             stream: true,
           });
 
-          let greeting = "";
+          let greeting: z.infer<typeof interviewContinueResponseSchema> | null = null;
           for await (const chunk of greetingStream) {
             if (chunk.type === EventType.RUN_ERROR) {
               throw new Error(chunk.message || "Interview greeting generation failed");
             }
-            if (chunk.type === EventType.TEXT_MESSAGE_CONTENT) {
-              greeting += chunk.delta;
+            if (chunk.type === EventType.CUSTOM && chunk.name === "structured-output.complete") {
+              greeting = interviewContinueResponseSchema.parse(chunk.value.object);
             }
           }
 
-          const content = greeting.trim();
-          if (content.length === 0) {
+          if (!greeting) {
             throw new Error("The interview assistant did not produce a greeting");
           }
 
           const savedGreeting = await completeInterviewGreeting(db, {
             interviewId: data.interviewId,
-            content,
+            content: greeting.message,
           });
           if (!savedGreeting) {
             throw new Error("Could not persist the interview greeting");
