@@ -1,3 +1,5 @@
+import { Upload04Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link, redirect, useLoaderData, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -91,11 +93,22 @@ function NewJobPage() {
 
   return (
     <div className="space-y-6 pb-28">
-      <div className="space-y-1">
-        <h1 className="text-xl font-semibold tracking-tight">Post a new job</h1>
-        <p className="text-sm text-muted-foreground">
-          Fill in the details below to create a new job posting.
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-1">
+          <h1 className="text-xl font-semibold tracking-tight">Post a new job</h1>
+          <p className="text-sm text-muted-foreground">
+            Fill in the details below to create a new job posting.
+          </p>
+        </div>
+        <Button variant="outline" size="sm" asChild>
+          <Link
+            to="/dashboard/jobs/import"
+            className="w-full no-underline hover:no-underline sm:w-auto"
+          >
+            <HugeiconsIcon icon={Upload04Icon} strokeWidth={2} className="size-3.5" />
+            Import existing jobs
+          </Link>
+        </Button>
       </div>
 
       {atLimit ? (
