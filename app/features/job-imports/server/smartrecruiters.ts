@@ -41,7 +41,7 @@ export async function hydrateSmartRecruitersPostings(
         const summary = postingSummarySchema.safeParse(item);
         if (!summary.success) return item;
         if (summary.data.jobAd?.jobDescription?.trim()) return item;
-        const id = summary.data.uuid ?? summary.data.id;
+        const id = summary.data.id ?? summary.data.uuid;
         if (!id) return item;
         const fallback = `${url.origin}/v1/companies/${encodeURIComponent(company)}/postings/${encodeURIComponent(id)}`;
         const detailUrl = summary.data.ref?.startsWith("https://") ? summary.data.ref : fallback;

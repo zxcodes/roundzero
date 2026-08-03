@@ -3,6 +3,27 @@ import { describe, expect, it } from "vitest";
 import { parseJobImportSource } from "../server/adapters";
 
 describe("parseJobImportSource", () => {
+  it("normalizes a single Greenhouse response", () => {
+    const [candidate] = parseJobImportSource({
+      platform: "greenhouse",
+      finalUrl: "https://boards-api.greenhouse.io/v1/boards/acme/jobs/123?content=true",
+      text: JSON.stringify({
+        id: 123,
+        title: "Product Engineer",
+        content: "<p>Build reliable products.</p>",
+        absolute_url: "https://job-boards.greenhouse.io/acme/jobs/123",
+        location: { name: "New York, NY" },
+      }),
+    });
+
+    expect(candidate.job).toMatchObject({
+      externalId: "123",
+      title: "Product Engineer",
+      description: "Build reliable products.",
+      location: "New York, NY",
+    });
+  });
+
   it("normalizes a Lever response", () => {
     const [candidate] = parseJobImportSource({
       platform: "lever",
@@ -27,6 +48,92 @@ describe("parseJobImportSource", () => {
       salaryMin: 100000,
       salaryMax: 150000,
       requirements: ["TypeScript", "5 years experience"],
+    });
+  });
+
+  it("normalizes a single Lever response", () => {
+    const [candidate] = parseJobImportSource({
+      platform: "lever",
+      finalUrl: "https://api.lever.co/v0/postings/acme/lever-1",
+      text: JSON.stringify({
+        id: "lever-1",
+        text: "Product Engineer",
+        hostedUrl: "https://jobs.lever.co/acme/lever-1",
+        descriptionPlain: "Build reliable products.",
+      }),
+    });
+
+    expect(candidate.job).toMatchObject({ externalId: "lever-1", title: "Product Engineer" });
+  });
+
+  it("uses Schema.org data for an individual Ashby page", () => {
+    const [candidate] = parseJobImportSource({
+      platform: "ashby",
+      finalUrl: "https://jobs.ashbyhq.com/acme/ashby-1",
+      text: `<script type="application/ld+json">${JSON.stringify({
+        "@type": "JobPosting",
+        identifier: { value: "ashby-1" },
+        title: "Product Engineer",
+        description: "<p>Build reliable products.</p>",
+        url: "https://jobs.ashbyhq.com/acme/ashby-1",
+      })}</script>`,
+    });
+
+    expect(candidate.job).toMatchObject({ externalId: "ashby-1", title: "Product Engineer" });
+  });
+
+  it("normalizes a single Recruitee offer response", () => {
+    const [candidate] = parseJobImportSource({
+      platform: "recruitee",
+      finalUrl: "https://acme.recruitee.com/api/offers/product-engineer",
+      text: JSON.stringify({
+        offer: {
+          id: 123,
+          title: "Product Engineer",
+          description: "<p>Build reliable products.</p>",
+          careers_url: "https://acme.recruitee.com/o/product-engineer",
+        },
+      }),
+    });
+
+    expect(candidate.job).toMatchObject({ externalId: "123", title: "Product Engineer" });
+  });
+
+  it.each([
+    {
+      name: "current nested",
+      jobAd: {
+        sections: {
+          jobDescription: { text: "<p>Build reliable products.</p>" },
+          qualifications: { text: "<p>TypeScript</p>" },
+        },
+      },
+    },
+    {
+      name: "legacy flat",
+      jobAd: {
+        jobDescription: "<p>Build reliable products.</p>",
+        qualifications: "<p>TypeScript</p>",
+      },
+    },
+  ])("normalizes a $name SmartRecruiters response", ({ jobAd }) => {
+    const [candidate] = parseJobImportSource({
+      platform: "smartrecruiters",
+      finalUrl: "https://api.smartrecruiters.com/v1/companies/Acme/postings/123",
+      text: JSON.stringify({
+        id: "123",
+        uuid: "smart-1",
+        name: "Product Engineer",
+        postingUrl: "https://jobs.smartrecruiters.com/Acme/123-product-engineer",
+        jobAd,
+      }),
+    });
+
+    expect(candidate.job).toMatchObject({
+      externalId: "smart-1",
+      title: "Product Engineer",
+      description: "Build reliable products.\n\nTypeScript",
+      requirements: ["TypeScript"],
     });
   });
 

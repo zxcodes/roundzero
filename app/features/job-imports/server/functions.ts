@@ -11,36 +11,22 @@ import {
   previewJobImportCsvSchema,
   previewJobImportUrlSchema,
 } from "../schemas";
-import { parseJobImportSource } from "./adapters";
 import { parseJobImportCsv } from "./csv";
-import { safeFetchImportSource } from "./safe-fetch";
 import {
   createJobImportPreview,
   enrichSelectedJobImportItems,
   importSelectedJobDrafts,
   loadJobImportPreview,
 } from "./service";
-import { hydrateSmartRecruitersPostings } from "./smartrecruiters";
 import { detectJobImportSource } from "./source-detector";
+import { loadJobImportCandidates } from "./source-loader";
 
 export const previewJobsFromUrl = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
   .validator(zodValidator(previewJobImportUrlSchema))
   .handler(async ({ data, context }) => {
     const source = detectJobImportSource(data.url);
-    const response = await safeFetchImportSource(
-      source.requestUrl,
-      source.platform === "generic" ? "html" : "json",
-    );
-    const text =
-      source.platform === "smartrecruiters"
-        ? await hydrateSmartRecruitersPostings(response.text, response.finalUrl)
-        : response.text;
-    const candidates = parseJobImportSource({
-      platform: source.platform,
-      text,
-      finalUrl: response.finalUrl,
-    });
+    const candidates = await loadJobImportCandidates(source);
     return createJobImportPreview({
       db: getDb(),
       companyId: context.company.id,

@@ -1,8 +1,12 @@
 import { ExpectedError } from "@/shared/expected-error";
 
 const MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
+const MAX_COLLECTION_READ_BYTES = 32 * 1024 * 1024;
+const MAX_COLLECTION_PREFIX_BYTES = 64 * 1024;
 const FETCH_TIMEOUT_MS = 10_000;
 const MAX_REDIRECTS = 3;
+const MAX_RETRIES = 2;
+const MAX_RETRY_DELAY_MS = 2_000;
 
 const FORBIDDEN_HOST_SUFFIXES = [".localhost", ".local", ".internal", ".home", ".lan"];
 
@@ -102,13 +106,151 @@ async function readBoundedText(response: Response): Promise<string> {
   return new TextDecoder().decode(bytes);
 }
 
+function collectionText(key: string | null, items: unknown[]): string {
+  return JSON.stringify(key === null ? items : { [key]: items });
+}
+
+function includeCollectionItem(item: unknown, filter: "listed" | undefined): boolean {
+  if (filter !== "listed" || typeof item !== "object" || item === null) return true;
+  return !("isListed" in item) || item.isListed !== false;
+}
+
+async function readBoundedJsonCollection(
+  response: Response,
+  key: string | null,
+  maxItems: number,
+  filter: "listed" | undefined,
+): Promise<string> {
+  if (!response.body) return collectionText(key, []);
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  const items: unknown[] = [];
+  let byteLength = 0;
+  let prefix = "";
+  let foundCollection = false;
+  let currentItem = "";
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  let collectionEnded = false;
+
+  const consume = (chunk: string): boolean => {
+    let input = chunk;
+    if (!foundCollection) {
+      prefix += input;
+      const arrayStart =
+        key === null ? prefix.search(/\S/) : prefix.search(new RegExp(`"${key}"\\s*:\\s*\\[`));
+      if (arrayStart < 0) {
+        if (prefix.length > MAX_COLLECTION_PREFIX_BYTES) {
+          throw new ExpectedError("invalid_input", "The job source returned unsupported data.");
+        }
+        return false;
+      }
+
+      const bracketIndex = prefix.indexOf("[", arrayStart);
+      if (bracketIndex < 0) return false;
+      input = prefix.slice(bracketIndex + 1);
+      prefix = "";
+      foundCollection = true;
+    }
+
+    for (const character of input) {
+      if (depth === 0) {
+        if (/\s|,/.test(character)) continue;
+        if (character === "]") {
+          collectionEnded = true;
+          return true;
+        }
+        if (character !== "{") {
+          throw new ExpectedError("invalid_input", "The job source returned unsupported data.");
+        }
+        currentItem = character;
+        depth = 1;
+        inString = false;
+        escaped = false;
+        continue;
+      }
+
+      currentItem += character;
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+      if (inString && character === "\\") {
+        escaped = true;
+        continue;
+      }
+      if (character === '"') {
+        inString = !inString;
+        continue;
+      }
+      if (inString) continue;
+      if (character === "{" || character === "[") depth += 1;
+      if (character === "}" || character === "]") depth -= 1;
+      if (depth !== 0) continue;
+
+      try {
+        const item: unknown = JSON.parse(currentItem);
+        if (includeCollectionItem(item, filter)) items.push(item);
+      } catch {
+        throw new ExpectedError("invalid_input", "The job source returned invalid JSON.");
+      }
+      currentItem = "";
+      if (items.length >= maxItems) return true;
+    }
+    return false;
+  };
+
+  try {
+    while (true) {
+      const result = await reader.read();
+      if (result.done) {
+        consume(decoder.decode());
+        break;
+      }
+      byteLength += result.value.byteLength;
+      if (byteLength > MAX_COLLECTION_READ_BYTES) {
+        await reader.cancel();
+        throw new ExpectedError("invalid_input", "The source response is too large to import.");
+      }
+      if (consume(decoder.decode(result.value, { stream: true }))) {
+        await reader.cancel();
+        break;
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  if (!foundCollection || (items.length < maxItems && !collectionEnded)) {
+    throw new ExpectedError("invalid_input", "The job source returned invalid JSON.");
+  }
+  return collectionText(key, items);
+}
+
+type SafeFetchImportSourceOptions = {
+  collection?: { key: string | null; maxItems: number; filter?: "listed" };
+};
+
+function retryDelay(response: Response, retry: number): number {
+  const retryAfter = Number(response.headers.get("retry-after"));
+  if (Number.isFinite(retryAfter) && retryAfter >= 0) {
+    return Math.min(retryAfter * 1_000, MAX_RETRY_DELAY_MS);
+  }
+  return Math.min(250 * 2 ** retry, MAX_RETRY_DELAY_MS);
+}
+
 export async function safeFetchImportSource(
   input: string,
   acceptedContent: "json" | "html",
+  options: SafeFetchImportSourceOptions = {},
 ): Promise<{ text: string; finalUrl: string }> {
   let url = assertSafeImportUrl(input);
+  let redirects = 0;
+  let retries = 0;
 
-  for (let redirects = 0; redirects <= MAX_REDIRECTS; redirects += 1) {
+  while (redirects <= MAX_REDIRECTS) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
     try {
@@ -125,6 +267,16 @@ export async function safeFetchImportSource(
           throw new ExpectedError("invalid_input", "The job source redirected too many times.");
         }
         url = assertSafeImportUrl(new URL(location, url).toString());
+        redirects += 1;
+        retries = 0;
+        continue;
+      }
+
+      if ((response.status === 429 || response.status >= 500) && retries < MAX_RETRIES) {
+        const delay = retryDelay(response, retries);
+        await response.body?.cancel();
+        retries += 1;
+        await new Promise((resolve) => setTimeout(resolve, delay));
         continue;
       }
 
@@ -148,7 +300,15 @@ export async function safeFetchImportSource(
         throw new ExpectedError("invalid_input", "That URL did not return supported job data.");
       }
 
-      return { text: await readBoundedText(response), finalUrl: url.toString() };
+      const text = options.collection
+        ? await readBoundedJsonCollection(
+            response,
+            options.collection.key,
+            options.collection.maxItems,
+            options.collection.filter,
+          )
+        : await readBoundedText(response);
+      return { text, finalUrl: url.toString() };
     } catch (error) {
       if (error instanceof ExpectedError) throw error;
       if (controller.signal.aborted || (error instanceof Error && error.name === "AbortError")) {
