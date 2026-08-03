@@ -8,7 +8,12 @@ import { ExpectedError } from "@/shared/expected-error";
 import { deriveEntitlements, type Entitlements, resolveReportTarget } from "../entitlements";
 
 /** Entitlements that can be enforced at a server-function boundary. */
-export type CompanyEntitlement = "jobs.open" | "team.invite" | "team.accept" | "aiJobCreation";
+export type CompanyEntitlement =
+  | "jobs.open"
+  | "team.invite"
+  | "team.accept"
+  | "aiJobCreation"
+  | "jobImport";
 
 /** Serialize active-job slot allocation for a company inside a transaction. */
 export async function lockCompanyEntitlementScope(db: Sql, companyId: string): Promise<void> {
@@ -78,6 +83,14 @@ export async function enforceCompanyEntitlement(
       "quota_exceeded",
       entitlements.aiJobCreation.disabledReason ??
         "AI job creation is not available on your current plan.",
+    );
+  }
+
+  if (entitlement === "jobImport" && !entitlements.jobImport.enabled) {
+    throw new ExpectedError(
+      "quota_exceeded",
+      entitlements.jobImport.disabledReason ??
+        "Job importing is not available on your current plan.",
     );
   }
 

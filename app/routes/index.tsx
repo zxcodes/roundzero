@@ -122,6 +122,74 @@ function Hero() {
   );
 }
 
+const supportedImportPlatforms = ["Greenhouse", "Lever", "Ashby", "Recruitee", "SmartRecruiters"];
+
+function JobImportPanel() {
+  return (
+    <aside
+      aria-labelledby="job-import-heading"
+      className="mt-16 overflow-hidden rounded-[2rem] bg-[#f3f5f3] lg:mt-24"
+    >
+      <div className="grid lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.2fr)]">
+        <div className="px-6 py-8 sm:px-8 lg:px-10 lg:py-10">
+          <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+            Start without starting over
+          </span>
+          <h3
+            id="job-import-heading"
+            className="mt-4 max-w-md text-balance text-[clamp(1.65rem,2.5vw,2.4rem)] font-medium leading-[1.05] tracking-[-0.04em]"
+          >
+            Import the jobs you already have.
+          </h3>
+          <p className="mt-4 max-w-md text-sm leading-6 text-muted-foreground">
+            Bring in existing postings, check the details, and keep every imported role safely in
+            draft.
+          </p>
+        </div>
+
+        <div className="border-t border-black/10 bg-white/65 px-6 py-8 sm:px-8 lg:border-l lg:border-t-0 lg:px-10 lg:py-10">
+          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+            Supported sources
+          </p>
+          <ul
+            aria-label="Supported job platforms"
+            className="mt-5 flex flex-wrap items-center gap-x-8 gap-y-4"
+          >
+            {supportedImportPlatforms.map((platform) => (
+              <li
+                key={platform}
+                className="text-[0.95rem] font-semibold tracking-[-0.025em] text-foreground/75"
+              >
+                {platform}
+              </li>
+            ))}
+          </ul>
+          <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-black/10 pt-5">
+            <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-foreground/65">
+              Careers URL or CSV
+            </span>
+            <span className="font-mono text-[10px] text-muted-foreground" aria-hidden="true">
+              →
+            </span>
+            <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-foreground/65">
+              Review
+            </span>
+            <span className="font-mono text-[10px] text-muted-foreground" aria-hidden="true">
+              →
+            </span>
+            <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-foreground/65">
+              Drafts
+            </span>
+            <span className="ml-auto rounded-full border border-black/12 bg-white/70 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+              Growth &amp; Scale
+            </span>
+          </div>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
 const steps = [
   {
     number: "01",
@@ -179,6 +247,7 @@ function HowItWorks() {
             ))}
           </ol>
         </div>
+        <JobImportPanel />
       </div>
     </section>
   );

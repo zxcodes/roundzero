@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 
+import { enforceCompanyEntitlement } from "@/features/entitlements/server/enforcement";
 import { getDb } from "@/shared/db";
 import { companyMiddleware } from "@/shared/middleware";
 import { zodValidator } from "@/shared/validation";
@@ -27,6 +28,7 @@ export const previewJobsFromUrl = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
   .validator(zodValidator(previewJobImportUrlSchema))
   .handler(async ({ data, context }) => {
+    await enforceCompanyEntitlement(getDb(), context.company.id, "jobImport");
     const source = detectJobImportSource(data.url);
     const candidates = await loadJobImportCandidates(source);
     return createJobImportPreview({
@@ -43,6 +45,7 @@ export const previewJobsFromCsv = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
   .validator(zodValidator(previewJobImportCsvSchema))
   .handler(async ({ data, context }) => {
+    await enforceCompanyEntitlement(getDb(), context.company.id, "jobImport");
     const candidates = await parseJobImportCsv(data.csv);
     return createJobImportPreview({
       db: getDb(),
@@ -57,46 +60,50 @@ export const previewJobsFromCsv = createServerFn({ method: "POST" })
 export const getJobImportPreview = createServerFn({ method: "GET" })
   .middleware([companyMiddleware])
   .validator(zodValidator(getJobImportPreviewSchema))
-  .handler(async ({ data, context }) =>
-    loadJobImportPreview({
+  .handler(async ({ data, context }) => {
+    await enforceCompanyEntitlement(getDb(), context.company.id, "jobImport");
+    return loadJobImportPreview({
       db: getDb(),
       companyId: context.company.id,
       batchId: data.batchId,
-    }),
-  );
+    });
+  });
 
 export const saveJobImportItems = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
   .validator(zodValidator(updateJobImportItemsSchema))
-  .handler(async ({ data, context }) =>
-    updateJobImportItems({
+  .handler(async ({ data, context }) => {
+    await enforceCompanyEntitlement(getDb(), context.company.id, "jobImport");
+    return updateJobImportItems({
       db: getDb(),
       companyId: context.company.id,
       batchId: data.batchId,
       items: data.items,
-    }),
-  );
+    });
+  });
 
 export const enrichSelectedJobImports = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
   .validator(zodValidator(enrichSelectedJobImportsSchema))
-  .handler(async ({ data, context }) =>
-    enrichSelectedJobImportItems({
+  .handler(async ({ data, context }) => {
+    await enforceCompanyEntitlement(getDb(), context.company.id, "jobImport");
+    return enrichSelectedJobImportItems({
       db: getDb(),
       companyId: context.company.id,
       batchId: data.batchId,
       itemIds: data.itemIds,
-    }),
-  );
+    });
+  });
 
 export const importSelectedJobs = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
   .validator(zodValidator(importSelectedJobsSchema))
-  .handler(async ({ data, context }) =>
-    importSelectedJobDrafts({
+  .handler(async ({ data, context }) => {
+    await enforceCompanyEntitlement(getDb(), context.company.id, "jobImport");
+    return importSelectedJobDrafts({
       db: getDb(),
       companyId: context.company.id,
       batchId: data.batchId,
       itemIds: data.itemIds,
-    }),
-  );
+    });
+  });

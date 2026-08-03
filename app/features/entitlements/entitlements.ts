@@ -55,6 +55,7 @@ export type Entitlements = {
     canInviteAnother: boolean;
   };
   aiJobCreation: { enabled: boolean; disabledReason: string | null };
+  jobImport: { enabled: boolean; disabledReason: string | null };
 };
 
 export const FREE_REPORT_DEFAULTS: Entitlements["reports"] = {
@@ -102,6 +103,7 @@ export function deriveEntitlements(input: {
   const pendingInvites = teamCounts.pendingInviteCount;
   const teamSlotsUsed = invitedMembers + pendingInvites;
   const teamAtLimit = invitedMembers >= teamLimit;
+  const jobImportEnabled = plan === "growth" || plan === "scale";
 
   return {
     subscription: { plan, status, isActive },
@@ -138,6 +140,12 @@ export function deriveEntitlements(input: {
       disabledReason: isActive
         ? null
         : "AI job creation is available on paid plans. Upgrade to unlock this feature.",
+    },
+    jobImport: {
+      enabled: jobImportEnabled,
+      disabledReason: jobImportEnabled
+        ? null
+        : "Job importing is available on the Growth plan and above.",
     },
   };
 }
