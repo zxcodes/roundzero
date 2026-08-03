@@ -6,6 +6,7 @@ import { CommandPalette } from "@/components/command-palette";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { JobImportAnnouncement } from "@/features/job-imports/components/job-import-announcement";
 import { getMyNotificationsFeed } from "@/features/notifications/server/functions";
 import { useCommandPaletteShortcut } from "@/hooks/use-command-palette-shortcut";
 import {
@@ -37,6 +38,10 @@ function DashboardLayout() {
     breadcrumbs,
     lastMatch,
   );
+  const showJobImportAnnouncement =
+    auth.type === "company" &&
+    !auth.company?.jobImportPromptDismissedAt &&
+    !routeId.endsWith("/jobs/import");
   const [commandOpen, setCommandOpen] = useState(false);
 
   useCommandPaletteShortcut(() => {
@@ -83,6 +88,7 @@ function DashboardLayout() {
           />
           <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden">
             <div className="mx-auto flex w-full min-w-0 max-w-[1600px] flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+              {showJobImportAnnouncement ? <JobImportAnnouncement /> : null}
               <Outlet />
             </div>
           </div>

@@ -101,6 +101,12 @@ describe("job import service", () => {
       source_url: "https://jobs.lever.co/acme/lever-job-123",
       import_batch_id: preview.batchId,
     });
+    const [updatedCompany] = await sql`
+      SELECT job_import_prompt_dismissed_at
+      FROM companies
+      WHERE id = ${company.id}
+    `;
+    expect(updatedCompany.job_import_prompt_dismissed_at).toBeInstanceOf(Date);
 
     const duplicatePreview = await createJobImportPreview({
       db: sql,

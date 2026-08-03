@@ -399,16 +399,22 @@ function ActiveJobsTable({
           <EmptyMedia variant="icon">
             <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={2} />
           </EmptyMedia>
-          <EmptyTitle>No active jobs</EmptyTitle>
+          <EmptyTitle>No jobs yet</EmptyTitle>
           <EmptyDescription>
-            Create your first job posting to start receiving applications.
+            Import your existing roles or create a new job manually.
           </EmptyDescription>
         </EmptyHeader>
-        <EmptyContent>
+        <EmptyContent className="flex-row flex-wrap">
           <Button size="sm" asChild>
+            <Link to="/dashboard/jobs/import">
+              <HugeiconsIcon icon={Upload04Icon} strokeWidth={2} data-icon="inline-start" />
+              Import existing jobs
+            </Link>
+          </Button>
+          <Button size="sm" variant="outline" asChild>
             <Link to="/dashboard/jobs/new">
-              <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-3.5" />
-              Post a job
+              <HugeiconsIcon icon={Add01Icon} strokeWidth={2} data-icon="inline-start" />
+              Create manually
             </Link>
           </Button>
         </EmptyContent>

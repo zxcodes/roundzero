@@ -6,7 +6,7 @@ import {
   Search01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -34,6 +34,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { companyBootstrapQueryKey } from "@/features/companies/server/functions";
 import { JobImportInspector } from "@/features/job-imports/components/job-import-inspector";
 import { JobImportTable } from "@/features/job-imports/components/job-import-table";
 import {
@@ -68,6 +69,7 @@ const options = <T extends string>(labels: Record<T, string>) =>
   Object.entries(labels) as Array<[T, string]>;
 
 export function ImportReviewWorkspace({ initialPreview }: { initialPreview: JobImportPreview }) {
+  const queryClient = useQueryClient();
   const [preview, setPreview] = useState(initialPreview);
   const importableItems = preview.items.filter((item) => item.status === "ready");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(
@@ -125,8 +127,11 @@ export function ImportReviewWorkspace({ initialPreview }: { initialPreview: JobI
   });
   const importMutation = useMutation({
     mutationFn: importFn,
-    onSuccess: (nextResult) => {
+    onSuccess: async (nextResult) => {
       setResult(nextResult);
+      if (nextResult.imported.length > 0) {
+        await queryClient.invalidateQueries({ queryKey: companyBootstrapQueryKey });
+      }
       toast.success(`${nextResult.imported.length} job drafts imported.`);
     },
     onError: mutationError,

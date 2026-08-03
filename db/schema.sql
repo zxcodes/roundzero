@@ -148,7 +148,8 @@ CREATE TABLE public.companies (
     subscription_welcome_polar_subscription_id text,
     polar_subscription_modified_at timestamp with time zone,
     subscription_pending_plan text,
-    subscription_pending_change_at timestamp with time zone
+    subscription_pending_change_at timestamp with time zone,
+    job_import_prompt_dismissed_at timestamp with time zone
 );
 
 
@@ -1300,4 +1301,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260721090921'),
     ('20260722040827'),
     ('20260728034113'),
-    ('20260802125802');
+    ('20260802125802'),
+    ('20260803013204');
