@@ -126,11 +126,15 @@ const greenhouseJobSchema = z.looseObject({
 });
 
 function parseGreenhouse(text: string, fallbackUrl: string): JobImportCandidate[] {
-  const response = greenhouseResponseSchema.parse(parseJson(text));
-  return response.jobs.slice(0, MAX_JOBS).flatMap((raw) => {
-    const parsed = greenhouseJobSchema.safeParse(raw);
+  if (/^\s*</.test(text)) return parseGenericJobPosting(text, fallbackUrl);
+  const raw = parseJson(text);
+  const response = greenhouseResponseSchema.safeParse(raw);
+  const rows = response.success ? response.data.jobs : [raw];
+  return rows.slice(0, MAX_JOBS).flatMap((rawJob) => {
+    const parsed = greenhouseJobSchema.safeParse(rawJob);
     if (!parsed.success) return [];
     const job = parsed.data;
+    if (!htmlToPlainText(job.title) || !htmlToPlainText(job.content)) return [];
     const metadataText = job.metadata == null ? "" : JSON.stringify(job.metadata);
     return [
       candidate({
@@ -180,7 +184,9 @@ const leverJobSchema = z.looseObject({
 });
 
 function parseLever(text: string, fallbackUrl: string): JobImportCandidate[] {
-  const response = z.array(z.unknown()).parse(parseJson(text));
+  if (/^\s*</.test(text)) return parseGenericJobPosting(text, fallbackUrl);
+  const raw = parseJson(text);
+  const response = Array.isArray(raw) ? raw : [raw];
   return response.slice(0, MAX_JOBS).flatMap((raw) => {
     const parsed = leverJobSchema.safeParse(raw);
     if (!parsed.success) return [];
@@ -196,6 +202,7 @@ function parseLever(text: string, fallbackUrl: string): JobImportCandidate[] {
     const requirements = lists
       .filter((list) => /require|qualif|skill/i.test(list.text ?? ""))
       .flatMap((list) => htmlToPlainText(list.content ?? "").split("\n"));
+    if (!htmlToPlainText(job.text) || !htmlToPlainText(description)) return [];
     const annualSalary =
       !job.salaryRange?.interval || /year|annual/i.test(job.salaryRange.interval);
     const warnings: JobImportWarning[] = [];
@@ -251,11 +258,14 @@ const ashbyJobSchema = z.looseObject({
 });
 
 function parseAshby(text: string, fallbackUrl: string): JobImportCandidate[] {
+  if (/^\s*</.test(text)) return parseGenericJobPosting(text, fallbackUrl);
   const response = z.object({ jobs: z.array(z.unknown()) }).parse(parseJson(text));
   return response.jobs.slice(0, MAX_JOBS).flatMap((raw) => {
     const parsed = ashbyJobSchema.safeParse(raw);
     if (!parsed.success || parsed.data.isListed === false) return [];
     const job = parsed.data;
+    const description = job.descriptionPlain ?? job.descriptionHtml ?? "";
+    if (!htmlToPlainText(job.title) || !htmlToPlainText(description)) return [];
     const salary = job.compensation?.summaryComponents?.find(
       (component) =>
         component.compensationType?.toLowerCase() === "salary" &&
@@ -269,7 +279,7 @@ function parseAshby(text: string, fallbackUrl: string): JobImportCandidate[] {
         sourceUrl,
         sourceUpdatedAt: job.publishedAt,
         title: job.title,
-        description: job.descriptionPlain ?? job.descriptionHtml ?? "",
+        description,
         location: job.location ?? null,
         workplaceType: job.workplaceType,
         employmentType: job.employmentType,
@@ -311,9 +321,15 @@ const recruiteeJobSchema = z.looseObject({
 });
 
 function parseRecruitee(text: string, fallbackUrl: string): JobImportCandidate[] {
+  if (/^\s*</.test(text)) return parseGenericJobPosting(text, fallbackUrl);
   const raw = parseJson(text);
   const envelope = z.object({ offers: z.array(z.unknown()) }).safeParse(raw);
-  const rows = envelope.success ? envelope.data.offers : z.array(z.unknown()).parse(raw);
+  const single = z.object({ offer: z.unknown() }).safeParse(raw);
+  const rows = envelope.success
+    ? envelope.data.offers
+    : single.success
+      ? [single.data.offer]
+      : z.array(z.unknown()).parse(raw);
   return rows.slice(0, MAX_JOBS).flatMap((item) => {
     const parsed = recruiteeJobSchema.safeParse(item);
     if (!parsed.success) return [];
@@ -331,6 +347,7 @@ function parseRecruitee(text: string, fallbackUrl: string): JobImportCandidate[]
     const description =
       job.description_requirements ??
       [job.description, job.requirements].filter(Boolean).join("\n\n");
+    if (!htmlToPlainText(job.title) || !htmlToPlainText(description)) return [];
     return [
       candidate({
         platform: "recruitee",
@@ -378,25 +395,36 @@ const smartRecruitersJobSchema = z.looseObject({
       jobDescription: z.string().optional(),
       qualifications: z.string().optional(),
       additionalInformation: z.string().optional(),
+      sections: z
+        .object({
+          jobDescription: z.object({ text: z.string().optional() }).optional(),
+          qualifications: z.object({ text: z.string().optional() }).optional(),
+          additionalInformation: z.object({ text: z.string().optional() }).optional(),
+        })
+        .optional(),
     })
     .optional(),
 });
 
 function parseSmartRecruiters(text: string, fallbackUrl: string): JobImportCandidate[] {
-  const response = z.object({ content: z.array(z.unknown()) }).parse(parseJson(text));
-  return response.content.slice(0, MAX_JOBS).flatMap((raw) => {
-    const parsed = smartRecruitersJobSchema.safeParse(raw);
+  if (/^\s*</.test(text)) return parseGenericJobPosting(text, fallbackUrl);
+  const raw = parseJson(text);
+  const response = z.object({ content: z.array(z.unknown()) }).safeParse(raw);
+  const rows = response.success ? response.data.content : [raw];
+  return rows.slice(0, MAX_JOBS).flatMap((rawJob) => {
+    const parsed = smartRecruitersJobSchema.safeParse(rawJob);
     if (!parsed.success) return [];
     const job = parsed.data;
     const id = job.uuid ?? job.id;
     if (!id) return [];
-    const description = [
-      job.jobAd?.jobDescription,
-      job.jobAd?.qualifications,
-      job.jobAd?.additionalInformation,
-    ]
+    const jobDescription = job.jobAd?.sections?.jobDescription?.text ?? job.jobAd?.jobDescription;
+    const qualifications = job.jobAd?.sections?.qualifications?.text ?? job.jobAd?.qualifications;
+    const additionalInformation =
+      job.jobAd?.sections?.additionalInformation?.text ?? job.jobAd?.additionalInformation;
+    const description = [jobDescription, qualifications, additionalInformation]
       .filter(Boolean)
       .join("\n\n");
+    if (!htmlToPlainText(job.name) || !htmlToPlainText(description)) return [];
     const location = [job.location?.city, job.location?.region, job.location?.country]
       .filter(Boolean)
       .join(", ");
@@ -408,9 +436,7 @@ function parseSmartRecruiters(text: string, fallbackUrl: string): JobImportCandi
         sourceUpdatedAt: job.releasedDate,
         title: job.name,
         description,
-        requirements: job.jobAd?.qualifications
-          ? htmlToPlainText(job.jobAd.qualifications).split("\n")
-          : [],
+        requirements: qualifications ? htmlToPlainText(qualifications).split("\n") : [],
         location: location || null,
         workplaceType: job.locationType ?? (job.location?.remote ? "remote" : null),
         employmentType: job.typeOfEmployment?.label ?? job.typeOfEmployment?.id,
