@@ -1,5 +1,6 @@
 import { Alert01Icon, ViewIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { Link } from "@tanstack/react-router";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,7 @@ export function JobImportTable({
   onToggleVisible,
   onPreview,
   onMappingChange,
+  disabled,
 }: {
   items: JobImportItemResponse[];
   mappings: Record<string, JobImportMapping>;
@@ -55,6 +57,7 @@ export function JobImportTable({
   onToggleVisible: (items: JobImportItemResponse[], checked: boolean) => void;
   onPreview: (id: string) => void;
   onMappingChange: (id: string, mapping: JobImportMapping) => void;
+  disabled: boolean;
 }) {
   const selectable = items.filter((item) => item.status === "ready");
   const selectedVisible = selectable.filter((item) => selectedIds.has(item.id)).length;
@@ -93,6 +96,7 @@ export function JobImportTable({
               onToggle={onToggleItem}
               onPreview={onPreview}
               onMappingChange={onMappingChange}
+              disabled={disabled}
             />
           ))}
         </TableBody>
@@ -108,6 +112,7 @@ function JobImportTableRow({
   onToggle,
   onPreview,
   onMappingChange,
+  disabled,
 }: {
   item: JobImportItemResponse;
   mapping: JobImportMapping | undefined;
@@ -115,6 +120,7 @@ function JobImportTableRow({
   onToggle: (id: string, checked: boolean) => void;
   onPreview: (id: string) => void;
   onMappingChange: (id: string, mapping: JobImportMapping) => void;
+  disabled: boolean;
 }) {
   const selectable = item.status === "ready";
   const missing = getJobImportMissingFields(mapping);
@@ -147,7 +153,7 @@ function JobImportTableRow({
         <Checkbox
           checked={selected}
           onCheckedChange={onCheckedChange}
-          disabled={!selectable}
+          disabled={!selectable || disabled}
           aria-label={`Select ${item.job.title}`}
         />
       </TableCell>
@@ -163,9 +169,13 @@ function JobImportTableRow({
         <Select
           value={mapping?.workplaceType ?? ""}
           onValueChange={onWorkplaceChange}
-          disabled={!selectable}
+          disabled={!selectable || disabled}
         >
-          <SelectTrigger size="sm" aria-invalid={selectable && !mapping?.workplaceType}>
+          <SelectTrigger
+            size="sm"
+            aria-invalid={selectable && !mapping?.workplaceType}
+            aria-label={`Workplace for ${item.job.title}`}
+          >
             <SelectValue placeholder="Missing: workplace" />
           </SelectTrigger>
           <SelectContent>
@@ -183,9 +193,13 @@ function JobImportTableRow({
         <Select
           value={mapping?.employmentType ?? ""}
           onValueChange={onEmploymentChange}
-          disabled={!selectable}
+          disabled={!selectable || disabled}
         >
-          <SelectTrigger size="sm" aria-invalid={selectable && !mapping?.employmentType}>
+          <SelectTrigger
+            size="sm"
+            aria-invalid={selectable && !mapping?.employmentType}
+            aria-label={`Employment type for ${item.job.title}`}
+          >
             <SelectValue placeholder="Missing: employment" />
           </SelectTrigger>
           <SelectContent>
@@ -204,9 +218,13 @@ function JobImportTableRow({
           <Select
             value={mapping?.experienceLevel ?? ""}
             onValueChange={onExperienceChange}
-            disabled={!selectable}
+            disabled={!selectable || disabled}
           >
-            <SelectTrigger size="sm" aria-invalid={selectable && !mapping?.experienceLevel}>
+            <SelectTrigger
+              size="sm"
+              aria-invalid={selectable && !mapping?.experienceLevel}
+              aria-label={`Seniority for ${item.job.title}`}
+            >
               <SelectValue placeholder="Missing: seniority" />
             </SelectTrigger>
             <SelectContent>
@@ -226,6 +244,16 @@ function JobImportTableRow({
       </TableCell>
       <TableCell>
         <ReviewStateBadge state={state} missingCount={missing.length} />
+        {item.error ? <p className="mt-1 max-w-52 text-xs text-destructive">{item.error}</p> : null}
+        {item.status === "imported" && item.importedJobId ? (
+          <Link
+            to="/dashboard/jobs/$jobId"
+            params={{ jobId: item.importedJobId }}
+            className="mt-1 block text-xs text-primary underline-offset-4 hover:underline"
+          >
+            Open imported draft
+          </Link>
+        ) : null}
       </TableCell>
       <TableCell className="text-right">
         <Button variant="ghost" size="sm" onClick={onPreviewClick}>

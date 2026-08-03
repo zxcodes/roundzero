@@ -10,6 +10,7 @@ import {
   importSelectedJobsSchema,
   previewJobImportCsvSchema,
   previewJobImportUrlSchema,
+  updateJobImportItemsSchema,
 } from "../schemas";
 import { parseJobImportCsv } from "./csv";
 import {
@@ -17,6 +18,7 @@ import {
   enrichSelectedJobImportItems,
   importSelectedJobDrafts,
   loadJobImportPreview,
+  updateJobImportItems,
 } from "./service";
 import { detectJobImportSource } from "./source-detector";
 import { loadJobImportCandidates } from "./source-loader";
@@ -63,6 +65,18 @@ export const getJobImportPreview = createServerFn({ method: "GET" })
     }),
   );
 
+export const saveJobImportItems = createServerFn({ method: "POST" })
+  .middleware([companyMiddleware])
+  .validator(zodValidator(updateJobImportItemsSchema))
+  .handler(async ({ data, context }) =>
+    updateJobImportItems({
+      db: getDb(),
+      companyId: context.company.id,
+      batchId: data.batchId,
+      items: data.items,
+    }),
+  );
+
 export const enrichSelectedJobImports = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
   .validator(zodValidator(enrichSelectedJobImportsSchema))
@@ -83,6 +97,6 @@ export const importSelectedJobs = createServerFn({ method: "POST" })
       db: getDb(),
       companyId: context.company.id,
       batchId: data.batchId,
-      items: data.items,
+      itemIds: data.itemIds,
     }),
   );

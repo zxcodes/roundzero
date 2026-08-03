@@ -1,6 +1,14 @@
 import { z } from "zod";
 
-import { employmentTypeSchema, experienceLevelSchema, workplaceTypeSchema } from "@/shared/enums";
+import {
+  employmentTypeSchema,
+  experienceLevelSchema,
+  salaryCurrencySchema,
+  workplaceTypeSchema,
+} from "@/shared/enums";
+
+const POSTGRES_INTEGER_MAX = 2_147_483_647;
+const positivePostgresIntegerSchema = z.number().int().positive().max(POSTGRES_INTEGER_MAX);
 
 export const jobImportSourcePlatformSchema = z.enum([
   "greenhouse",
@@ -32,10 +40,10 @@ export const normalizedJobImportSchema = z
     workplaceType: workplaceTypeSchema.nullable(),
     employmentType: employmentTypeSchema.nullable(),
     experienceLevel: experienceLevelSchema.nullable(),
-    salaryMin: z.number().int().positive().nullable(),
-    salaryMax: z.number().int().positive().nullable(),
-    salaryCurrency: z.string().trim().min(1).max(10),
-    headcount: z.number().int().positive().nullable(),
+    salaryMin: positivePostgresIntegerSchema.nullable(),
+    salaryMax: positivePostgresIntegerSchema.nullable(),
+    salaryCurrency: salaryCurrencySchema,
+    headcount: positivePostgresIntegerSchema.nullable(),
     expiresAt: z.iso.datetime({ offset: true }).nullable(),
   })
   .strict();
@@ -54,22 +62,43 @@ export const previewJobImportUrlSchema = z.object({
 
 export const previewJobImportCsvSchema = z.object({
   fileName: z.string().trim().min(1).max(255),
-  csv: z.string().min(1, "The CSV file is empty").max(262_144, "CSV files must be under 256 KB"),
+  csv: z
+    .string()
+    .min(1, "The CSV file is empty")
+    .max(262_144, "CSV files must be under 256 KB")
+    .refine(
+      (csv) => new TextEncoder().encode(csv).byteLength <= 262_144,
+      "CSV files must be under 256 KB",
+    ),
 });
 
 export const getJobImportPreviewSchema = z.object({ batchId: z.string().uuid() });
 
-export const jobImportItemOverrideSchema = z.object({
+export const editableJobImportPayloadSchema = normalizedJobImportSchema
+  .omit({ externalId: true, sourceUrl: true, sourceUpdatedAt: true })
+  .refine(
+    (job) => job.salaryMin == null || job.salaryMax == null || job.salaryMin <= job.salaryMax,
+    {
+      message: "Minimum salary cannot exceed maximum salary",
+      path: ["salaryMin"],
+    },
+  );
+export type EditableJobImportPayload = z.infer<typeof editableJobImportPayloadSchema>;
+
+const jobImportItemEditSchema = z.object({
   id: z.string().uuid(),
-  workplaceType: workplaceTypeSchema.nullable(),
-  employmentType: employmentTypeSchema.nullable(),
-  experienceLevel: experienceLevelSchema.nullable(),
+  expectedRevision: z.number().int().nonnegative(),
+  job: editableJobImportPayloadSchema,
 });
-export type JobImportItemOverride = z.infer<typeof jobImportItemOverrideSchema>;
+
+export const updateJobImportItemsSchema = z.object({
+  batchId: z.string().uuid(),
+  items: z.array(jobImportItemEditSchema).min(1).max(50),
+});
 
 export const importSelectedJobsSchema = z.object({
   batchId: z.string().uuid(),
-  items: z.array(jobImportItemOverrideSchema).min(1).max(50),
+  itemIds: z.array(z.string().uuid()).min(1).max(50),
 });
 
 export const enrichSelectedJobImportsSchema = z.object({
@@ -79,6 +108,7 @@ export const enrichSelectedJobImportsSchema = z.object({
 
 export const jobImportItemResponseSchema = z.object({
   id: z.string().uuid(),
+  revision: z.coerce.number().int().nonnegative(),
   status: z.enum(["ready", "duplicate", "imported", "failed"]),
   job: normalizedJobImportSchema,
   warnings: z.array(jobImportWarningSchema),
@@ -90,6 +120,7 @@ export type JobImportItemResponse = z.infer<typeof jobImportItemResponseSchema>;
 
 export const jobImportPreviewSchema = z.object({
   batchId: z.string().uuid(),
+  status: z.enum(["ready", "completed"]),
   sourcePlatform: jobImportSourcePlatformSchema,
   sourceLabel: z.string(),
   items: z.array(jobImportItemResponseSchema),

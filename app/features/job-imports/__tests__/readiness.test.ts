@@ -17,6 +17,7 @@ const mapping: JobImportMapping = {
 
 const item = (overrides?: Partial<JobImportItemResponse>): JobImportItemResponse => ({
   id: crypto.randomUUID(),
+  revision: 0,
   status: "ready",
   job: {
     externalId: crypto.randomUUID(),
@@ -95,6 +96,7 @@ describe("job import readiness", () => {
     };
     const before: JobImportPreview = {
       batchId: crypto.randomUUID(),
+      status: "ready",
       sourcePlatform: "generic",
       sourceLabel: "example.com",
       items: [beforeItem],

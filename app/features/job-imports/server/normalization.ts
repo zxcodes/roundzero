@@ -5,6 +5,7 @@ import type { JobImportWarning, NormalizedJobImport } from "../schemas";
 const DESCRIPTION_LIMIT = 5_000;
 const REQUIREMENT_LIMIT = 200;
 const SUPPORTED_CURRENCIES = new Set(["USD", "EUR", "GBP", "CAD", "AUD", "INR"]);
+const POSTGRES_INTEGER_MAX = 2_147_483_647;
 
 const decodeHtmlEntities = (value: string): string =>
   value
@@ -128,8 +129,55 @@ export function normalizeExperienceLevel(value: unknown): ExperienceLevel | null
 }
 
 export function normalizeSalary(value: unknown): number | null {
-  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) return null;
-  return Math.round(value);
+  if (
+    typeof value !== "number" ||
+    !Number.isFinite(value) ||
+    !Number.isInteger(value) ||
+    value <= 0 ||
+    value > POSTGRES_INTEGER_MAX
+  )
+    return null;
+  return value;
+}
+
+export function normalizeCompensation(args: {
+  minimum: unknown;
+  maximum: unknown;
+  currency: string | null | undefined;
+  warnings: JobImportWarning[];
+  context?: string;
+}): { salaryMin: number | null; salaryMax: number | null; salaryCurrency: string } {
+  const prefix = args.context ? `${args.context} ` : "";
+  const suppliedCurrency = args.currency?.trim().toUpperCase() || "USD";
+  const salaryCurrency = normalizeCurrency(args.currency, args.warnings);
+  let salaryMin = normalizeSalary(args.minimum);
+  let salaryMax = normalizeSalary(args.maximum);
+  if (args.minimum != null && args.minimum !== "" && salaryMin == null)
+    args.warnings.push({
+      code: "invalid_salary_min",
+      field: "salaryMin",
+      message: `${prefix}minimum salary must be a positive whole number no greater than 2,147,483,647; it was omitted.`,
+    });
+  if (args.maximum != null && args.maximum !== "" && salaryMax == null)
+    args.warnings.push({
+      code: "invalid_salary_max",
+      field: "salaryMax",
+      message: `${prefix}maximum salary must be a positive whole number no greater than 2,147,483,647; it was omitted.`,
+    });
+  if (!SUPPORTED_CURRENCIES.has(suppliedCurrency)) {
+    salaryMin = null;
+    salaryMax = null;
+  }
+  if (salaryMin != null && salaryMax != null && salaryMin > salaryMax) {
+    args.warnings.push({
+      code: "reversed_salary_range",
+      field: "salaryMin",
+      message: `${prefix}minimum salary exceeded maximum salary, so compensation was omitted.`,
+    });
+    salaryMin = null;
+    salaryMax = null;
+  }
+  return { salaryMin, salaryMax, salaryCurrency };
 }
 
 export function finishNormalizedJob(

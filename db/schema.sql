@@ -292,6 +292,17 @@ CREATE TABLE public.job_import_batches (
 
 
 --
+-- Name: job_import_enrichment_attempts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.job_import_enrichment_attempts (
+    item_id uuid NOT NULL,
+    company_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: job_import_items; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -309,7 +320,11 @@ CREATE TABLE public.job_import_items (
     error text,
     imported_job_id uuid,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    enrichment_attempts integer DEFAULT 0 NOT NULL,
+    revision bigint DEFAULT 0 NOT NULL,
+    enrichment_token uuid,
+    enrichment_claimed_at timestamp with time zone
 );
 
 
@@ -922,6 +937,13 @@ CREATE INDEX idx_job_import_batches_company_created ON public.job_import_batches
 
 
 --
+-- Name: idx_job_import_enrichment_attempts_company_created; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_job_import_enrichment_attempts_company_created ON public.job_import_enrichment_attempts USING btree (company_id, created_at);
+
+
+--
 -- Name: idx_job_import_items_batch; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1202,6 +1224,22 @@ ALTER TABLE ONLY public.job_import_batches
 
 
 --
+-- Name: job_import_enrichment_attempts job_import_enrichment_attempts_company_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.job_import_enrichment_attempts
+    ADD CONSTRAINT job_import_enrichment_attempts_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id) ON DELETE CASCADE;
+
+
+--
+-- Name: job_import_enrichment_attempts job_import_enrichment_attempts_item_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.job_import_enrichment_attempts
+    ADD CONSTRAINT job_import_enrichment_attempts_item_id_fkey FOREIGN KEY (item_id) REFERENCES public.job_import_items(id) ON DELETE CASCADE;
+
+
+--
 -- Name: job_import_items job_import_items_batch_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1238,7 +1276,7 @@ ALTER TABLE ONLY public.jobs
 --
 
 ALTER TABLE ONLY public.jobs
-    ADD CONSTRAINT jobs_import_batch_id_fkey FOREIGN KEY (import_batch_id) REFERENCES public.job_import_batches(id) ON DELETE RESTRICT;
+    ADD CONSTRAINT jobs_import_batch_id_fkey FOREIGN KEY (import_batch_id) REFERENCES public.job_import_batches(id) ON DELETE SET NULL;
 
 
 --
@@ -1302,4 +1340,7 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260722040827'),
     ('20260728034113'),
     ('20260802125802'),
-    ('20260803013204');
+    ('20260803013204'),
+    ('20260803162443'),
+    ('20260803164512'),
+    ('20260803171357');

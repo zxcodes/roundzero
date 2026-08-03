@@ -48,6 +48,20 @@ export async function createJobImportBatch(sql: Sql, args: createJobImportBatchA
     };
 }
 
+export const deleteExpiredJobImportBatchesQuery = `-- name: deleteExpiredJobImportBatches :exec
+DELETE FROM job_import_batches
+WHERE company_id = $1
+  AND status <> 'completed'
+  AND created_at < now() - interval '30 days'`;
+
+export interface deleteExpiredJobImportBatchesArgs {
+    companyId: string;
+}
+
+export async function deleteExpiredJobImportBatches(sql: Sql, args: deleteExpiredJobImportBatchesArgs): Promise<void> {
+    await sql.unsafe(deleteExpiredJobImportBatchesQuery, [args.companyId]);
+}
+
 export const createJobImportItemQuery = `-- name: createJobImportItem :one
 INSERT INTO job_import_items (
   batch_id, source_platform, source_external_id, source_url, source_updated_at,
@@ -71,7 +85,7 @@ VALUES (
       AND j.source_external_id = $3
   ) THEN 'duplicate' ELSE 'ready' END
 )
-RETURNING id, batch_id, source_platform, source_external_id, source_url, source_updated_at, normalized_payload, warnings, inferred_fields, status, error, imported_job_id, created_at, updated_at`;
+RETURNING id, batch_id, source_platform, source_external_id, source_url, source_updated_at, normalized_payload, warnings, inferred_fields, status, error, imported_job_id, created_at, updated_at, enrichment_attempts, revision, enrichment_token, enrichment_claimed_at`;
 
 export interface createJobImportItemArgs {
     batchId: string;
@@ -99,6 +113,10 @@ export interface createJobImportItemRow {
     importedJobId: string | null;
     createdAt: Date;
     updatedAt: Date;
+    enrichmentAttempts: number;
+    revision: string;
+    enrichmentToken: string | null;
+    enrichmentClaimedAt: Date | null;
 }
 
 export async function createJobImportItem(sql: Sql, args: createJobImportItemArgs): Promise<createJobImportItemRow | null> {
@@ -121,7 +139,11 @@ export async function createJobImportItem(sql: Sql, args: createJobImportItemArg
         error: row[10],
         importedJobId: row[11],
         createdAt: row[12],
-        updatedAt: row[13]
+        updatedAt: row[13],
+        enrichmentAttempts: row[14],
+        revision: row[15],
+        enrichmentToken: row[16],
+        enrichmentClaimedAt: row[17]
     };
 }
 
@@ -212,8 +234,33 @@ export async function getJobImportBatchForUpdate(sql: Sql, args: getJobImportBat
     };
 }
 
+export const lockJobImportCompanyQuery = `-- name: lockJobImportCompany :one
+SELECT id
+FROM companies
+WHERE id = $1
+FOR UPDATE`;
+
+export interface lockJobImportCompanyArgs {
+    id: string;
+}
+
+export interface lockJobImportCompanyRow {
+    id: string;
+}
+
+export async function lockJobImportCompany(sql: Sql, args: lockJobImportCompanyArgs): Promise<lockJobImportCompanyRow | null> {
+    const rows = await sql.unsafe(lockJobImportCompanyQuery, [args.id]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0]
+    };
+}
+
 export const listJobImportItemsForCompanyQuery = `-- name: listJobImportItemsForCompany :many
-SELECT i.id, i.batch_id, i.source_platform, i.source_external_id, i.source_url, i.source_updated_at, i.normalized_payload, i.warnings, i.inferred_fields, i.status, i.error, i.imported_job_id, i.created_at, i.updated_at
+SELECT i.id, i.batch_id, i.source_platform, i.source_external_id, i.source_url, i.source_updated_at, i.normalized_payload, i.warnings, i.inferred_fields, i.status, i.error, i.imported_job_id, i.created_at, i.updated_at, i.enrichment_attempts, i.revision, i.enrichment_token, i.enrichment_claimed_at
 FROM job_import_items i
 JOIN job_import_batches b ON b.id = i.batch_id
 WHERE i.batch_id = $1
@@ -240,6 +287,10 @@ export interface listJobImportItemsForCompanyRow {
     importedJobId: string | null;
     createdAt: Date;
     updatedAt: Date;
+    enrichmentAttempts: number;
+    revision: string;
+    enrichmentToken: string | null;
+    enrichmentClaimedAt: Date | null;
 }
 
 export async function listJobImportItemsForCompany(sql: Sql, args: listJobImportItemsForCompanyArgs): Promise<listJobImportItemsForCompanyRow[]> {
@@ -257,12 +308,16 @@ export async function listJobImportItemsForCompany(sql: Sql, args: listJobImport
         error: row[10],
         importedJobId: row[11],
         createdAt: row[12],
-        updatedAt: row[13]
+        updatedAt: row[13],
+        enrichmentAttempts: row[14],
+        revision: row[15],
+        enrichmentToken: row[16],
+        enrichmentClaimedAt: row[17]
     }));
 }
 
 export const listSelectedJobImportItemsForCompanyQuery = `-- name: listSelectedJobImportItemsForCompany :many
-SELECT i.id, i.batch_id, i.source_platform, i.source_external_id, i.source_url, i.source_updated_at, i.normalized_payload, i.warnings, i.inferred_fields, i.status, i.error, i.imported_job_id, i.created_at, i.updated_at
+SELECT i.id, i.batch_id, i.source_platform, i.source_external_id, i.source_url, i.source_updated_at, i.normalized_payload, i.warnings, i.inferred_fields, i.status, i.error, i.imported_job_id, i.created_at, i.updated_at, i.enrichment_attempts, i.revision, i.enrichment_token, i.enrichment_claimed_at
 FROM job_import_items i
 JOIN job_import_batches b ON b.id = i.batch_id
 WHERE i.batch_id = $1::uuid
@@ -292,6 +347,10 @@ export interface listSelectedJobImportItemsForCompanyRow {
     importedJobId: string | null;
     createdAt: Date;
     updatedAt: Date;
+    enrichmentAttempts: number;
+    revision: string;
+    enrichmentToken: string | null;
+    enrichmentClaimedAt: Date | null;
 }
 
 export async function listSelectedJobImportItemsForCompany(sql: Sql, args: listSelectedJobImportItemsForCompanyArgs): Promise<listSelectedJobImportItemsForCompanyRow[]> {
@@ -309,7 +368,11 @@ export async function listSelectedJobImportItemsForCompany(sql: Sql, args: listS
         error: row[10],
         importedJobId: row[11],
         createdAt: row[12],
-        updatedAt: row[13]
+        updatedAt: row[13],
+        enrichmentAttempts: row[14],
+        revision: row[15],
+        enrichmentToken: row[16],
+        enrichmentClaimedAt: row[17]
     }));
 }
 
@@ -444,7 +507,7 @@ SET status = 'imported',
     error = NULL,
     updated_at = now()
 WHERE id = $1
-RETURNING id, batch_id, source_platform, source_external_id, source_url, source_updated_at, normalized_payload, warnings, inferred_fields, status, error, imported_job_id, created_at, updated_at`;
+RETURNING id, batch_id, source_platform, source_external_id, source_url, source_updated_at, normalized_payload, warnings, inferred_fields, status, error, imported_job_id, created_at, updated_at, enrichment_attempts, revision, enrichment_token, enrichment_claimed_at`;
 
 export interface markJobImportItemImportedArgs {
     id: string;
@@ -466,6 +529,10 @@ export interface markJobImportItemImportedRow {
     importedJobId: string | null;
     createdAt: Date;
     updatedAt: Date;
+    enrichmentAttempts: number;
+    revision: string;
+    enrichmentToken: string | null;
+    enrichmentClaimedAt: Date | null;
 }
 
 export async function markJobImportItemImported(sql: Sql, args: markJobImportItemImportedArgs): Promise<markJobImportItemImportedRow | null> {
@@ -488,7 +555,11 @@ export async function markJobImportItemImported(sql: Sql, args: markJobImportIte
         error: row[10],
         importedJobId: row[11],
         createdAt: row[12],
-        updatedAt: row[13]
+        updatedAt: row[13],
+        enrichmentAttempts: row[14],
+        revision: row[15],
+        enrichmentToken: row[16],
+        enrichmentClaimedAt: row[17]
     };
 }
 
@@ -497,15 +568,25 @@ UPDATE job_import_items
 SET normalized_payload = $1::jsonb,
     warnings = $2::jsonb,
     inferred_fields = $3::jsonb,
+    enrichment_token = NULL,
+    enrichment_claimed_at = NULL,
+    revision = revision + 1,
     updated_at = now()
 WHERE id = $4::uuid
-RETURNING id, batch_id, source_platform, source_external_id, source_url, source_updated_at, normalized_payload, warnings, inferred_fields, status, error, imported_job_id, created_at, updated_at`;
+  AND batch_id = $5::uuid
+  AND status = 'ready'
+  AND enrichment_token = $6::uuid
+  AND revision = $7::bigint
+RETURNING id, batch_id, source_platform, source_external_id, source_url, source_updated_at, normalized_payload, warnings, inferred_fields, status, error, imported_job_id, created_at, updated_at, enrichment_attempts, revision, enrichment_token, enrichment_claimed_at`;
 
 export interface updateJobImportItemEnrichmentArgs {
     normalizedPayload: any;
     warnings: any;
     inferredFields: any;
     id: string;
+    batchId: string;
+    enrichmentToken: string;
+    expectedRevision: string;
 }
 
 export interface updateJobImportItemEnrichmentRow {
@@ -523,10 +604,14 @@ export interface updateJobImportItemEnrichmentRow {
     importedJobId: string | null;
     createdAt: Date;
     updatedAt: Date;
+    enrichmentAttempts: number;
+    revision: string;
+    enrichmentToken: string | null;
+    enrichmentClaimedAt: Date | null;
 }
 
 export async function updateJobImportItemEnrichment(sql: Sql, args: updateJobImportItemEnrichmentArgs): Promise<updateJobImportItemEnrichmentRow | null> {
-    const rows = await sql.unsafe(updateJobImportItemEnrichmentQuery, [args.normalizedPayload, args.warnings, args.inferredFields, args.id]).values();
+    const rows = await sql.unsafe(updateJobImportItemEnrichmentQuery, [args.normalizedPayload, args.warnings, args.inferredFields, args.id, args.batchId, args.enrichmentToken, args.expectedRevision]).values();
     if (rows.length !== 1) {
         return null;
     }
@@ -545,8 +630,173 @@ export async function updateJobImportItemEnrichment(sql: Sql, args: updateJobImp
         error: row[10],
         importedJobId: row[11],
         createdAt: row[12],
-        updatedAt: row[13]
+        updatedAt: row[13],
+        enrichmentAttempts: row[14],
+        revision: row[15],
+        enrichmentToken: row[16],
+        enrichmentClaimedAt: row[17]
     };
+}
+
+export const updateReadyJobImportItemQuery = `-- name: updateReadyJobImportItem :one
+UPDATE job_import_items i
+SET normalized_payload = $1::jsonb,
+    warnings = $2::jsonb,
+    inferred_fields = $3::jsonb,
+    enrichment_token = NULL,
+    enrichment_claimed_at = NULL,
+    revision = i.revision + 1,
+    updated_at = now()
+FROM job_import_batches b
+WHERE i.id = $4::uuid
+  AND i.batch_id = $5::uuid
+  AND b.id = i.batch_id
+  AND b.company_id = $6::uuid
+  AND b.status = 'ready'
+  AND i.status = 'ready'
+  AND i.revision = $7::bigint
+RETURNING i.id, i.batch_id, i.source_platform, i.source_external_id, i.source_url, i.source_updated_at, i.normalized_payload, i.warnings, i.inferred_fields, i.status, i.error, i.imported_job_id, i.created_at, i.updated_at, i.enrichment_attempts, i.revision, i.enrichment_token, i.enrichment_claimed_at`;
+
+export interface updateReadyJobImportItemArgs {
+    normalizedPayload: any;
+    warnings: any;
+    inferredFields: any;
+    id: string;
+    batchId: string;
+    companyId: string;
+    expectedRevision: string;
+}
+
+export interface updateReadyJobImportItemRow {
+    id: string;
+    batchId: string;
+    sourcePlatform: string;
+    sourceExternalId: string;
+    sourceUrl: string | null;
+    sourceUpdatedAt: Date | null;
+    normalizedPayload: any;
+    warnings: any;
+    inferredFields: any;
+    status: string;
+    error: string | null;
+    importedJobId: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    enrichmentAttempts: number;
+    revision: string;
+    enrichmentToken: string | null;
+    enrichmentClaimedAt: Date | null;
+}
+
+export async function updateReadyJobImportItem(sql: Sql, args: updateReadyJobImportItemArgs): Promise<updateReadyJobImportItemRow | null> {
+    const rows = await sql.unsafe(updateReadyJobImportItemQuery, [args.normalizedPayload, args.warnings, args.inferredFields, args.id, args.batchId, args.companyId, args.expectedRevision]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        batchId: row[1],
+        sourcePlatform: row[2],
+        sourceExternalId: row[3],
+        sourceUrl: row[4],
+        sourceUpdatedAt: row[5],
+        normalizedPayload: row[6],
+        warnings: row[7],
+        inferredFields: row[8],
+        status: row[9],
+        error: row[10],
+        importedJobId: row[11],
+        createdAt: row[12],
+        updatedAt: row[13],
+        enrichmentAttempts: row[14],
+        revision: row[15],
+        enrichmentToken: row[16],
+        enrichmentClaimedAt: row[17]
+    };
+}
+
+export const reserveJobImportEnrichmentAttemptsQuery = `-- name: reserveJobImportEnrichmentAttempts :many
+WITH eligible AS (
+  SELECT i.id
+  FROM job_import_items i
+  JOIN job_import_batches b ON b.id = i.batch_id
+  WHERE i.batch_id = $1::uuid
+    AND b.company_id = $2::uuid
+    AND b.status = 'ready'
+    AND i.status = 'ready'
+    AND i.id = ANY(string_to_array($3, ',')::uuid[])
+    AND i.enrichment_attempts < 2
+    AND (i.enrichment_token IS NULL OR i.enrichment_claimed_at < now() - interval '15 minutes')
+  ORDER BY i.created_at, i.id
+  FOR UPDATE OF i
+), reserved AS (
+  UPDATE job_import_items i
+  SET enrichment_attempts = enrichment_attempts + 1,
+      enrichment_token = $4::uuid,
+      enrichment_claimed_at = now(),
+      revision = revision + 1,
+      updated_at = now()
+  FROM eligible e
+  WHERE i.id = e.id
+    AND (SELECT count(*) FROM job_import_enrichment_attempts WHERE company_id = $2::uuid AND created_at >= now() - interval '24 hours')
+      + (SELECT count(*) FROM eligible) <= 100
+  RETURNING i.id, i.batch_id, i.source_platform, i.source_external_id, i.source_url, i.source_updated_at, i.normalized_payload, i.warnings, i.inferred_fields, i.status, i.error, i.imported_job_id, i.created_at, i.updated_at, i.enrichment_attempts, i.revision, i.enrichment_token, i.enrichment_claimed_at
+), attempts AS (
+  INSERT INTO job_import_enrichment_attempts (item_id, company_id)
+  SELECT id, $2::uuid FROM reserved
+)
+SELECT id, batch_id, source_platform, source_external_id, source_url, source_updated_at, normalized_payload, warnings, inferred_fields, status, error, imported_job_id, created_at, updated_at, enrichment_attempts, revision, enrichment_token, enrichment_claimed_at FROM reserved`;
+
+export interface reserveJobImportEnrichmentAttemptsArgs {
+    batchId: string;
+    companyId: string;
+    itemIdsCsv: string;
+    enrichmentToken: string;
+}
+
+export interface reserveJobImportEnrichmentAttemptsRow {
+    id: string;
+    batchId: string;
+    sourcePlatform: string;
+    sourceExternalId: string;
+    sourceUrl: string | null;
+    sourceUpdatedAt: Date | null;
+    normalizedPayload: any;
+    warnings: any;
+    inferredFields: any;
+    status: string;
+    error: string | null;
+    importedJobId: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    enrichmentAttempts: number;
+    revision: string;
+    enrichmentToken: string | null;
+    enrichmentClaimedAt: Date | null;
+}
+
+export async function reserveJobImportEnrichmentAttempts(sql: Sql, args: reserveJobImportEnrichmentAttemptsArgs): Promise<reserveJobImportEnrichmentAttemptsRow[]> {
+    return (await sql.unsafe(reserveJobImportEnrichmentAttemptsQuery, [args.batchId, args.companyId, args.itemIdsCsv, args.enrichmentToken]).values()).map(row => ({
+        id: row[0],
+        batchId: row[1],
+        sourcePlatform: row[2],
+        sourceExternalId: row[3],
+        sourceUrl: row[4],
+        sourceUpdatedAt: row[5],
+        normalizedPayload: row[6],
+        warnings: row[7],
+        inferredFields: row[8],
+        status: row[9],
+        error: row[10],
+        importedJobId: row[11],
+        createdAt: row[12],
+        updatedAt: row[13],
+        enrichmentAttempts: row[14],
+        revision: row[15],
+        enrichmentToken: row[16],
+        enrichmentClaimedAt: row[17]
+    }));
 }
 
 export const markJobImportItemDuplicateQuery = `-- name: markJobImportItemDuplicate :one
@@ -555,7 +805,7 @@ SET status = 'duplicate',
     error = 'This source job has already been imported.',
     updated_at = now()
 WHERE id = $1
-RETURNING id, batch_id, source_platform, source_external_id, source_url, source_updated_at, normalized_payload, warnings, inferred_fields, status, error, imported_job_id, created_at, updated_at`;
+RETURNING id, batch_id, source_platform, source_external_id, source_url, source_updated_at, normalized_payload, warnings, inferred_fields, status, error, imported_job_id, created_at, updated_at, enrichment_attempts, revision, enrichment_token, enrichment_claimed_at`;
 
 export interface markJobImportItemDuplicateArgs {
     id: string;
@@ -576,6 +826,10 @@ export interface markJobImportItemDuplicateRow {
     importedJobId: string | null;
     createdAt: Date;
     updatedAt: Date;
+    enrichmentAttempts: number;
+    revision: string;
+    enrichmentToken: string | null;
+    enrichmentClaimedAt: Date | null;
 }
 
 export async function markJobImportItemDuplicate(sql: Sql, args: markJobImportItemDuplicateArgs): Promise<markJobImportItemDuplicateRow | null> {
@@ -598,25 +852,31 @@ export async function markJobImportItemDuplicate(sql: Sql, args: markJobImportIt
         error: row[10],
         importedJobId: row[11],
         createdAt: row[12],
-        updatedAt: row[13]
+        updatedAt: row[13],
+        enrichmentAttempts: row[14],
+        revision: row[15],
+        enrichmentToken: row[16],
+        enrichmentClaimedAt: row[17]
     };
 }
 
-export const completeJobImportBatchQuery = `-- name: completeJobImportBatch :one
+export const finalizeJobImportBatchQuery = `-- name: finalizeJobImportBatch :one
 UPDATE job_import_batches
-SET status = 'completed',
+SET status = CASE WHEN EXISTS (
+      SELECT 1 FROM job_import_items i WHERE i.batch_id = $1 AND i.status = 'ready'
+    ) THEN 'ready' ELSE 'completed' END,
     imported_count = (
-      SELECT count(*)::int FROM job_import_items WHERE batch_id = $1 AND status = 'imported'
+      SELECT count(*)::int FROM job_import_items i WHERE i.batch_id = $1 AND i.status = 'imported'
     ),
     updated_at = now()
 WHERE id = $1
 RETURNING id, company_id, created_by, source_kind, source_label, status, discovered_count, imported_count, created_at, updated_at`;
 
-export interface completeJobImportBatchArgs {
+export interface finalizeJobImportBatchArgs {
     batchId: string;
 }
 
-export interface completeJobImportBatchRow {
+export interface finalizeJobImportBatchRow {
     id: string;
     companyId: string;
     createdBy: string;
@@ -629,8 +889,8 @@ export interface completeJobImportBatchRow {
     updatedAt: Date;
 }
 
-export async function completeJobImportBatch(sql: Sql, args: completeJobImportBatchArgs): Promise<completeJobImportBatchRow | null> {
-    const rows = await sql.unsafe(completeJobImportBatchQuery, [args.batchId]).values();
+export async function finalizeJobImportBatch(sql: Sql, args: finalizeJobImportBatchArgs): Promise<finalizeJobImportBatchRow | null> {
+    const rows = await sql.unsafe(finalizeJobImportBatchQuery, [args.batchId]).values();
     if (rows.length !== 1) {
         return null;
     }

@@ -11,7 +11,7 @@ import {
 import {
   finishNormalizedJob,
   htmlToPlainText,
-  normalizeCurrency,
+  normalizeCompensation,
   normalizeDescription,
   normalizeEmploymentType,
   normalizeExperienceLevel,
@@ -75,21 +75,28 @@ function candidate(args: {
   warnings?: JobImportWarning[];
 }): JobImportCandidate {
   const warnings = [...(args.warnings ?? [])];
-  const currency = normalizeCurrency(args.salaryCurrency, warnings);
-  const salaryCurrencySupported = !warnings.some(
-    (warning) => warning.code === "unsupported_currency",
-  );
-  let salaryMin = salaryCurrencySupported ? normalizeSalary(args.salaryMin) : null;
-  let salaryMax = salaryCurrencySupported ? normalizeSalary(args.salaryMax) : null;
-  if (salaryMin && salaryMax && salaryMin > salaryMax) {
+  const compensation = normalizeCompensation({
+    minimum: args.salaryMin,
+    maximum: args.salaryMax,
+    currency: args.salaryCurrency,
+    warnings,
+  });
+  const headcount = normalizeSalary(args.headcount);
+  if (args.headcount != null && headcount == null) {
     warnings.push({
-      code: "invalid_salary_range",
-      field: "salaryMin",
-      message: "The source salary range was reversed, so compensation was omitted.",
+      code: "invalid_headcount",
+      field: "headcount",
+      message:
+        "The source headcount must be a positive whole PostgreSQL-safe number, so it was omitted.",
     });
-    salaryMin = null;
-    salaryMax = null;
   }
+  const expiresAt = isoDate(args.expiresAt);
+  if (args.expiresAt != null && !expiresAt)
+    warnings.push({
+      code: "invalid_expiry_date",
+      field: "expiresAt",
+      message: "The source expiration date was invalid, so it was omitted.",
+    });
 
   const job = normalizedJobImportSchema.parse({
     externalId: args.externalId.slice(0, 500),
@@ -102,11 +109,11 @@ function candidate(args: {
     workplaceType: normalizeWorkplaceType(args.workplaceType),
     employmentType: normalizeEmploymentType(args.employmentType),
     experienceLevel: normalizeExperienceLevel(args.experienceLevel),
-    salaryMin,
-    salaryMax,
-    salaryCurrency: currency,
-    headcount: normalizeSalary(args.headcount),
-    expiresAt: isoDate(args.expiresAt),
+    salaryMin: compensation.salaryMin,
+    salaryMax: compensation.salaryMax,
+    salaryCurrency: compensation.salaryCurrency,
+    headcount,
+    expiresAt,
   });
 
   const finished = finishNormalizedJob(job, warnings);

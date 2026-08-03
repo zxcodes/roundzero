@@ -7,12 +7,11 @@ import {
 } from "../schemas";
 import {
   finishNormalizedJob,
-  normalizeCurrency,
+  normalizeCompensation,
   normalizeDescription,
   normalizeEmploymentType,
   normalizeExperienceLevel,
   normalizeRequirements,
-  normalizeSalary,
   normalizeWorkplaceType,
 } from "./normalization";
 
@@ -32,14 +31,30 @@ function parseCsvRows(input: string): string[][] {
         index += 1;
       } else if (character === '"') {
         quoted = false;
+        if (
+          input[index + 1] !== "," &&
+          input[index + 1] !== "\r" &&
+          input[index + 1] !== "\n" &&
+          input[index + 1] !== undefined
+        ) {
+          throw new ExpectedError(
+            "invalid_input",
+            "A quoted CSV field must end before a comma or line break.",
+          );
+        }
       } else {
         field += character;
       }
       continue;
     }
 
-    if (character === '"') {
+    if (character === '"' && field.length === 0) {
       quoted = true;
+    } else if (character === '"') {
+      throw new ExpectedError(
+        "invalid_input",
+        "A quote may only appear at the start of a CSV field.",
+      );
     } else if (character === ",") {
       row.push(field);
       field = "";
@@ -67,16 +82,29 @@ const normalizeHeader = (header: string): string =>
     .toLowerCase()
     .replaceAll(/[\s-]+/g, "_");
 
-function parsePositiveNumber(value: string | undefined): number | null {
+function parseNumber(value: string | undefined): number | null | string {
   if (!value?.trim()) return null;
-  const parsed = Number(value.replaceAll(",", ""));
-  return normalizeSalary(parsed);
+  const trimmed = value.trim();
+  if (!/^(?:0|[1-9]\d*)$/.test(trimmed)) return value;
+  const parsed = Number(trimmed);
+  return Number.isSafeInteger(parsed) ? parsed : value;
 }
 
 function parseDate(value: string | undefined): string | null {
   if (!value?.trim()) return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  )
+    return null;
+  return date.toISOString();
 }
 
 async function fingerprint(value: string): Promise<string> {
@@ -91,6 +119,13 @@ export async function parseJobImportCsv(csv: string): Promise<JobImportCandidate
   }
 
   const headers = rows[0].map(normalizeHeader);
+  const duplicateHeader = headers.find((header, index) => headers.indexOf(header) !== index);
+  if (duplicateHeader) {
+    throw new ExpectedError(
+      "invalid_input",
+      `The CSV contains duplicate ${duplicateHeader} columns.`,
+    );
+  }
   for (const required of ["title", "description"]) {
     if (!headers.includes(required)) {
       throw new ExpectedError(
@@ -106,8 +141,14 @@ export async function parseJobImportCsv(csv: string): Promise<JobImportCandidate
     );
   }
 
-  return Promise.all(
+  const candidates = await Promise.all(
     rows.slice(1).map(async (values, rowIndex) => {
+      if (values.length !== headers.length) {
+        throw new ExpectedError(
+          "invalid_input",
+          `CSV row ${rowIndex + 2} has ${values.length} columns but the header has ${headers.length}.`,
+        );
+      }
       const record = new Map(headers.map((header, index) => [header, values[index]?.trim() ?? ""]));
       const title = record.get("title") ?? "";
       const description = record.get("description") ?? "";
@@ -122,7 +163,29 @@ export async function parseJobImportCsv(csv: string): Promise<JobImportCandidate
       const workplaceType = normalizeWorkplaceType(record.get("workplace_type"));
       const employmentType = normalizeEmploymentType(record.get("employment_type"));
       const experienceLevel = normalizeExperienceLevel(record.get("experience_level"));
-      const salaryCurrency = normalizeCurrency(record.get("salary_currency"), warnings);
+      const rowLabel = `CSV row ${rowIndex + 2}`;
+      const compensation = normalizeCompensation({
+        minimum: parseNumber(record.get("salary_min")),
+        maximum: parseNumber(record.get("salary_max")),
+        currency: record.get("salary_currency"),
+        warnings,
+        context: rowLabel,
+      });
+      const rawHeadcount = parseNumber(record.get("headcount"));
+      const headcount =
+        typeof rawHeadcount === "number" &&
+        Number.isInteger(rawHeadcount) &&
+        rawHeadcount > 0 &&
+        rawHeadcount <= 2_147_483_647
+          ? rawHeadcount
+          : null;
+      if (rawHeadcount != null && headcount == null) {
+        warnings.push({
+          code: "invalid_headcount",
+          field: "headcount",
+          message: `${rowLabel} headcount must be a positive whole number no greater than 2,147,483,647; it was omitted.`,
+        });
+      }
       const sourceUrlValue = record.get("source_url");
       let sourceUrl: string | null = null;
       if (sourceUrlValue) {
@@ -165,15 +228,36 @@ export async function parseJobImportCsv(csv: string): Promise<JobImportCandidate
         workplaceType,
         employmentType,
         experienceLevel,
-        salaryMin: parsePositiveNumber(record.get("salary_min")),
-        salaryMax: parsePositiveNumber(record.get("salary_max")),
-        salaryCurrency,
-        headcount: parsePositiveNumber(record.get("headcount")),
+        salaryMin: compensation.salaryMin,
+        salaryMax: compensation.salaryMax,
+        salaryCurrency: compensation.salaryCurrency,
+        headcount,
         expiresAt: parseDate(record.get("expires_at")),
       });
+
+      if (record.get("expires_at") && !job.expiresAt) {
+        warnings.push({
+          code: "invalid_expiry_date",
+          field: "expiresAt",
+          message: `${rowLabel} expires_at must be a valid date; it was omitted.`,
+        });
+      }
 
       const finished = finishNormalizedJob(job, warnings);
       return { ...finished, inferredFields: [] };
     }),
   );
+
+  const seen = new Map<string, number>();
+  for (const [index, candidate] of candidates.entries()) {
+    const prior = seen.get(candidate.job.externalId);
+    if (prior != null) {
+      throw new ExpectedError(
+        "invalid_input",
+        `CSV rows ${prior + 2} and ${index + 2} have the same external ID or job fingerprint. Give each job a unique external_id, title, location, or description.`,
+      );
+    }
+    seen.set(candidate.job.externalId, index);
+  }
+  return candidates;
 }
