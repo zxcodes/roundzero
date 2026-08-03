@@ -105,6 +105,13 @@ describe("jobFieldsSchema", () => {
     expect(() => jobFieldsSchema.parse({ ...validJob, salaryMin: 100.5 })).toThrow();
   });
 
+  it("allows up to 50 final reports per job", () => {
+    expect(jobFieldsSchema.parse({ ...validJob, finalReportTarget: 50 }).finalReportTarget).toBe(
+      50,
+    );
+    expect(jobFieldsSchema.safeParse({ ...validJob, finalReportTarget: 51 }).success).toBe(false);
+  });
+
   // ─── Salary refinement ───────────────────────────────────
 
   it("allows salaryMin equal to salaryMax", () => {

@@ -64,7 +64,7 @@ const jobFieldsBaseSchema = z.object({
     .number({ error: "Final report target must be a valid number" })
     .int("Final report target must be a whole number")
     .min(1, "Final report target must be at least 1")
-    .max(15, "Final report target cannot exceed 15")
+    .max(50, "Final report target cannot exceed 50")
     .default(5),
   expiresAt: z.coerce.date().nullable().optional(),
 });
