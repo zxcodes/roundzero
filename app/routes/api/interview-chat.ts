@@ -35,6 +35,7 @@ import {
   areRequiredScreeningQuestionsResolved,
   buildInterviewSystemPrompt,
   ensureInterviewRuntimeMetadata,
+  interviewContinueResponseSchema,
   type InterviewMetadata,
   loadInterviewRuntimeContext,
 } from "@/features/interviews/shared/runtime";
@@ -103,14 +104,6 @@ const interviewResponseSchema = z
       });
     }
   });
-
-const interviewContinueResponseSchema = z
-  .object({
-    action: z.literal("continue"),
-    message: z.string().min(1).describe("The candidate-visible response."),
-    reason: z.null(),
-  })
-  .strict();
 
 const readMessageText = (message: UIMessage | ModelMessage) => {
   if ("parts" in message && Array.isArray(message.parts)) {

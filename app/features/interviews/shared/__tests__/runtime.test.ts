@@ -12,6 +12,7 @@ import {
   buildInterviewSystemPrompt,
   buildInterviewJobSnapshot,
   ensureInterviewRuntimeMetadata,
+  interviewContinueResponseSchema,
   jobSnapshotFromLegacyContextState,
   loadCandidateSummaryFromApplication,
   loadInterviewRuntimeContext,
@@ -21,6 +22,27 @@ import { createPreEvaluation } from "@/features/pre-evaluations/queries/queries_
 import { getTestDb, makeTestResumeKey, seedCompany, seedUser } from "@/shared/__tests__/test-utils";
 
 const sql = getTestDb();
+
+describe("interview response schema", () => {
+  it("accepts a structured greeting and rejects candidate-visible JSON text", () => {
+    expect(
+      interviewContinueResponseSchema.parse({
+        action: "continue",
+        message: "Hi Jordan, what is your notice period?",
+        reason: null,
+      }),
+    ).toEqual({
+      action: "continue",
+      message: "Hi Jordan, what is your notice period?",
+      reason: null,
+    });
+    expect(
+      interviewContinueResponseSchema.safeParse(
+        '```json\n{"action":"continue","message":"Hi Jordan","reason":null}\n```',
+      ).success,
+    ).toBe(false);
+  });
+});
 
 const seedInterviewContext = async () => {
   const { company } = await seedCompany({ name: "Runtime Co" });

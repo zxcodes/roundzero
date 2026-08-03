@@ -128,7 +128,7 @@ Hybrid architecture — **not** WebSockets for chat; **SSE** for turn streaming.
 
 ## Flow
 
-1. **Start** — `startMyInterview` server function generates the first greeting (`chat()`, `stream: false`)
+1. **Start** — `startMyInterview` generates and validates the first greeting as a structured `continue` response, then persists only its candidate-visible message
 2. **Chat turns** — client posts to `POST /api/interview-chat` (SSE stream via TanStack AI `chat()`)
 3. **Tools** — server-side tool loop (`maxIterations(5)`):
    - `check_resume_gap` — verify claims against resume/profile
