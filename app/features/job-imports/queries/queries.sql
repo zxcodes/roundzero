@@ -7,9 +7,28 @@ RETURNING *;
 
 -- name: deleteExpiredJobImportBatches :exec
 DELETE FROM job_import_batches
-WHERE company_id = $1
-  AND status <> 'completed'
-  AND created_at < now() - interval '30 days';
+WHERE id IN (
+  SELECT b.id
+  FROM job_import_batches b
+  WHERE b.company_id = $1
+    AND b.status <> 'completed'
+    AND b.updated_at < now() - interval '30 days'
+    AND NOT EXISTS (
+      SELECT 1
+      FROM job_import_items i
+      WHERE i.batch_id = b.id
+        AND i.enrichment_token IS NOT NULL
+        AND i.enrichment_claimed_at >= now() - interval '15 minutes'
+    )
+  FOR UPDATE OF b SKIP LOCKED
+);
+
+-- name: touchJobImportBatch :exec
+UPDATE job_import_batches
+SET updated_at = now()
+WHERE id = $1
+  AND company_id = $2
+  AND status = 'ready';
 
 -- name: createJobImportItem :one
 INSERT INTO job_import_items (
@@ -35,11 +54,6 @@ VALUES (
   ) THEN 'duplicate' ELSE 'ready' END
 )
 RETURNING *;
-
--- name: getJobImportBatchForCompany :one
-SELECT *
-FROM job_import_batches
-WHERE id = $1 AND company_id = $2;
 
 -- name: getJobImportBatchForUpdate :one
 SELECT *

@@ -374,7 +374,8 @@ describe("job import service", () => {
     });
     await sql`
       UPDATE job_import_batches
-      SET created_at = now() - interval '31 days'
+      SET created_at = now() - interval '31 days',
+          updated_at = now() - interval '31 days'
       WHERE id = ${preview.batchId}
     `;
 
@@ -400,6 +401,158 @@ describe("job import service", () => {
     `;
     expect(oldBatch).toBeUndefined();
     expect(draft.import_batch_id).toBeNull();
+  });
+
+  it("uses recent edits as activity when cleaning up old imports", async () => {
+    const { company, owner } = await seedCompany();
+    const preview = await createJobImportPreview({
+      db: sql,
+      companyId: company.id,
+      userId: owner.id,
+      sourcePlatform: "lever",
+      sourceLabel: "Lever · edited",
+      candidates: [candidate],
+    });
+    await sql`
+      UPDATE job_import_batches
+      SET created_at = now() - interval '31 days',
+          updated_at = now() - interval '31 days'
+      WHERE id = ${preview.batchId}
+    `;
+    await updateJobImportItems({
+      db: sql,
+      companyId: company.id,
+      batchId: preview.batchId,
+      items: [
+        {
+          id: preview.items[0].id,
+          expectedRevision: preview.items[0].revision,
+          job: { ...preview.items[0].job, title: "Recently edited" },
+        },
+      ],
+    });
+
+    await createJobImportPreview({
+      db: sql,
+      companyId: company.id,
+      userId: owner.id,
+      sourcePlatform: "lever",
+      sourceLabel: "Lever · new",
+      candidates: [
+        {
+          ...candidate,
+          job: { ...candidate.job, externalId: "lever-job-new", title: "New job" },
+        },
+      ],
+    });
+    expect(
+      await loadJobImportPreview({ db: sql, companyId: company.id, batchId: preview.batchId }),
+    ).toMatchObject({ items: [{ job: { title: "Recently edited" } }] });
+  });
+
+  it("protects active enrichment claims and expires stale claims", async () => {
+    const { company, owner } = await seedCompany();
+    const active = await createJobImportPreview({
+      db: sql,
+      companyId: company.id,
+      userId: owner.id,
+      sourcePlatform: "lever",
+      sourceLabel: "Lever · active claim",
+      candidates: [candidate],
+    });
+    await sql`
+      UPDATE job_import_batches
+      SET created_at = now() - interval '31 days',
+          updated_at = now() - interval '31 days'
+      WHERE id = ${active.batchId}
+    `;
+    await sql`
+      UPDATE job_import_items
+      SET enrichment_token = ${crypto.randomUUID()},
+          enrichment_claimed_at = now() - interval '14 minutes'
+      WHERE id = ${active.items[0].id}
+    `;
+
+    await createJobImportPreview({
+      db: sql,
+      companyId: company.id,
+      userId: owner.id,
+      sourcePlatform: "lever",
+      sourceLabel: "Lever · cleanup trigger",
+      candidates: [
+        {
+          ...candidate,
+          job: { ...candidate.job, externalId: "cleanup-trigger", title: "Cleanup trigger" },
+        },
+      ],
+    });
+    expect(
+      await loadJobImportPreview({ db: sql, companyId: company.id, batchId: active.batchId }),
+    ).not.toBeNull();
+    await expect(
+      importSelectedJobDrafts({
+        db: sql,
+        companyId: company.id,
+        batchId: active.batchId,
+        itemIds: [active.items[0].id],
+      }),
+    ).rejects.toThrow("Suggestions are still being prepared");
+
+    await sql`
+      UPDATE job_import_items
+      SET enrichment_claimed_at = now() - interval '16 minutes'
+      WHERE id = ${active.items[0].id}
+    `;
+    await expect(
+      importSelectedJobDrafts({
+        db: sql,
+        companyId: company.id,
+        batchId: active.batchId,
+        itemIds: [active.items[0].id],
+      }),
+    ).resolves.toMatchObject({ imported: [{ itemId: active.items[0].id }] });
+
+    const expired = await createJobImportPreview({
+      db: sql,
+      companyId: company.id,
+      userId: owner.id,
+      sourcePlatform: "lever",
+      sourceLabel: "Lever · expired claim",
+      candidates: [
+        {
+          ...candidate,
+          job: { ...candidate.job, externalId: "expired-claim", title: "Expired claim" },
+        },
+      ],
+    });
+    await sql`
+      UPDATE job_import_batches
+      SET created_at = now() - interval '31 days',
+          updated_at = now() - interval '31 days'
+      WHERE id = ${expired.batchId}
+    `;
+    await sql`
+      UPDATE job_import_items
+      SET enrichment_token = ${crypto.randomUUID()},
+          enrichment_claimed_at = now() - interval '16 minutes'
+      WHERE id = ${expired.items[0].id}
+    `;
+    await createJobImportPreview({
+      db: sql,
+      companyId: company.id,
+      userId: owner.id,
+      sourcePlatform: "lever",
+      sourceLabel: "Lever · final cleanup trigger",
+      candidates: [
+        {
+          ...candidate,
+          job: { ...candidate.job, externalId: "final-trigger", title: "Final trigger" },
+        },
+      ],
+    });
+    expect(
+      await loadJobImportPreview({ db: sql, companyId: company.id, batchId: expired.batchId }),
+    ).toBeNull();
   });
 
   it("exclusively claims enrichment and atomically caps attempts per item", async () => {

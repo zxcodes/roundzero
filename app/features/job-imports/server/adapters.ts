@@ -508,7 +508,11 @@ function jsonLdSalary(value: unknown): {
   };
 }
 
-function parseGenericJobPosting(html: string, finalUrl: string): JobImportCandidate[] {
+function parseGenericJobPosting(
+  html: string,
+  finalUrl: string,
+  namespaceExternalId = false,
+): JobImportCandidate[] {
   const scripts = [
     ...html.matchAll(
       /<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi,
@@ -553,14 +557,18 @@ function parseGenericJobPosting(html: string, finalUrl: string): JobImportCandid
     jsonLdString(job.identifier) ??
     (identifierObject.success ? jsonLdString(identifierObject.data.value) : null) ??
     finalUrl;
+  const sourceUrl = safeUrl(job.url, finalUrl);
+  const externalId = namespaceExternalId
+    ? `${new URL(sourceUrl).origin}:${identifier}`.slice(0, 500)
+    : identifier;
   const employmentType = Array.isArray(job.employmentType)
     ? job.employmentType.find((value) => typeof value === "string")
     : job.employmentType;
   return [
     candidate({
       platform: "generic",
-      externalId: identifier,
-      sourceUrl: safeUrl(job.url, finalUrl),
+      externalId,
+      sourceUrl,
       sourceUpdatedAt: job.datePosted,
       title,
       description,
@@ -601,7 +609,7 @@ export function parseJobImportSource(args: {
       jobs = parseSmartRecruiters(args.text, args.finalUrl);
       break;
     case "generic":
-      jobs = parseGenericJobPosting(args.text, args.finalUrl);
+      jobs = parseGenericJobPosting(args.text, args.finalUrl, true);
       break;
   }
 

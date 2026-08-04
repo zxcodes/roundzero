@@ -50,9 +50,21 @@ export async function createJobImportBatch(sql: Sql, args: createJobImportBatchA
 
 export const deleteExpiredJobImportBatchesQuery = `-- name: deleteExpiredJobImportBatches :exec
 DELETE FROM job_import_batches
-WHERE company_id = $1
-  AND status <> 'completed'
-  AND created_at < now() - interval '30 days'`;
+WHERE id IN (
+  SELECT b.id
+  FROM job_import_batches b
+  WHERE b.company_id = $1
+    AND b.status <> 'completed'
+    AND b.updated_at < now() - interval '30 days'
+    AND NOT EXISTS (
+      SELECT 1
+      FROM job_import_items i
+      WHERE i.batch_id = b.id
+        AND i.enrichment_token IS NOT NULL
+        AND i.enrichment_claimed_at >= now() - interval '15 minutes'
+    )
+  FOR UPDATE OF b SKIP LOCKED
+)`;
 
 export interface deleteExpiredJobImportBatchesArgs {
     companyId: string;
@@ -60,6 +72,22 @@ export interface deleteExpiredJobImportBatchesArgs {
 
 export async function deleteExpiredJobImportBatches(sql: Sql, args: deleteExpiredJobImportBatchesArgs): Promise<void> {
     await sql.unsafe(deleteExpiredJobImportBatchesQuery, [args.companyId]);
+}
+
+export const touchJobImportBatchQuery = `-- name: touchJobImportBatch :exec
+UPDATE job_import_batches
+SET updated_at = now()
+WHERE id = $1
+  AND company_id = $2
+  AND status = 'ready'`;
+
+export interface touchJobImportBatchArgs {
+    id: string;
+    companyId: string;
+}
+
+export async function touchJobImportBatch(sql: Sql, args: touchJobImportBatchArgs): Promise<void> {
+    await sql.unsafe(touchJobImportBatchQuery, [args.id, args.companyId]);
 }
 
 export const createJobImportItemQuery = `-- name: createJobImportItem :one
@@ -144,49 +172,6 @@ export async function createJobImportItem(sql: Sql, args: createJobImportItemArg
         revision: row[15],
         enrichmentToken: row[16],
         enrichmentClaimedAt: row[17]
-    };
-}
-
-export const getJobImportBatchForCompanyQuery = `-- name: getJobImportBatchForCompany :one
-SELECT id, company_id, created_by, source_kind, source_label, status, discovered_count, imported_count, created_at, updated_at
-FROM job_import_batches
-WHERE id = $1 AND company_id = $2`;
-
-export interface getJobImportBatchForCompanyArgs {
-    id: string;
-    companyId: string;
-}
-
-export interface getJobImportBatchForCompanyRow {
-    id: string;
-    companyId: string;
-    createdBy: string;
-    sourceKind: string;
-    sourceLabel: string;
-    status: string;
-    discoveredCount: number;
-    importedCount: number;
-    createdAt: Date;
-    updatedAt: Date;
-}
-
-export async function getJobImportBatchForCompany(sql: Sql, args: getJobImportBatchForCompanyArgs): Promise<getJobImportBatchForCompanyRow | null> {
-    const rows = await sql.unsafe(getJobImportBatchForCompanyQuery, [args.id, args.companyId]).values();
-    if (rows.length !== 1) {
-        return null;
-    }
-    const row = rows[0];
-    return {
-        id: row[0],
-        companyId: row[1],
-        createdBy: row[2],
-        sourceKind: row[3],
-        sourceLabel: row[4],
-        status: row[5],
-        discoveredCount: row[6],
-        importedCount: row[7],
-        createdAt: row[8],
-        updatedAt: row[9]
     };
 }
 
