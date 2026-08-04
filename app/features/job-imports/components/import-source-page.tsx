@@ -197,7 +197,7 @@ export function ImportSourcePage() {
                               data-icon="inline-start"
                             />
                           )}
-                          {urlMutation.isPending ? "Reading page…" : "Preview jobs"}
+                          {urlMutation.isPending ? "Reading page" : "Preview jobs"}
                         </Button>
                       </div>
                       {urlError ? (
@@ -265,7 +265,7 @@ export function ImportSourcePage() {
                             data-icon="inline-start"
                           />
                         )}
-                        {csvMutation.isPending ? "Reading CSV…" : "Preview CSV"}
+                        {csvMutation.isPending ? "Reading CSV" : "Preview CSV"}
                       </Button>
                       <Button
                         type="button"
