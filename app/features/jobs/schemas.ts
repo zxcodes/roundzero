@@ -88,7 +88,7 @@ export const jobIdSchema = z.object({
 });
 
 export const jobIdsSchema = z.object({
-  ids: z.array(z.string().uuid()).min(1).max(50),
+  ids: z.array(z.string().uuid()).min(1).max(100),
 });
 
 /**
