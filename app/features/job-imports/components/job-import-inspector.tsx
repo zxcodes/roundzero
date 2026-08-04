@@ -155,7 +155,7 @@ export function JobImportInspector({
           <div className="flex flex-col gap-6 px-6 pb-6">
             <p className="text-sm" aria-live="polite">
               {saveStatus === "saving"
-                ? "Saving…"
+                ? "Saving"
                 : saveStatus === "saved"
                   ? "Saved"
                   : saveStatus === "error"
