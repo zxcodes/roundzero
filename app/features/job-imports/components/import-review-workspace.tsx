@@ -52,7 +52,7 @@ import {
   importSelectedJobs,
   saveJobImportItems,
 } from "@/features/job-imports/server/functions";
-import { getMissingPublishFields } from "@/features/jobs/publish-readiness";
+import { getMissingRecommendedFields } from "@/features/jobs/publish-readiness";
 import {
   employmentTypeLabels,
   employmentTypeSchema,
@@ -358,7 +358,7 @@ export function ImportReviewWorkspace({ initialPreview }: { initialPreview: JobI
               itemId: item.id,
               jobId: item.importedJobId,
               title: item.job.title,
-              missingFields: getMissingPublishFields(item.job),
+              missingFields: getMissingRecommendedFields(item.job),
             },
           ]
         : [],

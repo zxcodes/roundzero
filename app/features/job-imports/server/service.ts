@@ -2,7 +2,7 @@ import type { Sql } from "postgres";
 
 import { dismissCompanyJobImportPrompt } from "@/features/companies/queries/queries_sql";
 import { readCompanyEntitlements } from "@/features/entitlements/server/enforcement";
-import { getMissingPublishFields } from "@/features/jobs/publish-readiness";
+import { getMissingRecommendedFields } from "@/features/jobs/publish-readiness";
 import { asSqlTransaction } from "@/shared/db-transaction";
 import { ExpectedError } from "@/shared/expected-error";
 
@@ -382,7 +382,7 @@ export async function importSelectedJobDrafts(args: {
     itemId: string;
     jobId: string;
     title: string;
-    missingFields: ReturnType<typeof getMissingPublishFields>;
+    missingFields: ReturnType<typeof getMissingRecommendedFields>;
   }>;
   skipped: Array<{ itemId: string; title: string | null; reason: string }>;
   preview: JobImportPreview;
@@ -408,7 +408,7 @@ export async function importSelectedJobDrafts(args: {
             itemId: row.id,
             jobId: row.importedJobId,
             title: job.title,
-            missingFields: getMissingPublishFields(job),
+            missingFields: getMissingRecommendedFields(job),
           },
         ];
       });
@@ -456,7 +456,7 @@ export async function importSelectedJobDrafts(args: {
       itemId: string;
       jobId: string;
       title: string;
-      missingFields: ReturnType<typeof getMissingPublishFields>;
+      missingFields: ReturnType<typeof getMissingRecommendedFields>;
     }> = [];
     const skipped: Array<{ itemId: string; title: string | null; reason: string }> = [];
 
@@ -497,7 +497,7 @@ export async function importSelectedJobDrafts(args: {
         itemId: row.id,
         jobId: importedJob.id,
         title: job.title,
-        missingFields: getMissingPublishFields(job),
+        missingFields: getMissingRecommendedFields(job),
       });
     }
 

@@ -1,25 +1,20 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  getJobPublishBlockReason,
-  getMissingPublishFields,
-  missingPublishFieldsMessage,
-} from "../publish-readiness";
+import { getJobPublishBlockReason, getMissingRecommendedFields } from "../publish-readiness";
 
 describe("publish readiness", () => {
-  it("identifies classifications required before publishing", () => {
-    const missing = getMissingPublishFields({
+  it("identifies missing recommended classifications", () => {
+    const missing = getMissingRecommendedFields({
       workplaceType: null,
       employmentType: "full_time",
       experienceLevel: null,
     });
     expect(missing).toEqual(["workplaceType", "experienceLevel"]);
-    expect(missingPublishFieldsMessage(missing)).toBe("workplace type, seniority");
   });
 
   it("accepts complete classifications", () => {
     expect(
-      getMissingPublishFields({
+      getMissingRecommendedFields({
         workplaceType: "hybrid",
         employmentType: "contract",
         experienceLevel: "mid",
@@ -27,24 +22,18 @@ describe("publish readiness", () => {
     ).toEqual([]);
   });
 
-  it("explains why a draft cannot be published", () => {
+  it("allows missing classifications and blocks expired drafts", () => {
     expect(
       getJobPublishBlockReason({
         status: "draft",
-        workplaceType: "remote",
-        employmentType: null,
-        experienceLevel: "senior",
         expiresAt: null,
       }),
-    ).toBe("Complete the employment type before publishing.");
+    ).toBeNull();
 
     expect(
       getJobPublishBlockReason(
         {
           status: "draft",
-          workplaceType: "remote",
-          employmentType: "full_time",
-          experienceLevel: "senior",
           expiresAt: new Date("2026-01-01"),
         },
         new Date("2026-02-01"),

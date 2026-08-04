@@ -80,7 +80,10 @@ import { getMyCandidateMatches } from "@/features/job-matching/server/functions"
 import { JobListRow } from "@/features/jobs/components/job-list-row";
 import { isJobClosingSoon } from "@/features/jobs/components/job-status-badge";
 import { canCopyPublicJobLink, copyPublicJobLink } from "@/features/jobs/copy-job-link";
-import { getJobPublishBlockReason } from "@/features/jobs/publish-readiness";
+import {
+  getJobPublishBlockReason,
+  getMissingRecommendedFields,
+} from "@/features/jobs/publish-readiness";
 import {
   getCandidateOpenJobsPaginated,
   getMyArchivedJobs,
@@ -362,6 +365,9 @@ function ActiveJobsTable({
   const somePublishableSelected = selectedPublishableIds.length > 0 && !allPublishableSelected;
   const selectedExceedsLimit = selectedPublishableIds.length > availableSlots;
   const allExceedsLimit = publishableDraftIds.length > availableSlots;
+  const confirmationMissingMetadata = jobs.filter(
+    (job) => confirmationIds.includes(job.id) && getMissingRecommendedFields(job).length > 0,
+  ).length;
 
   const onToggleAll = (checked: boolean | "indeterminate") => {
     setSelectedIds(checked === true ? new Set(publishableDraftIds) : new Set());
@@ -433,9 +439,9 @@ function ActiveJobsTable({
                 : `${publishableDraftIds.length} ${publishableDraftIds.length === 1 ? "draft is" : "drafts are"} ready to publish`}
             </p>
             {selectedExceedsLimit || (selectedPublishableIds.length === 0 && allExceedsLimit) ? (
-              <p className="text-xs text-destructive">
-                Your plan has {availableSlots} active job {availableSlots === 1 ? "slot" : "slots"}
-                remaining. Select fewer drafts.
+              <p className="text-xs text-warning">
+                {`Your plan has ${availableSlots} active job ${availableSlots === 1 ? "slot" : "slots"}
+                 remaining. Select fewer drafts.`}
               </p>
             ) : (
               <p className="text-xs text-muted-foreground">
@@ -467,211 +473,227 @@ function ActiveJobsTable({
           </div>
         </div>
       ) : null}
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-10">
-              <Checkbox
-                aria-label="Select all drafts ready to publish"
-                checked={
-                  allPublishableSelected ? true : somePublishableSelected ? "indeterminate" : false
+      <ScrollArea
+        orientation="both"
+        className="h-[min(58vh,38rem)] [&_[data-slot=table-container]]:overflow-visible"
+      >
+        <Table className="min-w-[64rem]">
+          <TableHeader className="sticky top-0 z-10 bg-background">
+            <TableRow>
+              <TableHead className="w-10">
+                <Checkbox
+                  aria-label="Select all drafts ready to publish"
+                  checked={
+                    allPublishableSelected
+                      ? true
+                      : somePublishableSelected
+                        ? "indeterminate"
+                        : false
+                  }
+                  onCheckedChange={onToggleAll}
+                  disabled={publishableDraftIds.length === 0 || isPending}
+                />
+              </TableHead>
+              <TableHead className="min-w-48">Title</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Applicants</TableHead>
+              <TableHead className="text-right">Reports</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead>Expires</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {jobs.map((job) => {
+              const stale = isStaleJob(job);
+              const closingLabel = formatDaysLeft(job.expiresAt);
+              const closingSoon = isJobClosingSoon(job);
+              const publishBlockReason = getJobPublishBlockReason(job);
+              const canPublish = publishBlockReason === null;
+
+              const onSelectJob = (checked: boolean | "indeterminate") => {
+                onToggleJob(job.id, checked);
+              };
+              const onPublishClick = async () => {
+                try {
+                  await onPublish([job.id]);
+                } catch {
+                  return;
                 }
-                onCheckedChange={onToggleAll}
-                disabled={publishableDraftIds.length === 0 || isPending}
-              />
-            </TableHead>
-            <TableHead className="min-w-48">Title</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="text-right">Applicants</TableHead>
-            <TableHead className="text-right">Reports</TableHead>
-            <TableHead>Created</TableHead>
-            <TableHead>Expires</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {jobs.map((job) => {
-            const stale = isStaleJob(job);
-            const closingLabel = formatDaysLeft(job.expiresAt);
-            const closingSoon = isJobClosingSoon(job);
-            const publishBlockReason = getJobPublishBlockReason(job);
-            const canPublish = publishBlockReason === null;
+              };
 
-            const onSelectJob = (checked: boolean | "indeterminate") => {
-              onToggleJob(job.id, checked);
-            };
-            const onPublishClick = async () => {
-              try {
-                await onPublish([job.id]);
-              } catch {
-                return;
-              }
-            };
+              const showCopyLink = canCopyPublicJobLink(job);
 
-            const showCopyLink = canCopyPublicJobLink(job);
+              const onCopyLinkClick = () => {
+                void copyPublicJobLink(job.id);
+              };
 
-            const onCopyLinkClick = () => {
-              void copyPublicJobLink(job.id);
-            };
-
-            return (
-              <TableRow key={job.id} data-state={selectedIds.has(job.id) ? "selected" : undefined}>
-                <TableCell>
-                  {job.status === "draft" ? (
-                    canPublish ? (
-                      <Checkbox
-                        aria-label={`Select ${job.title}`}
-                        checked={selectedIds.has(job.id)}
-                        onCheckedChange={onSelectJob}
-                        disabled={isPending}
-                      />
-                    ) : (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="inline-flex cursor-not-allowed">
-                            <Checkbox aria-label={`${job.title} cannot be published`} disabled />
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{publishBlockReason}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    )
-                  ) : null}
-                </TableCell>
-                <TableCell className="whitespace-normal">
-                  <div className="space-y-0.5">
-                    <Link
-                      to="/dashboard/job-applicants/$jobId"
-                      params={{ jobId: job.id }}
-                      className="font-medium hover:underline"
-                    >
-                      {job.title}
-                    </Link>
-                    {job.location ? (
-                      <p className="text-xs text-muted-foreground">{job.location}</p>
-                    ) : null}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-1.5">
-                    <Badge variant={statusVariant(job.status)} className="capitalize">
-                      {job.status}
-                    </Badge>
-                    {stale ? (
-                      <span
-                        className="inline-flex items-center gap-1 text-[11px] font-medium text-warning"
-                        title={`Open ${STALE_DAYS}+ days with no applicants`}
-                      >
-                        <HugeiconsIcon icon={Alert01Icon} strokeWidth={2.5} className="size-3" />
-                        Stale
-                      </span>
-                    ) : null}
-                  </div>
-                </TableCell>
-                <TableCell className="text-right text-sm tabular-nums">
-                  {job.totalApplicants > 0 ? job.totalApplicants : "—"}
-                </TableCell>
-                <TableCell className="text-right">
-                  <JobReportsCell job={job} />
-                </TableCell>
-                <TableCell className="text-xs text-muted-foreground">
-                  {formatDate(job.createdAt)}
-                </TableCell>
-                <TableCell
-                  className={`text-xs ${closingSoon ? "font-medium text-destructive" : "text-muted-foreground"}`}
+              return (
+                <TableRow
+                  key={job.id}
+                  data-state={selectedIds.has(job.id) ? "selected" : undefined}
                 >
-                  {closingLabel ?? "—"}
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex items-center justify-end gap-1">
+                  <TableCell>
                     {job.status === "draft" ? (
-                      atLimit || !canPublish ? (
+                      canPublish ? (
+                        <Checkbox
+                          aria-label={`Select ${job.title}`}
+                          checked={selectedIds.has(job.id)}
+                          onCheckedChange={onSelectJob}
+                          disabled={isPending}
+                        />
+                      ) : (
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <span>
-                              <Button variant="outline" size="sm" disabled>
-                                <HugeiconsIcon
-                                  icon={Rocket01Icon}
-                                  strokeWidth={2}
-                                  className="size-3.5"
-                                />
-                                Publish
-                              </Button>
+                            <span className="inline-flex cursor-not-allowed">
+                              <Checkbox aria-label={`${job.title} cannot be published`} disabled />
                             </span>
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>
-                              {atLimit
-                                ? `You've reached the ${jobLimit} active job limit on your current plan`
-                                : publishBlockReason}
-                            </p>
+                            <p>{publishBlockReason}</p>
                           </TooltipContent>
                         </Tooltip>
-                      ) : (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={onPublishClick}
-                          disabled={isPending}
-                        >
-                          {isPending ? (
-                            <HugeiconsIcon
-                              icon={Loading03Icon}
-                              strokeWidth={2}
-                              className="size-3.5 animate-spin"
-                            />
-                          ) : (
-                            <HugeiconsIcon
-                              icon={Rocket01Icon}
-                              strokeWidth={2}
-                              className="size-3.5"
-                            />
-                          )}
-                          {isPending ? "Publishing" : "Publish"}
-                        </Button>
                       )
                     ) : null}
-                    {showCopyLink ? (
-                      <>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="outline" size="sm" onClick={onCopyLinkClick}>
-                              <HugeiconsIcon
-                                icon={Copy01Icon}
-                                strokeWidth={2}
-                                className="size-3.5"
-                              />
-                              Copy link
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Copy public job link</p>
-                          </TooltipContent>
-                        </Tooltip>
-                        <Button variant="outline" size="sm" asChild>
-                          <a href={publicJobUrl(job.id)} target="_blank" rel="noopener noreferrer">
-                            Open
-                          </a>
-                        </Button>
-                      </>
-                    ) : null}
-                    <Button variant="outline" size="sm" asChild>
+                  </TableCell>
+                  <TableCell className="whitespace-normal">
+                    <div className="space-y-0.5">
                       <Link
                         to="/dashboard/job-applicants/$jobId"
                         params={{ jobId: job.id }}
-                        search={{ tab: "posting" }}
+                        className="font-medium hover:underline"
                       >
-                        Job posting
+                        {job.title}
                       </Link>
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
+                      {job.location ? (
+                        <p className="text-xs text-muted-foreground">{job.location}</p>
+                      ) : null}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1.5">
+                      <Badge variant={statusVariant(job.status)} className="capitalize">
+                        {job.status}
+                      </Badge>
+                      {stale ? (
+                        <span
+                          className="inline-flex items-center gap-1 text-[11px] font-medium text-warning"
+                          title={`Open ${STALE_DAYS}+ days with no applicants`}
+                        >
+                          <HugeiconsIcon icon={Alert01Icon} strokeWidth={2.5} className="size-3" />
+                          Stale
+                        </span>
+                      ) : null}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right text-sm tabular-nums">
+                    {job.totalApplicants > 0 ? job.totalApplicants : "—"}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <JobReportsCell job={job} />
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {formatDate(job.createdAt)}
+                  </TableCell>
+                  <TableCell
+                    className={`text-xs ${closingSoon ? "font-medium text-destructive" : "text-muted-foreground"}`}
+                  >
+                    {closingLabel ?? "—"}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      {job.status === "draft" ? (
+                        atLimit || !canPublish ? (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span>
+                                <Button variant="outline" size="sm" disabled>
+                                  <HugeiconsIcon
+                                    icon={Rocket01Icon}
+                                    strokeWidth={2}
+                                    className="size-3.5"
+                                  />
+                                  Publish
+                                </Button>
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>
+                                {atLimit
+                                  ? `You've reached the ${jobLimit} active job limit on your current plan`
+                                  : publishBlockReason}
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={onPublishClick}
+                            disabled={isPending}
+                          >
+                            {isPending ? (
+                              <HugeiconsIcon
+                                icon={Loading03Icon}
+                                strokeWidth={2}
+                                className="size-3.5 animate-spin"
+                              />
+                            ) : (
+                              <HugeiconsIcon
+                                icon={Rocket01Icon}
+                                strokeWidth={2}
+                                className="size-3.5"
+                              />
+                            )}
+                            {isPending ? "Publishing" : "Publish"}
+                          </Button>
+                        )
+                      ) : null}
+                      {showCopyLink ? (
+                        <>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="outline" size="sm" onClick={onCopyLinkClick}>
+                                <HugeiconsIcon
+                                  icon={Copy01Icon}
+                                  strokeWidth={2}
+                                  className="size-3.5"
+                                />
+                                Copy link
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Copy public job link</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          <Button variant="outline" size="sm" asChild>
+                            <a
+                              href={publicJobUrl(job.id)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              Open
+                            </a>
+                          </Button>
+                        </>
+                      ) : null}
+                      <Button variant="outline" size="sm" asChild>
+                        <Link
+                          to="/dashboard/job-applicants/$jobId"
+                          params={{ jobId: job.id }}
+                          search={{ tab: "posting" }}
+                        >
+                          Job posting
+                        </Link>
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </ScrollArea>
       <AlertDialog open={confirmationIds.length > 0} onOpenChange={onConfirmationOpenChange}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -681,6 +703,9 @@ function ActiveJobsTable({
             <AlertDialogDescription>
               These jobs will immediately become visible to candidates. You can close or archive
               them later.
+              {confirmationMissingMetadata > 0
+                ? ` ${confirmationMissingMetadata} ${confirmationMissingMetadata === 1 ? "job is" : "jobs are"} missing recommended metadata, which may reduce filtering and matching quality.`
+                : null}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -755,44 +780,51 @@ function ArchivedJobsTable({
 
   return (
     <div className="min-w-0 overflow-hidden rounded-3xl border border-border/60">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="min-w-48">Title</TableHead>
-            <TableHead>Location</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Archived</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {jobs.map((job) => (
-            <TableRow key={job.id} className="opacity-70">
-              <TableCell className="whitespace-normal font-medium">
-                <Link
-                  to="/dashboard/job-applicants/$jobId"
-                  params={{ jobId: job.id }}
-                  className="hover:underline"
-                >
-                  {job.title}
-                </Link>
-              </TableCell>
-              <TableCell className="text-sm text-muted-foreground">
-                {job.location || "\u2014"}
-              </TableCell>
-              <TableCell className="text-sm text-muted-foreground">
-                {job.employmentType
-                  ? employmentTypeLabels[job.employmentType as EmploymentType]
-                  : "\u2014"}
-              </TableCell>
-              <TableCell className="text-xs text-muted-foreground">
-                {job.archivedAt ? formatDate(job.archivedAt) : "\u2014"}
-              </TableCell>
-              <TableCell className="text-right text-xs text-muted-foreground">{"\u2014"}</TableCell>
+      <ScrollArea
+        orientation="both"
+        className="h-[min(58vh,38rem)] [&_[data-slot=table-container]]:overflow-visible"
+      >
+        <Table className="min-w-[48rem]">
+          <TableHeader className="sticky top-0 z-10 bg-background">
+            <TableRow>
+              <TableHead className="min-w-48">Title</TableHead>
+              <TableHead>Location</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Archived</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {jobs.map((job) => (
+              <TableRow key={job.id} className="opacity-70">
+                <TableCell className="whitespace-normal font-medium">
+                  <Link
+                    to="/dashboard/job-applicants/$jobId"
+                    params={{ jobId: job.id }}
+                    className="hover:underline"
+                  >
+                    {job.title}
+                  </Link>
+                </TableCell>
+                <TableCell className="text-sm text-muted-foreground">
+                  {job.location || "\u2014"}
+                </TableCell>
+                <TableCell className="text-sm text-muted-foreground">
+                  {job.employmentType
+                    ? employmentTypeLabels[job.employmentType as EmploymentType]
+                    : "\u2014"}
+                </TableCell>
+                <TableCell className="text-xs text-muted-foreground">
+                  {job.archivedAt ? formatDate(job.archivedAt) : "\u2014"}
+                </TableCell>
+                <TableCell className="text-right text-xs text-muted-foreground">
+                  {"\u2014"}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </ScrollArea>
     </div>
   );
 }

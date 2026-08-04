@@ -23,10 +23,6 @@ import {
   startJobMatchingExtraction,
 } from "@/features/job-matching/server/orchestration";
 import {
-  getMissingPublishFields,
-  missingPublishFieldsMessage,
-} from "@/features/jobs/publish-readiness";
-import {
   isJobPublishTransition,
   notifyJobPublished,
 } from "@/features/jobs/services/job-lifecycle-notifications";
@@ -353,13 +349,6 @@ const publishCompanyJobs = async (companyId: string, requestedIds: string[]) => 
         throw new ExpectedError("invalid_state", `“${job.title}” is no longer a draft.`);
       }
 
-      const missingFields = getMissingPublishFields(job);
-      if (missingFields.length > 0) {
-        throw new ExpectedError(
-          "invalid_state",
-          `Complete the ${missingPublishFieldsMessage(missingFields)} for “${job.title}” before publishing.`,
-        );
-      }
       if (job.expiresAt && job.expiresAt <= new Date()) {
         throw new ExpectedError(
           "expired",
