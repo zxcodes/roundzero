@@ -21,6 +21,7 @@ import { expireInterviewIfDue } from "@/features/interviews/server/expire";
 import {
   requestJobMatchingExtraction,
   startJobMatchingExtraction,
+  startJobMatchingExtractions,
 } from "@/features/job-matching/server/orchestration";
 import {
   isJobPublishTransition,
@@ -405,11 +406,13 @@ const publishCompanyJobs = async (companyId: string, requestedIds: string[]) => 
     return results;
   });
 
-  await Promise.all(published.map(({ job }) => notifyJobPublished(db, companyId, job)));
-  await Promise.all(
-    published.map(({ matchingRequest }) =>
-      matchingRequest ? startJobMatchingExtraction(matchingRequest) : Promise.resolve(false),
-    ),
+  for (let index = 0; index < published.length; index += 3) {
+    await Promise.all(
+      published.slice(index, index + 3).map(({ job }) => notifyJobPublished(db, companyId, job)),
+    );
+  }
+  await startJobMatchingExtractions(
+    published.flatMap(({ matchingRequest }) => (matchingRequest ? [matchingRequest] : [])),
   );
   return published.map(({ job }) => job);
 };
