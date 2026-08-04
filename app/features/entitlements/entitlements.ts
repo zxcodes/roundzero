@@ -58,9 +58,11 @@ export type Entitlements = {
   jobImport: { enabled: boolean; disabledReason: string | null };
 };
 
+const DEFAULT_REPORT_TARGET = 10;
+
 export const FREE_REPORT_DEFAULTS: Entitlements["reports"] = {
   perJobLimit: PLAN_CONFIGS.free.includedReportsPerJob,
-  defaultTarget: PLAN_CONFIGS.free.includedReportsPerJob,
+  defaultTarget: Math.min(DEFAULT_REPORT_TARGET, PLAN_CONFIGS.free.includedReportsPerJob),
   minTarget: 1,
 };
 
@@ -121,7 +123,7 @@ export function deriveEntitlements(input: {
     },
     reports: {
       perJobLimit: planConfig.includedReportsPerJob,
-      defaultTarget: planConfig.includedReportsPerJob,
+      defaultTarget: Math.min(DEFAULT_REPORT_TARGET, planConfig.includedReportsPerJob),
       minTarget: 1,
     },
     team: {

@@ -109,6 +109,24 @@ describe("deriveEntitlements", () => {
     expect(entitlements.subscription.plan).toBe("growth");
     expect(entitlements.jobs.active.limit).toBe(15);
   });
+
+  it.each([
+    ["free", "inactive", 5],
+    ["starter", "active", 10],
+    ["growth", "active", 10],
+    ["scale", "active", 10],
+  ])(
+    "defaults %s jobs with %s status to %i reports without lowering the plan limit",
+    (plan, status, target) => {
+      const entitlements = deriveEntitlements({
+        subscriptionPlan: plan,
+        subscriptionStatus: status,
+        jobCounts: null,
+      });
+
+      expect(entitlements.reports.defaultTarget).toBe(target);
+    },
+  );
 });
 
 describe("resolveReportTarget", () => {
@@ -123,14 +141,14 @@ describe("resolveReportTarget", () => {
     expect(resolveReportTarget(entitlements, 2)).toBe(2);
   });
 
-  it("defaults to the plan default and enforces a minimum of 1", () => {
+  it("defaults to 10 reports and enforces a minimum of 1", () => {
     const entitlements = deriveEntitlements({
       subscriptionPlan: "growth",
       subscriptionStatus: "active",
       jobCounts: null,
     });
 
-    expect(resolveReportTarget(entitlements, undefined)).toBe(25);
+    expect(resolveReportTarget(entitlements, undefined)).toBe(10);
     expect(resolveReportTarget(entitlements, 0)).toBe(1);
   });
 });
