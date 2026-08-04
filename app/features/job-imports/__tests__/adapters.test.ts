@@ -153,12 +153,34 @@ describe("parseJobImportSource", () => {
       })}</script></html>`,
     });
     expect(candidate.job).toMatchObject({
-      externalId: "job-1",
+      externalId: "https://example.com:job-1",
       title: "Product Engineer",
       description: "Build the product.",
       workplaceType: "remote",
       employmentType: "full_time",
     });
+  });
+
+  it("namespaces generic identifiers by source origin", () => {
+    const text = `<script type="application/ld+json">${JSON.stringify({
+      "@type": "JobPosting",
+      identifier: { value: "123" },
+      title: "Engineer",
+      description: "Build reliable products.",
+    })}</script>`;
+    const [first] = parseJobImportSource({
+      platform: "generic",
+      finalUrl: "https://first.example/jobs/123",
+      text,
+    });
+    const [second] = parseJobImportSource({
+      platform: "generic",
+      finalUrl: "https://second.example/jobs/123",
+      text,
+    });
+
+    expect(first.job.externalId).toBe("https://first.example:123");
+    expect(second.job.externalId).toBe("https://second.example:123");
   });
 
   it("rejects generic pages with multiple JobPosting records", () => {

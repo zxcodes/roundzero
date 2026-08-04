@@ -333,7 +333,7 @@ export const archiveJob = createServerFn({ method: "POST" })
 
 const publishCompanyJobs = async (companyId: string, requestedIds: string[]) => {
   const db = getDb();
-  const ids = [...new Set(requestedIds)];
+  const ids = [...new Set(requestedIds)].sort();
   await db.unsafe(closeExpiredJobsQuery);
 
   const published = await db.begin(async (tx) => {
@@ -342,9 +342,12 @@ const publishCompanyJobs = async (companyId: string, requestedIds: string[]) => 
 
     const jobs = [];
     for (const id of ids) {
-      const job = await getJobById(transaction, { id });
-      if (!job || job.companyId !== companyId) {
+      const job = await getOwnedJobForUpdate(transaction, { id, companyId });
+      if (!job) {
         throw new ExpectedError("not_found", "A selected job was not found or not authorized");
+      }
+      if (job.archivedAt) {
+        throw new ExpectedError("invalid_state", `“${job.title}” has been archived.`);
       }
       if (job.status !== "draft") {
         throw new ExpectedError("invalid_state", `“${job.title}” is no longer a draft.`);

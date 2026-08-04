@@ -13,7 +13,6 @@ import {
   createJobImportBatch,
   createJobImportItem,
   type createJobImportItemRow,
-  getJobImportBatchForCompany,
   getJobImportBatchForUpdate,
   listJobImportItemsForCompany,
   type listJobImportItemsForCompanyRow,
@@ -24,6 +23,7 @@ import {
   lockJobImportCompany,
   reserveJobImportEnrichmentAttempts,
   type reserveJobImportEnrichmentAttemptsRow,
+  touchJobImportBatch,
   type updateJobImportItemEnrichmentRow,
   updateJobImportItemEnrichment,
   updateReadyJobImportItem,
@@ -76,7 +76,7 @@ async function loadJobImportPreviewFromDb(args: {
   companyId: string;
   batchId: string;
 }): Promise<JobImportPreview | null> {
-  const batch = await getJobImportBatchForCompany(args.db, {
+  const batch = await getJobImportBatchForUpdate(args.db, {
     id: args.batchId,
     companyId: args.companyId,
   });
@@ -160,7 +160,9 @@ export async function loadJobImportPreview(args: {
   companyId: string;
   batchId: string;
 }): Promise<JobImportPreview | null> {
-  return loadJobImportPreviewFromDb(args);
+  return args.db.begin(async (transactionHandle) =>
+    loadJobImportPreviewFromDb({ ...args, db: asSqlTransaction(transactionHandle) }),
+  );
 }
 
 async function mapWithConcurrency<T, R>(
@@ -202,12 +204,19 @@ export async function enrichSelectedJobImportItems(args: {
         "This job import is already complete and cannot be enriched.",
       );
     await lockJobImportCompany(transaction, { id: args.companyId });
-    return reserveJobImportEnrichmentAttempts(transaction, {
+    const reserved = await reserveJobImportEnrichmentAttempts(transaction, {
       batchId: args.batchId,
       companyId: args.companyId,
       itemIdsCsv: args.itemIds.join(","),
       enrichmentToken,
     });
+    if (reserved.length > 0) {
+      await touchJobImportBatch(transaction, {
+        id: args.batchId,
+        companyId: args.companyId,
+      });
+    }
+    return reserved;
   });
   if (selected.length === 0) {
     throw new ExpectedError(
@@ -246,6 +255,12 @@ export async function enrichSelectedJobImportItems(args: {
         }
       }
     }
+    if (applied > 0) {
+      await touchJobImportBatch(transaction, {
+        id: args.batchId,
+        companyId: args.companyId,
+      });
+    }
     console.info(
       JSON.stringify({
         event: "job_import.enrichment_result",
@@ -259,22 +274,8 @@ export async function enrichSelectedJobImportItems(args: {
     );
   });
 
-  const items = await listJobImportItemsForCompany(args.db, {
-    batchId: args.batchId,
-    companyId: args.companyId,
-  });
-  const batch = await getJobImportBatchForCompany(args.db, {
-    id: args.batchId,
-    companyId: args.companyId,
-  });
-  if (!batch) throw new ExpectedError("not_found", "Job import not found.");
-  const preview: JobImportPreview = {
-    batchId: args.batchId,
-    status: batch.status === "completed" ? "completed" : "ready",
-    sourcePlatform: jobImportSourcePlatformSchema.parse(batch.sourceKind),
-    sourceLabel: batch.sourceLabel,
-    items: items.map(toItemResponse),
-  };
+  const preview = await loadJobImportPreview(args);
+  if (!preview) throw new ExpectedError("not_found", "Job import not found.");
   console.info(
     JSON.stringify({
       event: "job_import.enrichment",
@@ -344,6 +345,10 @@ export async function updateJobImportItems(args: {
         );
       }
     }
+    await touchJobImportBatch(transaction, {
+      id: args.batchId,
+      companyId: args.companyId,
+    });
     const preview = await loadJobImportPreviewFromDb({ ...args, db: transaction });
     if (!preview) throw new ExpectedError("not_found", "Job import not found.");
     return preview;
@@ -415,6 +420,20 @@ export async function importSelectedJobDrafts(args: {
       companyId: args.companyId,
       itemIdsCsv: args.itemIds.join(","),
     });
+    const activeEnrichmentCutoff = Date.now() - 15 * 60 * 1_000;
+    if (
+      selected.some(
+        (item) =>
+          item.enrichmentToken &&
+          item.enrichmentClaimedAt &&
+          item.enrichmentClaimedAt.getTime() >= activeEnrichmentCutoff,
+      )
+    ) {
+      throw new ExpectedError(
+        "conflict",
+        "Suggestions are still being prepared for one or more selected jobs. Wait for them to finish, then import again.",
+      );
+    }
     const entitlements = await readCompanyEntitlements(transaction, args.companyId);
     const imported: Array<{
       itemId: string;
