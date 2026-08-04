@@ -121,10 +121,10 @@ describe("PLAN_CONFIGS", () => {
     expect(PLAN_CONFIGS.starter.includedTeamMembers).toBe(2);
   });
 
-  it("growth plan is priced at $99/mo with 15 jobs, 25 reports, and 4 team members", () => {
+  it("growth plan is priced at $99/mo with 25 jobs, 25 reports, and 4 team members", () => {
     expect(PLAN_CONFIGS.growth.priceLabel).toBe("$99");
     expect(PLAN_CONFIGS.growth.periodLabel).toBe("per month");
-    expect(PLAN_CONFIGS.growth.includedJobs).toBe(15);
+    expect(PLAN_CONFIGS.growth.includedJobs).toBe(25);
     expect(PLAN_CONFIGS.growth.includedReportsPerJob).toBe(25);
     expect(PLAN_CONFIGS.growth.includedTeamMembers).toBe(4);
   });

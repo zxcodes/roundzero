@@ -5,7 +5,7 @@ import { z } from "zod";
  *
  * - `free`: 1 active job, no paid features.
  * - `starter`: $39/mo, 5 active jobs.
- * - `growth`: $99/mo, 15 active jobs.
+ * - `growth`: $99/mo, 25 active jobs.
  * - `scale`: $249/mo, 100 active jobs.
  */
 export const SUBSCRIPTION_PLANS = ["free", "starter", "growth", "scale"] as const;
@@ -87,11 +87,11 @@ export const PLAN_CONFIGS: Record<SubscriptionPlan, PlanConfig> = {
     description: "For teams hiring across multiple roles.",
     priceLabel: "$99",
     periodLabel: "per month",
-    includedJobs: 15,
+    includedJobs: 25,
     includedReportsPerJob: 25,
     includedTeamMembers: 4,
     features: [
-      "15 active jobs",
+      "25 active jobs",
       "25 evaluation reports per job",
       teamMemberFeatureLabel(4),
       "AI job creation",

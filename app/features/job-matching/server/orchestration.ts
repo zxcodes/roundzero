@@ -23,6 +23,15 @@ export type JobMatchingWorkflowPayload =
       extractionToken: string;
     };
 
+export type JobMatchingExtractionRequest = {
+  jobId: string;
+  extractionToken: string;
+};
+
+export type MatchReconciliationWorkflowPayload = {
+  jobRequests?: JobMatchingExtractionRequest[];
+};
+
 type MatchingJobSource = {
   id: string;
   title: string;
@@ -77,6 +86,23 @@ export async function startJobMatchingExtraction(request: {
         jobId: request.jobId,
         extractionToken: request.extractionToken,
       },
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function startJobMatchingExtractions(
+  requests: JobMatchingExtractionRequest[],
+): Promise<boolean> {
+  if (requests.length === 0) return true;
+  if (requests.length === 1) return await startJobMatchingExtraction(requests[0]);
+
+  try {
+    await env.MATCH_RECONCILIATION.create({
+      id: `job-extract-dispatch-${crypto.randomUUID()}`,
+      params: { jobRequests: requests } satisfies MatchReconciliationWorkflowPayload,
     });
     return true;
   } catch {

@@ -107,7 +107,7 @@ describe("deriveEntitlements", () => {
     });
 
     expect(entitlements.subscription.plan).toBe("growth");
-    expect(entitlements.jobs.active.limit).toBe(15);
+    expect(entitlements.jobs.active.limit).toBe(25);
   });
 
   it.each([
