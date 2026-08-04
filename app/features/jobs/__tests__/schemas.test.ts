@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { jobFieldsSchema, jobIdSchema, updateJobSchema } from "../schemas";
+import { jobFieldsSchema, jobIdSchema, jobIdsSchema, updateJobSchema } from "../schemas";
 
 describe("jobFieldsSchema", () => {
   const validJob = {
@@ -105,6 +105,13 @@ describe("jobFieldsSchema", () => {
     expect(() => jobFieldsSchema.parse({ ...validJob, salaryMin: 100.5 })).toThrow();
   });
 
+  it("allows up to 50 final reports per job", () => {
+    expect(jobFieldsSchema.parse({ ...validJob, finalReportTarget: 50 }).finalReportTarget).toBe(
+      50,
+    );
+    expect(jobFieldsSchema.safeParse({ ...validJob, finalReportTarget: 51 }).success).toBe(false);
+  });
+
   // ─── Salary refinement ───────────────────────────────────
 
   it("allows salaryMin equal to salaryMax", () => {
@@ -179,5 +186,21 @@ describe("jobIdSchema", () => {
 
   it("rejects missing id", () => {
     expect(() => jobIdSchema.parse({})).toThrow();
+  });
+});
+
+describe("jobIdsSchema", () => {
+  it("accepts a bounded bulk publish selection", () => {
+    const ids = Array.from({ length: 100 }, () => crypto.randomUUID());
+    expect(jobIdsSchema.parse({ ids })).toEqual({ ids });
+  });
+
+  it("rejects empty and oversized selections", () => {
+    expect(jobIdsSchema.safeParse({ ids: [] }).success).toBe(false);
+    expect(
+      jobIdsSchema.safeParse({
+        ids: Array.from({ length: 101 }, () => crypto.randomUUID()),
+      }).success,
+    ).toBe(false);
   });
 });

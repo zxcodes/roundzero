@@ -326,7 +326,7 @@ Job should contain:
 - headcount
 - expiry info
 - status
-- `final_report_target` (per-job evaluation quota; default and max come from subscription plan)
+- `final_report_target` (per-job evaluation quota; defaults to 10 or the plan limit when lower, with the max set by the subscription plan)
 
 Company membership:
 
@@ -341,17 +341,18 @@ RoundZero uses subscription plans with hard caps (no overage billing). Plan conf
 
 | Plan    | Price   | Active jobs | Reports/job | Teammates (+ owner) |
 | ------- | ------- | ----------- | ----------- | ------------------- |
-| Free    | $0      | 1           | 1           | 1                   |
-| Starter | $39/mo  | 5           | 3           | 2                   |
-| Growth  | $99/mo  | 15          | 5           | 4                   |
-| Scale   | $249/mo | 35          | 10          | 10                  |
+| Free    | $0      | 1           | 5           | 1                   |
+| Starter | $39/mo  | 5           | 15          | 2                   |
+| Growth  | $99/mo  | 15          | 25          | 4                   |
+| Scale   | $249/mo | 35          | 50          | 10                  |
 
 ### Gated features
 
 - **Active jobs** — only `open` jobs count toward the limit; companies can always create drafts
-- **Evaluation reports** — `final_report_target` defaults to the plan limit; new/increased targets cannot exceed the current limit and existing targets never decrease
+- **Evaluation reports** — `final_report_target` defaults to 10 or the plan limit when lower; new/increased targets cannot exceed the current limit and existing targets never decrease
 - **Team seats** — plan limits count invited teammates beyond the owner; pending invites consume invite slots; accept is gated on member count
 - **AI job creation** — paid plans with active/trialing subscription only
+- **Job importing** — Growth and Scale plans with active/trialing subscription only
 - **AI pre-evaluation** — runs on all applicants on every plan (not gated)
 
 ### Checkout

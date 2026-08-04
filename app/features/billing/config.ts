@@ -5,8 +5,8 @@ import { z } from "zod";
  *
  * - `free`: 1 active job, no paid features.
  * - `starter`: $39/mo, 5 active jobs.
- * - `growth`: $99/mo, 15 active jobs.
- * - `scale`: $249/mo, 35 active jobs.
+ * - `growth`: $99/mo, 25 active jobs.
+ * - `scale`: $249/mo, 100 active jobs.
  */
 export const SUBSCRIPTION_PLANS = ["free", "starter", "growth", "scale"] as const;
 export const subscriptionPlanSchema = z.enum(SUBSCRIPTION_PLANS);
@@ -53,11 +53,11 @@ export const PLAN_CONFIGS: Record<SubscriptionPlan, PlanConfig> = {
     priceLabel: "$0",
     periodLabel: "forever",
     includedJobs: 1,
-    includedReportsPerJob: 1,
+    includedReportsPerJob: 5,
     includedTeamMembers: 1,
     features: [
       "1 active job",
-      "1 evaluation report per job",
+      "5 evaluation reports per job",
       teamMemberFeatureLabel(1),
       "AI pre-evaluation on all applicants",
       "Email support",
@@ -70,11 +70,11 @@ export const PLAN_CONFIGS: Record<SubscriptionPlan, PlanConfig> = {
     priceLabel: "$39",
     periodLabel: "per month",
     includedJobs: 5,
-    includedReportsPerJob: 3,
+    includedReportsPerJob: 15,
     includedTeamMembers: 2,
     features: [
       "5 active jobs",
-      "3 evaluation reports per job",
+      "15 evaluation reports per job",
       teamMemberFeatureLabel(2),
       "AI job creation",
       "AI pre-evaluation on all applicants",
@@ -87,14 +87,15 @@ export const PLAN_CONFIGS: Record<SubscriptionPlan, PlanConfig> = {
     description: "For teams hiring across multiple roles.",
     priceLabel: "$99",
     periodLabel: "per month",
-    includedJobs: 15,
-    includedReportsPerJob: 5,
+    includedJobs: 25,
+    includedReportsPerJob: 25,
     includedTeamMembers: 4,
     features: [
-      "15 active jobs",
-      "5 evaluation reports per job",
+      "25 active jobs",
+      "25 evaluation reports per job",
       teamMemberFeatureLabel(4),
       "AI job creation",
+      "Import jobs from your ATS or CSV",
       "AI pre-evaluation on all applicants",
       "Email support",
     ],
@@ -105,14 +106,15 @@ export const PLAN_CONFIGS: Record<SubscriptionPlan, PlanConfig> = {
     description: "High-volume hiring with predictable pricing.",
     priceLabel: "$249",
     periodLabel: "per month",
-    includedJobs: 35,
-    includedReportsPerJob: 10,
+    includedJobs: 100,
+    includedReportsPerJob: 50,
     includedTeamMembers: 10,
     features: [
-      "35 active jobs",
-      "10 evaluation reports per job",
+      "100 active jobs",
+      "50 evaluation reports per job",
       teamMemberFeatureLabel(10),
       "AI job creation",
+      "Import jobs from your ATS or CSV",
       "AI pre-evaluation on all applicants",
       "Email support",
     ],

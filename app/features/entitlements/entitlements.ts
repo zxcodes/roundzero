@@ -55,11 +55,14 @@ export type Entitlements = {
     canInviteAnother: boolean;
   };
   aiJobCreation: { enabled: boolean; disabledReason: string | null };
+  jobImport: { enabled: boolean; disabledReason: string | null };
 };
+
+const DEFAULT_REPORT_TARGET = 10;
 
 export const FREE_REPORT_DEFAULTS: Entitlements["reports"] = {
   perJobLimit: PLAN_CONFIGS.free.includedReportsPerJob,
-  defaultTarget: PLAN_CONFIGS.free.includedReportsPerJob,
+  defaultTarget: Math.min(DEFAULT_REPORT_TARGET, PLAN_CONFIGS.free.includedReportsPerJob),
   minTarget: 1,
 };
 
@@ -102,6 +105,7 @@ export function deriveEntitlements(input: {
   const pendingInvites = teamCounts.pendingInviteCount;
   const teamSlotsUsed = invitedMembers + pendingInvites;
   const teamAtLimit = invitedMembers >= teamLimit;
+  const jobImportEnabled = plan === "growth" || plan === "scale";
 
   return {
     subscription: { plan, status, isActive },
@@ -119,7 +123,7 @@ export function deriveEntitlements(input: {
     },
     reports: {
       perJobLimit: planConfig.includedReportsPerJob,
-      defaultTarget: planConfig.includedReportsPerJob,
+      defaultTarget: Math.min(DEFAULT_REPORT_TARGET, planConfig.includedReportsPerJob),
       minTarget: 1,
     },
     team: {
@@ -138,6 +142,12 @@ export function deriveEntitlements(input: {
       disabledReason: isActive
         ? null
         : "AI job creation is available on paid plans. Upgrade to unlock this feature.",
+    },
+    jobImport: {
+      enabled: jobImportEnabled,
+      disabledReason: jobImportEnabled
+        ? null
+        : "Job importing is available on the Growth plan and above.",
     },
   };
 }

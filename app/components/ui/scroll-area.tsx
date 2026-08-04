@@ -9,7 +9,7 @@ function ScrollArea({
   orientation = "vertical",
   ...props
 }: React.ComponentProps<typeof ScrollAreaPrimitive.Root> & {
-  orientation?: "vertical" | "horizontal";
+  orientation?: "vertical" | "horizontal" | "both";
 }) {
   return (
     <ScrollAreaPrimitive.Root
@@ -23,7 +23,14 @@ function ScrollArea({
       >
         {children}
       </ScrollAreaPrimitive.Viewport>
-      <ScrollBar orientation={orientation} />
+      {orientation === "both" ? (
+        <>
+          <ScrollBar orientation="vertical" />
+          <ScrollBar orientation="horizontal" />
+        </>
+      ) : (
+        <ScrollBar orientation={orientation} />
+      )}
       <ScrollAreaPrimitive.Corner />
     </ScrollAreaPrimitive.Root>
   );

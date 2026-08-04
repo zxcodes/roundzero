@@ -7,7 +7,7 @@ INSERT INTO jobs (
   salary_min, salary_max, salary_currency, team_size, headcount, final_report_target, expires_at
 )
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
-RETURNING id, company_id, title, description, requirements, screening_questions, status, location, workplace_type, employment_type, experience_level, salary_min, salary_max, salary_currency, team_size, headcount, final_report_target, expires_at, archived_at, created_at, updated_at`;
+RETURNING id, company_id, title, description, requirements, screening_questions, status, location, workplace_type, employment_type, experience_level, salary_min, salary_max, salary_currency, team_size, headcount, final_report_target, expires_at, archived_at, created_at, updated_at, source_platform, source_external_id, source_url, source_updated_at, import_batch_id`;
 
 export interface createJobArgs {
     companyId: string;
@@ -51,6 +51,11 @@ export interface createJobRow {
     archivedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
+    sourcePlatform: string | null;
+    sourceExternalId: string | null;
+    sourceUrl: string | null;
+    sourceUpdatedAt: Date | null;
+    importBatchId: string | null;
 }
 
 export async function createJob(sql: Sql, args: createJobArgs): Promise<createJobRow | null> {
@@ -80,12 +85,17 @@ export async function createJob(sql: Sql, args: createJobArgs): Promise<createJo
         expiresAt: row[17],
         archivedAt: row[18],
         createdAt: row[19],
-        updatedAt: row[20]
+        updatedAt: row[20],
+        sourcePlatform: row[21],
+        sourceExternalId: row[22],
+        sourceUrl: row[23],
+        sourceUpdatedAt: row[24],
+        importBatchId: row[25]
     };
 }
 
 export const getJobsByCompanyIdQuery = `-- name: getJobsByCompanyId :many
-SELECT id, company_id, title, description, requirements, screening_questions, status, location, workplace_type, employment_type, experience_level, salary_min, salary_max, salary_currency, team_size, headcount, final_report_target, expires_at, archived_at, created_at, updated_at
+SELECT id, company_id, title, description, requirements, screening_questions, status, location, workplace_type, employment_type, experience_level, salary_min, salary_max, salary_currency, team_size, headcount, final_report_target, expires_at, archived_at, created_at, updated_at, source_platform, source_external_id, source_url, source_updated_at, import_batch_id
 FROM jobs
 WHERE company_id = $1
   AND archived_at IS NULL
@@ -117,6 +127,11 @@ export interface getJobsByCompanyIdRow {
     archivedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
+    sourcePlatform: string | null;
+    sourceExternalId: string | null;
+    sourceUrl: string | null;
+    sourceUpdatedAt: Date | null;
+    importBatchId: string | null;
 }
 
 export async function getJobsByCompanyId(sql: Sql, args: getJobsByCompanyIdArgs): Promise<getJobsByCompanyIdRow[]> {
@@ -141,12 +156,17 @@ export async function getJobsByCompanyId(sql: Sql, args: getJobsByCompanyIdArgs)
         expiresAt: row[17],
         archivedAt: row[18],
         createdAt: row[19],
-        updatedAt: row[20]
+        updatedAt: row[20],
+        sourcePlatform: row[21],
+        sourceExternalId: row[22],
+        sourceUrl: row[23],
+        sourceUpdatedAt: row[24],
+        importBatchId: row[25]
     }));
 }
 
 export const getJobsWithPipelineByCompanyIdQuery = `-- name: getJobsWithPipelineByCompanyId :many
-SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.screening_questions, j.status, j.location, j.workplace_type, j.employment_type, j.experience_level, j.salary_min, j.salary_max, j.salary_currency, j.team_size, j.headcount, j.final_report_target, j.expires_at, j.archived_at, j.created_at, j.updated_at,
+SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.screening_questions, j.status, j.location, j.workplace_type, j.employment_type, j.experience_level, j.salary_min, j.salary_max, j.salary_currency, j.team_size, j.headcount, j.final_report_target, j.expires_at, j.archived_at, j.created_at, j.updated_at, j.source_platform, j.source_external_id, j.source_url, j.source_updated_at, j.import_batch_id,
        count(a.id)::int AS total_applicants,
        count(a.id) FILTER (WHERE a.status = 'applied')::int AS applied_count,
        count(a.id) FILTER (WHERE a.status = 'pre_screening')::int AS pre_screening_count,
@@ -195,6 +215,11 @@ export interface getJobsWithPipelineByCompanyIdRow {
     archivedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
+    sourcePlatform: string | null;
+    sourceExternalId: string | null;
+    sourceUrl: string | null;
+    sourceUpdatedAt: Date | null;
+    importBatchId: string | null;
     totalApplicants: number;
     appliedCount: number;
     preScreeningCount: number;
@@ -231,22 +256,27 @@ export async function getJobsWithPipelineByCompanyId(sql: Sql, args: getJobsWith
         archivedAt: row[18],
         createdAt: row[19],
         updatedAt: row[20],
-        totalApplicants: row[21],
-        appliedCount: row[22],
-        preScreeningCount: row[23],
-        queuedForBatchCount: row[24],
-        interviewInvitedCount: row[25],
-        interviewInProgressCount: row[26],
-        evaluatedHeldCount: row[27],
-        evaluatedCount: row[28],
-        shortlistedCount: row[29],
-        rejectedCount: row[30],
-        reportsReadyCount: row[31]
+        sourcePlatform: row[21],
+        sourceExternalId: row[22],
+        sourceUrl: row[23],
+        sourceUpdatedAt: row[24],
+        importBatchId: row[25],
+        totalApplicants: row[26],
+        appliedCount: row[27],
+        preScreeningCount: row[28],
+        queuedForBatchCount: row[29],
+        interviewInvitedCount: row[30],
+        interviewInProgressCount: row[31],
+        evaluatedHeldCount: row[32],
+        evaluatedCount: row[33],
+        shortlistedCount: row[34],
+        rejectedCount: row[35],
+        reportsReadyCount: row[36]
     }));
 }
 
 export const getJobByIdQuery = `-- name: getJobById :one
-SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.screening_questions, j.status, j.location, j.workplace_type, j.employment_type, j.experience_level, j.salary_min, j.salary_max, j.salary_currency, j.team_size, j.headcount, j.final_report_target, j.expires_at, j.archived_at, j.created_at, j.updated_at,
+SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.screening_questions, j.status, j.location, j.workplace_type, j.employment_type, j.experience_level, j.salary_min, j.salary_max, j.salary_currency, j.team_size, j.headcount, j.final_report_target, j.expires_at, j.archived_at, j.created_at, j.updated_at, j.source_platform, j.source_external_id, j.source_url, j.source_updated_at, j.import_batch_id,
        c.name AS company_name,
        c.slug AS company_slug,
        (SELECT count(*)::int FROM applications a WHERE a.job_id = j.id) AS applicant_count
@@ -281,6 +311,11 @@ export interface getJobByIdRow {
     archivedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
+    sourcePlatform: string | null;
+    sourceExternalId: string | null;
+    sourceUrl: string | null;
+    sourceUpdatedAt: Date | null;
+    importBatchId: string | null;
     companyName: string;
     companySlug: string;
     applicantCount: number;
@@ -314,9 +349,14 @@ export async function getJobById(sql: Sql, args: getJobByIdArgs): Promise<getJob
         archivedAt: row[18],
         createdAt: row[19],
         updatedAt: row[20],
-        companyName: row[21],
-        companySlug: row[22],
-        applicantCount: row[23]
+        sourcePlatform: row[21],
+        sourceExternalId: row[22],
+        sourceUrl: row[23],
+        sourceUpdatedAt: row[24],
+        importBatchId: row[25],
+        companyName: row[26],
+        companySlug: row[27],
+        applicantCount: row[28]
     };
 }
 
@@ -342,7 +382,7 @@ SET title = $1,
 WHERE id = $17
   AND company_id = $18
   AND $15 >= final_report_target
-RETURNING id, company_id, title, description, requirements, screening_questions, status, location, workplace_type, employment_type, experience_level, salary_min, salary_max, salary_currency, team_size, headcount, final_report_target, expires_at, archived_at, created_at, updated_at`;
+RETURNING id, company_id, title, description, requirements, screening_questions, status, location, workplace_type, employment_type, experience_level, salary_min, salary_max, salary_currency, team_size, headcount, final_report_target, expires_at, archived_at, created_at, updated_at, source_platform, source_external_id, source_url, source_updated_at, import_batch_id`;
 
 export interface updateJobArgs {
     title: string;
@@ -387,6 +427,11 @@ export interface updateJobRow {
     archivedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
+    sourcePlatform: string | null;
+    sourceExternalId: string | null;
+    sourceUrl: string | null;
+    sourceUpdatedAt: Date | null;
+    importBatchId: string | null;
 }
 
 export async function updateJob(sql: Sql, args: updateJobArgs): Promise<updateJobRow | null> {
@@ -416,12 +461,17 @@ export async function updateJob(sql: Sql, args: updateJobArgs): Promise<updateJo
         expiresAt: row[17],
         archivedAt: row[18],
         createdAt: row[19],
-        updatedAt: row[20]
+        updatedAt: row[20],
+        sourcePlatform: row[21],
+        sourceExternalId: row[22],
+        sourceUrl: row[23],
+        sourceUpdatedAt: row[24],
+        importBatchId: row[25]
     };
 }
 
 export const getOwnedJobForUpdateQuery = `-- name: getOwnedJobForUpdate :one
-SELECT id, company_id, title, description, requirements, screening_questions, status, location, workplace_type, employment_type, experience_level, salary_min, salary_max, salary_currency, team_size, headcount, final_report_target, expires_at, archived_at, created_at, updated_at
+SELECT id, company_id, title, description, requirements, screening_questions, status, location, workplace_type, employment_type, experience_level, salary_min, salary_max, salary_currency, team_size, headcount, final_report_target, expires_at, archived_at, created_at, updated_at, source_platform, source_external_id, source_url, source_updated_at, import_batch_id
 FROM jobs
 WHERE id = $1
   AND company_id = $2
@@ -454,6 +504,11 @@ export interface getOwnedJobForUpdateRow {
     archivedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
+    sourcePlatform: string | null;
+    sourceExternalId: string | null;
+    sourceUrl: string | null;
+    sourceUpdatedAt: Date | null;
+    importBatchId: string | null;
 }
 
 export async function getOwnedJobForUpdate(sql: Sql, args: getOwnedJobForUpdateArgs): Promise<getOwnedJobForUpdateRow | null> {
@@ -483,7 +538,12 @@ export async function getOwnedJobForUpdate(sql: Sql, args: getOwnedJobForUpdateA
         expiresAt: row[17],
         archivedAt: row[18],
         createdAt: row[19],
-        updatedAt: row[20]
+        updatedAt: row[20],
+        sourcePlatform: row[21],
+        sourceExternalId: row[22],
+        sourceUrl: row[23],
+        sourceUpdatedAt: row[24],
+        importBatchId: row[25]
     };
 }
 
@@ -504,7 +564,7 @@ SET archived_at = now(),
 WHERE id = $1
   AND company_id = $2
   AND archived_at IS NULL
-RETURNING id, company_id, title, description, requirements, screening_questions, status, location, workplace_type, employment_type, experience_level, salary_min, salary_max, salary_currency, team_size, headcount, final_report_target, expires_at, archived_at, created_at, updated_at`;
+RETURNING id, company_id, title, description, requirements, screening_questions, status, location, workplace_type, employment_type, experience_level, salary_min, salary_max, salary_currency, team_size, headcount, final_report_target, expires_at, archived_at, created_at, updated_at, source_platform, source_external_id, source_url, source_updated_at, import_batch_id`;
 
 export interface archiveJobArgs {
     id: string;
@@ -533,6 +593,11 @@ export interface archiveJobRow {
     archivedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
+    sourcePlatform: string | null;
+    sourceExternalId: string | null;
+    sourceUrl: string | null;
+    sourceUpdatedAt: Date | null;
+    importBatchId: string | null;
 }
 
 export async function archiveJob(sql: Sql, args: archiveJobArgs): Promise<archiveJobRow | null> {
@@ -562,12 +627,17 @@ export async function archiveJob(sql: Sql, args: archiveJobArgs): Promise<archiv
         expiresAt: row[17],
         archivedAt: row[18],
         createdAt: row[19],
-        updatedAt: row[20]
+        updatedAt: row[20],
+        sourcePlatform: row[21],
+        sourceExternalId: row[22],
+        sourceUrl: row[23],
+        sourceUpdatedAt: row[24],
+        importBatchId: row[25]
     };
 }
 
 export const getOpenJobsQuery = `-- name: getOpenJobs :many
-SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.screening_questions, j.status, j.location, j.workplace_type, j.employment_type, j.experience_level, j.salary_min, j.salary_max, j.salary_currency, j.team_size, j.headcount, j.final_report_target, j.expires_at, j.archived_at, j.created_at, j.updated_at,
+SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.screening_questions, j.status, j.location, j.workplace_type, j.employment_type, j.experience_level, j.salary_min, j.salary_max, j.salary_currency, j.team_size, j.headcount, j.final_report_target, j.expires_at, j.archived_at, j.created_at, j.updated_at, j.source_platform, j.source_external_id, j.source_url, j.source_updated_at, j.import_batch_id,
        c.name AS company_name,
        c.slug AS company_slug
 FROM jobs j
@@ -600,6 +670,11 @@ export interface getOpenJobsRow {
     archivedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
+    sourcePlatform: string | null;
+    sourceExternalId: string | null;
+    sourceUrl: string | null;
+    sourceUpdatedAt: Date | null;
+    importBatchId: string | null;
     companyName: string;
     companySlug: string;
 }
@@ -627,8 +702,13 @@ export async function getOpenJobs(sql: Sql): Promise<getOpenJobsRow[]> {
         archivedAt: row[18],
         createdAt: row[19],
         updatedAt: row[20],
-        companyName: row[21],
-        companySlug: row[22]
+        sourcePlatform: row[21],
+        sourceExternalId: row[22],
+        sourceUrl: row[23],
+        sourceUpdatedAt: row[24],
+        importBatchId: row[25],
+        companyName: row[26],
+        companySlug: row[27]
     }));
 }
 
@@ -665,7 +745,7 @@ export async function countJobsByCompanyAndStatus(sql: Sql, args: countJobsByCom
 }
 
 export const getArchivedJobsByCompanyIdQuery = `-- name: getArchivedJobsByCompanyId :many
-SELECT id, company_id, title, description, requirements, screening_questions, status, location, workplace_type, employment_type, experience_level, salary_min, salary_max, salary_currency, team_size, headcount, final_report_target, expires_at, archived_at, created_at, updated_at
+SELECT id, company_id, title, description, requirements, screening_questions, status, location, workplace_type, employment_type, experience_level, salary_min, salary_max, salary_currency, team_size, headcount, final_report_target, expires_at, archived_at, created_at, updated_at, source_platform, source_external_id, source_url, source_updated_at, import_batch_id
 FROM jobs
 WHERE company_id = $1
   AND archived_at IS NOT NULL
@@ -697,6 +777,11 @@ export interface getArchivedJobsByCompanyIdRow {
     archivedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
+    sourcePlatform: string | null;
+    sourceExternalId: string | null;
+    sourceUrl: string | null;
+    sourceUpdatedAt: Date | null;
+    importBatchId: string | null;
 }
 
 export async function getArchivedJobsByCompanyId(sql: Sql, args: getArchivedJobsByCompanyIdArgs): Promise<getArchivedJobsByCompanyIdRow[]> {
@@ -721,12 +806,17 @@ export async function getArchivedJobsByCompanyId(sql: Sql, args: getArchivedJobs
         expiresAt: row[17],
         archivedAt: row[18],
         createdAt: row[19],
-        updatedAt: row[20]
+        updatedAt: row[20],
+        sourcePlatform: row[21],
+        sourceExternalId: row[22],
+        sourceUrl: row[23],
+        sourceUpdatedAt: row[24],
+        importBatchId: row[25]
     }));
 }
 
 export const getOpenJobsByCompanyIdQuery = `-- name: getOpenJobsByCompanyId :many
-SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.screening_questions, j.status, j.location, j.workplace_type, j.employment_type, j.experience_level, j.salary_min, j.salary_max, j.salary_currency, j.team_size, j.headcount, j.final_report_target, j.expires_at, j.archived_at, j.created_at, j.updated_at,
+SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.screening_questions, j.status, j.location, j.workplace_type, j.employment_type, j.experience_level, j.salary_min, j.salary_max, j.salary_currency, j.team_size, j.headcount, j.final_report_target, j.expires_at, j.archived_at, j.created_at, j.updated_at, j.source_platform, j.source_external_id, j.source_url, j.source_updated_at, j.import_batch_id,
        c.name AS company_name,
        c.slug AS company_slug
 FROM jobs j
@@ -764,6 +854,11 @@ export interface getOpenJobsByCompanyIdRow {
     archivedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
+    sourcePlatform: string | null;
+    sourceExternalId: string | null;
+    sourceUrl: string | null;
+    sourceUpdatedAt: Date | null;
+    importBatchId: string | null;
     companyName: string;
     companySlug: string;
 }
@@ -791,8 +886,13 @@ export async function getOpenJobsByCompanyId(sql: Sql, args: getOpenJobsByCompan
         archivedAt: row[18],
         createdAt: row[19],
         updatedAt: row[20],
-        companyName: row[21],
-        companySlug: row[22]
+        sourcePlatform: row[21],
+        sourceExternalId: row[22],
+        sourceUrl: row[23],
+        sourceUpdatedAt: row[24],
+        importBatchId: row[25],
+        companyName: row[26],
+        companySlug: row[27]
     }));
 }
 
@@ -821,7 +921,7 @@ export async function getOpenJobCompanies(sql: Sql): Promise<getOpenJobCompanies
 }
 
 export const getOpenJobsPaginatedQuery = `-- name: getOpenJobsPaginated :many
-SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.screening_questions, j.status, j.location, j.workplace_type, j.employment_type, j.experience_level, j.salary_min, j.salary_max, j.salary_currency, j.team_size, j.headcount, j.final_report_target, j.expires_at, j.archived_at, j.created_at, j.updated_at,
+SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.screening_questions, j.status, j.location, j.workplace_type, j.employment_type, j.experience_level, j.salary_min, j.salary_max, j.salary_currency, j.team_size, j.headcount, j.final_report_target, j.expires_at, j.archived_at, j.created_at, j.updated_at, j.source_platform, j.source_external_id, j.source_url, j.source_updated_at, j.import_batch_id,
        c.name AS company_name,
        c.slug AS company_slug
 FROM jobs j
@@ -874,6 +974,11 @@ export interface getOpenJobsPaginatedRow {
     archivedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
+    sourcePlatform: string | null;
+    sourceExternalId: string | null;
+    sourceUrl: string | null;
+    sourceUpdatedAt: Date | null;
+    importBatchId: string | null;
     companyName: string;
     companySlug: string;
 }
@@ -901,8 +1006,13 @@ export async function getOpenJobsPaginated(sql: Sql, args: getOpenJobsPaginatedA
         archivedAt: row[18],
         createdAt: row[19],
         updatedAt: row[20],
-        companyName: row[21],
-        companySlug: row[22]
+        sourcePlatform: row[21],
+        sourceExternalId: row[22],
+        sourceUrl: row[23],
+        sourceUpdatedAt: row[24],
+        importBatchId: row[25],
+        companyName: row[26],
+        companySlug: row[27]
     }));
 }
 
@@ -948,7 +1058,7 @@ export async function countOpenJobsFiltered(sql: Sql, args: countOpenJobsFiltere
 }
 
 export const getCandidateOpenJobsPaginatedQuery = `-- name: getCandidateOpenJobsPaginated :many
-SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.screening_questions, j.status, j.location, j.workplace_type, j.employment_type, j.experience_level, j.salary_min, j.salary_max, j.salary_currency, j.team_size, j.headcount, j.final_report_target, j.expires_at, j.archived_at, j.created_at, j.updated_at,
+SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.screening_questions, j.status, j.location, j.workplace_type, j.employment_type, j.experience_level, j.salary_min, j.salary_max, j.salary_currency, j.team_size, j.headcount, j.final_report_target, j.expires_at, j.archived_at, j.created_at, j.updated_at, j.source_platform, j.source_external_id, j.source_url, j.source_updated_at, j.import_batch_id,
        c.name AS company_name,
        c.slug AS company_slug
 FROM jobs j
@@ -1008,6 +1118,11 @@ export interface getCandidateOpenJobsPaginatedRow {
     archivedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
+    sourcePlatform: string | null;
+    sourceExternalId: string | null;
+    sourceUrl: string | null;
+    sourceUpdatedAt: Date | null;
+    importBatchId: string | null;
     companyName: string;
     companySlug: string;
 }
@@ -1035,8 +1150,13 @@ export async function getCandidateOpenJobsPaginated(sql: Sql, args: getCandidate
         archivedAt: row[18],
         createdAt: row[19],
         updatedAt: row[20],
-        companyName: row[21],
-        companySlug: row[22]
+        sourcePlatform: row[21],
+        sourceExternalId: row[22],
+        sourceUrl: row[23],
+        sourceUpdatedAt: row[24],
+        importBatchId: row[25],
+        companyName: row[26],
+        companySlug: row[27]
     }));
 }
 

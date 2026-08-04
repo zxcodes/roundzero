@@ -23,6 +23,7 @@
  *  - `answerAuthenticitySchema` — post_eval (Haiku; strings/enums only)
  *  - `reportAuditGenerationSchema` — post_eval_audit (`app/prompts/report-audit-output.ts`)
  *  - `aiJobGenerationSchema` — job_creation
+ *  - `enrichmentGenerationSchema` — job_import
  */
 
 import { z } from "zod";
