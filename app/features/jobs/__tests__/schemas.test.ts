@@ -191,7 +191,7 @@ describe("jobIdSchema", () => {
 
 describe("jobIdsSchema", () => {
   it("accepts a bounded bulk publish selection", () => {
-    const ids = [crypto.randomUUID(), crypto.randomUUID()];
+    const ids = Array.from({ length: 100 }, () => crypto.randomUUID());
     expect(jobIdsSchema.parse({ ids })).toEqual({ ids });
   });
 
@@ -199,7 +199,7 @@ describe("jobIdsSchema", () => {
     expect(jobIdsSchema.safeParse({ ids: [] }).success).toBe(false);
     expect(
       jobIdsSchema.safeParse({
-        ids: Array.from({ length: 51 }, () => crypto.randomUUID()),
+        ids: Array.from({ length: 101 }, () => crypto.randomUUID()),
       }).success,
     ).toBe(false);
   });
