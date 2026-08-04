@@ -6,7 +6,7 @@ import { z } from "zod";
  * - `free`: 1 active job, no paid features.
  * - `starter`: $39/mo, 5 active jobs.
  * - `growth`: $99/mo, 15 active jobs.
- * - `scale`: $249/mo, 35 active jobs.
+ * - `scale`: $249/mo, 100 active jobs.
  */
 export const SUBSCRIPTION_PLANS = ["free", "starter", "growth", "scale"] as const;
 export const subscriptionPlanSchema = z.enum(SUBSCRIPTION_PLANS);
@@ -106,11 +106,11 @@ export const PLAN_CONFIGS: Record<SubscriptionPlan, PlanConfig> = {
     description: "High-volume hiring with predictable pricing.",
     priceLabel: "$249",
     periodLabel: "per month",
-    includedJobs: 35,
+    includedJobs: 100,
     includedReportsPerJob: 50,
     includedTeamMembers: 10,
     features: [
-      "35 active jobs",
+      "100 active jobs",
       "50 evaluation reports per job",
       teamMemberFeatureLabel(10),
       "AI job creation",

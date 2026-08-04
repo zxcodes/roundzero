@@ -1,4 +1,4 @@
-import { getMissingPublishFields } from "@/features/jobs/publish-readiness";
+import { getMissingRecommendedFields } from "@/features/jobs/publish-readiness";
 import type { EmploymentType, ExperienceLevel, WorkplaceType } from "@/shared/enums";
 
 import type { JobImportItemResponse, JobImportPreview } from "./schemas";
@@ -27,7 +27,7 @@ export function initialJobImportMappings(
 }
 
 export function getJobImportMissingFields(mapping: JobImportMapping | undefined) {
-  return getMissingPublishFields({
+  return getMissingRecommendedFields({
     workplaceType: mapping?.workplaceType ?? null,
     employmentType: mapping?.employmentType ?? null,
     experienceLevel: mapping?.experienceLevel ?? null,

@@ -51,8 +51,8 @@ export function ImportComplete({ result }: { result: ImportResult }) {
         <Alert className="max-w-5xl">
           <AlertTitle>Your drafts were imported successfully</AlertTitle>
           <AlertDescription>
-            Some drafts need publishing details, but there is nothing else to complete now.
-            RoundZero will prompt you when you choose to publish one.
+            Some drafts are missing recommended metadata. You can still publish them, though adding
+            it can improve candidate filtering and matching.
           </AlertDescription>
         </Alert>
       ) : (
