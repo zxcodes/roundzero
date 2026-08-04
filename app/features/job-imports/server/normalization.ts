@@ -10,10 +10,19 @@ const POSTGRES_INTEGER_MAX = 2_147_483_647;
 const decodeHtmlEntities = (value: string): string =>
   value
     .replaceAll(/&amp;/gi, "&")
+    .replaceAll(/&nbsp;|&ensp;|&emsp;|&thinsp;/gi, " ")
     .replaceAll(/&lt;/gi, "<")
     .replaceAll(/&gt;/gi, ">")
     .replaceAll(/&quot;/gi, '"')
     .replaceAll(/&#39;|&apos;/gi, "'")
+    .replaceAll(/&lsquo;/gi, "‘")
+    .replaceAll(/&rsquo;/gi, "’")
+    .replaceAll(/&ldquo;/gi, "“")
+    .replaceAll(/&rdquo;/gi, "”")
+    .replaceAll(/&ndash;/gi, "–")
+    .replaceAll(/&mdash;/gi, "—")
+    .replaceAll(/&bull;/gi, "•")
+    .replaceAll(/&hellip;/gi, "…")
     .replaceAll(/&#x([0-9a-f]+);/gi, (_, hex: string) =>
       String.fromCodePoint(Number.parseInt(hex, 16)),
     )
@@ -21,16 +30,28 @@ const decodeHtmlEntities = (value: string): string =>
       String.fromCodePoint(Number.parseInt(decimal, 10)),
     );
 
+const decodeEscapedHtml = (value: string): string => {
+  let decoded = value;
+  for (let pass = 0; pass < 2; pass += 1) {
+    const next = decodeHtmlEntities(decoded);
+    if (next === decoded) return decoded;
+    decoded = next;
+  }
+  return decoded;
+};
+
 export const htmlToPlainText = (html: string): string =>
-  decodeHtmlEntities(
-    html
-      .replaceAll(/<\s*br\s*\/?\s*>/gi, "\n")
-      .replaceAll(/<\s*\/\s*(p|div|li|h[1-6])\s*>/gi, "\n")
-      .replaceAll(/<\s*li(?:\s[^>]*)?>/gi, "- ")
-      .replaceAll(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
-      .replaceAll(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "")
-      .replaceAll(/<[^>]+>/g, " "),
-  )
+  decodeEscapedHtml(html)
+    .replaceAll(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
+    .replaceAll(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "")
+    .replaceAll(/<!--[\s\S]*?-->/g, "")
+    .replaceAll(/<\s*br\s*\/?\s*>/gi, "\n")
+    .replaceAll(/<\s*hr(?:\s[^>]*)?\/?\s*>/gi, "\n\n")
+    .replaceAll(/<\s*li(?:\s[^>]*)?>/gi, "- ")
+    .replaceAll(/<\s*\/\s*li\s*>/gi, "\n")
+    .replaceAll(/<\s*\/\s*(p|div|h[1-6]|section|article|blockquote|tr)\s*>/gi, "\n\n")
+    .replaceAll(/<\s*\/\s*(ul|ol|table)\s*>/gi, "\n")
+    .replaceAll(/<\/?[a-z][^>]*>/gi, " ")
     .replaceAll(/\r/g, "")
     .replaceAll(/[ \t]+\n/g, "\n")
     .replaceAll(/\n[ \t]+/g, "\n")

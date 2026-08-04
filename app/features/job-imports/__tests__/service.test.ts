@@ -140,6 +140,44 @@ describe("job import service", () => {
     ]);
   });
 
+  it("normalizes escaped HTML before previewing and creating a draft", async () => {
+    const { company, owner } = await seedCompany();
+    const preview = await createJobImportPreview({
+      db: sql,
+      companyId: company.id,
+      userId: owner.id,
+      sourcePlatform: "greenhouse",
+      sourceLabel: "Greenhouse · acme",
+      candidates: [
+        {
+          ...candidate,
+          job: {
+            ...candidate.job,
+            externalId: "escaped-description-123",
+            description:
+              "&lt;h2&gt;Who we are&lt;/h2&gt;&lt;p&gt;Build the future&amp;nbsp;with us.&lt;/p&gt;",
+          },
+        },
+      ],
+    });
+
+    expect(preview.items[0].job.description).toBe("Who we are\n\nBuild the future with us.");
+
+    const result = await importSelectedJobDrafts({
+      db: sql,
+      companyId: company.id,
+      batchId: preview.batchId,
+      itemIds: [preview.items[0].id],
+    });
+    const [job] = await sql`
+      SELECT description
+      FROM jobs
+      WHERE id = ${result.imported[0].jobId}
+    `;
+
+    expect(job.description).toBe("Who we are\n\nBuild the future with us.");
+  });
+
   it("imports persisted classifications without client overrides", async () => {
     const { company, owner } = await seedCompany();
     const preview = await createJobImportPreview({

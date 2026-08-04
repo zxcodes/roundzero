@@ -40,6 +40,7 @@ import {
   jobImportSourcePlatformSchema,
 } from "../schemas";
 import { enrichJobImportCandidate } from "./enrichment";
+import { normalizeDescription, normalizeRequirements } from "./normalization";
 
 type ImportItemRow =
   | createJobImportItemRow
@@ -50,11 +51,21 @@ type ImportItemRow =
   | updateReadyJobImportItemRow;
 
 function parseStoredCandidate(row: ImportItemRow): JobImportCandidate {
-  return jobImportCandidateSchema.parse({
+  const candidate = jobImportCandidateSchema.parse({
     job: row.normalizedPayload,
     warnings: row.warnings,
     inferredFields: row.inferredFields,
   });
+  const warnings = [...candidate.warnings];
+  return {
+    ...candidate,
+    job: {
+      ...candidate.job,
+      description: normalizeDescription(candidate.job.description, warnings),
+      requirements: normalizeRequirements(candidate.job.requirements, warnings),
+    },
+    warnings,
+  };
 }
 
 function toItemResponse(row: ImportItemRow): JobImportItemResponse {
@@ -329,13 +340,19 @@ export async function updateJobImportItems(args: {
       const inferredFields = candidate.inferredFields.filter(
         (field) => JSON.stringify(candidate.job[field]) === JSON.stringify(edit.job[field]),
       );
+      const warnings = [...candidate.warnings];
+      const normalizedEdit = {
+        ...edit.job,
+        description: normalizeDescription(edit.job.description, warnings),
+        requirements: normalizeRequirements(edit.job.requirements, warnings),
+      };
       const updated = await updateReadyJobImportItem(transaction, {
         id: edit.id,
         batchId: args.batchId,
         companyId: args.companyId,
         expectedRevision: String(edit.expectedRevision),
-        normalizedPayload: { ...candidate.job, ...edit.job },
-        warnings: candidate.warnings,
+        normalizedPayload: { ...candidate.job, ...normalizedEdit },
+        warnings,
         inferredFields,
       });
       if (!updated) {
