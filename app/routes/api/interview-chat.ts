@@ -294,12 +294,10 @@ export const Route = createFileRoute("/api/interview-chat")({
             appTitle: "RoundZero",
           }),
           messages: history
-            .map(
-              (message): ModelMessage => ({
-                role: message.role === "assistant" ? "assistant" : "user",
-                content: message.content,
-              }),
-            )
+            .map((message): ModelMessage => ({
+              role: message.role === "assistant" ? "assistant" : "user",
+              content: message.content,
+            }))
             .concat({ role: "user", content: savedCandidateMessage.content }),
           systemPrompts: [getSystemPrompt()],
           tools: [
