@@ -33,11 +33,34 @@ describe("deriveEntitlements", () => {
 
     expect(entitlements.subscription.plan).toBe("free");
     expect(entitlements.jobs.active.limit).toBe(1);
-    expect(entitlements.reports.perJobLimit).toBe(1);
-    expect(entitlements.reports.defaultTarget).toBe(1);
+    expect(entitlements.reports.perJobLimit).toBe(5);
+    expect(entitlements.reports.defaultTarget).toBe(5);
     expect(entitlements.team.members.limit).toBe(1);
     expect(entitlements.aiJobCreation.enabled).toBe(false);
+    expect(entitlements.jobImport.enabled).toBe(false);
   });
+
+  it.each([
+    ["free", "inactive", false],
+    ["starter", "active", false],
+    ["growth", "active", true],
+    ["scale", "trialing", true],
+    ["growth", "past_due", false],
+  ])(
+    "gates job importing for %s with %s status",
+    (subscriptionPlan, subscriptionStatus, enabled) => {
+      const entitlements = deriveEntitlements({
+        subscriptionPlan,
+        subscriptionStatus,
+        jobCounts: null,
+      });
+
+      expect(entitlements.jobImport.enabled).toBe(enabled);
+      expect(entitlements.jobImport.disabledReason).toBe(
+        enabled ? null : "Job importing is available on the Growth plan and above.",
+      );
+    },
+  );
 
   it("enables AI job creation only for paid plans in good standing", () => {
     const active = deriveEntitlements({
@@ -71,7 +94,7 @@ describe("deriveEntitlements", () => {
       expect(entitlements.subscription.plan).toBe("free");
       expect(entitlements.subscription.isActive).toBe(false);
       expect(entitlements.jobs.active.limit).toBe(1);
-      expect(entitlements.reports.perJobLimit).toBe(1);
+      expect(entitlements.reports.perJobLimit).toBe(5);
       expect(entitlements.team.members.limit).toBe(1);
     },
   );
@@ -84,8 +107,26 @@ describe("deriveEntitlements", () => {
     });
 
     expect(entitlements.subscription.plan).toBe("growth");
-    expect(entitlements.jobs.active.limit).toBe(15);
+    expect(entitlements.jobs.active.limit).toBe(25);
   });
+
+  it.each([
+    ["free", "inactive", 5],
+    ["starter", "active", 10],
+    ["growth", "active", 10],
+    ["scale", "active", 10],
+  ])(
+    "defaults %s jobs with %s status to %i reports without lowering the plan limit",
+    (plan, status, target) => {
+      const entitlements = deriveEntitlements({
+        subscriptionPlan: plan,
+        subscriptionStatus: status,
+        jobCounts: null,
+      });
+
+      expect(entitlements.reports.defaultTarget).toBe(target);
+    },
+  );
 });
 
 describe("resolveReportTarget", () => {
@@ -96,18 +137,18 @@ describe("resolveReportTarget", () => {
       jobCounts: null,
     });
 
-    expect(resolveReportTarget(entitlements, 10)).toBe(3);
+    expect(resolveReportTarget(entitlements, 20)).toBe(15);
     expect(resolveReportTarget(entitlements, 2)).toBe(2);
   });
 
-  it("defaults to the plan default and enforces a minimum of 1", () => {
+  it("defaults to 10 reports and enforces a minimum of 1", () => {
     const entitlements = deriveEntitlements({
       subscriptionPlan: "growth",
       subscriptionStatus: "active",
       jobCounts: null,
     });
 
-    expect(resolveReportTarget(entitlements, undefined)).toBe(5);
+    expect(resolveReportTarget(entitlements, undefined)).toBe(10);
     expect(resolveReportTarget(entitlements, 0)).toBe(1);
   });
 });
@@ -162,8 +203,8 @@ describe("enforceReportTarget", () => {
       jobCounts: null,
     });
 
-    expect(() => enforceReportTarget(entitlements, 10)).toThrow(
-      "Your plan allows 1-3 evaluation reports per job.",
+    expect(() => enforceReportTarget(entitlements, 20)).toThrow(
+      "Your plan allows 1-15 evaluation reports per job.",
     );
   });
 
@@ -174,6 +215,6 @@ describe("enforceReportTarget", () => {
       jobCounts: null,
     });
 
-    expect(enforceReportTarget(entitlements, 10, "clamp")).toBe(3);
+    expect(enforceReportTarget(entitlements, 20, "clamp")).toBe(15);
   });
 });

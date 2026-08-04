@@ -554,10 +554,10 @@ Source of truth: `app/features/billing/config.ts` (`PLAN_CONFIGS`).
 
 | Plan    | Price   | Active jobs | Reports/job | Teammates (+ owner) |
 | ------- | ------- | ----------- | ----------- | ------------------- |
-| Free    | $0      | 1           | 1           | 1                   |
-| Starter | $39/mo  | 5           | 3           | 2                   |
-| Growth  | $99/mo  | 15          | 5           | 4                   |
-| Scale   | $249/mo | 35          | 10          | 10                  |
+| Free    | $0      | 1           | 5           | 1                   |
+| Starter | $39/mo  | 5           | 15          | 2                   |
+| Growth  | $99/mo  | 15          | 25          | 4                   |
+| Scale   | $249/mo | 35          | 50          | 10                  |
 
 Paid features require `hasActiveSubscription()` — plan is not `free` and status is `active` or `trialing`.
 
@@ -567,13 +567,14 @@ Paid features require `hasActiveSubscription()` — plan is not `free` and statu
 
 Gated capabilities:
 
-| Entitlement       | Rule                                                                                               |
-| ----------------- | -------------------------------------------------------------------------------------------------- |
-| `jobs.open`       | `open` jobs count toward limit; drafts never consume a slot                                        |
-| `reports` per job | target defaults to the plan limit; new values must be within the current limit and cannot decrease |
-| `team.invite`     | non-owner members + pending invites count toward limit                                             |
-| `team.accept`     | gated on non-owner member count (owner excluded)                                                   |
-| `aiJobCreation`   | paid plans only                                                                                    |
+| Entitlement       | Rule                                                                                                                |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `jobs.open`       | `open` jobs count toward limit; drafts never consume a slot                                                         |
+| `reports` per job | target defaults to 10 or the plan limit when lower; new values must be within the current limit and cannot decrease |
+| `team.invite`     | non-owner members + pending invites count toward limit                                                              |
+| `team.accept`     | gated on non-owner member count (owner excluded)                                                                    |
+| `aiJobCreation`   | paid plans only                                                                                                     |
+| `jobImport`       | active/trialing Growth or Scale subscription only                                                                   |
 
 ### Enforcement layers
 

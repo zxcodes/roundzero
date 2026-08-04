@@ -11,6 +11,8 @@ export const MATCHING_CONFIG = {
   retrievalMinimum: 15,
   reconciliationCandidateLimit: 250,
   reconciliationJobLimit: 100,
+  workflowDispatchBatchSize: 3,
+  workflowDispatchIntervalMs: 10_000,
   digestJobLimit: 10,
   weights: {
     roleFamily: 40,

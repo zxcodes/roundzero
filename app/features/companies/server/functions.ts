@@ -31,6 +31,7 @@ import {
 import {
   countCompaniesFiltered,
   createCompany as createCompanyQuery,
+  dismissCompanyJobImportPrompt,
   getAllCompaniesPaginated as getAllCompaniesPaginatedQuery,
   getCompanyById,
   getCompanyBySlug as getCompanyBySlugQuery,
@@ -329,6 +330,14 @@ export const updateCompanyProfile = createServerFn({ method: "POST" })
     }
 
     return { company: updated };
+  });
+
+export const dismissMyCompanyJobImportPrompt = createServerFn({ method: "POST" })
+  .middleware([companyMiddleware])
+  .handler(async ({ context }) => {
+    const company = await dismissCompanyJobImportPrompt(getDb(), { id: context.company.id });
+    if (!company) throw new Error("Failed to dismiss job import prompt");
+    return { company };
   });
 
 export const uploadCompanyLogo = createServerFn({ method: "POST" })

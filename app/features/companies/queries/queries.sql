@@ -47,6 +47,13 @@ SET name = $1,
 WHERE id = $12
 RETURNING *;
 
+-- name: dismissCompanyJobImportPrompt :one
+UPDATE companies
+SET job_import_prompt_dismissed_at = COALESCE(job_import_prompt_dismissed_at, now()),
+    updated_at = now()
+WHERE id = $1
+RETURNING *;
+
 -- name: getAllCompanies :many
 SELECT c.*,
        (SELECT count(*)::int FROM jobs j WHERE j.company_id = c.id AND j.status = 'open' AND j.archived_at IS NULL) AS open_job_count

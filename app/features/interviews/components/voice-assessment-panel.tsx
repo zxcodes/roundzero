@@ -423,17 +423,17 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
                 {clientError
                   ? "Connection issue"
                   : isConnecting
-                    ? "Connecting…"
+                    ? "Connecting"
                     : isInCall
                       ? chat.mode === "listening"
-                        ? "Listening…"
+                        ? "Listening"
                         : chat.mode === "thinking"
                           ? "Connected"
                           : chat.mode === "speaking"
-                            ? "Zero is speaking…"
+                            ? "Zero is speaking"
                             : "Connected"
                       : finalising
-                        ? "Finalising results…"
+                        ? "Finalising results"
                         : "Voice communication assessment"}
               </p>
               <p className="text-xs text-muted-foreground">

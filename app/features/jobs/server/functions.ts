@@ -21,6 +21,7 @@ import { expireInterviewIfDue } from "@/features/interviews/server/expire";
 import {
   requestJobMatchingExtraction,
   startJobMatchingExtraction,
+  startJobMatchingExtractions,
 } from "@/features/job-matching/server/orchestration";
 import {
   isJobPublishTransition,
@@ -50,7 +51,13 @@ import {
   getOpenJobsPaginated as getOpenJobsPaginatedQuery,
   updateJob as updateJobQuery,
 } from "../queries/queries_sql";
-import { aiJobGenerationSchema, jobFieldsSchema, jobIdSchema, updateJobSchema } from "../schemas";
+import {
+  aiJobGenerationSchema,
+  jobFieldsSchema,
+  jobIdSchema,
+  jobIdsSchema,
+  updateJobSchema,
+} from "../schemas";
 
 export const createJob = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
@@ -321,47 +328,58 @@ export const archiveJob = createServerFn({ method: "POST" })
     return { job: archived };
   });
 
-export const publishJob = createServerFn({ method: "POST" })
-  .middleware([companyMiddleware])
-  .validator(zodValidator(jobIdSchema))
-  .handler(async ({ data, context }) => {
-    const db = getDb();
-    await db.unsafe(closeExpiredJobsQuery);
-    const updated = await db.begin(async (tx) => {
-      const transaction = asSqlTransaction(tx);
-      await lockCompanyEntitlementScope(transaction, context.company.id);
+const publishCompanyJobs = async (companyId: string, requestedIds: string[]) => {
+  const db = getDb();
+  const ids = [...new Set(requestedIds)].sort();
+  await db.unsafe(closeExpiredJobsQuery);
 
-      const job = await getJobById(transaction, { id: data.id });
-      if (!job || job.companyId !== context.company.id) {
-        throw new ExpectedError("not_found", "Job not found or not authorized");
+  const published = await db.begin(async (tx) => {
+    const transaction = asSqlTransaction(tx);
+    await lockCompanyEntitlementScope(transaction, companyId);
+
+    const jobs = [];
+    for (const id of ids) {
+      const job = await getOwnedJobForUpdate(transaction, { id, companyId });
+      if (!job) {
+        throw new ExpectedError("not_found", "A selected job was not found or not authorized");
       }
-
+      if (job.archivedAt) {
+        throw new ExpectedError("invalid_state", `“${job.title}” has been archived.`);
+      }
       if (job.status !== "draft") {
-        throw new ExpectedError("invalid_state", "Only draft jobs can be published");
+        throw new ExpectedError("invalid_state", `“${job.title}” is no longer a draft.`);
       }
 
       if (job.expiresAt && job.expiresAt <= new Date()) {
         throw new ExpectedError(
           "expired",
-          "This job has already expired. Update the deadline before publishing.",
+          `“${job.title}” has expired. Update its deadline before publishing.`,
         );
       }
+      jobs.push(job);
+    }
 
-      const entitlements = await enforceCompanyEntitlement(
-        transaction,
-        context.company.id,
-        "jobs.open",
+    const entitlements = await enforceCompanyEntitlement(transaction, companyId, "jobs.open");
+    if (jobs.length > entitlements.jobs.active.remaining) {
+      const remaining = entitlements.jobs.active.remaining;
+      throw new ExpectedError(
+        "quota_exceeded",
+        `Your plan has ${remaining} active job ${remaining === 1 ? "slot" : "slots"} remaining. Select fewer drafts or upgrade your plan.`,
       );
+    }
+
+    const results = [];
+    for (const job of jobs) {
       if (job.finalReportTarget > entitlements.reports.perJobLimit) {
         throw new ExpectedError(
           "quota_exceeded",
-          `Upgrade your plan to publish this job with a report target of ${job.finalReportTarget}.`,
+          `Upgrade your plan to publish “${job.title}” with a report target of ${job.finalReportTarget}.`,
         );
       }
 
       const updated = await updateJobQuery(transaction, {
-        id: data.id,
-        companyId: context.company.id,
+        id: job.id,
+        companyId,
         title: job.title,
         description: job.description,
         requirements: job.requirements,
@@ -379,20 +397,40 @@ export const publishJob = createServerFn({ method: "POST" })
         finalReportTarget: job.finalReportTarget,
         expiresAt: job.expiresAt,
       });
-      const matchingRequest = updated
-        ? await requestJobMatchingExtraction(transaction, updated)
-        : null;
-      return { job: updated, matchingRequest };
-    });
-
-    if (!updated.job) {
-      throw new ExpectedError("conflict", "The job changed while it was being published");
+      if (!updated) {
+        throw new ExpectedError("conflict", `“${job.title}” changed while it was being published.`);
+      }
+      const matchingRequest = await requestJobMatchingExtraction(transaction, updated);
+      results.push({ job: updated, matchingRequest });
     }
+    return results;
+  });
 
-    await notifyJobPublished(db, context.company.id, updated.job);
-    if (updated.matchingRequest) await startJobMatchingExtraction(updated.matchingRequest);
+  for (let index = 0; index < published.length; index += 3) {
+    await Promise.all(
+      published.slice(index, index + 3).map(({ job }) => notifyJobPublished(db, companyId, job)),
+    );
+  }
+  await startJobMatchingExtractions(
+    published.flatMap(({ matchingRequest }) => (matchingRequest ? [matchingRequest] : [])),
+  );
+  return published.map(({ job }) => job);
+};
 
-    return { job: updated.job };
+export const publishJob = createServerFn({ method: "POST" })
+  .middleware([companyMiddleware])
+  .validator(zodValidator(jobIdSchema))
+  .handler(async ({ data, context }) => {
+    const [job] = await publishCompanyJobs(context.company.id, [data.id]);
+    return { job };
+  });
+
+export const publishJobs = createServerFn({ method: "POST" })
+  .middleware([companyMiddleware])
+  .validator(zodValidator(jobIdsSchema))
+  .handler(async ({ data, context }) => {
+    const jobs = await publishCompanyJobs(context.company.id, data.ids);
+    return { jobs };
   });
 
 // --- Public Server Functions ---

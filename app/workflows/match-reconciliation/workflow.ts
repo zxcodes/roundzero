@@ -8,8 +8,10 @@ import {
   listOpenJobsMissingMatchingProfile,
 } from "@/features/job-matching/queries/queries_sql";
 import {
+  type JobMatchingExtractionRequest,
   requestJobMatchingExtraction,
   type JobMatchingWorkflowPayload,
+  type MatchReconciliationWorkflowPayload,
 } from "@/features/job-matching/server/orchestration";
 import { getDb } from "@/shared/db";
 
@@ -21,37 +23,48 @@ const chunks = <T>(items: T[], size: number): T[][] => {
   return result;
 };
 
-export class MatchReconciliationWorkflow extends WorkflowEntrypoint<Env> {
-  async run(_event: WorkflowEvent<unknown>, step: WorkflowStep) {
-    const missingJobs = await step.do("request-missing-job-profiles", async () => {
-      const db = getDb();
-      const jobs = await listOpenJobsMissingMatchingProfile(db, {
-        limit: String(MATCHING_CONFIG.reconciliationJobLimit),
+export class MatchReconciliationWorkflow extends WorkflowEntrypoint<
+  Env,
+  MatchReconciliationWorkflowPayload
+> {
+  async run(event: WorkflowEvent<MatchReconciliationWorkflowPayload>, step: WorkflowStep) {
+    const requestedJobs = event.payload?.jobRequests ?? [];
+    let jobRequests: JobMatchingExtractionRequest[];
+
+    if (requestedJobs.length > 0) {
+      jobRequests = requestedJobs;
+    } else {
+      const missingJobs = await step.do("request-missing-job-profiles", async () => {
+        const db = getDb();
+        const jobs = await listOpenJobsMissingMatchingProfile(db, {
+          limit: String(MATCHING_CONFIG.reconciliationJobLimit),
+        });
+        const requests = [];
+        for (const job of jobs) {
+          const request = await requestJobMatchingExtraction(db, job);
+          if (request) requests.push(request);
+        }
+        return requests;
       });
-      const requests = [];
-      for (const job of jobs) {
-        const request = await requestJobMatchingExtraction(db, job);
-        if (request) requests.push(request);
-      }
-      return requests;
-    });
 
-    const jobs = await step.do("claim-job-profile-recoveries", async () => {
-      const db = getDb();
-      return await claimJobProfileRecoveryBatch(db, {
-        claimCutoff: new Date(Date.now() - MATCHING_CONFIG.refreshLeaseMs),
-        batchLimit: String(MATCHING_CONFIG.reconciliationJobLimit),
+      const jobs = await step.do("claim-job-profile-recoveries", async () => {
+        const db = getDb();
+        return await claimJobProfileRecoveryBatch(db, {
+          claimCutoff: new Date(Date.now() - MATCHING_CONFIG.refreshLeaseMs),
+          batchLimit: String(MATCHING_CONFIG.reconciliationJobLimit),
+        });
       });
-    });
 
-    const jobRequests = [
-      ...missingJobs,
-      ...jobs.flatMap((job) =>
-        job.extractionToken ? [{ jobId: job.jobId, extractionToken: job.extractionToken }] : [],
-      ),
-    ];
+      jobRequests = [
+        ...missingJobs,
+        ...jobs.flatMap((job) =>
+          job.extractionToken ? [{ jobId: job.jobId, extractionToken: job.extractionToken }] : [],
+        ),
+      ];
+    }
 
-    for (const [index, batch] of chunks(jobRequests, 100).entries()) {
+    const jobBatches = chunks(jobRequests, MATCHING_CONFIG.workflowDispatchBatchSize);
+    for (const [index, batch] of jobBatches.entries()) {
       await step.do(`start-job-recovery-batch-${index}`, async () => {
         await this.env.JOB_MATCHING.createBatch(
           batch.map((job) => ({
@@ -64,6 +77,16 @@ export class MatchReconciliationWorkflow extends WorkflowEntrypoint<Env> {
           })),
         );
       });
+      if (index < jobBatches.length - 1) {
+        await step.sleep(
+          `pace-job-recovery-batch-${index}`,
+          MATCHING_CONFIG.workflowDispatchIntervalMs,
+        );
+      }
+    }
+
+    if (requestedJobs.length > 0) {
+      return { recoveredJobs: jobRequests.length, refreshedCandidates: 0 };
     }
 
     if (jobRequests.length > 0) {
@@ -87,7 +110,8 @@ export class MatchReconciliationWorkflow extends WorkflowEntrypoint<Env> {
       });
     });
 
-    for (const [index, batch] of chunks(candidates, 100).entries()) {
+    const candidateBatches = chunks(candidates, MATCHING_CONFIG.workflowDispatchBatchSize);
+    for (const [index, batch] of candidateBatches.entries()) {
       await step.do(`start-candidate-refresh-batch-${index}`, async () => {
         await this.env.JOB_MATCHING.createBatch(
           batch.flatMap((candidate) =>
@@ -107,6 +131,12 @@ export class MatchReconciliationWorkflow extends WorkflowEntrypoint<Env> {
           ),
         );
       });
+      if (index < candidateBatches.length - 1) {
+        await step.sleep(
+          `pace-candidate-refresh-batch-${index}`,
+          MATCHING_CONFIG.workflowDispatchIntervalMs,
+        );
+      }
     }
 
     return { recoveredJobs: jobRequests.length, refreshedCandidates: candidates.length };
