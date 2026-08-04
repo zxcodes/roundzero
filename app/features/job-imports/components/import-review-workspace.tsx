@@ -39,7 +39,6 @@ import { JobImportInspector } from "@/features/job-imports/components/job-import
 import { JobImportTable } from "@/features/job-imports/components/job-import-table";
 import {
   filterJobImportItems,
-  getJobImportMissingFields,
   getJobImportReadinessCounts,
   initialJobImportMappings,
   type JobImportMapping,
@@ -113,9 +112,6 @@ export function ImportReviewWorkspace({ initialPreview }: { initialPreview: JobI
   const counts = getJobImportReadinessCounts(preview.items, mappings);
   const filteredItems = filterJobImportItems({ items: preview.items, mappings, filter, search });
   const selectedItems = importableItems.filter((item) => selectedIds.has(item.id));
-  const selectedNeedsReview = selectedItems.filter(
-    (item) => getJobImportMissingFields(mappings[item.id]).length > 0,
-  ).length;
   const suggestableItems = selectedItems.filter(
     (item) => item.job.requirements.length === 0 || !mappings[item.id]?.experienceLevel,
   );
@@ -397,10 +393,10 @@ export function ImportReviewWorkspace({ initialPreview }: { initialPreview: JobI
 
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
         <div className="flex flex-col gap-1">
-          <h1 className="text-xl font-semibold tracking-tight">Review imported jobs</h1>
+          <h1 className="text-xl font-semibold tracking-tight">Choose jobs to import</h1>
           <p className="text-sm text-muted-foreground">
-            {preview.sourceLabel} · Review what needs attention, then import selected jobs as
-            drafts.
+            {preview.sourceLabel} · All selected jobs can be imported now. Nothing will be
+            published.
           </p>
         </div>
         <Badge variant="outline">Drafts only</Badge>
@@ -409,8 +405,7 @@ export function ImportReviewWorkspace({ initialPreview }: { initialPreview: JobI
       <PageInlineStats
         items={[
           { value: counts.newJobs, label: "new jobs" },
-          { value: counts.ready, label: "ready" },
-          { value: counts.needsReview, label: "need review" },
+          { value: selectedItems.length, label: "selected to import" },
           { value: counts.duplicates, label: "duplicates" },
         ]}
       />
@@ -440,8 +435,8 @@ export function ImportReviewWorkspace({ initialPreview }: { initialPreview: JobI
           >
             <TabsList className="w-max">
               <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="needs_review">Needs review ({counts.needsReview})</TabsTrigger>
-              <TabsTrigger value="ready">Ready ({counts.ready})</TabsTrigger>
+              <TabsTrigger value="needs_review">Details later ({counts.needsReview})</TabsTrigger>
+              <TabsTrigger value="ready">Publish-ready ({counts.ready})</TabsTrigger>
               <TabsTrigger value="duplicate">Duplicates ({counts.duplicates})</TabsTrigger>
             </TabsList>
           </Tabs>
@@ -450,7 +445,9 @@ export function ImportReviewWorkspace({ initialPreview }: { initialPreview: JobI
         {selectedIds.size > 0 ? (
           <div className="flex flex-col gap-3 border-t pt-3 xl:flex-row xl:items-center xl:justify-between">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm font-medium">Set for {selectedIds.size} selected:</span>
+              <span className="text-sm font-medium">
+                Optional details for {selectedIds.size} selected:
+              </span>
               <Select value={bulkWorkplace} onValueChange={onBulkWorkplaceChange}>
                 <SelectTrigger size="sm" className="w-40">
                   <SelectValue placeholder="Workplace" />
@@ -516,10 +513,10 @@ export function ImportReviewWorkspace({ initialPreview }: { initialPreview: JobI
                 ) : (
                   <HugeiconsIcon icon={AiMagicIcon} strokeWidth={2} data-icon="inline-start" />
                 )}
-                Suggest missing details
+                Suggest optional details
               </Button>
               <span className="text-xs text-muted-foreground">
-                Uses source text to suggest requirements and seniority. Nothing is published.
+                Uses source text to save work later. You can import without running this.
               </span>
             </div>
           </div>
@@ -531,7 +528,7 @@ export function ImportReviewWorkspace({ initialPreview }: { initialPreview: JobI
           <HugeiconsIcon icon={Loading03Icon} strokeWidth={2} className="animate-spin" />
           <AlertTitle>Reviewing {suggestableItems.length} incomplete jobs…</AlertTitle>
           <AlertDescription>
-            RoundZero is looking for supported requirements and seniority in each source posting.
+            RoundZero is looking for optional requirements and seniority in each source posting.
           </AlertDescription>
         </Alert>
       ) : null}
@@ -621,9 +618,7 @@ export function ImportReviewWorkspace({ initialPreview }: { initialPreview: JobI
               {selectedItems.length} {selectedItems.length === 1 ? "draft" : "drafts"} selected
             </span>
             <span className="text-xs text-muted-foreground">
-              {selectedNeedsReview > 0
-                ? `${selectedNeedsReview} will need details before publishing.`
-                : "All selected jobs have their core publishing details."}
+              Import now and complete any publishing details whenever you are ready.
             </span>
           </div>
           <Button

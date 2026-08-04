@@ -67,8 +67,11 @@ export function JobImportTable({
     onToggleVisible(selectable, checked === true);
 
   return (
-    <ScrollArea className="h-[min(58vh,38rem)] rounded-2xl border">
-      <Table>
+    <ScrollArea
+      orientation="both"
+      className="h-[min(58vh,38rem)] rounded-2xl border [&_[data-slot=table-container]]:overflow-visible"
+    >
+      <Table className="min-w-[78rem]">
         <TableHeader className="sticky top-0 bg-background">
           <TableRow>
             <TableHead className="w-10">
@@ -83,7 +86,7 @@ export function JobImportTable({
             <TableHead className="hidden min-w-40 lg:table-cell">Employment</TableHead>
             <TableHead className="hidden min-w-40 lg:table-cell">Seniority</TableHead>
             <TableHead className="min-w-36">Status</TableHead>
-            <TableHead className="w-24 text-right">Preview</TableHead>
+            <TableHead className="w-28 min-w-28 text-right">Preview</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -171,12 +174,8 @@ function JobImportTableRow({
           onValueChange={onWorkplaceChange}
           disabled={!selectable || disabled}
         >
-          <SelectTrigger
-            size="sm"
-            aria-invalid={selectable && !mapping?.workplaceType}
-            aria-label={`Workplace for ${item.job.title}`}
-          >
-            <SelectValue placeholder="Missing: workplace" />
+          <SelectTrigger size="sm" aria-label={`Workplace for ${item.job.title}`}>
+            <SelectValue placeholder="Not set" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
@@ -195,12 +194,8 @@ function JobImportTableRow({
           onValueChange={onEmploymentChange}
           disabled={!selectable || disabled}
         >
-          <SelectTrigger
-            size="sm"
-            aria-invalid={selectable && !mapping?.employmentType}
-            aria-label={`Employment type for ${item.job.title}`}
-          >
-            <SelectValue placeholder="Missing: employment" />
+          <SelectTrigger size="sm" aria-label={`Employment type for ${item.job.title}`}>
+            <SelectValue placeholder="Not set" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
@@ -220,12 +215,8 @@ function JobImportTableRow({
             onValueChange={onExperienceChange}
             disabled={!selectable || disabled}
           >
-            <SelectTrigger
-              size="sm"
-              aria-invalid={selectable && !mapping?.experienceLevel}
-              aria-label={`Seniority for ${item.job.title}`}
-            >
-              <SelectValue placeholder="Missing: seniority" />
+            <SelectTrigger size="sm" aria-label={`Seniority for ${item.job.title}`}>
+              <SelectValue placeholder="Not set" />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
@@ -275,9 +266,9 @@ function ReviewStateBadge({
 }) {
   if (state === "needs_review") {
     return (
-      <Badge variant="destructive">
+      <Badge variant="outline">
         <HugeiconsIcon icon={Alert01Icon} strokeWidth={2} data-icon="inline-start" />
-        Needs {missingCount} {missingCount === 1 ? "detail" : "details"}
+        Add {missingCount} {missingCount === 1 ? "detail" : "details"} later
       </Badge>
     );
   }

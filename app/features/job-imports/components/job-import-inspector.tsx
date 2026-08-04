@@ -189,7 +189,9 @@ export function JobImportInspector({
                 />
               </Field>
               <Field>
-                <FieldLabel htmlFor={`${id}-requirements`}>Requirements (one per line)</FieldLabel>
+                <FieldLabel htmlFor={`${id}-requirements`}>
+                  Requirements (optional, one per line)
+                </FieldLabel>
                 <Textarea
                   id={`${id}-requirements`}
                   name="requirements"
