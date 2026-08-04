@@ -326,7 +326,7 @@ Job should contain:
 - headcount
 - expiry info
 - status
-- `final_report_target` (per-job evaluation quota; default and max come from subscription plan)
+- `final_report_target` (per-job evaluation quota; defaults to 10 or the plan limit when lower, with the max set by the subscription plan)
 
 Company membership:
 
@@ -349,7 +349,7 @@ RoundZero uses subscription plans with hard caps (no overage billing). Plan conf
 ### Gated features
 
 - **Active jobs** — only `open` jobs count toward the limit; companies can always create drafts
-- **Evaluation reports** — `final_report_target` defaults to the plan limit; new/increased targets cannot exceed the current limit and existing targets never decrease
+- **Evaluation reports** — `final_report_target` defaults to 10 or the plan limit when lower; new/increased targets cannot exceed the current limit and existing targets never decrease
 - **Team seats** — plan limits count invited teammates beyond the owner; pending invites consume invite slots; accept is gated on member count
 - **AI job creation** — paid plans with active/trialing subscription only
 - **Job importing** — Growth and Scale plans with active/trialing subscription only

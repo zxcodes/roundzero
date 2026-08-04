@@ -141,7 +141,10 @@ export function JobImportInspector({
 
   return (
     <Sheet open onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-2xl" aria-busy={saveStatus === "saving"}>
+      <SheetContent
+        className="w-full! data-[side=right]:sm:max-w-4xl!"
+        aria-busy={saveStatus === "saving"}
+      >
         <SheetHeader>
           <SheetTitle>Edit imported job</SheetTitle>
           <SheetDescription>

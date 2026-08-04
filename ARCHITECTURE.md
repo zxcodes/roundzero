@@ -567,14 +567,14 @@ Paid features require `hasActiveSubscription()` — plan is not `free` and statu
 
 Gated capabilities:
 
-| Entitlement       | Rule                                                                                               |
-| ----------------- | -------------------------------------------------------------------------------------------------- |
-| `jobs.open`       | `open` jobs count toward limit; drafts never consume a slot                                        |
-| `reports` per job | target defaults to the plan limit; new values must be within the current limit and cannot decrease |
-| `team.invite`     | non-owner members + pending invites count toward limit                                             |
-| `team.accept`     | gated on non-owner member count (owner excluded)                                                   |
-| `aiJobCreation`   | paid plans only                                                                                    |
-| `jobImport`       | active/trialing Growth or Scale subscription only                                                  |
+| Entitlement       | Rule                                                                                                                |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `jobs.open`       | `open` jobs count toward limit; drafts never consume a slot                                                         |
+| `reports` per job | target defaults to 10 or the plan limit when lower; new values must be within the current limit and cannot decrease |
+| `team.invite`     | non-owner members + pending invites count toward limit                                                              |
+| `team.accept`     | gated on non-owner member count (owner excluded)                                                                    |
+| `aiJobCreation`   | paid plans only                                                                                                     |
+| `jobImport`       | active/trialing Growth or Scale subscription only                                                                   |
 
 ### Enforcement layers
 
