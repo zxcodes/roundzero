@@ -115,6 +115,20 @@ describe("structured data", () => {
       },
     });
     expect(schema).not.toHaveProperty("jobLocation");
+    expect(schema?.hiringOrganization).not.toHaveProperty("logo");
+  });
+
+  it("includes company logo on hiringOrganization when present", () => {
+    const schema = buildJobPostingSchema({
+      ...job,
+      companyLogoKey: "https://cdn.example.com/company-logos/logo.png",
+    });
+
+    expect(schema?.hiringOrganization).toMatchObject({
+      "@type": "Organization",
+      name: "Example & Co",
+      logo: "https://cdn.example.com/company-logos/logo.png",
+    });
   });
 
   it("omits Google Jobs markup when a free-form location lacks a country", () => {
