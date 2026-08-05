@@ -279,6 +279,7 @@ export const getJobByIdQuery = `-- name: getJobById :one
 SELECT j.id, j.company_id, j.title, j.description, j.requirements, j.screening_questions, j.status, j.location, j.workplace_type, j.employment_type, j.experience_level, j.salary_min, j.salary_max, j.salary_currency, j.team_size, j.headcount, j.final_report_target, j.expires_at, j.archived_at, j.created_at, j.updated_at, j.source_platform, j.source_external_id, j.source_url, j.source_updated_at, j.import_batch_id,
        c.name AS company_name,
        c.slug AS company_slug,
+       c.logo_key AS company_logo_key,
        (SELECT count(*)::int FROM applications a WHERE a.job_id = j.id) AS applicant_count
 FROM jobs j
 JOIN companies c ON c.id = j.company_id
@@ -318,6 +319,7 @@ export interface getJobByIdRow {
     importBatchId: string | null;
     companyName: string;
     companySlug: string;
+    companyLogoKey: string | null;
     applicantCount: number;
 }
 
@@ -356,7 +358,8 @@ export async function getJobById(sql: Sql, args: getJobByIdArgs): Promise<getJob
         importBatchId: row[25],
         companyName: row[26],
         companySlug: row[27],
-        applicantCount: row[28]
+        companyLogoKey: row[28],
+        applicantCount: row[29]
     };
 }
 

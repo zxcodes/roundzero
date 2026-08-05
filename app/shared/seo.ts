@@ -1,3 +1,5 @@
+import { getPublicAssetUrl } from "@/shared/r2";
+
 export const DEFAULT_META_TITLE = "AI Candidate Screening & First-Round Interviews | RoundZero";
 
 export const DEFAULT_META_DESCRIPTION =
@@ -424,6 +426,7 @@ export type JobPostingSchemaInput = {
   description: string;
   companyName: string;
   companySlug: string;
+  companyLogoKey?: string | null;
   createdAt: Date | string;
   employmentType: string | null;
   location: string | null;
@@ -453,6 +456,16 @@ export function buildJobPostingSchema(job: JobPostingSchemaInput): Record<string
   }
 
   const jobUrl = publicJobUrl(job.id);
+  const companyLogoUrl = job.companyLogoKey ? getPublicAssetUrl(job.companyLogoKey) : null;
+  const hiringOrganization: Record<string, unknown> = {
+    "@type": "Organization",
+    name: job.companyName,
+    url: `${appUrl()}/companies/${job.companySlug}`,
+  };
+  if (companyLogoUrl) {
+    hiringOrganization.logo = companyLogoUrl;
+  }
+
   const schema: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "JobPosting",
@@ -465,11 +478,7 @@ export function buildJobPostingSchema(job: JobPostingSchemaInput): Record<string
       value: job.id,
     },
     directApply: true,
-    hiringOrganization: {
-      "@type": "Organization",
-      name: job.companyName,
-      url: `${appUrl()}/companies/${job.companySlug}`,
-    },
+    hiringOrganization,
     datePosted: typeof job.createdAt === "string" ? job.createdAt : job.createdAt.toISOString(),
     ...locationProperties,
   };

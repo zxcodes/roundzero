@@ -118,6 +118,21 @@ describe("getJobById", () => {
     expect(job).not.toBeNull();
     expect(job!.title).toBe("Software Engineer");
     expect(job!.companyName).toBe("Acme Corp");
+    expect(job!.companyLogoKey).toBeNull();
+  });
+
+  it("returns company logo key when set", async () => {
+    const { company } = await seedCompany({ name: "Logo Co" });
+    await sql`
+      UPDATE companies
+      SET logo_key = ${"company-logos/user-1/logo.png"}
+      WHERE id = ${company.id}
+    `;
+    const created = await createJob(sql, makeJobArgs(company.id));
+
+    const job = await getJobById(sql, { id: created!.id });
+    expect(job).not.toBeNull();
+    expect(job!.companyLogoKey).toBe("company-logos/user-1/logo.png");
   });
 
   it("returns null for non-existent id", async () => {

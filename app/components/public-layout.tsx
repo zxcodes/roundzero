@@ -52,6 +52,14 @@ export function PublicHeader({ user = null }: { user?: User | null }) {
                   className="rounded-full text-muted-foreground font-normal"
                   asChild
                 >
+                  <Link to="/jobs">Jobs</Link>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-full text-muted-foreground font-normal"
+                  asChild
+                >
                   <Link to="/" hash="pricing">
                     Pricing
                   </Link>
@@ -132,6 +140,16 @@ export function PublicHeader({ user = null }: { user?: User | null }) {
                     activeProps={{ className: "text-foreground bg-accent" }}
                   >
                     For job seekers
+                  </Link>
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="justify-start text-muted-foreground"
+                  asChild
+                  onClick={onCloseMobileMenu}
+                >
+                  <Link to="/jobs" activeProps={{ className: "text-foreground bg-accent" }}>
+                    Jobs
                   </Link>
                 </Button>
                 <Button

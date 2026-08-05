@@ -15,7 +15,7 @@ import { PublicFooter, PublicHeader } from "@/components/public-layout";
 import { PUBLIC_CONTAINER } from "@/components/public-page";
 import { JobDetailSkeleton } from "@/components/route-skeletons";
 import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CandidateApplySection } from "@/features/applications/components/candidate-apply-section";
@@ -31,6 +31,7 @@ import { formatDate, formatDaysLeft } from "@/shared/date";
 import type { EmploymentType, ExperienceLevel, WorkplaceType } from "@/shared/enums";
 import { employmentTypeLabels, experienceLevelLabels, workplaceTypeLabels } from "@/shared/enums";
 import { formatSalaryFull } from "@/shared/format";
+import { getPublicAssetUrl } from "@/shared/r2";
 import {
   breadcrumbJsonLd,
   buildJobPageSeo,
@@ -129,6 +130,8 @@ function JobDetailPage() {
   const postedDate = formatDate(job.createdAt);
   const closingLabel = formatDaysLeft(job.expiresAt);
   const deadlineDate = job.expiresAt ? formatDate(job.expiresAt) : null;
+  const logoUrl = job.companyLogoKey ? getPublicAssetUrl(job.companyLogoKey) : null;
+  const companyName = job.companyName ?? "Company";
 
   const dashboardJobPath = `/dashboard/jobs/${job.id}`;
   const isClosed = job.status !== "open";
@@ -168,8 +171,11 @@ function JobDetailPage() {
               <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
                 <div className="flex min-w-0 items-start gap-4">
                   <Avatar className="size-14 shrink-0 rounded-2xl after:rounded-2xl">
+                    {logoUrl ? (
+                      <AvatarImage src={logoUrl} alt={companyName} className="rounded-2xl" />
+                    ) : null}
                     <AvatarFallback className="rounded-2xl bg-muted text-sm font-semibold">
-                      {companyInitials(job.companyName ?? "Company")}
+                      {companyInitials(companyName)}
                     </AvatarFallback>
                   </Avatar>
 
@@ -310,8 +316,11 @@ function JobDetailPage() {
               className="group flex items-center gap-3 rounded-3xl border border-border/60 bg-muted-foreground/4.5 px-5 py-4 transition-all hover:border-primary/25 hover:shadow-md hover:shadow-primary/5 dark:bg-muted/10"
             >
               <Avatar className="size-11 shrink-0 rounded-2xl after:rounded-2xl">
+                {logoUrl ? (
+                  <AvatarImage src={logoUrl} alt={companyName} className="rounded-2xl" />
+                ) : null}
                 <AvatarFallback className="rounded-2xl bg-muted text-[11px] font-semibold">
-                  {companyInitials(job.companyName ?? "Company")}
+                  {companyInitials(companyName)}
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">

@@ -42,6 +42,7 @@ ORDER BY j.created_at DESC;
 SELECT j.*,
        c.name AS company_name,
        c.slug AS company_slug,
+       c.logo_key AS company_logo_key,
        (SELECT count(*)::int FROM applications a WHERE a.job_id = j.id) AS applicant_count
 FROM jobs j
 JOIN companies c ON c.id = j.company_id
