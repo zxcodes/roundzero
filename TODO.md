@@ -11,6 +11,7 @@
 - see if we can add a cold reach out feature for companies (paid) so find any candidate on the platform in natural lang. should give their profile with a nice summary irrespective of job postings or anything. useful if companies are looking for someone direct instead of posting a job. an alternate way of hiring basically.
 - right now there's no feedback if there's something wrong with candidate's pdf. they can upload any pdf and the workflow will try to parse it. we need to detect if it's not a resume, and tell the user to add or something? think.
 - add a really good resume and candidate test suite to pass thru the ai. (WIP in other branch)
+- **zod-compiler** ([gajus/zod-compiler](https://github.com/gajus/zod-compiler)) — AOT-compile Zod schemas via Vite plugin for faster validation. Fits stack (Zod 4 + Vite + Workers build-time). **Skip until Zod shows up as a real bottleneck** (profiles, bulk import, large nested parse hot paths). Current bottlenecks are Worker round trips / auth DB hits, not schema parse. If adopting: Vite plugin only (never `jit()` on Workers — uses `new Function`); prefer explicit/`include` hot schemas over full auto; watch env side-effect files at build discovery.
 
 <!--- disable public jobs route for now. or just hide the link.-->
 <!--- remove early access badge on landing.-->
