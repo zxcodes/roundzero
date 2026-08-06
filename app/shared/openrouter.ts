@@ -75,9 +75,9 @@ const MODEL_CHAINS = {
   job_creation: DEFAULT_CHAIN,
   job_import: DEFAULT_CHAIN,
   job_matching: {
-    dev: ["openrouter/free"],
-    staging: ["deepseek/deepseek-v4-flash"],
-    prod: ["deepseek/deepseek-v4-flash"],
+    dev: ["anthropic/claude-sonnet-4.5"],
+    staging: ["anthropic/claude-sonnet-4.5"],
+    prod: ["anthropic/claude-sonnet-4.5"],
   },
   interview: {
     dev: ["deepseek/deepseek-v4-flash"],

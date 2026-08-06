@@ -6,6 +6,7 @@ import {
   claimJobProfileRecoveryBatch,
   hasReadyOpenJobMatchingProfile,
   listOpenJobsMissingMatchingProfile,
+  listOpenJobsWithOutdatedMatchingProfile,
 } from "@/features/job-matching/queries/queries_sql";
 import {
   type JobMatchingExtractionRequest,
@@ -36,9 +37,15 @@ export class MatchReconciliationWorkflow extends WorkflowEntrypoint<
     } else {
       const missingJobs = await step.do("request-missing-job-profiles", async () => {
         const db = getDb();
-        const jobs = await listOpenJobsMissingMatchingProfile(db, {
-          limit: String(MATCHING_CONFIG.reconciliationJobLimit),
-        });
+        const [missing, outdated] = await Promise.all([
+          listOpenJobsMissingMatchingProfile(db, {
+            limit: String(MATCHING_CONFIG.reconciliationJobLimit),
+          }),
+          listOpenJobsWithOutdatedMatchingProfile(db, {
+            limit: String(MATCHING_CONFIG.reconciliationJobLimit),
+          }),
+        ]);
+        const jobs = [...missing, ...outdated].slice(0, MATCHING_CONFIG.reconciliationJobLimit);
         const requests = [];
         for (const job of jobs) {
           const request = await requestJobMatchingExtraction(db, job);

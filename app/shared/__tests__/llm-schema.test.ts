@@ -2,6 +2,11 @@ import { zodSchema } from "@ai-sdk/provider-utils";
 import { describe, expect, it } from "vitest";
 import type { z } from "zod";
 
+import {
+  candidateMatchingProfileGenerationSchema,
+  createRerankerOutputGenerationSchema,
+  jobMatchingProfileGenerationSchema,
+} from "@/features/job-matching/schemas";
 import { aiJobGenerationSchema } from "@/features/jobs/schemas";
 import {
   answerAuthenticitySchema,
@@ -80,7 +85,59 @@ const generationSchemas = {
   preEvaluationGenerationSchema,
   slopDetectionGenerationSchema,
   reportAuditGenerationSchema,
+  candidateMatchingProfileGenerationSchema,
+  jobMatchingProfileGenerationSchema,
+  rerankerOutputGenerationSchema: createRerankerOutputGenerationSchema(["job-1", "job-2"]),
 } as const;
+
+const matchingGenerationSchemas = {
+  candidateMatchingProfileGenerationSchema,
+  jobMatchingProfileGenerationSchema,
+  rerankerOutputGenerationSchema: createRerankerOutputGenerationSchema(["job-1", "job-2"]),
+} as const;
+
+function collectUnsupportedMatchingKeywords(
+  schema: JsonSchema,
+  path = "$",
+  violations: string[] = [],
+): string[] {
+  for (const keyword of [
+    "minItems",
+    "maxItems",
+    "minLength",
+    "maxLength",
+    "pattern",
+    "format",
+    "minimum",
+    "maximum",
+    "exclusiveMinimum",
+    "exclusiveMaximum",
+  ]) {
+    if (keyword in schema) violations.push(`${path}: ${keyword}`);
+  }
+
+  if (schema.properties && typeof schema.properties === "object") {
+    for (const [key, child] of Object.entries(schema.properties as Record<string, JsonSchema>)) {
+      collectUnsupportedMatchingKeywords(child, `${path}.${key}`, violations);
+    }
+  }
+  if (schema.items && typeof schema.items === "object") {
+    collectUnsupportedMatchingKeywords(schema.items as JsonSchema, `${path}[]`, violations);
+  }
+  for (const key of ["allOf", "anyOf", "oneOf"] as const) {
+    const branch = schema[key];
+    if (Array.isArray(branch)) {
+      branch.forEach((child, index) => {
+        collectUnsupportedMatchingKeywords(
+          child as JsonSchema,
+          `${path}.${key}[${index}]`,
+          violations,
+        );
+      });
+    }
+  }
+  return violations;
+}
 
 describe("llm-schema score normalization", () => {
   it("clamps nested 0–100 scores onto 0–10", () => {
@@ -119,6 +176,15 @@ describe("LLM generation schema audit", () => {
       const json = await toJsonSchema(schema);
       const violations = collectNumberMinMaxViolations(json);
       expect(violations, `${name} must be Anthropic-safe`).toEqual([]);
+    }
+  });
+
+  it("matching generation schemas use only Anthropic-compatible validation keywords", async () => {
+    for (const [name, schema] of Object.entries(matchingGenerationSchemas)) {
+      const json = await toJsonSchema(schema);
+      expect(collectUnsupportedMatchingKeywords(json), `${name} must be Anthropic-safe`).toEqual(
+        [],
+      );
     }
   });
 

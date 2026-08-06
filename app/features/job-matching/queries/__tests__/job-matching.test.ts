@@ -2,15 +2,19 @@ import { describe, expect, it } from "vitest";
 
 import { getTestDb, seedCandidateProfile, seedJob } from "@/shared/__tests__/test-utils";
 
+import { jobMatchingSourceHash, requestJobMatchingExtraction } from "../../server/orchestration";
 import {
   claimCandidateMatchRefresh,
+  claimJobProfileRecoveryBatch,
   getCandidateMatchFeed,
   getCandidateMatchRefreshProgress,
   hasReadyOpenJobMatchingProfile,
+  listOpenJobsWithOutdatedMatchingProfile,
   listDigestCandidates,
   lockCandidateDigestMatches,
   markCandidateDigestMatchesNotified,
   markCandidateMatchViewed,
+  saveJobMatchingProfileIfCurrent,
   setCandidateMatchRefreshPhaseIfCurrent,
   touchCandidateMatchFeedIfCurrent,
   upsertCandidateJobMatch,
@@ -88,7 +92,7 @@ describe("candidate match persistence", () => {
         job_id, requested_source_hash, completed_source_hash, source_version,
         extraction_status, matching_profile, extraction_token
       ) VALUES (
-        ${job.id}, 'job-v1', 'job-v1', 'v1', 'ready', ${sql.json({ facts: [] })}, ${crypto.randomUUID()}
+        ${job.id}, 'job-v1', 'job-v1', 'job-profile-v3-semantic', 'ready', ${sql.json({ facts: [] })}, ${crypto.randomUUID()}
       )
     `;
 
@@ -100,6 +104,60 @@ describe("candidate match persistence", () => {
       WHERE job_id = ${job.id}
     `;
     expect((await hasReadyOpenJobMatchingProfile(sql))?.ready).toBe(false);
+  });
+
+  it("recovers ready open-job profiles from an old source version", async () => {
+    const { job } = await seedJob({ status: "open" });
+    await sql`
+      INSERT INTO job_matching_profiles (
+        job_id, requested_source_hash, completed_source_hash, source_version,
+        extraction_status, matching_profile, extraction_token
+      ) VALUES (
+        ${job.id}, 'job-v1', 'job-v1', 'job-profile-v2', 'ready', ${sql.json({ facts: [] })}, ${crypto.randomUUID()}
+      )
+    `;
+
+    const recovered = await claimJobProfileRecoveryBatch(sql, {
+      claimCutoff: new Date(),
+      batchLimit: "10",
+    });
+    expect(recovered.map((row) => row.jobId)).not.toContain(job.id);
+    const outdated = await listOpenJobsWithOutdatedMatchingProfile(sql, { limit: "10" });
+    const source = outdated.find((row) => row.id === job.id);
+    expect(source).toBeDefined();
+    const request = await requestJobMatchingExtraction(sql, source!);
+    expect(request?.jobId).toBe(job.id);
+
+    const [profile] = await sql`
+      SELECT requested_source_hash, source_version, extraction_status
+      FROM job_matching_profiles
+      WHERE job_id = ${job.id}
+    `;
+    const expectedHash = await jobMatchingSourceHash(source!);
+    expect(profile).toMatchObject({
+      source_version: "job-profile-v3-semantic",
+      extraction_status: "pending",
+      requested_source_hash: expectedHash,
+    });
+    await saveJobMatchingProfileIfCurrent(sql, {
+      jobId: job.id,
+      extractionToken: request!.extractionToken,
+      sourceHash: expectedHash,
+      matchingProfile: { test: true },
+      model: "test-model",
+      promptVersion: "test-prompt",
+    });
+    const [completed] = await sql`
+      SELECT requested_source_hash, completed_source_hash, source_version, extraction_status
+      FROM job_matching_profiles
+      WHERE job_id = ${job.id}
+    `;
+    expect(completed).toMatchObject({
+      requested_source_hash: expectedHash,
+      completed_source_hash: expectedHash,
+      source_version: "job-profile-v3-semantic",
+      extraction_status: "ready",
+    });
   });
 
   it("preserves candidate interaction timestamps across reranks", async () => {

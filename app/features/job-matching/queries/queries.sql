@@ -150,7 +150,7 @@ RETURNING *;
 -- name: ListEligibleJobsForCandidateMatching :many
 SELECT j.id, j.title, j.location, j.workplace_type, j.employment_type,
        j.experience_level, j.created_at, p.matching_profile,
-       p.completed_source_hash
+       p.completed_source_hash, p.source_version
 FROM jobs j
 JOIN companies c ON c.id = j.company_id
 JOIN users owner ON owner.id = c.owner_id
@@ -161,6 +161,7 @@ WHERE j.status = 'open'
   AND owner.deleted_at IS NULL
   AND p.extraction_status = 'ready'
   AND p.completed_source_hash = p.requested_source_hash
+  AND p.source_version = 'job-profile-v3-semantic'
   AND NOT EXISTS (
     SELECT 1 FROM applications a
     WHERE a.job_id = j.id AND a.candidate_id = $1
@@ -313,6 +314,17 @@ FROM profiles
 WHERE p.job_id = profiles.job_id
 RETURNING p.job_id, p.extraction_token;
 
+-- name: ListOpenJobsWithOutdatedMatchingProfile :many
+SELECT j.id, j.title, j.description, j.requirements, j.experience_level
+FROM jobs j
+JOIN job_matching_profiles p ON p.job_id = j.id
+WHERE j.status = 'open'
+  AND j.archived_at IS NULL
+  AND (j.expires_at IS NULL OR j.expires_at > now())
+  AND p.source_version <> 'job-profile-v3-semantic'
+ORDER BY p.updated_at, p.job_id
+LIMIT $1;
+
 -- name: ListOpenJobsMissingMatchingProfile :many
 SELECT j.id, j.title, j.description, j.requirements, j.experience_level
 FROM jobs j
@@ -335,6 +347,7 @@ SELECT EXISTS (
     AND (j.expires_at IS NULL OR j.expires_at > now())
     AND p.extraction_status = 'ready'
     AND p.completed_source_hash = p.requested_source_hash
+    AND p.source_version = 'job-profile-v3-semantic'
 ) AS ready;
 
 -- name: ListDigestCandidates :many

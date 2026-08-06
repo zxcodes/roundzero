@@ -1,91 +1,74 @@
 import { MATCHING_CONFIG } from "./config";
 import type { CandidateMatchingProfile, JobMatchingProfile, MatchReason } from "./schemas";
 
-type EvidencePair = { candidateFactId: string; jobFactId: string };
+type EvidencePair = { candidateItemId: string; jobItemId: string };
+type Item = { id: string; label: string; context?: string };
 
-const compatibleJobCategories: Record<
-  CandidateMatchingProfile["facts"][number]["category"],
-  Set<JobMatchingProfile["facts"][number]["category"]>
-> = {
-  role_family: new Set(["role_family"]),
-  skill: new Set(["required_skill", "preferred_skill"]),
-  seniority: new Set(["seniority"]),
-  domain: new Set(["domain"]),
-  responsibility: new Set(["responsibility"]),
-  education: new Set(["education"]),
-  certification: new Set(["certification"]),
-};
-
-const renderEvidenceText = (
-  candidateFact: CandidateMatchingProfile["facts"][number],
-  jobFact: JobMatchingProfile["facts"][number],
-): string => {
-  switch (candidateFact.category) {
-    case "role_family":
-      return `Your ${candidateFact.label.toLowerCase()} background aligns with this role.`;
-    case "skill":
-      return `Your ${candidateFact.label} experience matches a ${jobFact.category === "required_skill" ? "required" : "preferred"} skill.`;
-    case "seniority":
-      return `Your ${candidateFact.label.toLowerCase()} experience aligns with this role's level.`;
-    case "domain":
-      return `Your ${candidateFact.label.toLowerCase()} background is relevant to this role.`;
-    case "responsibility":
-      return `Your experience with ${candidateFact.label.toLowerCase()} aligns with this role's responsibilities.`;
-    case "education":
-      return `Your ${candidateFact.label.toLowerCase()} background aligns with this role's education needs.`;
-    case "certification":
-      return `Your ${candidateFact.label} certification is relevant to this role.`;
-  }
-};
+const candidateItems = (profile: CandidateMatchingProfile): Item[] => [
+  ...profile.roleIdentities,
+  ...profile.capabilities,
+  ...profile.technologies,
+  ...profile.domains,
+];
+const jobItems = (profile: JobMatchingProfile): Item[] => [
+  profile.roleIdentity,
+  ...profile.responsibilities,
+  ...profile.requiredCapabilities,
+  ...profile.preferredCapabilities,
+  ...profile.requiredTechnologies,
+  ...profile.preferredTechnologies,
+  ...profile.domains,
+];
 
 export function validateAndRenderEvidence(
   candidate: CandidateMatchingProfile,
   job: JobMatchingProfile,
   pairs: EvidencePair[],
 ): MatchReason[] {
-  const candidateFacts = new Map(candidate.facts.map((fact) => [fact.id, fact]));
-  const jobFacts = new Map(job.facts.map((fact) => [fact.id, fact]));
-  const pairKeys = new Set<string>();
-
-  const renderPair = (pair: EvidencePair): MatchReason[] => {
-    const candidateFact = candidateFacts.get(pair.candidateFactId);
-    const jobFact = jobFacts.get(pair.jobFactId);
-    if (!candidateFact || !jobFact) return [];
-
-    const key = `${pair.candidateFactId}:${pair.jobFactId}`;
-    if (pairKeys.has(key)) return [];
-    pairKeys.add(key);
-
-    if (
-      candidateFact.canonicalId !== jobFact.canonicalId ||
-      !compatibleJobCategories[candidateFact.category].has(jobFact.category)
-    ) {
-      return [];
-    }
-
+  const candidates = new Map(candidateItems(candidate).map((item) => [item.id, item]));
+  const jobs = new Map(jobItems(job).map((item) => [item.id, item]));
+  const used = new Set<string>();
+  return pairs.flatMap((pair) => {
+    const candidateItem = candidates.get(pair.candidateItemId);
+    const jobItem = jobs.get(pair.jobItemId);
+    const key = `${pair.candidateItemId}:${pair.jobItemId}`;
+    if (!candidateItem || !jobItem || used.has(key)) return [];
+    used.add(key);
     return [
       {
-        candidateFactId: pair.candidateFactId,
-        jobFactId: pair.jobFactId,
-        text: renderEvidenceText(candidateFact, jobFact),
+        candidateFactId: candidateItem.id,
+        jobFactId: jobItem.id,
+        text: `${candidateItem.label} aligns with ${jobItem.label.toLowerCase()}.`.slice(0, 240),
       },
     ];
-  };
-
-  const selected = pairs.flatMap(renderPair);
-  if (selected.length >= 3) return selected;
-
-  for (const candidateFact of candidate.facts) {
-    for (const jobFact of job.facts) {
-      if (selected.length >= 3) return selected;
-      selected.push(...renderPair({ candidateFactId: candidateFact.id, jobFactId: jobFact.id }));
-    }
-  }
-
-  return selected;
+  });
 }
 
-export const capScoreForEvidence = (score: number, evidenceCount: number): number | null => {
-  if (evidenceCount === 0) return null;
-  return evidenceCount >= 2 ? score : Math.min(score, MATCHING_CONFIG.bands.good - 1);
+export const capScoreForEvidence = (
+  score: number,
+  reasons: MatchReason[],
+  roleFunctionScore: number,
+): number | null => {
+  if (reasons.length === 0 || roleFunctionScore < 50) return null;
+  const candidateItems = new Set(reasons.map((reason) => reason.candidateFactId)).size;
+  const jobItems = new Set(reasons.map((reason) => reason.jobFactId)).size;
+  if (candidateItems < 2 || jobItems < 2) {
+    return Math.min(score, MATCHING_CONFIG.bands.good - 1);
+  }
+  return score;
 };
+
+export const scoreMatchDimensions = (dimensions: {
+  roleFunction: number;
+  capabilitiesResponsibilities: number;
+  technologies: number;
+  seniority: number;
+  domain: number;
+}): number =>
+  Math.round(
+    dimensions.roleFunction * 0.35 +
+      dimensions.capabilitiesResponsibilities * 0.3 +
+      dimensions.technologies * 0.15 +
+      dimensions.seniority * 0.15 +
+      dimensions.domain * 0.05,
+  );

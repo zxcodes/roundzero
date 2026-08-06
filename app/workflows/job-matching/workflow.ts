@@ -6,9 +6,17 @@ import {
   rerankJobs,
 } from "@/features/job-matching/ai";
 import { deriveMatchBand, MATCHING_CONFIG } from "@/features/job-matching/config";
-import { capScoreForEvidence, validateAndRenderEvidence } from "@/features/job-matching/evidence";
+import {
+  capScoreForEvidence,
+  scoreMatchDimensions,
+  validateAndRenderEvidence,
+} from "@/features/job-matching/evidence";
 import { candidateFeedInputHash } from "@/features/job-matching/feed-fingerprint";
 import { sha256Bytes } from "@/features/job-matching/hash";
+import {
+  validateCandidateMatchingProfile,
+  validateJobMatchingProfile,
+} from "@/features/job-matching/profile-sanitization";
 import {
   getCandidateMatchingState,
   getJobForMatchingExtraction,
@@ -145,7 +153,9 @@ export class JobMatchingWorkflow extends WorkflowEntrypoint<Env, JobMatchingWork
             candidate.existingVersion === MATCHING_CONFIG.candidateProfileVersion
           ) {
             return {
-              profile: candidateMatchingProfileSchema.parse(candidate.existingProfile),
+              profile: validateCandidateMatchingProfile(
+                candidateMatchingProfileSchema.parse(candidate.existingProfile),
+              ),
               sourceHash,
               changed: false,
               model: null,
@@ -155,6 +165,7 @@ export class JobMatchingWorkflow extends WorkflowEntrypoint<Env, JobMatchingWork
           const resumeText = await extractSanitizedResumeText(
             bytes,
             resumeContentType(candidate.resumeKey),
+            100_000,
           );
           const result = await extractCandidateMatchingProfile(resumeText);
           return { profile: result.profile, sourceHash, changed: true, model: result.model };
@@ -189,6 +200,7 @@ export class JobMatchingWorkflow extends WorkflowEntrypoint<Env, JobMatchingWork
         const jobs = rows.flatMap((row) => {
           const parsed = jobMatchingProfileSchema.safeParse(row.matchingProfile);
           if (!parsed.success || !row.completedSourceHash) return [];
+          const profile = validateJobMatchingProfile(parsed.data);
           return [
             {
               id: row.id,
@@ -199,7 +211,8 @@ export class JobMatchingWorkflow extends WorkflowEntrypoint<Env, JobMatchingWork
               experienceLevel: row.experienceLevel,
               createdAt: row.createdAt,
               profileSourceHash: row.completedSourceHash,
-              profile: parsed.data,
+              profileVersion: row.sourceVersion,
+              profile,
             },
           ];
         });
@@ -326,7 +339,10 @@ export class JobMatchingWorkflow extends WorkflowEntrypoint<Env, JobMatchingWork
           refreshToken: payload.refreshToken,
           errorMessage: errorMessage(error),
         };
-        if (state?.matchingProfileStatus === "ready") {
+        if (
+          state?.matchingProfileStatus === "ready" &&
+          state.matchingProfileVersion === MATCHING_CONFIG.candidateProfileVersion
+        ) {
           await markCandidateFeedFailedIfCurrent(db, args);
         } else {
           await markCandidateProfileFailedIfCurrent(db, args);
@@ -348,7 +364,14 @@ export class JobMatchingWorkflow extends WorkflowEntrypoint<Env, JobMatchingWork
     output: Array<{
       jobId: string;
       score: number;
-      evidencePairs: Array<{ candidateFactId: string; jobFactId: string }>;
+      dimensions: {
+        roleFunction: number;
+        capabilitiesResponsibilities: number;
+        technologies: number;
+        seniority: number;
+        domain: number;
+      };
+      evidencePairs: Array<{ candidateItemId: string; jobItemId: string }>;
     }>,
   ) {
     const suppliedIds = new Set(jobs.map((job) => job.id));
@@ -362,13 +385,23 @@ export class JobMatchingWorkflow extends WorkflowEntrypoint<Env, JobMatchingWork
 
     const jobsById = new Map(jobs.map((job) => [job.id, job]));
     return output.flatMap((match) => {
-      if (!Number.isFinite(match.score) || match.score < 0 || match.score > 100) {
-        throw new Error("Reranker returned an invalid score");
+      const dimensionScores = Object.values(match.dimensions);
+      if (
+        !Number.isFinite(match.score) ||
+        match.score < 0 ||
+        match.score > 100 ||
+        dimensionScores.some((score) => !Number.isFinite(score) || score < 0 || score > 100)
+      ) {
+        throw new Error("Reranker returned an invalid score or dimension");
       }
       const job = jobsById.get(match.jobId);
       if (!job) throw new Error("Reranker returned an unknown job");
       const reasons = validateAndRenderEvidence(candidate, job.profile, match.evidencePairs);
-      const score = capScoreForEvidence(match.score, reasons.length);
+      const score = capScoreForEvidence(
+        scoreMatchDimensions(match.dimensions),
+        reasons,
+        match.dimensions.roleFunction,
+      );
       if (score === null) return [];
 
       return [
