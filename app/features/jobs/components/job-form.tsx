@@ -55,6 +55,60 @@ export interface JobFormData {
   expiresAt: Date | null;
 }
 
+/** Job row fields needed to hydrate the create/edit form. */
+export type JobFormSource = {
+  title: string;
+  description: string;
+  requirements: unknown;
+  screeningQuestions: unknown;
+  status: string;
+  location: string | null;
+  workplaceType: string | null;
+  employmentType: string | null;
+  experienceLevel: string | null;
+  salaryMin: number | null;
+  salaryMax: number | null;
+  salaryCurrency: string;
+  teamSize: number | null;
+  headcount: number | null;
+  finalReportTarget: number;
+  expiresAt: Date | string | null;
+};
+
+const asStringList = (value: unknown): string[] =>
+  Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+
+/**
+ * Map a persisted job into full form defaults.
+ * Every JobFormData key must be set here so edit cannot omit a field and wipe it on save.
+ */
+export function jobToFormDefaults(job: JobFormSource): JobFormData {
+  const status: JobStatus =
+    job.status === "draft" || job.status === "open" || job.status === "closed"
+      ? job.status
+      : "draft";
+
+  return {
+    title: job.title,
+    description: job.description,
+    requirements: asStringList(job.requirements),
+    screeningQuestions: asStringList(job.screeningQuestions),
+    status,
+    location: job.location,
+    // Nullable in DB for legacy/import rows; form requires a selection before save.
+    workplaceType: (job.workplaceType ?? undefined) as WorkplaceType,
+    employmentType: (job.employmentType ?? undefined) as EmploymentType,
+    experienceLevel: (job.experienceLevel ?? undefined) as ExperienceLevel,
+    salaryMin: job.salaryMin,
+    salaryMax: job.salaryMax,
+    salaryCurrency: job.salaryCurrency,
+    teamSize: job.teamSize,
+    headcount: job.headcount,
+    finalReportTarget: job.finalReportTarget,
+    expiresAt: job.expiresAt != null ? new Date(job.expiresAt) : null,
+  };
+}
+
 const requiredString = (max: number, message: string) => z.string().trim().min(1, message).max(max);
 
 const optionalPositiveInt = z
@@ -69,7 +123,7 @@ const formSchema = z
     description: requiredString(5000, "Job description is required"),
     requirements: z.array(z.string()),
     screeningQuestions: z.array(z.string()),
-    status: z.enum(["draft", "open"]),
+    status: z.enum(["draft", "open", "closed"]),
     location: z.string().max(200),
     workplaceType: z.string().min(1, "Workplace type is required"),
     employmentType: z.string().min(1, "Employment type is required"),
@@ -103,10 +157,12 @@ const workplaceOptions = toOptions(workplaceTypeLabels);
 const employmentOptions = toOptions(employmentTypeLabels);
 const experienceOptions = toOptions(experienceLevelLabels);
 
-const statusOptions = [
+const draftOpenStatusOptions = [
   { value: "draft", label: "Draft" },
   { value: "open", label: "Open" },
-];
+] as const;
+
+const closedStatusOption = { value: "closed", label: "Closed" } as const;
 const currencyOptions = salaryCurrencySchema.options.map((value) => ({
   value,
   label: salaryCurrencyLabels[value],
@@ -128,6 +184,14 @@ const SALARY_PLACEHOLDERS: Record<SalaryCurrency, { min: string; max: string }> 
   CAD: { min: "80,000", max: "160,000" },
   AUD: { min: "90,000", max: "170,000" },
   INR: { min: "8,00,000", max: "25,00,000" },
+};
+
+/** Local calendar date as YYYY-MM-DD (avoids UTC day-shift from toISOString). */
+const toDateInputValue = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 };
 
 export function JobForm({
@@ -157,6 +221,12 @@ export function JobForm({
   // already open never consumes a new slot, so don't lock it.
   const openLocked =
     !(entitlements?.jobs.canOpenAnother ?? true) && defaultValues?.status !== "open";
+  // Closed is archive/expiry state — only surface it when the job is already closed
+  // so the select shows the real status instead of a blank value.
+  const statusOptions =
+    defaultValues?.status === "closed"
+      ? [...draftOpenStatusOptions, closedStatusOption]
+      : draftOpenStatusOptions;
   const defaultReportTarget =
     defaultValues?.finalReportTarget != null
       ? defaultValues.finalReportTarget
@@ -198,7 +268,9 @@ export function JobForm({
       teamSize: defaultValues?.teamSize != null ? String(defaultValues.teamSize) : "",
       headcount: defaultValues?.headcount != null ? String(defaultValues.headcount) : "",
       finalReportTarget: String(defaultReportTarget),
-      expiresAt: defaultValues?.expiresAt ? defaultValues.expiresAt.toISOString().slice(0, 10) : "",
+      expiresAt: defaultValues?.expiresAt
+        ? toDateInputValue(new Date(defaultValues.expiresAt))
+        : "",
     },
 
     validators: { onSubmit: submitSchema },
@@ -538,7 +610,7 @@ export function JobForm({
                 ? new Date(`${field.state.value}T00:00:00`)
                 : undefined;
               const onDateSelect = (date: Date | undefined) => {
-                field.handleChange(date ? date.toISOString().slice(0, 10) : "");
+                field.handleChange(date ? toDateInputValue(date) : "");
                 setDeadlineOpen(false);
               };
               const onClearDeadline = () => {
