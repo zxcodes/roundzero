@@ -166,7 +166,7 @@ export function CompanyJobActions({
   }
 
   return (
-    <div className="flex shrink-0 items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       {isDraft ? (
         <Button size="sm" onClick={onPublish} disabled={publishJobMutation.isPending}>
           {publishJobMutation.isPending ? (
@@ -177,6 +177,13 @@ export function CompanyJobActions({
           {publishJobMutation.isPending ? "Publishing" : "Publish"}
         </Button>
       ) : null}
+
+      <Button variant="outline" size="sm" asChild>
+        <Link to="/dashboard/jobs/$jobId/edit" params={{ jobId: job.id }}>
+          <HugeiconsIcon icon={Edit02Icon} strokeWidth={2} className="size-3.5" />
+          Edit job
+        </Link>
+      </Button>
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -193,12 +200,6 @@ export function CompanyJobActions({
           <DropdownMenuItem onSelect={onOpenPreview}>
             <HugeiconsIcon icon={EyeIcon} strokeWidth={2} className="size-3.5" />
             Preview
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to="/dashboard/jobs/$jobId/edit" params={{ jobId: job.id }}>
-              <HugeiconsIcon icon={Edit02Icon} strokeWidth={2} className="size-3.5" />
-              Edit
-            </Link>
           </DropdownMenuItem>
           {showCopyLink ? (
             <>

@@ -305,28 +305,58 @@ export const updateJob = createServerFn({ method: "POST" })
     return { job: result.job };
   });
 
+const archiveCompanyJobs = async (companyId: string, requestedIds: string[]) => {
+  const db = getDb();
+  const ids = [...new Set(requestedIds)].sort();
+  const archivedJobs = await db.begin(async (tx) => {
+    const transaction = asSqlTransaction(tx);
+    const jobs = [];
+    for (const id of ids) {
+      const job = await archiveJobQuery(transaction, { id, companyId });
+      if (!job) {
+        throw new ExpectedError(
+          "conflict",
+          "A selected job was not found, not authorized, or already archived",
+        );
+      }
+      jobs.push(job);
+    }
+    return jobs;
+  });
+
+  for (let index = 0; index < archivedJobs.length; index += 3) {
+    await Promise.all(
+      archivedJobs.slice(index, index + 3).map((job) =>
+        notifyCompanyTeam(db, {
+          companyId,
+          type: "job_archived",
+          payload: {
+            jobId: job.id,
+            jobTitle: job.title,
+            status: "closed",
+          },
+        }),
+      ),
+    );
+  }
+
+  return archivedJobs;
+};
+
 export const archiveJob = createServerFn({ method: "POST" })
   .middleware([companyMiddleware])
   .validator(zodValidator(jobIdSchema))
   .handler(async ({ data, context }) => {
-    const db = getDb();
-    const archived = await archiveJobQuery(db, { id: data.id, companyId: context.company.id });
-    if (!archived) {
-      throw new ExpectedError("conflict", "Job not found, not authorized, or already archived");
-    }
-
-    await notifyCompanyTeam(db, {
-      companyId: context.company.id,
-      type: "job_archived",
-      payload: {
-        jobId: archived.id,
-        jobTitle: archived.title,
-        status: "closed",
-      },
-    });
-
-    return { job: archived };
+    const [job] = await archiveCompanyJobs(context.company.id, [data.id]);
+    return { job };
   });
+
+export const archiveJobs = createServerFn({ method: "POST" })
+  .middleware([companyMiddleware])
+  .validator(zodValidator(jobIdsSchema))
+  .handler(async ({ data, context }) => ({
+    jobs: await archiveCompanyJobs(context.company.id, data.ids),
+  }));
 
 const publishCompanyJobs = async (companyId: string, requestedIds: string[]) => {
   const db = getDb();
