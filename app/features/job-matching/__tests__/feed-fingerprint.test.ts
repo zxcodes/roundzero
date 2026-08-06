@@ -7,6 +7,7 @@ describe("candidate feed input fingerprint", () => {
     const job = {
       id: crypto.randomUUID(),
       profileSourceHash: "job-v1",
+      profileVersion: "profile-v1",
       location: "Remote",
       workplaceType: "remote",
     };
@@ -16,12 +17,16 @@ describe("candidate feed input fingerprint", () => {
     expect(
       await candidateFeedInputHash("candidate-v1", [{ ...job, profileSourceHash: "job-v2" }]),
     ).not.toBe(initial);
+    expect(
+      await candidateFeedInputHash("candidate-v1", [{ ...job, profileVersion: "profile-v2" }]),
+    ).not.toBe(initial);
   });
 
   it("changes when an eligible job is added or removed", async () => {
     const first = {
       id: crypto.randomUUID(),
       profileSourceHash: "job-v1",
+      profileVersion: "profile-v1",
       location: null,
       workplaceType: null,
     };
@@ -36,6 +41,7 @@ describe("candidate feed input fingerprint", () => {
     const baseJob = {
       id: crypto.randomUUID(),
       profileSourceHash: "job-v1",
+      profileVersion: "profile-v1",
       location: "Remote",
       workplaceType: "remote",
     };
@@ -55,6 +61,7 @@ describe("candidate feed input fingerprint", () => {
     const first = {
       id: crypto.randomUUID(),
       profileSourceHash: "job-v1",
+      profileVersion: "profile-v1",
       location: null,
       workplaceType: null,
     };

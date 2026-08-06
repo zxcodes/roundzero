@@ -1,216 +1,98 @@
-import type { CandidateMatchingProfile, JobMatchingProfile } from "./schemas";
+import {
+  candidateMatchingProfileSchema,
+  jobMatchingProfileSchema,
+  type CandidateMatchingProfile,
+  type CandidateMatchingProfileGeneration,
+  type JobMatchingProfile,
+  type JobMatchingProfileGeneration,
+} from "./schemas";
 
-const prohibitedTokenPattern =
-  /(?:^|-)(?:age|aged|citizen|citizenship|disability|disabled|ethnic|ethnicity|female|gender|male|married|nationality|nonbinary|race|religion|religious|sponsorship|veteran|visa)(?:-|$)/i;
-const organizationPattern =
-  /(?:^|-)(?:academy|college|company|corp|corporation|gmbh|inc|institute|llc|ltd|school|university)(?:-|$)/i;
-const dateOrContactPattern =
-  /(?:\b(?:19|20)\d{2}\b|\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b|@|\b\+?\d[\d ()-]{7,}\d\b)/;
-const educationPattern =
-  /^(?:associate|associates|bachelor|bachelors|doctorate|doctoral|high-school|master|masters|phd)(?:-[a-z0-9]+)*$/;
-const semanticPrefixPattern =
-  /^(?:(?:preferred|required)-skill|certification|domain|education|requirement|responsibility|role-family|seniority|skill)-/;
-const canonicalAliases = new Map([
-  ["cicd", "ci-cd"],
-  ["node", "node-js"],
-  ["nodejs", "node-js"],
-  ["postgres", "postgresql"],
-  ["react-js", "react"],
-]);
-const recognizedCandidateConcepts = new Set([
-  "account-executive",
-  "account-management",
-  "accounting",
-  "agile",
-  "analytics",
-  "angular",
-  "ansible",
-  "api-design",
-  "artificial-intelligence",
-  "aws",
-  "azure",
-  "backend-development",
-  "backend-engineering",
-  "business-analysis",
-  "business-development",
-  "c",
-  "c-sharp",
-  "c-plus-plus",
-  "ci-cd",
-  "cloud-architecture",
-  "cloud-computing",
-  "communication",
-  "computer-science",
-  "content-marketing",
-  "css",
-  "customer-success",
-  "cybersecurity",
-  "data-analysis",
-  "data-engineering",
-  "data-science",
-  "database-design",
-  "devops",
-  "distributed-systems",
-  "django",
-  "docker",
-  "dotnet",
-  "e-commerce",
-  "education",
-  "elasticsearch",
-  "engineering-management",
-  "express-js",
-  "fastapi",
-  "figma",
-  "finance",
-  "financial-analysis",
-  "flask",
-  "flutter",
-  "frontend-architecture",
-  "frontend-development",
-  "frontend-engineer",
-  "frontend-engineering",
-  "full-stack-development",
-  "full-stack-engineering",
-  "gcp",
-  "git",
-  "go",
-  "graphql",
-  "healthcare",
-  "html",
-  "human-resources",
-  "information-technology",
-  "infrastructure-as-code",
-  "java",
-  "javascript",
-  "kafka",
-  "kotlin",
-  "kubernetes",
-  "lead",
-  "leadership",
-  "legal",
-  "machine-learning",
-  "marketing",
-  "mid",
-  "mobile-development",
-  "mongodb",
-  "mysql",
-  "nestjs",
-  "next-js",
-  "node-js",
-  "nosql",
-  "operations",
-  "php",
-  "postgresql",
-  "principal",
-  "product-design",
-  "product-management",
-  "project-management",
-  "python",
-  "quality-assurance",
-  "r",
-  "react",
-  "react-native",
-  "redis",
-  "recruiting",
-  "rest-apis",
-  "retail",
-  "ruby",
-  "ruby-on-rails",
-  "rust",
-  "sales",
-  "salesforce",
-  "scala",
-  "security",
-  "senior",
-  "software-architecture",
-  "software-development",
-  "software-engineering",
-  "spring-boot",
-  "sql",
-  "staff",
-  "svelte",
-  "swift",
-  "system-design",
-  "tailwind-css",
-  "team-leadership",
-  "terraform",
-  "testing",
-  "typescript",
-  "ui-design",
-  "user-experience",
-  "user-research",
-  "vue-js",
-  "web-development",
-]);
+const unsafeText =
+  /(?:\b(?:19|20)\d{2}\b|[\w.+-]+@[\w.-]+|https?:\/\/|\b(?:phone|email|address|born|citizen(?:ship)?|nationality|gender|race|religion|disability|visa|veteran)\b)/i;
+const genericLabel =
+  /^(?:(?:required|preferred)[ -]?(?:skill|capability|technology)|responsibility|requirement|role|domain|skill|technology|professional|transferable skills?|communication skills?)$/i;
 
-export const normalizeCanonicalId = (value: string): string => {
-  let normalized = value;
-  while (semanticPrefixPattern.test(normalized)) {
-    normalized = normalized.replace(semanticPrefixPattern, "");
+const assertSafeText = (value: string) => {
+  if (unsafeText.test(value))
+    throw new Error("Matching profile contains private or source-identifying text");
+  if (genericLabel.test(value.trim()))
+    throw new Error("Matching profile contains a generic category-name item");
+};
+
+const assertUniqueItems = (items: Array<{ id: string; label: string; context?: string }>) => {
+  const ids = new Set<string>();
+  for (const item of items) {
+    if (ids.has(item.id)) throw new Error("Matching profile contains duplicate item IDs");
+    ids.add(item.id);
+    assertSafeText(item.label);
+    if (item.context) assertSafeText(item.context);
   }
-  return canonicalAliases.get(normalized) ?? normalized;
 };
 
-const humanizeCanonicalId = (value: string): string =>
-  value
-    .split("-")
-    .filter(Boolean)
-    .map((part, index) => (index === 0 ? `${part.charAt(0).toUpperCase()}${part.slice(1)}` : part))
-    .join(" ");
+const withIds = <T extends { id: string }>(category: string, items: T[]): T[] =>
+  items.map((item, index) => ({ ...item, id: `${category}-${index + 1}` }));
 
-const isSafeFact = (fact: CandidateMatchingProfile["facts"][number]): boolean => {
-  const values = [fact.id, fact.canonicalId];
-  if (values.some((value) => dateOrContactPattern.test(value))) return false;
-  if (prohibitedTokenPattern.test(fact.canonicalId)) return false;
-  if (/(?:^|-)(?:at|for)(?:-|$)/i.test(fact.canonicalId)) return false;
-  if (organizationPattern.test(fact.canonicalId)) return false;
-  if (fact.category === "education" && !educationPattern.test(fact.canonicalId)) return false;
-  return (
-    fact.category === "education" ||
-    recognizedCandidateConcepts.has(normalizeCanonicalId(fact.canonicalId))
-  );
-};
+const normalizedFamilies = (primary: string, adjacent: string[]) => [
+  ...new Set(adjacent.filter((family) => family !== "other" && family !== primary)),
+];
 
-/**
- * Removes model-authored display text and identifiers before a candidate profile
- * can be persisted or sent to the reranker. Role-family facts carry the useful
- * signal, so recent title strings are intentionally not retained.
- */
-export function sanitizeCandidateMatchingProfile(
-  profile: CandidateMatchingProfile,
+export function validateCandidateMatchingProfile(
+  profile: CandidateMatchingProfile | CandidateMatchingProfileGeneration,
 ): CandidateMatchingProfile {
-  const facts = new Map<string, CandidateMatchingProfile["facts"][number]>();
-  for (const fact of profile.facts) {
-    if (!isSafeFact(fact)) continue;
-    const canonicalId = normalizeCanonicalId(fact.canonicalId);
-    const key = `${fact.category}:${canonicalId}`;
-    facts.set(key, {
-      id: `${fact.category.replaceAll("_", "-")}-${canonicalId}`,
-      category: fact.category,
-      canonicalId,
-      label: humanizeCanonicalId(canonicalId),
-    });
+  if (profile.primaryFunctionalFamily === "other") {
+    throw new Error("Candidate matching profile has no usable functional identity");
   }
-
-  return {
-    recentTitles: [],
-    experienceYearsBucket: profile.experienceYearsBucket,
-    facts: [...facts.values()],
+  const normalized = {
+    ...profile,
+    adjacentFunctionalFamilies: normalizedFamilies(
+      profile.primaryFunctionalFamily,
+      profile.adjacentFunctionalFamilies,
+    ) as CandidateMatchingProfile["adjacentFunctionalFamilies"],
+    roleIdentities: withIds("role", profile.roleIdentities),
+    capabilities: withIds("capability", profile.capabilities),
+    technologies: withIds("technology", profile.technologies),
+    domains: withIds("domain", profile.domains),
   };
+  assertSafeText(normalized.summary);
+  assertUniqueItems([
+    ...normalized.roleIdentities,
+    ...normalized.capabilities,
+    ...normalized.technologies,
+    ...normalized.domains,
+  ]);
+  return candidateMatchingProfileSchema.parse(normalized);
 }
 
-export function normalizeJobMatchingProfile(profile: JobMatchingProfile): JobMatchingProfile {
-  const facts = new Map<string, JobMatchingProfile["facts"][number]>();
-  for (const fact of profile.facts) {
-    const canonicalId = normalizeCanonicalId(fact.canonicalId);
-    const key = `${fact.category}:${canonicalId}`;
-    facts.set(key, {
-      id: `${fact.category.replaceAll("_", "-")}-${canonicalId}`,
-      category: fact.category,
-      canonicalId,
-      label: humanizeCanonicalId(canonicalId),
-    });
+export function validateJobMatchingProfile(
+  profile: JobMatchingProfile | JobMatchingProfileGeneration,
+): JobMatchingProfile {
+  const functionalFamilies = [
+    ...new Set(profile.functionalFamilies.filter((family) => family !== "other")),
+  ];
+  if (functionalFamilies.length === 0) {
+    throw new Error("Job matching profile has no usable functional identity");
   }
-
-  return { facts: [...facts.values()] };
+  const normalized = {
+    ...profile,
+    functionalFamilies: functionalFamilies as JobMatchingProfile["functionalFamilies"],
+    roleIdentity: { ...profile.roleIdentity, id: "role-1" },
+    responsibilities: withIds("responsibility", profile.responsibilities),
+    requiredCapabilities: withIds("required-capability", profile.requiredCapabilities),
+    preferredCapabilities: withIds("preferred-capability", profile.preferredCapabilities),
+    requiredTechnologies: withIds("required-technology", profile.requiredTechnologies),
+    preferredTechnologies: withIds("preferred-technology", profile.preferredTechnologies),
+    domains: withIds("domain", profile.domains),
+  };
+  assertSafeText(normalized.roleIdentity.label);
+  assertSafeText(normalized.roleIdentity.summary);
+  assertUniqueItems([
+    normalized.roleIdentity,
+    ...normalized.responsibilities,
+    ...normalized.requiredCapabilities,
+    ...normalized.preferredCapabilities,
+    ...normalized.requiredTechnologies,
+    ...normalized.preferredTechnologies,
+    ...normalized.domains,
+  ]);
+  return jobMatchingProfileSchema.parse(normalized);
 }

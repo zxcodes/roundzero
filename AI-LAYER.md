@@ -260,6 +260,16 @@ Pre/post-eval use Vercel AI SDK `generateText` + Response Healing plugin.
 
 ---
 
+# Candidate Job Matching
+
+Candidate matching uses privacy-safe, rich semantic profiles rather than keyword facts. Candidate extraction reads sanitized resume text up to a matching-specific 100,000-character limit (effectively complete for normal resumes) and stores only a synthesized professional summary, role identities, coarse experience/seniority and functional families, capabilities with concise context, technologies with proficiency/context, and domains. Job extraction similarly models role identity, responsibilities/outcomes, required/preferred capabilities and technologies, seniority, and domains from the full posting.
+
+Both outputs use strict structured schemas and local usability/privacy validation. Empty, generic, functionless, duplicate-ID, or identifying output fails extraction and is never marked ready. Profile versions force candidate re-extraction on refresh and reconciliation re-extracts open jobs with an old source version.
+
+Retrieval uses only coarse functional-family compatibility as a boundary and does not pad results with unrelated new jobs. Anthropic Claude Sonnet 4.5 receives each complete candidate/job profile and scores role/function, capabilities/responsibilities, technologies, seniority, and domain semantically. It may reference 0–3 real profile item ID pairs; the server validates those IDs and renders reasons from the referenced structured items. Zero-evidence and cross-functional matches are omitted, and one-evidence matches cannot enter good/strong bands.
+
+---
+
 # One-Line Summary
 
 RoundZero deeply evaluates the right candidates, not every candidate — through selective pre-screening, batch-orchestrated interviews, and explainable multi-pass reports.

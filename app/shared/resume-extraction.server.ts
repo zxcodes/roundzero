@@ -8,6 +8,7 @@ import { LIMITS, sanitizeUntrustedText } from "./ai-refine";
 export async function extractSanitizedResumeText(
   bytes: Uint8Array,
   contentType: string,
+  limit: number = LIMITS.RESUME_TEXT,
 ): Promise<string> {
   let text: string;
   if (contentType === "application/pdf") {
@@ -21,7 +22,7 @@ export async function extractSanitizedResumeText(
     throw new Error(`Unsupported resume format: ${contentType}`);
   }
 
-  return sanitizeUntrustedText(text, LIMITS.RESUME_TEXT);
+  return sanitizeUntrustedText(text, limit);
 }
 
 export function resumeContentType(resumeKey: string): string {

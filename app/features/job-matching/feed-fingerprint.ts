@@ -4,6 +4,7 @@ import { hashStableValue } from "./hash";
 type FingerprintJob = {
   id: string;
   profileSourceHash: string;
+  profileVersion: string;
   location: string | null;
   workplaceType: string | null;
 };
@@ -22,6 +23,7 @@ export const candidateFeedInputHash = async (
       .map((job) => ({
         id: job.id,
         profileSourceHash: job.profileSourceHash,
+        profileVersion: job.profileVersion,
         location: job.location,
         workplaceType: job.workplaceType,
       }))

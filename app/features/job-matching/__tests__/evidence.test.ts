@@ -1,103 +1,63 @@
 import { describe, expect, it } from "vitest";
 
-import { capScoreForEvidence, validateAndRenderEvidence } from "../evidence";
-import type { CandidateMatchingProfile, JobMatchingProfile } from "../schemas";
+import { capScoreForEvidence, scoreMatchDimensions, validateAndRenderEvidence } from "../evidence";
+import { candidateProfile, jobProfile } from "./fixtures";
 
-const candidate: CandidateMatchingProfile = {
-  recentTitles: [],
-  experienceYearsBucket: "unknown",
-  facts: [{ id: "skill-react", category: "skill", canonicalId: "react", label: "React" }],
-};
-
-describe("match evidence", () => {
-  it("renders only canonically aligned, compatible facts", () => {
-    const job: JobMatchingProfile = {
-      facts: [
-        {
-          id: "job-react",
-          category: "required_skill",
-          canonicalId: "react",
-          label: "React",
-        },
-      ],
-    };
-
+describe("semantic match evidence", () => {
+  it("accepts valid semantically different item references and renders stored items", () => {
     expect(
-      validateAndRenderEvidence(candidate, job, [
-        { candidateFactId: "skill-react", jobFactId: "job-react" },
+      validateAndRenderEvidence(candidateProfile, jobProfile, [
+        { candidateItemId: "capability-1", jobItemId: "responsibility-1" },
       ]),
     ).toEqual([
       {
-        candidateFactId: "skill-react",
-        jobFactId: "job-react",
-        text: "Your React experience matches a required skill.",
+        candidateFactId: "capability-1",
+        jobFactId: "responsibility-1",
+        text: "Web product delivery aligns with deliver web interfaces.",
       },
     ]);
   });
 
-  it("discards fabricated canonical alignment", () => {
-    const job: JobMatchingProfile = {
-      facts: [{ id: "job-rust", category: "required_skill", canonicalId: "rust", label: "Rust" }],
-    };
-
+  it("drops fabricated IDs and duplicate references", () => {
     expect(
-      validateAndRenderEvidence(candidate, job, [
-        { candidateFactId: "skill-react", jobFactId: "job-rust" },
+      validateAndRenderEvidence(candidateProfile, jobProfile, [
+        { candidateItemId: "missing", jobItemId: "responsibility-1" },
+        { candidateItemId: "capability-1", jobItemId: "responsibility-1" },
+        { candidateItemId: "capability-1", jobItemId: "responsibility-1" },
       ]),
-    ).toEqual([]);
+    ).toHaveLength(1);
   });
 
-  it("discards unknown and duplicate evidence identifiers", () => {
-    const job: JobMatchingProfile = {
-      facts: [
-        {
-          id: "job-react",
-          category: "required_skill",
-          canonicalId: "react",
-          label: "React",
-        },
-      ],
-    };
+  it("omits zero evidence and functional mismatch and caps one-evidence matches", () => {
+    const one = [{ candidateFactId: "c1", jobFactId: "j1", text: "one" }];
+    const repeated = [...one, { candidateFactId: "c1", jobFactId: "j2", text: "two" }];
+    const independent = [...one, { candidateFactId: "c2", jobFactId: "j2", text: "two" }];
+    expect(capScoreForEvidence(95, [], 100)).toBeNull();
+    expect(capScoreForEvidence(95, independent, 30)).toBeNull();
+    expect(capScoreForEvidence(95, one, 100)).toBe(59);
+    expect(capScoreForEvidence(95, repeated, 100)).toBe(59);
+    expect(capScoreForEvidence(95, independent, 100)).toBe(95);
+  });
 
+  it("derives overall score from weighted dimensions", () => {
     expect(
-      validateAndRenderEvidence(candidate, job, [
-        { candidateFactId: "unknown", jobFactId: "job-react" },
-        { candidateFactId: "skill-react", jobFactId: "job-react" },
-        { candidateFactId: "skill-react", jobFactId: "job-react" },
-      ]),
-    ).toEqual([
-      {
-        candidateFactId: "skill-react",
-        jobFactId: "job-react",
-        text: "Your React experience matches a required skill.",
-      },
-    ]);
+      scoreMatchDimensions({
+        roleFunction: 100,
+        capabilitiesResponsibilities: 80,
+        technologies: 60,
+        seniority: 40,
+        domain: 20,
+      }),
+    ).toBe(75);
   });
 
-  it("fills missing model evidence from deterministic canonical overlaps", () => {
-    const job: JobMatchingProfile = {
-      facts: [
-        {
-          id: "job-react",
-          category: "required_skill",
-          canonicalId: "react",
-          label: "React",
-        },
-      ],
-    };
-
-    expect(validateAndRenderEvidence(candidate, job, [])).toEqual([
-      {
-        candidateFactId: "skill-react",
-        jobFactId: "job-react",
-        text: "Your React experience matches a required skill.",
-      },
-    ]);
-  });
-
-  it("omits unsupported jobs and keeps single-evidence jobs out of good and strong bands", () => {
-    expect(capScoreForEvidence(95, 0)).toBeNull();
-    expect(capScoreForEvidence(95, 1)).toBe(59);
-    expect(capScoreForEvidence(95, 2)).toBe(95);
+  it("keeps rendered reasons within storage length at label boundaries", () => {
+    const label = "A".repeat(110);
+    const reasons = validateAndRenderEvidence(
+      { ...candidateProfile, capabilities: [{ ...candidateProfile.capabilities[0], label }] },
+      { ...jobProfile, responsibilities: [{ ...jobProfile.responsibilities[0], label }] },
+      [{ candidateItemId: "capability-1", jobItemId: "responsibility-1" }],
+    );
+    expect(reasons[0]?.text.length).toBeLessThanOrEqual(240);
   });
 });

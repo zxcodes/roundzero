@@ -1,125 +1,88 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  normalizeJobMatchingProfile,
-  sanitizeCandidateMatchingProfile,
+  validateCandidateMatchingProfile,
+  validateJobMatchingProfile,
 } from "../profile-sanitization";
-import { candidateMatchingProfileSchema } from "../schemas";
+import { candidateProfile, jobProfile } from "./fixtures";
 
-describe("candidate matching profile sanitization", () => {
-  it("removes model-authored titles and prohibited facts before persistence", () => {
-    const sanitized = sanitizeCandidateMatchingProfile({
-      recentTitles: ["Engineer at Google"],
-      experienceYearsBucket: "3-5",
-      facts: [
-        { id: "raw-react", category: "skill", canonicalId: "react", label: "React at Google" },
-        {
-          id: "raw-school",
-          category: "education",
-          canonicalId: "harvard-university",
-          label: "Harvard University",
-        },
-        {
-          id: "raw-protected",
-          category: "domain",
-          canonicalId: "female-candidates",
-          label: "Female candidates",
-        },
-        {
-          id: "raw-employer",
-          category: "domain",
-          canonicalId: "google",
-          label: "Google",
-        },
-        {
-          id: "raw-degree",
-          category: "education",
-          canonicalId: "bachelors-computer-science",
-          label: "BSc, 2022",
-        },
-      ],
-    });
-
-    expect(sanitized.recentTitles).toEqual([]);
-    expect(sanitized.facts).toEqual([
-      { id: "skill-react", category: "skill", canonicalId: "react", label: "React" },
-      {
-        id: "education-bachelors-computer-science",
-        category: "education",
-        canonicalId: "bachelors-computer-science",
-        label: "Bachelors computer science",
-      },
-    ]);
+describe("matching profile usability", () => {
+  it("accepts rich privacy-safe profiles", () => {
+    expect(validateCandidateMatchingProfile(candidateProfile).summary).toBe(
+      candidateProfile.summary,
+    );
+    expect(validateJobMatchingProfile(jobProfile).roleIdentity.label).toBe(
+      jobProfile.roleIdentity.label,
+    );
   });
 
-  it("deduplicates facts using privacy-safe generated identifiers", () => {
-    const sanitized = sanitizeCandidateMatchingProfile({
-      recentTitles: [],
-      experienceYearsBucket: "unknown",
-      facts: [
-        { id: "first", category: "skill", canonicalId: "react", label: "React" },
-        { id: "second", category: "skill", canonicalId: "react", label: "React.js" },
-      ],
+  it("assigns deterministic global IDs idempotently and normalizes families", () => {
+    const candidate = validateCandidateMatchingProfile({
+      ...candidateProfile,
+      adjacentFunctionalFamilies: ["other", "data_ai", "software_engineering", "data_ai"],
     });
+    expect(validateCandidateMatchingProfile(candidate)).toEqual(candidate);
+    expect(candidate.adjacentFunctionalFamilies).toEqual(["data_ai"]);
+    expect(candidate.roleIdentities[0].id).toBe("role-1");
+    expect(candidate.capabilities[0].id).toBe("capability-1");
 
-    expect(sanitized.facts).toHaveLength(1);
-    expect(sanitized.facts[0]?.id).toBe("skill-react");
+    const job = validateJobMatchingProfile({
+      ...jobProfile,
+      functionalFamilies: ["software_engineering", "other", "software_engineering"],
+    });
+    expect(validateJobMatchingProfile(job)).toEqual(job);
+    expect(job.functionalFamilies).toEqual(["software_engineering"]);
   });
 
-  it("produces a profile that survives persisted schema round trips", () => {
-    const sanitized = sanitizeCandidateMatchingProfile({
-      recentTitles: [],
-      experienceYearsBucket: "3-5",
-      facts: [
-        {
-          id: "raw-role",
-          category: "role_family",
-          canonicalId: "frontend-engineer",
-          label: "Frontend Engineer at Acme Corp",
-        },
-        {
-          id: "raw-required",
-          category: "responsibility",
-          canonicalId: "frontend-architecture",
-          label: "Frontend architecture",
-        },
-      ],
-    });
-
-    expect(sanitized.facts.map((fact) => fact.id)).toEqual([
-      "role-family-frontend-engineer",
-      "responsibility-frontend-architecture",
-    ]);
-    expect(candidateMatchingProfileSchema.parse(sanitized)).toEqual(sanitized);
+  it("rejects generic schema-valid job output", () => {
+    expect(() =>
+      validateJobMatchingProfile({
+        ...jobProfile,
+        requiredCapabilities: [
+          { id: "required-skill", label: "required-skill", context: "Needed for this position" },
+        ],
+      }),
+    ).toThrow(/generic/);
   });
 
-  it("normalizes category-prefixed and common technology aliases", () => {
-    const candidate = sanitizeCandidateMatchingProfile({
-      recentTitles: [],
-      experienceYearsBucket: "3-5",
-      facts: [
-        { id: "one", category: "skill", canonicalId: "node", label: "Node" },
-        { id: "two", category: "skill", canonicalId: "cicd", label: "CI/CD" },
-      ],
-    });
-    const job = normalizeJobMatchingProfile({
-      facts: [
-        {
-          id: "one",
-          category: "required_skill",
-          canonicalId: "skill-node-js",
-          label: "Node.js",
-        },
-        {
-          id: "two",
-          category: "required_skill",
-          canonicalId: "skill-ci-cd",
-          label: "CI/CD",
-        },
-      ],
-    });
+  it("rejects identifying candidate text", () => {
+    expect(() =>
+      validateCandidateMatchingProfile({
+        ...candidateProfile,
+        summary: "Senior software engineer; email person@example.com for more information.",
+      }),
+    ).toThrow(/private/);
+  });
 
-    expect(candidate.facts.map((fact) => fact.canonicalId)).toEqual(["node-js", "ci-cd"]);
-    expect(job.facts.map((fact) => fact.canonicalId)).toEqual(["node-js", "ci-cd"]);
+  it("accepts legitimate technical language and rejects vague-only labels", () => {
+    expect(() =>
+      validateCandidateMatchingProfile({
+        ...candidateProfile,
+        capabilities: [
+          { id: "model-id", label: "Cloud cost optimization", context: "Optimized for AWS" },
+        ],
+      }),
+    ).not.toThrow();
+    for (const label of ["Professional", "transferable skills", "communication skills"]) {
+      expect(() =>
+        validateCandidateMatchingProfile({
+          ...candidateProfile,
+          capabilities: [{ id: "model-id", label, context: "Broad workplace capability" }],
+        }),
+      ).toThrow(/generic/);
+    }
+  });
+
+  it("requires a non-other primary family", () => {
+    expect(() =>
+      validateCandidateMatchingProfile({
+        ...candidateProfile,
+        primaryFunctionalFamily: "other",
+        adjacentFunctionalFamilies: ["software_engineering"],
+      }),
+    ).toThrow(/functional identity/);
+    expect(() =>
+      validateJobMatchingProfile({ ...jobProfile, functionalFamilies: ["other"] }),
+    ).toThrow(/functional identity/);
   });
 });
