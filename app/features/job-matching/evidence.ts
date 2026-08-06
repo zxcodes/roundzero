@@ -85,5 +85,7 @@ export function validateAndRenderEvidence(
   return selected;
 }
 
-export const capScoreForEvidence = (score: number, evidenceCount: number): number =>
-  evidenceCount >= 2 ? score : Math.min(score, MATCHING_CONFIG.bands.good - 1);
+export const capScoreForEvidence = (score: number, evidenceCount: number): number | null => {
+  if (evidenceCount === 0) return null;
+  return evidenceCount >= 2 ? score : Math.min(score, MATCHING_CONFIG.bands.good - 1);
+};

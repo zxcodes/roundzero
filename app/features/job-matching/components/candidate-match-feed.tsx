@@ -189,14 +189,21 @@ export function CandidateMatchFeed({ data }: { data: MatchFeed | null }) {
             <EmptyTitle>
               {isRefreshing && !data.refreshedAt
                 ? "Your personalized matches are on the way"
-                : "No personalized matches yet"}
+                : "No resume-backed matches yet"}
             </EmptyTitle>
             <EmptyDescription>
               {isRefreshing && !data.refreshedAt
                 ? "Your results will appear here when this refresh finishes."
-                : "We’ll keep checking as new roles are published. All jobs is always available."}
+                : "We’ll keep checking for roles with positive overlap. You can still browse every open role."}
             </EmptyDescription>
           </EmptyHeader>
+          {!isRefreshing || data.refreshedAt ? (
+            <EmptyContent>
+              <Button asChild variant="outline">
+                <a href="/dashboard/jobs?candidateTab=all">Browse all jobs</a>
+              </Button>
+            </EmptyContent>
+          ) : null}
         </Empty>
       ) : (
         <div className="divide-y divide-border/50 overflow-hidden rounded-3xl border border-border/60">

@@ -66,7 +66,7 @@ export const getMyCandidateMatches = createServerFn({ method: "GET" })
       alertsEnabled: state.matchAlertsEnabled,
       items: rows.flatMap((row) => {
         const reasons = matchReasonsSchema.safeParse(row.reasons);
-        if (!reasons.success) return [];
+        if (!reasons.success || reasons.data.length === 0) return [];
         return [{ ...row, reasons: reasons.data }];
       }),
     };
