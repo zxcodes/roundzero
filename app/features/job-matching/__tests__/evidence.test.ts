@@ -95,8 +95,8 @@ describe("match evidence", () => {
     ]);
   });
 
-  it("keeps jobs with insufficient evidence out of good and strong bands", () => {
-    expect(capScoreForEvidence(95, 0)).toBe(59);
+  it("omits unsupported jobs and keeps single-evidence jobs out of good and strong bands", () => {
+    expect(capScoreForEvidence(95, 0)).toBeNull();
     expect(capScoreForEvidence(95, 1)).toBe(59);
     expect(capScoreForEvidence(95, 2)).toBe(95);
   });

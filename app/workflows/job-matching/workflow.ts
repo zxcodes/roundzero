@@ -361,7 +361,7 @@ export class JobMatchingWorkflow extends WorkflowEntrypoint<Env, JobMatchingWork
     }
 
     const jobsById = new Map(jobs.map((job) => [job.id, job]));
-    return output.map((match) => {
+    return output.flatMap((match) => {
       if (!Number.isFinite(match.score) || match.score < 0 || match.score > 100) {
         throw new Error("Reranker returned an invalid score");
       }
@@ -369,17 +369,20 @@ export class JobMatchingWorkflow extends WorkflowEntrypoint<Env, JobMatchingWork
       if (!job) throw new Error("Reranker returned an unknown job");
       const reasons = validateAndRenderEvidence(candidate, job.profile, match.evidencePairs);
       const score = capScoreForEvidence(match.score, reasons.length);
+      if (score === null) return [];
 
-      return {
-        jobId: match.jobId,
-        score,
-        jobProfileSourceHash: job.profileSourceHash,
-        reasons: matchReasonsSchema.parse(reasons),
-        consideration:
-          job.workplaceType || job.location
-            ? `Work arrangement: ${[job.workplaceType, job.location].filter(Boolean).join(" · ")}`
-            : null,
-      };
+      return [
+        {
+          jobId: match.jobId,
+          score,
+          jobProfileSourceHash: job.profileSourceHash,
+          reasons: matchReasonsSchema.parse(reasons),
+          consideration:
+            job.workplaceType || job.location
+              ? `Work arrangement: ${[job.workplaceType, job.location].filter(Boolean).join(" · ")}`
+              : null,
+        },
+      ];
     });
   }
 }
