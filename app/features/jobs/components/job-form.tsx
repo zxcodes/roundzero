@@ -203,7 +203,7 @@ export function JobForm({
   isSubmitting: isSubmittingProp,
 }: {
   defaultValues?: Partial<JobFormData>;
-  onSubmit: (data: JobFormData) => void;
+  onSubmit: (data: JobFormData) => Promise<void>;
   submitLabel: string;
   companyName?: string;
   onCancel?: () => void;
@@ -276,12 +276,12 @@ export function JobForm({
     validators: { onSubmit: submitSchema },
     canSubmitWhenInvalid: true,
 
-    onSubmit: ({ value }) => {
+    onSubmit: async ({ value }) => {
       const expiresAt = value.expiresAt?.trim()
         ? new Date(`${value.expiresAt}T23:59:59.999`)
         : null;
 
-      onSubmit({
+      await onSubmit({
         title: value.title,
         description: value.description,
         requirements: value.requirements,
