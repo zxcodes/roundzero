@@ -332,7 +332,7 @@ export function generateReport(
     const requirementsBlock =
       interviewData.runtimeContext.jobRequirements.length > 0
         ? interviewData.runtimeContext.jobRequirements.map((r) => `  - ${r}`).join("\n")
-        : "  (none provided)";
+        : null;
 
     const missingRequirementsBlock =
       interviewData.runtimeContext.preEvaluation.missingRequirements.length > 0
@@ -433,7 +433,7 @@ export function generateReport(
         candidate: interviewData.interview.candidateName,
       },
       jobDescription: interviewData.runtimeContext.jobDescription || "(not provided)",
-      jobRequirements: requirementsBlock,
+      ...(requirementsBlock ? { jobRequirements: requirementsBlock } : {}),
       candidateSummary: interviewData.runtimeContext.candidateSummary || "(not provided)",
       preEvaluationSignal: {
         fitScore: interviewData.runtimeContext.preEvaluation.score,

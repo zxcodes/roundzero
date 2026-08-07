@@ -29,43 +29,43 @@ function MarkdownCode(props: React.ComponentProps<"code">) {
   return <code {...props} className="rounded bg-muted px-1 py-0.5 font-mono text-sm" />;
 }
 
-function MarkdownHeading1({ children, ...props }: React.ComponentProps<"h1">) {
+function MarkdownHeading1({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h1 {...props} className="text-xl font-semibold tracking-tight">
-      {children}
-    </h1>
-  );
-}
-
-function MarkdownHeading2({ children, ...props }: React.ComponentProps<"h2">) {
-  return (
-    <h2 {...props} className="text-lg font-semibold tracking-tight">
+    <h2 {...props} className="text-xl font-semibold tracking-tight">
       {children}
     </h2>
   );
 }
 
-function MarkdownHeading3({ children, ...props }: React.ComponentProps<"h3">) {
+function MarkdownHeading2({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h3 {...props} className="text-base font-semibold tracking-tight">
+    <h3 {...props} className="text-lg font-semibold tracking-tight">
       {children}
     </h3>
   );
 }
 
-function MarkdownHeading4({ children, ...props }: React.ComponentProps<"h4">) {
+function MarkdownHeading3({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h4 {...props} className="text-sm font-semibold tracking-tight">
+    <h4 {...props} className="text-base font-semibold tracking-tight">
       {children}
     </h4>
   );
 }
 
-function MarkdownHeading5({ children, ...props }: React.ComponentProps<"h5">) {
+function MarkdownHeading4({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h5 {...props} className="text-sm font-semibold tracking-tight">
       {children}
     </h5>
+  );
+}
+
+function MarkdownHeading5({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
+  return (
+    <h6 {...props} className="text-sm font-semibold tracking-tight">
+      {children}
+    </h6>
   );
 }
 

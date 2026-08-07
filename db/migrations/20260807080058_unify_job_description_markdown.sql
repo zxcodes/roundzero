@@ -11,7 +11,19 @@ WITH missing_requirements AS (
     END
   ) WITH ORDINALITY AS requirement(value, ordinality)
   WHERE btrim(requirement.value) <> ''
-    AND strpos(lower(jobs.description), lower(btrim(requirement.value))) = 0
+    AND NOT EXISTS (
+      SELECT 1
+      FROM regexp_split_to_table(jobs.description, E'\\n') AS description_line(value)
+      WHERE lower(
+        btrim(
+          regexp_replace(
+            description_line.value,
+            '^(#{1,6}|[-*+]|[0-9]+[.)])[[:space:]]+',
+            ''
+          )
+        )
+      ) = lower(btrim(requirement.value))
+    )
   GROUP BY jobs.id
 )
 UPDATE jobs

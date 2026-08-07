@@ -127,7 +127,35 @@ describe("interview runtime metadata", () => {
     expect(prompt).toContain("There is no fixed minimum, maximum, target, or turn count");
     expect(prompt).toContain("A long resume does not require a long interview");
     expect(prompt).toContain("highest-signal experiences and claims for this role");
+    expect(prompt).not.toContain("- Requirements:\n(not provided)");
     expect(prompt).not.toContain("end_interview");
+  });
+
+  it("keeps legacy non-empty job requirements in the interview prompt", () => {
+    const prompt = buildInterviewSystemPrompt({
+      runtimeContext: {
+        interviewId: crypto.randomUUID(),
+        applicationId: crypto.randomUUID(),
+        type: "full",
+        jobTitle: "Backend Engineer",
+        companyName: "Runtime Co",
+        jobDescription: "Build APIs.",
+        jobRequirements: ["Go"],
+        candidateName: "Jordan",
+        candidateSummary: "Built APIs.",
+        customQuestions: [],
+        preEvaluation: {
+          score: null,
+          missingRequirements: [],
+          consistencyScore: null,
+          authenticityFlags: [],
+          authenticityExplanation: null,
+        },
+      },
+      screeningCoverage: {},
+    });
+
+    expect(prompt).toContain("- Requirements:\n- Go");
   });
 
   it("requires every company screening question before normal completion", () => {

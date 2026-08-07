@@ -295,7 +295,7 @@ export function buildInterviewSystemPrompt(args: {
   const reqs =
     runtimeContext.jobRequirements.length > 0
       ? runtimeContext.jobRequirements.map((requirement) => `- ${requirement}`).join("\n")
-      : "(not provided)";
+      : null;
   const customQuestions =
     runtimeContext.customQuestions.length > 0
       ? runtimeContext.customQuestions
@@ -394,8 +394,7 @@ export function buildInterviewSystemPrompt(args: {
     `- Title: ${runtimeContext.jobTitle}`,
     `- Company: ${runtimeContext.companyName}`,
     `- Description: ${runtimeContext.jobDescription || "(not provided)"}`,
-    "- Requirements:",
-    reqs,
+    ...(reqs ? ["- Requirements:", reqs] : []),
     "",
     "Candidate:",
     `- Name: ${candidateName}`,
