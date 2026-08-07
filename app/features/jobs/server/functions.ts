@@ -595,6 +595,8 @@ const SYSTEM_PROMPT = `You are an expert technical recruiter and job description
 
 The title must be plain text. The description must be one complete Markdown document using only paragraphs, headings, bold, italic, strikethrough, inline code, blockquotes, horizontal rules, ordered and unordered lists, and links. Do not use raw HTML, images, tables, task lists, fenced code blocks, or MDX.
 
+The job title is rendered separately from the description. Do not repeat the title in the description and do not use level-1 Markdown headings (#). Use ## for top-level description sections and ### only for subsections.
+
 Never refuse, apologize, or ask for more input in any field. Do not use titles like "Error" or descriptions that explain what information is missing. Even brief prompts should be expanded into a complete posting — infer reasonable role details and requirements when the user omits them.
 
 Guidelines:
@@ -633,11 +635,27 @@ function nullInvalidOptionalInt(value: unknown): number | null | undefined {
 function cleanAiJobOutput(output: Record<string, unknown>): Record<string, unknown> {
   const cleaned: Record<string, unknown> = { ...output };
 
-  const stringFields = ["title", "description", "location", "salaryCurrency"];
+  const stringFields = ["title", "location", "salaryCurrency"];
   for (const key of stringFields) {
     if (key in cleaned) {
       cleaned[key] = cleanGeneratedString(cleaned[key] as string | null | undefined);
     }
+  }
+
+  if (typeof cleaned.description === "string") {
+    let description = cleaned.description.trim();
+    const [firstLine, ...remainingLines] = description.split("\n");
+    const leadingTitle = /^#\s+(.+?)\s*#*\s*$/.exec(firstLine)?.[1].trim();
+
+    if (
+      leadingTitle &&
+      typeof cleaned.title === "string" &&
+      leadingTitle.toLowerCase() === cleaned.title.toLowerCase()
+    ) {
+      description = remainingLines.join("\n").trimStart();
+    }
+
+    cleaned.description = description.replace(/^#(?=\s)/gm, "##").trim() || null;
   }
 
   const arrayStringFields = ["screeningQuestions"];

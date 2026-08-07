@@ -154,7 +154,7 @@ export function JobDescriptionEditor({
         <EditorContainer className="h-auto max-h-128 min-h-64 rounded-none">
           <Editor
             id={id}
-            className="min-h-64 px-4 py-3 text-sm"
+            className="min-h-64 px-4 py-3 text-sm [&>:first-child]:mt-0"
             variant="none"
             placeholder="Describe the role, responsibilities, qualifications, and what makes this opportunity exciting..."
             aria-invalid={invalid}

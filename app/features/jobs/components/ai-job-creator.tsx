@@ -188,8 +188,8 @@ function GeneratedPreview({
     <div className="space-y-4">
       <div className="space-y-3">
         <div>
-          <p className="text-sm font-semibold">{data.title}</p>
-          <JobDescriptionMarkdown className="mt-1 text-xs text-muted-foreground">
+          <p className="text-base font-semibold tracking-tight">{data.title}</p>
+          <JobDescriptionMarkdown className="mt-1 text-xs text-muted-foreground [&_h2]:text-sm [&_h3]:text-xs [&_h4]:text-xs [&_h5]:text-xs [&_h6]:text-xs">
             {data.description}
           </JobDescriptionMarkdown>
         </div>
