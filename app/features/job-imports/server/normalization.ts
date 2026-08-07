@@ -91,10 +91,13 @@ export function normalizeRequirements(values: string[], warnings: JobImportWarni
 }
 
 function getMissingRequirements(description: string, requirements: string[]): string[] {
-  const normalizedDescription = description.toLowerCase();
-  return requirements.filter(
-    (requirement) => !normalizedDescription.includes(requirement.toLowerCase()),
+  const descriptionLines = new Set(
+    markdownToPlainText(description)
+      .split("\n")
+      .map((line) => line.trim().toLowerCase())
+      .filter(Boolean),
   );
+  return requirements.filter((requirement) => !descriptionLines.has(requirement.toLowerCase()));
 }
 
 function hasFinalRequirementsHeading(description: string): boolean {
@@ -120,17 +123,38 @@ function combineDescriptionAndRequirements(description: string, appendix: string
   return [description.trimEnd(), appendix].filter(Boolean).join("\n\n");
 }
 
+function escapeMarkdownText(value: string): string {
+  return value.replaceAll(/([\\`*_{}[\]()<>#+.!|~-])/g, "\\$1");
+}
+
 function truncateMarkdownAtBoundary(markdown: string, maximumLength: number): string {
   if (markdown.length <= maximumLength) return markdown.trimEnd();
-  const candidate = markdown.slice(0, maximumLength).trimEnd();
-  const minimumBoundary = Math.floor(maximumLength * 0.8);
-  const paragraphBoundary = candidate.lastIndexOf("\n\n");
-  if (paragraphBoundary >= minimumBoundary) return candidate.slice(0, paragraphBoundary).trimEnd();
-  const lineBoundary = candidate.lastIndexOf("\n");
-  if (lineBoundary >= minimumBoundary) return candidate.slice(0, lineBoundary).trimEnd();
+  const lines = markdown.split("\n");
+  let length = 0;
+  let boundary = 0;
+  let fence: string | null = null;
+
+  for (const line of lines) {
+    const nextLength = length + line.length + (length > 0 ? 1 : 0);
+    if (nextLength > maximumLength) break;
+    length = nextLength;
+
+    const fenceMatch = line.match(/^\s*(`{3,}|~{3,})/);
+    if (fenceMatch) {
+      const marker = fenceMatch[1]?.[0];
+      if (!fence) fence = marker ?? null;
+      else if (marker === fence) fence = null;
+    }
+    if (!fence && line.trim() === "") boundary = length - 1;
+  }
+
+  if (boundary > 0) return markdown.slice(0, boundary).trimEnd();
+
+  const plainText = markdownToPlainText(markdown);
+  const candidate = plainText.slice(0, maximumLength).trimEnd();
   const wordBoundary = candidate.lastIndexOf(" ");
-  if (wordBoundary >= minimumBoundary) return candidate.slice(0, wordBoundary).trimEnd();
-  return candidate;
+  const truncated = wordBoundary > 0 ? candidate.slice(0, wordBoundary) : candidate;
+  return escapeMarkdownText(truncated.trimEnd());
 }
 
 export function normalizeDescription(

@@ -64,6 +64,12 @@ describe("job import description normalization", () => {
     );
   });
 
+  it("does not treat a requirement as represented by a substring of another line", () => {
+    expect(normalizeDescription("We build services with JavaScript.", [], ["Java"])).toBe(
+      "We build services with JavaScript.\n\n## Requirements\n\n- Java",
+    );
+  });
+
   it("reserves space for imported requirements when shortening a description", () => {
     const warnings: JobImportWarning[] = [];
     const description = `## About the role\n\n${"word ".repeat(MAX_JOB_DESCRIPTION_LENGTH)}`;
@@ -75,5 +81,16 @@ describe("job import description normalization", () => {
     expect(warnings).toContainEqual(
       expect.objectContaining({ code: "description_shortened", field: "description" }),
     );
+  });
+
+  it("does not append requirements inside an overlong fenced code block", () => {
+    const description = `<p>Intro paragraph.</p><pre>${"code ".repeat(
+      MAX_JOB_DESCRIPTION_LENGTH,
+    )}</pre>`;
+
+    const normalized = normalizeDescription(description, [], ["Java"]);
+
+    expect(normalized).toBe("Intro paragraph.\n\n## Requirements\n\n- Java");
+    expect(normalized).not.toContain("```");
   });
 });

@@ -2,7 +2,6 @@
 
 import {
   CodeIcon,
-  Heading01Icon,
   Heading02Icon,
   Heading03Icon,
   LeftToRightBlockQuoteIcon,
@@ -40,7 +39,6 @@ const editorPlugins = [...BasicBlocksKit, ...BasicMarksKit, ...ListKit, ...LinkK
 
 const blockOptions = [
   { icon: ParagraphIcon, label: "Paragraph", value: "p" },
-  { icon: Heading01Icon, label: "Heading 1", value: "h1" },
   { icon: Heading02Icon, label: "Heading 2", value: "h2" },
   { icon: Heading03Icon, label: "Heading 3", value: "h3" },
   { icon: LeftToRightBlockQuoteIcon, label: "Quote", value: "blockquote" },
