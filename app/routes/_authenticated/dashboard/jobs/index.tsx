@@ -534,9 +534,9 @@ function ActiveJobsTable({
       ) : null}
       <ScrollArea
         orientation="both"
-        className="h-[min(58vh,38rem)] [&_[data-slot=table-container]]:overflow-visible"
+        className="h-[min(58vh,38rem)] **:data-[slot=table-container]:overflow-visible"
       >
-        <Table className="min-w-[64rem]">
+        <Table className="min-w-5xl">
           <TableHeader className="sticky top-0 z-10 bg-background">
             <TableRow>
               <TableHead className="w-10">
@@ -861,9 +861,9 @@ function ArchivedJobsTable({
     <div className="min-w-0 overflow-hidden rounded-3xl border border-border/60">
       <ScrollArea
         orientation="both"
-        className="h-[min(58vh,38rem)] [&_[data-slot=table-container]]:overflow-visible"
+        className="h-[min(58vh,38rem)] **:data-[slot=table-container]:overflow-visible"
       >
-        <Table className="min-w-[48rem]">
+        <Table className="min-w-3xl">
           <TableHeader className="sticky top-0 z-10 bg-background">
             <TableRow>
               <TableHead className="min-w-48">Title</TableHead>
