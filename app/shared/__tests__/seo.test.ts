@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   absoluteUrl,
   buildBreadcrumbSchema,
+  buildComparisonPageSchema,
   buildHomepageSchema,
   buildJobPostingSchema,
   buildOrganizationSchema,
@@ -92,6 +93,45 @@ describe("structured data", () => {
 
     expect(script.children).not.toContain("</script>");
     expect(JSON.parse(script.children)).toMatchObject({ "@context": "https://schema.org" });
+  });
+
+  it("describes the comparison page and its sourced platforms", () => {
+    const schema = buildComparisonPageSchema({
+      title: "Compare RoundZero",
+      description: "Compare hiring platforms.",
+      items: [
+        { name: "RoundZero", url: absoluteUrl("/") },
+        { name: "Example", url: "https://example.com/pricing" },
+      ],
+    });
+
+    expect(schema).toMatchObject({
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "CollectionPage",
+          url: absoluteUrl("/compare"),
+          mainEntity: { "@id": `${absoluteUrl("/compare")}#platforms` },
+        },
+        {
+          "@type": "ItemList",
+          numberOfItems: 2,
+          itemListElement: [
+            { position: 1, item: { "@type": "SoftwareApplication", name: "RoundZero" } },
+            {
+              position: 2,
+              item: {
+                "@type": "SoftwareApplication",
+                name: "Example",
+                url: "https://example.com/pricing",
+              },
+            },
+          ],
+        },
+        { "@type": "BreadcrumbList" },
+      ],
+    });
+    expect(JSON.stringify(schema)).not.toContain("aggregateRating");
   });
 
   it("builds Google Jobs salary and remote-work properties", () => {

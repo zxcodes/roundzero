@@ -136,6 +136,7 @@ Sitemap: ${siteUrl}/sitemap.xml
       const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>${escapedSiteUrl}/</loc></url>
+  <url><loc>${escapedSiteUrl}/compare</loc></url>
   <url><loc>${escapedSiteUrl}/jobs</loc></url>
   <url><loc>${escapedSiteUrl}/companies</loc></url>
 
