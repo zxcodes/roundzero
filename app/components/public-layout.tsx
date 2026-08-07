@@ -52,6 +52,14 @@ export function PublicHeader({ user = null }: { user?: User | null }) {
                   className="rounded-full text-muted-foreground font-normal"
                   asChild
                 >
+                  <Link to="/compare">Compare</Link>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-full text-muted-foreground font-normal"
+                  asChild
+                >
                   <Link to="/jobs">Jobs</Link>
                 </Button>
                 <Button
@@ -135,6 +143,16 @@ export function PublicHeader({ user = null }: { user?: User | null }) {
                   asChild
                   onClick={onCloseMobileMenu}
                 >
+                  <Link to="/compare" activeProps={{ className: "text-foreground bg-accent" }}>
+                    Compare
+                  </Link>
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="justify-start text-muted-foreground"
+                  asChild
+                  onClick={onCloseMobileMenu}
+                >
                   <Link
                     to="/candidate/login"
                     activeProps={{ className: "text-foreground bg-accent" }}
@@ -173,22 +191,63 @@ export function PublicHeader({ user = null }: { user?: User | null }) {
 
 export function PublicFooter() {
   return (
-    <footer className="border-t border-border/40">
-      <div className="mx-auto flex w-full max-w-360 flex-col items-start gap-3 px-6 py-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between lg:px-12 xl:px-16">
-        <span>&copy; {new Date().getFullYear()} RoundZero</span>
-        <div className="flex gap-6">
-          <Link to="/contact" className="hover:text-foreground transition-colors">
-            Contact
-          </Link>
-          <Link to="/privacy" className="hover:text-foreground transition-colors">
-            Privacy Policy
-          </Link>
-          <Link to="/tos" className="hover:text-foreground transition-colors">
-            Terms of Service
-          </Link>
+    <footer className="border-t border-border/60 bg-background">
+      <div className="mx-auto w-full max-w-360 px-6 py-12 lg:px-12 lg:py-16 xl:px-16">
+        <div className="grid gap-12 lg:grid-cols-[minmax(15rem,1.5fr)_repeat(4,minmax(8rem,1fr))]">
+          <div className="max-w-sm">
+            <Link to="/" className="flex items-center gap-2 text-foreground">
+              <Logo />
+              <span className="font-heading text-lg font-medium tracking-[-0.01em]">RoundZero</span>
+            </Link>
+            <p className="mt-4 text-sm leading-6 text-muted-foreground">
+              AI pre-evaluation, adaptive interviews, and evidence-backed reports before the first
+              human interview.
+            </p>
+          </div>
+          <FooterColumn title="Product">
+            <Link to="/" hash="product">
+              How it works
+            </Link>
+            <Link to="/compare">Compare</Link>
+            <Link to="/" hash="pricing">
+              Pricing
+            </Link>
+          </FooterColumn>
+          <FooterColumn title="Explore">
+            <Link to="/jobs">Jobs</Link>
+            <Link to="/companies">Companies</Link>
+            <Link to="/candidate/login">For candidates</Link>
+          </FooterColumn>
+          <FooterColumn title="Company">
+            <Link to="/companies/$slug" params={{ slug: "roundzero" }}>
+              Careers
+            </Link>
+            <Link to="/contact">Contact</Link>
+          </FooterColumn>
+          <FooterColumn title="Legal">
+            <Link to="/privacy">Privacy Policy</Link>
+            <Link to="/tos">Terms of Service</Link>
+          </FooterColumn>
+        </div>
+        <div className="mt-12 border-t border-border/60 pt-6 text-xs text-muted-foreground">
+          &copy; {new Date().getFullYear()} RoundZero
         </div>
       </div>
     </footer>
+  );
+}
+
+function FooterColumn({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <h2 className="text-sm font-medium text-foreground">{title}</h2>
+      <nav
+        className="mt-4 flex flex-col items-start gap-3 text-sm text-muted-foreground"
+        aria-label={title}
+      >
+        {children}
+      </nav>
+    </div>
   );
 }
 

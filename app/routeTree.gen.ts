@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as CompareRouteImport } from './routes/compare'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as TosRouteImport } from './routes/tos'
@@ -68,6 +69,11 @@ const AuthenticatedRoute = AuthenticatedRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompareRoute = CompareRouteImport.update({
+  id: '/compare',
+  path: '/compare',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContactRoute = ContactRouteImport.update({
@@ -315,6 +321,7 @@ const AuthenticatedDashboardJobsJobIdEditRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/compare': typeof CompareRoute
   '/contact': typeof ContactRoute
   '/privacy': typeof PrivacyRoute
   '/tos': typeof TosRoute
@@ -361,6 +368,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/compare': typeof CompareRoute
   '/contact': typeof ContactRoute
   '/privacy': typeof PrivacyRoute
   '/tos': typeof TosRoute
@@ -406,6 +414,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
+  '/compare': typeof CompareRoute
   '/contact': typeof ContactRoute
   '/privacy': typeof PrivacyRoute
   '/tos': typeof TosRoute
@@ -455,6 +464,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/compare'
     | '/contact'
     | '/privacy'
     | '/tos'
@@ -501,6 +511,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/compare'
     | '/contact'
     | '/privacy'
     | '/tos'
@@ -545,6 +556,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/admin'
+    | '/compare'
     | '/contact'
     | '/privacy'
     | '/tos'
@@ -594,6 +606,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AdminRoute: typeof AdminRouteWithChildren
+  CompareRoute: typeof CompareRoute
   ContactRoute: typeof ContactRoute
   PrivacyRoute: typeof PrivacyRoute
   TosRoute: typeof TosRoute
@@ -629,6 +642,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/compare': {
+      id: '/compare'
+      path: '/compare'
+      fullPath: '/compare'
+      preLoaderRoute: typeof CompareRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contact': {
@@ -1096,6 +1116,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AdminRoute: AdminRouteWithChildren,
+  CompareRoute: CompareRoute,
   ContactRoute: ContactRoute,
   PrivacyRoute: PrivacyRoute,
   TosRoute: TosRoute,

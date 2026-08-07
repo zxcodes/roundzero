@@ -226,6 +226,79 @@ export function homepageJsonLd(faq: HomepageFaq[]): JsonLdScript {
   };
 }
 
+export type ComparisonPageSchemaInput = {
+  title: string;
+  description: string;
+  items: Array<{ name: string; url: string }>;
+};
+
+export function buildComparisonPageSchema(
+  comparison: ComparisonPageSchemaInput,
+): Record<string, unknown> {
+  const pageUrl = absoluteUrl("/compare");
+  const pageId = `${pageUrl}#webpage`;
+  const itemListId = `${pageUrl}#platforms`;
+  const breadcrumbId = `${pageUrl}#breadcrumb`;
+
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "CollectionPage",
+        "@id": pageId,
+        name: comparison.title,
+        description: comparison.description,
+        url: pageUrl,
+        isPartOf: { "@id": `${absoluteUrl("/")}#website` },
+        breadcrumb: { "@id": breadcrumbId },
+        mainEntity: { "@id": itemListId },
+        inLanguage: "en",
+      },
+      {
+        "@type": "ItemList",
+        "@id": itemListId,
+        name: "Hiring platforms compared",
+        numberOfItems: comparison.items.length,
+        itemListElement: comparison.items.map((item, index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          item: {
+            "@type": "SoftwareApplication",
+            name: item.name,
+            url: item.url,
+            applicationCategory: "BusinessApplication",
+          },
+        })),
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": breadcrumbId,
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: absoluteUrl("/"),
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "Compare",
+            item: pageUrl,
+          },
+        ],
+      },
+    ],
+  };
+}
+
+export function comparisonPageJsonLd(comparison: ComparisonPageSchemaInput): JsonLdScript {
+  return {
+    type: "application/ld+json",
+    children: serializeJsonLd(buildComparisonPageSchema(comparison)),
+  };
+}
+
 const employmentTypeToSchema = (type: string): string => {
   const map: Record<string, string> = {
     full_time: "FULL_TIME",

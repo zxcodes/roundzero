@@ -123,6 +123,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     "/privacy",
     "/tos",
     "/contact",
+    "/compare",
   ];
 
   const matchesRoute = (route: string, pathname: string) => {
