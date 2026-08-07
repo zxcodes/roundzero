@@ -189,7 +189,7 @@ function GeneratedPreview({
       <div className="space-y-3">
         <div>
           <p className="text-sm font-semibold">{data.title}</p>
-          <JobDescriptionMarkdown className="mt-1 line-clamp-6 text-xs text-muted-foreground">
+          <JobDescriptionMarkdown className="mt-1 text-xs text-muted-foreground">
             {data.description}
           </JobDescriptionMarkdown>
         </div>
