@@ -39,33 +39,33 @@ function MarkdownHeading1({ children, ...props }: React.HTMLAttributes<HTMLHeadi
 
 function MarkdownHeading2({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h3 {...props} className="text-lg font-medium tracking-tight [&_strong]:font-medium">
+    <h2 {...props} className="text-lg font-medium tracking-tight [&_strong]:font-medium">
       {children}
-    </h3>
+    </h2>
   );
 }
 
 function MarkdownHeading3({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h4 {...props} className="text-base font-medium tracking-tight [&_strong]:font-medium">
+    <h3 {...props} className="text-base font-medium tracking-tight [&_strong]:font-medium">
       {children}
-    </h4>
+    </h3>
   );
 }
 
 function MarkdownHeading4({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h5 {...props} className="text-sm font-medium tracking-tight [&_strong]:font-medium">
+    <h4 {...props} className="text-sm font-medium tracking-tight [&_strong]:font-medium">
       {children}
-    </h5>
+    </h4>
   );
 }
 
 function MarkdownHeading5({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h6 {...props} className="text-sm font-medium tracking-tight [&_strong]:font-medium">
+    <h5 {...props} className="text-sm font-medium tracking-tight [&_strong]:font-medium">
       {children}
-    </h6>
+    </h5>
   );
 }
 

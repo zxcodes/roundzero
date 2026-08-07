@@ -60,11 +60,17 @@ describe("job description Markdown", () => {
 
   it("renders description headings below the page heading hierarchy", () => {
     const html = renderToStaticMarkup(
-      createElement(JobDescriptionMarkdown, null, "# Overview\n\n## Requirements"),
+      createElement(
+        JobDescriptionMarkdown,
+        null,
+        "# Legacy heading\n\n## Requirements\n\n### Details",
+      ),
     );
 
     expect(html).not.toContain("<h1");
-    expect(html).toContain("<h2");
-    expect(html).toContain("<h3");
+    expect(html).toContain(">Legacy heading</h2>");
+    expect(html).toContain(">Requirements</h2>");
+    expect(html).toContain(">Details</h3>");
+    expect(html).not.toContain("<h4");
   });
 });
