@@ -37,43 +37,6 @@ export async function createBatch(sql: Sql, args: createBatchArgs): Promise<crea
     };
 }
 
-export const getActiveBatchForJobQuery = `-- name: getActiveBatchForJob :one
-SELECT id, job_id, status, target_size, created_at, launched_at, released_at
-FROM job_batches
-WHERE job_id = $1 AND status = 'active'
-LIMIT 1`;
-
-export interface getActiveBatchForJobArgs {
-    jobId: string;
-}
-
-export interface getActiveBatchForJobRow {
-    id: string;
-    jobId: string;
-    status: string;
-    targetSize: number;
-    createdAt: Date;
-    launchedAt: Date | null;
-    releasedAt: Date | null;
-}
-
-export async function getActiveBatchForJob(sql: Sql, args: getActiveBatchForJobArgs): Promise<getActiveBatchForJobRow | null> {
-    const rows = await sql.unsafe(getActiveBatchForJobQuery, [args.jobId]).values();
-    if (rows.length !== 1) {
-        return null;
-    }
-    const row = rows[0];
-    return {
-        id: row[0],
-        jobId: row[1],
-        status: row[2],
-        targetSize: row[3],
-        createdAt: row[4],
-        launchedAt: row[5],
-        releasedAt: row[6]
-    };
-}
-
 export const getActiveBatchesByCompanyQuery = `-- name: getActiveBatchesByCompany :many
 SELECT b.id, b.job_id, b.status, b.target_size, b.created_at, b.launched_at, b.released_at,
        j.title AS job_title

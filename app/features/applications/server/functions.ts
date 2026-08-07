@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { env } from "cloudflare:workers";
 import { z } from "zod";
 
-import { getActiveBatchForJob, getJobReportProgress } from "@/features/batches/queries/queries_sql";
+import { getJobReportProgress } from "@/features/batches/queries/queries_sql";
 import { getCompanyByMemberUserId } from "@/features/companies/queries/membership-queries_sql";
 import {
   getActiveInterviewsByJob,
@@ -168,7 +168,7 @@ export const getJobApplicants = createServerFn({ method: "GET" })
   });
 
 // Consolidated read for the job-applicants dashboard route: one auth-middleware
-// run + one job lookup, then the applicants and active batch in parallel.
+// run + one job lookup, then the applicants and report progress in parallel.
 // Returns null when the job is missing or not owned by the caller's company so
 // the loader can throw notFound() instead of hitting the error boundary.
 export const getJobApplicantsView = createServerFn({ method: "GET" })
@@ -199,16 +199,14 @@ export const getJobApplicantsView = createServerFn({ method: "GET" })
       ),
     );
 
-    const [applicants, activeBatch, progress] = await Promise.all([
+    const [applicants, progress] = await Promise.all([
       getApplicationsByJob(db, { jobId: data.jobId }),
-      getActiveBatchForJob(db, { jobId: data.jobId }),
       getJobReportProgress(db, { jobId: data.jobId }),
     ]);
 
     return {
       job,
       applicants,
-      activeBatch,
       reportProgress: {
         target: job.finalReportTarget,
         delivered: progress?.deliveredCount ?? 0,
