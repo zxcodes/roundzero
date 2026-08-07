@@ -151,7 +151,7 @@ export function JobDescriptionEditor({
         data-invalid={invalid}
       >
         {disabled ? null : <JobDescriptionToolbar />}
-        <EditorContainer className="max-h-[32rem] min-h-64" variant="select">
+        <EditorContainer className="max-h-128 min-h-64 rounded-none" variant="select">
           <Editor
             id={id}
             className="min-h-64 px-4 py-3 text-sm"
