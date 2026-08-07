@@ -156,10 +156,16 @@ function JobApplicantsPage() {
   const applicantStatItems =
     tab === "applicants"
       ? [
-          { value: `${reportProgress.delivered} of ${reportProgress.target}`, label: "Delivered" },
-          { value: reportProgress.processing, label: "Reports processing" },
-          { value: reportProgress.underway, label: "Interviews underway" },
-          { value: reportProgress.waitlisted, label: "Waitlisted" },
+          {
+            value: `${reportProgress.delivered} of ${reportProgress.target}`,
+            label: "Reports delivered",
+          },
+          { value: reportProgress.processing, label: "Reports pending" },
+          {
+            value: reportProgress.underway,
+            label: reportProgress.underway === 1 ? "Active interview" : "Active interviews",
+          },
+          { value: reportProgress.waitlisted, label: "Awaiting invitation" },
         ]
       : [];
 
@@ -262,17 +268,10 @@ function ApplicantsTabContent({
   return (
     <div className="space-y-5">
       {reportProgress.processing + reportProgress.underway > 0 ? (
-        <Alert className="border-border/60 bg-muted/30">
-          <AlertTitle>More evaluation results are pending</AlertTitle>
-          <AlertDescription>
-            {reportProgress.processing} completed interview
-            {reportProgress.processing === 1 ? " is" : "s are"} being processed and{" "}
-            {reportProgress.underway} candidate
-            {reportProgress.underway === 1 ? " is" : "s are"} still finishing their interviews.
-            Completed reports will appear here automatically. Candidates who do not finish will not
-            count toward your report target.
-          </AlertDescription>
-        </Alert>
+        <EvaluationProgressAlert
+          processing={reportProgress.processing}
+          activeInterviews={reportProgress.underway}
+        />
       ) : null}
 
       <Tabs value={view} onValueChange={onViewChange}>
@@ -336,7 +335,7 @@ function ApplicantsTabContent({
       )}
 
       {view === "all" && activeInterviewApplicants.length > 0 ? (
-        <ActiveBatchPanel
+        <InterviewProgressPanel
           applicants={activeInterviewApplicants}
           batchId={activeBatch?.id ?? null}
         />
@@ -356,7 +355,43 @@ function ApplicantsTabContent({
   );
 }
 
-function ActiveBatchPanel({
+function EvaluationProgressAlert({
+  processing,
+  activeInterviews,
+}: {
+  processing: number;
+  activeInterviews: number;
+}) {
+  const title = processing > 0 ? "Reports are on the way" : "Interviews are awaiting completion";
+
+  return (
+    <Alert className="border-border/60 bg-muted/30">
+      <AlertTitle>{title}</AlertTitle>
+      <AlertDescription>
+        {processing > 0 ? (
+          <>
+            {processing} completed interview{processing === 1 ? " is" : "s are"} awaiting report
+            delivery.
+          </>
+        ) : null}{" "}
+        {activeInterviews > 0 ? (
+          <>
+            {activeInterviews} candidate{activeInterviews === 1 ? " has" : "s have"}{" "}
+            {activeInterviews === 1 ? "an active interview" : "active interviews"}. If{" "}
+            {activeInterviews === 1 ? "the candidate completes it" : "they complete them"}, the
+            resulting {activeInterviews === 1 ? "report" : "reports"} will appear here
+            automatically. Candidates who do not complete their interviews will not count toward
+            your report target.
+          </>
+        ) : (
+          <>Completed reports will appear here automatically when they are ready.</>
+        )}
+      </AlertDescription>
+    </Alert>
+  );
+}
+
+function InterviewProgressPanel({
   applicants,
   batchId,
 }: {
@@ -373,16 +408,18 @@ function ActiveBatchPanel({
     <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="space-y-1">
-          <h2 className="text-base font-semibold tracking-tight">Batch in progress</h2>
+          <h2 className="text-base font-semibold tracking-tight">Interview progress</h2>
           <p className="text-sm text-muted-foreground">
-            {completed} of {applicants.length} completed · {inProgress} in progress · {invited}{" "}
-            invited
+            {invited} invited · {inProgress} in progress · {completed} completed
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Reports appear automatically as candidates complete their interviews.
           </p>
         </div>
         {batchId ? (
           <Button variant="outline" size="sm" asChild>
             <Link to="/dashboard/job-batches/$batchId" params={{ batchId }}>
-              Open batch
+              View details
             </Link>
           </Button>
         ) : null}
