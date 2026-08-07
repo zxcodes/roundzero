@@ -147,11 +147,11 @@ export function JobDescriptionEditor({
   return (
     <Plate editor={editor} onValueChange={onValueChange} readOnly={disabled}>
       <div
-        className="overflow-hidden rounded-md border border-input bg-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 data-[invalid=true]:border-destructive data-[invalid=true]:ring-destructive/20"
+        className="overflow-hidden rounded-md border border-input bg-background focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/30 data-[invalid=true]:border-destructive data-[invalid=true]:ring-destructive/20"
         data-invalid={invalid}
       >
         {disabled ? null : <JobDescriptionToolbar />}
-        <EditorContainer className="max-h-128 min-h-64 rounded-none" variant="select">
+        <EditorContainer className="h-auto max-h-128 min-h-64 rounded-none">
           <Editor
             id={id}
             className="min-h-64 px-4 py-3 text-sm"
