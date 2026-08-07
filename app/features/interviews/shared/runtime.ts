@@ -199,7 +199,7 @@ export async function buildInterviewJobSnapshot(
       typeof job?.description === "string"
         ? sanitizeUntrustedText(job.description, LIMITS.UNTRUSTED_TEXT)
         : "",
-    jobRequirements: filterStrings(job?.requirements),
+    jobRequirements: [],
     customQuestions: filterStrings(job?.screeningQuestions),
     snapshottedAt: new Date().toISOString(),
   };

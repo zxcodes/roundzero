@@ -316,8 +316,7 @@ Company profile should contain:
 Job should contain:
 
 - title
-- description
-- requirements
+- Markdown description (including responsibilities and qualifications)
 - location
 - type
 - experience level

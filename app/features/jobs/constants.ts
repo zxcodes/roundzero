@@ -1,0 +1,1 @@
+export const MAX_JOB_DESCRIPTION_LENGTH = 16_000;

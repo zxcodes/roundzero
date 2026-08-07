@@ -5,7 +5,6 @@ import { jobToFormDefaults, type JobFormData } from "@/features/jobs/components/
 const JOB_FORM_KEYS = [
   "title",
   "description",
-  "requirements",
   "screeningQuestions",
   "status",
   "location",
@@ -27,7 +26,6 @@ describe("jobToFormDefaults", () => {
     const defaults = jobToFormDefaults({
       title: "Engineer",
       description: "Build things",
-      requirements: ["TypeScript", 42, "React"],
       screeningQuestions: ["Why us?", null, "Remote ok?"],
       status: "open",
       location: "Remote",
@@ -51,7 +49,6 @@ describe("jobToFormDefaults", () => {
     expect(defaults).toMatchObject({
       title: "Engineer",
       description: "Build things",
-      requirements: ["TypeScript", "React"],
       screeningQuestions: ["Why us?", "Remote ok?"],
       status: "open",
       location: "Remote",
@@ -73,7 +70,6 @@ describe("jobToFormDefaults", () => {
     const defaults = jobToFormDefaults({
       title: "Closed role",
       description: "Done",
-      requirements: null,
       screeningQuestions: undefined,
       status: "closed",
       location: null,
@@ -90,7 +86,6 @@ describe("jobToFormDefaults", () => {
     });
 
     expect(defaults.status).toBe("closed");
-    expect(defaults.requirements).toEqual([]);
     expect(defaults.screeningQuestions).toEqual([]);
     expect(defaults.location).toBeNull();
     expect(defaults.expiresAt).toBeInstanceOf(Date);
@@ -100,7 +95,6 @@ describe("jobToFormDefaults", () => {
     const defaults = jobToFormDefaults({
       title: "Odd",
       description: "Odd",
-      requirements: [],
       screeningQuestions: [],
       status: "archived",
       location: null,

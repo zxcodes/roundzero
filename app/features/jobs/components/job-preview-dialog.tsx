@@ -19,6 +19,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { JobDescriptionMarkdown } from "@/features/jobs/components/job-description-markdown";
 import type { EmploymentType, ExperienceLevel, WorkplaceType } from "@/shared/enums";
 import { employmentTypeLabels, experienceLevelLabels, workplaceTypeLabels } from "@/shared/enums";
 import { formatSalaryFull } from "@/shared/format";
@@ -26,7 +27,6 @@ import { formatSalaryFull } from "@/shared/format";
 interface JobPreviewData {
   title: string;
   description: string;
-  requirements: string[];
   companyName: string;
   location: string | null;
   workplaceType: string | null;
@@ -116,27 +116,7 @@ function JobPreviewContent({ data, salary }: { data: JobPreviewData; salary: str
 
       {data.description ? (
         <section className="space-y-3 rounded-2xl bg-muted/30 px-5 py-4">
-          <h4 className="text-sm font-semibold tracking-tight">Description</h4>
-          <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-line">
-            {data.description}
-          </p>
-        </section>
-      ) : null}
-
-      {data.requirements.length > 0 ? (
-        <section className="space-y-3 rounded-2xl bg-muted/30 px-5 py-4">
-          <h4 className="text-sm font-semibold tracking-tight">Requirements</h4>
-          <ul className="space-y-2">
-            {data.requirements.map((req, i) => (
-              <li
-                key={i}
-                className="flex items-start gap-3 text-sm leading-relaxed text-foreground/90"
-              >
-                <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary/60" />
-                {req}
-              </li>
-            ))}
-          </ul>
+          <JobDescriptionMarkdown>{data.description}</JobDescriptionMarkdown>
         </section>
       ) : null}
 

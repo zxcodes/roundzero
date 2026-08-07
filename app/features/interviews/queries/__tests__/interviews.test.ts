@@ -34,7 +34,6 @@ const makeApplication = async () => {
       company_id,
       title,
       description,
-      requirements,
       screening_questions,
       status,
       final_report_target
@@ -42,8 +41,7 @@ const makeApplication = async () => {
     VALUES (
       ${company.id},
       ${"Platform Engineer"},
-      ${"Build APIs and data workflows"},
-      ${["TypeScript", "Postgres"]},
+      ${"Build APIs and data workflows\n\n## Requirements\n\n- TypeScript\n- Postgres"},
       ${["Tell us about ownership"]},
       ${"open"},
       ${5}

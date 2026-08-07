@@ -359,7 +359,6 @@ CREATE TABLE public.jobs (
     company_id uuid NOT NULL,
     title text NOT NULL,
     description text NOT NULL,
-    requirements jsonb DEFAULT '[]'::jsonb NOT NULL,
     screening_questions jsonb DEFAULT '[]'::jsonb CONSTRAINT jobs_interview_questions_not_null NOT NULL,
     status text DEFAULT 'draft'::text NOT NULL,
     location text,
@@ -1343,4 +1342,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260803013204'),
     ('20260803162443'),
     ('20260803164512'),
-    ('20260803171357');
+    ('20260803171357'),
+    ('20260807080058');

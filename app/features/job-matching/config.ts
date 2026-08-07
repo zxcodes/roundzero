@@ -1,6 +1,6 @@
 export const MATCHING_CONFIG = {
   candidateProfileVersion: "candidate-profile-v6-semantic",
-  jobProfileVersion: "job-profile-v3-semantic",
+  jobProfileVersion: "job-profile-v4-markdown",
   algorithmVersion: "semantic-fit-v5",
   thresholdVersion: "semantic-bands-v3",
   rerankerPromptVersion: "job-reranker-v3-semantic",

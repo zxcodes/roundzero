@@ -14,7 +14,6 @@ describe("jobFieldsSchema", () => {
   it("accepts minimal valid input with defaults", () => {
     const result = jobFieldsSchema.parse(validJob);
     expect(result.title).toBe("Software Engineer");
-    expect(result.requirements).toEqual([]);
     expect(result.status).toBe("draft");
     expect(result.salaryCurrency).toBe("USD");
     expect(result.screeningQuestions).toEqual([]);
@@ -23,7 +22,6 @@ describe("jobFieldsSchema", () => {
   it("accepts full input with all fields", () => {
     const result = jobFieldsSchema.parse({
       ...validJob,
-      requirements: ["TypeScript", "React"],
       screeningQuestions: ["Are you authorized to work in the US?"],
       status: "open",
       location: "NYC",
@@ -77,8 +75,8 @@ describe("jobFieldsSchema", () => {
     expect(() => jobFieldsSchema.parse({ ...validJob, description: "" })).toThrow();
   });
 
-  it("rejects description over 5000 chars", () => {
-    expect(() => jobFieldsSchema.parse({ ...validJob, description: "a".repeat(5001) })).toThrow();
+  it("rejects description over 16,000 chars", () => {
+    expect(() => jobFieldsSchema.parse({ ...validJob, description: "a".repeat(16_001) })).toThrow();
   });
 
   it("rejects invalid workplace type", () => {

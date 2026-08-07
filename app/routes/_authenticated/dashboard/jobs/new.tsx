@@ -137,7 +137,7 @@ function NewJobPage() {
           <p className="text-xs text-muted-foreground">
             {selectedTemplate
               ? "Edit any field before publishing."
-              : "Provide a clear title, description, and requirements to attract the right candidates."}
+              : "Provide a clear title and complete Markdown description to attract the right candidates."}
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={onOpenTemplateDialog}>

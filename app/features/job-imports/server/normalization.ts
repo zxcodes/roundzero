@@ -1,11 +1,16 @@
+import { NodeHtmlMarkdown } from "node-html-markdown";
+
+import { MAX_JOB_DESCRIPTION_LENGTH } from "@/features/jobs/constants";
+import { markdownToPlainText } from "@/features/jobs/markdown";
 import type { EmploymentType, ExperienceLevel, WorkplaceType } from "@/shared/enums";
 
 import type { JobImportWarning, NormalizedJobImport } from "../schemas";
 
-const DESCRIPTION_LIMIT = 5_000;
 const REQUIREMENT_LIMIT = 200;
 const SUPPORTED_CURRENCIES = new Set(["USD", "EUR", "GBP", "CAD", "AUD", "INR"]);
 const POSTGRES_INTEGER_MAX = 2_147_483_647;
+const HTML_TAG_PATTERN =
+  /<\/?(?:a|abbr|address|area|article|aside|audio|b|base|bdi|bdo|blockquote|body|br|button|canvas|caption|cite|code|col|colgroup|data|datalist|dd|del|details|dfn|dialog|div|dl|dt|em|embed|fieldset|figcaption|figure|footer|form|h[1-6]|head|header|hgroup|hr|html|i|iframe|img|input|ins|kbd|label|legend|li|link|main|map|mark|menu|meta|meter|nav|noscript|object|ol|optgroup|option|output|p|picture|pre|progress|q|rp|rt|ruby|s|samp|script|search|section|select|slot|small|source|span|strong|style|sub|summary|sup|table|tbody|td|template|textarea|tfoot|th|thead|time|title|tr|track|u|ul|var|video|wbr)(?=[\s/>])/i;
 
 const decodeHtmlEntities = (value: string): string =>
   value
@@ -40,35 +45,30 @@ const decodeEscapedHtml = (value: string): string => {
   return decoded;
 };
 
-export const htmlToPlainText = (html: string): string =>
+const stripUnsafeHtml = (html: string): string =>
   decodeEscapedHtml(html)
     .replaceAll(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
     .replaceAll(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "")
-    .replaceAll(/<!--[\s\S]*?-->/g, "")
-    .replaceAll(/<\s*br\s*\/?\s*>/gi, "\n")
-    .replaceAll(/<\s*hr(?:\s[^>]*)?\/?\s*>/gi, "\n\n")
-    .replaceAll(/<\s*li(?:\s[^>]*)?>/gi, "- ")
-    .replaceAll(/<\s*\/\s*li\s*>/gi, "\n")
-    .replaceAll(/<\s*\/\s*(p|div|h[1-6]|section|article|blockquote|tr)\s*>/gi, "\n\n")
-    .replaceAll(/<\s*\/\s*(ul|ol|table)\s*>/gi, "\n")
-    .replaceAll(/<\/?[a-z][^>]*>/gi, " ")
+    .replaceAll(/<!--[\s\S]*?-->/g, "");
+
+const looksLikeHtml = (value: string): boolean => HTML_TAG_PATTERN.test(value);
+
+export function htmlToMarkdown(value: string): string {
+  const decoded = decodeEscapedHtml(value);
+  if (!looksLikeHtml(decoded)) return decoded.replaceAll("\0", "").trim();
+
+  return NodeHtmlMarkdown.translate(stripUnsafeHtml(decoded), {
+    bulletMarker: "-",
+    keepDataImages: false,
+  })
     .replaceAll(/\r/g, "")
     .replaceAll(/[ \t]+\n/g, "\n")
     .replaceAll(/\n[ \t]+/g, "\n")
-    .replaceAll(/[ \t]{2,}/g, " ")
     .replaceAll(/\n{3,}/g, "\n\n")
     .trim();
-
-export function normalizeDescription(value: string, warnings: JobImportWarning[]): string {
-  const text = htmlToPlainText(value);
-  if (text.length <= DESCRIPTION_LIMIT) return text;
-  warnings.push({
-    code: "description_shortened",
-    field: "description",
-    message: "The source description exceeded 5,000 characters and was shortened for RoundZero.",
-  });
-  return text.slice(0, DESCRIPTION_LIMIT).trimEnd();
 }
+
+export const htmlToPlainText = (html: string): string => markdownToPlainText(htmlToMarkdown(html));
 
 export function normalizeRequirements(values: string[], warnings: JobImportWarning[]): string[] {
   const normalized = values
@@ -82,12 +82,83 @@ export function normalizeRequirements(values: string[], warnings: JobImportWarni
       if (value.length <= REQUIREMENT_LIMIT) return value;
       warnings.push({
         code: "requirement_shortened",
-        field: "requirements",
-        message: "A source requirement exceeded 200 characters and was shortened.",
+        field: "description",
+        message: "A source qualification exceeded 200 characters and was shortened.",
       });
       return value.slice(0, REQUIREMENT_LIMIT).trimEnd();
     });
   return [...new Set(normalized)].slice(0, 30);
+}
+
+function getMissingRequirements(description: string, requirements: string[]): string[] {
+  const normalizedDescription = description.toLowerCase();
+  return requirements.filter(
+    (requirement) => !normalizedDescription.includes(requirement.toLowerCase()),
+  );
+}
+
+function hasFinalRequirementsHeading(description: string): boolean {
+  const headings = description.matchAll(/^#{1,6}\s+(.+?)\s*$/gm);
+  let finalHeading = "";
+  for (const heading of headings) finalHeading = heading[1] ?? "";
+  return /^(requirements|qualifications)(?:\s|$)/i.test(finalHeading);
+}
+
+function formatRequirementsAppendix(
+  description: string,
+  requirements: string[],
+  forceHeading = false,
+): string {
+  const missing = getMissingRequirements(description, requirements);
+  if (missing.length === 0) return "";
+  const heading =
+    !forceHeading && hasFinalRequirementsHeading(description) ? "" : "## Requirements\n\n";
+  return `${heading}${missing.map((item) => `- ${item}`).join("\n")}`;
+}
+
+function combineDescriptionAndRequirements(description: string, appendix: string): string {
+  return [description.trimEnd(), appendix].filter(Boolean).join("\n\n");
+}
+
+function truncateMarkdownAtBoundary(markdown: string, maximumLength: number): string {
+  if (markdown.length <= maximumLength) return markdown.trimEnd();
+  const candidate = markdown.slice(0, maximumLength).trimEnd();
+  const minimumBoundary = Math.floor(maximumLength * 0.8);
+  const paragraphBoundary = candidate.lastIndexOf("\n\n");
+  if (paragraphBoundary >= minimumBoundary) return candidate.slice(0, paragraphBoundary).trimEnd();
+  const lineBoundary = candidate.lastIndexOf("\n");
+  if (lineBoundary >= minimumBoundary) return candidate.slice(0, lineBoundary).trimEnd();
+  const wordBoundary = candidate.lastIndexOf(" ");
+  if (wordBoundary >= minimumBoundary) return candidate.slice(0, wordBoundary).trimEnd();
+  return candidate;
+}
+
+export function normalizeDescription(
+  value: string,
+  warnings: JobImportWarning[],
+  requirements: string[] = [],
+): string {
+  const description = htmlToMarkdown(value);
+  const normalizedRequirements = normalizeRequirements(requirements, warnings);
+  const markdown = combineDescriptionAndRequirements(
+    description,
+    formatRequirementsAppendix(description, normalizedRequirements),
+  );
+  if (markdown.length <= MAX_JOB_DESCRIPTION_LENGTH) return markdown;
+  warnings.push({
+    code: "description_shortened",
+    field: "description",
+    message: `The source description exceeded ${MAX_JOB_DESCRIPTION_LENGTH.toLocaleString()} characters and was shortened for RoundZero.`,
+  });
+  const requirementsAppendix = formatRequirementsAppendix("", normalizedRequirements, true);
+  if (!requirementsAppendix)
+    return truncateMarkdownAtBoundary(description, MAX_JOB_DESCRIPTION_LENGTH);
+
+  const separatorLength = description ? 2 : 0;
+  const availableDescriptionLength =
+    MAX_JOB_DESCRIPTION_LENGTH - requirementsAppendix.length - separatorLength;
+  const shortenedDescription = truncateMarkdownAtBoundary(description, availableDescriptionLength);
+  return combineDescriptionAndRequirements(shortenedDescription, requirementsAppendix);
 }
 
 export function normalizeCurrency(

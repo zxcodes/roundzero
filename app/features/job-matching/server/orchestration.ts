@@ -36,7 +36,6 @@ type MatchingJobSource = {
   id: string;
   title: string;
   description: string;
-  requirements: unknown;
   experienceLevel: string | null;
 };
 
@@ -44,7 +43,6 @@ export async function jobMatchingSourceHash(job: MatchingJobSource): Promise<str
   return hashStableValue({
     title: job.title.trim(),
     description: job.description.trim(),
-    requirements: job.requirements,
     experienceLevel: job.experienceLevel,
     profileVersion: MATCHING_CONFIG.jobProfileVersion,
   });

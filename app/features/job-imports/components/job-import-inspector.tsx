@@ -22,11 +22,11 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Textarea } from "@/components/ui/textarea";
 import type {
   EditableJobImportPayload,
   JobImportItemResponse,
 } from "@/features/job-imports/schemas";
+import { JobDescriptionEditor } from "@/features/jobs/components/job-description-editor";
 import {
   employmentTypeLabels,
   employmentTypeSchema,
@@ -64,7 +64,6 @@ export function JobImportInspector({
       ? {
           title: item.job.title,
           description: item.job.description,
-          requirements: item.job.requirements,
           location: item.job.location,
           workplaceType: item.job.workplaceType,
           employmentType: item.job.employmentType,
@@ -78,7 +77,6 @@ export function JobImportInspector({
       : null,
   );
   const [dirty, setDirty] = useState(false);
-  const [requirements, setRequirements] = useState(() => item?.job.requirements.join("\n") ?? "");
   const onOpenChange = (open: boolean) => {
     if (open || saveStatus === "saving") return;
     if (dirty && item && job) {
@@ -102,19 +100,9 @@ export function JobImportInspector({
   ) => update({ [field]: event.target.value || (field === "location" ? null : "") });
   const onTitleChange = (event: React.ChangeEvent<HTMLInputElement>) =>
     onTextChange("title", event);
-  const onDescriptionChange = (event: React.ChangeEvent<HTMLTextAreaElement>) =>
-    onTextChange("description", event);
+  const onDescriptionChange = (value: string) => update({ description: value });
   const onLocationChange = (event: React.ChangeEvent<HTMLInputElement>) =>
     onTextChange("location", event);
-  const onRequirementsChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setRequirements(event.target.value);
-    update({
-      requirements: event.target.value
-        .split("\n")
-        .map((value) => value.trim())
-        .filter(Boolean),
-    });
-  };
   const onBlur = () => {
     if (dirty) onSave(item.id, job);
   };
@@ -177,30 +165,12 @@ export function JobImportInspector({
               </Field>
               <Field>
                 <FieldLabel htmlFor={`${id}-description`}>Description</FieldLabel>
-                <Textarea
+                <JobDescriptionEditor
                   id={`${id}-description`}
-                  name="description"
-                  autoComplete="off"
                   value={job.description}
                   onChange={onDescriptionChange}
                   onBlur={onBlur}
                   disabled={disabled}
-                  className="min-h-36"
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor={`${id}-requirements`}>
-                  Requirements (optional, one per line)
-                </FieldLabel>
-                <Textarea
-                  id={`${id}-requirements`}
-                  name="requirements"
-                  autoComplete="off"
-                  value={requirements}
-                  onChange={onRequirementsChange}
-                  onBlur={onBlur}
-                  disabled={disabled}
-                  className="min-h-28"
                 />
               </Field>
               <Field>
