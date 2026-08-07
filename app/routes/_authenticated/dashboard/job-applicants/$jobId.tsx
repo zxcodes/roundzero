@@ -1,6 +1,6 @@
 import { Briefcase01Icon, RankingIcon, UserGroupIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { createFileRoute, Link, notFound, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, notFound, redirect, useNavigate } from "@tanstack/react-router";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 
@@ -8,7 +8,6 @@ import { PageInlineStats } from "@/components/page-inline-stats";
 import { DashboardJobApplicantsSkeleton } from "@/components/route-skeletons";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import {
   Select,
@@ -35,7 +34,6 @@ import { validateUuidParams } from "@/shared/validation";
 
 type JobApplicantsView = NonNullable<Awaited<ReturnType<typeof getJobApplicantsView>>>;
 type JobApplicants = JobApplicantsView["applicants"];
-type JobActiveBatch = JobApplicantsView["activeBatch"];
 const jobStatusLabels = {
   draft: "Draft",
   open: "Open",
@@ -94,7 +92,7 @@ type ApplicantsView = "ready" | "all";
 type ApplicantsFilter = JobApplicantsFilter;
 
 function JobApplicantsPage() {
-  const { job, applicants, activeBatch, reportProgress } = Route.useLoaderData();
+  const { job, applicants, reportProgress } = Route.useLoaderData();
   const { tab, view: searchView, filter: searchFilter } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const view: ApplicantsView = searchView ?? (searchFilter ? "all" : "ready");
@@ -139,12 +137,6 @@ function JobApplicantsPage() {
     (a: (typeof applicants)[number]) =>
       a.status === "evaluated_held" || (a.reportId !== null && a.reportReleasedAt === null),
   ).length;
-  const activeInterviewApplicants = applicants.filter(
-    (a: (typeof applicants)[number]) =>
-      a.status === "interview_invited" ||
-      a.status === "interview_in_progress" ||
-      a.status === "evaluated_held",
-  );
   const screeningApplicants = applicants.filter((a: (typeof applicants)[number]) => {
     return a.status === "pre_screening";
   });
@@ -221,13 +213,11 @@ function JobApplicantsPage() {
       ) : (
         <ApplicantsTabContent
           applicants={applicants}
-          activeBatch={activeBatch}
           reportProgress={reportProgress}
           view={view}
           filter={filter}
           releasedReportApplicants={releasedReportApplicants}
           heldForReleaseCount={heldForReleaseCount}
-          activeInterviewApplicants={activeInterviewApplicants}
           screeningApplicants={screeningApplicants}
           filteredApplicants={filteredApplicants}
           onViewChange={onViewChange}
@@ -240,26 +230,22 @@ function JobApplicantsPage() {
 
 function ApplicantsTabContent({
   applicants,
-  activeBatch,
   reportProgress,
   view,
   filter,
   releasedReportApplicants,
   heldForReleaseCount,
-  activeInterviewApplicants,
   screeningApplicants,
   filteredApplicants,
   onViewChange,
   onFilterChange,
 }: {
   applicants: JobApplicants;
-  activeBatch: JobActiveBatch;
   reportProgress: JobApplicantsView["reportProgress"];
   view: ApplicantsView;
   filter: ApplicantsFilter;
   releasedReportApplicants: JobApplicants;
   heldForReleaseCount: number;
-  activeInterviewApplicants: JobApplicants;
   screeningApplicants: JobApplicants;
   filteredApplicants: JobApplicants;
   onViewChange: (value: string) => void;
@@ -334,13 +320,6 @@ function ApplicantsTabContent({
         />
       )}
 
-      {view === "all" && activeInterviewApplicants.length > 0 ? (
-        <InterviewProgressPanel
-          applicants={activeInterviewApplicants}
-          batchId={activeBatch?.id ?? null}
-        />
-      ) : null}
-
       {view === "all" && filter === "screening" && screeningApplicants.length === 0 ? (
         <Empty className="rounded-2xl border-0 bg-muted/30">
           <EmptyHeader>
@@ -388,48 +367,5 @@ function EvaluationProgressAlert({
         )}
       </AlertDescription>
     </Alert>
-  );
-}
-
-function InterviewProgressPanel({
-  applicants,
-  batchId,
-}: {
-  applicants: JobApplicants;
-  batchId: string | null;
-}) {
-  const completed = applicants.filter((applicant) => applicant.status === "evaluated_held").length;
-  const inProgress = applicants.filter(
-    (applicant) => applicant.status === "interview_in_progress",
-  ).length;
-  const invited = applicants.filter((applicant) => applicant.status === "interview_invited").length;
-
-  return (
-    <section className="space-y-4 rounded-3xl border border-border/60 px-5 py-4 md:px-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="space-y-1">
-          <h2 className="text-base font-semibold tracking-tight">Interview progress</h2>
-          <p className="text-sm text-muted-foreground">
-            {invited} invited · {inProgress} in progress · {completed} completed
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Reports appear automatically as candidates complete their interviews.
-          </p>
-        </div>
-        {batchId ? (
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/dashboard/job-batches/$batchId" params={{ batchId }}>
-              View details
-            </Link>
-          </Button>
-        ) : null}
-      </div>
-      <div className="h-2 overflow-hidden rounded-full bg-muted">
-        <div
-          className="h-full rounded-full bg-primary transition-all"
-          style={{ width: `${(completed / applicants.length) * 100}%` }}
-        />
-      </div>
-    </section>
   );
 }

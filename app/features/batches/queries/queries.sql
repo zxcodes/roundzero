@@ -3,12 +3,6 @@ INSERT INTO job_batches (job_id, status, target_size)
 VALUES ($1, 'forming', $2)
 RETURNING id, job_id, status, target_size, created_at, launched_at, released_at;
 
--- name: getActiveBatchForJob :one
-SELECT id, job_id, status, target_size, created_at, launched_at, released_at
-FROM job_batches
-WHERE job_id = $1 AND status = 'active'
-LIMIT 1;
-
 -- name: getActiveBatchesByCompany :many
 SELECT b.id, b.job_id, b.status, b.target_size, b.created_at, b.launched_at, b.released_at,
        j.title AS job_title
