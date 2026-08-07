@@ -1,10 +1,10 @@
 -- name: createJob :one
 INSERT INTO jobs (
-  company_id, title, description, requirements, screening_questions, status,
+  company_id, title, description, screening_questions, status,
   location, workplace_type, employment_type, experience_level,
   salary_min, salary_max, salary_currency, team_size, headcount, final_report_target, expires_at
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
 RETURNING *;
 
 -- name: getJobsByCompanyId :many
@@ -53,24 +53,23 @@ WHERE j.id = $1;
 UPDATE jobs
 SET title = $1,
     description = $2,
-    requirements = $3,
-    screening_questions = $4,
-    status = $5,
-    location = $6,
-    workplace_type = $7,
-    employment_type = $8,
-    experience_level = $9,
-    salary_min = $10,
-    salary_max = $11,
-    salary_currency = $12,
-    team_size = $13,
-    headcount = $14,
-    final_report_target = $15,
-    expires_at = $16,
+    screening_questions = $3,
+    status = $4,
+    location = $5,
+    workplace_type = $6,
+    employment_type = $7,
+    experience_level = $8,
+    salary_min = $9,
+    salary_max = $10,
+    salary_currency = $11,
+    team_size = $12,
+    headcount = $13,
+    final_report_target = $14,
+    expires_at = $15,
     updated_at = now()
-WHERE id = $17
-  AND company_id = $18
-  AND $15 >= final_report_target
+WHERE id = $16
+  AND company_id = $17
+  AND $14 >= final_report_target
 RETURNING *;
 
 -- name: getOwnedJobForUpdate :one

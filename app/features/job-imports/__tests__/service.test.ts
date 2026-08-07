@@ -25,8 +25,8 @@ const candidate: JobImportCandidate = {
     sourceUrl: "https://jobs.lever.co/acme/lever-job-123",
     sourceUpdatedAt: "2026-08-01T10:00:00.000Z",
     title: "Platform Engineer",
-    description: "Build and operate the platform.",
-    requirements: ["TypeScript", "Distributed systems"],
+    description:
+      "Build and operate the platform.\n\n## Requirements\n\n- TypeScript\n- Distributed systems",
     location: "Remote",
     workplaceType: "remote",
     employmentType: "full_time",
@@ -161,7 +161,7 @@ describe("job import service", () => {
       ],
     });
 
-    expect(preview.items[0].job.description).toBe("Who we are\n\nBuild the future with us.");
+    expect(preview.items[0].job.description).toBe("## Who we are\n\nBuild the future with us.");
 
     const result = await importSelectedJobDrafts({
       db: sql,
@@ -175,7 +175,7 @@ describe("job import service", () => {
       WHERE id = ${result.imported[0].jobId}
     `;
 
-    expect(job.description).toBe("Who we are\n\nBuild the future with us.");
+    expect(job.description).toBe("## Who we are\n\nBuild the future with us.");
   });
 
   it("imports persisted classifications without client overrides", async () => {
@@ -233,7 +233,6 @@ describe("job import service", () => {
           expectedRevision: preview.items[0].revision,
           job: {
             description: candidate.job.description,
-            requirements: candidate.job.requirements,
             location: candidate.job.location,
             workplaceType: candidate.job.workplaceType,
             employmentType: candidate.job.employmentType,

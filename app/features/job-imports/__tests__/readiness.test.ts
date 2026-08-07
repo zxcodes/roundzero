@@ -25,7 +25,6 @@ const item = (overrides?: Partial<JobImportItemResponse>): JobImportItemResponse
     sourceUpdatedAt: null,
     title: "Platform Engineer",
     description: "Build the platform.",
-    requirements: [],
     location: "Remote",
     workplaceType: "remote",
     employmentType: "full_time",

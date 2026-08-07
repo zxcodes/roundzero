@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { FREE_REPORT_DEFAULTS } from "@/features/entitlements/entitlements";
 import { useEntitlements } from "@/features/entitlements/hooks/use-entitlements";
+import { JobDescriptionMarkdown } from "@/features/jobs/components/job-description-markdown";
 import type { JobFormData } from "@/features/jobs/components/job-form";
 import type { AiJobGenerationOutput } from "@/features/jobs/schemas";
 import { generateJobWithAI } from "@/features/jobs/server/functions";
@@ -188,7 +189,9 @@ function GeneratedPreview({
       <div className="space-y-3">
         <div>
           <p className="text-sm font-semibold">{data.title}</p>
-          <p className="mt-1 line-clamp-3 text-xs text-muted-foreground">{data.description}</p>
+          <JobDescriptionMarkdown className="mt-1 line-clamp-6 text-xs text-muted-foreground">
+            {data.description}
+          </JobDescriptionMarkdown>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -209,23 +212,6 @@ function GeneratedPreview({
             </Badge>
           ) : null}
         </div>
-
-        {data.requirements.length > 0 ? (
-          <>
-            <Separator />
-            <div className="space-y-2">
-              <h3 className="text-sm font-semibold tracking-tight">Requirements</h3>
-              <ul className="space-y-1">
-                {data.requirements.map((req, i) => (
-                  <li key={i} className="flex items-start gap-2 text-xs">
-                    <span className="mt-1.5 block size-1 shrink-0 rounded-full bg-primary" />
-                    {req}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </>
-        ) : null}
 
         {data.screeningQuestions.length > 0 ? (
           <>

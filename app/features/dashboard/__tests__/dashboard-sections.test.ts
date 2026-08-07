@@ -117,7 +117,6 @@ describe("candidate dashboard recent activity expiry overlay", () => {
       companyId: company.id,
       title: "Expired Interview Role",
       description: "Test",
-      requirements: [],
       screeningQuestions: [],
       status: "open",
       location: null,

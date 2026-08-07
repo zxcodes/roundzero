@@ -20,7 +20,7 @@ FROM job_matching_profiles
 WHERE job_id = $1;
 
 -- name: GetJobForMatchingExtraction :one
-SELECT id, title, description, requirements, experience_level, status, archived_at, expires_at
+SELECT id, title, description, experience_level, status, archived_at, expires_at
 FROM jobs
 WHERE id = $1;
 
@@ -161,7 +161,7 @@ WHERE j.status = 'open'
   AND owner.deleted_at IS NULL
   AND p.extraction_status = 'ready'
   AND p.completed_source_hash = p.requested_source_hash
-  AND p.source_version = 'job-profile-v3-semantic'
+  AND p.source_version = 'job-profile-v4-markdown'
   AND NOT EXISTS (
     SELECT 1 FROM applications a
     WHERE a.job_id = j.id AND a.candidate_id = $1
@@ -315,18 +315,18 @@ WHERE p.job_id = profiles.job_id
 RETURNING p.job_id, p.extraction_token;
 
 -- name: ListOpenJobsWithOutdatedMatchingProfile :many
-SELECT j.id, j.title, j.description, j.requirements, j.experience_level
+SELECT j.id, j.title, j.description, j.experience_level
 FROM jobs j
 JOIN job_matching_profiles p ON p.job_id = j.id
 WHERE j.status = 'open'
   AND j.archived_at IS NULL
   AND (j.expires_at IS NULL OR j.expires_at > now())
-  AND p.source_version <> 'job-profile-v3-semantic'
+  AND p.source_version <> 'job-profile-v4-markdown'
 ORDER BY p.updated_at, p.job_id
 LIMIT $1;
 
 -- name: ListOpenJobsMissingMatchingProfile :many
-SELECT j.id, j.title, j.description, j.requirements, j.experience_level
+SELECT j.id, j.title, j.description, j.experience_level
 FROM jobs j
 WHERE j.status = 'open'
   AND j.archived_at IS NULL
@@ -347,7 +347,7 @@ SELECT EXISTS (
     AND (j.expires_at IS NULL OR j.expires_at > now())
     AND p.extraction_status = 'ready'
     AND p.completed_source_hash = p.requested_source_hash
-    AND p.source_version = 'job-profile-v3-semantic'
+    AND p.source_version = 'job-profile-v4-markdown'
 ) AS ready;
 
 -- name: ListDigestCandidates :many

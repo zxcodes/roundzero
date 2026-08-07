@@ -98,8 +98,6 @@ function JobApplicantsPage() {
   const view: ApplicantsView = searchView ?? (searchFilter ? "all" : "ready");
   const filter: ApplicantsFilter = searchFilter ?? "all";
 
-  const requirements: string[] = Array.isArray(job.requirements) ? job.requirements : [];
-
   const onPageTabChange = (value: string) => {
     void navigate({
       search: (prev) => ({
@@ -190,7 +188,7 @@ function JobApplicantsPage() {
               </JobMetaChip>
             </>
           ) : null}
-          <CompanyJobActions job={job} requirements={requirements} />
+          <CompanyJobActions job={job} />
         </div>
       </div>
 

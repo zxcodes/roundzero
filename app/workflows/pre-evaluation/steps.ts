@@ -112,14 +112,9 @@ function buildPreEvaluationPrompt(
   job: {
     title: string;
     description: string;
-    requirements: string[];
   },
   resumeText: string,
 ): string {
-  const requirementsList = Array.isArray(job.requirements)
-    ? job.requirements.map((r) => `- ${r}`).join("\n")
-    : "None listed.";
-
   return JSON.stringify({
     currentDate: getModelDateContext(),
     instructions:
@@ -127,7 +122,6 @@ function buildPreEvaluationPrompt(
     job: {
       title: job.title,
       description: job.description,
-      requirements: requirementsList,
     },
     resumeText: sanitizeUntrustedText(resumeText, LIMITS.RESUME_TEXT),
   });
@@ -292,7 +286,7 @@ export function detectSlop(resumeText: string, log: ReturnType<typeof createWork
 }
 
 export function runAiPreEvaluation(
-  job: { title: string; description: string; requirements: string[] },
+  job: { title: string; description: string },
   resumeText: string,
   roleType: string,
   log: ReturnType<typeof createWorkflowLogger>,
@@ -330,7 +324,7 @@ export function runAiPreEvaluation(
           modelNextStep: raw.nextStep,
         },
         resumeText,
-        Array.isArray(job.requirements) ? job.requirements : [],
+        [job.description],
       );
 
       log.ai(userPrompt.length, usage.outputTokens, latency, promptVersion);
@@ -428,7 +422,6 @@ export function decideNextStep(
       id: string;
       title: string;
       description: string;
-      requirements: unknown;
       companyName: string;
       finalReportTarget: number | null;
       screeningQuestions: unknown;

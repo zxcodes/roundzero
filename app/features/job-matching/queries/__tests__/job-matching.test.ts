@@ -92,7 +92,7 @@ describe("candidate match persistence", () => {
         job_id, requested_source_hash, completed_source_hash, source_version,
         extraction_status, matching_profile, extraction_token
       ) VALUES (
-        ${job.id}, 'job-v1', 'job-v1', 'job-profile-v3-semantic', 'ready', ${sql.json({ facts: [] })}, ${crypto.randomUUID()}
+        ${job.id}, 'job-v1', 'job-v1', 'job-profile-v4-markdown', 'ready', ${sql.json({ facts: [] })}, ${crypto.randomUUID()}
       )
     `;
 
@@ -135,7 +135,7 @@ describe("candidate match persistence", () => {
     `;
     const expectedHash = await jobMatchingSourceHash(source!);
     expect(profile).toMatchObject({
-      source_version: "job-profile-v3-semantic",
+      source_version: "job-profile-v4-markdown",
       extraction_status: "pending",
       requested_source_hash: expectedHash,
     });
@@ -155,7 +155,7 @@ describe("candidate match persistence", () => {
     expect(completed).toMatchObject({
       requested_source_hash: expectedHash,
       completed_source_hash: expectedHash,
-      source_version: "job-profile-v3-semantic",
+      source_version: "job-profile-v4-markdown",
       extraction_status: "ready",
     });
   });

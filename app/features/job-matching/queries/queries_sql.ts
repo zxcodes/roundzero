@@ -115,7 +115,7 @@ export async function getJobMatchingProfile(sql: Sql, args: GetJobMatchingProfil
 }
 
 export const getJobForMatchingExtractionQuery = `-- name: GetJobForMatchingExtraction :one
-SELECT id, title, description, requirements, experience_level, status, archived_at, expires_at
+SELECT id, title, description, experience_level, status, archived_at, expires_at
 FROM jobs
 WHERE id = $1`;
 
@@ -127,7 +127,6 @@ export interface GetJobForMatchingExtractionRow {
     id: string;
     title: string;
     description: string;
-    requirements: any;
     experienceLevel: string | null;
     status: string;
     archivedAt: Date | null;
@@ -144,11 +143,10 @@ export async function getJobForMatchingExtraction(sql: Sql, args: GetJobForMatch
         id: row[0],
         title: row[1],
         description: row[2],
-        requirements: row[3],
-        experienceLevel: row[4],
-        status: row[5],
-        archivedAt: row[6],
-        expiresAt: row[7]
+        experienceLevel: row[3],
+        status: row[4],
+        archivedAt: row[5],
+        expiresAt: row[6]
     };
 }
 
@@ -795,7 +793,7 @@ WHERE j.status = 'open'
   AND owner.deleted_at IS NULL
   AND p.extraction_status = 'ready'
   AND p.completed_source_hash = p.requested_source_hash
-  AND p.source_version = 'job-profile-v3-semantic'
+  AND p.source_version = 'job-profile-v4-markdown'
   AND NOT EXISTS (
     SELECT 1 FROM applications a
     WHERE a.job_id = j.id AND a.candidate_id = $1
@@ -1375,13 +1373,13 @@ export async function claimJobProfileRecoveryBatch(sql: Sql, args: ClaimJobProfi
 }
 
 export const listOpenJobsWithOutdatedMatchingProfileQuery = `-- name: ListOpenJobsWithOutdatedMatchingProfile :many
-SELECT j.id, j.title, j.description, j.requirements, j.experience_level
+SELECT j.id, j.title, j.description, j.experience_level
 FROM jobs j
 JOIN job_matching_profiles p ON p.job_id = j.id
 WHERE j.status = 'open'
   AND j.archived_at IS NULL
   AND (j.expires_at IS NULL OR j.expires_at > now())
-  AND p.source_version <> 'job-profile-v3-semantic'
+  AND p.source_version <> 'job-profile-v4-markdown'
 ORDER BY p.updated_at, p.job_id
 LIMIT $1`;
 
@@ -1393,7 +1391,6 @@ export interface ListOpenJobsWithOutdatedMatchingProfileRow {
     id: string;
     title: string;
     description: string;
-    requirements: any;
     experienceLevel: string | null;
 }
 
@@ -1402,13 +1399,12 @@ export async function listOpenJobsWithOutdatedMatchingProfile(sql: Sql, args: Li
         id: row[0],
         title: row[1],
         description: row[2],
-        requirements: row[3],
-        experienceLevel: row[4]
+        experienceLevel: row[3]
     }));
 }
 
 export const listOpenJobsMissingMatchingProfileQuery = `-- name: ListOpenJobsMissingMatchingProfile :many
-SELECT j.id, j.title, j.description, j.requirements, j.experience_level
+SELECT j.id, j.title, j.description, j.experience_level
 FROM jobs j
 WHERE j.status = 'open'
   AND j.archived_at IS NULL
@@ -1427,7 +1423,6 @@ export interface ListOpenJobsMissingMatchingProfileRow {
     id: string;
     title: string;
     description: string;
-    requirements: any;
     experienceLevel: string | null;
 }
 
@@ -1436,8 +1431,7 @@ export async function listOpenJobsMissingMatchingProfile(sql: Sql, args: ListOpe
         id: row[0],
         title: row[1],
         description: row[2],
-        requirements: row[3],
-        experienceLevel: row[4]
+        experienceLevel: row[3]
     }));
 }
 
@@ -1451,7 +1445,7 @@ SELECT EXISTS (
     AND (j.expires_at IS NULL OR j.expires_at > now())
     AND p.extraction_status = 'ready'
     AND p.completed_source_hash = p.requested_source_hash
-    AND p.source_version = 'job-profile-v3-semantic'
+    AND p.source_version = 'job-profile-v4-markdown'
 ) AS ready`;
 
 export interface HasReadyOpenJobMatchingProfileRow {

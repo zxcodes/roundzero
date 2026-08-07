@@ -41,6 +41,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
+import { JobDescriptionMarkdown } from "@/features/jobs/components/job-description-markdown";
 import { JobPreviewDialog } from "@/features/jobs/components/job-preview-dialog";
 import { JobStatusBadge } from "@/features/jobs/components/job-status-badge";
 import { canCopyPublicJobLink, copyPublicJobLink } from "@/features/jobs/copy-job-link";
@@ -76,13 +77,7 @@ export function JobMetaChip({
   );
 }
 
-export function CompanyJobActions({
-  job,
-  requirements,
-}: {
-  job: JobDetail;
-  requirements: string[];
-}) {
+export function CompanyJobActions({ job }: { job: JobDetail }) {
   const router = useRouter();
   const [previewOpen, setPreviewOpen] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
@@ -132,7 +127,6 @@ export function CompanyJobActions({
   const previewData = {
     title: job.title,
     description: job.description,
-    requirements,
     companyName: job.companyName ?? "",
     location: job.location,
     workplaceType: job.workplaceType,
@@ -262,7 +256,6 @@ export function CompanyJobActions({
 }
 
 export function CompanyJobPostingPanel({ job }: { job: JobDetail }) {
-  const requirements: string[] = Array.isArray(job.requirements) ? job.requirements : [];
   const salary = formatSalaryFull(job.salaryMin, job.salaryMax, job.salaryCurrency);
 
   return (
@@ -285,23 +278,8 @@ export function CompanyJobPostingPanel({ job }: { job: JobDetail }) {
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
           <section className="rounded-2xl bg-muted/30 px-6 py-5">
-            <h2 className="text-lg font-semibold tracking-tight">Description</h2>
-            <p className="mt-3 text-sm leading-relaxed whitespace-pre-wrap">{job.description}</p>
+            <JobDescriptionMarkdown>{job.description}</JobDescriptionMarkdown>
           </section>
-
-          {requirements.length > 0 ? (
-            <section className="rounded-2xl bg-muted/30 px-6 py-5">
-              <h2 className="text-lg font-semibold tracking-tight">Requirements</h2>
-              <ul className="mt-3 space-y-2">
-                {requirements.map((req, i) => (
-                  <li key={`${req}-${i}`} className="flex items-start gap-2.5 text-sm">
-                    <span className="mt-2 block size-1 shrink-0 rounded-full bg-primary" />
-                    {req}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
         </div>
 
         <div className="space-y-5">
