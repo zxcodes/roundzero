@@ -88,6 +88,9 @@ describe("jobToFormDefaults", () => {
     expect(defaults.status).toBe("closed");
     expect(defaults.screeningQuestions).toEqual([]);
     expect(defaults.location).toBeNull();
+    expect(defaults.workplaceType).toBeNull();
+    expect(defaults.employmentType).toBeNull();
+    expect(defaults.experienceLevel).toBeNull();
     expect(defaults.expiresAt).toBeInstanceOf(Date);
   });
 

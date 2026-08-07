@@ -54,11 +54,18 @@ describe("jobFieldsSchema", () => {
     expect(result.screeningQuestions).toEqual([]);
   });
 
-  it("rejects missing required job detail fields", () => {
-    expect(() => jobFieldsSchema.parse({ title: "Test", description: "Test" })).toThrow();
-    expect(() =>
-      jobFieldsSchema.parse({ title: "Test", description: "Test", workplaceType: "remote" }),
-    ).toThrow();
+  it("accepts null recommended job detail fields", () => {
+    const result = jobFieldsSchema.parse({
+      title: "Test",
+      description: "Test",
+      workplaceType: null,
+      employmentType: null,
+      experienceLevel: null,
+    });
+
+    expect(result.workplaceType).toBeNull();
+    expect(result.employmentType).toBeNull();
+    expect(result.experienceLevel).toBeNull();
   });
 
   // ─── Validation failures ─────────────────────────────────
