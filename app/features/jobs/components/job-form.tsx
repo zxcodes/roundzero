@@ -28,13 +28,16 @@ import {
   type EmploymentType,
   type ExperienceLevel,
   employmentTypeLabels,
+  employmentTypeSchema,
   experienceLevelLabels,
+  experienceLevelSchema,
   type JobStatus,
   type SalaryCurrency,
   salaryCurrencyLabels,
   salaryCurrencySchema,
   type WorkplaceType,
   workplaceTypeLabels,
+  workplaceTypeSchema,
 } from "@/shared/enums";
 
 export interface JobFormData {
@@ -43,9 +46,9 @@ export interface JobFormData {
   screeningQuestions: string[];
   status: JobStatus;
   location: string | null;
-  workplaceType: WorkplaceType;
-  employmentType: EmploymentType;
-  experienceLevel: ExperienceLevel;
+  workplaceType: WorkplaceType | null;
+  employmentType: EmploymentType | null;
+  experienceLevel: ExperienceLevel | null;
   salaryMin: number | null;
   salaryMax: number | null;
   salaryCurrency: string;
@@ -93,10 +96,9 @@ export function jobToFormDefaults(job: JobFormSource): JobFormData {
     screeningQuestions: asStringList(job.screeningQuestions),
     status,
     location: job.location,
-    // Nullable in DB for legacy/import rows; form requires a selection before save.
-    workplaceType: (job.workplaceType ?? undefined) as WorkplaceType,
-    employmentType: (job.employmentType ?? undefined) as EmploymentType,
-    experienceLevel: (job.experienceLevel ?? undefined) as ExperienceLevel,
+    workplaceType: workplaceTypeSchema.safeParse(job.workplaceType).data ?? null,
+    employmentType: employmentTypeSchema.safeParse(job.employmentType).data ?? null,
+    experienceLevel: experienceLevelSchema.safeParse(job.experienceLevel).data ?? null,
     salaryMin: job.salaryMin,
     salaryMax: job.salaryMax,
     salaryCurrency: job.salaryCurrency,
@@ -122,9 +124,9 @@ const formSchema = z
     screeningQuestions: z.array(z.string()),
     status: z.enum(["draft", "open", "closed"]),
     location: z.string().max(200),
-    workplaceType: z.string().min(1, "Workplace type is required"),
-    employmentType: z.string().min(1, "Employment type is required"),
-    experienceLevel: z.string().min(1, "Experience level is required"),
+    workplaceType: z.string(),
+    employmentType: z.string(),
+    experienceLevel: z.string(),
     salaryMin: optionalPositiveInt,
     salaryMax: optionalPositiveInt,
     salaryCurrency: z.string().min(1),
@@ -282,9 +284,9 @@ export function JobForm({
         screeningQuestions: value.screeningQuestions,
         status: value.status as JobStatus,
         location: value.location || null,
-        workplaceType: value.workplaceType as WorkplaceType,
-        employmentType: value.employmentType as EmploymentType,
-        experienceLevel: value.experienceLevel as ExperienceLevel,
+        workplaceType: workplaceTypeSchema.safeParse(value.workplaceType).data ?? null,
+        employmentType: employmentTypeSchema.safeParse(value.employmentType).data ?? null,
+        experienceLevel: experienceLevelSchema.safeParse(value.experienceLevel).data ?? null,
         salaryMin: value.salaryMin ? Number(value.salaryMin) : null,
         salaryMax: value.salaryMax ? Number(value.salaryMax) : null,
         salaryCurrency: value.salaryCurrency,
@@ -500,20 +502,13 @@ export function JobForm({
             }}
           </form.Field>
 
-          <form.Field
-            name="workplaceType"
-            validators={{
-              onSubmit: z.string().min(1, "Workplace type is required"),
-            }}
-          >
+          <form.Field name="workplaceType">
             {(field) => {
               const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
               const onWorkplaceChange = (val: string) => field.handleChange(val);
               return (
                 <Field data-invalid={isInvalid}>
-                  <FieldLabel htmlFor={field.name}>
-                    Workplace <span className="text-destructive">*</span>
-                  </FieldLabel>
+                  <FieldLabel htmlFor={field.name}>Workplace</FieldLabel>
                   <Select value={field.state.value} onValueChange={onWorkplaceChange}>
                     <SelectTrigger id={field.name} aria-invalid={isInvalid}>
                       <SelectValue placeholder="Select type" />
@@ -532,20 +527,13 @@ export function JobForm({
             }}
           </form.Field>
 
-          <form.Field
-            name="employmentType"
-            validators={{
-              onSubmit: z.string().min(1, "Employment type is required"),
-            }}
-          >
+          <form.Field name="employmentType">
             {(field) => {
               const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
               const onEmploymentChange = (val: string) => field.handleChange(val);
               return (
                 <Field data-invalid={isInvalid}>
-                  <FieldLabel htmlFor={field.name}>
-                    Employment type <span className="text-destructive">*</span>
-                  </FieldLabel>
+                  <FieldLabel htmlFor={field.name}>Employment type</FieldLabel>
                   <Select value={field.state.value} onValueChange={onEmploymentChange}>
                     <SelectTrigger id={field.name} aria-invalid={isInvalid}>
                       <SelectValue placeholder="Select type" />
@@ -564,20 +552,13 @@ export function JobForm({
             }}
           </form.Field>
 
-          <form.Field
-            name="experienceLevel"
-            validators={{
-              onSubmit: z.string().min(1, "Experience level is required"),
-            }}
-          >
+          <form.Field name="experienceLevel">
             {(field) => {
               const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
               const onExperienceChange = (val: string) => field.handleChange(val);
               return (
                 <Field data-invalid={isInvalid}>
-                  <FieldLabel htmlFor={field.name}>
-                    Experience level <span className="text-destructive">*</span>
-                  </FieldLabel>
+                  <FieldLabel htmlFor={field.name}>Experience level</FieldLabel>
                   <Select value={field.state.value} onValueChange={onExperienceChange}>
                     <SelectTrigger id={field.name} aria-invalid={isInvalid}>
                       <SelectValue placeholder="Select level" />

@@ -31,7 +31,7 @@ function MarkdownCode(props: React.ComponentProps<"code">) {
 
 function MarkdownHeading1({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h2 {...props} className="text-xl font-semibold tracking-tight">
+    <h2 {...props} className="text-xl font-medium tracking-tight [&_strong]:font-medium">
       {children}
     </h2>
   );
@@ -39,7 +39,7 @@ function MarkdownHeading1({ children, ...props }: React.HTMLAttributes<HTMLHeadi
 
 function MarkdownHeading2({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h3 {...props} className="text-lg font-semibold tracking-tight">
+    <h3 {...props} className="text-lg font-medium tracking-tight [&_strong]:font-medium">
       {children}
     </h3>
   );
@@ -47,7 +47,7 @@ function MarkdownHeading2({ children, ...props }: React.HTMLAttributes<HTMLHeadi
 
 function MarkdownHeading3({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h4 {...props} className="text-base font-semibold tracking-tight">
+    <h4 {...props} className="text-base font-medium tracking-tight [&_strong]:font-medium">
       {children}
     </h4>
   );
@@ -55,7 +55,7 @@ function MarkdownHeading3({ children, ...props }: React.HTMLAttributes<HTMLHeadi
 
 function MarkdownHeading4({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h5 {...props} className="text-sm font-semibold tracking-tight">
+    <h5 {...props} className="text-sm font-medium tracking-tight [&_strong]:font-medium">
       {children}
     </h5>
   );
@@ -63,7 +63,7 @@ function MarkdownHeading4({ children, ...props }: React.HTMLAttributes<HTMLHeadi
 
 function MarkdownHeading5({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h6 {...props} className="text-sm font-semibold tracking-tight">
+    <h6 {...props} className="text-sm font-medium tracking-tight [&_strong]:font-medium">
       {children}
     </h6>
   );
@@ -71,7 +71,7 @@ function MarkdownHeading5({ children, ...props }: React.HTMLAttributes<HTMLHeadi
 
 function MarkdownHeading6({ children, ...props }: React.ComponentProps<"h6">) {
   return (
-    <h6 {...props} className="text-sm font-semibold tracking-tight">
+    <h6 {...props} className="text-sm font-medium tracking-tight [&_strong]:font-medium">
       {children}
     </h6>
   );
