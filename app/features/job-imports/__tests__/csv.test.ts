@@ -11,8 +11,8 @@ describe("parseJobImportCsv", () => {
       workplaceType: "hybrid",
       employmentType: "full_time",
       experienceLevel: "senior",
-      requirements: ["TypeScript", "System design"],
     });
+    expect(candidate.job.description).toContain("## About the role");
   });
 
   it("handles commas and line breaks inside quoted fields", async () => {

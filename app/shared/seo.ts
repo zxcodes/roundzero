@@ -1,3 +1,6 @@
+import { renderHtml } from "@tanstack/markdown";
+
+import { markdownToPlainText } from "@/features/jobs/markdown";
 import { getPublicAssetUrl } from "@/shared/r2";
 
 export const DEFAULT_META_TITLE = "AI Candidate Screening & First-Round Interviews | RoundZero";
@@ -389,35 +392,8 @@ function buildJobLocationProperties(job: JobPostingSchemaInput): Record<string, 
   };
 }
 
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
-
 function buildJobPostingDescription(job: JobPostingSchemaInput): string {
-  const paragraphs = job.description
-    .split(/\n{2,}/)
-    .map((paragraph) => paragraph.trim())
-    .filter(Boolean)
-    .map((paragraph) => `<p>${escapeHtml(paragraph).replaceAll("\n", "<br>")}</p>`);
-  const requirements = Array.isArray(job.requirements)
-    ? job.requirements.filter(
-        (requirement): requirement is string =>
-          typeof requirement === "string" && requirement.trim().length > 0,
-      )
-    : [];
-
-  if (requirements.length > 0) {
-    paragraphs.push(
-      `<ul>${requirements.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`,
-    );
-  }
-
-  return paragraphs.join("");
+  return renderHtml(job.description);
 }
 
 export type JobPostingSchemaInput = {
@@ -435,7 +411,6 @@ export type JobPostingSchemaInput = {
   salaryMax: number | null;
   salaryCurrency: string;
   expiresAt: Date | string | null;
-  requirements: unknown;
 };
 
 export function buildJobPageSeo(job: JobPostingSchemaInput) {
@@ -443,7 +418,7 @@ export function buildJobPageSeo(job: JobPostingSchemaInput) {
   const locationSuffix = locationLabel ? ` in ${locationLabel}` : "";
   const title = `${job.title} at ${job.companyName} | RoundZero`;
   const description = truncateDescription(
-    `${job.title} at ${job.companyName}${locationSuffix}. ${job.description}`,
+    `${job.title} at ${job.companyName}${locationSuffix}. ${markdownToPlainText(job.description)}`,
   );
 
   return { title, description };
@@ -503,10 +478,6 @@ export function buildJobPostingSchema(job: JobPostingSchemaInput): Record<string
   if (job.expiresAt) {
     schema.validThrough =
       typeof job.expiresAt === "string" ? job.expiresAt : job.expiresAt.toISOString();
-  }
-
-  if (Array.isArray(job.requirements) && job.requirements.length > 0) {
-    schema.skills = job.requirements;
   }
 
   return schema;

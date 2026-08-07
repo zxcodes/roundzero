@@ -43,14 +43,13 @@ export async function extractCandidateMatchingProfile(resumeText: string) {
 export async function extractJobMatchingProfile(input: {
   title: string;
   description: string;
-  requirements: string[];
   experienceLevel: string | null;
 }) {
   const { model } = getModelChain("job_matching");
   const result = await generateText({
     model: createChatModel("job_matching", { plugins: [{ id: "response-healing" }] }),
     output: Output.object({ schema: jobMatchingProfileGenerationSchema }),
-    system: `Read the full title, description, requirements, and experience level and extract a rich semantic role profile. Capture a specific role identity, coarse functional families, responsibilities/outcomes, required and preferred capabilities and technologies, seniority, and domains. Required versus preferred must follow the posting. ${extractionRules}`,
+    system: `Read the full title, Markdown description, and experience level and extract a rich semantic role profile. Capture a specific role identity, coarse functional families, responsibilities/outcomes, required and preferred capabilities and technologies, seniority, and domains. Required versus preferred must follow the posting. ${extractionRules}`,
     prompt: JSON.stringify(input),
     maxOutputTokens: 6_000,
     providerOptions: { openrouter: { reasoning: { enabled: false } } },

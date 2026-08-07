@@ -112,9 +112,7 @@ export function ImportReviewWorkspace({ initialPreview }: { initialPreview: JobI
   const counts = getJobImportReadinessCounts(preview.items, mappings);
   const filteredItems = filterJobImportItems({ items: preview.items, mappings, filter, search });
   const selectedItems = importableItems.filter((item) => selectedIds.has(item.id));
-  const suggestableItems = selectedItems.filter(
-    (item) => item.job.requirements.length === 0 || !mappings[item.id]?.experienceLevel,
-  );
+  const suggestableItems = selectedItems.filter((item) => !mappings[item.id]?.experienceLevel);
   const inspectorItem = preview.items.find((item) => item.id === inspectorId) ?? null;
 
   const mutationError = (error: Error) => toast.error(error.message || "The import failed.");
@@ -251,7 +249,6 @@ export function ImportReviewWorkspace({ initialPreview }: { initialPreview: JobI
         job: {
           title: item.job.title,
           description: item.job.description,
-          requirements: item.job.requirements,
           location: item.job.location,
           workplaceType: mapping.workplaceType,
           employmentType: mapping.employmentType,
@@ -278,7 +275,6 @@ export function ImportReviewWorkspace({ initialPreview }: { initialPreview: JobI
         job: {
           title: item.job.title,
           description: item.job.description,
-          requirements: item.job.requirements,
           location: item.job.location,
           workplaceType: mapping.workplaceType,
           employmentType: mapping.employmentType,
@@ -528,7 +524,7 @@ export function ImportReviewWorkspace({ initialPreview }: { initialPreview: JobI
           <HugeiconsIcon icon={Loading03Icon} strokeWidth={2} className="animate-spin" />
           <AlertTitle>Reviewing {suggestableItems.length} incomplete jobs…</AlertTitle>
           <AlertDescription>
-            RoundZero is looking for optional requirements and seniority in each source posting.
+            RoundZero is looking for seniority signals in each source posting.
           </AlertDescription>
         </Alert>
       ) : null}

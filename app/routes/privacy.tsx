@@ -47,8 +47,8 @@ function PrivacyPage() {
         </p>
         <p>
           <LegalStrong>Job Posting Data:</LegalStrong> When companies create job postings, we
-          collect the job title, description, requirements, location, type, experience level, salary
-          information, and custom screening questions.
+          collect the job title, description, location, type, experience level, salary information,
+          and custom screening questions.
         </p>
         <p>
           <LegalStrong>Application Data:</LegalStrong> When you apply to a job, we create an

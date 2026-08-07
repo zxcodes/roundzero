@@ -23,6 +23,7 @@ import { hasApplied } from "@/features/applications/server/functions";
 import { currentUserQueryKey, getCurrentUser } from "@/features/auth/server/functions";
 import { candidateLoginLink } from "@/features/auth/signup-search";
 import { getMyCandidateProfile } from "@/features/candidates/server/functions";
+import { JobDescriptionMarkdown } from "@/features/jobs/components/job-description-markdown";
 import { JobStatusBadge } from "@/features/jobs/components/job-status-badge";
 import { getPublicJobById } from "@/features/jobs/server/functions";
 import { cn } from "@/lib/utils";
@@ -126,7 +127,6 @@ function JobDetailPage() {
   const { user, isCompany } = Route.useRouteContext();
 
   const salary = formatSalaryFull(job.salaryMin, job.salaryMax, job.salaryCurrency);
-  const requirements: string[] = Array.isArray(job.requirements) ? job.requirements : [];
   const postedDate = formatDate(job.createdAt);
   const closingLabel = formatDaysLeft(job.expiresAt);
   const deadlineDate = job.expiresAt ? formatDate(job.expiresAt) : null;
@@ -180,9 +180,7 @@ function JobDetailPage() {
                   </Avatar>
 
                   <div className="min-w-0 space-y-1">
-                    <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-                      {job.title}
-                    </h1>
+                    <h1 className="text-2xl font-normal tracking-tight sm:text-3xl">{job.title}</h1>
                     <Link
                       to="/companies/$slug"
                       params={{ slug: job.companySlug }}
@@ -243,27 +241,7 @@ function JobDetailPage() {
           <div className="space-y-8 lg:col-span-2">
             {job.description ? (
               <section className="space-y-3 rounded-2xl bg-muted/30 px-6 py-5">
-                <h2 className="text-lg font-semibold tracking-tight">Description</h2>
-                <div className="text-sm leading-relaxed whitespace-pre-line text-foreground/90">
-                  {job.description}
-                </div>
-              </section>
-            ) : null}
-
-            {requirements.length > 0 ? (
-              <section className="space-y-3 rounded-2xl bg-muted/30 px-6 py-5">
-                <h2 className="text-lg font-semibold tracking-tight">Requirements</h2>
-                <ul className="space-y-2.5">
-                  {requirements.map((req, i) => (
-                    <li
-                      key={i}
-                      className="flex items-start gap-3 text-sm leading-relaxed text-foreground/90"
-                    >
-                      <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary/60" />
-                      {req}
-                    </li>
-                  ))}
-                </ul>
+                <JobDescriptionMarkdown>{job.description}</JobDescriptionMarkdown>
               </section>
             ) : null}
 

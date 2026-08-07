@@ -28,7 +28,6 @@ describe("platform admin metrics queries", () => {
       companyId: company.id,
       title: "Platform Metrics Job",
       description: "Test",
-      requirements: [],
       screeningQuestions: [],
       status: "open",
       location: null,

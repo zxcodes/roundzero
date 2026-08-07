@@ -16,7 +16,8 @@ import {
 const job = {
   id: "10000000-0000-4000-8000-000000000001",
   title: "Product Designer",
-  description: "Design accessible hiring workflows.",
+  description:
+    "Design accessible hiring workflows.\n\n## Requirements\n\n- Product design\n- User research",
   companyName: "Example & Co",
   companySlug: "example-and-co",
   createdAt: "2026-07-01T00:00:00.000Z",
@@ -27,7 +28,6 @@ const job = {
   salaryMax: 120_000,
   salaryCurrency: "USD",
   expiresAt: "2026-08-01T00:00:00.000Z",
-  requirements: ["Product design", "User research"],
 } satisfies JobPostingSchemaInput;
 
 describe("SEO metadata", () => {

@@ -8,7 +8,11 @@ export interface JobTemplate {
   data: Partial<JobFormData>;
 }
 
-export const JOB_TEMPLATES: JobTemplate[] = [
+type JobTemplateSource = Omit<JobTemplate, "data"> & {
+  data: Partial<JobFormData> & { requirements: string[] };
+};
+
+const JOB_TEMPLATE_SOURCES: JobTemplateSource[] = [
   {
     id: "junior_frontend",
     title: "Junior Frontend Engineer",
@@ -352,3 +356,15 @@ export const JOB_TEMPLATES: JobTemplate[] = [
     },
   },
 ];
+
+export const JOB_TEMPLATES: JobTemplate[] = JOB_TEMPLATE_SOURCES.map((template) => {
+  const { requirements, ...data } = template.data;
+  const requirementsMarkdown = requirements.map((requirement) => `- ${requirement}`).join("\n");
+  return {
+    ...template,
+    data: {
+      ...data,
+      description: `${data.description?.trimEnd() ?? ""}\n\n## Requirements\n\n${requirementsMarkdown}`,
+    },
+  };
+});

@@ -1,4 +1,5 @@
 import type { Sql } from "postgres";
+import { z } from "zod";
 
 import { dismissCompanyJobImportPrompt } from "@/features/companies/queries/queries_sql";
 import { readCompanyEntitlements } from "@/features/entitlements/server/enforcement";
@@ -40,7 +41,7 @@ import {
   jobImportSourcePlatformSchema,
 } from "../schemas";
 import { enrichJobImportCandidate } from "./enrichment";
-import { normalizeDescription, normalizeRequirements } from "./normalization";
+import { normalizeDescription } from "./normalization";
 
 type ImportItemRow =
   | createJobImportItemRow
@@ -50,22 +51,28 @@ type ImportItemRow =
   | reserveJobImportEnrichmentAttemptsRow
   | updateReadyJobImportItemRow;
 
+const legacyNormalizedPayloadSchema = z.looseObject({
+  description: z.string(),
+  requirements: z.array(z.string()).optional().default([]),
+});
+
 function parseStoredCandidate(row: ImportItemRow): JobImportCandidate {
+  const legacyPayload = legacyNormalizedPayloadSchema.parse(row.normalizedPayload);
+  const { requirements: legacyRequirements, ...payload } = legacyPayload;
+  const warnings = jobImportCandidateSchema.shape.warnings.parse(row.warnings);
   const candidate = jobImportCandidateSchema.parse({
-    job: row.normalizedPayload,
-    warnings: row.warnings,
-    inferredFields: row.inferredFields,
-  });
-  const warnings = [...candidate.warnings];
-  return {
-    ...candidate,
     job: {
-      ...candidate.job,
-      description: normalizeDescription(candidate.job.description, warnings),
-      requirements: normalizeRequirements(candidate.job.requirements, warnings),
+      ...payload,
+      description: normalizeDescription(legacyPayload.description, warnings, legacyRequirements),
     },
     warnings,
-  };
+    inferredFields: jobImportCandidateSchema.shape.inferredFields.parse(
+      Array.isArray(row.inferredFields)
+        ? row.inferredFields.filter((field) => field === "experienceLevel")
+        : [],
+    ),
+  });
+  return candidate;
 }
 
 function toItemResponse(row: ImportItemRow): JobImportItemResponse {
@@ -344,7 +351,6 @@ export async function updateJobImportItems(args: {
       const normalizedEdit = {
         ...edit.job,
         description: normalizeDescription(edit.job.description, warnings),
-        requirements: normalizeRequirements(edit.job.requirements, warnings),
       };
       const updated = await updateReadyJobImportItem(transaction, {
         id: edit.id,
@@ -468,7 +474,6 @@ export async function importSelectedJobDrafts(args: {
         companyId: args.companyId,
         title: job.title,
         description: job.description,
-        requirements: job.requirements,
         location: job.location,
         workplaceType: job.workplaceType,
         employmentType: job.employmentType,

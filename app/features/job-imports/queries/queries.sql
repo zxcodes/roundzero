@@ -87,7 +87,7 @@ ORDER BY i.created_at, i.id;
 
 -- name: createImportedJob :one
 INSERT INTO jobs (
-  company_id, title, description, requirements, screening_questions, status,
+  company_id, title, description, screening_questions, status,
   location, workplace_type, employment_type, experience_level,
   salary_min, salary_max, salary_currency, team_size, headcount,
   final_report_target, expires_at, source_platform, source_external_id,
@@ -97,7 +97,6 @@ VALUES (
   sqlc.arg('company_id')::uuid,
   sqlc.arg('title'),
   sqlc.arg('description'),
-  sqlc.arg('requirements')::jsonb,
   '[]'::jsonb,
   'draft',
   sqlc.narg('location'),
