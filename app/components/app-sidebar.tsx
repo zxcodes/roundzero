@@ -11,9 +11,11 @@ import {
   SecurityValidationIcon,
   Setting06Icon,
   UserGroupIcon,
+  WorkflowCircle01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
+import { useState } from "react";
 
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
@@ -27,8 +29,10 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/features/auth/provider";
+import { WorkflowGuideDialog } from "@/features/dashboard/components/workflow-guide-dialog";
 import { FeedbackDialog } from "@/features/feedback/components/feedback-dialog";
 import type { User } from "@/router";
 import type { CompanyMemberRole } from "@/shared/enums";
@@ -37,7 +41,8 @@ import { Logo } from "./public-layout";
 
 type SidebarNavItem = {
   title: string;
-  url: string;
+  url?: string;
+  onSelect?: () => void;
   icon: React.ReactNode;
   matchPrefix?: boolean;
 };
@@ -47,7 +52,11 @@ type SidebarNavSection = {
   items: SidebarNavItem[];
 };
 
-const buildCompanyNavSections = (showBilling: boolean, showTeam: boolean): SidebarNavSection[] => {
+const buildCompanyNavSections = (
+  showBilling: boolean,
+  showTeam: boolean,
+  onOpenGuide: () => void,
+): SidebarNavSection[] => {
   const sections: SidebarNavSection[] = [
     {
       label: "Hiring",
@@ -102,6 +111,11 @@ const buildCompanyNavSections = (showBilling: boolean, showTeam: boolean): Sideb
             ]
           : []),
         {
+          title: "How it works",
+          onSelect: onOpenGuide,
+          icon: <HugeiconsIcon icon={WorkflowCircle01Icon} strokeWidth={2} className="size-4" />,
+        },
+        {
           title: "Support",
           url: "/dashboard/support",
           icon: <HugeiconsIcon icon={CustomerService01Icon} strokeWidth={2} className="size-4" />,
@@ -118,7 +132,7 @@ const buildCompanyNavSections = (showBilling: boolean, showTeam: boolean): Sideb
   return sections.filter((section) => section.items.length > 0);
 };
 
-const buildCandidateNavSections = (): SidebarNavSection[] => [
+const buildCandidateNavSections = (onOpenGuide: () => void): SidebarNavSection[] => [
   {
     label: "Overview",
     items: [
@@ -154,6 +168,11 @@ const buildCandidateNavSections = (): SidebarNavSection[] => [
     label: "Account",
     items: [
       {
+        title: "How it works",
+        onSelect: onOpenGuide,
+        icon: <HugeiconsIcon icon={WorkflowCircle01Icon} strokeWidth={2} className="size-4" />,
+      },
+      {
         title: "Support",
         url: "/dashboard/support",
         icon: <HugeiconsIcon icon={CustomerService01Icon} strokeWidth={2} className="size-4" />,
@@ -178,10 +197,17 @@ export function AppSidebar({
   membershipRole: CompanyMemberRole | null;
 }) {
   const { signOut, isSigningOut } = useAuth();
+  const { setOpenMobile } = useSidebar();
+  const [guideOpen, setGuideOpen] = useState(false);
   const canManageTeam = membershipRole === "owner" || membershipRole === "admin";
+  const onOpenGuide = () => setGuideOpen(true);
+  const onGuideOpenChange = (open: boolean) => {
+    setGuideOpen(open);
+    if (!open) setOpenMobile(false);
+  };
   const navSections = isCompany
-    ? buildCompanyNavSections(membershipRole === "owner", canManageTeam)
-    : buildCandidateNavSections();
+    ? buildCompanyNavSections(membershipRole === "owner", canManageTeam, onOpenGuide)
+    : buildCandidateNavSections(onOpenGuide);
 
   if (user.isPlatformAdmin) {
     navSections.push({
@@ -236,6 +262,11 @@ export function AppSidebar({
         <FeedbackDialog />
         <NavUser user={user} onSignOut={signOut} isSigningOut={isSigningOut} />
       </SidebarFooter>
+      <WorkflowGuideDialog
+        open={guideOpen}
+        onOpenChange={onGuideOpenChange}
+        isCompany={isCompany}
+      />
     </Sidebar>
   );
 }

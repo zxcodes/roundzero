@@ -16,7 +16,8 @@ export function NavMain({
     label?: string;
     items: {
       title: string;
-      url: string;
+      url?: string;
+      onSelect?: () => void;
       icon?: React.ReactNode;
       matchPrefix?: boolean;
     }[];
@@ -34,6 +35,19 @@ export function NavMain({
           <SidebarGroupContent>
             <SidebarMenu>
               {section.items.map((item) => {
+                if (item.onSelect) {
+                  return (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton tooltip={item.title} onClick={item.onSelect}>
+                        {item.icon}
+                        <span>{item.title}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                }
+
+                if (!item.url) return null;
+
                 const matchPrefix = item.matchPrefix !== false;
                 const isActive =
                   pathname === item.url ||
