@@ -2,6 +2,7 @@ import type { Sql } from "postgres";
 import type { ReactElement } from "react";
 import { jsx } from "react/jsx-runtime";
 
+import { loginUrlForEmailAction } from "@/features/auth/signup-search";
 import { JobMatchDigestEmailTemplate } from "@/features/notifications/components/job-match-digest-email-template";
 import { NotificationEmailTemplate } from "@/features/notifications/components/notification-email-template";
 import {
@@ -57,6 +58,18 @@ function getNotificationFromName(type: string): string {
       return "RoundZero Matches";
     default:
       return "RoundZero";
+  }
+}
+
+function getNotificationRecipientRole(type: string): "candidate" | "company" {
+  switch (type) {
+    case "application_status_changed":
+    case "interview_invited":
+    case "position_filled":
+    case "job_match_digest":
+      return "candidate";
+    default:
+      return "company";
   }
 }
 
@@ -146,7 +159,13 @@ export async function deliverNotificationEmail(
   for (const [key, value] of Object.entries(presentation.params)) {
     pathname = pathname.replace(`$${key}`, String(value));
   }
-  const link = appUrl ? new URL(pathname, appUrl).toString() : null;
+  const link = appUrl
+    ? loginUrlForEmailAction(
+        appUrl,
+        getNotificationRecipientRole(input.notification.type),
+        pathname,
+      )
+    : null;
 
   const sendEmail = input.sendEmail;
   if (!sendEmail || (sendEmail === sendNotificationEmail && !isEmailDeliveryConfigured())) {
@@ -166,7 +185,11 @@ export async function deliverNotificationEmail(
       digestPayload?.success && appUrl
         ? jsx(JobMatchDigestEmailTemplate, {
             jobs: digestPayload.data.jobs,
-            jobsUrl: new URL("/dashboard/jobs/?candidateTab=for-you", appUrl).toString(),
+            jobsUrl: loginUrlForEmailAction(
+              appUrl,
+              "candidate",
+              "/dashboard/jobs/?candidateTab=for-you",
+            ),
           })
         : jsx(NotificationEmailTemplate, {
             previewText:

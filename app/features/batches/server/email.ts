@@ -1,5 +1,6 @@
 import { jsx } from "react/jsx-runtime";
 
+import { loginUrlForEmailAction } from "@/features/auth/signup-search";
 import { BatchDigestEmailTemplate } from "@/features/notifications/components/batch-digest-email-template";
 import {
   getNotificationById,
@@ -38,7 +39,7 @@ export async function sendBatchDigestEmail(input: BatchDigestEmailInput): Promis
 
     const appUrl = appEnv.APP_URL;
     const batchUrl = appUrl
-      ? new URL(`/dashboard/job-batches/${input.batchId}`, appUrl).toString()
+      ? loginUrlForEmailAction(appUrl, "company", `/dashboard/job-batches/${input.batchId}`)
       : `/dashboard/job-batches/${input.batchId}`;
 
     try {

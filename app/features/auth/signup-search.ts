@@ -82,3 +82,14 @@ export function candidateLoginLink(redirectTo: string) {
     search: toSignupRouteSearch(parseSignupSearch({ redirect: redirectTo })),
   });
 }
+
+export function loginUrlForEmailAction(
+  appUrl: string,
+  role: "candidate" | "company",
+  redirectTo: string,
+) {
+  const loginUrl = new URL(`/${role}/login`, appUrl);
+  const redirect = sanitizeRedirect(redirectTo);
+  if (redirect) loginUrl.searchParams.set("redirect", redirect);
+  return loginUrl.toString();
+}

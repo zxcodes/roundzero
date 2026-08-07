@@ -5,6 +5,7 @@ import type { Sql } from "postgres";
 import { jsx } from "react/jsx-runtime";
 import { z } from "zod";
 
+import { loginUrlForEmailAction } from "@/features/auth/signup-search";
 import {
   type CompanyTeamNotificationDelivery,
   notifyCompanyTeam,
@@ -655,10 +656,11 @@ export function sendReportReadyEmail(
 
     const appUrl = env.APP_URL ?? "";
     const reportUrl = appUrl
-      ? new URL(
-          `/dashboard/applicant-reports/${interviewData.interview.applicationId}`,
+      ? loginUrlForEmailAction(
           appUrl,
-        ).toString()
+          "company",
+          `/dashboard/applicant-reports/${interviewData.interview.applicationId}`,
+        )
       : "";
 
     const failures: unknown[] = [];
