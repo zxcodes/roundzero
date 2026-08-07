@@ -75,9 +75,6 @@ export class JobMatchingWorkflow extends WorkflowEntrypoint<Env, JobMatchingWork
         return {
           title: job.title,
           description: job.description,
-          requirements: Array.isArray(job.requirements)
-            ? job.requirements.filter((value): value is string => typeof value === "string")
-            : [],
           experienceLevel: job.experienceLevel,
           sourceHash: request.requestedSourceHash,
         };

@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { MAX_JOB_DESCRIPTION_LENGTH } from "@/features/jobs/constants";
 import {
   employmentTypeSchema,
   experienceLevelSchema,
@@ -11,16 +12,7 @@ import { nullableTrimmedString, requiredTrimmedString } from "@/shared/validatio
 
 const jobFieldsBaseSchema = z.object({
   title: requiredTrimmedString(200, "Job title is required"),
-  description: requiredTrimmedString(5000, "Job description is required"),
-  requirements: z
-    .array(
-      z
-        .string()
-        .trim()
-        .min(1, "Requirement cannot be empty")
-        .max(200, "Requirement must be under 200 characters"),
-    )
-    .default([]),
+  description: requiredTrimmedString(MAX_JOB_DESCRIPTION_LENGTH, "Job description is required"),
   screeningQuestions: z
     .array(
       z

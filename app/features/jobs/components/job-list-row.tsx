@@ -3,6 +3,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { Link, useNavigate } from "@tanstack/react-router";
 
 import { Badge } from "@/components/ui/badge";
+import { markdownExcerpt } from "@/features/jobs/markdown";
 import { cn } from "@/lib/utils";
 import type { EmploymentType, ExperienceLevel, WorkplaceType } from "@/shared/enums";
 import { employmentTypeLabels, experienceLevelLabels, workplaceTypeLabels } from "@/shared/enums";
@@ -73,7 +74,7 @@ export function JobListRow({
     details ??
     (job.description ? (
       <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-        {job.description}
+        {markdownExcerpt(job.description, 240)}
       </p>
     ) : null);
 

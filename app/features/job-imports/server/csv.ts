@@ -11,7 +11,6 @@ import {
   normalizeDescription,
   normalizeEmploymentType,
   normalizeExperienceLevel,
-  normalizeRequirements,
   normalizeWorkplaceType,
 } from "./normalization";
 
@@ -204,7 +203,11 @@ export async function parseJobImportCsv(csv: string): Promise<JobImportCandidate
         }
       }
 
-      const normalizedDescription = normalizeDescription(description, warnings);
+      const normalizedDescription = normalizeDescription(
+        description,
+        warnings,
+        (record.get("requirements") ?? "").split("|").filter(Boolean),
+      );
       const externalId =
         record.get("external_id") ||
         (await fingerprint(
@@ -220,10 +223,6 @@ export async function parseJobImportCsv(csv: string): Promise<JobImportCandidate
         sourceUpdatedAt: null,
         title: title.trim().slice(0, 200),
         description: normalizedDescription,
-        requirements: normalizeRequirements(
-          (record.get("requirements") ?? "").split("|").filter(Boolean),
-          warnings,
-        ),
         location: record.get("location")?.slice(0, 200) || null,
         workplaceType,
         employmentType,

@@ -166,7 +166,7 @@ High-level responsibilities:
 - `dashboard`: role-specific metrics and dashboard data
 - `entitlements`: `deriveEntitlements()`, server enforcement, `useEntitlements()` hook
 - `interviews`: interview lifecycle, routes, agent chat hooks/components, server functions
-- `jobs`: job CRUD, lifecycle, requirements, screening questions
+- `jobs`: job CRUD, lifecycle, Markdown descriptions, screening questions
 - `notifications`: inbox UI, payload rendering, email delivery
 - `pre-evaluations`: pre-screening queries and server functions
 - `reports`: post-evaluation reports, report pages, reusable report components
@@ -265,8 +265,7 @@ Source of truth:
 
 - owned by a company
 - stores:
-  - title, description
-  - requirements
+  - title and canonical Markdown description (including requirements/qualifications)
   - screening questions
   - lifecycle status (`draft`, `open`, `closed`)
   - salary / workplace / experience fields

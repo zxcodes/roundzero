@@ -68,7 +68,6 @@ export const createJob = createServerFn({ method: "POST" })
       companyId: context.company.id,
       title: data.title,
       description: data.description,
-      requirements: data.requirements,
       screeningQuestions: data.screeningQuestions,
       status: data.status,
       location: data.location ?? null,
@@ -234,7 +233,6 @@ export const updateJob = createServerFn({ method: "POST" })
       companyId: context.company.id,
       title: data.title,
       description: data.description,
-      requirements: data.requirements,
       screeningQuestions: data.screeningQuestions,
       status: data.status,
       location: data.location ?? null,
@@ -412,7 +410,6 @@ const publishCompanyJobs = async (companyId: string, requestedIds: string[]) => 
         companyId,
         title: job.title,
         description: job.description,
-        requirements: job.requirements,
         screeningQuestions: job.screeningQuestions,
         status: "open",
         location: job.location,
@@ -596,14 +593,14 @@ const generateJobPromptSchema = z.object({
 
 const SYSTEM_PROMPT = `You are an expert technical recruiter and job description writer. Given a brief description of a role, generate a complete, detailed, and compelling job posting.
 
-IMPORTANT: Do NOT prepend colons (:), dashes (-), bullets, or any markdown formatting to text values. The title should be "Senior UX Designer" not ": Senior UX Designer". The description should be plain paragraphs, not a list.
+The title must be plain text. The description must be one complete Markdown document using only paragraphs, headings, bold, italic, strikethrough, inline code, blockquotes, horizontal rules, ordered and unordered lists, and links. Do not use raw HTML, images, tables, task lists, fenced code blocks, or MDX.
 
 Never refuse, apologize, or ask for more input in any field. Do not use titles like "Error" or descriptions that explain what information is missing. Even brief prompts should be expanded into a complete posting — infer reasonable role details and requirements when the user omits them.
 
 Guidelines:
-- Write a professional, engaging job description that would attract top-tier candidates
-- Requirements should be specific and actionable (e.g., "5+ years of React experience" not just "React experience")
-- Include 4-8 relevant requirements based on the role
+- Write a professional, engaging job description that would attract top-tier candidates.
+- Include clear Markdown sections for the role, responsibilities, and requirements or qualifications.
+- Include 4-8 specific, actionable qualifications (e.g., "5+ years of React experience" not just "React experience") inside the description.
 - Always return an empty screeningQuestions array. Companies add must-know logistics constraints themselves.
 - Salary should be realistic for the role and location; if unsure, use reasonable market ranges
 - Team size and headcount should be realistic; use null if not inferable from the prompt
@@ -643,7 +640,7 @@ function cleanAiJobOutput(output: Record<string, unknown>): Record<string, unkno
     }
   }
 
-  const arrayStringFields = ["requirements", "screeningQuestions"];
+  const arrayStringFields = ["screeningQuestions"];
   for (const key of arrayStringFields) {
     const arr = cleaned[key];
     if (Array.isArray(arr)) {
@@ -654,11 +651,7 @@ function cleanAiJobOutput(output: Record<string, unknown>): Record<string, unkno
   }
 
   // Sanity check: cap array lengths to prevent model from generating excessive lists
-  const MAX_REQUIREMENTS = 12;
   const MAX_SCREENING_QUESTIONS = 12;
-  if (Array.isArray(cleaned.requirements) && cleaned.requirements.length > MAX_REQUIREMENTS) {
-    cleaned.requirements = cleaned.requirements.slice(0, MAX_REQUIREMENTS);
-  }
   if (
     Array.isArray(cleaned.screeningQuestions) &&
     cleaned.screeningQuestions.length > MAX_SCREENING_QUESTIONS
@@ -752,7 +745,7 @@ export const generateJobWithAI = createServerFn({ method: "POST" })
 
       if (!validated.success) {
         throw new Error(
-          "The draft was incomplete. Add a bit more detail about the role, requirements, and work setup, then try again.",
+          "The draft was incomplete. Add a bit more detail about the role, qualifications, and work setup, then try again.",
         );
       }
 

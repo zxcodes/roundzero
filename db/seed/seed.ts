@@ -633,20 +633,20 @@ async function seedJobs(companyId: string) {
   for (let i = 0; i < jobTemplates.length; i++) {
     const template = jobTemplates[i]!;
     const jobId = makeUuidFromSeed(`dashboard-seed-job-${companyId}-${i}`);
+    const description = `${template.description.trimEnd()}\n\n## Requirements\n\n${template.requirements.map((requirement) => `- ${requirement}`).join("\n")}`;
 
     const expiresInDays = template.status === "open" ? randomInt(`${jobId}-expires`, 8, 28) : 45;
     const expiresAt = new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000);
 
     await sql`
       INSERT INTO jobs (
-        id, company_id, title, description, requirements, screening_questions, status,
+        id, company_id, title, description, screening_questions, status,
         location, workplace_type, employment_type, experience_level,
         salary_min, salary_max, salary_currency, team_size, headcount, final_report_target,
         expires_at
       ) VALUES (
         ${jobId}, ${companyId}, ${template.title},
-        ${template.description},
-        ${sql.json(template.requirements)},
+        ${description},
         ${sql.json(screeningQuestions)},
         ${template.status},
         ${template.workplace === "remote" ? "Remote (US timezones)" : "San Francisco, CA"},
@@ -665,7 +665,6 @@ async function seedJobs(companyId: string) {
       SET
         title = EXCLUDED.title,
         description = EXCLUDED.description,
-        requirements = EXCLUDED.requirements,
         screening_questions = EXCLUDED.screening_questions,
         status = EXCLUDED.status,
         location = EXCLUDED.location,
@@ -690,8 +689,7 @@ async function seedJobs(companyId: string) {
     if (template.status === "open") {
       const sourceHash = await hashStableValue({
         title: template.title.trim(),
-        description: template.description.trim(),
-        requirements: template.requirements,
+        description: description.trim(),
         experienceLevel: template.experience,
         profileVersion: MATCHING_CONFIG.jobProfileVersion,
       });

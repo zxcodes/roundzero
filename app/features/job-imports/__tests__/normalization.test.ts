@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { htmlToPlainText } from "../server/normalization";
+import { MAX_JOB_DESCRIPTION_LENGTH } from "@/features/jobs/constants";
+
+import type { JobImportWarning } from "../schemas";
+import { htmlToMarkdown, htmlToPlainText, normalizeDescription } from "../server/normalization";
 
 describe("job import description normalization", () => {
   it("preserves readable structure while removing HTML", () => {
@@ -10,8 +13,8 @@ describe("job import description normalization", () => {
       "<ul><li>Own the roadmap</li><li>Support customers</li></ul>",
     ].join("");
 
-    expect(htmlToPlainText(html)).toBe(
-      "Who we are\n\nBuild the future with us.\n\n- Own the roadmap\n- Support customers",
+    expect(htmlToMarkdown(html)).toBe(
+      "## Who we are\n\nBuild the future with us.\n\n- Own the roadmap\n- Support customers",
     );
   });
 
@@ -32,9 +35,45 @@ describe("job import description normalization", () => {
     ).toBe("Visible");
   });
 
-  it("is idempotent and preserves plain-text comparisons", () => {
+  it("is idempotent and preserves Markdown input", () => {
     const text = "Use a value < 5 and a result > 2.\n\n- Explain why.";
 
-    expect(htmlToPlainText(htmlToPlainText(text))).toBe(text);
+    expect(htmlToMarkdown(htmlToMarkdown(text))).toBe(text);
+    expect(htmlToPlainText(text)).toBe("Use a value < 5 and a result > 2.\n\nExplain why.");
+  });
+
+  it("preserves TypeScript generic syntax in plain Markdown", () => {
+    const text = "Use Array<T>, Map<K, V>, and Promise<Result>.";
+
+    expect(htmlToMarkdown(text)).toBe(text);
+  });
+
+  it("creates a new requirements section after later description sections", () => {
+    const description = [
+      "## Requirements",
+      "",
+      "- TypeScript",
+      "",
+      "## Benefits",
+      "",
+      "- Remote work",
+    ].join("\n");
+
+    expect(normalizeDescription(description, [], ["TypeScript", "PostgreSQL"])).toBe(
+      `${description}\n\n## Requirements\n\n- PostgreSQL`,
+    );
+  });
+
+  it("reserves space for imported requirements when shortening a description", () => {
+    const warnings: JobImportWarning[] = [];
+    const description = `## About the role\n\n${"word ".repeat(MAX_JOB_DESCRIPTION_LENGTH)}`;
+
+    const normalized = normalizeDescription(description, warnings, ["TypeScript", "PostgreSQL"]);
+
+    expect(normalized.length).toBeLessThanOrEqual(MAX_JOB_DESCRIPTION_LENGTH);
+    expect(normalized.endsWith("## Requirements\n\n- TypeScript\n- PostgreSQL")).toBe(true);
+    expect(warnings).toContainEqual(
+      expect.objectContaining({ code: "description_shortened", field: "description" }),
+    );
   });
 });

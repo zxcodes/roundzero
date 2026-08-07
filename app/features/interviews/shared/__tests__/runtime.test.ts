@@ -52,7 +52,6 @@ const seedInterviewContext = async () => {
       company_id,
       title,
       description,
-      requirements,
       screening_questions,
       status,
       final_report_target
@@ -60,8 +59,7 @@ const seedInterviewContext = async () => {
     VALUES (
       ${company.id},
       ${"Backend Engineer"},
-      ${"Build APIs and data pipelines"},
-      ${["TypeScript", "Postgres"]},
+      ${"Build APIs and data pipelines\n\n## Requirements\n\n- TypeScript\n- Postgres"},
       ${["What is your notice period?"]},
       ${"open"},
       ${5}
@@ -192,7 +190,7 @@ describe("interview runtime metadata", () => {
     const metadata = await ensureInterviewRuntimeMetadata(sql, interview!);
     expect(metadata.jobSnapshot?.jobDescription).toContain("Build APIs");
     expect(metadata.jobSnapshot?.customQuestions).toEqual(["What is your notice period?"]);
-    expect(metadata.jobSnapshot?.jobRequirements).toEqual(["TypeScript", "Postgres"]);
+    expect(metadata.jobSnapshot?.jobRequirements).toEqual([]);
     expect(Object.keys(metadata)).not.toContain("contextState");
     expect(Object.keys(metadata)).not.toContain("preEvaluationScore");
 

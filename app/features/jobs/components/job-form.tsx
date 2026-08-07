@@ -17,11 +17,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Textarea } from "@/components/ui/textarea";
 import { UnsavedChangesBar } from "@/components/unsaved-changes-bar";
 import { FREE_REPORT_DEFAULTS, reportTargetRangeLabel } from "@/features/entitlements/entitlements";
 import { useEntitlements } from "@/features/entitlements/hooks/use-entitlements";
+import { JobDescriptionEditor } from "@/features/jobs/components/job-description-editor";
 import { JobPreviewDialog } from "@/features/jobs/components/job-preview-dialog";
+import { MAX_JOB_DESCRIPTION_LENGTH } from "@/features/jobs/constants";
 import { formatDate } from "@/shared/date";
 import {
   type EmploymentType,
@@ -39,7 +40,6 @@ import {
 export interface JobFormData {
   title: string;
   description: string;
-  requirements: string[];
   screeningQuestions: string[];
   status: JobStatus;
   location: string | null;
@@ -59,7 +59,6 @@ export interface JobFormData {
 export type JobFormSource = {
   title: string;
   description: string;
-  requirements: unknown;
   screeningQuestions: unknown;
   status: string;
   location: string | null;
@@ -91,7 +90,6 @@ export function jobToFormDefaults(job: JobFormSource): JobFormData {
   return {
     title: job.title,
     description: job.description,
-    requirements: asStringList(job.requirements),
     screeningQuestions: asStringList(job.screeningQuestions),
     status,
     location: job.location,
@@ -120,8 +118,7 @@ const optionalPositiveInt = z
 const formSchema = z
   .object({
     title: requiredString(200, "Job title is required"),
-    description: requiredString(5000, "Job description is required"),
-    requirements: z.array(z.string()),
+    description: requiredString(MAX_JOB_DESCRIPTION_LENGTH, "Job description is required"),
     screeningQuestions: z.array(z.string()),
     status: z.enum(["draft", "open", "closed"]),
     location: z.string().max(200),
@@ -209,7 +206,6 @@ export function JobForm({
   onCancel?: () => void;
   isSubmitting?: boolean;
 }) {
-  const [requirementInput, setRequirementInput] = useState("");
   const [screeningQuestionInput, setScreeningQuestionInput] = useState("");
   const [deadlineOpen, setDeadlineOpen] = useState(false);
 
@@ -255,7 +251,6 @@ export function JobForm({
     defaultValues: {
       title: defaultValues?.title ?? "",
       description: defaultValues?.description ?? "",
-      requirements: defaultValues?.requirements ?? ([] as string[]),
       screeningQuestions: defaultValues?.screeningQuestions ?? ([] as string[]),
       status: defaultValues?.status ?? ("draft" as string),
       location: defaultValues?.location ?? "",
@@ -284,7 +279,6 @@ export function JobForm({
       await onSubmit({
         title: value.title,
         description: value.description,
-        requirements: value.requirements,
         screeningQuestions: value.screeningQuestions,
         status: value.status as JobStatus,
         location: value.location || null,
@@ -305,9 +299,6 @@ export function JobForm({
   const onFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     void form.handleSubmit();
-  };
-  const onRequirementInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setRequirementInput(e.target.value);
   };
   const onScreeningQuestionInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setScreeningQuestionInput(e.target.value);
@@ -363,8 +354,8 @@ export function JobForm({
         <form.Field
           name="description"
           validators={{
-            onBlur: requiredString(5000, "Job description is required"),
-            onSubmit: requiredString(5000, "Job description is required"),
+            onBlur: requiredString(MAX_JOB_DESCRIPTION_LENGTH, "Job description is required"),
+            onSubmit: requiredString(MAX_JOB_DESCRIPTION_LENGTH, "Job description is required"),
           }}
         >
           {(field) => {
@@ -374,17 +365,18 @@ export function JobForm({
                 <FieldLabel htmlFor={field.name}>
                   Description <span className="text-destructive">*</span>
                 </FieldLabel>
-                <Textarea
+                <JobDescriptionEditor
                   id={field.name}
-                  placeholder="Describe the role, responsibilities, and what makes this opportunity exciting..."
-                  required
-                  maxLength={5000}
-                  rows={6}
                   value={field.state.value}
                   onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  aria-invalid={isInvalid}
+                  onChange={field.handleChange}
+                  invalid={isInvalid}
                 />
+                <p className="text-muted-foreground text-xs">
+                  Paste Markdown from ChatGPT or format the complete role here, including
+                  responsibilities and qualifications. {field.state.value.length.toLocaleString()} /{" "}
+                  {MAX_JOB_DESCRIPTION_LENGTH.toLocaleString()} characters
+                </p>
                 {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
               </Field>
             );
@@ -860,90 +852,6 @@ export function JobForm({
         </div>
       </div>
 
-      <Separator />
-
-      <div className="space-y-4">
-        <h3 className="text-base font-semibold tracking-tight">
-          Requirements <span className="text-destructive">*</span>
-        </h3>
-        <form.Field name="requirements" mode="array">
-          {(reqField) => {
-            const onRequirementInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-              const trimmed = requirementInput.trim();
-              if (e.key === "Enter" && trimmed) {
-                e.preventDefault();
-                if (!reqField.state.value.includes(trimmed)) {
-                  reqField.pushValue(trimmed);
-                }
-                setRequirementInput("");
-              }
-            };
-            const onAddRequirement = () => {
-              const trimmed = requirementInput.trim();
-              if (trimmed && !reqField.state.value.includes(trimmed)) {
-                reqField.pushValue(trimmed);
-              }
-              setRequirementInput("");
-            };
-            const onRemoveRequirement = (index: number) => reqField.removeValue(index);
-
-            return (
-              <div className="space-y-2">
-                <p className="text-xs text-muted-foreground">
-                  Skills, experience, and qualifications candidates need for this role. The AI uses
-                  these to screen résumés and guide the interview.
-                </p>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="e.g. 3+ years React experience"
-                    value={requirementInput}
-                    onChange={onRequirementInputChange}
-                    onKeyDown={onRequirementInputKeyDown}
-                    maxLength={200}
-                  />
-                  <Button type="button" variant="outline" size="icon" onClick={onAddRequirement}>
-                    <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-4" />
-                  </Button>
-                </div>
-                {reqField.state.value.length > 0 ? (
-                  <ul className="mt-2 space-y-1">
-                    {reqField.state.value.map((req, i) => {
-                      const onRemoveClick = () => onRemoveRequirement(i);
-                      return (
-                        <li
-                          key={`${req}-${i}`}
-                          className="flex items-center justify-between gap-2 rounded-md bg-muted px-3 py-2 text-sm"
-                        >
-                          <span className="flex items-center gap-2">
-                            <span className="block size-1 shrink-0 rounded-full bg-primary" />
-                            {req}
-                          </span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon-xs"
-                            onClick={onRemoveClick}
-                            className="shrink-0 text-muted-foreground hover:text-foreground"
-                          >
-                            <HugeiconsIcon
-                              icon={Cancel01Icon}
-                              strokeWidth={2}
-                              className="size-3.5"
-                            />
-                          </Button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                ) : null}
-              </div>
-            );
-          }}
-        </form.Field>
-      </div>
-
-      <Separator />
-
       <div className="space-y-4">
         <form.Field name="status">
           {(field) => {
@@ -995,7 +903,6 @@ export function JobForm({
                     data={{
                       title: values.title,
                       description: values.description,
-                      requirements: values.requirements,
                       companyName,
                       location: values.location || null,
                       workplaceType: values.workplaceType || null,

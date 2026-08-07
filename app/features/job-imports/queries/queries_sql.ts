@@ -363,7 +363,7 @@ export async function listSelectedJobImportItemsForCompany(sql: Sql, args: listS
 
 export const createImportedJobQuery = `-- name: createImportedJob :one
 INSERT INTO jobs (
-  company_id, title, description, requirements, screening_questions, status,
+  company_id, title, description, screening_questions, status,
   location, workplace_type, employment_type, experience_level,
   salary_min, salary_max, salary_currency, team_size, headcount,
   final_report_target, expires_at, source_platform, source_external_id,
@@ -373,36 +373,34 @@ VALUES (
   $1::uuid,
   $2,
   $3,
-  $4::jsonb,
   '[]'::jsonb,
   'draft',
+  $4,
   $5,
   $6,
   $7,
-  $8,
+  $8::int,
   $9::int,
-  $10::int,
-  $11,
+  $10,
   NULL,
+  $11::int,
   $12::int,
-  $13::int,
-  $14::timestamptz,
+  $13::timestamptz,
+  $14,
   $15,
   $16,
-  $17,
-  $18::timestamptz,
-  $19::uuid
+  $17::timestamptz,
+  $18::uuid
 )
 ON CONFLICT (company_id, source_platform, source_external_id)
   WHERE source_platform IS NOT NULL AND source_external_id IS NOT NULL
 DO NOTHING
-RETURNING id, company_id, title, description, requirements, screening_questions, status, location, workplace_type, employment_type, experience_level, salary_min, salary_max, salary_currency, team_size, headcount, final_report_target, expires_at, archived_at, created_at, updated_at, source_platform, source_external_id, source_url, source_updated_at, import_batch_id`;
+RETURNING id, company_id, title, description, screening_questions, status, location, workplace_type, employment_type, experience_level, salary_min, salary_max, salary_currency, team_size, headcount, final_report_target, expires_at, archived_at, created_at, updated_at, source_platform, source_external_id, source_url, source_updated_at, import_batch_id`;
 
 export interface createImportedJobArgs {
     companyId: string;
     title: string;
     description: string;
-    requirements: any;
     location: string | null;
     workplaceType: string | null;
     employmentType: string | null;
@@ -425,7 +423,6 @@ export interface createImportedJobRow {
     companyId: string;
     title: string;
     description: string;
-    requirements: any;
     screeningQuestions: any;
     status: string;
     location: string | null;
@@ -450,7 +447,7 @@ export interface createImportedJobRow {
 }
 
 export async function createImportedJob(sql: Sql, args: createImportedJobArgs): Promise<createImportedJobRow | null> {
-    const rows = await sql.unsafe(createImportedJobQuery, [args.companyId, args.title, args.description, args.requirements, args.location, args.workplaceType, args.employmentType, args.experienceLevel, args.salaryMin, args.salaryMax, args.salaryCurrency, args.headcount, args.finalReportTarget, args.expiresAt, args.sourcePlatform, args.sourceExternalId, args.sourceUrl, args.sourceUpdatedAt, args.importBatchId]).values();
+    const rows = await sql.unsafe(createImportedJobQuery, [args.companyId, args.title, args.description, args.location, args.workplaceType, args.employmentType, args.experienceLevel, args.salaryMin, args.salaryMax, args.salaryCurrency, args.headcount, args.finalReportTarget, args.expiresAt, args.sourcePlatform, args.sourceExternalId, args.sourceUrl, args.sourceUpdatedAt, args.importBatchId]).values();
     if (rows.length !== 1) {
         return null;
     }
@@ -460,28 +457,27 @@ export async function createImportedJob(sql: Sql, args: createImportedJobArgs): 
         companyId: row[1],
         title: row[2],
         description: row[3],
-        requirements: row[4],
-        screeningQuestions: row[5],
-        status: row[6],
-        location: row[7],
-        workplaceType: row[8],
-        employmentType: row[9],
-        experienceLevel: row[10],
-        salaryMin: row[11],
-        salaryMax: row[12],
-        salaryCurrency: row[13],
-        teamSize: row[14],
-        headcount: row[15],
-        finalReportTarget: row[16],
-        expiresAt: row[17],
-        archivedAt: row[18],
-        createdAt: row[19],
-        updatedAt: row[20],
-        sourcePlatform: row[21],
-        sourceExternalId: row[22],
-        sourceUrl: row[23],
-        sourceUpdatedAt: row[24],
-        importBatchId: row[25]
+        screeningQuestions: row[4],
+        status: row[5],
+        location: row[6],
+        workplaceType: row[7],
+        employmentType: row[8],
+        experienceLevel: row[9],
+        salaryMin: row[10],
+        salaryMax: row[11],
+        salaryCurrency: row[12],
+        teamSize: row[13],
+        headcount: row[14],
+        finalReportTarget: row[15],
+        expiresAt: row[16],
+        archivedAt: row[17],
+        createdAt: row[18],
+        updatedAt: row[19],
+        sourcePlatform: row[20],
+        sourceExternalId: row[21],
+        sourceUrl: row[22],
+        sourceUpdatedAt: row[23],
+        importBatchId: row[24]
     };
 }
 

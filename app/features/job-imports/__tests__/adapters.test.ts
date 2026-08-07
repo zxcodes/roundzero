@@ -47,8 +47,9 @@ describe("parseJobImportSource", () => {
       employmentType: "full_time",
       salaryMin: 100000,
       salaryMax: 150000,
-      requirements: ["TypeScript", "5 years experience"],
     });
+    expect(candidate.job.description).toContain("TypeScript");
+    expect(candidate.job.description).toContain("5 years experience");
   });
 
   it("normalizes a single Lever response", () => {
@@ -133,7 +134,6 @@ describe("parseJobImportSource", () => {
       externalId: "smart-1",
       title: "Product Engineer",
       description: "Build reliable products.\n\nTypeScript",
-      requirements: ["TypeScript"],
     });
   });
 

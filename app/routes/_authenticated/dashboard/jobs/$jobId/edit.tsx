@@ -70,7 +70,7 @@ function EditJobPage() {
         <div className="space-y-1">
           <h2 className="text-base font-semibold tracking-tight">Job details</h2>
           <p className="text-sm text-muted-foreground">
-            Provide a clear title, description, and requirements to attract the right candidates.
+            Keep the title and complete Markdown description clear for candidates.
           </p>
         </div>
         <JobForm

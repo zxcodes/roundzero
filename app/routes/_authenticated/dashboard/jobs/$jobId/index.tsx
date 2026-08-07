@@ -12,6 +12,7 @@ import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { DashboardJobDetailSkeleton } from "@/components/route-skeletons";
 import { Separator } from "@/components/ui/separator";
 import { CandidateApplySection } from "@/features/applications/components/candidate-apply-section";
+import { JobDescriptionMarkdown } from "@/features/jobs/components/job-description-markdown";
 import { JobStatusBadge } from "@/features/jobs/components/job-status-badge";
 import { formatDate, formatDaysLeft } from "@/shared/date";
 import {
@@ -46,7 +47,6 @@ function JobDetailPage() {
   }
   const { job, alreadyApplied, candidateProfile } = data;
 
-  const requirements: string[] = Array.isArray(job.requirements) ? job.requirements : [];
   const salary = formatSalaryFull(job.salaryMin, job.salaryMax, job.salaryCurrency);
 
   return (
@@ -82,23 +82,8 @@ function JobDetailPage() {
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
           <section className="space-y-3 rounded-2xl bg-muted/30 px-5 py-4 md:px-6">
-            <h2 className="text-lg font-semibold tracking-tight">Description</h2>
-            <p className="text-sm leading-relaxed whitespace-pre-wrap">{job.description}</p>
+            <JobDescriptionMarkdown>{job.description}</JobDescriptionMarkdown>
           </section>
-
-          {requirements.length > 0 ? (
-            <section className="space-y-3 rounded-2xl bg-muted/30 px-5 py-4 md:px-6">
-              <h2 className="text-lg font-semibold tracking-tight">Requirements</h2>
-              <ul className="space-y-2">
-                {requirements.map((req, i) => (
-                  <li key={`${req}-${i}`} className="flex items-start gap-2.5 text-sm">
-                    <span className="mt-2 block size-1 shrink-0 rounded-full bg-primary" />
-                    {req}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
         </div>
 
         <div className="space-y-5">

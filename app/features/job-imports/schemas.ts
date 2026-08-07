@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { MAX_JOB_DESCRIPTION_LENGTH } from "@/features/jobs/constants";
 import {
   employmentTypeSchema,
   experienceLevelSchema,
@@ -34,8 +35,7 @@ export const normalizedJobImportSchema = z
     sourceUrl: z.url().max(2_000).nullable(),
     sourceUpdatedAt: z.iso.datetime({ offset: true }).nullable(),
     title: z.string().trim().min(1).max(200),
-    description: z.string().trim().min(1).max(5_000),
-    requirements: z.array(z.string().trim().min(1).max(200)).max(30),
+    description: z.string().trim().min(1).max(MAX_JOB_DESCRIPTION_LENGTH),
     location: z.string().trim().min(1).max(200).nullable(),
     workplaceType: workplaceTypeSchema.nullable(),
     employmentType: employmentTypeSchema.nullable(),
@@ -52,7 +52,7 @@ export type NormalizedJobImport = z.infer<typeof normalizedJobImportSchema>;
 export const jobImportCandidateSchema = z.object({
   job: normalizedJobImportSchema,
   warnings: z.array(jobImportWarningSchema),
-  inferredFields: z.array(z.enum(["requirements", "experienceLevel"])),
+  inferredFields: z.array(z.literal("experienceLevel")),
 });
 export type JobImportCandidate = z.infer<typeof jobImportCandidateSchema>;
 
@@ -112,7 +112,7 @@ export const jobImportItemResponseSchema = z.object({
   status: z.enum(["ready", "duplicate", "imported", "failed"]),
   job: normalizedJobImportSchema,
   warnings: z.array(jobImportWarningSchema),
-  inferredFields: z.array(z.enum(["requirements", "experienceLevel"])),
+  inferredFields: z.array(z.literal("experienceLevel")),
   error: z.string().nullable(),
   importedJobId: z.string().uuid().nullable(),
 });
@@ -129,7 +129,6 @@ export type JobImportPreview = z.infer<typeof jobImportPreviewSchema>;
 
 export const enrichmentGenerationSchema = z
   .object({
-    requirements: z.array(z.string().trim().min(1).max(200)).max(15),
     experienceLevel: experienceLevelSchema.nullable(),
   })
   .strict();

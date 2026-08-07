@@ -15,7 +15,6 @@ import {
   normalizeDescription,
   normalizeEmploymentType,
   normalizeExperienceLevel,
-  normalizeRequirements,
   normalizeSalary,
   normalizeWorkplaceType,
 } from "./normalization";
@@ -103,8 +102,7 @@ function candidate(args: {
     sourceUrl: args.sourceUrl,
     sourceUpdatedAt: isoDate(args.sourceUpdatedAt),
     title: titleWithWarning(args.title, warnings),
-    description: normalizeDescription(args.description, warnings),
-    requirements: normalizeRequirements(args.requirements ?? [], warnings),
+    description: normalizeDescription(args.description, warnings, args.requirements),
     location: args.location ? htmlToPlainText(args.location).slice(0, 200) || null : null,
     workplaceType: normalizeWorkplaceType(args.workplaceType),
     employmentType: normalizeEmploymentType(args.employmentType),
