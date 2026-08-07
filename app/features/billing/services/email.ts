@@ -2,6 +2,7 @@ import type { Sql } from "postgres";
 import { jsx } from "react/jsx-runtime";
 
 import { getUserById } from "@/features/auth/queries/queries_sql";
+import { loginUrlForEmailAction } from "@/features/auth/signup-search";
 import {
   claimSubscriptionWelcomeSend,
   clearSubscriptionWelcomeSendClaim,
@@ -22,9 +23,11 @@ export async function sendSubscriptionWelcomeEmail(input: {
     return;
   }
 
-  const dashboardUrl = appEnv.APP_URL
-    ? `${appEnv.APP_URL}/dashboard`
-    : "https://tryroundzero.com/dashboard";
+  const dashboardUrl = loginUrlForEmailAction(
+    appEnv.APP_URL || "https://tryroundzero.com",
+    "company",
+    "/dashboard",
+  );
 
   await sendReactTransactionalEmail({
     to: input.to,
