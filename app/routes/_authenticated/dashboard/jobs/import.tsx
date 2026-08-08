@@ -55,7 +55,7 @@ function JobImportPaywall({ canUpgrade }: { canUpgrade: boolean }) {
         </EmptyMedia>
         <EmptyTitle>Import existing jobs with Growth</EmptyTitle>
         <EmptyDescription className="max-w-lg">
-          Import up to 50 roles from Greenhouse, Lever, Ashby, Recruitee, SmartRecruiters, public
+          Import up to 100 roles from Greenhouse, Lever, Ashby, Recruitee, SmartRecruiters, public
           careers pages, or CSV. Every imported role starts as a draft.
         </EmptyDescription>
       </EmptyHeader>
