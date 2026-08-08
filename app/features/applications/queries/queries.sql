@@ -13,11 +13,13 @@ SELECT a.id, a.job_id, a.candidate_id, a.resume_key, a.metadata, a.status, a.cre
        j.title AS job_title, j.status AS job_status,
        c.name AS company_name,
        u.deleted_at IS NOT NULL AS company_owner_deleted,
-       latest_interview.status AS interview_status
+       latest_interview.status AS interview_status,
+       pe.next_step AS pre_evaluation_next_step
 FROM applications a
 JOIN jobs j ON j.id = a.job_id
 JOIN companies c ON c.id = j.company_id
 JOIN users u ON u.id = c.owner_id
+LEFT JOIN pre_evaluations pe ON pe.application_id = a.id
 LEFT JOIN LATERAL (
   SELECT i.status
   FROM interviews i
@@ -36,11 +38,13 @@ SELECT a.id, a.job_id, a.candidate_id, a.resume_key, a.metadata, a.status, a.cre
        j.title AS job_title, j.status AS job_status,
        c.name AS company_name,
        u.deleted_at IS NOT NULL AS company_owner_deleted,
-       latest_interview.status AS interview_status
+       latest_interview.status AS interview_status,
+       pe.next_step AS pre_evaluation_next_step
 FROM applications a
 JOIN jobs j ON j.id = a.job_id
 JOIN companies c ON c.id = j.company_id
 JOIN users u ON u.id = c.owner_id
+LEFT JOIN pre_evaluations pe ON pe.application_id = a.id
 LEFT JOIN LATERAL (
   SELECT i.status
   FROM interviews i
@@ -79,11 +83,13 @@ ORDER BY (latest_released_report.released_at IS NOT NULL) DESC, COALESCE((latest
 SELECT a.id, a.job_id, a.candidate_id, a.resume_key, a.metadata, a.status, a.created_at, a.updated_at,
        j.title AS job_title, j.status AS job_status,
        c.name AS company_name,
-       u.deleted_at IS NOT NULL AS company_owner_deleted
+       u.deleted_at IS NOT NULL AS company_owner_deleted,
+       pe.next_step AS pre_evaluation_next_step
 FROM applications a
 JOIN jobs j ON j.id = a.job_id
 JOIN companies c ON c.id = j.company_id
 JOIN users u ON u.id = c.owner_id
+LEFT JOIN pre_evaluations pe ON pe.application_id = a.id
 WHERE a.id = $1;
 
 -- name: getApplicationReviewById :one

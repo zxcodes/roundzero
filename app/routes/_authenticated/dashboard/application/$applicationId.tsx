@@ -69,6 +69,15 @@ const stageCopy = {
     summary: "Your application is in the review queue.",
     nextStep: "Keep your profile sharp - the next signal is typically a move to interview review.",
   },
+  company_review: {
+    label: "Company review",
+    badge: "Company review",
+    tone: "border-info/20 bg-info/10 text-info",
+    summary:
+      "Your initial screening is complete, and the company is reviewing whether to move your application forward.",
+    nextStep:
+      "If they would like to continue, they may invite you to an interview. No action is needed right now.",
+  },
   queued_for_batch: {
     label: "Under review",
     badge: "Under review",
@@ -121,7 +130,14 @@ const stageCopy = {
   },
 } as const;
 
-const toApplicationStage = (status: string): keyof typeof stageCopy => {
+const toApplicationStage = (
+  status: string,
+  preEvaluationNextStep: string | null,
+): keyof typeof stageCopy => {
+  if (status === "pre_screening" && preEvaluationNextStep === "hold") {
+    return "company_review";
+  }
+
   switch (status) {
     case "queued_for_batch":
       return "queued_for_batch";
@@ -143,11 +159,13 @@ const toApplicationStage = (status: string): keyof typeof stageCopy => {
 const getDisplayMeta = ({
   status,
   interviewStatus,
+  preEvaluationNextStep,
 }: {
   status: string;
   interviewStatus: string | null;
+  preEvaluationNextStep: string | null;
 }) => {
-  const baseMeta = stageCopy[toApplicationStage(status)];
+  const baseMeta = stageCopy[toApplicationStage(status, preEvaluationNextStep)];
   return resolveInterviewAwareCandidateMeta(status, interviewStatus, baseMeta);
 };
 
@@ -208,8 +226,13 @@ function CandidateApplicationDetailPage() {
     });
   };
 
-  const currentStage = toApplicationStage(application.status);
-  const progressStage = currentStage === "shortlisted" ? "evaluated" : currentStage;
+  const currentStage = toApplicationStage(application.status, application.preEvaluationNextStep);
+  const progressStage =
+    currentStage === "shortlisted"
+      ? "evaluated"
+      : currentStage === "company_review"
+        ? "applied"
+        : currentStage;
   const shortlistDetails =
     application.status === "shortlisted" && !application.companyOwnerDeleted
       ? parseShortlistDetails(application.metadata)
@@ -218,6 +241,7 @@ function CandidateApplicationDetailPage() {
   const meta = getDisplayMeta({
     status: application.status,
     interviewStatus: interview?.status ?? null,
+    preEvaluationNextStep: application.preEvaluationNextStep,
   });
   const jobStateLabel = getJobStateLabel(application);
   const canWithdraw =

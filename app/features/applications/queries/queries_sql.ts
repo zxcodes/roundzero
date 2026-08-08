@@ -88,11 +88,13 @@ SELECT a.id, a.job_id, a.candidate_id, a.resume_key, a.metadata, a.status, a.cre
        j.title AS job_title, j.status AS job_status,
        c.name AS company_name,
        u.deleted_at IS NOT NULL AS company_owner_deleted,
-       latest_interview.status AS interview_status
+       latest_interview.status AS interview_status,
+       pe.next_step AS pre_evaluation_next_step
 FROM applications a
 JOIN jobs j ON j.id = a.job_id
 JOIN companies c ON c.id = j.company_id
 JOIN users u ON u.id = c.owner_id
+LEFT JOIN pre_evaluations pe ON pe.application_id = a.id
 LEFT JOIN LATERAL (
   SELECT i.status
   FROM interviews i
@@ -122,6 +124,7 @@ export interface getApplicationsByCandidateRow {
     companyName: string;
     companyOwnerDeleted: string | null;
     interviewStatus: string;
+    preEvaluationNextStep: string | null;
 }
 
 export async function getApplicationsByCandidate(sql: Sql, args: getApplicationsByCandidateArgs): Promise<getApplicationsByCandidateRow[]> {
@@ -138,7 +141,8 @@ export async function getApplicationsByCandidate(sql: Sql, args: getApplications
         jobStatus: row[9],
         companyName: row[10],
         companyOwnerDeleted: row[11],
-        interviewStatus: row[12]
+        interviewStatus: row[12],
+        preEvaluationNextStep: row[13]
     }));
 }
 
@@ -147,11 +151,13 @@ SELECT a.id, a.job_id, a.candidate_id, a.resume_key, a.metadata, a.status, a.cre
        j.title AS job_title, j.status AS job_status,
        c.name AS company_name,
        u.deleted_at IS NOT NULL AS company_owner_deleted,
-       latest_interview.status AS interview_status
+       latest_interview.status AS interview_status,
+       pe.next_step AS pre_evaluation_next_step
 FROM applications a
 JOIN jobs j ON j.id = a.job_id
 JOIN companies c ON c.id = j.company_id
 JOIN users u ON u.id = c.owner_id
+LEFT JOIN pre_evaluations pe ON pe.application_id = a.id
 LEFT JOIN LATERAL (
   SELECT i.status
   FROM interviews i
@@ -182,6 +188,7 @@ export interface getRecentApplicationsByCandidateRow {
     companyName: string;
     companyOwnerDeleted: string | null;
     interviewStatus: string;
+    preEvaluationNextStep: string | null;
 }
 
 export async function getRecentApplicationsByCandidate(sql: Sql, args: getRecentApplicationsByCandidateArgs): Promise<getRecentApplicationsByCandidateRow[]> {
@@ -198,7 +205,8 @@ export async function getRecentApplicationsByCandidate(sql: Sql, args: getRecent
         jobStatus: row[9],
         companyName: row[10],
         companyOwnerDeleted: row[11],
-        interviewStatus: row[12]
+        interviewStatus: row[12],
+        preEvaluationNextStep: row[13]
     }));
 }
 
@@ -272,11 +280,13 @@ export const getApplicationByIdQuery = `-- name: getApplicationById :one
 SELECT a.id, a.job_id, a.candidate_id, a.resume_key, a.metadata, a.status, a.created_at, a.updated_at,
        j.title AS job_title, j.status AS job_status,
        c.name AS company_name,
-       u.deleted_at IS NOT NULL AS company_owner_deleted
+       u.deleted_at IS NOT NULL AS company_owner_deleted,
+       pe.next_step AS pre_evaluation_next_step
 FROM applications a
 JOIN jobs j ON j.id = a.job_id
 JOIN companies c ON c.id = j.company_id
 JOIN users u ON u.id = c.owner_id
+LEFT JOIN pre_evaluations pe ON pe.application_id = a.id
 WHERE a.id = $1`;
 
 export interface getApplicationByIdArgs {
@@ -296,6 +306,7 @@ export interface getApplicationByIdRow {
     jobStatus: string;
     companyName: string;
     companyOwnerDeleted: string | null;
+    preEvaluationNextStep: string | null;
 }
 
 export async function getApplicationById(sql: Sql, args: getApplicationByIdArgs): Promise<getApplicationByIdRow | null> {
@@ -316,7 +327,8 @@ export async function getApplicationById(sql: Sql, args: getApplicationByIdArgs)
         jobTitle: row[8],
         jobStatus: row[9],
         companyName: row[10],
-        companyOwnerDeleted: row[11]
+        companyOwnerDeleted: row[11],
+        preEvaluationNextStep: row[12]
     };
 }
 

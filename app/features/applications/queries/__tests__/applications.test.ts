@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { softDeleteUser } from "@/features/auth/queries/queries_sql";
 import { createInterview } from "@/features/interviews/queries/queries_sql";
 import { archiveJob, createJob } from "@/features/jobs/queries/queries_sql";
+import { createPreEvaluation } from "@/features/pre-evaluations/queries/queries_sql";
 import { getTestDb, makeTestResumeKey, seedCompany, seedUser } from "@/shared/__tests__/test-utils";
 
 import {
@@ -396,6 +397,36 @@ describe("getApplicationsByCandidate", () => {
     expect(apps[0].jobTitle).toBe("Active Job");
     expect(apps[0].companyName).toBe("Visible Co");
     expect(apps[0].companyOwnerDeleted).toBe(false);
+  });
+
+  it("includes the completed pre-evaluation decision", async () => {
+    const { company } = await seedCompany();
+    const candidate = await seedUser({ role: "candidate" });
+    const job = await makeOpenJob(company.id);
+    const application = await createApplication(sql, {
+      jobId: job.id,
+      candidateId: candidate.id,
+      resumeKey: makeTestResumeKey(candidate.id),
+      metadata: {},
+      status: "pre_screening",
+    });
+    await createPreEvaluation(sql, {
+      applicationId: application!.id,
+      score: 6,
+      missingRequirements: ["Production leadership experience"],
+      confidence: "medium",
+      nextStep: "hold",
+      consistencyScore: 6,
+      rawResponse: null,
+      model: "test-model",
+      promptVersion: "test",
+    });
+
+    const applications = await getApplicationsByCandidate(sql, { candidateId: candidate.id });
+    const detail = await getApplicationById(sql, { id: application!.id });
+
+    expect(applications[0].preEvaluationNextStep).toBe("hold");
+    expect(detail?.preEvaluationNextStep).toBe("hold");
   });
 
   it("sets companyOwnerDeleted when the company owner was soft-deleted", async () => {
