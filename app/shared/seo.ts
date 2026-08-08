@@ -4,7 +4,7 @@ import { markdownToPlainText } from "@/features/jobs/markdown";
 import { getRemoteApplicantCountry, normalizeJobCountry } from "@/features/jobs/publish-readiness";
 import { getPublicAssetUrl } from "@/shared/r2";
 
-export const DEFAULT_META_TITLE = "AI Candidate Screening & First-Round Interviews | RoundZero";
+export const DEFAULT_META_TITLE = "AI Hiring Evaluation & Adaptive Interviews | RoundZero";
 
 export const DEFAULT_META_DESCRIPTION =
   "RoundZero automatically interviews and evaluates applicants, delivering ranked candidates, structured reports, and evidence-backed recommendations before the first human interview.";
@@ -20,6 +20,26 @@ export const HOMEPAGE_META_DESCRIPTION =
 
 export const NOINDEX_ROBOTS = "noindex, nofollow, noarchive";
 export const NOINDEX_FOLLOW_ROBOTS = "noindex, follow, noarchive";
+
+export const PUBLIC_STATIC_SITEMAP_ENTRIES = [
+  { path: "/" },
+  { path: "/compare" },
+  { path: "/candidate-screening-software", lastModified: "2026-08-08" },
+  { path: "/ai-interview-platform", lastModified: "2026-08-08" },
+  { path: "/candidate-evaluation-software", lastModified: "2026-08-08" },
+  { path: "/pricing", lastModified: "2026-08-08" },
+  { path: "/resources", lastModified: "2026-08-08" },
+  { path: "/resources/skills-based-hiring", lastModified: "2026-08-08" },
+  { path: "/resources/structured-interview-scorecards", lastModified: "2026-08-08" },
+  { path: "/resources/ai-interview-guide", lastModified: "2026-08-08" },
+  { path: "/jobs" },
+  { path: "/companies" },
+  { path: "/contact" },
+  { path: "/privacy" },
+  { path: "/tos" },
+] as const;
+
+export const PUBLIC_STATIC_SITEMAP_PATHS = PUBLIC_STATIC_SITEMAP_ENTRIES.map((entry) => entry.path);
 
 export const PAGE_SEO = {
   jobs: {
@@ -297,6 +317,49 @@ export function comparisonPageJsonLd(comparison: ComparisonPageSchemaInput): Jso
   return {
     type: "application/ld+json",
     children: serializeJsonLd(buildComparisonPageSchema(comparison)),
+  };
+}
+
+export type ArticleSchemaInput = {
+  title: string;
+  description: string;
+  path: string;
+  imagePath?: string;
+  datePublished: string;
+  dateModified: string;
+};
+
+export function buildArticleSchema(article: ArticleSchemaInput): Record<string, unknown> {
+  const url = absoluteUrl(article.path);
+  return {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "@id": `${url}#article`,
+    headline: article.title,
+    description: article.description,
+    url,
+    mainEntityOfPage: { "@type": "WebPage", "@id": url },
+    image: absoluteUrl(article.imagePath ?? "/og-default.png"),
+    datePublished: article.datePublished,
+    dateModified: article.dateModified,
+    author: { "@type": "Organization", name: "RoundZero", url: absoluteUrl("/") },
+    publisher: {
+      "@type": "Organization",
+      name: "RoundZero",
+      url: absoluteUrl("/"),
+      logo: {
+        "@type": "ImageObject",
+        url: absoluteUrl("/android-chrome-512x512.png"),
+      },
+    },
+    inLanguage: "en",
+  };
+}
+
+export function articleJsonLd(article: ArticleSchemaInput): JsonLdScript {
+  return {
+    type: "application/ld+json",
+    children: serializeJsonLd(buildArticleSchema(article)),
   };
 }
 

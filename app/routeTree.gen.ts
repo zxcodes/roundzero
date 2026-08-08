@@ -12,8 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AiInterviewPlatformRouteImport } from './routes/ai-interview-platform'
+import { Route as CandidateEvaluationSoftwareRouteImport } from './routes/candidate-evaluation-software'
+import { Route as CandidateScreeningSoftwareRouteImport } from './routes/candidate-screening-software'
 import { Route as CompareRouteImport } from './routes/compare'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as TosRouteImport } from './routes/tos'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -30,6 +34,10 @@ import { Route as CompanyLoginRouteImport } from './routes/company/login'
 import { Route as InviteTokenRouteImport } from './routes/invite/$token'
 import { Route as JobsIndexRouteImport } from './routes/jobs/index'
 import { Route as JobsJobIdRouteImport } from './routes/jobs/$jobId'
+import { Route as ResourcesIndexRouteImport } from './routes/resources/index'
+import { Route as ResourcesAiInterviewGuideRouteImport } from './routes/resources/ai-interview-guide'
+import { Route as ResourcesSkillsBasedHiringRouteImport } from './routes/resources/skills-based-hiring'
+import { Route as ResourcesStructuredInterviewScorecardsRouteImport } from './routes/resources/structured-interview-scorecards'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard/index'
 import { Route as AuthenticatedDashboardApplicationsRouteImport } from './routes/_authenticated/dashboard/applications'
 import { Route as AuthenticatedDashboardAwaitingReviewRouteImport } from './routes/_authenticated/dashboard/awaiting-review'
@@ -71,6 +79,23 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AiInterviewPlatformRoute = AiInterviewPlatformRouteImport.update({
+  id: '/ai-interview-platform',
+  path: '/ai-interview-platform',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CandidateEvaluationSoftwareRoute =
+  CandidateEvaluationSoftwareRouteImport.update({
+    id: '/candidate-evaluation-software',
+    path: '/candidate-evaluation-software',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const CandidateScreeningSoftwareRoute =
+  CandidateScreeningSoftwareRouteImport.update({
+    id: '/candidate-screening-software',
+    path: '/candidate-screening-software',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const CompareRoute = CompareRouteImport.update({
   id: '/compare',
   path: '/compare',
@@ -79,6 +104,11 @@ const CompareRoute = CompareRouteImport.update({
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -161,6 +191,29 @@ const JobsJobIdRoute = JobsJobIdRouteImport.update({
   path: '/jobs/$jobId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResourcesIndexRoute = ResourcesIndexRouteImport.update({
+  id: '/resources/',
+  path: '/resources/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResourcesAiInterviewGuideRoute =
+  ResourcesAiInterviewGuideRouteImport.update({
+    id: '/resources/ai-interview-guide',
+    path: '/resources/ai-interview-guide',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ResourcesSkillsBasedHiringRoute =
+  ResourcesSkillsBasedHiringRouteImport.update({
+    id: '/resources/skills-based-hiring',
+    path: '/resources/skills-based-hiring',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ResourcesStructuredInterviewScorecardsRoute =
+  ResourcesStructuredInterviewScorecardsRouteImport.update({
+    id: '/resources/structured-interview-scorecards',
+    path: '/resources/structured-interview-scorecards',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedDashboardIndexRoute =
   AuthenticatedDashboardIndexRouteImport.update({
     id: '/',
@@ -321,8 +374,12 @@ const AuthenticatedDashboardJobsJobIdEditRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/ai-interview-platform': typeof AiInterviewPlatformRoute
+  '/candidate-evaluation-software': typeof CandidateEvaluationSoftwareRoute
+  '/candidate-screening-software': typeof CandidateScreeningSoftwareRoute
   '/compare': typeof CompareRoute
   '/contact': typeof ContactRoute
+  '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/tos': typeof TosRoute
   '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
@@ -336,9 +393,13 @@ export interface FileRoutesByFullPath {
   '/company/login': typeof CompanyLoginRoute
   '/invite/$token': typeof InviteTokenRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
+  '/resources/ai-interview-guide': typeof ResourcesAiInterviewGuideRoute
+  '/resources/skills-based-hiring': typeof ResourcesSkillsBasedHiringRoute
+  '/resources/structured-interview-scorecards': typeof ResourcesStructuredInterviewScorecardsRoute
   '/admin/': typeof AdminIndexRoute
   '/companies/': typeof CompaniesIndexRoute
   '/jobs/': typeof JobsIndexRoute
+  '/resources/': typeof ResourcesIndexRoute
   '/dashboard/applications': typeof AuthenticatedDashboardApplicationsRoute
   '/dashboard/awaiting-review': typeof AuthenticatedDashboardAwaitingReviewRoute
   '/dashboard/billing': typeof AuthenticatedDashboardBillingRoute
@@ -368,8 +429,12 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/ai-interview-platform': typeof AiInterviewPlatformRoute
+  '/candidate-evaluation-software': typeof CandidateEvaluationSoftwareRoute
+  '/candidate-screening-software': typeof CandidateScreeningSoftwareRoute
   '/compare': typeof CompareRoute
   '/contact': typeof ContactRoute
+  '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/tos': typeof TosRoute
   '/onboarding': typeof AuthenticatedOnboardingRouteWithChildren
@@ -381,9 +446,13 @@ export interface FileRoutesByTo {
   '/company/login': typeof CompanyLoginRoute
   '/invite/$token': typeof InviteTokenRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
+  '/resources/ai-interview-guide': typeof ResourcesAiInterviewGuideRoute
+  '/resources/skills-based-hiring': typeof ResourcesSkillsBasedHiringRoute
+  '/resources/structured-interview-scorecards': typeof ResourcesStructuredInterviewScorecardsRoute
   '/admin': typeof AdminIndexRoute
   '/companies': typeof CompaniesIndexRoute
   '/jobs': typeof JobsIndexRoute
+  '/resources': typeof ResourcesIndexRoute
   '/dashboard/applications': typeof AuthenticatedDashboardApplicationsRoute
   '/dashboard/awaiting-review': typeof AuthenticatedDashboardAwaitingReviewRoute
   '/dashboard/billing': typeof AuthenticatedDashboardBillingRoute
@@ -414,8 +483,12 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
+  '/ai-interview-platform': typeof AiInterviewPlatformRoute
+  '/candidate-evaluation-software': typeof CandidateEvaluationSoftwareRoute
+  '/candidate-screening-software': typeof CandidateScreeningSoftwareRoute
   '/compare': typeof CompareRoute
   '/contact': typeof ContactRoute
+  '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/tos': typeof TosRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
@@ -429,9 +502,13 @@ export interface FileRoutesById {
   '/company/login': typeof CompanyLoginRoute
   '/invite/$token': typeof InviteTokenRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
+  '/resources/ai-interview-guide': typeof ResourcesAiInterviewGuideRoute
+  '/resources/skills-based-hiring': typeof ResourcesSkillsBasedHiringRoute
+  '/resources/structured-interview-scorecards': typeof ResourcesStructuredInterviewScorecardsRoute
   '/admin/': typeof AdminIndexRoute
   '/companies/': typeof CompaniesIndexRoute
   '/jobs/': typeof JobsIndexRoute
+  '/resources/': typeof ResourcesIndexRoute
   '/_authenticated/dashboard/applications': typeof AuthenticatedDashboardApplicationsRoute
   '/_authenticated/dashboard/awaiting-review': typeof AuthenticatedDashboardAwaitingReviewRoute
   '/_authenticated/dashboard/billing': typeof AuthenticatedDashboardBillingRoute
@@ -464,8 +541,12 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/ai-interview-platform'
+    | '/candidate-evaluation-software'
+    | '/candidate-screening-software'
     | '/compare'
     | '/contact'
+    | '/pricing'
     | '/privacy'
     | '/tos'
     | '/dashboard'
@@ -479,9 +560,13 @@ export interface FileRouteTypes {
     | '/company/login'
     | '/invite/$token'
     | '/jobs/$jobId'
+    | '/resources/ai-interview-guide'
+    | '/resources/skills-based-hiring'
+    | '/resources/structured-interview-scorecards'
     | '/admin/'
     | '/companies/'
     | '/jobs/'
+    | '/resources/'
     | '/dashboard/applications'
     | '/dashboard/awaiting-review'
     | '/dashboard/billing'
@@ -511,8 +596,12 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/ai-interview-platform'
+    | '/candidate-evaluation-software'
+    | '/candidate-screening-software'
     | '/compare'
     | '/contact'
+    | '/pricing'
     | '/privacy'
     | '/tos'
     | '/onboarding'
@@ -524,9 +613,13 @@ export interface FileRouteTypes {
     | '/company/login'
     | '/invite/$token'
     | '/jobs/$jobId'
+    | '/resources/ai-interview-guide'
+    | '/resources/skills-based-hiring'
+    | '/resources/structured-interview-scorecards'
     | '/admin'
     | '/companies'
     | '/jobs'
+    | '/resources'
     | '/dashboard/applications'
     | '/dashboard/awaiting-review'
     | '/dashboard/billing'
@@ -556,8 +649,12 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/admin'
+    | '/ai-interview-platform'
+    | '/candidate-evaluation-software'
+    | '/candidate-screening-software'
     | '/compare'
     | '/contact'
+    | '/pricing'
     | '/privacy'
     | '/tos'
     | '/_authenticated/dashboard'
@@ -571,9 +668,13 @@ export interface FileRouteTypes {
     | '/company/login'
     | '/invite/$token'
     | '/jobs/$jobId'
+    | '/resources/ai-interview-guide'
+    | '/resources/skills-based-hiring'
+    | '/resources/structured-interview-scorecards'
     | '/admin/'
     | '/companies/'
     | '/jobs/'
+    | '/resources/'
     | '/_authenticated/dashboard/applications'
     | '/_authenticated/dashboard/awaiting-review'
     | '/_authenticated/dashboard/billing'
@@ -606,8 +707,12 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AdminRoute: typeof AdminRouteWithChildren
+  AiInterviewPlatformRoute: typeof AiInterviewPlatformRoute
+  CandidateEvaluationSoftwareRoute: typeof CandidateEvaluationSoftwareRoute
+  CandidateScreeningSoftwareRoute: typeof CandidateScreeningSoftwareRoute
   CompareRoute: typeof CompareRoute
   ContactRoute: typeof ContactRoute
+  PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   TosRoute: typeof TosRoute
   ApiInterviewChatRoute: typeof ApiInterviewChatRoute
@@ -617,8 +722,12 @@ export interface RootRouteChildren {
   CompanyLoginRoute: typeof CompanyLoginRoute
   InviteTokenRoute: typeof InviteTokenRoute
   JobsJobIdRoute: typeof JobsJobIdRoute
+  ResourcesAiInterviewGuideRoute: typeof ResourcesAiInterviewGuideRoute
+  ResourcesSkillsBasedHiringRoute: typeof ResourcesSkillsBasedHiringRoute
+  ResourcesStructuredInterviewScorecardsRoute: typeof ResourcesStructuredInterviewScorecardsRoute
   CompaniesIndexRoute: typeof CompaniesIndexRoute
   JobsIndexRoute: typeof JobsIndexRoute
+  ResourcesIndexRoute: typeof ResourcesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -644,6 +753,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ai-interview-platform': {
+      id: '/ai-interview-platform'
+      path: '/ai-interview-platform'
+      fullPath: '/ai-interview-platform'
+      preLoaderRoute: typeof AiInterviewPlatformRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/candidate-evaluation-software': {
+      id: '/candidate-evaluation-software'
+      path: '/candidate-evaluation-software'
+      fullPath: '/candidate-evaluation-software'
+      preLoaderRoute: typeof CandidateEvaluationSoftwareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/candidate-screening-software': {
+      id: '/candidate-screening-software'
+      path: '/candidate-screening-software'
+      fullPath: '/candidate-screening-software'
+      preLoaderRoute: typeof CandidateScreeningSoftwareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/compare': {
       id: '/compare'
       path: '/compare'
@@ -656,6 +786,13 @@ declare module '@tanstack/react-router' {
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -768,6 +905,34 @@ declare module '@tanstack/react-router' {
       path: '/jobs/$jobId'
       fullPath: '/jobs/$jobId'
       preLoaderRoute: typeof JobsJobIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resources/': {
+      id: '/resources/'
+      path: '/resources'
+      fullPath: '/resources/'
+      preLoaderRoute: typeof ResourcesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resources/ai-interview-guide': {
+      id: '/resources/ai-interview-guide'
+      path: '/resources/ai-interview-guide'
+      fullPath: '/resources/ai-interview-guide'
+      preLoaderRoute: typeof ResourcesAiInterviewGuideRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resources/skills-based-hiring': {
+      id: '/resources/skills-based-hiring'
+      path: '/resources/skills-based-hiring'
+      fullPath: '/resources/skills-based-hiring'
+      preLoaderRoute: typeof ResourcesSkillsBasedHiringRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resources/structured-interview-scorecards': {
+      id: '/resources/structured-interview-scorecards'
+      path: '/resources/structured-interview-scorecards'
+      fullPath: '/resources/structured-interview-scorecards'
+      preLoaderRoute: typeof ResourcesStructuredInterviewScorecardsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/dashboard/': {
@@ -1116,8 +1281,12 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AdminRoute: AdminRouteWithChildren,
+  AiInterviewPlatformRoute: AiInterviewPlatformRoute,
+  CandidateEvaluationSoftwareRoute: CandidateEvaluationSoftwareRoute,
+  CandidateScreeningSoftwareRoute: CandidateScreeningSoftwareRoute,
   CompareRoute: CompareRoute,
   ContactRoute: ContactRoute,
+  PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   TosRoute: TosRoute,
   ApiInterviewChatRoute: ApiInterviewChatRoute,
@@ -1127,8 +1296,13 @@ const rootRouteChildren: RootRouteChildren = {
   CompanyLoginRoute: CompanyLoginRoute,
   InviteTokenRoute: InviteTokenRoute,
   JobsJobIdRoute: JobsJobIdRoute,
+  ResourcesAiInterviewGuideRoute: ResourcesAiInterviewGuideRoute,
+  ResourcesSkillsBasedHiringRoute: ResourcesSkillsBasedHiringRoute,
+  ResourcesStructuredInterviewScorecardsRoute:
+    ResourcesStructuredInterviewScorecardsRoute,
   CompaniesIndexRoute: CompaniesIndexRoute,
   JobsIndexRoute: JobsIndexRoute,
+  ResourcesIndexRoute: ResourcesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

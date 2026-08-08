@@ -406,7 +406,7 @@ const faq = [
   {
     question: "How does the interview work?",
     answer:
-      "Candidates complete an adaptive chat interview on their own time. Zero asks role-specific questions, follows up on vague answers, and validates claims against the résumé. Most interviews take twenty to forty minutes.",
+      "Candidates complete an adaptive interview on their own time. Zero asks role-specific questions, follows up on vague answers, and validates claims against the résumé. The candidate interface estimates 15–20 minutes for the full evaluation, followed by an approximately five-minute voice assessment.",
   },
   {
     question: "What is included in a candidate report?",

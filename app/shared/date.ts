@@ -41,6 +41,14 @@ export function formatDate(date: Date | string | null): string {
   return format(new Date(date), "MMM d, yyyy");
 }
 
+/** Formats a YYYY-MM-DD calendar date without shifting it through a local timezone. */
+export function formatCalendarDate(date: string): string {
+  const [year, month, day] = date.split("-").map(Number);
+  const monthLabel = MONTHS_SHORT[month - 1];
+  if (!year || !monthLabel || !day) return "";
+  return `${monthLabel} ${day}, ${year}`;
+}
+
 export function formatDateShort(date: Date | string | null): string {
   if (!date) return "";
   return format(new Date(date), "MMM d");
