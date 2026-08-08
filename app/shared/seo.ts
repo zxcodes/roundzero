@@ -1,6 +1,7 @@
 import { renderHtml } from "@tanstack/markdown";
 
 import { markdownToPlainText } from "@/features/jobs/markdown";
+import { getRemoteApplicantCountry, normalizeJobCountry } from "@/features/jobs/publish-readiness";
 import { getPublicAssetUrl } from "@/shared/r2";
 
 export const DEFAULT_META_TITLE = "AI Candidate Screening & First-Round Interviews | RoundZero";
@@ -363,49 +364,6 @@ const US_STATE_CODES = new Set([
   "DC",
 ]);
 
-const COUNTRY_ALIASES: Record<string, string> = {
-  US: "US",
-  USA: "US",
-  "UNITED STATES": "US",
-  "UNITED STATES OF AMERICA": "US",
-  UK: "GB",
-  GB: "GB",
-  "UNITED KINGDOM": "GB",
-  UAE: "AE",
-  "UNITED ARAB EMIRATES": "AE",
-  AUSTRALIA: "AU",
-  AUSTRIA: "AT",
-  BELGIUM: "BE",
-  BRAZIL: "BR",
-  CANADA: "CA",
-  CZECHIA: "CZ",
-  "CZECH REPUBLIC": "CZ",
-  DENMARK: "DK",
-  FINLAND: "FI",
-  FRANCE: "FR",
-  GERMANY: "DE",
-  INDIA: "IN",
-  IRELAND: "IE",
-  ITALY: "IT",
-  JAPAN: "JP",
-  MEXICO: "MX",
-  NETHERLANDS: "NL",
-  "NEW ZEALAND": "NZ",
-  NORWAY: "NO",
-  POLAND: "PL",
-  PORTUGAL: "PT",
-  ROMANIA: "RO",
-  SINGAPORE: "SG",
-  "SOUTH AFRICA": "ZA",
-  SPAIN: "ES",
-  SWEDEN: "SE",
-  SWITZERLAND: "CH",
-};
-
-function normalizedCountry(value: string): string | null {
-  return COUNTRY_ALIASES[value.trim().toUpperCase()] ?? null;
-}
-
 function buildJobLocationProperties(job: JobPostingSchemaInput): Record<string, unknown> | null {
   const location = job.location?.trim();
   if (!location) {
@@ -413,8 +371,7 @@ function buildJobLocationProperties(job: JobPostingSchemaInput): Record<string, 
   }
 
   if (job.workplaceType === "remote") {
-    const restriction = location.match(/^remote\s*(?:[-–—:]|\()\s*([^)]+)\)?$/i)?.[1];
-    const country = restriction ? normalizedCountry(restriction) : null;
+    const country = getRemoteApplicantCountry(location);
     if (!country) {
       return null;
     }
@@ -448,7 +405,7 @@ function buildJobLocationProperties(job: JobPostingSchemaInput): Record<string, 
     };
   }
 
-  const country = normalizedCountry(finalPart);
+  const country = normalizeJobCountry(finalPart);
   if (!country) {
     return null;
   }

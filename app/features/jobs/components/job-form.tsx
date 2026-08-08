@@ -6,7 +6,7 @@ import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -23,6 +23,7 @@ import { useEntitlements } from "@/features/entitlements/hooks/use-entitlements"
 import { JobDescriptionEditor } from "@/features/jobs/components/job-description-editor";
 import { JobPreviewDialog } from "@/features/jobs/components/job-preview-dialog";
 import { MAX_JOB_DESCRIPTION_LENGTH } from "@/features/jobs/constants";
+import { getRemoteLocationPublishIssue } from "@/features/jobs/publish-readiness";
 import { formatDate } from "@/shared/date";
 import {
   type EmploymentType,
@@ -246,6 +247,15 @@ export function JobForm({
         path: ["finalReportTarget"],
         message: `Upgrade your plan to increase the report target above ${reportLimit}.`,
       });
+    }
+    if (value.status === "open") {
+      const issue = getRemoteLocationPublishIssue({
+        workplaceType: value.workplaceType || null,
+        location: value.location || null,
+      });
+      if (issue) {
+        context.addIssue({ code: "custom", path: ["location"], message: issue });
+      }
     }
   });
 
@@ -497,6 +507,9 @@ export function JobForm({
                     aria-invalid={isInvalid}
                   />
                   {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+                  <FieldDescription>
+                    For remote roles, include the applicant country, for example “Remote (India)”.
+                  </FieldDescription>
                 </Field>
               );
             }}
