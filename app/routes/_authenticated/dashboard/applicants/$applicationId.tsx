@@ -189,6 +189,13 @@ function ApplicantReviewPage() {
 
   const currentStatus = applicationStatusSchema.parse(application.status);
   const preEvaluationScore = preEvaluation?.score ?? null;
+  const missingRequirements =
+    preEvaluation && Array.isArray(preEvaluation.missingRequirements)
+      ? preEvaluation.missingRequirements.filter(
+          (requirement): requirement is string =>
+            typeof requirement === "string" && requirement.trim().length > 0,
+        )
+      : [];
   const isFailed = currentStatus === "evaluation_failed";
   const isWithdrawn = currentStatus === "withdrawn";
   const currentStepIndex = statusToStepIndex(currentStatus);
@@ -345,11 +352,26 @@ function ApplicantReviewPage() {
                 {preEvaluation.confidence}
               </Badge>
             </div>
-            {preEvaluation.missingRequirements.length > 0 ? (
-              <p className="text-sm text-muted-foreground">
-                {preEvaluation.missingRequirements.length} gap
-                {preEvaluation.missingRequirements.length === 1 ? "" : "s"} detected
-              </p>
+            {missingRequirements.length > 0 ? (
+              <div className="space-y-2">
+                <div>
+                  <p className="text-sm font-medium text-foreground">Requirements to verify</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Zero could not confirm these from the candidate's application.
+                  </p>
+                </div>
+                <ul className="space-y-1.5 rounded-2xl bg-muted/30 px-4 py-3">
+                  {missingRequirements.map((requirement) => (
+                    <li key={requirement} className="text-sm text-foreground">
+                      • {requirement}
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-xs text-muted-foreground">
+                  An unconfirmed requirement does not necessarily mean the candidate lacks that
+                  experience.
+                </p>
+              </div>
             ) : (
               <p className="text-sm text-success">All key requirements matched</p>
             )}

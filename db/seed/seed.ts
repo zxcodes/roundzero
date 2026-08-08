@@ -60,6 +60,7 @@ type ApplicantPlan = {
   status: ApplicantStatus;
   interviewStatus?: "pending" | "in_progress" | "awaiting_voice" | "completed";
   overallScore?: number;
+  missingRequirements?: string[];
   reportState?: "held" | "released";
   batch?: "active" | "released";
 };
@@ -111,6 +112,14 @@ const jobTemplates = [
       },
       { status: "queued_for_batch" },
       { status: "queued_for_batch" },
+      {
+        status: "pre_screening",
+        overallScore: 5.8,
+        missingRequirements: [
+          "Production ownership across both frontend and backend systems",
+          "Experience designing asynchronous workflows at scale",
+        ],
+      },
     ] satisfies ApplicantPlan[],
     description: `RoundZero is building a hiring platform that helps teams evaluate applicants consistently without losing the human context behind each decision. As a Senior Full-Stack Engineer, you will own high-impact product areas used by recruiters, hiring managers, and candidates throughout the interview process.
 
@@ -146,6 +155,14 @@ This is a senior individual-contributor role with meaningful product influence. 
       { status: "interview_in_progress", interviewStatus: "in_progress", batch: "active" },
       { status: "queued_for_batch" },
       { status: "queued_for_batch" },
+      {
+        status: "pre_screening",
+        overallScore: 6.2,
+        missingRequirements: [
+          "Evidence of accessibility work in production interfaces",
+          "Experience contributing to a shared design system",
+        ],
+      },
     ] satisfies ApplicantPlan[],
     description: `The candidate and recruiter experience is the product at RoundZero. We are looking for a Frontend Engineer who cares about the details that make complex hiring workflows feel calm, fast, and trustworthy.
 
@@ -181,6 +198,14 @@ You will partner closely with product design from early prototypes through imple
       { status: "interview_in_progress", interviewStatus: "awaiting_voice" },
       { status: "queued_for_batch" },
       { status: "queued_for_batch" },
+      {
+        status: "pre_screening",
+        overallScore: 5.6,
+        missingRequirements: [
+          "Hands-on PostgreSQL performance tuning experience",
+          "Production experience with durable workflows and idempotency",
+        ],
+      },
     ] satisfies ApplicantPlan[],
     description: `RoundZero coordinates long-running interview, evaluation, reporting, and notification workflows where correctness matters as much as speed. We are hiring a Backend Engineer to make those systems dependable as usage and product complexity grow.
 
@@ -826,7 +851,7 @@ async function seedApplicationPipeline(ctx: ApplicationSeedContext) {
       updated_at = EXCLUDED.updated_at
   `;
 
-  if (plan.status !== "applied" && plan.status !== "pre_screening") {
+  if (plan.status !== "applied") {
     const preScore = plan.overallScore ?? clampPreScore(index, plan.status);
     await sql`
       INSERT INTO pre_evaluations (
@@ -836,7 +861,10 @@ async function seedApplicationPipeline(ctx: ApplicationSeedContext) {
         ${makeUuidFromSeed(`dashboard-seed-pre-eval-${applicationId}`)},
         ${applicationId},
         ${preScore},
-        ${sql.json(preScore >= 7 ? [] : ["Needs stronger production examples at scale"])},
+        ${sql.json(
+          plan.missingRequirements ??
+            (preScore >= 7 ? [] : ["Needs stronger production examples at scale"]),
+        )},
         ${preScore >= 8 ? "high" : preScore >= 6 ? "medium" : "low"},
         ${preScore >= 7 ? "interview_invited" : "hold"},
         ${"seed/demo"},

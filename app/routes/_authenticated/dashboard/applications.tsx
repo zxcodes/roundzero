@@ -39,6 +39,11 @@ const stageCopy = {
     tone: "border-info/20 bg-info/10 text-info",
     blurb: "Waiting on first review",
   },
+  company_review: {
+    badge: "Company review",
+    tone: "border-info/20 bg-info/10 text-info",
+    blurb: "The company is reviewing whether to move your application forward",
+  },
   queued_for_batch: {
     badge: "Under review",
     tone: "border-info/20 bg-info/10 text-info",
@@ -86,7 +91,14 @@ const stageCopy = {
   },
 } as const;
 
-const toApplicationStage = (status: string): keyof typeof stageCopy => {
+const toApplicationStage = (
+  status: string,
+  preEvaluationNextStep: string | null,
+): keyof typeof stageCopy => {
+  if (status === "pre_screening" && preEvaluationNextStep === "hold") {
+    return "company_review";
+  }
+
   switch (status) {
     case "queued_for_batch":
       return "queued_for_batch";
@@ -110,7 +122,7 @@ const toApplicationStage = (status: string): keyof typeof stageCopy => {
 };
 
 const getStatusMeta = (application: Application) => {
-  const stage = toApplicationStage(application.status);
+  const stage = toApplicationStage(application.status, application.preEvaluationNextStep);
   const baseMeta = stageCopy[stage];
   return resolveInterviewAwareCandidateMeta(
     application.status,
