@@ -43,7 +43,7 @@ const valueProps = [
   },
   {
     title: "Interview when invited, on your time",
-    body: "Strong matches complete a twenty to forty minute async interview, anytime, anywhere.",
+    body: "Selected candidates complete an adaptive interview on their own time, with a 15–20 minute evaluation estimate and a separate short voice assessment.",
   },
   {
     title: "Show how you think",

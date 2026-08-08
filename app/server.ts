@@ -6,7 +6,7 @@ import { handlePolarWebhook } from "./features/billing/webhook";
 import { getDb } from "./shared/db";
 import { isDev } from "./shared/env.app";
 import { sentryOptions } from "./shared/sentry";
-import { escapeXml } from "./shared/seo";
+import { escapeXml, PUBLIC_STATIC_SITEMAP_ENTRIES } from "./shared/seo";
 
 declare global {
   interface CacheStorage {
@@ -135,16 +135,10 @@ Sitemap: ${siteUrl}/sitemap.xml
       );
       const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>${escapedSiteUrl}/</loc></url>
-  <url><loc>${escapedSiteUrl}/compare</loc></url>
-  <url><loc>${escapedSiteUrl}/jobs</loc></url>
-  <url><loc>${escapedSiteUrl}/companies</loc></url>
+${PUBLIC_STATIC_SITEMAP_ENTRIES.map((entry) => `  <url><loc>${escapedSiteUrl}${entry.path}</loc>${"lastModified" in entry ? `<lastmod>${entry.lastModified}</lastmod>` : ""}</url>`).join("\n")}
 
 ${jobs.map((j) => `  <url><loc>${escapedSiteUrl}/jobs/${escapeXml(j.id)}</loc><lastmod>${new Date(j.updatedAt).toISOString()}</lastmod></url>`).join("\n")}
 ${indexableCompanies.map((c) => `  <url><loc>${escapedSiteUrl}/companies/${escapeXml(c.slug)}</loc><lastmod>${new Date(c.updatedAt).toISOString()}</lastmod></url>`).join("\n")}
-  <url><loc>${escapedSiteUrl}/contact</loc></url>
-  <url><loc>${escapedSiteUrl}/privacy</loc></url>
-  <url><loc>${escapedSiteUrl}/tos</loc></url>
 </urlset>`;
       const response = await createCachedTextResponse(xml, "application/xml; charset=utf-8", 300);
       cacheResponse(request, response, ctx);

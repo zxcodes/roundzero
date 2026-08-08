@@ -42,9 +42,7 @@ export function PublicHeader({ user = null }: { user?: User | null }) {
                   className="rounded-full text-muted-foreground font-normal"
                   asChild
                 >
-                  <Link to="/" hash="product">
-                    Product
-                  </Link>
+                  <Link to="/candidate-screening-software">Product</Link>
                 </Button>
                 <Button
                   variant="ghost"
@@ -68,14 +66,20 @@ export function PublicHeader({ user = null }: { user?: User | null }) {
                   className="rounded-full text-muted-foreground font-normal"
                   asChild
                 >
-                  <Link to="/" hash="pricing">
-                    Pricing
-                  </Link>
+                  <Link to="/pricing">Pricing</Link>
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
                   className="rounded-full text-muted-foreground font-normal max-lg:hidden"
+                  asChild
+                >
+                  <Link to="/resources">Resources</Link>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-full text-muted-foreground font-normal max-xl:hidden"
                   asChild
                 >
                   <Link to="/candidate/login">For candidates</Link>
@@ -133,8 +137,16 @@ export function PublicHeader({ user = null }: { user?: User | null }) {
                   asChild
                   onClick={onCloseMobileMenu}
                 >
-                  <Link to="/" hash="product">
-                    Product
+                  <Link to="/candidate-screening-software">Product</Link>
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="justify-start text-muted-foreground"
+                  asChild
+                  onClick={onCloseMobileMenu}
+                >
+                  <Link to="/resources" activeProps={{ className: "text-foreground bg-accent" }}>
+                    Resources
                   </Link>
                 </Button>
                 <Button
@@ -176,9 +188,7 @@ export function PublicHeader({ user = null }: { user?: User | null }) {
                   asChild
                   onClick={onCloseMobileMenu}
                 >
-                  <Link to="/" hash="pricing">
-                    Pricing
-                  </Link>
+                  <Link to="/pricing">Pricing</Link>
                 </Button>
               </div>
             </SheetContent>
@@ -205,17 +215,16 @@ export function PublicFooter() {
             </p>
           </div>
           <FooterColumn title="Product">
-            <Link to="/" hash="product">
-              How it works
-            </Link>
+            <Link to="/candidate-screening-software">Candidate screening</Link>
+            <Link to="/ai-interview-platform">AI interviews</Link>
+            <Link to="/candidate-evaluation-software">Candidate evaluation</Link>
             <Link to="/compare">Compare</Link>
-            <Link to="/" hash="pricing">
-              Pricing
-            </Link>
+            <Link to="/pricing">Pricing</Link>
           </FooterColumn>
           <FooterColumn title="Explore">
             <Link to="/jobs">Jobs</Link>
             <Link to="/companies">Companies</Link>
+            <Link to="/resources">Resources</Link>
             <Link to="/candidate/login">For candidates</Link>
           </FooterColumn>
           <FooterColumn title="Company">

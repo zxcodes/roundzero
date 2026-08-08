@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { MAX_JOB_DESCRIPTION_LENGTH } from "@/features/jobs/constants";
+import { getRemoteLocationPublishIssue } from "@/features/jobs/publish-readiness";
 import {
   employmentTypeSchema,
   experienceLevelSchema,
@@ -61,15 +62,25 @@ const jobFieldsBaseSchema = z.object({
   expiresAt: z.coerce.date().nullable().optional(),
 });
 
-export const jobFieldsSchema = jobFieldsBaseSchema.refine(
-  (data) => {
-    if (data.salaryMin != null && data.salaryMax != null) {
-      return data.salaryMin <= data.salaryMax;
-    }
-    return true;
-  },
-  { message: "Minimum salary cannot exceed maximum salary", path: ["salaryMin"] },
-);
+export const jobFieldsSchema = jobFieldsBaseSchema
+  .refine(
+    (data) => {
+      if (data.salaryMin != null && data.salaryMax != null) {
+        return data.salaryMin <= data.salaryMax;
+      }
+      return true;
+    },
+    { message: "Minimum salary cannot exceed maximum salary", path: ["salaryMin"] },
+  )
+  .superRefine((data, context) => {
+    if (data.status !== "open") return;
+    const issue = getRemoteLocationPublishIssue({
+      workplaceType: data.workplaceType,
+      location: data.location ?? null,
+    });
+    if (!issue) return;
+    context.addIssue({ code: "custom", message: issue, path: ["location"] });
+  });
 
 export const updateJobSchema = jobFieldsSchema.extend({
   id: z.string().uuid(),

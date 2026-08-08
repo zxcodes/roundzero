@@ -111,6 +111,7 @@ function RootComponent() {
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   const { pathname } = useLocation();
+  const normalizedPathname = pathname === "/" ? pathname : pathname.replace(/\/+$/, "");
 
   const routes: (keyof FileRoutesByTo)[] = [
     "/",
@@ -124,6 +125,14 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     "/tos",
     "/contact",
     "/compare",
+    "/candidate-screening-software",
+    "/ai-interview-platform",
+    "/candidate-evaluation-software",
+    "/pricing",
+    "/resources",
+    "/resources/skills-based-hiring",
+    "/resources/structured-interview-scorecards",
+    "/resources/ai-interview-guide",
   ];
 
   const matchesRoute = (route: string, pathname: string) => {
@@ -139,7 +148,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const isPublicRoute = routes.some((route) => matchesRoute(route, pathname));
+  const isPublicRoute = routes.some((route) => matchesRoute(route, normalizedPathname));
 
   return (
     <html lang="en" suppressHydrationWarning data-force-light={isPublicRoute ? "true" : undefined}>
