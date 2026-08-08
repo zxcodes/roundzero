@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   absoluteUrl,
+  articleJsonLd,
+  buildArticleSchema,
   buildBreadcrumbSchema,
   buildComparisonPageSchema,
   buildHomepageSchema,
@@ -12,6 +14,8 @@ import {
   homepageJsonLd,
   type JobPostingSchemaInput,
   NOINDEX_ROBOTS,
+  PUBLIC_STATIC_SITEMAP_ENTRIES,
+  PUBLIC_STATIC_SITEMAP_PATHS,
 } from "@/shared/seo";
 
 const job = {
@@ -134,6 +138,46 @@ describe("structured data", () => {
     expect(JSON.stringify(schema)).not.toContain("aggregateRating");
   });
 
+  it("describes a canonical article without invented authorship or ratings", () => {
+    const schema = buildArticleSchema({
+      title: "Skills-based hiring",
+      description: "A practical guide.",
+      path: "/resources/skills-based-hiring",
+      imagePath: "/og/skills-based-hiring.png",
+      datePublished: "2026-08-08",
+      dateModified: "2026-08-08",
+    });
+
+    expect(schema).toMatchObject({
+      "@context": "https://schema.org",
+      "@type": "Article",
+      headline: "Skills-based hiring",
+      url: absoluteUrl("/resources/skills-based-hiring"),
+      mainEntityOfPage: {
+        "@type": "WebPage",
+        "@id": absoluteUrl("/resources/skills-based-hiring"),
+      },
+      author: { "@type": "Organization", name: "RoundZero" },
+      image: absoluteUrl("/og/skills-based-hiring.png"),
+      datePublished: "2026-08-08",
+      dateModified: "2026-08-08",
+    });
+    expect(JSON.stringify(schema)).not.toContain("aggregateRating");
+  });
+
+  it("safely serializes article JSON-LD", () => {
+    const script = articleJsonLd({
+      title: "Guide </script>",
+      description: "No <script> can execute.",
+      path: "/resources/ai-interview-guide",
+      datePublished: "2026-08-08",
+      dateModified: "2026-08-08",
+    });
+
+    expect(script.children).not.toContain("</script>");
+    expect(JSON.parse(script.children)).toMatchObject({ "@type": "Article" });
+  });
+
   it("builds Google Jobs salary and remote-work properties", () => {
     const schema = buildJobPostingSchema(job);
 
@@ -232,6 +276,28 @@ describe("structured data", () => {
 });
 
 describe("XML output", () => {
+  it("includes every static public discovery page once", () => {
+    expect(PUBLIC_STATIC_SITEMAP_PATHS).toEqual(
+      expect.arrayContaining([
+        "/candidate-screening-software",
+        "/ai-interview-platform",
+        "/candidate-evaluation-software",
+        "/pricing",
+        "/resources",
+        "/resources/skills-based-hiring",
+        "/resources/structured-interview-scorecards",
+        "/resources/ai-interview-guide",
+      ]),
+    );
+    expect(new Set(PUBLIC_STATIC_SITEMAP_PATHS).size).toBe(PUBLIC_STATIC_SITEMAP_PATHS.length);
+    expect(PUBLIC_STATIC_SITEMAP_PATHS.every((path) => !path.includes("?"))).toBe(true);
+    expect(
+      PUBLIC_STATIC_SITEMAP_ENTRIES.filter((entry) => "lastModified" in entry).every((entry) =>
+        /^\d{4}-\d{2}-\d{2}$/.test(entry.lastModified),
+      ),
+    ).toBe(true);
+  });
+
   it("escapes XML-reserved characters", () => {
     expect(escapeXml(`A&B <tag> "quote" 'apostrophe'`)).toBe(
       "A&amp;B &lt;tag&gt; &quot;quote&quot; &apos;apostrophe&apos;",

@@ -23,6 +23,7 @@ import {
   startJobMatchingExtraction,
   startJobMatchingExtractions,
 } from "@/features/job-matching/server/orchestration";
+import { getRemoteLocationPublishIssue } from "@/features/jobs/publish-readiness";
 import {
   isJobPublishTransition,
   notifyJobPublished,
@@ -383,6 +384,10 @@ const publishCompanyJobs = async (companyId: string, requestedIds: string[]) => 
           "expired",
           `“${job.title}” has expired. Update its deadline before publishing.`,
         );
+      }
+      const remoteLocationIssue = getRemoteLocationPublishIssue(job);
+      if (remoteLocationIssue) {
+        throw new ExpectedError("invalid_input", `“${job.title}”: ${remoteLocationIssue}`);
       }
       jobs.push(job);
     }

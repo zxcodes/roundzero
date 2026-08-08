@@ -1,9 +1,10 @@
 import { renderHtml } from "@tanstack/markdown";
 
 import { markdownToPlainText } from "@/features/jobs/markdown";
+import { getRemoteApplicantCountry, normalizeJobCountry } from "@/features/jobs/publish-readiness";
 import { getPublicAssetUrl } from "@/shared/r2";
 
-export const DEFAULT_META_TITLE = "AI Candidate Screening & First-Round Interviews | RoundZero";
+export const DEFAULT_META_TITLE = "AI Hiring Evaluation & Adaptive Interviews | RoundZero";
 
 export const DEFAULT_META_DESCRIPTION =
   "RoundZero automatically interviews and evaluates applicants, delivering ranked candidates, structured reports, and evidence-backed recommendations before the first human interview.";
@@ -19,6 +20,26 @@ export const HOMEPAGE_META_DESCRIPTION =
 
 export const NOINDEX_ROBOTS = "noindex, nofollow, noarchive";
 export const NOINDEX_FOLLOW_ROBOTS = "noindex, follow, noarchive";
+
+export const PUBLIC_STATIC_SITEMAP_ENTRIES = [
+  { path: "/" },
+  { path: "/compare" },
+  { path: "/candidate-screening-software", lastModified: "2026-08-08" },
+  { path: "/ai-interview-platform", lastModified: "2026-08-08" },
+  { path: "/candidate-evaluation-software", lastModified: "2026-08-08" },
+  { path: "/pricing", lastModified: "2026-08-08" },
+  { path: "/resources", lastModified: "2026-08-08" },
+  { path: "/resources/skills-based-hiring", lastModified: "2026-08-08" },
+  { path: "/resources/structured-interview-scorecards", lastModified: "2026-08-08" },
+  { path: "/resources/ai-interview-guide", lastModified: "2026-08-08" },
+  { path: "/jobs" },
+  { path: "/companies" },
+  { path: "/contact" },
+  { path: "/privacy" },
+  { path: "/tos" },
+] as const;
+
+export const PUBLIC_STATIC_SITEMAP_PATHS = PUBLIC_STATIC_SITEMAP_ENTRIES.map((entry) => entry.path);
 
 export const PAGE_SEO = {
   jobs: {
@@ -299,6 +320,49 @@ export function comparisonPageJsonLd(comparison: ComparisonPageSchemaInput): Jso
   };
 }
 
+export type ArticleSchemaInput = {
+  title: string;
+  description: string;
+  path: string;
+  imagePath?: string;
+  datePublished: string;
+  dateModified: string;
+};
+
+export function buildArticleSchema(article: ArticleSchemaInput): Record<string, unknown> {
+  const url = absoluteUrl(article.path);
+  return {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "@id": `${url}#article`,
+    headline: article.title,
+    description: article.description,
+    url,
+    mainEntityOfPage: { "@type": "WebPage", "@id": url },
+    image: absoluteUrl(article.imagePath ?? "/og-default.png"),
+    datePublished: article.datePublished,
+    dateModified: article.dateModified,
+    author: { "@type": "Organization", name: "RoundZero", url: absoluteUrl("/") },
+    publisher: {
+      "@type": "Organization",
+      name: "RoundZero",
+      url: absoluteUrl("/"),
+      logo: {
+        "@type": "ImageObject",
+        url: absoluteUrl("/android-chrome-512x512.png"),
+      },
+    },
+    inLanguage: "en",
+  };
+}
+
+export function articleJsonLd(article: ArticleSchemaInput): JsonLdScript {
+  return {
+    type: "application/ld+json",
+    children: serializeJsonLd(buildArticleSchema(article)),
+  };
+}
+
 const employmentTypeToSchema = (type: string): string => {
   const map: Record<string, string> = {
     full_time: "FULL_TIME",
@@ -363,49 +427,6 @@ const US_STATE_CODES = new Set([
   "DC",
 ]);
 
-const COUNTRY_ALIASES: Record<string, string> = {
-  US: "US",
-  USA: "US",
-  "UNITED STATES": "US",
-  "UNITED STATES OF AMERICA": "US",
-  UK: "GB",
-  GB: "GB",
-  "UNITED KINGDOM": "GB",
-  UAE: "AE",
-  "UNITED ARAB EMIRATES": "AE",
-  AUSTRALIA: "AU",
-  AUSTRIA: "AT",
-  BELGIUM: "BE",
-  BRAZIL: "BR",
-  CANADA: "CA",
-  CZECHIA: "CZ",
-  "CZECH REPUBLIC": "CZ",
-  DENMARK: "DK",
-  FINLAND: "FI",
-  FRANCE: "FR",
-  GERMANY: "DE",
-  INDIA: "IN",
-  IRELAND: "IE",
-  ITALY: "IT",
-  JAPAN: "JP",
-  MEXICO: "MX",
-  NETHERLANDS: "NL",
-  "NEW ZEALAND": "NZ",
-  NORWAY: "NO",
-  POLAND: "PL",
-  PORTUGAL: "PT",
-  ROMANIA: "RO",
-  SINGAPORE: "SG",
-  "SOUTH AFRICA": "ZA",
-  SPAIN: "ES",
-  SWEDEN: "SE",
-  SWITZERLAND: "CH",
-};
-
-function normalizedCountry(value: string): string | null {
-  return COUNTRY_ALIASES[value.trim().toUpperCase()] ?? null;
-}
-
 function buildJobLocationProperties(job: JobPostingSchemaInput): Record<string, unknown> | null {
   const location = job.location?.trim();
   if (!location) {
@@ -413,8 +434,7 @@ function buildJobLocationProperties(job: JobPostingSchemaInput): Record<string, 
   }
 
   if (job.workplaceType === "remote") {
-    const restriction = location.match(/^remote\s*(?:[-–—:]|\()\s*([^)]+)\)?$/i)?.[1];
-    const country = restriction ? normalizedCountry(restriction) : null;
+    const country = getRemoteApplicantCountry(location);
     if (!country) {
       return null;
     }
@@ -448,7 +468,7 @@ function buildJobLocationProperties(job: JobPostingSchemaInput): Record<string, 
     };
   }
 
-  const country = normalizedCountry(finalPart);
+  const country = normalizeJobCountry(finalPart);
   if (!country) {
     return null;
   }

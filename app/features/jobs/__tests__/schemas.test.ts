@@ -40,6 +40,20 @@ describe("jobFieldsSchema", () => {
     expect(result.salaryMax).toBe(200000);
   });
 
+  it("requires a recognized applicant country when opening a remote job", () => {
+    expect(
+      jobFieldsSchema.safeParse({ ...validJob, status: "open", location: "Remote" }).success,
+    ).toBe(false);
+    expect(
+      jobFieldsSchema.safeParse({ ...validJob, status: "open", location: "Remote (India)" })
+        .success,
+    ).toBe(true);
+  });
+
+  it("allows incomplete remote locations while the job remains a draft", () => {
+    expect(jobFieldsSchema.safeParse({ ...validJob, location: "Remote" }).success).toBe(true);
+  });
+
   it("accepts null for nullable fields", () => {
     const result = jobFieldsSchema.parse({
       ...validJob,

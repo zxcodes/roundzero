@@ -46,24 +46,37 @@ function TierCta({ plan, featured }: Tier) {
   );
 }
 
-export function MarketingPricingSection({ className }: { className?: string }) {
+export function MarketingPricingSection({
+  className,
+  showIntro = true,
+}: {
+  className?: string;
+  showIntro?: boolean;
+}) {
   return (
     <section id="pricing" className={cn("scroll-mt-20 border-b border-border bg-white", className)}>
       <div className="mx-auto w-full max-w-[90rem] px-5 py-20 sm:px-8 lg:px-12 lg:py-32 xl:px-16">
-        <div className="grid items-end gap-7 lg:grid-cols-12">
-          <div className="lg:col-span-7">
-            <span className="marketing-eyebrow">Pricing</span>
-            <h2 className="mt-5 max-w-3xl text-balance text-[clamp(2.5rem,5vw,5rem)] font-medium leading-[0.98] tracking-[-0.055em]">
-              Start with one role. Scale when hiring does.
-            </h2>
+        {showIntro ? (
+          <div className="grid items-end gap-7 lg:grid-cols-12">
+            <div className="lg:col-span-7">
+              <span className="marketing-eyebrow">Pricing</span>
+              <h2 className="mt-5 max-w-3xl text-balance text-[clamp(2.5rem,5vw,5rem)] font-medium leading-[0.98] tracking-[-0.055em]">
+                Start with one role. Scale when hiring does.
+              </h2>
+            </div>
+            <p className="max-w-md text-[1.02rem] leading-7 text-muted-foreground lg:col-span-4 lg:col-start-9 lg:pb-1">
+              Every plan pre-evaluates submitted applications and includes evidence-backed reports.
+              Upgrade for more active roles, reports, and teammates.
+            </p>
           </div>
-          <p className="max-w-md text-[1.02rem] leading-7 text-muted-foreground lg:col-span-4 lg:col-start-9 lg:pb-1">
-            Every plan pre-screens applicants and includes evidence-backed reports. Upgrade for more
-            active roles, reports, and teammates.
-          </p>
-        </div>
+        ) : null}
 
-        <div className="mt-12 grid border-t border-black/12 sm:grid-cols-2 lg:mt-16 lg:grid-cols-4">
+        <div
+          className={cn(
+            "grid border-t border-black/12 sm:grid-cols-2 lg:grid-cols-4",
+            showIntro ? "mt-12 lg:mt-16" : "",
+          )}
+        >
           {tiers.map((tier, index) => {
             const config = PLAN_CONFIGS[tier.plan];
 

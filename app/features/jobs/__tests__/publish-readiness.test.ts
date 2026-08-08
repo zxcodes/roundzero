@@ -27,6 +27,8 @@ describe("publish readiness", () => {
       getJobPublishBlockReason({
         status: "draft",
         expiresAt: null,
+        workplaceType: "hybrid",
+        location: "New York, NY",
       }),
     ).toBeNull();
 
@@ -35,9 +37,31 @@ describe("publish readiness", () => {
         {
           status: "draft",
           expiresAt: new Date("2026-01-01"),
+          workplaceType: "hybrid",
+          location: "New York, NY",
         },
         new Date("2026-02-01"),
       ),
     ).toBe("Update the expired deadline before publishing.");
+  });
+
+  it("requires a recognized applicant country for remote drafts", () => {
+    expect(
+      getJobPublishBlockReason({
+        status: "draft",
+        expiresAt: null,
+        workplaceType: "remote",
+        location: "Remote",
+      }),
+    ).toBe('Remote jobs must include an applicant country, for example "Remote (India)".');
+
+    expect(
+      getJobPublishBlockReason({
+        status: "draft",
+        expiresAt: null,
+        workplaceType: "remote",
+        location: "Remote (India)",
+      }),
+    ).toBeNull();
   });
 });
