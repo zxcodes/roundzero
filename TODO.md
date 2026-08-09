@@ -7,6 +7,7 @@
 
 ## Future
 
+- send periodic job recommendations to candidates (matches) based on their profile and put it behind a paywall. (DONE but not being a paywall)
 - add batch actions for companies (shortlist multiple candidates, and quick actions "shortlist top 3" reject "bottom ones")
 - see if we can add a cold reach out feature for companies (paid) so find any candidate on the platform in natural lang. should give their profile with a nice summary irrespective of job postings or anything. useful if companies are looking for someone direct instead of posting a job. an alternate way of hiring basically.
 - right now there's no feedback if there's something wrong with candidate's pdf. they can upload any pdf and the workflow will try to parse it. we need to detect if it's not a resume, and tell the user to add or something? think.
@@ -226,8 +227,6 @@
 <!--- make sure redirects work properly in the app.-->
 
 ## Agent & AI Stuff
-
-- send periodic job recommendations to candidates (matches) based on their profile and put it behind a paywall.
 
 <!--- add guard rails during agent conv, detect short and uninterested answers, detect screenshots, detect ai responses, detect if text was copied, and detect if answers don't align with normal conv tone and more. basically ai beating ai. - this will be another step in post-evaluation.-->
 <!--- show suggested skills based on job description.-->
