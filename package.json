@@ -13,6 +13,7 @@
     "sqlgen": "sqlc generate",
     "db:reset": "bash db/reset.sh",
     "db:seed": "bun ./seed.ts",
+    "db:seed:candidate": "bun ./seed-candidate.ts",
     "db:migrate": "dbmate migrate up --url $DATABASE_URL",
     "check": "oxfmt && oxlint --fix && bun typecheck",
     "typecheck": "tsc --noEmit",
