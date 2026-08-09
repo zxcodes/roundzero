@@ -1,5 +1,5 @@
-import { closeSql } from "./db/seed/util";
 import { runCandidateSeed } from "./db/seed/seed";
+import { closeSql } from "./db/seed/util";
 
 try {
   await runCandidateSeed();
