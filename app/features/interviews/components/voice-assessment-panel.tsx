@@ -23,13 +23,14 @@ import {
   requestMyVoiceFinalization,
 } from "@/features/interviews/server/functions";
 import type { VoiceFinalizationResult } from "@/features/interviews/server/voice-assessment";
-import { waitForCandidateUtteranceCommit } from "@/features/interviews/shared/voice-client";
+import {
+  buildVoiceDisplayMessages,
+  type VoiceDisplayMessage,
+  waitForCandidateUtteranceCommit,
+} from "@/features/interviews/shared/voice-client";
 import { cn } from "@/lib/utils";
 
 type VoiceAssessmentStatus = "pending" | "in_call" | "completed" | "skipped" | "error";
-type ChatMessage = { role: "assistant" | "user"; text: string };
-
-const EXPRESSIVE_TAG_RE = /\[[\w\s-]+?\]\s*/g;
 
 const customVoiceMessageSchema = z.discriminatedUnion("type", [
   z
@@ -55,34 +56,6 @@ const customVoiceMessageSchema = z.discriminatedUnion("type", [
     .strict(),
 ]);
 
-const normalizeMessageKey = (message: ChatMessage) =>
-  `${message.role}:${message.text.replace(/\s+/gu, " ").trim().toLowerCase()}`;
-
-function mergeChatMessages(current: ChatMessage[], incoming: ChatMessage[]) {
-  const merged = [...current];
-  const keys = new Set(current.map(normalizeMessageKey));
-  for (const message of incoming) {
-    const text = message.text.replace(EXPRESSIVE_TAG_RE, "").trim();
-    if (!text) continue;
-
-    const normalized = { ...message, text };
-    const key = normalizeMessageKey(normalized);
-    if (keys.has(key)) continue;
-    keys.add(key);
-    merged.push(normalized);
-  }
-  return merged;
-}
-
-function cloudflareTranscriptToChat(transcript: TranscriptMessage[]): ChatMessage[] {
-  return transcript.reduce<ChatMessage[]>((messages, message) => {
-    const text = message.text.replace(EXPRESSIVE_TAG_RE, "").trim();
-    if (!text) return messages;
-    messages.push({ role: message.role === "assistant" ? "assistant" : "user", text });
-    return messages;
-  }, []);
-}
-
 function getEffectiveStatus(status: string | null | undefined): VoiceAssessmentStatus | null {
   if (!status) return null;
   if (status === "in_progress") return "in_call";
@@ -91,7 +64,7 @@ function getEffectiveStatus(status: string | null | undefined): VoiceAssessmentS
 }
 
 export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
-  const [displayTranscript, setDisplayTranscript] = useState<ChatMessage[]>([]);
+  const [recoveredMessages, setRecoveredMessages] = useState<VoiceDisplayMessage[]>([]);
   const prepareConnection = useServerFn(prepareMyVoiceConnection);
 
   const assessmentQuery = useQuery({
@@ -135,7 +108,7 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
   };
 
   if (effectiveStatus === "completed") {
-    const completedMessages: ChatMessage[] = (historicalTranscriptQuery.data ?? []).map(
+    const completedMessages: VoiceDisplayMessage[] = (historicalTranscriptQuery.data ?? []).map(
       (message) => ({
         role: message.role === "assistant" ? "assistant" : "user",
         text: message.content,
@@ -184,8 +157,8 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
     <PreparedVoiceAssessment
       key={preparationQuery.data.expiresAt}
       interviewId={interviewId}
-      messages={displayTranscript}
-      onMessagesChange={setDisplayTranscript}
+      recoveredMessages={recoveredMessages}
+      onRecoveredMessagesChange={setRecoveredMessages}
       onRefreshCapability={refreshCapability}
     />
   );
@@ -193,13 +166,13 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
 
 function PreparedVoiceAssessment({
   interviewId,
-  messages,
-  onMessagesChange,
+  recoveredMessages,
+  onRecoveredMessagesChange,
   onRefreshCapability,
 }: {
   interviewId: string;
-  messages: ChatMessage[];
-  onMessagesChange: (messages: ChatMessage[]) => void;
+  recoveredMessages: VoiceDisplayMessage[];
+  onRecoveredMessagesChange: (messages: VoiceDisplayMessage[]) => void;
   onRefreshCapability: () => Promise<void>;
 }) {
   const router = useRouter();
@@ -209,8 +182,7 @@ function PreparedVoiceAssessment({
   const historyRequestedRef = useRef(false);
   const transcriptRef = useRef<TranscriptMessage[]>([]);
   const interimTranscriptRef = useRef<string | null>(null);
-  const messagesRef = useRef(messages);
-  const onMessagesChangeRef = useRef(onMessagesChange);
+  const onRecoveredMessagesChangeRef = useRef(onRecoveredMessagesChange);
   const finalizeRef = useRef<() => Promise<void>>(async () => {});
   const [clientError, setClientError] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
@@ -231,24 +203,19 @@ function PreparedVoiceAssessment({
 
   transcriptRef.current = voice.transcript;
   interimTranscriptRef.current = voice.interimTranscript;
-  messagesRef.current = messages;
-  onMessagesChangeRef.current = onMessagesChange;
+  onRecoveredMessagesChangeRef.current = onRecoveredMessagesChange;
 
   const { connected, sendJSON } = voice;
 
   const isInCall = voice.status !== "idle";
   const isConnecting = !voice.connected;
   const interim = voice.interimTranscript?.trim() ?? "";
+  const messages = buildVoiceDisplayMessages(recoveredMessages, voice.transcript);
+  const lastMessageText = messages.at(-1)?.text;
 
   useEffect(() => {
     transcriptEndRef.current?.scrollIntoView({ block: "end" });
-  });
-
-  useEffect(() => {
-    const liveMessages = cloudflareTranscriptToChat(voice.transcript);
-    if (liveMessages.length === 0) return;
-    onMessagesChangeRef.current(mergeChatMessages(messagesRef.current, liveMessages));
-  }, [voice.transcript]);
+  }, [interim, lastMessageText, messages.length]);
 
   useEffect(() => {
     if (!connected) {
@@ -269,7 +236,7 @@ function PreparedVoiceAssessment({
         role: message.role,
         text: message.content,
       }));
-      onMessagesChangeRef.current(mergeChatMessages(messagesRef.current, recovered));
+      onRecoveredMessagesChangeRef.current(recovered);
       return;
     }
 
@@ -434,7 +401,7 @@ function PreparedVoiceAssessment({
               </p>
               <p className="text-xs text-muted-foreground">
                 {endingAfterFarewell
-                  ? "Finish the assessment after Zero's farewell."
+                  ? "Confirm once you have heard Zero's full closing."
                   : isInCall
                     ? "Speak naturally. Zero will follow up when you pause."
                     : "A short voice conversation to assess communication skills."}
@@ -458,7 +425,7 @@ function PreparedVoiceAssessment({
               ) : (
                 <HugeiconsIcon icon={PhoneOff01Icon} strokeWidth={2} className="size-4" />
               )}
-              {endingAfterFarewell ? "Finish assessment" : "End call"}
+              {endingAfterFarewell ? "I heard Zero — finish" : "End call"}
             </Button>
           ) : null}
         </div>
@@ -471,7 +438,7 @@ function PreparedVoiceAssessment({
           <div className="space-y-7 px-5 py-6 md:px-7 md:py-7">
             {messages.map((message, index) => (
               <TranscriptBubble
-                key={`${index}-${message.role}-${message.text.length}`}
+                key={`${index}-${message.role}`}
                 message={{
                   role: message.role === "user" ? "candidate" : "assistant",
                   content: message.text,
@@ -553,7 +520,7 @@ function PreparedVoiceAssessment({
   );
 }
 
-function CompletedVoiceAssessment({ messages }: { messages: ChatMessage[] }) {
+function CompletedVoiceAssessment({ messages }: { messages: VoiceDisplayMessage[] }) {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-muted/30">
       {messages.length > 0 ? (

@@ -10,6 +10,7 @@
     "deploy:production": "CLOUDFLARE_ENV=production vite build && CLOUDFLARE_ENV=production wrangler deploy --secrets-file .env.production",
     "cf-typegen": "wrangler types --env-file .env.example",
     "test": "vitest run",
+    "test:workers": "vitest run --config vitest.workers.config.ts",
     "sqlgen": "sqlc generate",
     "db:reset": "bash db/reset.sh",
     "db:seed": "bun ./seed.ts",
@@ -83,6 +84,7 @@
   "devDependencies": {
     "@babel/core": "^8.0.1",
     "@cloudflare/vite-plugin": "^1.51.1",
+    "@cloudflare/vitest-pool-workers": "^0.20.3",
     "@types/bun": "^1.3.14",
     "@types/node": "^26.2.0",
     "@types/react": "^19.2.18",
