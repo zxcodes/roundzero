@@ -1,3 +1,4 @@
+import { getAgentByName } from "agents";
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers";
 
 import { ACCOUNT_CLEANUP_SWEEP_LIMIT } from "@/features/accounts/config";
@@ -37,7 +38,16 @@ export class AccountCleanupWorkflow extends WorkflowEntrypoint<Env> {
           { retries: { limit: 1, delay: "10 seconds", backoff: "exponential" } },
           async (): Promise<SweepEntry> => {
             const db = getDb();
-            const result = await eraseDeletedAccount(db, this.env.RESUMES, row.id);
+            const result = await eraseDeletedAccount(db, this.env.RESUMES, row.id, {
+              eraseVoiceHistory: async (interviewId) => {
+                const voiceAgent = await getAgentByName(
+                  this.env.VoiceAssessmentAgent,
+                  interviewId,
+                  { locationHint: "enam" },
+                );
+                await voiceAgent.eraseConversationHistory();
+              },
+            });
             return { userId: row.id, status: "ok", erased: result.erased };
           },
         );

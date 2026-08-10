@@ -193,6 +193,11 @@ INSERT INTO communication_assessments (interview_id, application_id, status)
 VALUES ($1, $2, $3)
 RETURNING *;
 
+-- name: createCommunicationAssessmentIfAbsent :exec
+INSERT INTO communication_assessments (interview_id, application_id, status)
+VALUES ($1, $2, 'pending')
+ON CONFLICT (interview_id) DO NOTHING;
+
 -- name: getCommunicationAssessmentByInterviewId :one
 SELECT *
 FROM communication_assessments
@@ -203,29 +208,21 @@ SELECT *
 FROM communication_assessments
 WHERE application_id = $1;
 
--- name: getCommunicationAssessmentByProviderConversationId :one
-SELECT *
-FROM communication_assessments
-WHERE provider_conversation_id = $1;
-
--- name: getCommunicationAssessmentByProviderSessionId :one
-SELECT *
-FROM communication_assessments
-WHERE provider_session_id = $1;
-
--- name: registerCommunicationAssessmentSession :one
+-- name: startCommunicationAssessment :one
 UPDATE communication_assessments
-SET provider_session_id = $2,
-    provider_conversation_id = NULL,
+SET status = 'in_progress',
+    started_at = COALESCE(started_at, now()),
     updated_at = now()
 WHERE interview_id = $1
-RETURNING *;
-
--- name: registerCommunicationAssessmentConversation :one
-UPDATE communication_assessments
-SET provider_conversation_id = $2,
-    updated_at = now()
-WHERE interview_id = $1
+  AND status IN ('pending', 'in_progress')
+  AND EXISTS (
+    SELECT 1
+    FROM interviews i
+    JOIN applications a ON a.id = i.application_id
+    WHERE i.id = communication_assessments.interview_id
+      AND i.status = 'awaiting_voice'
+      AND a.status NOT IN ('withdrawn', 'rejected')
+  )
 RETURNING *;
 
 -- name: completeCommunicationAssessment :one

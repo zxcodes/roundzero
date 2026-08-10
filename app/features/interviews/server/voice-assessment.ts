@@ -1,12 +1,13 @@
 import { generateText, Output } from "ai";
 import { env } from "cloudflare:workers";
-import { z } from "zod";
 
 import {
   completeCommunicationAssessment,
   completeInterviewAfterVoice,
+  createCommunicationAssessmentIfAbsent,
   getCommunicationAssessmentByInterviewId,
   getInterviewContextById,
+  startCommunicationAssessment,
 } from "@/features/interviews/queries/queries_sql";
 import type { loadVoiceAssessmentContext } from "@/features/interviews/shared/voice-runtime";
 import { getReportByApplicationId } from "@/features/reports/queries/queries_sql";
@@ -16,132 +17,26 @@ import {
   communicationAssessmentSchema,
   parseCommunicationAssessment,
 } from "@/prompts/communication-assessment";
-import { ExpectedError } from "@/shared/expected-error";
+import { asSqlTransaction } from "@/shared/db-transaction";
 import { createChatModel } from "@/shared/openrouter";
 import { disposeRpcResource } from "@/shared/workflow-rpc";
 import { refineCommunicationAnalysis } from "@/workflows/post-evaluation/refine";
-
-const elevenLabsTranscriptEventSchema = z.object({
-  type: z.literal("post_call_transcription"),
-  data: z.object({
-    conversationId: z.string().min(1).optional(),
-    conversation_id: z.string().min(1).optional(),
-    userId: z.string().min(1).optional(),
-    user_id: z.string().min(1).optional(),
-    transcript: z
-      .array(
-        z.object({
-          role: z.string().min(1),
-          message: z.string().default(""),
-        }),
-      )
-      .catch([]),
-  }),
-});
-
-export const elevenLabsWebhookEventSchema = z.discriminatedUnion("type", [
-  elevenLabsTranscriptEventSchema,
-  z.object({ type: z.literal("post_call_audio") }).loose(),
-  z.object({ type: z.literal("call_initiation_failure") }).loose(),
-]);
 
 export type VoiceTranscriptMessage = {
   role: "assistant" | "candidate";
   content: string;
 };
 
-async function verifyElevenLabsSignature(
-  rawBody: string,
-  sigHeader: string,
-  secret: string,
-): Promise<unknown> {
-  const parts = sigHeader.split(",");
-  const timestamp = parts.find((p) => p.startsWith("t="))?.slice(2);
-  const signature = parts.find((p) => p.startsWith("v0="));
-
-  if (!timestamp || !signature) {
-    throw new ExpectedError("invalid_input", "No signature hash found with expected scheme v0");
-  }
-
-  const reqTimestamp = Number(timestamp) * 1000;
-  if (reqTimestamp < Date.now() - 30 * 60 * 1000) {
-    throw new ExpectedError("invalid_input", "Timestamp outside the tolerance zone");
-  }
-
-  const enc = new TextEncoder();
-  const cryptoKey = await crypto.subtle.importKey(
-    "raw",
-    enc.encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const sig = await crypto.subtle.sign("HMAC", cryptoKey, enc.encode(`${timestamp}.${rawBody}`));
-
-  const digest =
-    "v0=" +
-    Array.from(new Uint8Array(sig))
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
-
-  if (signature !== digest) {
-    throw new ExpectedError("invalid_input", "Signature hash does not match");
-  }
-
-  try {
-    return JSON.parse(rawBody);
-  } catch {
-    throw new ExpectedError("invalid_input", "Invalid webhook payload");
-  }
-}
-
-function parseElevenLabsWebhookPayload(rawBody: string) {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(rawBody);
-  } catch {
-    throw new ExpectedError("invalid_input", "Invalid webhook payload");
-  }
-
-  const result = elevenLabsWebhookEventSchema.safeParse(parsed);
-  if (!result.success) {
-    throw new ExpectedError("invalid_input", "Invalid webhook payload");
-  }
-  return result.data;
-}
-
-export async function parseElevenLabsWebhookEvent(request: Request) {
-  const rawBody = await request.text();
-  const secret = env.ELEVENLABS_WEBHOOK_SECRET;
-
-  if (!secret) {
-    return parseElevenLabsWebhookPayload(rawBody);
-  }
-
-  const signature = request.headers.get("elevenlabs-signature");
-  if (!signature) {
-    throw new ExpectedError("invalid_input", "Missing elevenlabs-signature header");
-  }
-
-  const verified = await verifyElevenLabsSignature(rawBody, signature, secret);
-  const result = elevenLabsWebhookEventSchema.safeParse(verified);
-  if (!result.success) {
-    throw new ExpectedError("invalid_input", "Invalid webhook payload");
-  }
-  return result.data;
-}
-
-export function getWebhookConversationId(
-  event: z.infer<typeof elevenLabsTranscriptEventSchema>,
-): string | null {
-  return event.data.conversationId ?? event.data.conversation_id ?? null;
-}
-
-export function getWebhookSessionId(
-  event: z.infer<typeof elevenLabsTranscriptEventSchema>,
-): string | null {
-  return event.data.userId ?? event.data.user_id ?? null;
-}
+export type VoiceFinalizationResult =
+  | { ok: true; reason: "completed" | "already_completed" }
+  | {
+      ok: false;
+      reason:
+        | "no_candidate_speech"
+        | "assessment_unavailable"
+        | "terminal_state"
+        | "retryable_failure";
+    };
 
 const EXPRESSIVE_TAG_RE = /\[[\w\s-]+?\]\s*/g;
 
@@ -149,26 +44,52 @@ function stripExpressiveTags(text: string): string {
   return text.replace(EXPRESSIVE_TAG_RE, "").trim();
 }
 
-export function normalizeVoiceTranscriptMessages(
-  transcript: z.infer<typeof elevenLabsTranscriptEventSchema>["data"]["transcript"],
-): Array<VoiceTranscriptMessage> {
-  return transcript.reduce<Array<VoiceTranscriptMessage>>((messages, message) => {
-    const content = stripExpressiveTags(message.message);
-    if (!content) {
-      return messages;
+export async function startVoiceAssessmentCall(
+  db: Parameters<typeof getInterviewContextById>[0],
+  interviewId: string,
+) {
+  return await db.begin(async (tx) => {
+    const [reference] = await tx<{ application_id: string }[]>`
+      SELECT application_id
+      FROM interviews
+      WHERE id = ${interviewId}
+    `;
+    if (!reference) return null;
+
+    // Match the canonical application -> interview lock order used by
+    // rejection, withdrawal, and finalization so lifecycle races serialize.
+    const [application] = await tx<{ status: string }[]>`
+      SELECT status
+      FROM applications
+      WHERE id = ${reference.application_id}
+      FOR UPDATE
+    `;
+    const [interview] = await tx<{ status: string }[]>`
+      SELECT status
+      FROM interviews
+      WHERE id = ${interviewId}
+      FOR UPDATE
+    `;
+    if (
+      !application ||
+      !interview ||
+      application.status === "withdrawn" ||
+      application.status === "rejected" ||
+      interview.status !== "awaiting_voice"
+    ) {
+      return null;
     }
 
-    if (message.role === "agent" || message.role === "assistant") {
-      messages.push({ role: "assistant", content });
-      return messages;
-    }
+    const transaction = asSqlTransaction(tx);
+    await createCommunicationAssessmentIfAbsent(transaction, {
+      interviewId,
+      applicationId: reference.application_id,
+    });
+    const startedAssessment = await startCommunicationAssessment(transaction, { interviewId });
+    if (!startedAssessment) return null;
 
-    if (message.role === "user" || message.role === "candidate") {
-      messages.push({ role: "candidate", content });
-    }
-
-    return messages;
-  }, []);
+    return await getInterviewContextById(transaction, { id: interviewId });
+  });
 }
 
 /**
@@ -190,40 +111,55 @@ export async function finalizeVoiceAssessmentFromTranscript(input: {
   interviewId: string;
   messages: Array<VoiceTranscriptMessage>;
   audioKey?: string | null;
-}) {
+}): Promise<VoiceFinalizationResult> {
   const existingAssessment = await getCommunicationAssessmentByInterviewId(input.db, {
     interviewId: input.interviewId,
   });
   const interview = await getInterviewContextById(input.db, { id: input.interviewId });
 
   if (existingAssessment?.status === "completed") {
-    if (interview) {
+    if (interview?.status === "completed") {
       await startPostEvaluation(input.db, {
         interviewId: input.interviewId,
         applicationId: interview.applicationId,
       });
+      return { ok: true, reason: "already_completed" };
     }
-    return true;
+    if (
+      interview?.status === "cancelled" ||
+      interview?.status === "expired" ||
+      interview === null
+    ) {
+      return { ok: false, reason: "terminal_state" };
+    }
+    return { ok: false, reason: "retryable_failure" };
   }
 
   if (!existingAssessment || existingAssessment.status === "skipped") {
-    return false;
+    return { ok: false, reason: "assessment_unavailable" };
   }
 
   if (interview?.status !== "awaiting_voice") {
-    return false;
+    if (interview?.status === "cancelled" || interview?.status === "expired") {
+      return { ok: false, reason: "terminal_state" };
+    }
+    return { ok: false, reason: "assessment_unavailable" };
   }
 
-  const transcriptForDb = input.messages.map((message) => ({
-    role: message.role,
-    content: stripExpressiveTags(message.content),
-  }));
+  const transcriptForDb = input.messages.reduce<Array<VoiceTranscriptMessage>>(
+    (messages, message) => {
+      const content = stripExpressiveTags(message.content);
+      if (!content) return messages;
+      messages.push({ role: message.role, content });
+      return messages;
+    },
+    [],
+  );
 
-  // Never terminally complete an empty transcript. An empty webhook payload
-  // would otherwise lock the row and block the browser fallback (or a later,
-  // real webhook) from ever saving the actual conversation.
-  if (transcriptForDb.length === 0) {
-    return false;
+  // An assistant greeting alone is not an assessment. Keep the row retryable
+  // until committed history contains at least one candidate utterance.
+  if (!transcriptForDb.some((message) => message.role === "candidate")) {
+    return { ok: false, reason: "no_candidate_speech" };
   }
 
   const transition = await input.db.begin(async (tx) => {
@@ -296,14 +232,19 @@ export async function finalizeVoiceAssessmentFromTranscript(input: {
     return { kind: "completed", applicationId: completedInterview.applicationId } as const;
   });
 
-  if (transition.kind !== "completed") return false;
+  if (transition.kind === "terminal_winner" || transition.kind === "not_awaiting_voice") {
+    return { ok: false, reason: "terminal_state" };
+  }
+  if (transition.kind === "assessment_not_completed" || transition.kind === "completion_failed") {
+    return { ok: false, reason: "retryable_failure" };
+  }
 
   await startPostEvaluation(input.db, {
     interviewId: input.interviewId,
     applicationId: transition.applicationId,
   });
 
-  return true;
+  return { ok: true, reason: "completed" };
 }
 
 /**

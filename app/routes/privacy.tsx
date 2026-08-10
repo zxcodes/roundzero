@@ -58,8 +58,9 @@ function PrivacyPage() {
         <p>
           <LegalStrong>Interview Data:</LegalStrong> During AI text interviews, we collect your
           conversation transcript with our AI interviewer. If you complete the voice assessment, we
-          also store the voice conversation transcript and may store an audio recording. This data
-          is used to generate evaluation reports and for quality and auditing purposes.
+          process your voice audio live and store the resulting conversation transcript. The current
+          voice assessment does not record or store a call-audio recording. The transcript is used
+          to generate evaluation reports and for quality and auditing purposes.
         </p>
         <p>
           <LegalStrong>Usage Data:</LegalStrong> We automatically collect information about how you
@@ -106,12 +107,19 @@ function PrivacyPage() {
             .
           </li>
           <li>
-            <strong>Cloudflare</strong> for hosting, storage (R2), AI infrastructure, and
-            transactional email delivery. See{" "}
+            <strong>Cloudflare</strong> for hosting, storage (including R2 and Durable Objects), AI
+            infrastructure, live voice processing, and transactional email delivery. Voice speech
+            processing uses Deepgram partner models hosted on Cloudflare Workers AI infrastructure.
+            See{" "}
             <LegalLink href="https://www.cloudflare.com/privacypolicy/">
               Cloudflare's Privacy Policy
+            </LegalLink>{" "}
+            and{" "}
+            <LegalLink href="https://developers.cloudflare.com/workers-ai/platform/data-usage/">
+              Workers AI Data Usage
             </LegalLink>
-            .
+            . Deepgram's model terms and privacy information are available through its{" "}
+            <LegalLink href="https://deepgram.com/privacy">Privacy Policy</LegalLink>.
           </li>
           <li>
             <strong>OpenRouter</strong> for AI model inference during interviews and evaluations.
@@ -120,10 +128,6 @@ function PrivacyPage() {
               OpenRouter's Privacy Policy
             </LegalLink>
             .
-          </li>
-          <li>
-            <strong>ElevenLabs</strong> for voice interview sessions (speech processing). See{" "}
-            <LegalLink href="https://elevenlabs.io/privacy">ElevenLabs' Privacy Policy</LegalLink>.
           </li>
         </ul>
         <p>
@@ -145,10 +149,10 @@ function PrivacyPage() {
           controls, and regular security audits.
         </p>
         <p>
-          Resumes, voice audio, and company logos are stored in Cloudflare R2. File access is
-          mediated through our servers — we do not expose direct public download links for private
-          uploads. Interview transcripts and evaluation data are stored securely and access is
-          restricted to authorized personnel and the company you applied to.
+          Resumes and company logos are stored in Cloudflare R2. File access is mediated through our
+          servers — we do not expose direct public download links for private uploads. Interview
+          transcripts and evaluation data are stored securely and access is restricted to authorized
+          personnel and the company you applied to.
         </p>
         <p>
           While we take reasonable precautions, no system is completely secure. We cannot guarantee
@@ -166,6 +170,11 @@ function PrivacyPage() {
           <li>
             Application data and interview transcripts are retained for the duration of the hiring
             process and a reasonable period afterward to support disputes or audits.
+          </li>
+          <li>
+            Reconnectable voice-session history may remain in Cloudflare Durable Object storage for
+            up to seven days. The final transcript follows the interview retention described above;
+            account erasure clears both copies.
           </li>
           <li>
             Usage and log data are retained for a shorter period, typically up to 12 months, unless

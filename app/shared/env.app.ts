@@ -7,7 +7,7 @@ const envSchema = z.object({
 
   APP_URL: z.url(),
 
-  SESSION_SECRET: z.string(),
+  SESSION_SECRET: z.string().min(32),
 
   // Cloudflare Email Service — from address must use an onboarded sending domain.
   EMAIL_FROM: z.email(),

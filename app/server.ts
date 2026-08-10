@@ -1,8 +1,16 @@
 import * as Sentry from "@sentry/cloudflare";
 import { wrapFetchWithSentry } from "@sentry/tanstackstart-react";
 import handler from "@tanstack/react-start/server-entry";
+import { routeAgentRequest } from "agents";
 
+import { getUserById } from "./features/auth/queries/queries_sql";
 import { handlePolarWebhook } from "./features/billing/webhook";
+import {
+  getCommunicationAssessmentByInterviewId,
+  getInterviewForCandidateById,
+} from "./features/interviews/queries/queries_sql";
+import { VoiceAssessmentAgent } from "./features/interviews/server/voice-agent";
+import { authorizeVoiceAgentUpgrade } from "./features/interviews/server/voice-agent-route";
 import { getDb } from "./shared/db";
 import { isDev } from "./shared/env.app";
 import { sentryOptions } from "./shared/sentry";
@@ -23,6 +31,7 @@ export { PreEvaluationWorkflow } from "./workflows/pre-evaluation/workflow";
 export { JobMatchingWorkflow } from "./workflows/job-matching/workflow";
 export { MatchDigestWorkflow } from "./workflows/match-digest/workflow";
 export { MatchReconciliationWorkflow } from "./workflows/match-reconciliation/workflow";
+export { VoiceAssessmentAgent };
 
 function getCacheKey(request: Request) {
   const url = new URL(request.url);
@@ -95,6 +104,37 @@ const appHandler = {
       return handlePolarWebhook(request);
     }
 
+    if (url.pathname.startsWith("/agents/")) {
+      const authorization = await authorizeVoiceAgentUpgrade({
+        request,
+        appUrl: env.APP_URL,
+        sessionSecret: env.SESSION_SECRET,
+        authorizeCandidate: async ({ interviewId, candidateId }) => {
+          const db = getDb();
+          const [user, interview, assessment] = await Promise.all([
+            getUserById(db, { id: candidateId }),
+            getInterviewForCandidateById(db, { id: interviewId, candidateId }),
+            getCommunicationAssessmentByInterviewId(db, { interviewId }),
+          ]);
+          if (user?.role !== "candidate" || !interview) return false;
+          if (
+            interview.status !== "awaiting_voice" ||
+            interview.applicationStatus === "withdrawn" ||
+            interview.applicationStatus === "rejected"
+          ) {
+            return false;
+          }
+          return (
+            !assessment || assessment.status === "pending" || assessment.status === "in_progress"
+          );
+        },
+      });
+      if (authorization instanceof Response) return authorization;
+
+      const agentResponse = await routeAgentRequest(request, env, { locationHint: "enam" });
+      return agentResponse ?? new Response("Not found", { status: 404 });
+    }
+
     const assetResponse = await serveAsset(request, env);
     if (assetResponse) return assetResponse;
 
@@ -106,7 +146,6 @@ const appHandler = {
       const body = `User-agent: *
 Allow: /
 Disallow: /api/interview-chat
-Disallow: /api/voice-webhook
 Disallow: /api/polar/
 
 Sitemap: ${siteUrl}/sitemap.xml
