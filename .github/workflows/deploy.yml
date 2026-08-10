@@ -64,6 +64,9 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/roundzero_test?sslmode=disable
           TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/roundzero_test?sslmode=disable
 
+      - name: Run Workers runtime tests
+        run: bun run test:workers
+
   deploy:
     needs: test
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'

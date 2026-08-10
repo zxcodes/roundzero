@@ -721,7 +721,7 @@ Normalize `TranscriptMessage` with its actual `{ role, text, timestamp }` shape 
 - trim empty messages;
 - continue de-duplicating DB terminal history and live history by normalized role/text.
 
-After `connected` becomes true and the hook's custom-message listener is installed, send `{ type: "request_voice_history" }`. Consume the response and merge it before current live messages. Validate it with a client-side Zod schema; never trust arbitrary custom WebSocket data. Keep recovered/live display history in application-owned parent state so remounting the hook for a refreshed cookie does not erase the UI transcript. It is never sent back for persistence.
+After `connected` becomes true and the hook's custom-message listener is installed, send `{ type: "request_voice_history" }`. Consume the response and merge it before current live messages. Validate it with a client-side Zod schema; never trust arbitrary custom WebSocket data. Keep only recovered history in application-owned parent state. Following Cloudflare's `useVoiceAgent` React guide, render the hook's current `transcript` snapshot directly and combine it with recovered history during render; do not append successive streamed snapshots into application state. Recovered and live display history is never sent back for persistence.
 
 ### 10.2 Start behavior
 
@@ -765,7 +765,7 @@ When Agent-requested completion or the maximum-duration guard fires, handle a va
 }
 ```
 
-Present “Finish assessment” and disable it while the closing response is still `speaking`. Once the candidate has heard the farewell and activates Finish, run the same intentional-end path. Keep the machine-readable reason so the UI can distinguish completion from an unexplained drop. Do not use a word-count timer or create a second completion implementation; staging may replace the explicit control only after proving a playback-drained signal that cannot clip audio.
+Present an explicit confirmation such as “I heard Zero — finish” and disable it while the closing response is still `speaking`. Cloudflare's status is pipeline state, not a playback-drained signal, so the candidate's confirmation is authoritative: once they have heard the farewell and activate Finish, run the same intentional-end path. Keep the machine-readable reason so the UI can distinguish completion from an unexplained drop. Do not use a word-count timer or create a second completion implementation; staging may replace the explicit control only after Cloudflare exposes or the application proves a playback-drained signal that cannot clip audio.
 
 ### 10.5 UI parity and improvements
 
@@ -942,6 +942,7 @@ Required behavior coverage or manual staging evidence:
 - microphone permission denial gives retryable UX;
 - `idle/listening/thinking/speaking` map correctly;
 - interim and final transcripts render correctly;
+- streamed assistant deltas update one live transcript bubble rather than appending each partial snapshot;
 - recovered history de-duplicates live transcript;
 - intentional end requests server-owned finalization without sending transcript data;
 - End with an interim candidate utterance waits for its committed transcript before closing;
