@@ -10,6 +10,7 @@ import {
 } from "@/features/interviews/queries/queries_sql";
 import {
   finalizeVoiceAssessmentFromTranscript,
+  startVoiceAssessmentCall,
   startPostEvaluation,
 } from "@/features/interviews/server/voice-assessment";
 import {
@@ -85,6 +86,55 @@ const seedAwaitingVoiceInterview = async () => {
   };
 };
 
+describe("voice assessment call start", () => {
+  it("starts an eligible assessment and returns authoritative interview context", async () => {
+    const { interviewId } = await seedAwaitingVoiceInterview();
+
+    const interview = await startVoiceAssessmentCall(sql, interviewId);
+
+    expect(interview?.id).toBe(interviewId);
+    expect(interview?.status).toBe("awaiting_voice");
+    const assessment = await interviewQueries.getCommunicationAssessmentByInterviewId(sql, {
+      interviewId,
+    });
+    expect(assessment?.status).toBe("in_progress");
+    expect(assessment?.startedAt).toBeInstanceOf(Date);
+  });
+
+  it.each([
+    { applicationStatus: "interview_in_progress", interviewStatus: "cancelled" },
+    { applicationStatus: "withdrawn", interviewStatus: "cancelled" },
+    { applicationStatus: "rejected", interviewStatus: "cancelled" },
+  ])(
+    "rejects a $applicationStatus/$interviewStatus lifecycle winner",
+    async ({ applicationStatus, interviewStatus }) => {
+      const { interviewId, applicationId } = await seedAwaitingVoiceInterview();
+      await sql.begin(async (tx) => {
+        await tx`SELECT id FROM applications WHERE id = ${applicationId} FOR UPDATE`;
+        await tx`
+          UPDATE applications
+          SET status = ${applicationStatus}, updated_at = now()
+          WHERE id = ${applicationId}
+        `;
+        await tx`
+          UPDATE interviews
+          SET status = ${interviewStatus}, cancelled_at = now(), updated_at = now()
+          WHERE id = ${interviewId}
+        `;
+      });
+
+      const interview = await startVoiceAssessmentCall(sql, interviewId);
+
+      expect(interview).toBeNull();
+      const assessment = await interviewQueries.getCommunicationAssessmentByInterviewId(sql, {
+        interviewId,
+      });
+      expect(assessment?.status).toBe("pending");
+      expect(assessment?.startedAt).toBeNull();
+    },
+  );
+});
+
 describe("voice assessment post-eval triggers", () => {
   beforeEach(() => {
     workflowMocks.create.mockClear();
@@ -95,7 +145,7 @@ describe("voice assessment post-eval triggers", () => {
   it("finalizes voice, completes the interview, and starts post-evaluation", async () => {
     const { interviewId, applicationId } = await seedAwaitingVoiceInterview();
 
-    const ok = await finalizeVoiceAssessmentFromTranscript({
+    const result = await finalizeVoiceAssessmentFromTranscript({
       db: sql,
       interviewId,
       messages: [
@@ -104,7 +154,7 @@ describe("voice assessment post-eval triggers", () => {
       ],
     });
 
-    expect(ok).toBe(true);
+    expect(result).toEqual({ ok: true, reason: "completed" });
     expect(workflowMocks.create).toHaveBeenCalledWith({
       id: interviewId,
       params: { interviewId },
@@ -128,7 +178,7 @@ describe("voice assessment post-eval triggers", () => {
       interviewId,
       messages: [{ role: "candidate", content: "First answer." }],
     });
-    expect(firstPass).toBe(true);
+    expect(firstPass).toEqual({ ok: true, reason: "completed" });
     workflowMocks.create.mockClear();
     workflowMocks.get.mockResolvedValueOnce({
       id: interviewId,
@@ -142,7 +192,7 @@ describe("voice assessment post-eval triggers", () => {
       messages: [{ role: "candidate", content: "Retry should not need new transcript." }],
     });
 
-    expect(secondPass).toBe(true);
+    expect(secondPass).toEqual({ ok: true, reason: "already_completed" });
     expect(workflowMocks.create).not.toHaveBeenCalled();
 
     const interview = await interviewQueries.getInterviewContextById(sql, { id: interviewId });
@@ -175,14 +225,37 @@ describe("voice assessment post-eval triggers", () => {
     const { interviewId } = await seedAwaitingVoiceInterview();
     await updateInterviewStatus(sql, { id: interviewId, status: "in_progress" });
 
-    const ok = await finalizeVoiceAssessmentFromTranscript({
+    const result = await finalizeVoiceAssessmentFromTranscript({
       db: sql,
       interviewId,
       messages: [{ role: "candidate", content: "Too early." }],
     });
 
-    expect(ok).toBe(false);
+    expect(result).toEqual({ ok: false, reason: "assessment_unavailable" });
     expect(workflowMocks.create).not.toHaveBeenCalled();
+  });
+
+  it("does not complete an assistant-only transcript", async () => {
+    const { interviewId } = await seedAwaitingVoiceInterview();
+
+    const result = await finalizeVoiceAssessmentFromTranscript({
+      db: sql,
+      interviewId,
+      messages: [
+        { role: "assistant", content: "Tell me about your work." },
+        { role: "candidate", content: "[noise]" },
+      ],
+    });
+
+    expect(result).toEqual({ ok: false, reason: "no_candidate_speech" });
+    expect(workflowMocks.create).not.toHaveBeenCalled();
+
+    const interview = await interviewQueries.getInterviewContextById(sql, { id: interviewId });
+    expect(interview?.status).toBe("awaiting_voice");
+    const assessment = await interviewQueries.getCommunicationAssessmentByInterviewId(sql, {
+      interviewId,
+    });
+    expect(assessment?.status).toBe("pending");
   });
 
   it.each([
@@ -198,13 +271,13 @@ describe("voice assessment post-eval triggers", () => {
         await tx`UPDATE interviews SET status = ${interviewStatus} WHERE id = ${interviewId}`;
       });
 
-      const ok = await finalizeVoiceAssessmentFromTranscript({
+      const result = await finalizeVoiceAssessmentFromTranscript({
         db: sql,
         interviewId,
         messages: [{ role: "candidate", content: "Late transcript." }],
       });
 
-      expect(ok).toBe(false);
+      expect(result).toEqual({ ok: false, reason: "terminal_state" });
       expect(workflowMocks.create).not.toHaveBeenCalled();
 
       const application = await getApplicationById(sql, { id: applicationId });

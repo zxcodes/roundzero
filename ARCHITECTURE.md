@@ -15,7 +15,7 @@ Implemented in the repo today:
 - in-app notifications with Cloudflare Email Service delivery
 - Cloudflare Workflows for pre-evaluation, post-evaluation, batch orchestration, pool-check, eval-retry, and account-cleanup
 - TanStack AI + OpenRouter text interviews (SSE via `/api/interview-chat`)
-- ElevenLabs Conversational AI for voice assessment
+- Cloudflare Voice Agents + Workers AI for voice assessment
 - AI pre-evaluation, interviews, reports, and ranked batch release flow
 - billing plan config, Polar checkout/webhooks, and plan-gated entitlements
 - multi-tenant company auth (membership, email invitations, team management)
@@ -35,6 +35,7 @@ Important current constraints:
 | Framework          | TanStack Start, React 19, Vite 8                       |
 | Runtime            | Cloudflare Worker                                      |
 | AI Runtime         | Cloudflare Workflows                                   |
+| Voice Runtime      | Cloudflare Agents, Voice, Durable Objects, Workers AI  |
 | Database           | Postgres                                               |
 | Local DB           | Docker Postgres containers (`rz_pg_dev`, `rz_pg_test`) |
 | Deployed DB Access | Hyperdrive binding in `wrangler.jsonc`                 |
@@ -646,18 +647,21 @@ Hybrid TanStack AI + OpenRouter:
 
 ### Voice Assessment
 
-The voice assessment uses ElevenLabs' Conversational AI:
+The voice assessment is a Cloudflare Voice Agent hosted in a Durable Object:
 
-- ElevenLabs handles all voice processing (STT, LLM, TTS) as a managed service
-- `getMyVoiceToken` is available only while `interviews.status === 'awaiting_voice'`
-- `getMyVoiceToken` generates a signed URL via `fetch` to the ElevenLabs REST API for client-side session initiation
-- Candidate/job context is injected via ElevenLabs `dynamicVariables` (`candidate_name`, `job_title`, `company_name`, `candidate_summary`)
-- The client connects via `@elevenlabs/client` `Conversation.startSession()` using the signed URL
-- `finalizeVoiceAssessmentFromTranscript` (ElevenLabs webhook or browser fallback) persists transcript with `analysis: null`, moves interview to `completed`, calls `startPostEvaluation`
-- Voice dimension analysis (`analyzeVoiceTranscript`) runs inside post-evaluation `load_voice_assessment`, not on the hot path
-- Communication score blend is evidence-weighted in `applyVoiceAssessmentToReport()` (not fixed 60/40)
-
-The agent's system prompt and voice personality are configured in the ElevenLabs dashboard.
+- `VoiceAssessmentAgent` uses `@cloudflare/voice` over the Agents SDK, with one Durable Object named by interview UUID.
+- Workers AI runs Deepgram Flux speech-to-text, `@cf/openai/gpt-oss-20b` conversation turns, and Deepgram Aura text-to-speech.
+- The browser uses `@cloudflare/voice/react` directly. `prepareMyVoiceConnection` issues a 30-minute, interview-scoped HttpOnly capability cookie only while the interview is eligible.
+- The Worker intercepts `/agents/voice-assessment-agent/:interviewId` before TanStack routing and accepts only same-origin WebSocket upgrades with a valid capability. It then rechecks the candidate role, interview ownership, application state, interview state, and communication-assessment state in Postgres before routing the original request to the Agent.
+- The source-controlled prompt and first message are built from server-owned job/company/candidate context in `voice-runtime.ts`. Candidate background is delimited as untrusted evidence.
+- A call creates the assessment if absent and changes it to `in_progress`. The Agent enforces one active speaker per interview and a 10-minute conversation limit, after which no new turn reaches the LLM and the candidate is asked to finish.
+- Durable Object SQLite is the authority for in-call and reconnect history. The browser is display-only and never submits transcript content to the server.
+- Intentional completion waits for a pending candidate utterance to commit, ends the live session, and calls an authenticated Agent RPC to finalize committed history. Finalization persists the Postgres transcript with `analysis: null`, moves the interview to `completed`, and starts post-evaluation idempotently.
+- Agent-selected completion speaks its farewell once, then asks the candidate to finish after playback; this avoids clipping the farewell because the Beta SDK has no browser playback-drained callback.
+- Durable Object history is scheduled for deletion no later than seven days after its first creation. Account erasure deletes it immediately in addition to redacting the final Postgres transcript.
+- The initial Cloudflare implementation does not record or store call audio. The nullable legacy `audio_key` column remains for compatibility and erasure coverage.
+- Voice dimension analysis (`analyzeVoiceTranscript`) runs inside post-evaluation `load_voice_assessment`, not on the hot path.
+- Communication score blend is evidence-weighted in `applyVoiceAssessmentToReport()` (not fixed 60/40).
 
 ### Post-Evaluation Workflow
 
@@ -793,7 +797,7 @@ wrangler hyperdrive create roundzero-db-staging \
 | Secret                       | Purpose                                                                               |
 | ---------------------------- | ------------------------------------------------------------------------------------- |
 | `DATABASE_URL`               | Postgres connection string for dbmate migrations                                      |
-| `SESSION_SECRET`             | Cookie signing key                                                                    |
+| `SESSION_SECRET`             | Session and voice-capability signing key                                              |
 | `APP_URL`                    | Canonical app URL (`https://staging.tryroundzero.com`)                                |
 | `EMAIL_FROM`                 | Transactional email from address (Cloudflare Email Service; domain must be onboarded) |
 | `OPENROUTER_API_KEY`         | LLM inference                                                                         |
@@ -803,9 +807,6 @@ wrangler hyperdrive create roundzero-db-staging \
 | `POLAR_PRODUCT_ID_STARTER`   | Polar Starter plan product ID                                                         |
 | `POLAR_PRODUCT_ID_GROWTH`    | Polar Growth plan product ID                                                          |
 | `POLAR_PRODUCT_ID_SCALE`     | Polar Scale plan product ID                                                           |
-| `ELEVENLABS_API_KEY`         | Voice assessment                                                                      |
-| `ELEVENLABS_AGENT_ID`        | Voice agent config                                                                    |
-| `ELEVENLABS_WEBHOOK_SECRET`  | Voice webhook verification                                                            |
 | `VITE_GOOGLE_CLIENT_ID`      | Google OAuth client ID                                                                |
 | `VITE_APP_URL`               | Client-side app URL                                                                   |
 | `VITE_PUBLIC_ASSET_BASE_URL` | R2 asset CDN domain (optional)                                                        |

@@ -30,6 +30,12 @@ function makeFakeR2Bucket(deleteImplementation?: (key: string) => Promise<void>)
   };
 }
 
+function makeExternalStores(eraseVoiceHistory?: (interviewId: string) => Promise<void>) {
+  return {
+    eraseVoiceHistory: vi.fn(eraseVoiceHistory ?? (async () => undefined)),
+  };
+}
+
 async function seedCandidatePipeline() {
   const { company } = await seedCompany();
   const { job } = await seedJob({ companyId: company.id, status: "open" });
@@ -187,7 +193,9 @@ describe("eraseDeletedAccount", () => {
       throw deletionError;
     });
 
-    await expect(eraseDeletedAccount(sql, bucket, candidate.id)).rejects.toThrow(deletionError);
+    await expect(
+      eraseDeletedAccount(sql, bucket, candidate.id, makeExternalStores()),
+    ).rejects.toThrow(deletionError);
     expect(deleteFn).toHaveBeenCalledTimes(1);
 
     const [userRow] = await sql`
@@ -237,8 +245,10 @@ describe("eraseDeletedAccount", () => {
     await softDeleteUser(candidate.id, daysAgo(31));
 
     const { bucket, deleteFn } = makeFakeR2Bucket();
-    const first = await eraseDeletedAccount(sql, bucket, candidate.id);
+    const externalStores = makeExternalStores();
+    const first = await eraseDeletedAccount(sql, bucket, candidate.id, externalStores);
     expect(first).toEqual({ erased: true });
+    expect(externalStores.eraseVoiceHistory).toHaveBeenCalledWith(interviewId);
 
     const deletedKeys = deleteFn.mock.calls.map(([key]) => key).sort();
     expect(deletedKeys).toEqual([appResumeKey, audioKey, profileResumeKey].sort());
@@ -340,12 +350,36 @@ describe("eraseDeletedAccount", () => {
     expect(feedbackCount?.count).toBe(0);
   });
 
+  it("does not anonymize the account when Durable Object voice-history erasure fails", async () => {
+    const { candidate, interviewId } = await seedCandidatePipeline();
+    await softDeleteUser(candidate.id, daysAgo(31));
+
+    const voiceError = new Error("Voice history unavailable");
+    const externalStores = makeExternalStores(async () => {
+      throw voiceError;
+    });
+    const { bucket } = makeFakeR2Bucket();
+
+    await expect(eraseDeletedAccount(sql, bucket, candidate.id, externalStores)).rejects.toThrow(
+      voiceError,
+    );
+    expect(externalStores.eraseVoiceHistory).toHaveBeenCalledWith(interviewId);
+
+    const [userRow] = await sql`
+      SELECT name, anonymized_at
+      FROM users
+      WHERE id = ${candidate.id}
+    `;
+    expect(userRow?.name).toBe(candidate.name);
+    expect(userRow?.anonymized_at).toBeNull();
+  });
+
   it("is idempotent on a second run", async () => {
     const { candidate } = await seedCandidatePipeline();
     await softDeleteUser(candidate.id, daysAgo(31));
 
     const { bucket } = makeFakeR2Bucket();
-    const first = await eraseDeletedAccount(sql, bucket, candidate.id);
+    const first = await eraseDeletedAccount(sql, bucket, candidate.id, makeExternalStores());
     expect(first).toEqual({ erased: true });
 
     const [afterFirst] = await sql`
@@ -354,7 +388,7 @@ describe("eraseDeletedAccount", () => {
       WHERE id = ${candidate.id}
     `;
 
-    const second = await eraseDeletedAccount(sql, bucket, candidate.id);
+    const second = await eraseDeletedAccount(sql, bucket, candidate.id, makeExternalStores());
     expect(second).toEqual({ erased: false });
 
     const [afterSecond] = await sql`
@@ -380,7 +414,7 @@ describe("eraseDeletedAccount", () => {
     await softDeleteUser(candidate.id, daysAgo(10));
 
     const { bucket, deleteFn } = makeFakeR2Bucket();
-    const result = await eraseDeletedAccount(sql, bucket, candidate.id);
+    const result = await eraseDeletedAccount(sql, bucket, candidate.id, makeExternalStores());
     expect(result).toEqual({ erased: false });
     expect(deleteFn).not.toHaveBeenCalled();
 
@@ -400,7 +434,7 @@ describe("eraseDeletedAccount", () => {
     await softDeleteUser(owner.id, daysAgo(31));
 
     const { bucket } = makeFakeR2Bucket();
-    const result = await eraseDeletedAccount(sql, bucket, owner.id);
+    const result = await eraseDeletedAccount(sql, bucket, owner.id, makeExternalStores());
     expect(result).toEqual({ erased: true });
 
     const [ownerRow] = await sql`
@@ -442,7 +476,7 @@ describe("eraseDeletedAccount", () => {
     await softDeleteUser(owner.id, daysAgo(31));
 
     const { bucket } = makeFakeR2Bucket();
-    const result = await eraseDeletedAccount(sql, bucket, owner.id);
+    const result = await eraseDeletedAccount(sql, bucket, owner.id, makeExternalStores());
     expect(result).toEqual({ erased: true });
 
     const [jobRow] = await sql`

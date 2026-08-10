@@ -170,20 +170,23 @@ Only for selected candidates who completed text + voice.
 1. Idempotency check
 2. Load interview context + transcript
 3. `assess_answer_authenticity` (Haiku in prod)
-4. `load_voice_assessment` — LLM analysis over stored ElevenLabs transcript (`generateText` + `Output.object`)
+4. `load_voice_assessment` — LLM analysis over the stored voice transcript (`generateText` + `Output.object`)
 5. Generate structured report (`post_eval` chain)
 6. Deterministic refine + `post_eval_audit` LLM pass
 7. Blend voice into communication score
 8. Persist report, move application to `evaluated_held`
 9. Batch orchestration holds until release
 
-## Voice assessment (ElevenLabs)
+## Voice assessment (Cloudflare)
 
-- ElevenLabs handles STT/LLM/TTS
-- `getMyVoiceToken` fetches signed URL via ElevenLabs REST API (`fetch` to `api.elevenlabs.io`)
-- Client: `@elevenlabs/client` + TanStack `useRealtimeChat` adapter
-- On end: transcript persisted (`analysis: null` initially); interview → `completed`; `startPostEvaluation` triggered
-- Voice dimension scoring runs in post-eval, not on the hot path
+- One `VoiceAssessmentAgent` Durable Object per interview runs the live session through `@cloudflare/voice` and the Agents SDK.
+- Speech-to-text uses Workers AI Deepgram Flux, conversation turns use Workers AI `@cf/openai/gpt-oss-20b`, and text-to-speech uses Workers AI Deepgram Aura.
+- The browser connects with `@cloudflare/voice/react` through an authenticated, same-origin WebSocket route. A short-lived HttpOnly capability cookie is scoped to the candidate and interview; the route also rechecks current Postgres ownership and lifecycle state.
+- The source-controlled system prompt and first message live in `app/features/interviews/shared/voice-runtime.ts`; candidate background is explicitly marked as untrusted evidence.
+- Durable Object SQLite holds reconnectable live history for at most seven days. The browser never submits the authoritative transcript.
+- Intentional completion asks the Agent RPC to finalize committed server history. It persists the transcript with `analysis: null`, moves the interview to `completed`, and triggers `startPostEvaluation` idempotently.
+- The initial Cloudflare implementation does not record or store call audio.
+- Voice dimension scoring runs in post-eval, not on the hot path.
 
 ## Communication score blend
 
