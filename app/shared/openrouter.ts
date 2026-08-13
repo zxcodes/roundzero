@@ -1,4 +1,5 @@
 import { createOpenRouter, type OpenRouterProvider } from "@openrouter/ai-sdk-provider";
+import type { createOpenRouterText } from "@tanstack/ai-openrouter";
 import { env } from "cloudflare:workers";
 
 import { isProd, isStaging } from "./env.app";
@@ -46,10 +47,10 @@ type Task =
   | "answer_authenticity";
 
 type EnvKey = "dev" | "staging" | "prod";
-type ModelId<T extends Task> =
-  | (typeof MODEL_CHAINS)[T]["dev"][number]
-  | (typeof MODEL_CHAINS)[T]["staging"][number]
-  | (typeof MODEL_CHAINS)[T]["prod"][number];
+
+// @tanstack/ai-openrouter's generated union lags some OpenRouter slugs (e.g. openrouter/free).
+// Cast at this boundary so createOpenRouterText / modelOptions.models accept our chains.
+type OpenRouterTextModel = Parameters<typeof createOpenRouterText>[0];
 
 const currentEnv = (): EnvKey => (isProd ? "prod" : isStaging ? "staging" : "dev");
 
@@ -67,39 +68,27 @@ const MODEL_CHAINS = {
   post_eval: DEFAULT_CHAIN,
   // Audit uses a different model family than post_eval so it can catch
   // model-specific biases, with an Anthropic fallback for resilience.
-  post_eval_audit: {
-    dev: ["openrouter/free"],
-    staging: ["deepseek/deepseek-v4-flash"],
-    prod: ["google/gemini-2.5-pro", "anthropic/claude-sonnet-4.5"],
-  },
+  post_eval_audit: DEFAULT_CHAIN,
   job_creation: DEFAULT_CHAIN,
   job_import: DEFAULT_CHAIN,
-  job_matching: {
-    dev: ["anthropic/claude-sonnet-4.5"],
-    staging: ["anthropic/claude-sonnet-4.5"],
-    prod: ["anthropic/claude-sonnet-4.5"],
-  },
-  interview: {
-    dev: ["deepseek/deepseek-v4-flash"],
-    staging: ["deepseek/deepseek-v4-flash"],
-    prod: ["anthropic/claude-sonnet-4.5", "anthropic/claude-haiku-4.5", "google/gemini-2.5-pro"],
-  },
+  job_matching: DEFAULT_CHAIN,
+  interview: DEFAULT_CHAIN,
   // Cheap, high-frequency slop / AI-detection check — Haiku only in prod.
-  answer_authenticity: {
-    dev: DEFAULT_CHAIN.dev,
-    staging: DEFAULT_CHAIN.staging,
-    prod: ["anthropic/claude-haiku-4.5"],
-  },
+  answer_authenticity: DEFAULT_CHAIN,
 } as const satisfies Record<
   Task,
   { dev: readonly string[]; staging: readonly string[]; prod: readonly string[] }
 >;
 
-export function getModelChain<T extends Task>(
-  task: T,
-): { model: ModelId<T>; fallbacks: ModelId<T>[] } {
+export function getModelChain(task: Task): {
+  model: OpenRouterTextModel;
+  fallbacks: OpenRouterTextModel[];
+} {
   const chain = MODEL_CHAINS[task][currentEnv()];
-  return { model: chain[0], fallbacks: chain.slice(1) };
+  return {
+    model: chain[0] as OpenRouterTextModel,
+    fallbacks: chain.slice(1) as OpenRouterTextModel[],
+  };
 }
 
 export function createChatModel(
