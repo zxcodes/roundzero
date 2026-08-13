@@ -178,14 +178,11 @@ function InterviewWorkspaceContent({
   // round-trip during the chat itself.
   const voiceAssessmentQuery = useQuery({
     queryKey: ["voice-assessment", interview.id],
-    queryFn: async () => {
-      const result = await getMyVoiceAssessment({ data: { interviewId: interview.id } });
-      return result?.assessment ?? null;
-    },
+    queryFn: async () => await getMyVoiceAssessment({ data: { interviewId: interview.id } }),
     enabled: isAwaitingVoice || isCompleted,
   });
 
-  const voiceStatus = voiceAssessmentQuery.data?.status ?? null;
+  const voiceStatus = voiceAssessmentQuery.data?.assessment?.status ?? null;
   const voiceTabAvailable = isAwaitingVoice || isCompleted;
 
   // We deliberately do NOT auto-switch to the voice tab when the chat ends.

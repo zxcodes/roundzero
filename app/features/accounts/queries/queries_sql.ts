@@ -126,6 +126,26 @@ export async function listVoiceAudioKeysForUser(sql: Sql, args: listVoiceAudioKe
     }));
 }
 
+export const listInterviewIdsForCandidateQuery = `-- name: listInterviewIdsForCandidate :many
+SELECT i.id
+FROM interviews i
+JOIN applications a ON a.id = i.application_id
+WHERE a.candidate_id = $1`;
+
+export interface listInterviewIdsForCandidateArgs {
+    candidateId: string;
+}
+
+export interface listInterviewIdsForCandidateRow {
+    id: string;
+}
+
+export async function listInterviewIdsForCandidate(sql: Sql, args: listInterviewIdsForCandidateArgs): Promise<listInterviewIdsForCandidateRow[]> {
+    return (await sql.unsafe(listInterviewIdsForCandidateQuery, [args.candidateId]).values()).map(row => ({
+        id: row[0]
+    }));
+}
+
 export const scrubCandidateProfileForUserQuery = `-- name: scrubCandidateProfileForUser :exec
 UPDATE candidate_profiles
 SET resume_key = NULL,

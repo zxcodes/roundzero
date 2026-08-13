@@ -26,7 +26,6 @@ import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authentic
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminFeedbackRouteImport } from './routes/admin/feedback'
 import { Route as ApiInterviewChatRouteImport } from './routes/api/interview-chat'
-import { Route as ApiVoiceWebhookRouteImport } from './routes/api/voice-webhook'
 import { Route as CandidateLoginRouteImport } from './routes/candidate/login'
 import { Route as CompaniesIndexRouteImport } from './routes/companies/index'
 import { Route as CompaniesSlugRouteImport } from './routes/companies/$slug'
@@ -149,11 +148,6 @@ const AdminFeedbackRoute = AdminFeedbackRouteImport.update({
 const ApiInterviewChatRoute = ApiInterviewChatRouteImport.update({
   id: '/api/interview-chat',
   path: '/api/interview-chat',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiVoiceWebhookRoute = ApiVoiceWebhookRouteImport.update({
-  id: '/api/voice-webhook',
-  path: '/api/voice-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CandidateLoginRoute = CandidateLoginRouteImport.update({
@@ -387,7 +381,6 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AuthenticatedOnboardingRouteWithChildren
   '/admin/feedback': typeof AdminFeedbackRoute
   '/api/interview-chat': typeof ApiInterviewChatRoute
-  '/api/voice-webhook': typeof ApiVoiceWebhookRoute
   '/candidate/login': typeof CandidateLoginRoute
   '/companies/$slug': typeof CompaniesSlugRoute
   '/company/login': typeof CompanyLoginRoute
@@ -440,7 +433,6 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AuthenticatedOnboardingRouteWithChildren
   '/admin/feedback': typeof AdminFeedbackRoute
   '/api/interview-chat': typeof ApiInterviewChatRoute
-  '/api/voice-webhook': typeof ApiVoiceWebhookRoute
   '/candidate/login': typeof CandidateLoginRoute
   '/companies/$slug': typeof CompaniesSlugRoute
   '/company/login': typeof CompanyLoginRoute
@@ -496,7 +488,6 @@ export interface FileRoutesById {
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRouteWithChildren
   '/admin/feedback': typeof AdminFeedbackRoute
   '/api/interview-chat': typeof ApiInterviewChatRoute
-  '/api/voice-webhook': typeof ApiVoiceWebhookRoute
   '/candidate/login': typeof CandidateLoginRoute
   '/companies/$slug': typeof CompaniesSlugRoute
   '/company/login': typeof CompanyLoginRoute
@@ -554,7 +545,6 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/admin/feedback'
     | '/api/interview-chat'
-    | '/api/voice-webhook'
     | '/candidate/login'
     | '/companies/$slug'
     | '/company/login'
@@ -607,7 +597,6 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/admin/feedback'
     | '/api/interview-chat'
-    | '/api/voice-webhook'
     | '/candidate/login'
     | '/companies/$slug'
     | '/company/login'
@@ -662,7 +651,6 @@ export interface FileRouteTypes {
     | '/_authenticated/onboarding'
     | '/admin/feedback'
     | '/api/interview-chat'
-    | '/api/voice-webhook'
     | '/candidate/login'
     | '/companies/$slug'
     | '/company/login'
@@ -716,7 +704,6 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   TosRoute: typeof TosRoute
   ApiInterviewChatRoute: typeof ApiInterviewChatRoute
-  ApiVoiceWebhookRoute: typeof ApiVoiceWebhookRoute
   CandidateLoginRoute: typeof CandidateLoginRoute
   CompaniesSlugRoute: typeof CompaniesSlugRoute
   CompanyLoginRoute: typeof CompanyLoginRoute
@@ -849,13 +836,6 @@ declare module '@tanstack/react-router' {
       path: '/api/interview-chat'
       fullPath: '/api/interview-chat'
       preLoaderRoute: typeof ApiInterviewChatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/voice-webhook': {
-      id: '/api/voice-webhook'
-      path: '/api/voice-webhook'
-      fullPath: '/api/voice-webhook'
-      preLoaderRoute: typeof ApiVoiceWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/candidate/login': {
@@ -1290,7 +1270,6 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   TosRoute: TosRoute,
   ApiInterviewChatRoute: ApiInterviewChatRoute,
-  ApiVoiceWebhookRoute: ApiVoiceWebhookRoute,
   CandidateLoginRoute: CandidateLoginRoute,
   CompaniesSlugRoute: CompaniesSlugRoute,
   CompanyLoginRoute: CompanyLoginRoute,

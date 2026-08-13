@@ -5,12 +5,19 @@
  * Phase 1 — synthetic candidate pool (applicant pool for dashboard demos)
  * Phase 2 — rich company dashboard for a real dev company account
  *
+ * Opt-in (separate command):
+ *   Phase 3 — candidate journey for a real dev candidate account
+ *
  * Run:
  *   bun run db:seed
  *   bun run db:seed you@company.com
+ *   bun run db:seed:candidate
+ *   bun run db:seed:candidate you@candidate.com
+ *   bun run db:seed:candidate you@candidate.com you@company.com
  *
  * Requires: sign up in dev mode first. The company phase skips gracefully
- * when the matching account is missing. Candidate accounts are never mutated.
+ * when the matching account is missing. Real candidate accounts are only
+ * mutated by the opt-in `db:seed:candidate` command.
  */
 import { MATCHING_CONFIG } from "../../app/features/job-matching/config";
 import { hashStableValue } from "../../app/features/job-matching/hash";
@@ -493,15 +500,35 @@ function clampPreScore(index: number, status: ApplicantStatus) {
   return Math.round((base + (index % 4) * 0.15) * 10) / 10;
 }
 
-function parseEmailArgs() {
+function parseCompanyEmailArg() {
   const emails = process.argv.slice(2).filter((arg) => arg.includes("@"));
   if (emails.length > 1) {
     throw new Error(
-      "The seed accepts one optional company email. Candidate accounts are never seeded.",
+      "db:seed accepts one optional company email. Use db:seed:candidate for candidate accounts.",
     );
   }
   return emails[0];
 }
+
+function parseCandidateSeedArgs() {
+  const emails = process.argv.slice(2).filter((arg) => arg.includes("@"));
+  if (emails.length > 2) {
+    throw new Error(
+      "db:seed:candidate accepts optional emails: [candidateEmail] [companyEmail]",
+    );
+  }
+  return {
+    candidateEmail: emails[0],
+    companyEmail: emails[1],
+  };
+}
+
+const candidateStatusNotifications = new Set([
+  "interview_invited",
+  "shortlisted",
+  "rejected",
+  "evaluated",
+]);
 
 // ─── Phase 1: synthetic candidate pool ─────────────────────────────
 
@@ -1324,22 +1351,264 @@ async function seedCompanyDashboard(companyEmail?: string) {
   return { companyId, jobs, owner };
 }
 
-// ─── Main ──────────────────────────────────────────────────────────
+// ─── Phase 3: dev candidate journey (opt-in via db:seed:candidate) ─
 
-try {
-  const companyEmail = parseEmailArgs();
+async function loadSeededCompanyJobs(companyEmail?: string) {
+  const owner = await loadDevUser("company", companyEmail);
+  if (!owner) {
+    if (companyEmail) {
+      throw new Error(
+        `No company user found for ${companyEmail}. Sign up as company in dev mode, then run bun run db:seed.`,
+      );
+    }
+    return null;
+  }
+
+  const companyId = makeUuidFromSeed(`seed-me-company-${owner.id}`);
+  const companyRows = await sql<{ id: string; name: string }[]>`
+    SELECT id, name
+    FROM companies
+    WHERE id = ${companyId}
+    LIMIT 1
+  `;
+  const company = companyRows[0];
+  if (!company) {
+    return null;
+  }
+
+  const jobs = await sql<SeedJob[]>`
+    SELECT id, title, final_report_target AS "finalReportTarget"
+    FROM jobs
+    WHERE company_id = ${companyId}
+      AND status = 'open'
+    ORDER BY created_at ASC
+  `;
+
+  return { companyId: company.id, companyName: company.name, jobs, owner };
+}
+
+async function clearCandidateApplication(applicationId: string) {
+  await sql.begin(async (tx) => {
+    await tx`DELETE FROM notifications WHERE payload->>'applicationId' = ${applicationId}`;
+    await tx`DELETE FROM reports WHERE application_id = ${applicationId}`;
+    await tx`DELETE FROM communication_assessments WHERE application_id = ${applicationId}`;
+    await tx`
+      DELETE FROM interview_messages
+      WHERE interview_id IN (SELECT id FROM interviews WHERE application_id = ${applicationId})
+    `;
+    await tx`DELETE FROM interviews WHERE application_id = ${applicationId}`;
+    await tx`DELETE FROM pre_evaluations WHERE application_id = ${applicationId}`;
+    await tx`DELETE FROM applications WHERE id = ${applicationId}`;
+  });
+}
+
+async function seedCandidateNotification(input: {
+  applicationId: string;
+  candidateId: string;
+  jobId: string;
+  jobTitle: string;
+  companyName: string;
+  status: ApplicantStatus;
+  updatedAt: Date;
+  index: number;
+}) {
+  if (!candidateStatusNotifications.has(input.status)) {
+    return;
+  }
+
+  await sql`
+    INSERT INTO notifications (id, user_id, type, payload, read_at, created_at)
+    VALUES (
+      ${makeUuidFromSeed(`seed-candidate-notification-${input.applicationId}`)},
+      ${input.candidateId},
+      ${"application_status_changed"},
+      ${sql.json({
+        applicationId: input.applicationId,
+        jobId: input.jobId,
+        jobTitle: input.jobTitle,
+        companyName: input.companyName,
+        status: input.status,
+      })},
+      ${input.index % 2 === 0 ? input.updatedAt : null},
+      ${input.updatedAt}
+    )
+    ON CONFLICT (id) DO UPDATE
+    SET
+      payload = EXCLUDED.payload,
+      read_at = EXCLUDED.read_at,
+      created_at = EXCLUDED.created_at
+  `;
+}
+
+async function seedDevCandidate(
+  candidateEmail: string | undefined,
+  companyEmail: string | undefined,
+) {
+  const candidate = await loadDevUser("candidate", candidateEmail);
+
+  if (!candidate) {
+    if (candidateEmail) {
+      throw new Error(
+        `No candidate user found for ${candidateEmail}. Sign up as candidate in dev mode first.`,
+      );
+    }
+    throw new Error(
+      "No dev candidate user found. Sign up as candidate in dev mode first, or pass an email: bun run db:seed:candidate you@candidate.com",
+    );
+  }
+
+  const existingProfile = await sql<{ resumeKey: string | null }[]>`
+    SELECT resume_key AS "resumeKey"
+    FROM candidate_profiles
+    WHERE user_id = ${candidate.id}
+    LIMIT 1
+  `;
+  const resumeKey =
+    existingProfile[0]?.resumeKey ?? `resumes/${candidate.id}/seed-dev-resume.pdf`;
+
+  await sql`
+    INSERT INTO candidate_profiles (
+      id, user_id, onboarding_completed_at, resume_key, resume_updated_at
+    )
+    VALUES (
+      ${makeUuidFromSeed(`seed-dev-profile-${candidate.id}`)},
+      ${candidate.id},
+      now(),
+      ${resumeKey},
+      now()
+    )
+    ON CONFLICT (user_id) DO UPDATE
+    SET
+      resume_key = COALESCE(candidate_profiles.resume_key, EXCLUDED.resume_key),
+      resume_updated_at = CASE
+        WHEN candidate_profiles.resume_key IS NULL THEN now()
+        ELSE candidate_profiles.resume_updated_at
+      END,
+      onboarding_completed_at = COALESCE(candidate_profiles.onboarding_completed_at, now()),
+      updated_at = now()
+  `;
+
+  const companyContext = await loadSeededCompanyJobs(companyEmail);
+  if (!companyContext) {
+    console.log(
+      `  Dev candidate profile: ${candidate.name} <${candidate.email}> (no seeded company jobs — run bun run db:seed first)`,
+    );
+    return;
+  }
+
+  const { jobs, companyName } = companyContext;
+  if (jobs.length < 5) {
+    throw new Error(
+      `Need at least 5 open seeded jobs for the candidate journey (found ${jobs.length}). Run bun run db:seed first.`,
+    );
+  }
+
+  // Spread across early funnel + interview + completed report states.
+  const devPlans: Array<{ jobIndex: number; plan: ApplicantPlan }> = [
+    { jobIndex: 0, plan: { status: "applied" } },
+    { jobIndex: 1, plan: { status: "pre_screening" } },
+    {
+      jobIndex: 2,
+      plan: { status: "interview_invited", interviewStatus: "pending" },
+    },
+    {
+      jobIndex: 3,
+      plan: { status: "interview_in_progress", interviewStatus: "in_progress" },
+    },
+    {
+      jobIndex: 4,
+      plan: {
+        status: "evaluated",
+        interviewStatus: "completed",
+        overallScore: 8.2,
+        reportState: "released",
+      },
+    },
+  ];
+
+  if (jobs.length >= 6) {
+    devPlans.push({ jobIndex: 5, plan: { status: "rejected" } });
+  }
+
+  const candidateUser: CandidateUser = {
+    id: candidate.id,
+    name: candidate.name,
+    email: candidate.email,
+  };
+
+  for (let i = 0; i < devPlans.length; i++) {
+    const { jobIndex, plan } = devPlans[i]!;
+    const job = jobs[jobIndex]!;
+    const applicationId = makeUuidFromSeed(`seed-dev-app-${candidate.id}-${job.id}`);
+    const createdAt = new Date(Date.now() - (devPlans.length - i) * 24 * 60 * 60 * 1000);
+    const updatedAt = new Date(createdAt.getTime() + 6 * 60 * 60 * 1000);
+
+    // Clear any existing application for this job/candidate pair (manual or prior seed).
+    const existingApps = await sql<{ id: string }[]>`
+      SELECT id FROM applications
+      WHERE job_id = ${job.id} AND candidate_id = ${candidate.id}
+    `;
+    for (const existing of existingApps) {
+      await clearCandidateApplication(existing.id);
+    }
+
+    await seedApplicationPipeline({
+      job,
+      jobTitle: job.title,
+      candidate: candidateUser,
+      plan,
+      applicationId,
+      interviewId: makeUuidFromSeed(`seed-dev-interview-${applicationId}`),
+      index: i + 100,
+      batchId: null,
+      createdAt,
+      updatedAt,
+    });
+
+    await seedCandidateNotification({
+      applicationId,
+      candidateId: candidate.id,
+      jobId: job.id,
+      jobTitle: job.title,
+      companyName,
+      status: plan.status,
+      updatedAt,
+      index: i,
+    });
+  }
+
+  console.log(
+    `  Dev candidate journey: ${candidate.name} <${candidate.email}> (${devPlans.length} applications across ${companyName})`,
+  );
+}
+
+// ─── Entrypoints ───────────────────────────────────────────────────
+
+export async function runCompanySeed(companyEmail?: string) {
+  const email = companyEmail ?? parseCompanyEmailArg();
   console.log("Starting RoundZero seed...\n");
 
   console.log("Phase 1 — synthetic candidate pool");
   await seedSyntheticCandidates();
 
   console.log("\nPhase 2 — company dashboard");
-  await seedCompanyDashboard(companyEmail);
+  await seedCompanyDashboard(email);
 
   console.log("\nSeed completed successfully.");
-} catch (error) {
-  console.error("\nSeed failed:", error);
-  process.exit(1);
-} finally {
-  await closeSql();
+  console.log("Tip: run `bun run db:seed:candidate` to seed applications for your candidate account.");
+}
+
+export async function runCandidateSeed(
+  candidateEmail?: string,
+  companyEmail?: string,
+) {
+  const args =
+    candidateEmail !== undefined || companyEmail !== undefined
+      ? { candidateEmail, companyEmail }
+      : parseCandidateSeedArgs();
+
+  console.log("Starting RoundZero candidate seed...\n");
+  console.log("Phase 3 — dev candidate journey");
+  await seedDevCandidate(args.candidateEmail, args.companyEmail);
+  console.log("\nCandidate seed completed successfully.");
 }

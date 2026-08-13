@@ -985,6 +985,20 @@ export async function createCommunicationAssessment(sql: Sql, args: createCommun
     };
 }
 
+export const createCommunicationAssessmentIfAbsentQuery = `-- name: createCommunicationAssessmentIfAbsent :exec
+INSERT INTO communication_assessments (interview_id, application_id, status)
+VALUES ($1, $2, 'pending')
+ON CONFLICT (interview_id) DO NOTHING`;
+
+export interface createCommunicationAssessmentIfAbsentArgs {
+    interviewId: string;
+    applicationId: string;
+}
+
+export async function createCommunicationAssessmentIfAbsent(sql: Sql, args: createCommunicationAssessmentIfAbsentArgs): Promise<void> {
+    await sql.unsafe(createCommunicationAssessmentIfAbsentQuery, [args.interviewId, args.applicationId]);
+}
+
 export const getCommunicationAssessmentByInterviewIdQuery = `-- name: getCommunicationAssessmentByInterviewId :one
 SELECT id, interview_id, application_id, status, audio_key, provider_session_id, provider_conversation_id, transcript, analysis, started_at, completed_at, created_at, updated_at
 FROM communication_assessments
@@ -1081,116 +1095,28 @@ export async function getCommunicationAssessmentByApplicationId(sql: Sql, args: 
     };
 }
 
-export const getCommunicationAssessmentByProviderConversationIdQuery = `-- name: getCommunicationAssessmentByProviderConversationId :one
-SELECT id, interview_id, application_id, status, audio_key, provider_session_id, provider_conversation_id, transcript, analysis, started_at, completed_at, created_at, updated_at
-FROM communication_assessments
-WHERE provider_conversation_id = $1`;
-
-export interface getCommunicationAssessmentByProviderConversationIdArgs {
-    providerConversationId: string | null;
-}
-
-export interface getCommunicationAssessmentByProviderConversationIdRow {
-    id: string;
-    interviewId: string;
-    applicationId: string;
-    status: string;
-    audioKey: string | null;
-    providerSessionId: string | null;
-    providerConversationId: string | null;
-    transcript: any;
-    analysis: any | null;
-    startedAt: Date | null;
-    completedAt: Date | null;
-    createdAt: Date;
-    updatedAt: Date;
-}
-
-export async function getCommunicationAssessmentByProviderConversationId(sql: Sql, args: getCommunicationAssessmentByProviderConversationIdArgs): Promise<getCommunicationAssessmentByProviderConversationIdRow | null> {
-    const rows = await sql.unsafe(getCommunicationAssessmentByProviderConversationIdQuery, [args.providerConversationId]).values();
-    if (rows.length !== 1) {
-        return null;
-    }
-    const row = rows[0];
-    return {
-        id: row[0],
-        interviewId: row[1],
-        applicationId: row[2],
-        status: row[3],
-        audioKey: row[4],
-        providerSessionId: row[5],
-        providerConversationId: row[6],
-        transcript: row[7],
-        analysis: row[8],
-        startedAt: row[9],
-        completedAt: row[10],
-        createdAt: row[11],
-        updatedAt: row[12]
-    };
-}
-
-export const getCommunicationAssessmentByProviderSessionIdQuery = `-- name: getCommunicationAssessmentByProviderSessionId :one
-SELECT id, interview_id, application_id, status, audio_key, provider_session_id, provider_conversation_id, transcript, analysis, started_at, completed_at, created_at, updated_at
-FROM communication_assessments
-WHERE provider_session_id = $1`;
-
-export interface getCommunicationAssessmentByProviderSessionIdArgs {
-    providerSessionId: string | null;
-}
-
-export interface getCommunicationAssessmentByProviderSessionIdRow {
-    id: string;
-    interviewId: string;
-    applicationId: string;
-    status: string;
-    audioKey: string | null;
-    providerSessionId: string | null;
-    providerConversationId: string | null;
-    transcript: any;
-    analysis: any | null;
-    startedAt: Date | null;
-    completedAt: Date | null;
-    createdAt: Date;
-    updatedAt: Date;
-}
-
-export async function getCommunicationAssessmentByProviderSessionId(sql: Sql, args: getCommunicationAssessmentByProviderSessionIdArgs): Promise<getCommunicationAssessmentByProviderSessionIdRow | null> {
-    const rows = await sql.unsafe(getCommunicationAssessmentByProviderSessionIdQuery, [args.providerSessionId]).values();
-    if (rows.length !== 1) {
-        return null;
-    }
-    const row = rows[0];
-    return {
-        id: row[0],
-        interviewId: row[1],
-        applicationId: row[2],
-        status: row[3],
-        audioKey: row[4],
-        providerSessionId: row[5],
-        providerConversationId: row[6],
-        transcript: row[7],
-        analysis: row[8],
-        startedAt: row[9],
-        completedAt: row[10],
-        createdAt: row[11],
-        updatedAt: row[12]
-    };
-}
-
-export const registerCommunicationAssessmentSessionQuery = `-- name: registerCommunicationAssessmentSession :one
+export const startCommunicationAssessmentQuery = `-- name: startCommunicationAssessment :one
 UPDATE communication_assessments
-SET provider_session_id = $2,
-    provider_conversation_id = NULL,
+SET status = 'in_progress',
+    started_at = COALESCE(started_at, now()),
     updated_at = now()
 WHERE interview_id = $1
+  AND status IN ('pending', 'in_progress')
+  AND EXISTS (
+    SELECT 1
+    FROM interviews i
+    JOIN applications a ON a.id = i.application_id
+    WHERE i.id = communication_assessments.interview_id
+      AND i.status = 'awaiting_voice'
+      AND a.status NOT IN ('withdrawn', 'rejected')
+  )
 RETURNING id, interview_id, application_id, status, audio_key, provider_session_id, provider_conversation_id, transcript, analysis, started_at, completed_at, created_at, updated_at`;
 
-export interface registerCommunicationAssessmentSessionArgs {
+export interface startCommunicationAssessmentArgs {
     interviewId: string;
-    providerSessionId: string | null;
 }
 
-export interface registerCommunicationAssessmentSessionRow {
+export interface startCommunicationAssessmentRow {
     id: string;
     interviewId: string;
     applicationId: string;
@@ -1206,59 +1132,8 @@ export interface registerCommunicationAssessmentSessionRow {
     updatedAt: Date;
 }
 
-export async function registerCommunicationAssessmentSession(sql: Sql, args: registerCommunicationAssessmentSessionArgs): Promise<registerCommunicationAssessmentSessionRow | null> {
-    const rows = await sql.unsafe(registerCommunicationAssessmentSessionQuery, [args.interviewId, args.providerSessionId]).values();
-    if (rows.length !== 1) {
-        return null;
-    }
-    const row = rows[0];
-    return {
-        id: row[0],
-        interviewId: row[1],
-        applicationId: row[2],
-        status: row[3],
-        audioKey: row[4],
-        providerSessionId: row[5],
-        providerConversationId: row[6],
-        transcript: row[7],
-        analysis: row[8],
-        startedAt: row[9],
-        completedAt: row[10],
-        createdAt: row[11],
-        updatedAt: row[12]
-    };
-}
-
-export const registerCommunicationAssessmentConversationQuery = `-- name: registerCommunicationAssessmentConversation :one
-UPDATE communication_assessments
-SET provider_conversation_id = $2,
-    updated_at = now()
-WHERE interview_id = $1
-RETURNING id, interview_id, application_id, status, audio_key, provider_session_id, provider_conversation_id, transcript, analysis, started_at, completed_at, created_at, updated_at`;
-
-export interface registerCommunicationAssessmentConversationArgs {
-    interviewId: string;
-    providerConversationId: string | null;
-}
-
-export interface registerCommunicationAssessmentConversationRow {
-    id: string;
-    interviewId: string;
-    applicationId: string;
-    status: string;
-    audioKey: string | null;
-    providerSessionId: string | null;
-    providerConversationId: string | null;
-    transcript: any;
-    analysis: any | null;
-    startedAt: Date | null;
-    completedAt: Date | null;
-    createdAt: Date;
-    updatedAt: Date;
-}
-
-export async function registerCommunicationAssessmentConversation(sql: Sql, args: registerCommunicationAssessmentConversationArgs): Promise<registerCommunicationAssessmentConversationRow | null> {
-    const rows = await sql.unsafe(registerCommunicationAssessmentConversationQuery, [args.interviewId, args.providerConversationId]).values();
+export async function startCommunicationAssessment(sql: Sql, args: startCommunicationAssessmentArgs): Promise<startCommunicationAssessmentRow | null> {
+    const rows = await sql.unsafe(startCommunicationAssessmentQuery, [args.interviewId]).values();
     if (rows.length !== 1) {
         return null;
     }

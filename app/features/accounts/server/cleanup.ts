@@ -9,6 +9,7 @@ import {
   deleteCandidateJobMatchesForUser,
   deleteNotificationsForUser,
   getUserErasureState,
+  listInterviewIdsForCandidate,
   listOwnedCompanyIdsForUser,
   listResumeKeysForUser,
   listVoiceAudioKeysForUser,
@@ -73,19 +74,26 @@ export async function eraseDeletedAccount(
   db: Sql,
   resumes: R2Bucket,
   userId: string,
+  externalStores: {
+    eraseVoiceHistory: (interviewId: string) => Promise<void>;
+  },
 ): Promise<{ erased: boolean }> {
   const initial = await getUserErasureState(db, { id: userId });
   if (!isEligibleForErasure(initial)) {
     return { erased: false };
   }
 
-  const [resumeKeys, audioKeys] = await Promise.all([
+  const [resumeKeys, audioKeys, interviews] = await Promise.all([
     listResumeKeysForUser(db, { userId }),
     listVoiceAudioKeysForUser(db, { candidateId: userId }),
+    listInterviewIdsForCandidate(db, { candidateId: userId }),
   ]);
   const r2Keys = [...resumeKeys.map((row) => row.key), ...audioKeys.map((row) => row.key)];
 
   await deleteR2Objects(resumes, r2Keys);
+  for (const interview of interviews) {
+    await externalStores.eraseVoiceHistory(interview.id);
+  }
 
   const erased = await db.begin(async (tx) => {
     const transaction = asSqlTransaction(tx);

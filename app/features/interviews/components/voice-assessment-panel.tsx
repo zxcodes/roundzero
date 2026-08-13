@@ -1,12 +1,12 @@
+import { useVoiceAgent, type TranscriptMessage } from "@cloudflare/voice/react";
 import { Loading03Icon, Mic01Icon, PhoneOff01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import type { RealtimeToken } from "@tanstack/ai";
-import { useRealtimeChat } from "@tanstack/ai-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -17,109 +17,78 @@ import {
   TranscriptBubble,
 } from "@/features/interviews/components/interview-transcript";
 import {
-  completeMyVoiceAssessment,
   getMyVoiceAssessment,
   getMyVoiceAssessmentTranscript,
-  getMyVoiceToken,
-  registerMyVoiceAssessmentSession,
+  prepareMyVoiceConnection,
+  requestMyVoiceFinalization,
 } from "@/features/interviews/server/functions";
-import { voiceRealtimeAdapter } from "@/features/interviews/shared/voice-realtime-adapter";
+import type { VoiceFinalizationResult } from "@/features/interviews/server/voice-assessment";
+import {
+  buildVoiceDisplayMessages,
+  type VoiceDisplayMessage,
+  waitForCandidateUtteranceCommit,
+} from "@/features/interviews/shared/voice-client";
 import { cn } from "@/lib/utils";
 
 type VoiceAssessmentStatus = "pending" | "in_call" | "completed" | "skipped" | "error";
 
-type ChatMessage = { role: "assistant" | "user"; text: string };
+const customVoiceMessageSchema = z.discriminatedUnion("type", [
+  z
+    .object({
+      type: z.literal("voice_history"),
+      messages: z
+        .array(
+          z
+            .object({
+              role: z.enum(["assistant", "user"]),
+              content: z.string(),
+            })
+            .strict(),
+        )
+        .max(200),
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("assessment_complete"),
+      reason: z.enum(["agent_complete", "duration_limit"]),
+    })
+    .strict(),
+]);
 
-const normMessage = (m: ChatMessage): string =>
-  `${m.role}:${m.text.replace(/\s+/g, " ").trim().toLowerCase()}`;
-
-// Grace window after the call ends before we fall back to the browser
-// transcript. ElevenLabs' `post_call_transcription` webhook delivers the
-// authoritative, complete transcript (including the agent's closing line);
-// the in-browser transcript can be clipped because the final message event
-// races the disconnect. We let a fast webhook win (the 2s DB poll picks it up
-// as soon as it lands), but keep this window short: the only thing the browser
-// transcript typically loses is the agent's closing pleasantry, which doesn't
-// affect scoring of the candidate, so a long wait is pure DX cost. If the
-// webhook hasn't landed by now (slow webhook, local dev, or an outage) we
-// submit the browser transcript we already hold.
-const WEBHOOK_GRACE_MS = 3_000;
+function getEffectiveStatus(status: string | null | undefined): VoiceAssessmentStatus | null {
+  if (!status) return null;
+  if (status === "in_progress") return "in_call";
+  if (status === "pending" || status === "completed" || status === "skipped") return status;
+  return "error";
+}
 
 export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
-  const router = useRouter();
-  const queryClient = useQueryClient();
-  const transcriptEndRef = useRef<HTMLDivElement>(null);
-  const completeCalledRef = useRef(false);
-  const [clientError, setClientError] = useState<string | null>(null);
-  const [callEnded, setCallEnded] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitFailed, setSubmitFailed] = useState(false);
+  const [recoveredMessages, setRecoveredMessages] = useState<VoiceDisplayMessage[]>([]);
+  const prepareConnection = useServerFn(prepareMyVoiceConnection);
 
-  const { data: dbData, isPending: dbPending } = useQuery({
+  const assessmentQuery = useQuery({
     queryKey: ["voice-assessment", interviewId],
-    queryFn: async () => {
-      const result = await getMyVoiceAssessment({ data: { interviewId } });
-      return result?.assessment ?? null;
-    },
+    queryFn: async () => await getMyVoiceAssessment({ data: { interviewId } }),
     refetchInterval: (query) => {
-      const status = query.state.data?.status;
-      return status === "completed" || status === "skipped" ? false : 2000;
+      const status = query.state.data?.assessment?.status;
+      return status === "completed" || status === "skipped" ? false : 2_000;
     },
   });
 
-  const effectiveStatus: VoiceAssessmentStatus | null = (() => {
-    if (!dbData?.status) return null;
-    if (dbData.status === "in_progress") return "in_call";
-    if (
-      dbData.status === "pending" ||
-      dbData.status === "completed" ||
-      dbData.status === "skipped"
-    ) {
-      return dbData.status;
-    }
-    return "error";
-  })();
-
+  const effectiveStatus = getEffectiveStatus(assessmentQuery.data?.assessment?.status);
   const isTerminal = effectiveStatus === "completed" || effectiveStatus === "skipped";
+  const canPrepare = assessmentQuery.data?.interviewStatus === "awaiting_voice" && !isTerminal;
 
-  const completeFn = useServerFn(completeMyVoiceAssessment);
-  const getTokenFn = useServerFn(getMyVoiceToken);
-  const registerSessionFn = useServerFn(registerMyVoiceAssessmentSession);
-
-  const registerSessionMutation = useMutation({
-    mutationFn: registerSessionFn,
-    onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Could not register the voice session.");
-    },
+  const preparationQuery = useQuery({
+    queryKey: ["voice-connection-preparation", interviewId],
+    queryFn: async () => await prepareConnection({ data: { interviewId } }),
+    enabled: canPrepare,
+    retry: false,
+    staleTime: 20 * 60 * 1000,
   });
 
-  const registerConversationRef = useRef<(conversationId: string) => Promise<void>>(async () => {});
-  registerConversationRef.current = async (conversationId: string) => {
-    await registerSessionMutation.mutateAsync({
-      data: {
-        interviewId,
-        conversationId,
-      },
-    });
-  };
-
-  const chat = useRealtimeChat({
-    getToken: () =>
-      getTokenFn({
-        data: { interviewId },
-      }) as Promise<RealtimeToken>,
-    adapter: voiceRealtimeAdapter({
-      onConversationStarted: (conversationId) => registerConversationRef.current(conversationId),
-    }),
-    onError: (error) => {
-      setClientError(error.message);
-    },
-  });
-
-  const isInCall = chat.status === "connected" || chat.status === "connecting";
-  const isConnecting = chat.status === "connecting";
-
-  const { data: historicalTranscript } = useQuery({
+  const historicalTranscriptQuery = useQuery({
     queryKey: ["voice-assessment-transcript", interviewId],
     queryFn: async () => {
       const result = await getMyVoiceAssessmentTranscript({ data: { interviewId } });
@@ -129,225 +98,24 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
     staleTime: 30_000,
   });
 
-  // Derive a chat-shaped transcript. Live messages from the realtime hook are
-  // role+parts; we flatten them down to plain text and tag candidate-role.
-  const EXPRESSIVE_TAG_RE = /\[[\w\s-]+?\]\s*/g;
-
-  const liveTranscript: ChatMessage[] = chat.messages
-    .map((msg): ChatMessage | null => {
-      if (msg.role !== "assistant" && msg.role !== "user") return null;
-      const text = msg.parts
-        .map((part) => {
-          if (part.type === "text") return part.content;
-          if (part.type === "audio") return part.transcript;
-          return "";
-        })
-        .join(" ")
-        .replace(EXPRESSIVE_TAG_RE, "")
-        .trim();
-      if (!text) return null;
-      return { role: msg.role, text };
-    })
-    .filter((m): m is ChatMessage => m !== null);
-
-  const liveTranscriptRef = useRef<ChatMessage[]>([]);
-  liveTranscriptRef.current = liveTranscript;
-
-  const historicalChat: ChatMessage[] = (historicalTranscript ?? []).map((m) => ({
-    role: m.role === "assistant" ? "assistant" : "user",
-    text: m.content.replace(EXPRESSIVE_TAG_RE, ""),
-  }));
-  const historicalKeys = new Set(historicalChat.map(normMessage));
-  const visibleTranscript: ChatMessage[] = [
-    ...historicalChat,
-    ...liveTranscript.filter((m) => !historicalKeys.has(normMessage(m))),
-  ].filter((msg) => msg.role === "user" || msg.text.trim().length > 0);
-
-  useEffect(() => {
-    transcriptEndRef.current?.scrollIntoView({ block: "end" });
-  });
-
-  const submitTranscriptRef = useRef<() => Promise<boolean>>(async () => false);
-  submitTranscriptRef.current = async () => {
-    if (completeCalledRef.current) {
-      return true;
-    }
-
-    const transcript = liveTranscriptRef.current;
-    if (transcript.length === 0) {
-      return false;
-    }
-
-    completeCalledRef.current = true;
-    setIsSubmitting(true);
-    setSubmitFailed(false);
-
-    try {
-      const result = await completeFn({
-        data: {
-          interviewId,
-          messages: transcript.map((m) => ({ role: m.role, content: m.text })),
-        },
-      });
-
-      if (!result?.ok) {
-        completeCalledRef.current = false;
-        setSubmitFailed(true);
-        return false;
-      }
-
-      await queryClient.invalidateQueries({ queryKey: ["voice-assessment", interviewId] });
-      await queryClient.invalidateQueries({
-        queryKey: ["voice-assessment-transcript", interviewId],
-      });
-      await router.invalidate();
-      return true;
-    } catch (error) {
-      completeCalledRef.current = false;
-      setSubmitFailed(true);
-      toast.error(error instanceof Error ? error.message : "Could not save voice assessment.");
-      return false;
-    } finally {
-      setIsSubmitting(false);
-    }
+  const onRetryPreparation = () => {
+    void preparationQuery.refetch();
   };
 
-  useEffect(() => {
-    if (effectiveStatus === "completed" || effectiveStatus === "skipped") {
-      setCallEnded(false);
-      setSubmitFailed(false);
-      completeCalledRef.current = false;
-    }
-  }, [effectiveStatus]);
-
-  // Detect the call ending for ANY reason, the candidate clicking "End call",
-  // the agent's `end_call` system tool (a warm closing message + clean hang-up,
-  // per ElevenLabs' recommended pattern), or an unexpected drop. Nudge the DB
-  // poll so a webhook-completed assessment is picked up promptly; the grace
-  // effect below handles the browser fallback.
-  const wasConnectedRef = useRef(false);
-  useEffect(() => {
-    if (chat.status === "connected") {
-      wasConnectedRef.current = true;
-      return;
-    }
-    if (chat.status !== "idle" || !wasConnectedRef.current) {
-      return;
-    }
-
-    wasConnectedRef.current = false;
-    if (clientError) {
-      return;
-    }
-
-    setCallEnded(true);
-    void queryClient.invalidateQueries({ queryKey: ["voice-assessment", interviewId] });
-  }, [chat.status, clientError, queryClient, interviewId]);
-
-  // Webhook-first finalisation: once the call has ended, give ElevenLabs'
-  // post-call webhook a window to persist the authoritative transcript (which
-  // flips the DB status to completed). If it never arrives, fall back to the
-  // browser transcript so local dev and webhook outages don't strand the
-  // candidate. Deps are all primitives that don't change on the 2s DB poll, so
-  // the timer isn't continuously reset.
-  useEffect(() => {
-    if (!callEnded || chat.status !== "idle") {
-      return;
-    }
-    if (isTerminal || clientError || completeCalledRef.current) {
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      if (completeCalledRef.current || liveTranscriptRef.current.length === 0) {
-        return;
-      }
-      void submitTranscriptRef.current();
-    }, WEBHOOK_GRACE_MS);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [callEnded, chat.status, isTerminal, clientError]);
-
-  const onStartCall = () => {
-    setClientError(null);
-    setCallEnded(false);
-    setSubmitFailed(false);
-    completeCalledRef.current = false;
-    chat.connect().catch((error) => {
-      const message = error instanceof Error ? error.message : "Could not start voice call.";
-      setClientError(message);
-    });
+  const refreshCapability = async () => {
+    const refreshed = await preparationQuery.refetch();
+    if (refreshed.error) throw refreshed.error;
   };
-
-  const onEndCall = () => {
-    setClientError(null);
-    chat.disconnect().catch(() => {
-      // non-fatal, the disconnect effect + grace fallback still finalise
-    });
-  };
-
-  const onRetryAfterError = () => {
-    setClientError(null);
-    onStartCall();
-  };
-
-  const onRetrySubmit = () => {
-    completeCalledRef.current = false;
-    setSubmitFailed(false);
-    void submitTranscriptRef.current();
-  };
-
-  // ---------- Terminal states ----------
 
   if (effectiveStatus === "completed") {
-    const completedMessages: ChatMessage[] = (historicalTranscript ?? []).map((m) => ({
-      role: m.role === "assistant" ? "assistant" : "user",
-      text: m.content,
-    }));
-
-    return (
-      <div className="flex h-full min-h-0 flex-col overflow-hidden bg-muted/30">
-        {completedMessages.length > 0 ? (
-          <ScrollArea className="min-h-0 flex-1">
-            <div className="space-y-7 px-5 py-6 md:px-7 md:py-7">
-              {completedMessages.map((msg, i) => (
-                <TranscriptBubble
-                  key={`completed-${i}-${msg.role}-${msg.text.length}`}
-                  message={{
-                    role: msg.role === "user" ? "candidate" : "assistant",
-                    content: msg.text,
-                  }}
-                  userLabel="You"
-                />
-              ))}
-            </div>
-          </ScrollArea>
-        ) : (
-          <div className="flex flex-1 items-center justify-center px-6 py-10">
-            <div className="flex flex-col items-center gap-3 text-center text-muted-foreground">
-              <div className="flex size-12 items-center justify-center rounded-full border border-border/60 bg-muted/30">
-                <HugeiconsIcon icon={Mic01Icon} strokeWidth={2} className="size-5 text-primary" />
-              </div>
-              <p className="text-sm text-foreground">Transcript unavailable</p>
-            </div>
-          </div>
-        )}
-
-        <div className="shrink-0 border-t border-border/50 bg-card px-5 py-4 md:px-6">
-          <div className="flex items-center justify-between gap-3">
-            <CompletedInterviewBar
-              title="Voice assessment complete"
-              description="Your results are included in the report."
-            />
-            <Button size="sm" variant="outline" asChild>
-              <Link to="/dashboard/applications">Back to applications</Link>
-            </Button>
-          </div>
-        </div>
-      </div>
+    const completedMessages: VoiceDisplayMessage[] = (historicalTranscriptQuery.data ?? []).map(
+      (message) => ({
+        role: message.role === "assistant" ? "assistant" : "user",
+        text: message.content,
+      }),
     );
+
+    return <CompletedVoiceAssessment messages={completedMessages} />;
   }
 
   if (effectiveStatus === "skipped") {
@@ -372,33 +140,226 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
     );
   }
 
-  // ---------- Loading ----------
-
-  if (dbPending) {
-    return (
-      <div className="flex h-full min-h-0 flex-col overflow-hidden bg-muted/30">
-        <div className="flex flex-1 items-center justify-center p-6">
-          <div className="flex flex-col items-center gap-3">
-            <HugeiconsIcon
-              icon={Loading03Icon}
-              strokeWidth={2}
-              className="size-6 animate-spin text-muted-foreground"
-            />
-            <p className="text-sm text-muted-foreground">Preparing voice assessment</p>
-          </div>
-        </div>
-      </div>
-    );
+  if (assessmentQuery.isPending || preparationQuery.isPending || !preparationQuery.data) {
+    if (assessmentQuery.error || preparationQuery.error) {
+      const error = assessmentQuery.error ?? preparationQuery.error;
+      return (
+        <PreparationError
+          message={error instanceof Error ? error.message : "Could not prepare voice assessment."}
+          onRetry={onRetryPreparation}
+        />
+      );
+    }
+    return <PreparingVoiceAssessment />;
   }
 
-  // ---------- Active workspace ----------
+  return (
+    <PreparedVoiceAssessment
+      key={preparationQuery.data.expiresAt}
+      interviewId={interviewId}
+      recoveredMessages={recoveredMessages}
+      onRecoveredMessagesChange={setRecoveredMessages}
+      onRefreshCapability={refreshCapability}
+    />
+  );
+}
 
-  const finalising = callEnded && !isTerminal && !clientError;
-  const showEmptyAfterCall =
-    finalising && !isSubmitting && !submitFailed && liveTranscript.length === 0;
-  const showFinalisingSpinner = finalising && !submitFailed && !showEmptyAfterCall;
-  const showStartScreen = !isInCall && !finalising;
-  const interim = chat.mode === "listening" ? (chat.pendingUserTranscript?.trim() ?? "") : "";
+function PreparedVoiceAssessment({
+  interviewId,
+  recoveredMessages,
+  onRecoveredMessagesChange,
+  onRefreshCapability,
+}: {
+  interviewId: string;
+  recoveredMessages: VoiceDisplayMessage[];
+  onRecoveredMessagesChange: (messages: VoiceDisplayMessage[]) => void;
+  onRefreshCapability: () => Promise<void>;
+}) {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const finalizeAssessment = useServerFn(requestMyVoiceFinalization);
+  const transcriptEndRef = useRef<HTMLDivElement>(null);
+  const historyRequestedRef = useRef(false);
+  const transcriptRef = useRef<TranscriptMessage[]>([]);
+  const interimTranscriptRef = useRef<string | null>(null);
+  const onRecoveredMessagesChangeRef = useRef(onRecoveredMessagesChange);
+  const finalizeRef = useRef<() => Promise<void>>(async () => {});
+  const [clientError, setClientError] = useState<string | null>(null);
+  const [isStarting, setIsStarting] = useState(false);
+  const [endRequested, setEndRequested] = useState(false);
+  const [isFinalizing, setIsFinalizing] = useState(false);
+  const [finalizationResult, setFinalizationResult] = useState<VoiceFinalizationResult | null>(
+    null,
+  );
+  const [agentCompletionReason, setAgentCompletionReason] = useState<
+    "agent_complete" | "duration_limit" | null
+  >(null);
+
+  const voice = useVoiceAgent({
+    agent: "VoiceAssessmentAgent",
+    name: interviewId,
+    enabled: true,
+  });
+
+  transcriptRef.current = voice.transcript;
+  interimTranscriptRef.current = voice.interimTranscript;
+  onRecoveredMessagesChangeRef.current = onRecoveredMessagesChange;
+
+  const { connected, sendJSON } = voice;
+
+  const isInCall = voice.status !== "idle";
+  const isConnecting = !voice.connected;
+  const interim = voice.interimTranscript?.trim() ?? "";
+  const messages = buildVoiceDisplayMessages(recoveredMessages, voice.transcript);
+  const lastMessageText = messages.at(-1)?.text;
+
+  useEffect(() => {
+    transcriptEndRef.current?.scrollIntoView({ block: "end" });
+  }, [interim, lastMessageText, messages.length]);
+
+  useEffect(() => {
+    if (!connected) {
+      historyRequestedRef.current = false;
+      return;
+    }
+    if (historyRequestedRef.current) return;
+    historyRequestedRef.current = true;
+    sendJSON({ type: "request_voice_history" });
+  }, [connected, sendJSON]);
+
+  useEffect(() => {
+    const parsed = customVoiceMessageSchema.safeParse(voice.lastCustomMessage);
+    if (!parsed.success) return;
+
+    if (parsed.data.type === "voice_history") {
+      const recovered = parsed.data.messages.map((message) => ({
+        role: message.role,
+        text: message.content,
+      }));
+      onRecoveredMessagesChangeRef.current(recovered);
+      return;
+    }
+
+    setAgentCompletionReason(parsed.data.reason);
+  }, [voice.lastCustomMessage]);
+
+  useEffect(() => {
+    if (voice.error) {
+      setClientError(voice.error);
+      return;
+    }
+    if (voice.connected) {
+      setClientError(null);
+    }
+  }, [voice.connected, voice.error]);
+
+  finalizeRef.current = async () => {
+    if (isFinalizing) return;
+
+    setIsFinalizing(true);
+    setFinalizationResult(null);
+    try {
+      const result = await finalizeAssessment({ data: { interviewId } });
+      setFinalizationResult(result);
+      if (result.ok) {
+        await queryClient.invalidateQueries({ queryKey: ["voice-assessment", interviewId] });
+        await queryClient.invalidateQueries({
+          queryKey: ["voice-assessment-transcript", interviewId],
+        });
+        await router.invalidate();
+        return;
+      }
+
+      if (result.reason === "terminal_state" || result.reason === "assessment_unavailable") {
+        await router.invalidate();
+      }
+    } catch (error) {
+      setFinalizationResult({ ok: false, reason: "retryable_failure" });
+      toast.error(error instanceof Error ? error.message : "Could not save voice assessment.");
+    } finally {
+      setIsFinalizing(false);
+      setEndRequested(false);
+    }
+  };
+
+  const onStartCall = () => {
+    if (!voice.connected) {
+      setClientError("Voice connection is still preparing. Please try again in a moment.");
+      return;
+    }
+
+    setClientError(null);
+    setFinalizationResult(null);
+    setAgentCompletionReason(null);
+    setEndRequested(false);
+    setIsStarting(true);
+    const startPromise = voice.startCall();
+    void startPromise
+      .catch((error) => {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Microphone access failed. Check your browser permission and try again.";
+        setClientError(message);
+      })
+      .finally(() => {
+        setIsStarting(false);
+      });
+  };
+
+  const requestIntentionalEnd = async () => {
+    if (endRequested) return;
+
+    setClientError(null);
+    setEndRequested(true);
+    const candidateMessageCount = transcriptRef.current.filter(
+      (message) => message.role === "user",
+    ).length;
+
+    if (interimTranscriptRef.current?.trim()) {
+      const waitResult = await waitForCandidateUtteranceCommit({
+        initialCandidateMessageCount: candidateMessageCount,
+        readSnapshot: () => ({
+          interimTranscript: interimTranscriptRef.current,
+          candidateMessageCount: transcriptRef.current.filter((message) => message.role === "user")
+            .length,
+        }),
+      });
+      if (waitResult === "timeout") {
+        setEndRequested(false);
+        setClientError(
+          "Zero is still capturing your last response. Pause for a moment, then try End call again.",
+        );
+        return;
+      }
+    }
+
+    voice.endCall();
+    await finalizeRef.current();
+  };
+
+  const onEndCall = () => {
+    void requestIntentionalEnd();
+  };
+
+  const onRetryFinalization = () => {
+    void finalizeRef.current();
+  };
+
+  const onDismissError = () => {
+    setClientError(null);
+  };
+
+  const onReconnect = () => {
+    setClientError(null);
+    void onRefreshCapability().catch((error) => {
+      setClientError(error instanceof Error ? error.message : "Could not refresh voice access.");
+    });
+  };
+
+  const endingAfterFarewell = agentCompletionReason !== null;
+  const endButtonDisabled =
+    endRequested || isFinalizing || (endingAfterFarewell && voice.status === "speaking");
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-muted/30">
@@ -409,70 +370,85 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
               tone={
                 clientError
                   ? "danger"
-                  : isInCall
-                    ? chat.mode === "thinking"
+                  : endingAfterFarewell
+                    ? "success"
+                    : voice.status === "thinking"
                       ? "amber"
-                      : chat.mode === "speaking"
+                      : voice.status === "speaking"
                         ? "primary"
-                        : "success"
-                    : "muted"
+                        : voice.status === "listening"
+                          ? "success"
+                          : "muted"
               }
             />
             <div>
               <p className="text-sm font-medium">
                 {clientError
                   ? "Connection issue"
-                  : isConnecting
-                    ? "Connecting"
-                    : isInCall
-                      ? chat.mode === "listening"
+                  : endingAfterFarewell
+                    ? "Assessment complete"
+                    : isConnecting
+                      ? "Connecting"
+                      : voice.status === "listening"
                         ? "Listening"
-                        : chat.mode === "thinking"
+                        : voice.status === "thinking"
                           ? "Connected"
-                          : chat.mode === "speaking"
+                          : voice.status === "speaking"
                             ? "Zero is speaking"
-                            : "Connected"
-                      : finalising
-                        ? "Finalising results"
-                        : "Voice communication assessment"}
+                            : isFinalizing
+                              ? "Finalising results"
+                              : "Voice communication assessment"}
               </p>
               <p className="text-xs text-muted-foreground">
-                {isInCall
-                  ? "Speak naturally. Zero will follow up when you pause."
-                  : "A short voice conversation to assess communication skills."}
+                {endingAfterFarewell
+                  ? "Confirm once you have heard Zero's full closing."
+                  : isInCall
+                    ? "Speak naturally. Zero will follow up when you pause."
+                    : "A short voice conversation to assess communication skills."}
               </p>
             </div>
           </div>
 
           {isInCall ? (
-            <Button size="sm" variant="destructive" onClick={onEndCall}>
-              <HugeiconsIcon icon={PhoneOff01Icon} strokeWidth={2} className="size-4" />
-              End call
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={onEndCall}
+              disabled={endButtonDisabled}
+            >
+              {endRequested ? (
+                <HugeiconsIcon
+                  icon={Loading03Icon}
+                  strokeWidth={2}
+                  className="size-4 animate-spin"
+                />
+              ) : (
+                <HugeiconsIcon icon={PhoneOff01Icon} strokeWidth={2} className="size-4" />
+              )}
+              {endingAfterFarewell ? "I heard Zero — finish" : "End call"}
             </Button>
           ) : null}
         </div>
       </div>
 
-      {visibleTranscript.length === 0 && !interim ? (
-        <VoiceEmptyState finalising={finalising} error={clientError} />
+      {messages.length === 0 && !interim ? (
+        <VoiceEmptyState finalising={isFinalizing} error={clientError} />
       ) : (
         <ScrollArea className="min-h-0 flex-1">
           <div className="space-y-7 px-5 py-6 md:px-7 md:py-7">
-            {visibleTranscript.map((msg, i) => (
+            {messages.map((message, index) => (
               <TranscriptBubble
-                key={`${i}-${msg.role}-${msg.text.length}`}
+                key={`${index}-${message.role}`}
                 message={{
-                  role: msg.role === "user" ? "candidate" : "assistant",
-                  content: msg.text,
+                  role: message.role === "user" ? "candidate" : "assistant",
+                  content: message.text,
                 }}
                 userLabel="You"
               />
             ))}
 
-            {chat.mode === "thinking" ? <InterviewThinkingBubble /> : null}
-
+            {voice.status === "thinking" ? <InterviewThinkingBubble /> : null}
             {interim ? <InterviewInterimBubble content={interim} /> : null}
-
             <div ref={transcriptEndRef} className="h-1" />
           </div>
         </ScrollArea>
@@ -483,62 +459,163 @@ export function VoiceAssessmentPanel({ interviewId }: { interviewId: string }) {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-danger">{clientError}</p>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setClientError(null)}>
+              <Button variant="outline" size="sm" onClick={onDismissError}>
                 Dismiss
               </Button>
-              <Button size="sm" onClick={onRetryAfterError}>
-                Try again
-              </Button>
+              {!voice.connected ? (
+                <Button size="sm" onClick={onReconnect}>
+                  Reconnect
+                </Button>
+              ) : null}
             </div>
           </div>
-        ) : isInCall ? (
-          <ActiveCallFooter audioLevel={chat.inputLevel} mode={chat.mode} />
-        ) : showFinalisingSpinner ? (
+        ) : isFinalizing ? (
           <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
             <HugeiconsIcon icon={Loading03Icon} strokeWidth={2} className="size-4 animate-spin" />
             Finalising results
           </div>
-        ) : finalising && submitFailed && liveTranscript.length > 0 ? (
+        ) : finalizationResult?.ok === false &&
+          finalizationResult.reason === "retryable_failure" ? (
+          <FinalizationRetry onRetry={onRetryFinalization} />
+        ) : finalizationResult?.ok === false &&
+          finalizationResult.reason === "no_candidate_speech" ? (
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-muted-foreground">
-              Could not save your assessment. Please try again.
+              No candidate response was captured. Start the assessment and try again.
             </p>
-            <Button size="sm" onClick={onRetrySubmit} className="px-5">
-              Try again
-            </Button>
-          </div>
-        ) : showEmptyAfterCall ? (
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-muted-foreground">
-              No conversation was recorded. Start the assessment to try again.
-            </p>
-            <Button size="sm" onClick={onStartCall} className="px-5">
+            <Button size="sm" onClick={onStartCall} disabled={!voice.connected || isStarting}>
               <HugeiconsIcon icon={Mic01Icon} strokeWidth={2} className="size-4" />
               Start voice assessment
             </Button>
           </div>
-        ) : showStartScreen ? (
+        ) : finalizationResult?.ok === false ? (
+          <p className="text-center text-sm text-muted-foreground">
+            This voice assessment is no longer available. Refreshing the interview status…
+          </p>
+        ) : isInCall ? (
+          <ActiveCallFooter audioLevel={voice.audioLevel} status={voice.status} />
+        ) : (
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-muted-foreground">
-              Make sure you're in a quiet spot with your microphone working.
+              {voice.connected
+                ? "Make sure you're in a quiet spot with your microphone working."
+                : "Preparing the secure voice connection…"}
             </p>
-            <Button size="sm" onClick={onStartCall} className="px-5">
-              <HugeiconsIcon icon={Mic01Icon} strokeWidth={2} className="size-4" />
+            <Button size="sm" onClick={onStartCall} disabled={!voice.connected || isStarting}>
+              {isStarting ? (
+                <HugeiconsIcon
+                  icon={Loading03Icon}
+                  strokeWidth={2}
+                  className="size-4 animate-spin"
+                />
+              ) : (
+                <HugeiconsIcon icon={Mic01Icon} strokeWidth={2} className="size-4" />
+              )}
               Start voice assessment
             </Button>
           </div>
-        ) : null}
+        )}
       </div>
+    </div>
+  );
+}
+
+function CompletedVoiceAssessment({ messages }: { messages: VoiceDisplayMessage[] }) {
+  return (
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-muted/30">
+      {messages.length > 0 ? (
+        <ScrollArea className="min-h-0 flex-1">
+          <div className="space-y-7 px-5 py-6 md:px-7 md:py-7">
+            {messages.map((message, index) => (
+              <TranscriptBubble
+                key={`completed-${index}-${message.role}-${message.text.length}`}
+                message={{
+                  role: message.role === "user" ? "candidate" : "assistant",
+                  content: message.text,
+                }}
+                userLabel="You"
+              />
+            ))}
+          </div>
+        </ScrollArea>
+      ) : (
+        <div className="flex flex-1 items-center justify-center px-6 py-10">
+          <div className="flex flex-col items-center gap-3 text-center text-muted-foreground">
+            <div className="flex size-12 items-center justify-center rounded-full border border-border/60 bg-muted/30">
+              <HugeiconsIcon icon={Mic01Icon} strokeWidth={2} className="size-5 text-primary" />
+            </div>
+            <p className="text-sm text-foreground">Transcript unavailable</p>
+          </div>
+        </div>
+      )}
+
+      <div className="shrink-0 border-t border-border/50 bg-card px-5 py-4 md:px-6">
+        <div className="flex items-center justify-between gap-3">
+          <CompletedInterviewBar
+            title="Voice assessment complete"
+            description="Your results are included in the report."
+          />
+          <Button size="sm" variant="outline" asChild>
+            <Link to="/dashboard/applications">Back to applications</Link>
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PreparingVoiceAssessment() {
+  return (
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-muted/30">
+      <div className="flex flex-1 items-center justify-center p-6">
+        <div className="flex flex-col items-center gap-3">
+          <HugeiconsIcon
+            icon={Loading03Icon}
+            strokeWidth={2}
+            className="size-6 animate-spin text-muted-foreground"
+          />
+          <p className="text-sm text-muted-foreground">Preparing voice assessment</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PreparationError({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <CompletedState
+      icon={<HugeiconsIcon icon={PhoneOff01Icon} strokeWidth={2} className="size-6 text-danger" />}
+      iconBg="bg-danger/10"
+      title="Could not prepare voice assessment"
+      description={message}
+      actions={
+        <Button size="sm" onClick={onRetry}>
+          Try again
+        </Button>
+      }
+    />
+  );
+}
+
+function FinalizationRetry({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <p className="text-sm text-muted-foreground">
+        Could not save your assessment. Your committed transcript is safe; please try again.
+      </p>
+      <Button size="sm" onClick={onRetry} className="px-5">
+        Try again
+      </Button>
     </div>
   );
 }
 
 function ActiveCallFooter({
   audioLevel,
-  mode,
+  status,
 }: {
   audioLevel: number;
-  mode: "idle" | "listening" | "thinking" | "speaking";
+  status: "idle" | "listening" | "thinking" | "speaking";
 }) {
   const bars = Array.from({ length: 14 });
   const [tick, setTick] = useState(0);
@@ -546,42 +623,42 @@ function ActiveCallFooter({
   useEffect(() => {
     let raf = 0;
     const loop = () => {
-      setTick((n) => (n + 1) % 1_000_000);
+      setTick((current) => (current + 1) % 1_000_000);
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
   }, []);
 
-  const t = tick / 6;
+  const time = tick / 6;
 
   return (
     <div className="flex h-12 items-end justify-center gap-1 py-1" aria-hidden="true">
-      {bars.map((_, i) => {
-        const idle = (Math.sin(t + i * 0.6) + 1) / 2;
+      {bars.map((_, index) => {
+        const idle = (Math.sin(time + index * 0.6) + 1) / 2;
         const active =
-          mode === "listening"
+          status === "listening"
             ? Math.min(1, audioLevel * 4 + idle * 0.15)
-            : mode === "speaking"
+            : status === "speaking"
               ? 0.4 + idle * 0.4
-              : mode === "thinking"
+              : status === "thinking"
                 ? 0.15 + idle * 0.15
                 : 0.05;
-        const heightPct = Math.max(0.08, active);
+        const height = Math.max(0.08, active);
         return (
           <span
-            key={i}
+            key={index}
             className={cn(
               "w-1 rounded-full transition-[background-color] duration-100",
-              mode === "listening"
+              status === "listening"
                 ? "bg-success"
-                : mode === "speaking"
+                : status === "speaking"
                   ? "bg-primary"
-                  : mode === "thinking"
+                  : status === "thinking"
                     ? "bg-amber-500"
                     : "bg-muted-foreground/40",
             )}
-            style={{ height: `${Math.round(heightPct * 36) + 4}px` }}
+            style={{ height: `${Math.round(height * 36) + 4}px` }}
           />
         );
       })}
@@ -642,7 +719,7 @@ function VoiceEmptyState({ finalising, error }: { finalising: boolean; error: st
           {error
             ? error
             : finalising
-              ? "We're scoring your responses now."
+              ? "We're saving your responses now."
               : "Speak naturally about your experience. There are no wrong answers."}
         </p>
       </div>

@@ -37,6 +37,12 @@ JOIN applications a ON a.id = ca.application_id
 WHERE a.candidate_id = $1
   AND ca.audio_key IS NOT NULL;
 
+-- name: listInterviewIdsForCandidate :many
+SELECT i.id
+FROM interviews i
+JOIN applications a ON a.id = i.application_id
+WHERE a.candidate_id = $1;
+
 -- name: scrubCandidateProfileForUser :exec
 UPDATE candidate_profiles
 SET resume_key = NULL,

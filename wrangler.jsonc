@@ -20,6 +20,21 @@
     "AI_GATEWAY_ID": "roundzero",
     "MATCH_DIGEST_ENABLED": "false",
   },
+  "ai": { "binding": "AI" },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "VoiceAssessmentAgent",
+        "class_name": "VoiceAssessmentAgent",
+      },
+    ],
+  },
+  "exports": {
+    "VoiceAssessmentAgent": {
+      "type": "durable-object",
+      "storage": "sqlite",
+    },
+  },
   "hyperdrive": [
     {
       "binding": "HYPERDRIVE",
@@ -96,6 +111,15 @@
   },
   "env": {
     "staging": {
+      "ai": { "binding": "AI" },
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "VoiceAssessmentAgent",
+            "class_name": "VoiceAssessmentAgent",
+          },
+        ],
+      },
       "hyperdrive": [
         {
           "binding": "HYPERDRIVE",
@@ -173,6 +197,15 @@
       ],
     },
     "production": {
+      "ai": { "binding": "AI" },
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "VoiceAssessmentAgent",
+            "class_name": "VoiceAssessmentAgent",
+          },
+        ],
+      },
       "hyperdrive": [
         {
           "binding": "HYPERDRIVE",
