@@ -74,10 +74,11 @@ const MODEL_CHAINS = {
   },
   job_creation: DEFAULT_CHAIN,
   job_import: DEFAULT_CHAIN,
+  // No users yet — free model until job matching actually has traffic.
   job_matching: {
-    dev: ["anthropic/claude-sonnet-4.5"],
-    staging: ["anthropic/claude-sonnet-4.5"],
-    prod: ["anthropic/claude-sonnet-4.5"],
+    dev: ["openrouter/free"],
+    staging: ["openrouter/free"],
+    prod: ["openrouter/free"],
   },
   interview: {
     dev: ["deepseek/deepseek-v4-flash"],
