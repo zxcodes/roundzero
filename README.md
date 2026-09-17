@@ -2,6 +2,8 @@
 
 AI-powered hiring platform that replaces first-round screening with structured async interviews, voice assessment, and explainable candidate reports.
 
+Licensed under [MIT](LICENSE).
+
 ## Stack
 
 - **Framework:** TanStack Start (React 19 with React Compiler, Vite 8)
@@ -18,33 +20,49 @@ AI-powered hiring platform that replaces first-round screening with structured a
 - **Linting & Formatting:** Oxlint + Oxfmt
 - **Finding Unused Code & Dependencies:** Knip
 
+## Prerequisites
+
+- [Bun](https://bun.sh) 1.4+
+- [Docker](https://docs.docker.com/get-docker/) (local Postgres)
+- [sqlc](https://docs.sqlc.dev/en/latest/overview/install.html) (only if you change `queries.sql` files)
+
 ## Getting Started
 
+Use [`setup.ts`](setup.ts) — do not install, copy env, or start Postgres by hand:
+
 ```bash
-# Install dependencies
-bun install
+bun run setup
+```
 
-# Set up local Postgres (requires Docker)
-bash setup-db.sh setup_pg
+That installs dependencies, copies `.env.example` → `.env` if needed, starts Postgres (dev on `:6311`, test on `:6312`), and generates SQLC types.
 
-# Copy env template
-cp .env.example .env
-# Fill in DATABASE_URL, OPENROUTER_API_KEY, and other values
+Then edit `.env`:
 
-# Start dev server
+1. Set `SESSION_SECRET` (`openssl rand -hex 32`)
+2. Set `VITE_GOOGLE_CLIENT_ID` from [Google Cloud Console](https://console.cloud.google.com/apis/credentials) (OAuth client, authorized origin `http://localhost:3000`)
+3. Keep the Polar placeholders if you are not testing billing. The app still expects those keys to be present.
+4. Add `OPENROUTER_API_KEY` for interviews and evaluations. Leave ElevenLabs empty to skip voice.
+
+```bash
 bun run dev
 ```
+
+Optional: sign up as a company, then `bun run db:seed` (or `bun run db:seed you@company.com`).
+
+Self-hosting production also needs Cloudflare (Workers, Hyperdrive, R2, Email), Polar, and Sentry. Bindings and account IDs live in `wrangler.jsonc` — replace them with your own.
 
 ## Commands
 
 | Command              | Description                            |
 | -------------------- | -------------------------------------- |
+| `bun run setup`      | Install, env, local Postgres, SQLC     |
 | `bun run dev`        | Start dev server (port 3000)           |
 | `bun run build`      | Production build                       |
 | `bun run check`      | Format + lint + typecheck              |
 | `bun run typecheck`  | TypeScript check only                  |
 | `bun run sqlgen`     | Generate typed queries from SQL (SQLC) |
 | `bun run db:migrate` | Run database migrations                |
+| `bun run db:seed`    | Seed local demo data                   |
 | `bun run test`       | Run Vitest suite                       |
 
 ## Project Structure
@@ -65,3 +83,5 @@ app/
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** — Technical architecture
 - **[AI-LAYER.md](AI-LAYER.md)** — AI funnel, interviews, evaluation, batching
 - **[AGENTS.md](AGENTS.md)** — Agent/AI coding conventions
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** — Local setup and PR checks
+- **[SECURITY.md](SECURITY.md)** — Vulnerability reports
